@@ -53,7 +53,7 @@ data class CapabilityResult(
     val attempts: List<CapabilityAttempt> = emptyList(),
 )
 
-interface CapabilityClient {
+fun interface CapabilityClient {
     suspend fun execute(request: CapabilityRequest): CapabilityResult
 }
 
