@@ -34,11 +34,11 @@ class AccessibilityBackend : CapabilityBackend {
                         request.payload.string("text"),
                         request.payload.boolean("exact"),
                     )
-                    return@withContext CapabilityResult(true, ConfigValue.BooleanValue(found))
+                    return@withContext CapabilityResult(success = true, value = ConfigValue.BooleanValue(found))
                 }
                 AccessibilityOperations.FIND_VIEW_ID -> {
                     val found = service.hasViewId(request.payload.string("viewId"))
-                    return@withContext CapabilityResult(true, ConfigValue.BooleanValue(found))
+                    return@withContext CapabilityResult(success = true, value = ConfigValue.BooleanValue(found))
                 }
             }
 
