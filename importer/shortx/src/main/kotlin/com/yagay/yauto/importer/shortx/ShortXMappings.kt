@@ -25,6 +25,10 @@ internal object ShortXMappings {
             "Delay" -> delay(any, importerId, fields)
             "LaunchApp" -> launchApp(any, importerId, fields)
             "WriteClipboard" -> writeClipboard(any, importerId, fields)
+            "InputText" -> inputText(any, importerId, fields)
+            "InputTap" -> inputTap(any, importerId, fields)
+            "InputSwipe" -> inputSwipe(any, importerId, fields)
+            "FindAndClickViewById" -> clickViewId(any, importerId, fields)
             else -> null
         }
     }
@@ -71,6 +75,44 @@ internal object ShortXMappings {
                 sourceFeature("android.clipboard.set", importerId, any.typeUrl, any.value.toString(Charsets.UTF_8),
                     extra = mapOf("text" to ConfigValue.StringValue(text)))
             }
+            "InputText" -> {
+                val text = (obj["text"] as? JsonPrimitive)?.contentOrNull ?: return null
+                sourceFeature("accessibility.input_text", importerId, any.typeUrl, any.value.toString(Charsets.UTF_8),
+                    extra = mapOf("text" to ConfigValue.StringValue(text)))
+            }
+            "InputTap" -> {
+                val x = jsonNumeric(obj, "xs", "x") ?: return null
+                val y = jsonNumeric(obj, "ys", "y") ?: return null
+                if (x < 0 || y < 0) return null
+                sourceFeature("accessibility.gesture.tap", importerId, any.typeUrl, any.value.toString(Charsets.UTF_8),
+                    extra = mapOf(
+                        "x" to ConfigValue.NumberValue(x),
+                        "y" to ConfigValue.NumberValue(y),
+                        "durationMs" to ConfigValue.NumberValue(40.0),
+                    ))
+            }
+            "InputSwipe" -> {
+                val x1 = jsonNumeric(obj, "startXS", "startX") ?: return null
+                val y1 = jsonNumeric(obj, "startYS", "startY") ?: return null
+                val x2 = jsonNumeric(obj, "endXS", "endX") ?: return null
+                val y2 = jsonNumeric(obj, "endYS", "endY") ?: return null
+                val duration = jsonNumeric(obj, "swipeTimeS", "swipeTime") ?: return null
+                if (listOf(x1, y1, x2, y2).any { it < 0 } || duration <= 0) return null
+                sourceFeature("accessibility.gesture.swipe", importerId, any.typeUrl, any.value.toString(Charsets.UTF_8),
+                    extra = mapOf(
+                        "x1" to ConfigValue.NumberValue(x1), "y1" to ConfigValue.NumberValue(y1),
+                        "x2" to ConfigValue.NumberValue(x2), "y2" to ConfigValue.NumberValue(y2),
+                        "durationMs" to ConfigValue.NumberValue(duration),
+                    ))
+            }
+            "FindAndClickViewById" -> {
+                val viewId = (obj["viewId"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() } ?: return null
+                if ((obj["isRegex"] as? JsonPrimitive)?.booleanOrNull == true) return null
+                val timeout = (obj["timeout"] as? JsonPrimitive)?.longOrNull ?: 0L
+                if (timeout != 0L) return null
+                sourceFeature("accessibility.click_view_id", importerId, any.typeUrl, any.value.toString(Charsets.UTF_8),
+                    extra = mapOf("viewId" to ConfigValue.StringValue(viewId)))
+            }
             else -> null
         }
     }
@@ -82,18 +124,21 @@ internal object ShortXMappings {
         "WriteClipboard" -> "android.clipboard.set"
         "ShellCommand" -> "system.shell.execute"
         "StopApp" -> "android.app.force_stop"
+        "InputText" -> "accessibility.input_text"
+        "InputTap" -> "accessibility.gesture.tap"
+        "InputSwipe" -> "accessibility.gesture.swipe"
+        "FindAndClickViewById" -> "accessibility.click_view_id"
+        "FindAndClickViewByText" -> "accessibility.click_text"
         else -> null
     }
 
     private fun showToast(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
-        // ShortX Actions.proto: ShowToast.message = 1.
         val message = fields.string(1) ?: return null
         return binaryFeature(any, importerId, "android.toast.show",
             mapOf("text" to ConfigValue.StringValue(message)))
     }
 
     private fun delay(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
-        // Actions.proto: time(deprecated)=1, timeString=2, TimeUnit=5 (MS/S/M/H/D).
         val value = fields.string(2)?.toDoubleOrNull() ?: fields.varint(1)?.toDouble() ?: return null
         val unit = fields.varint(5) ?: 0L
         val millis = durationMs(value, unit) ?: return null
@@ -102,21 +147,71 @@ internal object ShortXMappings {
     }
 
     private fun launchApp(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
-        // Actions.proto: LaunchApp.appPkg = 1; Common.proto: AppPkg.pkgName = 1, userId = 2.
         val appPkg = fields.bytes(1)?.let(::ProtoFields) ?: return null
         val packageName = appPkg.string(1)?.takeIf { it.isNotBlank() } ?: return null
         val userId = appPkg.varint(2) ?: 0L
-        if (userId != 0L) return null // Current YAuto launch action targets the current Android user only.
+        if (userId != 0L) return null
         return binaryFeature(any, importerId, "android.app.launch",
             mapOf("package" to ConfigValue.StringValue(packageName)))
     }
 
     private fun writeClipboard(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
-        // Actions.proto: WriteClipboard.text = 1, filePath = 2. File clipboard entries stay compat.
         if (!fields.string(2).isNullOrBlank()) return null
         val text = fields.string(1) ?: return null
         return binaryFeature(any, importerId, "android.clipboard.set",
             mapOf("text" to ConfigValue.StringValue(text)))
+    }
+
+    private fun inputText(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        val text = fields.string(1) ?: return null
+        return binaryFeature(any, importerId, "accessibility.input_text",
+            mapOf("text" to ConfigValue.StringValue(text)))
+    }
+
+    private fun inputTap(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        val x = protoNumber(fields, 3, 1) ?: return null
+        val y = protoNumber(fields, 4, 2) ?: return null
+        if (x < 0 || y < 0) return null
+        return binaryFeature(any, importerId, "accessibility.gesture.tap",
+            mapOf(
+                "x" to ConfigValue.NumberValue(x),
+                "y" to ConfigValue.NumberValue(y),
+                "durationMs" to ConfigValue.NumberValue(40.0),
+            ))
+    }
+
+    private fun inputSwipe(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        val x1 = protoNumber(fields, 11, 1) ?: return null
+        val y1 = protoNumber(fields, 12, 2) ?: return null
+        val x2 = protoNumber(fields, 13, 3) ?: return null
+        val y2 = protoNumber(fields, 14, 4) ?: return null
+        val duration = protoNumber(fields, 15, 5) ?: return null
+        if (listOf(x1, y1, x2, y2).any { it < 0 } || duration <= 0) return null
+        return binaryFeature(any, importerId, "accessibility.gesture.swipe",
+            mapOf(
+                "x1" to ConfigValue.NumberValue(x1), "y1" to ConfigValue.NumberValue(y1),
+                "x2" to ConfigValue.NumberValue(x2), "y2" to ConfigValue.NumberValue(y2),
+                "durationMs" to ConfigValue.NumberValue(duration),
+            ))
+    }
+
+    private fun clickViewId(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        val viewId = fields.string(1)?.takeIf { it.isNotBlank() } ?: return null
+        if ((fields.varint(2) ?: 0L) != 0L) return null
+        if ((fields.varint(3) ?: 0L) != 0L) return null
+        return binaryFeature(any, importerId, "accessibility.click_view_id",
+            mapOf("viewId" to ConfigValue.StringValue(viewId)))
+    }
+
+    private fun protoNumber(fields: ProtoFields, stringField: Int, deprecatedField: Int): Double? {
+        fields.string(stringField)?.let { return it.toDoubleOrNull()?.takeIf(Double::isFinite) }
+        return (fields.varint(deprecatedField) ?: 0L).toDouble()
+    }
+
+    private fun jsonNumeric(obj: JsonObject, preferred: String, deprecated: String): Double? {
+        val preferredValue = (obj[preferred] as? JsonPrimitive)?.contentOrNull
+        if (!preferredValue.isNullOrBlank()) return preferredValue.toDoubleOrNull()?.takeIf(Double::isFinite)
+        return (obj[deprecated] as? JsonPrimitive)?.doubleOrNull?.takeIf(Double::isFinite) ?: 0.0
     }
 
     private fun binaryFeature(any: AnyStub, importerId: String, target: String, extra: Map<String, ConfigValue>) =
@@ -161,7 +256,6 @@ internal object ShortXMappings {
         .substringAfterLast('$')
 }
 
-/** Tiny field reader for individual ShortX action messages. */
 internal class ProtoFields(bytes: ByteArray) {
     private val fields = Wire(bytes).fields()
     fun has(number: Int): Boolean = fields.any { it.number == number }
