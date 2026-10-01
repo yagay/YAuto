@@ -14,6 +14,7 @@ import com.yagay.yauto.core.logging.TraceKind
 import com.yagay.yauto.core.logging.TraceLevel
 import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.platform.android.AndroidEventSource
+import com.yagay.yauto.platform.android.ClipboardEventSource
 import com.yagay.yauto.platform.android.ConfiguredBroadcastEventSource
 import com.yagay.yauto.platform.android.NetworkEventSource
 import com.yagay.yauto.platform.android.RuntimeEventEmitter
@@ -36,6 +37,7 @@ class AutomationRuntimeService : Service() {
         val dispatcher = RuntimeEventDispatcher(graph, scope)
         sources += SystemBroadcastEventSource(this)
         sources += NetworkEventSource(this)
+        sources += ClipboardEventSource(this)
         sources += ConfiguredBroadcastEventSource(this, graph.workspace)
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
         sources.forEach { source ->
