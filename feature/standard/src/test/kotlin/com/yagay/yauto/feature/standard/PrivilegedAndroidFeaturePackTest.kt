@@ -65,9 +65,31 @@ class PrivilegedAndroidFeaturePackTest {
         assertEquals("settings put secure 'demo_key' 'a'\\''b c'", command)
     }
 
+    @Test fun `connectivity toggles use stable svc entry points`() = runBlocking {
+        val registry = FeatureRegistry().apply { install(PrivilegedAndroidFeaturePack()) }
+        val commands = mutableMapOf<String, String>()
+        val client = CapabilityClient { request ->
+            commands[request.operationId] = (request.payload["command"] as ConfigValue.StringValue).value
+            CapabilityResult(true, backendId = "shizuku")
+        }
+        for ((id, enabled) in listOf(
+            "android.wifi.set" to false,
+            "android.mobile_data.set" to true,
+            "android.bluetooth.set" to false,
+        )) {
+            registry.actionExecutor(id)!!.execute(
+                FeatureRef(id, config = mapOf("enabled" to ConfigValue.BooleanValue(enabled))),
+                context(client),
+            )
+        }
+        assertEquals("svc wifi disable", commands["android.wifi.set"])
+        assertEquals("svc data enable", commands["android.mobile_data.set"])
+        assertEquals("svc bluetooth disable", commands["android.bluetooth.set"])
+    }
+
     @Test fun `whole pack can be removed cleanly`() {
         val registry = FeatureRegistry().apply { install(PrivilegedAndroidFeaturePack()) }
-        assertEquals(7, registry.allDescriptors().count { it.ownerPackId == "standard.android.privileged" })
+        assertEquals(11, registry.allDescriptors().count { it.ownerPackId == "standard.android.privileged" })
         registry.uninstallPack("standard.android.privileged")
         assertTrue(registry.allDescriptors().none { it.ownerPackId == "standard.android.privileged" })
     }
