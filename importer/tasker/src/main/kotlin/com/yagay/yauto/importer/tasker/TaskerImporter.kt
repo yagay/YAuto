@@ -6,6 +6,11 @@ import org.w3c.dom.Element
 import java.io.ByteArrayInputStream
 import java.util.UUID
 import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.OutputKeys
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
+import java.io.StringWriter
 
 class TaskerImporter : AutomationImporter {
     override val id = "tasker"
@@ -118,7 +123,7 @@ class TaskerImporter : AutomationImporter {
         val path = "task[${task.id}].action[$index]"
         val raw = action.toCompactXml()
 
-        if (code == "130") {
+        if (code == "130" && action.children("ConditionList").isEmpty()) {
             val targetName = TaskerMappings.performTaskTarget(action)
             val target = targetName?.let(flowAliases::get)
             if (target != null) {
@@ -137,7 +142,8 @@ class TaskerImporter : AutomationImporter {
                 compatibilityAction(code, raw)
             }
         } else {
-            val native = TaskerMappings.nativeAction(action, code, id, raw)
+            // Conditional actions need a condition translator; preserve them until then.
+            val native = if (action.children("ConditionList").isEmpty()) TaskerMappings.nativeAction(action, code, id, raw) else null
             if (native != null) {
                 ActionNode.Action(NodeId(UUID.randomUUID().toString()), native)
             } else {
@@ -162,16 +168,11 @@ class TaskerImporter : AutomationImporter {
     private fun Element.childText(name: String): String? = elementChildren().firstOrNull { it.tagName == name }?.textContent?.trim()?.takeIf { it.isNotEmpty() }
     private fun Element.children(name: String): List<Element> = elementChildren().filter { it.tagName == name }
     private fun Element.elementChildren(): List<Element> = (0 until childNodes.length).mapNotNull { childNodes.item(it) as? Element }
-    private fun Element.toCompactXml(): String = buildString {
-        append('<').append(tagName)
-        if (hasAttribute("sr")) append(" sr=\"").append(getAttribute("sr")).append("\"")
-        append('>')
-        elementChildren().take(30).forEach { child ->
-            append('<').append(child.tagName)
-            if (child.hasAttribute("sr")) append(" sr=\"").append(child.getAttribute("sr")).append("\"")
-            if (child.hasAttribute("val")) append(" val=\"").append(child.getAttribute("val")).append("\"")
-            append('>').append(child.textContent.trim().take(512)).append("</").append(child.tagName).append('>')
-        }
-        append("</").append(tagName).append('>')
-    }.take(32_000)
+    private fun Element.toCompactXml(): String {
+        val writer = StringWriter()
+        TransformerFactory.newInstance().newTransformer().apply {
+            setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes")
+        }.transform(DOMSource(this), StreamResult(writer))
+        return writer.toString()
+    }
 }

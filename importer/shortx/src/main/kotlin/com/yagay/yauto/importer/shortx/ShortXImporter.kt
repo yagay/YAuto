@@ -88,10 +88,10 @@ class ShortXImporter : AutomationImporter {
                 PredicateNode.Condition(preserve(v, CompatFeatureIds.SOURCE_CONDITION, "rule[$index].condition[$i]"))
             }
             val actions = rule.actions.mapIndexed { i, v ->
-                val feature = if (!v.isJson) ShortXMappings.nativeAction(v, id) else null
+                val feature = ShortXMappings.nativeAction(v, id)
                 if (feature != null) {
                     trace += ImportTrace("rule[$index].action[$i]", feature.typeId, "MAPPED", v.typeUrl)
-                    ActionNode.Action(NodeId(UUID.randomUUID().toString()), feature)
+                    ActionNode.Action(NodeId(UUID.randomUUID().toString()), feature, enabled = ShortXMappings.enabled(v), comment = ShortXMappings.note(v))
                 } else {
                     val suggested = ShortXMappings.suggestedActionFeature(v.typeUrl)
                     ActionNode.Action(

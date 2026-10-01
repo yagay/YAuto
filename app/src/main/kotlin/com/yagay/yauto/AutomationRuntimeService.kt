@@ -60,7 +60,13 @@ class AutomationRuntimeService : Service() {
         dispatcher.dispatch(com.yagay.yauto.core.model.RuntimeEvent("android.event.runtime_started", source = "android.runtime"), statesOnly = true)
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.getBooleanExtra("boot", false) == true) {
+            RuntimeEventDispatcher((application as YAutoApplication).graph, scope).dispatch(
+                com.yagay.yauto.core.model.RuntimeEvent("android.event.boot", source = "android.boot"))
+        }
+        return START_STICKY
+    }
 
     override fun onDestroy() {
         sources.asReversed().forEach { source -> runCatching { source.stop() } }
@@ -92,8 +98,8 @@ class AutomationRuntimeService : Service() {
         private const val CHANNEL_ID = "yauto_runtime"
         private const val NOTIFICATION_ID = 1001
 
-        fun start(context: Context) {
-            ContextCompat.startForegroundService(context, Intent(context, AutomationRuntimeService::class.java))
+        fun start(context: Context, boot: Boolean = false) {
+            ContextCompat.startForegroundService(context, Intent(context, AutomationRuntimeService::class.java).putExtra("boot", boot))
         }
     }
 }

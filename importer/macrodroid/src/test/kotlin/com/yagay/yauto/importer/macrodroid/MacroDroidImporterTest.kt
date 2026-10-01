@@ -8,6 +8,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MacroDroidImporterTest {
+    @Test fun `maps screen context and clipboard while retaining action constraints`() {
+        val json = """{"macro":{"m_GUID":"contexts","m_triggerList":[{"m_classType":"ScreenOnOffTrigger","m_screenOn":false}],"m_constraintList":[{"m_classType":"ScreenOnConstraint","m_screenOn":false}],"m_actionList":[{"m_classType":"SetClipboardAction","m_text":"text"},{"m_classType":"ToastAction","m_messageText":"guarded","m_constraintList":[{"m_classType":"UnknownConstraint"}]}]}}"""
+        val result = MacroDroidImporter().import(ImportInput("contexts.macro", null, json.toByteArray()))
+        assertTrue(result.success)
+        val rule = result.bundle.automations.single()
+        assertEquals("android.event.screen_off", rule.activation.events.single().typeId)
+        val condition = (rule.activation.condition as com.yagay.yauto.core.model.PredicateNode.All).children.single() as com.yagay.yauto.core.model.PredicateNode.Condition
+        assertEquals("android.condition.screen", condition.feature.typeId)
+        assertEquals(ConfigValue.BooleanValue(false), condition.feature.config["value"])
+        assertEquals("android.clipboard.set", (rule.onEvent[0] as ActionNode.Action).feature.typeId)
+        val guarded = (rule.onEvent[1] as ActionNode.Action).feature
+        assertEquals("compat.source.action", guarded.typeId)
+        assertTrue((guarded.config["source.raw"] as? ConfigValue.StringValue)?.value?.contains("UnknownConstraint") == true)
+    }
     @Test
     fun `imports common single macro wrapper and native actions`() {
         val json = """

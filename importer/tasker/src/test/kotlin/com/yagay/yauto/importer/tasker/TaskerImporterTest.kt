@@ -8,6 +8,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TaskerImporterTest {
+    @Test fun `conditional action stays preserved with complete XML attributes and text`() {
+        val longValue = "x".repeat(1000) + " &amp; &lt;test&gt;"
+        val xml = """<TaskerData><Task sr="task1"><id>1</id><nme>Guarded</nme><Action sr="act0" extra="kept"><code>548</code><Str sr="arg0">$longValue</Str><ConditionList sr="if"><Condition sr="c0"><lhs>%test</lhs><op>0</op><rhs>yes</rhs></Condition></ConditionList></Action></Task></TaskerData>"""
+        val result = TaskerImporter().import(ImportInput("guarded.xml", null, xml.toByteArray()))
+        assertTrue(result.success)
+        val feature = (result.bundle.flows.single().actions.single() as ActionNode.Action).feature
+        assertEquals("compat.source.action", feature.typeId)
+        val raw = (feature.config["source.raw"] as ConfigValue.StringValue).value
+        assertTrue(raw.contains("extra=\"kept\""))
+        assertTrue(raw.contains("<Condition sr=\"c0\">"))
+        assertTrue(raw.contains("x".repeat(1000)))
+        assertTrue(raw.contains("&amp;"))
+    }
     @Test
     fun `maps stable Tasker actions and perform task to native YAuto nodes`() {
         val xml = """

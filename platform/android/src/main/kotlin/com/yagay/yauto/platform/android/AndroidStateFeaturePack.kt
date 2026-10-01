@@ -93,8 +93,9 @@ class AndroidStateFeaturePack(private val reader: AndroidStateReader) : FeatureP
     private fun state(registry: FeatureRegistry, key: String, title: String, category: FeatureCategory,
         fields: List<FieldSchema>, evaluate: (ConfigMap, FeatureExecutionContext) -> Boolean) {
         val featureId = "android.state.$key"
-        registry.registerState(FeatureDescriptor(FeatureId(featureId), FeatureKind.STATE, title,
-            "Evaluate current Android state", category, fields = fields, ownerPackId = id)) { feature, ctx ->
+        for (kind in listOf(FeatureKind.STATE, FeatureKind.CONDITION)) {
+        val registeredId = if (kind == FeatureKind.STATE) featureId else "android.condition.$key"
+        val evaluator = ConditionEvaluator { feature, ctx ->
             val start = System.nanoTime()
             var failure: Throwable? = null
             val matches = try { evaluate(feature.config, ctx) } catch (error: Exception) {
@@ -102,13 +103,16 @@ class AndroidStateFeaturePack(private val reader: AndroidStateReader) : FeatureP
                 failure = error
                 false
             }
-            ctx.tracer.record(TraceEvent(ctx.executionId, kind = TraceKind.STATE,
+            ctx.tracer.record(TraceEvent(ctx.executionId, kind = if (kind == FeatureKind.STATE) TraceKind.STATE else TraceKind.CONDITION,
                 level = if (failure == null) TraceLevel.DEBUG else TraceLevel.ERROR,
                 timestampEpochMs = System.currentTimeMillis(), message = failure?.message ?: "Android state evaluated",
-                nodeId = ctx.nodeId, featureId = featureId, backendId = "android", success = failure == null,
+                nodeId = ctx.nodeId, featureId = registeredId, backendId = "android", success = failure == null,
                 durationMs = (System.nanoTime() - start) / 1_000_000,
                 attributes = mapOf("matched" to matches.toString(), "exception" to failure?.javaClass?.name.orEmpty())))
             matches
+        }
+        val descriptor = FeatureDescriptor(FeatureId(registeredId), kind, title, "Evaluate current Android state", category, fields = fields, ownerPackId = id)
+        if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator) else registry.registerCondition(descriptor, evaluator)
         }
     }
 }

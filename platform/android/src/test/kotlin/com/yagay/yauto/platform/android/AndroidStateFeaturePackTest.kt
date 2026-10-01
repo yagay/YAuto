@@ -37,7 +37,7 @@ class AndroidStateFeaturePackTest {
         registry.stateEvaluator("android.state.$key")!!.evaluate(FeatureRef("android.state.$key", config = config), ctx)
 
     @Test fun `six removable registry states query current values`() = runBlocking {
-        assertEquals(6, registry.allDescriptors().size)
+        assertEquals(12, registry.allDescriptors().size)
         assertTrue(matches("screen"))
         reader.on = false
         assertFalse(matches("screen"))

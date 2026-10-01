@@ -22,7 +22,7 @@ fun sourceFeature(
     config = buildMap {
         put("source.importer", ConfigValue.StringValue(importerId))
         put("source.type", ConfigValue.StringValue(sourceType))
-        raw?.let { put("source.raw", ConfigValue.StringValue(it.take(32_000))) }
+        raw?.let { put("source.raw", ConfigValue.StringValue(it)) }
         putAll(extra)
     },
 )

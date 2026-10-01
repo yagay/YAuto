@@ -110,8 +110,13 @@ class SystemBroadcastEventSource(
             addAction(Intent.ACTION_PACKAGE_REPLACED)
             addDataScheme("package")
         }
-        register(systemReceiver, systemFilter)
-        register(packageReceiver, packageFilter)
+        try {
+            register(systemReceiver, systemFilter)
+            register(packageReceiver, packageFilter)
+        } catch (error: Exception) {
+            stop()
+            throw error
+        }
     }
 
     override fun stop() {

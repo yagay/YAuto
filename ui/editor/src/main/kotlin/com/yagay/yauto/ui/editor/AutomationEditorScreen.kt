@@ -49,12 +49,15 @@ fun AutomationEditorScreen(
     var onEvent by remember(initial?.id) { mutableStateOf(initial?.onEvent.orEmpty()) }
     var onExit by remember(initial?.id) { mutableStateOf(initial?.onExit.orEmpty()) }
     var variables by remember(initial?.id) { mutableStateOf(initial?.variables.orEmpty()) }
+    var policy by remember(initial?.id) { mutableStateOf(initial?.executionPolicy ?: ExecutionPolicy()) }
+    var runtimeLimit by remember(initial?.id) { mutableStateOf(policy.maxRuntimeMs.toString()) }
+    var loopLimit by remember(initial?.id) { mutableStateOf(policy.maxLoopIterations.toString()) }
+    val validPolicy = runtimeLimit.toLongOrNull()?.let { it > 0 } == true && loopLimit.toIntOrNull()?.let { it > 0 } == true
 
     val originalCondition = initial?.activation?.condition
     val simpleInitialConditions = remember(initial?.id) { extractSimpleConditions(originalCondition) }
-    val preservedComplexCondition = remember(initial?.id) {
-        if (simpleInitialConditions != null) null else originalCondition
-    }
+    var preservedComplexCondition by remember(initial?.id) { mutableStateOf(if (simpleInitialConditions != null) null else originalCondition) }
+    var predicateEditor by remember { mutableStateOf(false) }
     var conditions by remember(initial?.id) { mutableStateOf(simpleInitialConditions.orEmpty()) }
 
     var pickerTarget by remember { mutableStateOf<EditTarget?>(null) }
@@ -69,7 +72,7 @@ fun AutomationEditorScreen(
                 navigationIcon = { TextButton(onClick = onBack) { Text("返回") } },
                 actions = {
                     TextButton(
-                        enabled = name.isNotBlank(),
+                        enabled = name.isNotBlank() && validPolicy,
                         onClick = {
                             val simple = conditions.map { PredicateNode.Condition(it) }
                             val condition = when {
@@ -90,7 +93,7 @@ fun AutomationEditorScreen(
                                     onEvent = onEvent,
                                     onExit = onExit,
                                     variables = variables,
-                                    executionPolicy = initial?.executionPolicy ?: ExecutionPolicy(),
+                                    executionPolicy = policy.copy(maxRuntimeMs = runtimeLimit.toLong(), maxLoopIterations = loopLimit.toInt()),
                                     description = description.trim().ifBlank { null },
                                     source = initial?.source,
                                 )
@@ -213,6 +216,19 @@ fun AutomationEditorScreen(
             }
 
             item {
+                YSectionCard("运行策略") {
+                    listOf(ConflictPolicy.QUEUE to "排队运行", ConflictPolicy.IGNORE_NEW to "运行中忽略新触发", ConflictPolicy.CANCEL_PREVIOUS to "取消上次运行", ConflictPolicy.PARALLEL to "并行运行").forEach { (value, label) ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(policy.conflictPolicy == value, { policy = policy.copy(conflictPolicy = value) }); Text(label)
+                        }
+                    }
+                    OutlinedTextField(runtimeLimit, { runtimeLimit = it }, label = { Text("最长运行时间（毫秒）") }, isError = runtimeLimit.toLongOrNull()?.let { it > 0 } != true)
+                    OutlinedTextField(loopLimit, { loopLimit = it }, label = { Text("最大循环次数") }, isError = loopLimit.toIntOrNull()?.let { it > 0 } != true)
+                }
+            }
+
+            item {
+                OutlinedButton(onClick = { predicateEditor = true }, modifier = Modifier.fillMaxWidth()) { Text("编辑条件组合：全部 / 任一 / 都不") }
                 VariableSection(
                     variables = variables,
                     onAdd = { variableDialog = "" to null },
@@ -222,6 +238,10 @@ fun AutomationEditorScreen(
             }
         }
     }
+
+    if (predicateEditor) PredicateDialog(
+        PredicateNode.All(listOfNotNull(preservedComplexCondition) + conditions.map { PredicateNode.Condition(it) }),
+        descriptors, onDismiss = { predicateEditor = false }, onSave = { preservedComplexCondition = it; conditions = emptyList(); predicateEditor = false })
 
     pickerTarget?.let { target ->
         FeaturePickerDialog(
@@ -460,6 +480,16 @@ internal fun FeatureConfigDialog(
         descriptor.fields.associate { field -> field.key to initial?.config?.get(field.key).toEditorText() }
     }
     var values by remember(descriptor.id.value, initial) { mutableStateOf(initialTexts) }
+    val valid = descriptor.fields.all { field ->
+        val raw = values[field.key].orEmpty()
+        when (field) {
+            is FieldSchema.Number -> (raw.isBlank() && !field.required) || raw.toDoubleOrNull()?.let { it.isFinite() && (field.min == null || it >= field.min) && (field.max == null || it <= field.max) } == true
+            is FieldSchema.Duration -> (raw.isBlank() && !field.required) || raw.toDoubleOrNull()?.let { it.isFinite() && it >= 0 } == true
+            is FieldSchema.Choice -> (raw.isBlank() && !field.required) || raw in field.options
+            is FieldSchema.Toggle -> true
+            else -> !field.required || raw.isNotBlank()
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -509,11 +539,16 @@ internal fun FeatureConfigDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
+            TextButton(enabled = valid, onClick = {
                 val config = buildMap<String, ConfigValue> {
                     putAll(initial?.config.orEmpty().filterKeys { key -> descriptor.fields.none { it.key == key } })
                     descriptor.fields.forEach { field ->
                         val raw = values[field.key].orEmpty()
+                        val original = initial?.config?.get(field.key)
+                        if (original != null && raw == initialTexts[field.key]) {
+                            put(field.key, original)
+                            return@forEach
+                        }
                         when (field) {
                             is FieldSchema.Toggle -> put(field.key, ConfigValue.BooleanValue(raw.toBooleanStrictOrNull() ?: false))
                             is FieldSchema.Number, is FieldSchema.Duration -> raw.toDoubleOrNull()?.let { put(field.key, ConfigValue.NumberValue(it)) }

@@ -162,7 +162,11 @@ class MacroDroidImporter(
         val sourceType = obj.string("m_classType", "classType", "type") ?: "Unknown"
 
         if (kind == SourceFeatureKind.ACTION) {
-            MacroDroidMappings.nativeAction(obj, id, sourceType, item.toString())?.let { return it }
+            // Per-action constraints cannot be dropped during conversion.
+            if (obj.array("m_constraintList", "constraintList", "constraints").isEmpty())
+                MacroDroidMappings.nativeAction(obj, id, sourceType, item.toString())?.let { return it }
+        } else {
+            MacroDroidMappings.nativeContext(obj, kind, id, sourceType, item.toString())?.let { return it }
         }
 
         val mapped = mapper.targetId(sourceType, kind)

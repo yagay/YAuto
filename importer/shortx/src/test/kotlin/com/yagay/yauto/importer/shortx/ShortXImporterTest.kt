@@ -9,6 +9,29 @@ import org.junit.Test
 import java.io.ByteArrayOutputStream
 
 class ShortXImporterTest {
+    @Test fun `JSON toast preserves disabled state and note`() {
+        val json = """{"id":"json-toast","title":"Toast","facts":[],"conditions":[],"actions":[{"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.ShowToast","message":"hello","isDisabled":true,"note":"keep note"}]}"""
+        val result = ShortXImporter().import(ImportInput("toast.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        val action = result.bundle.automations.single().onEvent.single() as ActionNode.Action
+        assertEquals("android.toast.show", action.feature.typeId)
+        assertEquals(false, action.enabled)
+        assertEquals("keep note", action.comment)
+    }
+
+    @Test fun `protobuf disabled state and unsupported error handling are retained`() {
+        val toast = message(field(1, "disabled"), varintField(98, 1), field(99, "comment"))
+        val guarded = message(field(1, "guarded"), varintField(97, 2))
+        val raw = message(field(4, "flags"), field(9, "Flags"),
+            field(3, message(field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.action.ShowToast"), field(2, toast))),
+            field(3, message(field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.action.ShowToast"), field(2, guarded))))
+        val result = ShortXImporter().import(ImportInput("flags.rule", null, raw))
+        assertTrue(result.success)
+        val actions = result.bundle.automations.single().onEvent.map { it as ActionNode.Action }
+        assertEquals(false, actions[0].enabled)
+        assertEquals("comment", actions[0].comment)
+        assertEquals("compat.source.action", actions[1].feature.typeId)
+    }
     @Test
     fun `maps ShowToast Any payload to native toast action`() {
         val showToast = message(field(1, "Hello from ShortX"))

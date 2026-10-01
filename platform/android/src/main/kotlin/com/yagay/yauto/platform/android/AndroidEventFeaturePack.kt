@@ -7,6 +7,9 @@ class AndroidEventFeaturePack : FeaturePack {
     override val id: String = "android.events"
 
     override fun install(registry: FeatureRegistry) {
+        simpleEvent(registry, "android.event.boot", "Device boot", FeatureCategory.SYSTEM)
+        simpleEvent(registry, "android.event.battery_changed", "Battery changed", FeatureCategory.DEVICE)
+        simpleEvent(registry, "android.event.power_save_changed", "Power saving mode changed", FeatureCategory.DEVICE)
         simpleEvent(registry, "android.event.screen_on", "Screen on", FeatureCategory.DISPLAY)
         simpleEvent(registry, "android.event.screen_off", "Screen off", FeatureCategory.DISPLAY)
         simpleEvent(registry, "android.event.user_present", "Device unlocked", FeatureCategory.DEVICE)

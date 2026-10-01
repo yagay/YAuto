@@ -38,7 +38,24 @@ object MacroDroidMappings {
         "ToastAction" -> toast(obj, importerId, sourceType, raw)
         "LaunchActivityAction" -> launchApp(obj, importerId, sourceType, raw)
         "SetVariableAction" -> setVariable(obj, importerId, sourceType, raw)
+        "SetClipboardAction" -> obj.string("m_text", "text")?.let { sourceFeature("android.clipboard.set", importerId, sourceType, raw, extra = mapOf("text" to ConfigValue.StringValue(it))) }
+        "OpenWebPageAction" -> obj.string("m_urlToOpen", "urlToOpen")?.takeIf { it.isNotBlank() }?.let { sourceFeature("android.uri.open", importerId, sourceType, raw, extra = mapOf("uri" to ConfigValue.StringValue(it))) }
         else -> null
+    }
+
+    fun nativeContext(obj: JsonObject, kind: SourceFeatureKind, importerId: String, sourceType: String, raw: String): FeatureRef? {
+        val target = when (kind) {
+            SourceFeatureKind.EVENT -> when (sourceType) {
+                "ScreenOnOffTrigger" -> obj.bool("m_screenOn", "screenOn")?.let { if (it) "android.event.screen_on" else "android.event.screen_off" }
+                "DeviceBootTrigger" -> "android.event.boot"
+                "ScreenUnlockedTrigger" -> "android.event.user_present"
+                else -> null
+            }
+            SourceFeatureKind.CONDITION -> if (sourceType == "ScreenOnConstraint" && obj.bool("m_screenOn", "screenOn") != null) "android.condition.screen" else null
+            else -> null
+        } ?: return null
+        return sourceFeature(target, importerId, sourceType, raw, extra =
+            if (kind == SourceFeatureKind.CONDITION) mapOf("value" to ConfigValue.BooleanValue(obj.bool("m_screenOn", "screenOn")!!)) else emptyMap())
     }
 
     private fun pause(obj: JsonObject, importerId: String, sourceType: String, raw: String): FeatureRef {
