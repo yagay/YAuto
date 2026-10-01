@@ -8,6 +8,7 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.model.NodeId
+import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.registry.FeatureExecutionContext
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.registry.VariableAccess
@@ -19,7 +20,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AccessibilityFeaturePackTest {
-    private fun context(client: CapabilityClient) = FeatureExecutionContext(
+    private fun context(client: CapabilityClient, event: RuntimeEvent = RuntimeEvent("test")) = FeatureExecutionContext(
         executionId = ExecutionId("test"),
         nodeId = NodeId("node"),
         variables = object : VariableAccess {
@@ -29,18 +30,24 @@ class AccessibilityFeaturePackTest {
         },
         capabilities = client,
         tracer = NoOpExecutionTracer,
+        event = event,
     )
 
     @Test
-    fun `pack registers removable UI automation actions and conditions`() = runBlocking {
+    fun `pack registers removable UI automation actions conditions and foreground features`() = runBlocking {
         val registry = FeatureRegistry().apply { install(AccessibilityFeaturePack()) }
-        assertEquals(12, registry.allDescriptors().count { it.ownerPackId == "accessibility.actions" })
+        assertEquals(17, registry.allDescriptors().count { it.ownerPackId == "accessibility.actions" })
         assertNotNull(registry.actionExecutor(AccessibilityOperations.CLICK_TEXT))
         assertNotNull(registry.actionExecutor(AccessibilityOperations.LONG_CLICK_TEXT))
         assertNotNull(registry.actionExecutor(AccessibilityOperations.INPUT_TEXT_VIEW_ID))
         assertNotNull(registry.actionExecutor(AccessibilityOperations.SCROLL))
         assertNotNull(registry.conditionEvaluator("accessibility.condition.text_present"))
         assertNotNull(registry.conditionEvaluator("accessibility.condition.view_id_present"))
+        assertNotNull(registry.conditionEvaluator("android.condition.app_foreground"))
+        assertNotNull(registry.stateEvaluator("android.state.app_foreground"))
+        assertNotNull(registry.eventMatcher("android.event.app_foreground"))
+        assertNotNull(registry.eventMatcher("android.event.app_background"))
+        assertNotNull(registry.eventMatcher("android.event.window_changed"))
 
         var captured: CapabilityRequest? = null
         val result = registry.actionExecutor(AccessibilityOperations.CLICK_TEXT)!!.execute(
@@ -76,14 +83,14 @@ class AccessibilityFeaturePackTest {
             feature,
             context(CapabilityClient { request ->
                 assertEquals(AccessibilityOperations.FIND_TEXT, request.operationId)
-                CapabilityResult(true, ConfigValue.BooleanValue(false))
+                CapabilityResult(success = true, value = ConfigValue.BooleanValue(false))
             }),
         )
         assertFalse(notFound)
 
         val found = registry.conditionEvaluator(feature.typeId)!!.evaluate(
             feature,
-            context(CapabilityClient { CapabilityResult(true, ConfigValue.BooleanValue(true)) }),
+            context(CapabilityClient { CapabilityResult(success = true, value = ConfigValue.BooleanValue(true)) }),
         )
         assertTrue(found)
 
@@ -92,5 +99,25 @@ class AccessibilityFeaturePackTest {
             context(CapabilityClient { CapabilityResult(false, message = "service unavailable") }),
         )
         assertFalse(unavailable)
+    }
+
+    @Test
+    fun `foreground event filters package and class`() = runBlocking {
+        val registry = FeatureRegistry().apply { install(AccessibilityFeaturePack()) }
+        val feature = FeatureRef(
+            "android.event.app_foreground",
+            config = mapOf(
+                "package" to ConfigValue.StringValue("com.example.app"),
+                "classContains" to ConfigValue.StringValue("Main"),
+            ),
+        )
+        val event = RuntimeEvent(
+            "android.event.app_foreground",
+            mapOf(
+                "package" to ConfigValue.StringValue("com.example.app"),
+                "class" to ConfigValue.StringValue("com.example.app.MainActivity"),
+            ),
+        )
+        assertTrue(registry.eventMatcher(feature.typeId)!!.matches(feature, context(CapabilityClient { CapabilityResult(false) }, event)))
     }
 }
