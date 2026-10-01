@@ -57,6 +57,7 @@ class AutomationRuntimeService : Service() {
                     }
                 }
         }
+        dispatcher.dispatch(com.yagay.yauto.core.model.RuntimeEvent("android.event.runtime_started", source = "android.runtime"))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY

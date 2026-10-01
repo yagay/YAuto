@@ -8,6 +8,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Build
+import android.os.PowerManager
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.RuntimeEvent
 import java.util.concurrent.atomic.AtomicBoolean
@@ -41,6 +42,8 @@ class SystemBroadcastEventSource(
                 Intent.ACTION_POWER_DISCONNECTED -> "android.event.power_disconnected"
                 Intent.ACTION_BATTERY_LOW -> "android.event.battery_low"
                 Intent.ACTION_BATTERY_OKAY -> "android.event.battery_okay"
+                Intent.ACTION_BATTERY_CHANGED -> "android.event.battery_changed"
+                PowerManager.ACTION_POWER_SAVE_MODE_CHANGED -> "android.event.power_save_changed"
                 Intent.ACTION_DEVICE_STORAGE_LOW -> "android.event.storage_low"
                 Intent.ACTION_DEVICE_STORAGE_OK -> "android.event.storage_okay"
                 Intent.ACTION_AIRPLANE_MODE_CHANGED -> "android.event.airplane_mode_changed"
@@ -93,6 +96,8 @@ class SystemBroadcastEventSource(
             addAction(Intent.ACTION_POWER_DISCONNECTED)
             addAction(Intent.ACTION_BATTERY_LOW)
             addAction(Intent.ACTION_BATTERY_OKAY)
+            addAction(Intent.ACTION_BATTERY_CHANGED)
+            addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED)
             addAction(Intent.ACTION_DEVICE_STORAGE_LOW)
             addAction(Intent.ACTION_DEVICE_STORAGE_OK)
             addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)
@@ -161,6 +166,7 @@ class NetworkEventSource(
             .onFailure {
                 started.set(false)
                 this.emitter = null
+                throw it
             }
     }
 

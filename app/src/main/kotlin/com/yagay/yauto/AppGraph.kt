@@ -45,6 +45,7 @@ class AppGraph(context: Context) {
         StandardFeaturePacks.all().forEach(features::install)
         features.install(AndroidFeaturePack(context.applicationContext))
         features.install(AndroidEventFeaturePack())
+        features.install(AndroidStateFeaturePack(context.applicationContext))
         capabilities.register(RootBackend(rootShell))
 
         importers.register(MacroDroidImporter())
