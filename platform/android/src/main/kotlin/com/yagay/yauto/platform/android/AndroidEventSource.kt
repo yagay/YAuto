@@ -11,6 +11,8 @@ import android.os.Build
 import android.os.PowerManager
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.RuntimeEvent
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicBoolean
 
 fun interface RuntimeEventEmitter {
@@ -49,12 +51,18 @@ class SystemBroadcastEventSource(
                 Intent.ACTION_AIRPLANE_MODE_CHANGED -> "android.event.airplane_mode_changed"
                 Intent.ACTION_LOCALE_CHANGED -> "android.event.locale_changed"
                 Intent.ACTION_TIMEZONE_CHANGED -> "android.event.timezone_changed"
+                Intent.ACTION_TIME_TICK -> "android.event.time_tick"
+                Intent.ACTION_TIME_CHANGED -> "android.event.time_changed"
+                Intent.ACTION_DATE_CHANGED -> "android.event.date_changed"
                 else -> "android.event.broadcast"
             }
             val payload = buildMap<String, ConfigValue> {
                 put("action", ConfigValue.StringValue(action))
                 if (action == Intent.ACTION_AIRPLANE_MODE_CHANGED && intent.hasExtra("state")) {
                     put("state", ConfigValue.BooleanValue(intent.getBooleanExtra("state", false)))
+                }
+                if (action in setOf(Intent.ACTION_TIME_TICK, Intent.ACTION_TIME_CHANGED, Intent.ACTION_DATE_CHANGED, Intent.ACTION_TIMEZONE_CHANGED)) {
+                    putAll(currentTimePayload())
                 }
             }
             emitter?.emit(RuntimeEvent(typeId, payload, source = id))
@@ -103,6 +111,9 @@ class SystemBroadcastEventSource(
             addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)
             addAction(Intent.ACTION_LOCALE_CHANGED)
             addAction(Intent.ACTION_TIMEZONE_CHANGED)
+            addAction(Intent.ACTION_TIME_TICK)
+            addAction(Intent.ACTION_TIME_CHANGED)
+            addAction(Intent.ACTION_DATE_CHANGED)
         }
         val packageFilter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
@@ -133,6 +144,20 @@ class SystemBroadcastEventSource(
             @Suppress("DEPRECATION")
             context.registerReceiver(receiver, filter)
         }
+    }
+
+    private fun currentTimePayload(): Map<String, ConfigValue> {
+        val now = ZonedDateTime.now()
+        return mapOf(
+            "hour" to ConfigValue.NumberValue(now.hour.toDouble()),
+            "minute" to ConfigValue.NumberValue(now.minute.toDouble()),
+            "weekday" to ConfigValue.NumberValue(now.dayOfWeek.value.toDouble()),
+            "day" to ConfigValue.NumberValue(now.dayOfMonth.toDouble()),
+            "month" to ConfigValue.NumberValue(now.monthValue.toDouble()),
+            "year" to ConfigValue.NumberValue(now.year.toDouble()),
+            "date" to ConfigValue.StringValue(now.toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE)),
+            "zone" to ConfigValue.StringValue(now.zone.id),
+        )
     }
 }
 
