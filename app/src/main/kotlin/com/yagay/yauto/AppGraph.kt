@@ -53,6 +53,8 @@ class AppGraph(context: Context) {
         StandardFeaturePacks.all().forEach(features::install)
         features.install(AndroidFeaturePack(context.applicationContext))
         features.install(AndroidControlFeaturePack(context.applicationContext))
+        features.install(AndroidMediaDeviceFeaturePack(context.applicationContext))
+        features.install(AndroidHttpFeaturePack())
         features.install(AndroidEventFeaturePack())
         features.install(AndroidStateFeaturePack(context.applicationContext))
         features.install(AccessibilityFeaturePack())
