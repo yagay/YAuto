@@ -32,19 +32,12 @@ class ShortXImporterTest {
         assertEquals("comment", actions[0].comment)
         assertEquals("compat.source.action", actions[1].feature.typeId)
     }
+
     @Test
     fun `maps ShowToast Any payload to native toast action`() {
         val showToast = message(field(1, "Hello from ShortX"))
-        val any = message(
-            field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.action.ShowToast"),
-            field(2, showToast),
-        )
-        val rawRule = message(
-            field(3, any),
-            field(4, "rule-1"),
-            field(9, "Toast rule"),
-            varintField(11, 1),
-        )
+        val any = any("ShowToast", showToast)
+        val rawRule = rule("rule-1", "Toast rule", any)
 
         val result = ShortXImporter().import(ImportInput("shortx.rule", "application/octet-stream", rawRule))
 
@@ -57,21 +50,78 @@ class ShortXImporterTest {
     }
 
     @Test
+    fun `maps numeric Delay using protobuf TimeUnit`() {
+        val delay = message(field(2, "2.5"), varintField(5, 1)) // seconds
+        val result = ShortXImporter().import(ImportInput("delay.rule", null, rule("delay", "Delay", any("Delay", delay))))
+
+        assertTrue(result.success)
+        val feature = actionFeature(result)
+        assertEquals("core.delay", feature.typeId)
+        assertEquals(2500.0, (feature.config["durationMs"] as ConfigValue.NumberValue).value, 0.0)
+    }
+
+    @Test
+    fun `maps current-user LaunchApp embedded AppPkg`() {
+        val appPkg = message(field(1, "com.example.app"), varintField(2, 0))
+        val launch = message(field(1, appPkg))
+        val result = ShortXImporter().import(ImportInput("launch.rule", null, rule("launch", "Launch", any("LaunchApp", launch))))
+
+        assertTrue(result.success)
+        val feature = actionFeature(result)
+        assertEquals("android.app.launch", feature.typeId)
+        assertEquals("com.example.app", (feature.config["package"] as ConfigValue.StringValue).value)
+    }
+
+    @Test
+    fun `keeps other-user LaunchApp as compatibility node`() {
+        val appPkg = message(field(1, "com.example.app"), varintField(2, 10))
+        val launch = message(field(1, appPkg))
+        val result = ShortXImporter().import(ImportInput("launch-user.rule", null, rule("launch-user", "Launch user", any("LaunchApp", launch))))
+
+        assertTrue(result.success)
+        assertEquals("compat.source.action", actionFeature(result).typeId)
+        assertTrue(result.issues.any { it.suggestedFeatureId == "android.app.launch" })
+    }
+
+    @Test
+    fun `maps text WriteClipboard but preserves file clipboard`() {
+        val textResult = ShortXImporter().import(ImportInput("clip.rule", null,
+            rule("clip", "Clipboard", any("WriteClipboard", message(field(1, "hello"))))))
+        assertEquals("android.clipboard.set", actionFeature(textResult).typeId)
+        assertEquals("hello", (actionFeature(textResult).config["text"] as ConfigValue.StringValue).value)
+
+        val fileResult = ShortXImporter().import(ImportInput("clip-file.rule", null,
+            rule("clip-file", "Clipboard file", any("WriteClipboard", message(field(1, "label"), field(2, "/tmp/file"))))))
+        assertEquals("compat.source.action", actionFeature(fileResult).typeId)
+    }
+
+    @Test
     fun `preserves recognized but unsafe conversion with suggested target`() {
         val delay = message(field(2, "variable_or_expression"))
-        val any = message(
-            field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.action.Delay"),
-            field(2, delay),
-        )
-        val rawRule = message(field(3, any), field(4, "rule-2"), field(9, "Delay rule"))
+        val rawRule = rule("rule-2", "Delay rule", any("Delay", delay))
 
         val result = ShortXImporter().import(ImportInput("shortx.rule", null, rawRule))
 
         assertTrue(result.success)
-        val feature = (result.bundle.automations.single().onEvent.single() as ActionNode.Action).feature
+        val feature = actionFeature(result)
         assertEquals("compat.source.action", feature.typeId)
         assertTrue(result.issues.any { it.suggestedFeatureId == "core.delay" })
     }
+
+    private fun actionFeature(result: com.yagay.yauto.core.importer.ImportResult) =
+        (result.bundle.automations.single().onEvent.single() as ActionNode.Action).feature
+
+    private fun any(shortName: String, payload: ByteArray): ByteArray = message(
+        field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.action.$shortName"),
+        field(2, payload),
+    )
+
+    private fun rule(id: String, title: String, actionAny: ByteArray): ByteArray = message(
+        field(3, actionAny),
+        field(4, id),
+        field(9, title),
+        varintField(11, 1),
+    )
 
     private fun message(vararg chunks: ByteArray): ByteArray = ByteArrayOutputStream().apply {
         chunks.forEach(::write)
