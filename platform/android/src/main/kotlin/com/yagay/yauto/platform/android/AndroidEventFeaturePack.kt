@@ -26,6 +26,8 @@ class AndroidEventFeaturePack : FeaturePack {
         packageEvent(registry, "android.event.package_added", "App installed")
         packageEvent(registry, "android.event.package_removed", "App removed")
         packageEvent(registry, "android.event.package_replaced", "App updated")
+        notificationEvent(registry, "android.event.notification_posted", "Notification posted")
+        notificationEvent(registry, "android.event.notification_removed", "Notification removed")
 
         registry.registerEvent(
             FeatureDescriptor(
@@ -65,6 +67,33 @@ class AndroidEventFeaturePack : FeaturePack {
                 val expected = feature.config.string("package")
                 expected.isBlank() || ctx.event.payload.string("package") == expected
             }
+        }
+    }
+
+    private fun notificationEvent(registry: FeatureRegistry, typeId: String, title: String) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId(typeId), FeatureKind.EVENT, title, "Match Android notifications by app and content", FeatureCategory.NOTIFICATION,
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "App / package"),
+                    FieldSchema.Text("channel", "Channel ID"),
+                    FieldSchema.Text("titleContains", "Title contains"),
+                    FieldSchema.Text("textContains", "Text contains"),
+                ),
+                keywords = setOf("notification", "通知", "message"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != typeId) return@registerEvent false
+            val event = ctx.event.payload
+            val packageFilter = feature.config.string("package")
+            val channelFilter = feature.config.string("channel")
+            val titleFilter = feature.config.string("titleContains")
+            val textFilter = feature.config.string("textContains")
+            (packageFilter.isBlank() || event.string("package") == packageFilter) &&
+                (channelFilter.isBlank() || event.string("channel") == channelFilter) &&
+                (titleFilter.isBlank() || event.string("title").contains(titleFilter, ignoreCase = true)) &&
+                (textFilter.isBlank() || event.string("text").contains(textFilter, ignoreCase = true))
         }
     }
 }

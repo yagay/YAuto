@@ -32,32 +32,10 @@ class AutomationRuntimeService : Service() {
         super.onCreate()
         startForeground(NOTIFICATION_ID, createNotification())
         val graph = (application as YAutoApplication).graph
+        val dispatcher = RuntimeEventDispatcher(graph, scope)
         sources += SystemBroadcastEventSource(this)
         sources += NetworkEventSource(this)
-        val emitter = RuntimeEventEmitter { event ->
-            scope.launch {
-                try {
-                    graph.runtime.dispatch(event)
-                } catch (error: Throwable) {
-                    graph.tracer.record(
-                        TraceEvent(
-                            executionId = ExecutionId("runtime-${UUID.randomUUID()}"),
-                            kind = TraceKind.ERROR,
-                            level = TraceLevel.ERROR,
-                            timestampEpochMs = System.currentTimeMillis(),
-                            message = "Runtime event dispatch failed: ${error.message ?: error::class.simpleName}",
-                            featureId = event.typeId,
-                            success = false,
-                            attributes = mapOf(
-                                "event.source" to event.source,
-                                "event.type" to event.typeId,
-                                "exception" to error::class.qualifiedName.orEmpty(),
-                            ),
-                        )
-                    )
-                }
-            }
-        }
+        val emitter = RuntimeEventEmitter(dispatcher::dispatch)
         sources.forEach { source ->
             runCatching { source.start(emitter) }
                 .onFailure { error ->

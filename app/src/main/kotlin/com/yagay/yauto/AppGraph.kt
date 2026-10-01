@@ -53,6 +53,7 @@ class AppGraph(context: Context) {
 
         diagnosticRegistry.register(ExecutionFileDiagnosticCollector(context.applicationContext))
         diagnosticRegistry.register(ImportReportDiagnosticCollector(context.applicationContext))
+        diagnosticRegistry.register(NotificationAccessDiagnosticCollector(context.applicationContext))
         diagnosticRegistry.register(RootDiagnosticCollector(rootShell))
         diagnosticRegistry.register(LsposedLogCollector(rootShell))
     }

@@ -29,6 +29,16 @@
                 android:value="user-configured automation event monitoring and execution" />
         </service>
 
+        <service
+            android:name=".YAutoNotificationListenerService"
+            android:label="YAuto 通知事件"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <receiver
             android:name=".BootReceiver"
             android:enabled="true"
