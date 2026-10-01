@@ -24,7 +24,8 @@ import kotlinx.serialization.json.Json
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val graph = AppGraph(this)
+        AutomationRuntimeService.start(this)
+        val graph = (application as YAutoApplication).graph
         setContent {
             YAutoTheme {
                 var page by remember { mutableStateOf("home") }
