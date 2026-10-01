@@ -33,58 +33,45 @@ class ShortXImporterTest {
         assertEquals("compat.source.action", actions[1].feature.typeId)
     }
 
-    @Test
-    fun `maps ShowToast Any payload to native toast action`() {
-        val showToast = message(field(1, "Hello from ShortX"))
-        val any = any("ShowToast", showToast)
-        val rawRule = rule("rule-1", "Toast rule", any)
-
-        val result = ShortXImporter().import(ImportInput("shortx.rule", "application/octet-stream", rawRule))
-
+    @Test fun `maps ShowToast Any payload to native toast action`() {
+        val result = ShortXImporter().import(ImportInput("shortx.rule", "application/octet-stream",
+            rule("rule-1", "Toast rule", any("ShowToast", message(field(1, "Hello from ShortX"))))))
         assertTrue(result.success)
-        assertEquals(1, result.bundle.automations.size)
-        val feature = (result.bundle.automations.single().onEvent.single() as ActionNode.Action).feature
+        val feature = actionFeature(result)
         assertEquals("android.toast.show", feature.typeId)
         assertEquals("Hello from ShortX", (feature.config["text"] as ConfigValue.StringValue).value)
         assertTrue(result.trace.any { it.status == "MAPPED" && it.targetId == "android.toast.show" })
     }
 
-    @Test
-    fun `maps numeric Delay using protobuf TimeUnit`() {
-        val delay = message(field(2, "2.5"), varintField(5, 1)) // seconds
+    @Test fun `maps numeric Delay using protobuf TimeUnit`() {
+        val delay = message(field(2, "2.5"), varintField(5, 1))
         val result = ShortXImporter().import(ImportInput("delay.rule", null, rule("delay", "Delay", any("Delay", delay))))
-
         assertTrue(result.success)
         val feature = actionFeature(result)
         assertEquals("core.delay", feature.typeId)
         assertEquals(2500.0, (feature.config["durationMs"] as ConfigValue.NumberValue).value, 0.0)
     }
 
-    @Test
-    fun `maps current-user LaunchApp embedded AppPkg`() {
+    @Test fun `maps current-user LaunchApp embedded AppPkg`() {
         val appPkg = message(field(1, "com.example.app"), varintField(2, 0))
-        val launch = message(field(1, appPkg))
-        val result = ShortXImporter().import(ImportInput("launch.rule", null, rule("launch", "Launch", any("LaunchApp", launch))))
-
+        val result = ShortXImporter().import(ImportInput("launch.rule", null,
+            rule("launch", "Launch", any("LaunchApp", message(field(1, appPkg))))))
         assertTrue(result.success)
         val feature = actionFeature(result)
         assertEquals("android.app.launch", feature.typeId)
         assertEquals("com.example.app", (feature.config["package"] as ConfigValue.StringValue).value)
     }
 
-    @Test
-    fun `keeps other-user LaunchApp as compatibility node`() {
+    @Test fun `keeps other-user LaunchApp as compatibility node`() {
         val appPkg = message(field(1, "com.example.app"), varintField(2, 10))
-        val launch = message(field(1, appPkg))
-        val result = ShortXImporter().import(ImportInput("launch-user.rule", null, rule("launch-user", "Launch user", any("LaunchApp", launch))))
-
+        val result = ShortXImporter().import(ImportInput("launch-user.rule", null,
+            rule("launch-user", "Launch user", any("LaunchApp", message(field(1, appPkg))))))
         assertTrue(result.success)
         assertEquals("compat.source.action", actionFeature(result).typeId)
         assertTrue(result.issues.any { it.suggestedFeatureId == "android.app.launch" })
     }
 
-    @Test
-    fun `maps text WriteClipboard but preserves file clipboard`() {
+    @Test fun `maps text WriteClipboard but preserves file clipboard`() {
         val textResult = ShortXImporter().import(ImportInput("clip.rule", null,
             rule("clip", "Clipboard", any("WriteClipboard", message(field(1, "hello"))))))
         assertEquals("android.clipboard.set", actionFeature(textResult).typeId)
@@ -95,16 +82,55 @@ class ShortXImporterTest {
         assertEquals("compat.source.action", actionFeature(fileResult).typeId)
     }
 
-    @Test
-    fun `preserves recognized but unsafe conversion with suggested target`() {
-        val delay = message(field(2, "variable_or_expression"))
-        val rawRule = rule("rule-2", "Delay rule", any("Delay", delay))
+    @Test fun `maps verified accessibility input actions`() {
+        val text = ShortXImporter().import(ImportInput("input-text.rule", null,
+            rule("input-text", "Input", any("InputText", message(field(1, "hello"))))))
+        assertEquals("accessibility.input_text", actionFeature(text).typeId)
+        assertEquals(ConfigValue.StringValue("hello"), actionFeature(text).config["text"])
 
-        val result = ShortXImporter().import(ImportInput("shortx.rule", null, rawRule))
+        val tap = ShortXImporter().import(ImportInput("tap.rule", null,
+            rule("tap", "Tap", any("InputTap", message(field(3, "120"), field(4, "450"))))))
+        assertEquals("accessibility.gesture.tap", actionFeature(tap).typeId)
+        assertEquals(ConfigValue.NumberValue(120.0), actionFeature(tap).config["x"])
+        assertEquals(ConfigValue.NumberValue(450.0), actionFeature(tap).config["y"])
 
+        val swipe = ShortXImporter().import(ImportInput("swipe.rule", null,
+            rule("swipe", "Swipe", any("InputSwipe", message(
+                field(11, "10"), field(12, "20"), field(13, "300"), field(14, "500"), field(15, "250")
+            )))))
+        assertEquals("accessibility.gesture.swipe", actionFeature(swipe).typeId)
+        assertEquals(ConfigValue.NumberValue(250.0), actionFeature(swipe).config["durationMs"])
+    }
+
+    @Test fun `maps non-regex zero-timeout view id and preserves unsupported variants`() {
+        val native = ShortXImporter().import(ImportInput("view.rule", null,
+            rule("view", "View", any("FindAndClickViewById", message(field(1, "com.example:id/ok"))))))
+        assertEquals("accessibility.click_view_id", actionFeature(native).typeId)
+        assertEquals(ConfigValue.StringValue("com.example:id/ok"), actionFeature(native).config["viewId"])
+
+        val regex = ShortXImporter().import(ImportInput("view-regex.rule", null,
+            rule("view-regex", "View regex", any("FindAndClickViewById", message(field(1, ".*:id/ok"), varintField(2, 1))))))
+        assertEquals("compat.source.action", actionFeature(regex).typeId)
+        assertTrue(regex.issues.any { it.suggestedFeatureId == "accessibility.click_view_id" })
+
+        val text = ShortXImporter().import(ImportInput("view-text.rule", null,
+            rule("view-text", "View text", any("FindAndClickViewByText", message(field(1, "OK"))))))
+        assertEquals("compat.source.action", actionFeature(text).typeId)
+        assertTrue(text.issues.any { it.suggestedFeatureId == "accessibility.click_text" })
+    }
+
+    @Test fun `preserves variable gesture expressions instead of guessing`() {
+        val tap = ShortXImporter().import(ImportInput("tap-var.rule", null,
+            rule("tap-var", "Tap var", any("InputTap", message(field(3, "${'$'}x"), field(4, "100"))))))
+        assertEquals("compat.source.action", actionFeature(tap).typeId)
+        assertTrue(tap.issues.any { it.suggestedFeatureId == "accessibility.gesture.tap" })
+    }
+
+    @Test fun `preserves recognized but unsafe conversion with suggested target`() {
+        val result = ShortXImporter().import(ImportInput("shortx.rule", null,
+            rule("rule-2", "Delay rule", any("Delay", message(field(2, "variable_or_expression"))))))
         assertTrue(result.success)
-        val feature = actionFeature(result)
-        assertEquals("compat.source.action", feature.typeId)
+        assertEquals("compat.source.action", actionFeature(result).typeId)
         assertTrue(result.issues.any { it.suggestedFeatureId == "core.delay" })
     }
 
@@ -117,29 +143,13 @@ class ShortXImporterTest {
     )
 
     private fun rule(id: String, title: String, actionAny: ByteArray): ByteArray = message(
-        field(3, actionAny),
-        field(4, id),
-        field(9, title),
-        varintField(11, 1),
+        field(3, actionAny), field(4, id), field(9, title), varintField(11, 1),
     )
 
-    private fun message(vararg chunks: ByteArray): ByteArray = ByteArrayOutputStream().apply {
-        chunks.forEach(::write)
-    }.toByteArray()
-
+    private fun message(vararg chunks: ByteArray): ByteArray = ByteArrayOutputStream().apply { chunks.forEach(::write) }.toByteArray()
     private fun field(number: Int, value: String): ByteArray = field(number, value.toByteArray())
-
-    private fun field(number: Int, value: ByteArray): ByteArray = message(
-        varint(((number shl 3) or 2).toLong()),
-        varint(value.size.toLong()),
-        value,
-    )
-
-    private fun varintField(number: Int, value: Long): ByteArray = message(
-        varint((number shl 3).toLong()),
-        varint(value),
-    )
-
+    private fun field(number: Int, value: ByteArray): ByteArray = message(varint(((number shl 3) or 2).toLong()), varint(value.size.toLong()), value)
+    private fun varintField(number: Int, value: Long): ByteArray = message(varint((number shl 3).toLong()), varint(value))
     private fun varint(value: Long): ByteArray {
         var remaining = value
         val out = ByteArrayOutputStream()
