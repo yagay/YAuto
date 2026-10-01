@@ -13,7 +13,7 @@ import java.util.Base64
  * YAuto feature. Unknown fields remain inside source.raw so future versions can remap them without
  * data loss.
  */
-object ShortXMappings {
+internal object ShortXMappings {
     fun nativeAction(any: AnyStub, importerId: String): FeatureRef? {
         val type = shortName(any.typeUrl)
         return when (type) {
