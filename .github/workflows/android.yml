@@ -23,7 +23,7 @@ jobs:
         with:
           gradle-version: '9.4.1'
       - name: Unit tests
-        run: gradle :core:engine:test :core:runtime:test :core:storage:test :importer:macrodroid:test --stacktrace
+        run: gradle :core:engine:test :core:runtime:test :core:storage:test :importer:macrodroid:test :importer:tasker:test --stacktrace
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace
       - name: Normalize APK name

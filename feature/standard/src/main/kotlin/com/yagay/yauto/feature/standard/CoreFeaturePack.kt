@@ -51,7 +51,7 @@ class CoreFeaturePack : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            val message = feature.config.string("message")
+            val message = feature.config.string("message").resolveVariables(ctx.variables)
             ctx.tracer.record(
                 TraceEvent(
                     ctx.executionId,

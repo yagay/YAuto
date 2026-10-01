@@ -31,30 +31,44 @@ class TaskerImporter : AutomationImporter {
         val doc = factory.newDocumentBuilder().parse(ByteArrayInputStream(input.bytes))
         val issues = mutableListOf<CompatibilityIssue>()
         val trace = mutableListOf<ImportTrace>()
-        val flowsByTaskId = linkedMapOf<String, Flow>()
+
         val taskNodes = doc.getElementsByTagName("Task")
-        for (i in 0 until taskNodes.length) {
-            val task = taskNodes.item(i) as? Element ?: continue
-            val taskId = task.childText("id") ?: task.getAttribute("sr").ifBlank { "task-$i" }
+        val taskDefs = (0 until taskNodes.length).mapNotNull { i ->
+            val task = taskNodes.item(i) as? Element ?: return@mapNotNull null
+            val taskId = task.childText("id") ?: task.getAttribute("sr").ifBlank { "task-$i" }.removePrefix("task")
             val name = task.childText("nme") ?: "Imported Task ${i + 1}"
-            val actionNodes = task.children("Action").mapIndexed { ai, action ->
-                val code = action.childText("code") ?: "unknown"
-                issues += CompatibilityIssue(ImportSeverity.WARNING, "task[$taskId].action[$ai]", "code:$code", "Tasker action preserved; native mapping can be added independently")
-                ActionNode.Action(
-                    NodeId(UUID.randomUUID().toString()),
-                    sourceFeature(CompatFeatureIds.SOURCE_ACTION, id, "TaskerAction:$code", action.toCompactXml()),
-                )
+            TaskDef(task, taskId, name, FlowId("import-tasker-$taskId"))
+        }
+        val flowAliases = buildMap<String, FlowId> {
+            taskDefs.forEach { def ->
+                put(def.id, def.flowId)
+                put(def.name, def.flowId)
+                put("task${def.id}", def.flowId)
             }
-            val flow = Flow(FlowId("import-tasker-$taskId"), name, actions = actionNodes, source = SourceMetadata(id, taskId, "Task"))
-            flowsByTaskId[taskId] = flow
-            trace += ImportTrace("task[$taskId]", flow.id.value, "IMPORTED", "${actionNodes.size} actions")
+        }
+
+        val flowsByTaskId = linkedMapOf<String, Flow>()
+        taskDefs.forEach { def ->
+            val actionNodes = mapTaskActions(def, flowAliases, issues)
+            val flow = Flow(
+                id = def.flowId,
+                name = def.name,
+                inputs = listOf(
+                    FlowParameter("%par1", ValueType.ANY),
+                    FlowParameter("%par2", ValueType.ANY),
+                ),
+                actions = actionNodes,
+                source = SourceMetadata(id, def.id, "Task"),
+            )
+            flowsByTaskId[def.id] = flow
+            trace += ImportTrace("task[${def.id}]", flow.id.value, "IMPORTED", "${actionNodes.size} actions")
         }
 
         val automations = mutableListOf<Automation>()
         val profiles = doc.getElementsByTagName("Profile")
         for (i in 0 until profiles.length) {
             val profile = profiles.item(i) as? Element ?: continue
-            val profileId = profile.childText("id") ?: profile.getAttribute("sr").ifBlank { "profile-$i" }
+            val profileId = profile.childText("id") ?: profile.getAttribute("sr").ifBlank { "profile-$i" }.removePrefix("prof")
             val name = profile.childText("nme") ?: "Imported Profile ${i + 1}"
             val contexts = profile.elementChildren().filter { it.tagName in setOf("Event", "State", "App", "Time", "Location", "Day") }
             val events = mutableListOf<FeatureRef>()
@@ -71,8 +85,8 @@ class TaskerImporter : AutomationImporter {
 
             fun flowCall(childName: String): List<ActionNode> {
                 val taskId = profile.childText(childName) ?: return emptyList()
-                val flow = flowsByTaskId[taskId] ?: return emptyList()
-                return listOf(ActionNode.CallFlow(NodeId(UUID.randomUUID().toString()), flow.id))
+                val flowId = flowAliases[taskId] ?: flowAliases["task$taskId"] ?: return emptyList()
+                return listOf(ActionNode.CallFlow(NodeId(UUID.randomUUID().toString()), flowId))
             }
 
             val enter = flowCall("mid0")
@@ -95,6 +109,56 @@ class TaskerImporter : AutomationImporter {
         ImportResult(id, false, issues = listOf(CompatibilityIssue(ImportSeverity.ERROR, input.fileName ?: "input", message = error.message ?: "Tasker import failed")))
     }
 
+    private fun mapTaskActions(
+        task: TaskDef,
+        flowAliases: Map<String, FlowId>,
+        issues: MutableList<CompatibilityIssue>,
+    ): List<ActionNode> = task.element.children("Action").mapIndexed { index, action ->
+        val code = action.childText("code") ?: "unknown"
+        val path = "task[${task.id}].action[$index]"
+        val raw = action.toCompactXml()
+
+        if (code == "130") {
+            val targetName = TaskerMappings.performTaskTarget(action)
+            val target = targetName?.let(flowAliases::get)
+            if (target != null) {
+                val input = buildMap<String, ConfigValue> {
+                    TaskerMappings.performTaskParam1(action)?.let { put("%par1", ConfigValue.StringValue(it)) }
+                    TaskerMappings.performTaskParam2(action)?.let { put("%par2", ConfigValue.StringValue(it)) }
+                }
+                ActionNode.CallFlow(
+                    NodeId(UUID.randomUUID().toString()),
+                    target,
+                    input = input,
+                    resultVariable = TaskerMappings.performTaskResultVariable(action),
+                )
+            } else {
+                issues += CompatibilityIssue(ImportSeverity.WARNING, path, "code:$code", "Perform Task target could not be resolved; source action preserved")
+                compatibilityAction(code, raw)
+            }
+        } else {
+            val native = TaskerMappings.nativeAction(action, code, id, raw)
+            if (native != null) {
+                ActionNode.Action(NodeId(UUID.randomUUID().toString()), native)
+            } else {
+                issues += CompatibilityIssue(ImportSeverity.WARNING, path, "code:$code", "Tasker action preserved; native mapping can be added independently")
+                compatibilityAction(code, raw)
+            }
+        }
+    }
+
+    private fun compatibilityAction(code: String, raw: String): ActionNode.Action = ActionNode.Action(
+        NodeId(UUID.randomUUID().toString()),
+        sourceFeature(CompatFeatureIds.SOURCE_ACTION, id, "TaskerAction:$code", raw),
+    )
+
+    private data class TaskDef(
+        val element: Element,
+        val id: String,
+        val name: String,
+        val flowId: FlowId,
+    )
+
     private fun Element.childText(name: String): String? = elementChildren().firstOrNull { it.tagName == name }?.textContent?.trim()?.takeIf { it.isNotEmpty() }
     private fun Element.children(name: String): List<Element> = elementChildren().filter { it.tagName == name }
     private fun Element.elementChildren(): List<Element> = (0 until childNodes.length).mapNotNull { childNodes.item(it) as? Element }
@@ -102,7 +166,12 @@ class TaskerImporter : AutomationImporter {
         append('<').append(tagName)
         if (hasAttribute("sr")) append(" sr=\"").append(getAttribute("sr")).append("\"")
         append('>')
-        elementChildren().take(20).forEach { child -> append('<').append(child.tagName).append('>').append(child.textContent.trim().take(512)).append("</").append(child.tagName).append('>') }
+        elementChildren().take(30).forEach { child ->
+            append('<').append(child.tagName)
+            if (child.hasAttribute("sr")) append(" sr=\"").append(child.getAttribute("sr")).append("\"")
+            if (child.hasAttribute("val")) append(" val=\"").append(child.getAttribute("val")).append("\"")
+            append('>').append(child.textContent.trim().take(512)).append("</").append(child.tagName).append('>')
+        }
         append("</").append(tagName).append('>')
     }.take(32_000)
 }

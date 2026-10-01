@@ -26,7 +26,7 @@ class SystemFeaturePack : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            val command = feature.config.string("command")
+            val command = feature.config.string("command").resolveVariables(ctx.variables)
             if (command.isBlank()) return@registerAction ActionExecutionResult(false, message = "Shell command is empty")
             val result = ctx.capabilities.execute(
                 CapabilityRequest(

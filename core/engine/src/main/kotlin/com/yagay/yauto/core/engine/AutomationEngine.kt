@@ -8,6 +8,7 @@ import com.yagay.yauto.core.logging.TraceLevel
 import com.yagay.yauto.core.model.*
 import com.yagay.yauto.core.registry.FeatureExecutionContext
 import com.yagay.yauto.core.registry.FeatureRegistry
+import com.yagay.yauto.core.registry.resolveVariables
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import java.util.UUID
@@ -152,8 +153,17 @@ class AutomationEngine(
             is ActionNode.CallFlow -> {
                 val target = flowResolver.resolve(node.flowId) ?: return Signal.Failure("Unknown flow: ${node.flowId.value}")
                 val childInitial = variables.snapshot().toMutableMap()
-                node.input.forEach { (key, value) -> childInitial["input.$key"] = value }
-                target.inputs.forEach { childInitial.putIfAbsent("input.${it.name}", it.defaultValue) }
+                node.input.forEach { (key, rawValue) ->
+                    val value = rawValue.resolveVariables(variables)
+                    childInitial["input.$key"] = value
+                    childInitial[key] = value
+                }
+                target.inputs.forEach {
+                    val directKey = it.name
+                    val inputKey = "input.${it.name}"
+                    if (inputKey !in childInitial) childInitial[inputKey] = it.defaultValue
+                    if (directKey !in childInitial) childInitial[directKey] = childInitial[inputKey] ?: it.defaultValue
+                }
                 val childVariables = RuntimeVariables(childInitial)
                 trace(executionId, TraceKind.FLOW, "Call ${target.name}", automation, target, node.id)
                 when (val signal = executeNodes(target.actions, executionId, childVariables, automation, target, maxLoopIterations)) {
@@ -162,7 +172,7 @@ class AutomationEngine(
                     else -> Signal.Next
                 }
             }
-            is ActionNode.Return -> Signal.Return(node.value)
+            is ActionNode.Return -> Signal.Return(node.value.resolveVariables(variables))
             is ActionNode.Break -> Signal.Break
             is ActionNode.Continue -> Signal.Continue
         }

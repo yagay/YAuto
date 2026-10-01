@@ -22,8 +22,8 @@ class AndroidFeaturePack(
                 fields = listOf(FieldSchema.Text("text", "Text", true, true)),
                 ownerPackId = id,
             )
-        ) { feature, _ ->
-            Toast.makeText(context, feature.config.string("text"), Toast.LENGTH_SHORT).show()
+        ) { feature, ctx ->
+            Toast.makeText(context, feature.config.string("text").resolveVariables(ctx.variables), Toast.LENGTH_SHORT).show()
             ActionExecutionResult(true)
         }
 
@@ -34,8 +34,8 @@ class AndroidFeaturePack(
                 fields = listOf(FieldSchema.AppPicker("package", "App", true)),
                 ownerPackId = id,
             )
-        ) { feature, _ ->
-            val pkg = feature.config.string("package")
+        ) { feature, ctx ->
+            val pkg = feature.config.string("package").resolveVariables(ctx.variables)
             val intent = context.packageManager.getLaunchIntentForPackage(pkg)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             if (intent == null) ActionExecutionResult(false, message = "No launch intent for $pkg")
             else {
@@ -51,8 +51,8 @@ class AndroidFeaturePack(
                 fields = listOf(FieldSchema.Text("uri", "URI", true)),
                 ownerPackId = id,
             )
-        ) { feature, _ ->
-            val uri = feature.config.string("uri")
+        ) { feature, ctx ->
+            val uri = feature.config.string("uri").resolveVariables(ctx.variables)
             if (uri.isBlank()) return@registerAction ActionExecutionResult(false, message = "URI is empty")
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             runCatching { context.startActivity(intent) }
@@ -66,9 +66,10 @@ class AndroidFeaturePack(
                 fields = listOf(FieldSchema.Text("text", "Text", true, true)),
                 ownerPackId = id,
             )
-        ) { feature, _ ->
+        ) { feature, ctx ->
+            val text = feature.config.string("text").resolveVariables(ctx.variables)
             val clipboard = context.getSystemService(ClipboardManager::class.java)
-            clipboard.setPrimaryClip(ClipData.newPlainText("YAuto", feature.config.string("text")))
+            clipboard.setPrimaryClip(ClipData.newPlainText("YAuto", text))
             ActionExecutionResult(true)
         }
 
@@ -82,13 +83,13 @@ class AndroidFeaturePack(
                 ),
                 ownerPackId = id,
             )
-        ) { feature, _ ->
+        ) { feature, ctx ->
             val share = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, feature.config.string("text"))
+                putExtra(Intent.EXTRA_TEXT, feature.config.string("text").resolveVariables(ctx.variables))
             }
-            val chooser = Intent.createChooser(share, feature.config.string("title").ifBlank { null })
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val title = feature.config.string("title").resolveVariables(ctx.variables)
+            val chooser = Intent.createChooser(share, title.ifBlank { null }).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             runCatching { context.startActivity(chooser) }
                 .fold({ ActionExecutionResult(true) }, { ActionExecutionResult(false, message = it.message) })
         }

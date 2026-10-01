@@ -18,7 +18,7 @@ class VariableFeaturePack : FeaturePack {
             val name = feature.config.string("name")
             if (name.isBlank()) ActionExecutionResult(false, message = "Variable name is empty")
             else {
-                ctx.variables.set(name, feature.config["value"] ?: ConfigValue.NullValue)
+                ctx.variables.set(name, (feature.config["value"] ?: ConfigValue.NullValue).resolveVariables(ctx.variables))
                 ActionExecutionResult(true)
             }
         }
@@ -124,8 +124,8 @@ class VariableFeaturePack : FeaturePack {
 
     private fun variableEquals(feature: FeatureRef, ctx: FeatureExecutionContext): Boolean {
         val actual = ctx.variables.get(feature.config.string("name"))
-        val expected = feature.config["value"]
-        return if (expected != null) actual == expected else actual.asText() == feature.config.string("value")
+        val expected = feature.config["value"]?.resolveVariables(ctx.variables)
+        return if (expected != null) actual == expected else actual.asText() == feature.config.string("value").resolveVariables(ctx.variables)
     }
 }
 
