@@ -16,6 +16,7 @@ android {
 dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:logging"))
+    implementation(project(":core:diagnostics"))
     implementation(project(":core:capability"))
     implementation(project(":core:registry"))
     implementation(project(":core:storage"))

@@ -14,9 +14,10 @@ class JsonImportReportStore(
 ) : ImportReportSink {
     private val dir = File(context.filesDir, "import-reports").apply { mkdirs() }
 
-    override suspend fun save(result: ImportResult) = withContext(Dispatchers.IO) {
+    override suspend fun save(result: ImportResult): Unit = withContext(Dispatchers.IO) {
         val file = File(dir, "import-${System.currentTimeMillis()}-${result.importerId}.json")
         file.writeText(json.encodeToString(ImportResult.serializer(), result))
         dir.listFiles()?.sortedByDescending { it.lastModified() }?.drop(20)?.forEach { it.delete() }
+        Unit
     }
 }
