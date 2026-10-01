@@ -1,5 +1,6 @@
 package com.yagay.yauto.platform.android
 
+import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
@@ -32,20 +33,39 @@ class AndroidEventFeaturePack : FeaturePack {
         packageEvent(registry, "android.event.package_replaced", "App updated")
         notificationEvent(registry, "android.event.notification_posted", "Notification posted")
         notificationEvent(registry, "android.event.notification_removed", "Notification removed")
+        broadcastEvent(registry)
+    }
 
+    private fun broadcastEvent(registry: FeatureRegistry) {
         registry.registerEvent(
             FeatureDescriptor(
                 id = FeatureId("android.event.broadcast"),
                 kind = FeatureKind.EVENT,
                 title = "Android broadcast",
-                description = "Match a runtime Android broadcast by action name",
+                description = "Receive a configured Android broadcast action and optionally match simple extras",
                 category = FeatureCategory.SYSTEM,
-                fields = listOf(FieldSchema.Text("action", "Intent action", true)),
+                fields = buildList {
+                    add(FieldSchema.Text("action", "Intent action", true))
+                    for (index in 1..3) {
+                        add(FieldSchema.Text("extra${index}Key", "Extra $index key"))
+                        add(FieldSchema.Text("extra${index}Value", "Extra $index exact value"))
+                    }
+                },
+                keywords = setOf("intent", "broadcast", "receiver"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            ctx.event.typeId == "android.event.broadcast" &&
-                ctx.event.payload.string("action") == feature.config.string("action")
+            if (ctx.event.typeId != "android.event.broadcast") return@registerEvent false
+            if (ctx.event.payload.string("action") != feature.config.string("action").resolveVariables(ctx.variables)) return@registerEvent false
+            val extras = (ctx.event.payload["extras"] as? ConfigValue.ObjectValue)?.value.orEmpty()
+            for (index in 1..3) {
+                val key = feature.config.string("extra${index}Key").resolveVariables(ctx.variables).trim()
+                if (key.isBlank()) continue
+                val expected = feature.config.string("extra${index}Value").resolveVariables(ctx.variables)
+                val actual = extras[key].simpleText()
+                if (actual != expected) return@registerEvent false
+            }
+            true
         }
     }
 
@@ -107,4 +127,13 @@ class AndroidEventFeaturePack : FeaturePack {
                 (textFilter.isBlank() || event.string("text").contains(textFilter, ignoreCase = true))
         }
     }
+}
+
+private fun ConfigValue?.simpleText(): String = when (this) {
+    null, ConfigValue.NullValue -> ""
+    is ConfigValue.StringValue -> value
+    is ConfigValue.BooleanValue -> value.toString()
+    is ConfigValue.NumberValue -> value.toString().removeSuffix(".0")
+    is ConfigValue.ListValue -> value.joinToString(",") { it.simpleText() }
+    is ConfigValue.ObjectValue -> value.toString()
 }
