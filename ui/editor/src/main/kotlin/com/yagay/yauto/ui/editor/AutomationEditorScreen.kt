@@ -77,7 +77,7 @@ fun AutomationEditorScreen(
                             val simple = conditions.map { PredicateNode.Condition(it) }
                             val condition = when {
                                 preservedComplexCondition != null && simple.isEmpty() -> preservedComplexCondition
-                                preservedComplexCondition != null -> PredicateNode.All(listOf(preservedComplexCondition) + simple)
+                                preservedComplexCondition != null -> PredicateNode.All(listOfNotNull(preservedComplexCondition) + simple)
                                 simple.isEmpty() -> null
                                 simple.size == 1 -> simple.single()
                                 else -> PredicateNode.All(simple)
@@ -483,7 +483,7 @@ internal fun FeatureConfigDialog(
     val valid = descriptor.fields.all { field ->
         val raw = values[field.key].orEmpty()
         when (field) {
-            is FieldSchema.Number -> (raw.isBlank() && !field.required) || raw.toDoubleOrNull()?.let { it.isFinite() && (field.min == null || it >= field.min) && (field.max == null || it <= field.max) } == true
+            is FieldSchema.Number -> (raw.isBlank() && !field.required) || raw.toDoubleOrNull()?.let { number -> number.isFinite() && (field.min?.let { number >= it } ?: true) && (field.max?.let { number <= it } ?: true) } == true
             is FieldSchema.Duration -> (raw.isBlank() && !field.required) || raw.toDoubleOrNull()?.let { it.isFinite() && it >= 0 } == true
             is FieldSchema.Choice -> (raw.isBlank() && !field.required) || raw in field.options
             is FieldSchema.Toggle -> true

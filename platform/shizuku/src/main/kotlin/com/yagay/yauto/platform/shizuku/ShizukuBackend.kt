@@ -12,12 +12,16 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import rikka.shizuku.Shizuku
+import java.util.UUID
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContract, DiagnosticCollector {
     override val id = "shizuku"
     override val priority = 70
     private val args = Shizuku.UserServiceArgs(ComponentName(context.packageName, ShizukuShellService::class.java.name))
-        .daemon(false).processNameSuffix("shizuku_shell").version(1)
+        .daemon(false).processNameSuffix("shizuku_shell").version(2)
+    private val ipcScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val connectionLock = Mutex()
     @Volatile private var service: IShizukuShell? = null
     private var pending: CompletableDeferred<IShizukuShell>? = null
@@ -53,7 +57,19 @@ class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContrac
         val command = if (request.capability == CapabilityIds.SYSTEM_UI) SystemOperations.shellCommand(request.operationId).orEmpty() else request.payload.string("command")
         if (command.isBlank()) return CapabilityResult(false, message = "Shell command is empty")
         val binder = connect()
-        val output = withContext(Dispatchers.IO) { binder.execute(command, request.payload.long("timeoutMs", 10_000).coerceIn(1, 120_000)) }
+        val requestId = UUID.randomUUID().toString()
+        val output = suspendCancellableCoroutine<android.os.Bundle> { continuation ->
+            val call = ipcScope.launch {
+                try {
+                    val result = binder.execute(requestId, command, request.payload.long("timeoutMs", 10_000).coerceIn(1, 120_000))
+                    if (continuation.isActive) continuation.resume(result)
+                } catch (error: Exception) { if (continuation.isActive) continuation.resumeWithException(error) }
+            }
+            continuation.invokeOnCancellation {
+                ipcScope.launch { runCatching { binder.cancel(requestId) } }
+                call.cancel()
+            }
+        }
         return CapabilityResult(output.getInt("exitCode", -1) == 0 && !output.getBoolean("timedOut"), id,
             ConfigValue.ObjectValue(mapOf("stdout" to ConfigValue.StringValue(output.getString("stdout").orEmpty()),
                 "stderr" to ConfigValue.StringValue(output.getString("stderr").orEmpty()), "exitCode" to ConfigValue.NumberValue(output.getInt("exitCode", -1).toDouble()))),

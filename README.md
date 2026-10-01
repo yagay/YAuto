@@ -10,6 +10,8 @@ YAuto is a clean-room Android automation platform focused on long-term maintaina
 
 The project is a **modular monolith**. Stable contracts live in `core/*`; optional functionality is registered as a FeaturePack, Importer or DiagnosticCollector. A feature can be added or removed without editing the rule engine or UI navigation.
 
+See [development status and verification scope](docs/DEVELOPMENT_STATUS.md) for implemented features, import coverage and remaining device checks.
+
 ## Architecture
 
 ```text

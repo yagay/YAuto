@@ -59,4 +59,30 @@ class ExecutionSafetyTest {
         assertFalse(result.success)
         assertTrue(result.error!!.contains("depth"))
     }
+
+    @Test fun `loop limits fail rather than silently truncate work`() = runBlocking {
+        val nodes = listOf(
+            ActionNode.Repeat(NodeId("repeat"), 3, emptyList()),
+            ActionNode.While(NodeId("while"), PredicateNode.Literal(true), emptyList()),
+            ActionNode.ForEach(NodeId("each"), List(3) { ConfigValue.NullValue }, "item", emptyList()),
+        )
+        for (node in nodes) {
+            val automation = rule(listOf(node)).copy(executionPolicy = ExecutionPolicy(maxLoopIterations = 2))
+            val result = engine().execute(automation, AutomationPhase.EVENT)
+            assertFalse(node::class.simpleName, result.success)
+            assertTrue(result.error!!.contains("limit"))
+        }
+    }
+
+    @Test fun `finally executes when the error handler also throws`() = runBlocking {
+        registry.registerAction(FeatureDescriptor(FeatureId("throw"), FeatureKind.ACTION, "throw", "", FeatureCategory.CORE)) { _, _ -> error("handler failure") }
+        registry.registerAction(FeatureDescriptor(FeatureId("cleanup"), FeatureKind.ACTION, "cleanup", "", FeatureCategory.CORE)) { _, ctx ->
+            ctx.variables.set("cleaned", ConfigValue.BooleanValue(true)); ActionExecutionResult(true)
+        }
+        val action = ActionNode.Action(NodeId("throw"), FeatureRef("throw"))
+        val result = engine().execute(rule(listOf(ActionNode.Try(NodeId("try"), listOf(action),
+            onError = listOf(action), finallyActions = listOf(ActionNode.Action(NodeId("cleanup"), FeatureRef("cleanup")))))), AutomationPhase.EVENT)
+        assertFalse(result.success)
+        assertEquals(ConfigValue.BooleanValue(true), result.variables["cleaned"])
+    }
 }

@@ -125,7 +125,8 @@ class AutomationEngine(
                 executeNodes(branch, executionId, variables, automation, flow, maxLoopIterations)
             }
             is ActionNode.Repeat -> {
-                repeat(node.times.coerceIn(0, maxLoopIterations)) {
+                if (node.times !in 0..maxLoopIterations) return Signal.Failure("Repeat count exceeds loop limit or is negative")
+                repeat(node.times) {
                     currentCoroutineContext().ensureActive()
                     when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
                         Signal.Next, Signal.Continue -> Unit
@@ -137,8 +138,9 @@ class AutomationEngine(
             }
             is ActionNode.While -> {
                 var count = 0
-                while (count++ < maxLoopIterations && evaluatePredicate(node.condition, executionId, node.id, variables)) {
+                while (evaluatePredicate(node.condition, executionId, node.id, variables)) {
                     currentCoroutineContext().ensureActive()
+                    if (count++ >= maxLoopIterations) return Signal.Failure("While loop limit exceeded")
                     when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
                         Signal.Next, Signal.Continue -> Unit
                         Signal.Break -> return Signal.Next
@@ -148,7 +150,8 @@ class AutomationEngine(
                 Signal.Next
             }
             is ActionNode.ForEach -> {
-                for (value in node.values.take(maxLoopIterations)) {
+                if (node.values.size > maxLoopIterations) return Signal.Failure("ForEach count exceeds loop limit")
+                for (value in node.values) {
                     currentCoroutineContext().ensureActive()
                     variables.set(node.variableName, value)
                     when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
@@ -173,7 +176,9 @@ class AutomationEngine(
                 }
                 val handled = if (primary is Signal.Failure && node.onError.isNotEmpty()) {
                     variables.set("error.message", ConfigValue.StringValue(primary.message))
-                    executeNodes(node.onError, executionId, variables, automation, flow, maxLoopIterations)
+                    try { executeNodes(node.onError, executionId, variables, automation, flow, maxLoopIterations) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (error: Exception) { Signal.Failure(error.message ?: error.javaClass.simpleName) }
                 } else primary
                 val finalSignal = executeNodes(node.finallyActions, executionId, variables, automation, flow, maxLoopIterations)
                 if (finalSignal != Signal.Next) finalSignal else handled
