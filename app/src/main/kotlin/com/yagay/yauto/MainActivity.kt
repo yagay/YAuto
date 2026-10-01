@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
                 var editingAutomation by remember { mutableStateOf<Automation?>(null) }
                 var editingFlow by remember { mutableStateOf<Flow?>(null) }
                 var workspaceReady by remember { mutableStateOf(false) }
+                var workspaceSaving by remember { mutableStateOf(false) }
                 var pendingRestore by remember { mutableStateOf<WorkspaceBackup?>(null) }
                 var backupText by remember { mutableStateOf<String?>(null) }
                 var statuses by remember { mutableStateOf<List<CollectorStatus>>(emptyList()) }
@@ -58,15 +59,22 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(Unit) {
                     try { workspace = graph.workspace.load(); workspaceReady = true }
+                    catch (cancelled: CancellationException) { throw cancelled }
                     catch (error: Exception) { importSummary = "工作区读取失败：${error.message}。原始文件已保留。" }
                 }
 
-                fun saveWorkspace(updated: WorkspaceData, resetId: AutomationId? = null) {
-                    workspace = updated
+                fun saveWorkspace(updated: WorkspaceData, resetId: AutomationId? = null, onSaved: () -> Unit = {}) {
+                    if (workspaceSaving) return
+                    workspaceSaving = true
                     operation {
-                        saveLock.withLock { graph.workspace.save(updated) }
-                        resetId?.let(graph.runtime::resetState) ?: graph.runtime.resetState()
-                        graph.runtime.dispatch(RuntimeEvent("android.event.workspace_changed", source = "ui"), statesOnly = true)
+                        try {
+                            saveLock.withLock { graph.workspace.save(updated); workspace = updated }
+                            onSaved()
+                            operation {
+                                resetId?.let(graph.runtime::resetState) ?: graph.runtime.resetState()
+                                graph.runtime.dispatch(RuntimeEvent("android.event.workspace_changed", source = "ui"), statesOnly = true)
+                            }
+                        } finally { workspaceSaving = false }
                     }
                 }
 
@@ -107,8 +115,9 @@ class MainActivity : ComponentActivity() {
                         graph.importReports.save(result)
                         if (result.success) {
                             val updated = workspace.merge(result.bundle.automations, result.bundle.flows, result.bundle.globalVariables)
-                            saveWorkspace(updated)
-                            importSummary = "${result.importerId}: 导入 ${result.bundle.automations.size} 个自动化、${result.bundle.flows.size} 个流程；${result.issues.size} 个兼容提示"
+                            saveWorkspace(updated) {
+                                importSummary = "${result.importerId}: 导入 ${result.bundle.automations.size} 个自动化、${result.bundle.flows.size} 个流程；${result.issues.size} 个兼容提示"
+                            }
                         } else {
                             importSummary = "导入失败：${result.issues.firstOrNull()?.message ?: "未知格式"}"
                         }
@@ -127,9 +136,12 @@ class MainActivity : ComponentActivity() {
                     val unknown = backup.workspace.featureIds().filter { graph.features.descriptor(it) == null }
                     AlertDialog(onDismissRequest = { pendingRestore = null }, title = { Text("恢复备份？") },
                         text = { Text("合并 ${backup.workspace.automations.size} 个自动化、${backup.workspace.flows.size} 个流程。同 ID 的项目将替换；未安装功能 ${unknown.size} 个，其配置会保留。") },
-                        confirmButton = { TextButton(onClick = { saveWorkspace(workspace.merge(backup.workspace.automations, backup.workspace.flows, backup.workspace.globalVariables)); pendingRestore = null; importSummary = "已恢复备份。" }) { Text("恢复") } },
+                        confirmButton = { TextButton(onClick = { saveWorkspace(workspace.merge(backup.workspace.automations, backup.workspace.flows, backup.workspace.globalVariables)) { importSummary = "已恢复备份。" }; pendingRestore = null }) { Text("恢复") } },
                         dismissButton = { TextButton(onClick = { pendingRestore = null }) { Text("取消") } })
                 }
+
+                if (workspaceSaving) AlertDialog(onDismissRequest = {}, confirmButton = {},
+                    title = { Text("正在保存") }, text = { CircularProgressIndicator() })
 
                 when (page) {
                     "editor" -> AutomationEditorScreen(
