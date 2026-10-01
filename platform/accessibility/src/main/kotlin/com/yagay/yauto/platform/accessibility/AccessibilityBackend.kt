@@ -27,7 +27,22 @@ class AccessibilityBackend : CapabilityBackend {
         withContext(Dispatchers.Main.immediate) {
             val service = YAutoAccessibilityService.current
                 ?: return@withContext CapabilityResult(false, message = "YAuto Accessibility Service is not connected")
-            val result = when (request.operationId) {
+
+            when (request.operationId) {
+                AccessibilityOperations.FIND_TEXT -> {
+                    val found = service.hasText(
+                        request.payload.string("text"),
+                        request.payload.boolean("exact"),
+                    )
+                    return@withContext CapabilityResult(true, ConfigValue.BooleanValue(found))
+                }
+                AccessibilityOperations.FIND_VIEW_ID -> {
+                    val found = service.hasViewId(request.payload.string("viewId"))
+                    return@withContext CapabilityResult(true, ConfigValue.BooleanValue(found))
+                }
+            }
+
+            val completed = when (request.operationId) {
                 AccessibilityOperations.CLICK_TEXT -> service.clickText(
                     request.payload.string("text"),
                     request.payload.boolean("exact"),
@@ -47,10 +62,6 @@ class AccessibilityBackend : CapabilityBackend {
                 )
                 AccessibilityOperations.GLOBAL_ACTION -> service.globalAction(request.payload.string("action"))
                 AccessibilityOperations.SCROLL -> service.scroll(request.payload.string("direction"))
-                AccessibilityOperations.FIND_TEXT -> service.hasText(
-                    request.payload.string("text"), request.payload.boolean("exact")
-                )
-                AccessibilityOperations.FIND_VIEW_ID -> service.hasViewId(request.payload.string("viewId"))
                 AccessibilityOperations.TAP -> {
                     val x = request.payload["x"].numberOrNull()
                     val y = request.payload["y"].numberOrNull()
@@ -71,9 +82,9 @@ class AccessibilityBackend : CapabilityBackend {
                 else -> return@withContext CapabilityResult(false, message = "Unsupported accessibility operation: ${request.operationId}")
             }
             CapabilityResult(
-                success = result,
-                value = ConfigValue.BooleanValue(result),
-                message = if (result) null else "Accessibility operation did not complete successfully",
+                success = completed,
+                value = ConfigValue.BooleanValue(completed),
+                message = if (completed) null else "Accessibility operation did not complete successfully",
             )
         }
 }
