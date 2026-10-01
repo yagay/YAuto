@@ -10,6 +10,7 @@ import android.hardware.camera2.CameraManager
 import android.media.AudioManager
 import android.view.KeyEvent
 import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 
