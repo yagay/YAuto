@@ -18,6 +18,19 @@ object CapabilityIds {
     val LSPOSED = CapabilityId("android.lsposed")
 }
 
+/** Shared stable operation IDs for system controls; platform backends own their implementation. */
+object SystemOperations {
+    const val SLEEP = "system.screen.sleep"
+    const val EXPAND_NOTIFICATIONS = "system.notifications.expand"
+    const val COLLAPSE_PANELS = "system.notifications.collapse"
+    fun shellCommand(operation: String): String? = when (operation) {
+        SLEEP -> "input keyevent 223"
+        EXPAND_NOTIFICATIONS -> "cmd statusbar expand-notifications"
+        COLLAPSE_PANELS -> "cmd statusbar collapse"
+        else -> null
+    }
+}
+
 @Serializable
 data class RuntimeEnvironment(
     val sdkInt: Int,

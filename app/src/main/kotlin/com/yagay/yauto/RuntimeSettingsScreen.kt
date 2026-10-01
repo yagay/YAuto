@@ -45,6 +45,9 @@ import kotlinx.coroutines.launch
             Button(enabled = !notifications && Build.VERSION.SDK_INT >= 33, onClick = { permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) { Text("允许运行通知") }
             Text("Root：$root")
             Button(onClick = { root = "检查中"; scope.launch { root = if (graph.rootShell.isAvailable()) "可用" else "不可用或未授权" } }) { Text("检查 Root") }
+            Text("Shizuku：${if (graph.shizuku.hasPermission()) "已连接并授权" else "未运行或未授权"}")
+            Button(onClick = { root = runCatching { graph.shizuku.requestPermission(); "请在 Shizuku 授权后返回此页" }.getOrElse { it.message.orEmpty() }; refresh++ }) { Text("授权 Shizuku") }
+            Button(onClick = { scope.launch { root = graph.xposed.status().message.orEmpty(); refresh++ } }) { Text("检查 LSPosed 桥接") }
             Text("屏幕、网络、电量和 App 状态使用 Android API。通知触发器需要通知监听权限；系统动作需要相应后端授权。")
         }
     }

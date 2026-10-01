@@ -15,6 +15,8 @@ import com.yagay.yauto.importer.tasker.TaskerImporter
 import com.yagay.yauto.platform.android.*
 import com.yagay.yauto.platform.root.*
 import com.yagay.yauto.platform.xposed.LsposedLogCollector
+import com.yagay.yauto.platform.shizuku.ShizukuBackend
+import com.yagay.yauto.platform.xposed.XposedBackend
 
 class AppGraph(context: Context) {
     val features = FeatureRegistry()
@@ -24,6 +26,8 @@ class AppGraph(context: Context) {
     private val persistentTracer = FileExecutionTracer(context.applicationContext)
     val tracer: ExecutionTracer = SequencedExecutionTracer(CompositeExecutionTracer(listOf(traceStore, persistentTracer)))
     val rootShell = RootShell()
+    val shizuku = ShizukuBackend(context.applicationContext)
+    val xposed = XposedBackend(context.applicationContext)
     val workspace = JsonWorkspaceRepository(context.applicationContext)
     val importReports = JsonImportReportStore(context.applicationContext)
 
@@ -47,6 +51,8 @@ class AppGraph(context: Context) {
         features.install(AndroidEventFeaturePack())
         features.install(AndroidStateFeaturePack(context.applicationContext))
         capabilities.register(RootBackend(rootShell))
+        capabilities.register(shizuku)
+        capabilities.register(xposed)
 
         importers.register(MacroDroidImporter())
         importers.register(ShortXImporter())
@@ -57,5 +63,7 @@ class AppGraph(context: Context) {
         diagnosticRegistry.register(NotificationAccessDiagnosticCollector(context.applicationContext))
         diagnosticRegistry.register(RootDiagnosticCollector(rootShell))
         diagnosticRegistry.register(LsposedLogCollector(rootShell))
+        diagnosticRegistry.register(shizuku)
+        diagnosticRegistry.register(xposed)
     }
 }

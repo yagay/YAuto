@@ -5,18 +5,14 @@ import com.yagay.yauto.core.diagnostics.DiagnosticCommandRunner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
+import com.yagay.yauto.core.diagnostics.BoundedProcessRunner
+import kotlinx.coroutines.CancellationException
 
 class RootShell : DiagnosticCommandRunner {
-    override suspend fun run(command: String, timeoutMs: Long): CommandOutput = withContext(Dispatchers.IO) {
-        val process = runCatching { ProcessBuilder("su", "-c", command).start() }.getOrElse {
-            return@withContext CommandOutput(-1, "", it.message.orEmpty())
-        }
-        val finished = process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)
-        if (!finished) process.destroyForcibly()
-        val stdout = runCatching { process.inputStream.bufferedReader().readText() }.getOrDefault("")
-        val stderr = runCatching { process.errorStream.bufferedReader().readText() }.getOrDefault("")
-        CommandOutput(if (finished) process.exitValue() else -1, stdout.take(1_000_000), stderr.take(200_000), !finished)
-    }
+    override suspend fun run(command: String, timeoutMs: Long): CommandOutput = try {
+        BoundedProcessRunner.run(listOf("su", "-c", command), timeoutMs)
+    } catch (cancelled: CancellationException) { throw cancelled }
+    catch (error: Exception) { CommandOutput(-1, "", error.message.orEmpty()) }
 
     suspend fun isAvailable(): Boolean = run("id", 3_000).let { it.exitCode == 0 && "uid=0" in it.stdout }
 }

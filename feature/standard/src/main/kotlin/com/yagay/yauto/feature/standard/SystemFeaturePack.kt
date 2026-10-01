@@ -2,6 +2,7 @@ package com.yagay.yauto.feature.standard
 
 import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
+import com.yagay.yauto.core.capability.SystemOperations
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
@@ -10,6 +11,14 @@ class SystemFeaturePack : FeaturePack {
     override val id: String = "standard.system"
 
     override fun install(registry: FeatureRegistry) {
+        mapOf(SystemOperations.SLEEP to "Turn screen off", SystemOperations.EXPAND_NOTIFICATIONS to "Expand notifications",
+            SystemOperations.COLLAPSE_PANELS to "Collapse system panels").forEach { (operation, title) ->
+            registry.registerAction(FeatureDescriptor(FeatureId(operation), FeatureKind.ACTION, title,
+                "Use an authorized system backend", FeatureCategory.SYSTEM, capabilities = setOf(CapabilityIds.SYSTEM_UI), ownerPackId = id)) { feature, ctx ->
+                val result = ctx.executeCapability(feature.typeId, CapabilityRequest(CapabilityIds.SYSTEM_UI, operation))
+                ActionExecutionResult(result.success, result.value, result.message)
+            }
+        }
         registry.registerAction(
             FeatureDescriptor(
                 id = FeatureId("system.shell.execute"),
