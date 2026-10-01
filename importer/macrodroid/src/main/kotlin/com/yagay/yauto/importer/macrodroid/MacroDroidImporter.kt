@@ -157,26 +157,46 @@ class MacroDroidImporter(
         }
     }
 
-    private fun mapSourceFeature(item: JsonElement, kind: SourceFeatureKind, fallbackId: String, path: String, issues: MutableList<CompatibilityIssue>): FeatureRef {
+    private fun mapSourceFeature(
+        item: JsonElement,
+        kind: SourceFeatureKind,
+        fallbackId: String,
+        path: String,
+        issues: MutableList<CompatibilityIssue>,
+    ): FeatureRef {
         val obj = item as? JsonObject ?: JsonObject(emptyMap())
         val sourceType = obj.string("m_classType", "classType", "type") ?: "Unknown"
 
-        if (kind == SourceFeatureKind.ACTION) {
+        val native = if (kind == SourceFeatureKind.ACTION) {
             // Per-action constraints cannot be dropped during conversion.
             if (obj.array("m_constraintList", "constraintList", "constraints").isEmpty())
-                MacroDroidMappings.nativeAction(obj, id, sourceType, item.toString())?.let { return it }
+                MacroDroidMappings.nativeAction(obj, id, sourceType, item.toString())
+            else null
         } else {
-            MacroDroidMappings.nativeContext(obj, kind, id, sourceType, item.toString())?.let { return it }
+            MacroDroidMappings.nativeContext(obj, kind, id, sourceType, item.toString())
         }
+        if (native != null) return native
 
         val mapped = mapper.targetId(sourceType, kind)
         if (mapped == null) {
-            issues += CompatibilityIssue(ImportSeverity.WARNING, path, sourceType, "No native YAuto mapping yet; source payload preserved")
-        } else if (kind == SourceFeatureKind.ACTION) {
-            issues += CompatibilityIssue(ImportSeverity.WARNING, path, sourceType, "Native feature type is known but required source fields could not be translated; source payload preserved", mapped)
-            return sourceFeature(fallbackId, id, sourceType, item.toString())
+            issues += CompatibilityIssue(
+                ImportSeverity.WARNING,
+                path,
+                sourceType,
+                "No native YAuto mapping yet; source payload preserved",
+            )
+        } else {
+            issues += CompatibilityIssue(
+                ImportSeverity.WARNING,
+                path,
+                sourceType,
+                "Native feature type is known but required source fields or semantics could not be translated; source payload preserved",
+                suggestedFeatureId = mapped,
+            )
         }
-        return sourceFeature(mapped ?: fallbackId, id, sourceType, item.toString())
+        // Never assign a native typeId unless nativeAction/nativeContext produced a complete native
+        // configuration. A compatibility node cannot accidentally execute with missing/default data.
+        return sourceFeature(fallbackId, id, sourceType, item.toString())
     }
 
     private fun JsonObject.string(vararg keys: String): String? = keys.firstNotNullOfOrNull { (this[it] as? JsonPrimitive)?.contentOrNull }
