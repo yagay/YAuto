@@ -6,6 +6,7 @@ object StandardFeaturePacks {
     fun all(): List<FeaturePack> = listOf(
         CoreFeaturePack(),
         VariableFeaturePack(),
+        TimeFeaturePack(),
         SystemFeaturePack(),
         CompatibilityFeaturePack(),
     )
