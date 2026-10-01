@@ -32,9 +32,25 @@ class AccessibilityBackend : CapabilityBackend {
                     request.payload.string("text"),
                     request.payload.boolean("exact"),
                 )
+                AccessibilityOperations.LONG_CLICK_TEXT -> service.longClickText(
+                    request.payload.string("text"),
+                    request.payload.boolean("exact"),
+                )
                 AccessibilityOperations.CLICK_VIEW_ID -> service.clickViewId(request.payload.string("viewId"))
+                AccessibilityOperations.CLICK_DESCRIPTION -> service.clickDescription(
+                    request.payload.string("description"),
+                    request.payload.boolean("exact"),
+                )
                 AccessibilityOperations.INPUT_TEXT -> service.setFocusedText(request.payload.string("text"))
+                AccessibilityOperations.INPUT_TEXT_VIEW_ID -> service.setTextByViewId(
+                    request.payload.string("viewId"), request.payload.string("text")
+                )
                 AccessibilityOperations.GLOBAL_ACTION -> service.globalAction(request.payload.string("action"))
+                AccessibilityOperations.SCROLL -> service.scroll(request.payload.string("direction"))
+                AccessibilityOperations.FIND_TEXT -> service.hasText(
+                    request.payload.string("text"), request.payload.boolean("exact")
+                )
+                AccessibilityOperations.FIND_VIEW_ID -> service.hasViewId(request.payload.string("viewId"))
                 AccessibilityOperations.TAP -> {
                     val x = request.payload["x"].numberOrNull()
                     val y = request.payload["y"].numberOrNull()
