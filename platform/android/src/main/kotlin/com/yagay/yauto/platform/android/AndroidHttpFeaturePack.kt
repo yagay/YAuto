@@ -41,11 +41,11 @@ class AndroidHttpFeaturePack : FeaturePack {
             val headers = parseHeaders(feature.config.string("headers").resolveVariables(ctx.variables))
             val body = feature.config.string("body").resolveVariables(ctx.variables)
             val contentType = feature.config.string("contentType").resolveVariables(ctx.variables).ifBlank { "text/plain; charset=utf-8" }
-            val connectTimeout = feature.config.long("connectTimeoutMs", 10_000).coerceIn(1_000, 120_000).toInt()
-            val readTimeout = feature.config.long("readTimeoutMs", 20_000).coerceIn(1_000, 180_000).toInt()
+            val connectTimeoutMs = feature.config.long("connectTimeoutMs", 10_000).coerceIn(1_000, 120_000).toInt()
+            val readTimeoutMs = feature.config.long("readTimeoutMs", 20_000).coerceIn(1_000, 180_000).toInt()
 
             val result = withContext(Dispatchers.IO) {
-                execute(url, method, headers, body, contentType, connectTimeout, readTimeout)
+                execute(url, method, headers, body, contentType, connectTimeoutMs, readTimeoutMs)
             }
             if (result.success) {
                 feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, result.value) }
@@ -60,16 +60,16 @@ class AndroidHttpFeaturePack : FeaturePack {
         headers: Map<String, String>,
         body: String,
         contentType: String,
-        connectTimeout: Int,
-        readTimeout: Int,
+        connectTimeoutMs: Int,
+        readTimeoutMs: Int,
     ): ActionExecutionResult {
         var connection: HttpURLConnection? = null
         return runCatching {
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 requestMethod = method
                 instanceFollowRedirects = true
-                connectTimeout = connectTimeout
-                readTimeout = readTimeout
+                this.connectTimeout = connectTimeoutMs
+                this.readTimeout = readTimeoutMs
                 useCaches = false
                 setRequestProperty("Accept-Encoding", "identity")
                 headers.forEach { (name, value) -> setRequestProperty(name, value) }
