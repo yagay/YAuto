@@ -23,32 +23,45 @@ class YAutoAccessibilityService : AccessibilityService() {
         super.onDestroy()
     }
 
-    internal fun clickText(text: String, exact: Boolean): Boolean {
-        if (text.isBlank()) return false
-        val root = rootInActiveWindow ?: return false
-        val candidates = root.findAccessibilityNodeInfosByText(text).orEmpty()
-        val target = candidates.firstOrNull { node ->
-            if (!exact) true
-            else node.text?.toString() == text || node.contentDescription?.toString() == text
-        } ?: return false
-        return clickNearest(target)
-    }
+    internal fun clickText(text: String, exact: Boolean): Boolean =
+        findTextNode(text, exact)?.let(::clickNearest) == true
 
-    internal fun clickViewId(viewId: String): Boolean {
-        if (viewId.isBlank()) return false
-        val root = rootInActiveWindow ?: return false
-        val target = runCatching { root.findAccessibilityNodeInfosByViewId(viewId).orEmpty().firstOrNull() }.getOrNull()
-            ?: return false
-        return clickNearest(target)
+    internal fun longClickText(text: String, exact: Boolean): Boolean =
+        findTextNode(text, exact)?.let { performNearest(it, AccessibilityNodeInfo.ACTION_LONG_CLICK) } == true
+
+    internal fun clickViewId(viewId: String): Boolean =
+        findViewIdNode(viewId)?.let(::clickNearest) == true
+
+    internal fun clickDescription(description: String, exact: Boolean): Boolean {
+        if (description.isBlank()) return false
+        val node = walkActiveWindow().firstOrNull { item ->
+            val current = item.contentDescription?.toString().orEmpty()
+            if (exact) current == description else current.contains(description, ignoreCase = true)
+        } ?: return false
+        return clickNearest(node)
     }
 
     internal fun setFocusedText(text: String): Boolean {
         val root = rootInActiveWindow ?: return false
         val node = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) ?: return false
-        val args = Bundle().apply {
-            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        return setNodeText(node, text)
+    }
+
+    internal fun setTextByViewId(viewId: String, text: String): Boolean =
+        findViewIdNode(viewId)?.let { setNodeText(it, text) } == true
+
+    internal fun hasText(text: String, exact: Boolean): Boolean = findTextNode(text, exact) != null
+    internal fun hasViewId(viewId: String): Boolean = findViewIdNode(viewId) != null
+
+    internal fun scroll(direction: String): Boolean {
+        val action = when (direction) {
+            "forward", "down", "right" -> AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+            "backward", "up", "left" -> AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
+            else -> return false
         }
-        return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        val root = rootInActiveWindow ?: return false
+        return walk(root).firstOrNull { it.isScrollable && it.actionList.any { actionInfo -> actionInfo.id == action } }
+            ?.performAction(action) == true
     }
 
     internal fun globalAction(name: String): Boolean {
@@ -78,14 +91,57 @@ class YAutoAccessibilityService : AccessibilityService() {
         return gesture(path, durationMs.coerceIn(1, 60_000))
     }
 
-    private fun clickNearest(start: AccessibilityNodeInfo): Boolean {
+    private fun findTextNode(text: String, exact: Boolean): AccessibilityNodeInfo? {
+        if (text.isBlank()) return null
+        val root = rootInActiveWindow ?: return null
+        return root.findAccessibilityNodeInfosByText(text).orEmpty().firstOrNull { node ->
+            if (!exact) {
+                node.text?.toString()?.contains(text, ignoreCase = true) == true ||
+                    node.contentDescription?.toString()?.contains(text, ignoreCase = true) == true
+            } else {
+                node.text?.toString() == text || node.contentDescription?.toString() == text
+            }
+        }
+    }
+
+    private fun findViewIdNode(viewId: String): AccessibilityNodeInfo? {
+        if (viewId.isBlank()) return null
+        val root = rootInActiveWindow ?: return null
+        return runCatching { root.findAccessibilityNodeInfosByViewId(viewId).orEmpty().firstOrNull() }.getOrNull()
+    }
+
+    private fun setNodeText(node: AccessibilityNodeInfo, text: String): Boolean {
+        val args = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        }
+        return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+    }
+
+    private fun clickNearest(start: AccessibilityNodeInfo): Boolean =
+        performNearest(start, AccessibilityNodeInfo.ACTION_CLICK)
+
+    private fun performNearest(start: AccessibilityNodeInfo, action: Int): Boolean {
         var node: AccessibilityNodeInfo? = start
         var depth = 0
         while (node != null && depth++ < 32) {
-            if (node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true
+            if (node.actionList.any { it.id == action } && node.performAction(action)) return true
             node = node.parent
         }
         return false
+    }
+
+    private fun walkActiveWindow(): Sequence<AccessibilityNodeInfo> =
+        rootInActiveWindow?.let(::walk) ?: emptySequence()
+
+    private fun walk(root: AccessibilityNodeInfo): Sequence<AccessibilityNodeInfo> = sequence {
+        val stack = ArrayDeque<AccessibilityNodeInfo>()
+        stack.add(root)
+        var visited = 0
+        while (stack.isNotEmpty() && visited++ < 10_000) {
+            val node = stack.removeLast()
+            yield(node)
+            for (index in node.childCount - 1 downTo 0) node.getChild(index)?.let(stack::add)
+        }
     }
 
     private suspend fun gesture(path: Path, durationMs: Long): Boolean = suspendCancellableCoroutine { continuation ->
