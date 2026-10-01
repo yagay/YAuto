@@ -1,0 +1,56 @@
+package com.yagay.yauto
+
+import android.content.Context
+import android.os.Build
+import com.yagay.yauto.core.capability.*
+import com.yagay.yauto.core.diagnostics.*
+import com.yagay.yauto.core.importer.ImporterRegistry
+import com.yagay.yauto.core.logging.*
+import com.yagay.yauto.core.registry.FeatureRegistry
+import com.yagay.yauto.feature.standard.StandardFeaturePack
+import com.yagay.yauto.importer.macrodroid.MacroDroidImporter
+import com.yagay.yauto.importer.shortx.ShortXImporter
+import com.yagay.yauto.importer.tasker.TaskerImporter
+import com.yagay.yauto.platform.android.*
+import com.yagay.yauto.platform.root.*
+import com.yagay.yauto.platform.xposed.LsposedLogCollector
+
+class AppGraph(context: Context) {
+    val features = FeatureRegistry()
+    val importers = ImporterRegistry()
+    val diagnosticRegistry = DiagnosticRegistry()
+    val traceStore = InMemoryExecutionTracer()
+    private val persistentTracer = FileExecutionTracer(context.applicationContext)
+    val tracer: ExecutionTracer = SequencedExecutionTracer(CompositeExecutionTracer(listOf(traceStore, persistentTracer)))
+    val rootShell = RootShell()
+    val workspace = JsonWorkspaceRepository(context.applicationContext)
+    val importReports = JsonImportReportStore(context.applicationContext)
+
+    val capabilities = CapabilityBroker(
+        environmentProvider = {
+            RuntimeEnvironment(
+                sdkInt = Build.VERSION.SDK_INT,
+                manufacturer = Build.MANUFACTURER,
+                brand = Build.BRAND,
+                model = Build.MODEL,
+            )
+        }
+    )
+
+    val diagnostics = DiagnosticCoordinator(diagnosticRegistry)
+
+    init {
+        features.install(StandardFeaturePack())
+        features.install(AndroidFeaturePack(context.applicationContext))
+        capabilities.register(RootBackend(rootShell))
+
+        importers.register(MacroDroidImporter())
+        importers.register(ShortXImporter())
+        importers.register(TaskerImporter())
+
+        diagnosticRegistry.register(ExecutionFileDiagnosticCollector(context.applicationContext))
+        diagnosticRegistry.register(ImportReportDiagnosticCollector(context.applicationContext))
+        diagnosticRegistry.register(RootDiagnosticCollector(rootShell))
+        diagnosticRegistry.register(LsposedLogCollector(rootShell))
+    }
+}
