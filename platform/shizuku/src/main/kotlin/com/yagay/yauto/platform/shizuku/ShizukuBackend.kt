@@ -38,8 +38,8 @@ class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContrac
     fun requestPermission() { check(isAvailable()) { "Shizuku is not running" }; Shizuku.requestPermission(1001) }
     override suspend fun isAvailable(environment: RuntimeEnvironment) = hasPermission()
     override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) =
-        (request.capability == CapabilityIds.PRIVILEGED_SHELL && request.operationId == "system.shell.execute") ||
-        (request.capability == CapabilityIds.SYSTEM_UI && SystemOperations.shellCommand(request.operationId) != null)
+        request.capability == CapabilityIds.PRIVILEGED_SHELL ||
+            (request.capability == CapabilityIds.SYSTEM_UI && SystemOperations.shellCommand(request.operationId) != null)
 
     private suspend fun connect(): IShizukuShell = connectionLock.withLock {
         service?.takeIf { it.asBinder().pingBinder() } ?: withContext(Dispatchers.Main.immediate) {
