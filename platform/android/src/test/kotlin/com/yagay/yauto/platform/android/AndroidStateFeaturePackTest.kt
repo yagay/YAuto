@@ -15,6 +15,9 @@ class AndroidStateFeaturePackTest {
         var on = true
         var types = setOf("wifi", "vpn", "connected")
         var percent: Double? = 50.0
+        var mediaPercent: Double? = 40.0
+        var brightness: Double? = 60.0
+        var automaticBrightness = false
         var failure = false
         override fun screenOn(): Boolean { if (failure) error("unavailable"); return on }
         override fun networkTypes() = types
@@ -22,6 +25,9 @@ class AndroidStateFeaturePackTest {
         override fun batteryPercent() = percent
         override fun powerSave() = false
         override fun appInstalled(packageName: String) = packageName == "installed.app"
+        override fun mediaVolumePercent() = mediaPercent
+        override fun brightnessPercent() = brightness
+        override fun autoBrightness() = automaticBrightness
     }
     private val reader = Reader()
     private val registry = FeatureRegistry().apply { install(AndroidStateFeaturePack(reader)) }
@@ -36,8 +42,8 @@ class AndroidStateFeaturePackTest {
     private suspend fun matches(key: String, config: ConfigMap = emptyMap()) =
         registry.stateEvaluator("android.state.$key")!!.evaluate(FeatureRef("android.state.$key", config = config), ctx)
 
-    @Test fun `six removable registry states query current values`() = runBlocking {
-        assertEquals(12, registry.allDescriptors().size)
+    @Test fun `registry states query current values and remain removable as a pack`() = runBlocking {
+        assertEquals(16, registry.allDescriptors().size)
         assertTrue(matches("screen"))
         reader.on = false
         assertFalse(matches("screen"))
@@ -54,6 +60,25 @@ class AndroidStateFeaturePackTest {
         registry.uninstallPack("android.state")
         assertTrue(registry.allDescriptors().isEmpty())
         assertNull(registry.stateEvaluator("android.state.screen"))
+    }
+
+    @Test fun `media volume and brightness comparisons use current live values`() = runBlocking {
+        assertTrue(matches("media_volume", mapOf("operator" to ConfigValue.StringValue("<"), "value" to ConfigValue.NumberValue(50.0))))
+        assertFalse(matches("media_volume", mapOf("operator" to ConfigValue.StringValue(">"), "value" to ConfigValue.NumberValue(50.0))))
+        reader.mediaPercent = 50.2
+        assertTrue(matches("media_volume", mapOf("operator" to ConfigValue.StringValue("=="), "value" to ConfigValue.NumberValue(50.0))))
+
+        assertTrue(matches("brightness", mapOf(
+            "mode" to ConfigValue.StringValue("manual"),
+            "compareLevel" to ConfigValue.BooleanValue(true),
+            "operator" to ConfigValue.StringValue(">"),
+            "value" to ConfigValue.NumberValue(50.0),
+        )))
+        reader.automaticBrightness = true
+        assertFalse(matches("brightness", mapOf("mode" to ConfigValue.StringValue("manual"), "compareLevel" to ConfigValue.BooleanValue(false))))
+        assertTrue(matches("brightness", mapOf("mode" to ConfigValue.StringValue("auto"), "compareLevel" to ConfigValue.BooleanValue(false))))
+        reader.brightness = null
+        assertFalse(matches("brightness", mapOf("mode" to ConfigValue.StringValue("auto"), "compareLevel" to ConfigValue.BooleanValue(true), "value" to ConfigValue.NumberValue(20.0))))
     }
 
     @Test fun `battery bounds are inclusive and unknown or invalid values fail closed`() = runBlocking {
