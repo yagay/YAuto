@@ -64,20 +64,7 @@ fun FlowEditorScreen(initial: Flow?, descriptors: List<FeatureDescriptor>, flows
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } })
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable fun GlobalVariablesScreen(initial: Map<String, String>, onSave: (Map<String, String>) -> Unit, onBack: () -> Unit) {
-    var values by remember { mutableStateOf(initial.mapValues { ConfigValue.StringValue(it.value) as ConfigValue }) }
-    Scaffold(topBar = { TopAppBar(title = { Text("全局变量") }, navigationIcon = { TextButton(onClick = onBack) { Text("返回") } },
-        actions = { TextButton(onClick = { onSave(values.mapValues { (_, value) -> (value as? ConfigValue.StringValue)?.value ?: value.toString() }) }) { Text("保存") } }) }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp)) {
-            // Workspace v1 stores global variables as strings; retain that format.
-            var name by remember { mutableStateOf("") }
-            values.forEach { (key, value) ->
-                OutlinedTextField((value as ConfigValue.StringValue).value, { values = values + (key to ConfigValue.StringValue(it)) }, label = { Text(key) })
-                TextButton(onClick = { values = values - key }) { Text("删除") }
-            }
-            OutlinedTextField(name, { name = it }, label = { Text("新变量名") })
-            Button(enabled = name.isNotBlank() && name.trim() !in values, onClick = { values = values + (name.trim() to ConfigValue.StringValue("")); name = "" }) { Text("+ 添加") }
-        }
-    }
+@Composable
+fun GlobalVariablesScreen(initial: Map<String, String>, onSave: (Map<String, String>) -> Unit, onBack: () -> Unit) {
+    MacroGlobalVariablesScreen(initial = initial, onSave = onSave, onBack = onBack)
 }
