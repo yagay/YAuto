@@ -28,8 +28,9 @@ class SystemFeaturePack : FeaturePack {
         ) { feature, ctx ->
             val command = feature.config.string("command").resolveVariables(ctx.variables)
             if (command.isBlank()) return@registerAction ActionExecutionResult(false, message = "Shell command is empty")
-            val result = ctx.capabilities.execute(
-                CapabilityRequest(
+            val result = ctx.executeCapability(
+                featureId = feature.typeId,
+                request = CapabilityRequest(
                     capability = CapabilityIds.PRIVILEGED_SHELL,
                     operationId = "system.shell.execute",
                     payload = mapOf("command" to ConfigValue.StringValue(command)),

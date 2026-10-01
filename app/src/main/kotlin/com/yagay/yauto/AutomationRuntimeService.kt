@@ -9,6 +9,10 @@ import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.yagay.yauto.core.logging.TraceEvent
+import com.yagay.yauto.core.logging.TraceKind
+import com.yagay.yauto.core.logging.TraceLevel
+import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.platform.android.AndroidEventSource
 import com.yagay.yauto.platform.android.NetworkEventSource
 import com.yagay.yauto.platform.android.RuntimeEventEmitter
@@ -18,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class AutomationRuntimeService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -30,9 +35,50 @@ class AutomationRuntimeService : Service() {
         sources += SystemBroadcastEventSource(this)
         sources += NetworkEventSource(this)
         val emitter = RuntimeEventEmitter { event ->
-            scope.launch { graph.runtime.dispatch(event) }
+            scope.launch {
+                try {
+                    graph.runtime.dispatch(event)
+                } catch (error: Throwable) {
+                    graph.tracer.record(
+                        TraceEvent(
+                            executionId = ExecutionId("runtime-${UUID.randomUUID()}"),
+                            kind = TraceKind.ERROR,
+                            level = TraceLevel.ERROR,
+                            timestampEpochMs = System.currentTimeMillis(),
+                            message = "Runtime event dispatch failed: ${error.message ?: error::class.simpleName}",
+                            featureId = event.typeId,
+                            success = false,
+                            attributes = mapOf(
+                                "event.source" to event.source,
+                                "event.type" to event.typeId,
+                                "exception" to error::class.qualifiedName.orEmpty(),
+                            ),
+                        )
+                    )
+                }
+            }
         }
-        sources.forEach { source -> runCatching { source.start(emitter) } }
+        sources.forEach { source ->
+            runCatching { source.start(emitter) }
+                .onFailure { error ->
+                    scope.launch {
+                        graph.tracer.record(
+                            TraceEvent(
+                                executionId = ExecutionId("source-${UUID.randomUUID()}"),
+                                kind = TraceKind.ERROR,
+                                level = TraceLevel.ERROR,
+                                timestampEpochMs = System.currentTimeMillis(),
+                                message = "Event source failed to start: ${source.id}: ${error.message ?: error::class.simpleName}",
+                                success = false,
+                                attributes = mapOf(
+                                    "eventSource" to source.id,
+                                    "exception" to error::class.qualifiedName.orEmpty(),
+                                ),
+                            )
+                        )
+                    }
+                }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
