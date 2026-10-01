@@ -3,6 +3,7 @@ package com.yagay.yauto.importer.macrodroid
 import com.yagay.yauto.core.importer.ImportInput
 import com.yagay.yauto.core.model.ActionNode
 import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.PredicateNode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -14,7 +15,7 @@ class MacroDroidImporterTest {
         assertTrue(result.success)
         val rule = result.bundle.automations.single()
         assertEquals("android.event.screen_off", rule.activation.events.single().typeId)
-        val condition = (rule.activation.condition as com.yagay.yauto.core.model.PredicateNode.All).children.single() as com.yagay.yauto.core.model.PredicateNode.Condition
+        val condition = (rule.activation.condition as PredicateNode.All).children.single() as PredicateNode.Condition
         assertEquals("android.condition.screen", condition.feature.typeId)
         assertEquals(ConfigValue.BooleanValue(false), condition.feature.config["value"])
         assertEquals("android.clipboard.set", (rule.onEvent[0] as ActionNode.Action).feature.typeId)
@@ -88,6 +89,44 @@ class MacroDroidImporterTest {
         assertEquals(ConfigValue.StringValue("broadcast"), features[3].config["target"])
         assertEquals(ConfigValue.StringValue("mode"), features[3].config["extra1Key"])
         assertEquals(ConfigValue.NumberValue(77.0), features[4].config["id"])
+    }
+
+    @Test
+    fun `maps notification trigger and display constraints conservatively`() {
+        val json = """
+            {"macro":{"m_GUID":"contexts-2","m_name":"Contexts","m_triggerList":[
+              {"m_classType":"NotificationTrigger","m_option":0,"m_packageNameList":["com.example.chat"],"separateTitleAndMessage":true,"titleContent":"Alert","matchOptionTitle":2,"messageContent":"Ready","matchOptionMessage":2,"ignoreCase":true,"m_ignoreOngoing":true}
+            ],"m_constraintList":[
+              {"m_classType":"VolumeLevelConstraint","m_streamIndexArray":[false,true,false,false,false,false,false],"m_volume":35,"m_comparison":1},
+              {"m_classType":"BrightnessConstraint","m_equals":true,"m_isAutoBrightness":false,"m_brightness":60},
+              {"m_classType":"BrightnessConstraint","m_isAutoBrightness":true,"m_brightness":0}
+            ],"m_actionList":[]}}
+        """.trimIndent()
+        val result = MacroDroidImporter().import(ImportInput("contexts-2.macro", null, json.toByteArray()))
+        assertTrue(result.success)
+        val automation = result.bundle.automations.single()
+        val event = automation.activation.events.single()
+        assertEquals("android.event.notification_posted", event.typeId)
+        assertEquals(ConfigValue.StringValue("com.example.chat"), event.config["package"])
+        assertEquals(ConfigValue.StringValue("Alert"), event.config["titleContains"])
+        assertEquals(ConfigValue.StringValue("Ready"), event.config["textContains"])
+        assertEquals(ConfigValue.StringValue("exclude"), event.config["ongoing"])
+
+        val conditions = (automation.activation.condition as PredicateNode.All).children.map { (it as PredicateNode.Condition).feature }
+        assertEquals(listOf("android.condition.media_volume", "android.condition.brightness", "android.condition.brightness"), conditions.map { it.typeId })
+        assertEquals(ConfigValue.StringValue(">"), conditions[0].config["operator"])
+        assertEquals(ConfigValue.NumberValue(35.0), conditions[0].config["value"])
+        assertEquals(ConfigValue.StringValue("=="), conditions[1].config["operator"])
+        assertEquals(ConfigValue.StringValue("auto"), conditions[2].config["mode"])
+        assertEquals(ConfigValue.BooleanValue(false), conditions[2].config["compareLevel"])
+    }
+
+    @Test
+    fun `keeps unsupported notification trigger variants as compatibility event`() {
+        val json = """{"macro":{"m_GUID":"notify-unsafe","m_triggerList":[{"m_classType":"NotificationTrigger","m_packageNameList":["a","b"],"m_excludeApps":true,"enableRegex":true}],"m_actionList":[]}}"""
+        val result = MacroDroidImporter().import(ImportInput("notify-unsafe.macro", null, json.toByteArray()))
+        assertTrue(result.success)
+        assertEquals("compat.source.event", result.bundle.automations.single().activation.events.single().typeId)
     }
 
     @Test
