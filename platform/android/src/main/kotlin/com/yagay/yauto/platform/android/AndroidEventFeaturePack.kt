@@ -1,5 +1,6 @@
 package com.yagay.yauto.platform.android
 
+import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 
@@ -82,6 +83,7 @@ class AndroidEventFeaturePack : FeaturePack {
                     FieldSchema.Text("channel", "Channel ID"),
                     FieldSchema.Text("titleContains", "Title contains"),
                     FieldSchema.Text("textContains", "Text contains"),
+                    FieldSchema.Choice("ongoing", "Ongoing notification", options = listOf("any", "only", "exclude")),
                 ),
                 keywords = setOf("notification", "通知", "message"),
                 ownerPackId = id,
@@ -93,7 +95,13 @@ class AndroidEventFeaturePack : FeaturePack {
             val channelFilter = feature.config.string("channel")
             val titleFilter = feature.config.string("titleContains")
             val textFilter = feature.config.string("textContains")
-            (packageFilter.isBlank() || event.string("package") == packageFilter) &&
+            val ongoingMatches = when (feature.config.string("ongoing", "any")) {
+                "only" -> event.boolean("ongoing")
+                "exclude" -> !event.boolean("ongoing")
+                else -> true
+            }
+            ongoingMatches &&
+                (packageFilter.isBlank() || event.string("package") == packageFilter) &&
                 (channelFilter.isBlank() || event.string("channel") == channelFilter) &&
                 (titleFilter.isBlank() || event.string("title").contains(titleFilter, ignoreCase = true)) &&
                 (textFilter.isBlank() || event.string("text").contains(textFilter, ignoreCase = true))
