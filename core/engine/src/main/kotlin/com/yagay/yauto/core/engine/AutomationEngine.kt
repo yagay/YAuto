@@ -86,84 +86,86 @@ class AutomationEngine(
         automation: Automation?,
         flow: Flow?,
         maxLoopIterations: Int,
-    ): Signal = when (node) {
-        is ActionNode.Action -> {
-            if (!node.enabled) Signal.Next else {
-                val executor = registry.actionExecutor(node.feature.typeId)
-                    ?: return Signal.Failure("Unknown action: ${node.feature.typeId}")
-                trace(executionId, TraceKind.ACTION, "Start ${node.feature.typeId}", automation, flow, node.id, node.feature.typeId)
-                val result = executor.execute(node.feature, FeatureExecutionContext(executionId, node.id, variables, capabilities, tracer))
-                trace(executionId, TraceKind.ACTION, result.message ?: node.feature.typeId, automation, flow, node.id, node.feature.typeId, result.success)
-                if (result.success) Signal.Next else Signal.Failure(result.message ?: "Action failed: ${node.feature.typeId}")
-            }
-        }
-        is ActionNode.If -> executeNodes(if (evaluatePredicate(node.condition, executionId, node.id, variables)) node.thenActions else node.elseActions, executionId, variables, automation, flow, maxLoopIterations)
-        is ActionNode.Switch -> {
-            val actual = expressions.evaluateText(node.expression, variables)
-            val branch = node.cases.firstOrNull { it.match == actual }?.actions ?: node.defaultActions
-            executeNodes(branch, executionId, variables, automation, flow, maxLoopIterations)
-        }
-        is ActionNode.Repeat -> {
-            repeat(node.times.coerceIn(0, maxLoopIterations)) {
-                when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
-                    Signal.Next, Signal.Continue -> Unit
-                    Signal.Break -> return Signal.Next
-                    else -> return signal
+    ): Signal {
+        return when (node) {
+            is ActionNode.Action -> {
+                if (!node.enabled) Signal.Next else {
+                    val executor = registry.actionExecutor(node.feature.typeId)
+                        ?: return Signal.Failure("Unknown action: ${node.feature.typeId}")
+                    trace(executionId, TraceKind.ACTION, "Start ${node.feature.typeId}", automation, flow, node.id, node.feature.typeId)
+                    val result = executor.execute(node.feature, FeatureExecutionContext(executionId, node.id, variables, capabilities, tracer))
+                    trace(executionId, TraceKind.ACTION, result.message ?: node.feature.typeId, automation, flow, node.id, node.feature.typeId, result.success)
+                    if (result.success) Signal.Next else Signal.Failure(result.message ?: "Action failed: ${node.feature.typeId}")
                 }
             }
-            Signal.Next
-        }
-        is ActionNode.While -> {
-            var count = 0
-            while (count++ < maxLoopIterations && evaluatePredicate(node.condition, executionId, node.id, variables)) {
-                when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
-                    Signal.Next, Signal.Continue -> Unit
-                    Signal.Break -> return Signal.Next
-                    else -> return signal
+            is ActionNode.If -> executeNodes(if (evaluatePredicate(node.condition, executionId, node.id, variables)) node.thenActions else node.elseActions, executionId, variables, automation, flow, maxLoopIterations)
+            is ActionNode.Switch -> {
+                val actual = expressions.evaluateText(node.expression, variables)
+                val branch = node.cases.firstOrNull { it.match == actual }?.actions ?: node.defaultActions
+                executeNodes(branch, executionId, variables, automation, flow, maxLoopIterations)
+            }
+            is ActionNode.Repeat -> {
+                repeat(node.times.coerceIn(0, maxLoopIterations)) {
+                    when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
+                        Signal.Next, Signal.Continue -> Unit
+                        Signal.Break -> return Signal.Next
+                        else -> return signal
+                    }
+                }
+                Signal.Next
+            }
+            is ActionNode.While -> {
+                var count = 0
+                while (count++ < maxLoopIterations && evaluatePredicate(node.condition, executionId, node.id, variables)) {
+                    when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
+                        Signal.Next, Signal.Continue -> Unit
+                        Signal.Break -> return Signal.Next
+                        else -> return signal
+                    }
+                }
+                Signal.Next
+            }
+            is ActionNode.ForEach -> {
+                for (value in node.values.take(maxLoopIterations)) {
+                    variables.set(node.variableName, value)
+                    when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
+                        Signal.Next, Signal.Continue -> Unit
+                        Signal.Break -> return Signal.Next
+                        else -> return signal
+                    }
+                }
+                Signal.Next
+            }
+            is ActionNode.Parallel -> coroutineScope {
+                val results = node.branches.map { branch -> async { executeNodes(branch, executionId, RuntimeVariables(variables.snapshot()), automation, flow, maxLoopIterations) } }.map { it.await() }
+                results.firstOrNull { it is Signal.Failure || it is Signal.Return } ?: Signal.Next
+            }
+            is ActionNode.Try -> {
+                val primary = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)
+                val handled = if (primary is Signal.Failure && node.onError.isNotEmpty()) {
+                    variables.set("error.message", ConfigValue.StringValue(primary.message))
+                    executeNodes(node.onError, executionId, variables, automation, flow, maxLoopIterations)
+                } else primary
+                val finalSignal = executeNodes(node.finallyActions, executionId, variables, automation, flow, maxLoopIterations)
+                if (finalSignal != Signal.Next) finalSignal else handled
+            }
+            is ActionNode.CallFlow -> {
+                val target = flowResolver.resolve(node.flowId) ?: return Signal.Failure("Unknown flow: ${node.flowId.value}")
+                val childInitial = variables.snapshot().toMutableMap()
+                node.input.forEach { (key, value) -> childInitial["input.$key"] = value }
+                target.inputs.forEach { childInitial.putIfAbsent("input.${it.name}", it.defaultValue) }
+                val childVariables = RuntimeVariables(childInitial)
+                trace(executionId, TraceKind.FLOW, "Call ${target.name}", automation, target, node.id)
+                when (val signal = executeNodes(target.actions, executionId, childVariables, automation, target, maxLoopIterations)) {
+                    is Signal.Failure -> signal
+                    is Signal.Return -> { node.resultVariable?.let { variables.set(it, signal.value) }; Signal.Next }
+                    else -> Signal.Next
                 }
             }
-            Signal.Next
+            is ActionNode.Return -> Signal.Return(node.value)
+            is ActionNode.Break -> Signal.Break
+            is ActionNode.Continue -> Signal.Continue
         }
-        is ActionNode.ForEach -> {
-            for (value in node.values.take(maxLoopIterations)) {
-                variables.set(node.variableName, value)
-                when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
-                    Signal.Next, Signal.Continue -> Unit
-                    Signal.Break -> return Signal.Next
-                    else -> return signal
-                }
-            }
-            Signal.Next
-        }
-        is ActionNode.Parallel -> coroutineScope {
-            val results = node.branches.map { branch -> async { executeNodes(branch, executionId, RuntimeVariables(variables.snapshot()), automation, flow, maxLoopIterations) } }.map { it.await() }
-            results.firstOrNull { it is Signal.Failure || it is Signal.Return } ?: Signal.Next
-        }
-        is ActionNode.Try -> {
-            val primary = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)
-            val handled = if (primary is Signal.Failure && node.onError.isNotEmpty()) {
-                variables.set("error.message", ConfigValue.StringValue(primary.message))
-                executeNodes(node.onError, executionId, variables, automation, flow, maxLoopIterations)
-            } else primary
-            val finalSignal = executeNodes(node.finallyActions, executionId, variables, automation, flow, maxLoopIterations)
-            if (finalSignal != Signal.Next) finalSignal else handled
-        }
-        is ActionNode.CallFlow -> {
-            val target = flowResolver.resolve(node.flowId) ?: return Signal.Failure("Unknown flow: ${node.flowId.value}")
-            val childInitial = variables.snapshot().toMutableMap()
-            node.input.forEach { (key, value) -> childInitial["input.$key"] = value }
-            target.inputs.forEach { childInitial.putIfAbsent("input.${it.name}", it.defaultValue) }
-            val childVariables = RuntimeVariables(childInitial)
-            trace(executionId, TraceKind.FLOW, "Call ${target.name}", automation, target, node.id)
-            when (val signal = executeNodes(target.actions, executionId, childVariables, automation, target, maxLoopIterations)) {
-                is Signal.Failure -> signal
-                is Signal.Return -> { node.resultVariable?.let { variables.set(it, signal.value) }; Signal.Next }
-                else -> Signal.Next
-            }
-        }
-        is ActionNode.Return -> Signal.Return(node.value)
-        is ActionNode.Break -> Signal.Break
-        is ActionNode.Continue -> Signal.Continue
     }
 
     private suspend fun evaluatePredicate(predicate: PredicateNode, executionId: ExecutionId, nodeId: NodeId, variables: RuntimeVariables): Boolean = when (predicate) {
