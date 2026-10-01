@@ -12,27 +12,41 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.intOrNull
 
 /**
- * MacroDroid mappings are intentionally conservative. A source action is converted to a native
- * YAuto feature only when both the class type and the fields required by that native feature are
- * understood. Otherwise the importer keeps the complete source payload as a compatibility node.
+ * MacroDroid mappings are intentionally conservative. A source item is converted to a native
+ * YAuto feature only when both the class type and all behaviorally relevant fields are understood.
+ * Otherwise the importer keeps the complete source payload as a compatibility node.
  */
 object MacroDroidMappings {
     val mapper = SourceFeatureMapper { sourceType, kind ->
-        if (kind != SourceFeatureKind.ACTION) null
-        else when (sourceType) {
-            "PauseAction" -> "core.delay"
-            "ToastAction" -> "android.toast.show"
-            "LaunchActivityAction" -> "android.app.launch"
-            "SetVariableAction" -> "variable.set"
-            "SetClipboardAction" -> "android.clipboard.set"
-            "OpenWebPageAction" -> "android.uri.open"
-            "SetVolumeAction" -> "android.audio.media_volume.set"
-            "SetBrightnessAction" -> "android.display.brightness.set"
-            "SendIntentAction" -> "android.intent.send"
-            "NotificationAction" -> "android.notification.show"
+        when (kind) {
+            SourceFeatureKind.ACTION -> when (sourceType) {
+                "PauseAction" -> "core.delay"
+                "ToastAction" -> "android.toast.show"
+                "LaunchActivityAction" -> "android.app.launch"
+                "SetVariableAction" -> "variable.set"
+                "SetClipboardAction" -> "android.clipboard.set"
+                "OpenWebPageAction" -> "android.uri.open"
+                "SetVolumeAction" -> "android.audio.media_volume.set"
+                "SetBrightnessAction" -> "android.display.brightness.set"
+                "SendIntentAction" -> "android.intent.send"
+                "NotificationAction" -> "android.notification.show"
+                else -> null
+            }
+            SourceFeatureKind.EVENT -> when (sourceType) {
+                "ScreenOnOffTrigger" -> "android.event.screen_on"
+                "DeviceBootTrigger" -> "android.event.boot"
+                "ScreenUnlockedTrigger" -> "android.event.user_present"
+                "NotificationTrigger" -> "android.event.notification_posted"
+                else -> null
+            }
+            SourceFeatureKind.CONDITION -> when (sourceType) {
+                "ScreenOnConstraint" -> "android.condition.screen"
+                "VolumeLevelConstraint" -> "android.condition.media_volume"
+                "BrightnessConstraint" -> "android.condition.brightness"
+                else -> null
+            }
             else -> null
         }
     }
@@ -56,19 +70,116 @@ object MacroDroidMappings {
         else -> null
     }
 
-    fun nativeContext(obj: JsonObject, kind: SourceFeatureKind, importerId: String, sourceType: String, raw: String): FeatureRef? {
-        val target = when (kind) {
+    fun nativeContext(obj: JsonObject, kind: SourceFeatureKind, importerId: String, sourceType: String, raw: String): FeatureRef? =
+        when (kind) {
             SourceFeatureKind.EVENT -> when (sourceType) {
-                "ScreenOnOffTrigger" -> obj.bool("m_screenOn", "screenOn")?.let { if (it) "android.event.screen_on" else "android.event.screen_off" }
-                "DeviceBootTrigger" -> "android.event.boot"
-                "ScreenUnlockedTrigger" -> "android.event.user_present"
+                "ScreenOnOffTrigger" -> obj.bool("m_screenOn", "screenOn")?.let {
+                    sourceFeature(if (it) "android.event.screen_on" else "android.event.screen_off", importerId, sourceType, raw)
+                }
+                "DeviceBootTrigger" -> sourceFeature("android.event.boot", importerId, sourceType, raw)
+                "ScreenUnlockedTrigger" -> sourceFeature("android.event.user_present", importerId, sourceType, raw)
+                "NotificationTrigger" -> notificationTrigger(obj, importerId, sourceType, raw)
                 else -> null
             }
-            SourceFeatureKind.CONDITION -> if (sourceType == "ScreenOnConstraint" && obj.bool("m_screenOn", "screenOn") != null) "android.condition.screen" else null
+            SourceFeatureKind.CONDITION -> when (sourceType) {
+                "ScreenOnConstraint" -> obj.bool("m_screenOn", "screenOn")?.let {
+                    sourceFeature("android.condition.screen", importerId, sourceType, raw,
+                        extra = mapOf("value" to ConfigValue.BooleanValue(it)))
+                }
+                "VolumeLevelConstraint" -> volumeConstraint(obj, importerId, sourceType, raw)
+                "BrightnessConstraint" -> brightnessConstraint(obj, importerId, sourceType, raw)
+                else -> null
+            }
             else -> null
-        } ?: return null
-        return sourceFeature(target, importerId, sourceType, raw, extra =
-            if (kind == SourceFeatureKind.CONDITION) mapOf("value" to ConfigValue.BooleanValue(obj.bool("m_screenOn", "screenOn")!!)) else emptyMap())
+        }
+
+    private fun notificationTrigger(obj: JsonObject, importerId: String, sourceType: String, raw: String): FeatureRef? {
+        if (obj.bool("m_excludeApps") == true || obj.bool("m_excludes") == true) return null
+        if (obj.bool("enableRegex") == true || obj.bool("m_exactMatch") == true) return null
+        if (obj.bool("m_supressMultiples") == true) return null
+        if ((obj.number("m_soundOption") ?: 0.0) != 0.0) return null
+
+        val packages = obj.array("m_packageNameList")?.mapNotNull { (it as? JsonPrimitive)?.contentOrNull?.takeIf(String::isNotBlank) }.orEmpty()
+        if (packages.size > 1) return null
+
+        val separate = obj.bool("separateTitleAndMessage") == true
+        val title = obj.string("titleContent").orEmpty()
+        val message = obj.string("messageContent").orEmpty()
+        val legacy = obj.string("m_textContent").orEmpty()
+        if (!separate && (title.isNotBlank() || message.isNotBlank() || legacy.isNotBlank())) return null
+        if ((title.isNotBlank() || message.isNotBlank()) && obj.bool("ignoreCase") == false) return null
+
+        fun containsOrAny(content: String, optionKey: String): String? {
+            if (content.isBlank()) return ""
+            return when ((obj.number(optionKey) ?: 0.0).toInt()) {
+                0 -> "" // Source ignores the content when match mode is Any.
+                2 -> content
+                else -> null
+            }
+        }
+        val titleContains = if (separate) containsOrAny(title, "matchOptionTitle") ?: return null else ""
+        val textContains = if (separate) containsOrAny(message, "matchOptionMessage") ?: return null else ""
+        val eventId = when ((obj.number("m_option") ?: 0.0).toInt()) {
+            0 -> "android.event.notification_posted"
+            1 -> "android.event.notification_removed"
+            else -> return null
+        }
+        return sourceFeature(
+            eventId, importerId, sourceType, raw,
+            extra = buildMap {
+                packages.singleOrNull()?.let { put("package", ConfigValue.StringValue(it)) }
+                if (titleContains.isNotBlank()) put("titleContains", ConfigValue.StringValue(titleContains))
+                if (textContains.isNotBlank()) put("textContains", ConfigValue.StringValue(textContains))
+                if (obj.bool("m_ignoreOngoing") == true) put("ongoing", ConfigValue.StringValue("exclude"))
+            },
+        )
+    }
+
+    private fun volumeConstraint(obj: JsonObject, importerId: String, sourceType: String, raw: String): FeatureRef? {
+        val selected = obj.array("m_streamIndexArray") ?: return null
+        val enabledIndexes = selected.mapIndexedNotNull { index, value -> if (value.asBoolean() == true) index else null }
+        if (enabledIndexes != listOf(1)) return null // Exact native reader currently covers Media/Music only.
+        val value = obj.number("m_volume") ?: return null
+        if (value !in 0.0..100.0) return null
+        val operator = when ((obj.number("m_comparison") ?: 2.0).toInt()) {
+            0 -> "<"
+            1 -> ">"
+            2 -> "=="
+            else -> return null
+        }
+        return sourceFeature(
+            "android.condition.media_volume", importerId, sourceType, raw,
+            extra = mapOf("operator" to ConfigValue.StringValue(operator), "value" to ConfigValue.NumberValue(value)),
+        )
+    }
+
+    private fun brightnessConstraint(obj: JsonObject, importerId: String, sourceType: String, raw: String): FeatureRef? {
+        if (obj.bool("m_forcePieMode") == true) return null
+        if (obj.bool("m_isAutoBrightness") == true) {
+            return sourceFeature(
+                "android.condition.brightness", importerId, sourceType, raw,
+                extra = mapOf(
+                    "mode" to ConfigValue.StringValue("auto"),
+                    "compareLevel" to ConfigValue.BooleanValue(false),
+                ),
+            )
+        }
+        val value = obj.number("m_brightness") ?: return null
+        if (value !in 0.0..100.0) return null
+        val operator = when {
+            obj.bool("m_equals") == true -> "=="
+            obj.bool("m_greaterThan") == true -> ">"
+            else -> "<"
+        }
+        return sourceFeature(
+            "android.condition.brightness", importerId, sourceType, raw,
+            extra = mapOf(
+                "mode" to ConfigValue.StringValue("any"),
+                "compareLevel" to ConfigValue.BooleanValue(true),
+                "operator" to ConfigValue.StringValue(operator),
+                "value" to ConfigValue.NumberValue(value),
+            ),
+        )
     }
 
     private fun pause(obj: JsonObject, importerId: String, sourceType: String, raw: String): FeatureRef {
@@ -99,8 +210,6 @@ object MacroDroidMappings {
     }
 
     private fun setVolume(obj: JsonObject, importerId: String, sourceType: String, raw: String): FeatureRef? {
-        // MacroDroid schema order: Alarm, Music, Notification, Ringer, System, VoiceCall,
-        // BluetoothVoice, Accessibility. YAuto currently has an exact native target for Music only.
         val selected = obj.array("m_streamIndexArray") ?: return null
         val volumes = obj.array("m_streamVolumeArray") ?: return null
         if (selected.size <= 1 || volumes.size <= 1) return null
@@ -126,14 +235,14 @@ object MacroDroidMappings {
         val autoOn = obj.bool("autoBrightnessOn") ?: false
         val setValue = obj.bool("setBrightnessValue") ?: true
 
-        if (setAuto && autoOn && setValue) return null // Source performs two independent operations.
+        if (setAuto && autoOn && setValue) return null
         if (setAuto && autoOn && !setValue) {
             return sourceFeature(
                 "android.display.brightness.set", importerId, sourceType, raw,
                 extra = mapOf("mode" to ConfigValue.StringValue("auto")),
             )
         }
-        if (!setValue) return null // Merely switching auto off does not specify a brightness value.
+        if (!setValue) return null
         val percent = obj.number("m_brightnessPercent") ?: return null
         if (percent !in 0.0..100.0) return null
         return sourceFeature(
@@ -152,8 +261,6 @@ object MacroDroidMappings {
             "service" -> "service"
             else -> return null
         }
-        // Current YAuto intent editor stores simple string extras. Convert only explicitly-string
-        // MacroDroid extras; auto-detected/numeric/array extras remain compatibility nodes.
         for (i in 1..6) {
             val name = obj.string("m_extra${i}Name").orEmpty()
             if (name.isNotBlank()) {
@@ -184,7 +291,6 @@ object MacroDroidMappings {
     }
 
     private fun notification(obj: JsonObject, importerId: String, sourceType: String, raw: String): FeatureRef? {
-        // Preserve interactive/overlay/special-channel variants until YAuto has equivalent UI.
         if (obj.bool("m_runMacroWhenPressed") == true) return null
         if (!obj.string("configuredActionJson").isNullOrBlank()) return null
         if (obj.array("notificationActionButtons")?.isNotEmpty() == true) return null
