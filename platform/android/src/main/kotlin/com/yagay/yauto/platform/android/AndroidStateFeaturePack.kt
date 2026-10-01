@@ -4,10 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.BatteryManager
 import android.os.PowerManager
+import android.provider.Settings
 import com.yagay.yauto.core.logging.*
 import com.yagay.yauto.core.model.*
 import com.yagay.yauto.core.registry.*
@@ -21,6 +23,9 @@ interface AndroidStateReader {
     fun batteryPercent(): Double?
     fun powerSave(): Boolean
     fun appInstalled(packageName: String): Boolean
+    fun mediaVolumePercent(): Double?
+    fun brightnessPercent(): Double?
+    fun autoBrightness(): Boolean
 }
 
 class SystemAndroidStateReader(context: Context) : AndroidStateReader {
@@ -55,6 +60,27 @@ class SystemAndroidStateReader(context: Context) : AndroidStateReader {
     } catch (_: PackageManager.NameNotFoundException) {
         false
     }
+
+    override fun mediaVolumePercent(): Double? {
+        val audio = context.getSystemService(AudioManager::class.java)
+        val min = audio.getStreamMinVolume(AudioManager.STREAM_MUSIC)
+        val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        if (max <= min) return null
+        val value = audio.getStreamVolume(AudioManager.STREAM_MUSIC).coerceIn(min, max)
+        return (value - min) * 100.0 / (max - min)
+    }
+
+    override fun brightnessPercent(): Double? = runCatching {
+        Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
+            .coerceIn(0, 255) * 100.0 / 255.0
+    }.getOrNull()
+
+    override fun autoBrightness(): Boolean =
+        Settings.System.getInt(
+            context.contentResolver,
+            Settings.System.SCREEN_BRIGHTNESS_MODE,
+            Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
+        ) == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC
 }
 
 class AndroidStateFeaturePack(private val reader: AndroidStateReader) : FeaturePack {
@@ -83,6 +109,26 @@ class AndroidStateFeaturePack(private val reader: AndroidStateReader) : FeatureP
             require(pkg.isNotEmpty()) { "Package is empty" }
             reader.appInstalled(pkg) == config.boolean("value", true)
         }
+        numericState(registry, "media_volume", "Media volume", FeatureCategory.AUDIO, reader::mediaVolumePercent)
+        state(registry, "brightness", "Screen brightness", FeatureCategory.DISPLAY,
+            listOf(
+                FieldSchema.Choice("mode", "Brightness mode", true, listOf("any", "manual", "auto")),
+                FieldSchema.Toggle("compareLevel", "Compare brightness level"),
+                FieldSchema.Choice("operator", "Operator", true, listOf("<", "<=", "==", ">=", ">")),
+                FieldSchema.Number("value", "Brightness percent", min = 0.0, max = 100.0),
+            )) { config, _ ->
+            val mode = config.string("mode", "any")
+            val auto = reader.autoBrightness()
+            val modeMatches = when (mode) {
+                "auto" -> auto
+                "manual" -> !auto
+                "any" -> true
+                else -> false
+            }
+            if (!modeMatches) false
+            else if (!config.boolean("compareLevel", true)) true
+            else comparePercent(reader.brightnessPercent() ?: error("Brightness unavailable"), config)
+        }
     }
 
     private fun booleanState(registry: FeatureRegistry, key: String, title: String, category: FeatureCategory, query: () -> Boolean) =
@@ -90,29 +136,51 @@ class AndroidStateFeaturePack(private val reader: AndroidStateReader) : FeatureP
             query() == config.boolean("value", true)
         }
 
+    private fun numericState(registry: FeatureRegistry, key: String, title: String, category: FeatureCategory, query: () -> Double?) =
+        state(registry, key, title, category,
+            listOf(
+                FieldSchema.Choice("operator", "Operator", true, listOf("<", "<=", "==", ">=", ">")),
+                FieldSchema.Number("value", "Percent", true, min = 0.0, max = 100.0),
+            )) { config, _ ->
+            comparePercent(query() ?: error("$title unavailable"), config)
+        }
+
+    private fun comparePercent(actual: Double, config: ConfigMap): Boolean {
+        val expected = config["value"].numberOrNull() ?: 0.0
+        require(expected.isFinite() && expected in 0.0..100.0) { "Invalid percentage" }
+        return when (config.string("operator", "==")) {
+            "<" -> actual < expected
+            "<=" -> actual <= expected
+            "==" -> kotlin.math.abs(actual - expected) < 0.5
+            ">=" -> actual >= expected
+            ">" -> actual > expected
+            else -> false
+        }
+    }
+
     private fun state(registry: FeatureRegistry, key: String, title: String, category: FeatureCategory,
         fields: List<FieldSchema>, evaluate: (ConfigMap, FeatureExecutionContext) -> Boolean) {
         val featureId = "android.state.$key"
         for (kind in listOf(FeatureKind.STATE, FeatureKind.CONDITION)) {
-        val registeredId = if (kind == FeatureKind.STATE) featureId else "android.condition.$key"
-        val evaluator = ConditionEvaluator { feature, ctx ->
-            val start = System.nanoTime()
-            var failure: Throwable? = null
-            val matches = try { evaluate(feature.config, ctx) } catch (error: Exception) {
-                if (error is CancellationException) throw error
-                failure = error
-                false
+            val registeredId = if (kind == FeatureKind.STATE) featureId else "android.condition.$key"
+            val evaluator = ConditionEvaluator { feature, ctx ->
+                val start = System.nanoTime()
+                var failure: Throwable? = null
+                val matches = try { evaluate(feature.config, ctx) } catch (error: Exception) {
+                    if (error is CancellationException) throw error
+                    failure = error
+                    false
+                }
+                ctx.tracer.record(TraceEvent(ctx.executionId, kind = if (kind == FeatureKind.STATE) TraceKind.STATE else TraceKind.CONDITION,
+                    level = if (failure == null) TraceLevel.DEBUG else TraceLevel.ERROR,
+                    timestampEpochMs = System.currentTimeMillis(), message = failure?.message ?: "Android state evaluated",
+                    nodeId = ctx.nodeId, featureId = registeredId, backendId = "android", success = failure == null,
+                    durationMs = (System.nanoTime() - start) / 1_000_000,
+                    attributes = mapOf("matched" to matches.toString(), "exception" to failure?.javaClass?.name.orEmpty())))
+                matches
             }
-            ctx.tracer.record(TraceEvent(ctx.executionId, kind = if (kind == FeatureKind.STATE) TraceKind.STATE else TraceKind.CONDITION,
-                level = if (failure == null) TraceLevel.DEBUG else TraceLevel.ERROR,
-                timestampEpochMs = System.currentTimeMillis(), message = failure?.message ?: "Android state evaluated",
-                nodeId = ctx.nodeId, featureId = registeredId, backendId = "android", success = failure == null,
-                durationMs = (System.nanoTime() - start) / 1_000_000,
-                attributes = mapOf("matched" to matches.toString(), "exception" to failure?.javaClass?.name.orEmpty())))
-            matches
-        }
-        val descriptor = FeatureDescriptor(FeatureId(registeredId), kind, title, "Evaluate current Android state", category, fields = fields, ownerPackId = id)
-        if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator) else registry.registerCondition(descriptor, evaluator)
+            val descriptor = FeatureDescriptor(FeatureId(registeredId), kind, title, "Evaluate current Android state", category, fields = fields, ownerPackId = id)
+            if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator) else registry.registerCondition(descriptor, evaluator)
         }
     }
 }
