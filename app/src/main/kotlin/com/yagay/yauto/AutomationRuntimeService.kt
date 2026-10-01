@@ -12,7 +12,10 @@ import androidx.core.content.ContextCompat
 import com.yagay.yauto.core.logging.TraceEvent
 import com.yagay.yauto.core.logging.TraceKind
 import com.yagay.yauto.core.logging.TraceLevel
+import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.ExecutionId
+import com.yagay.yauto.core.model.RuntimeEvent
+import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
 import com.yagay.yauto.platform.android.AndroidEventSource
 import com.yagay.yauto.platform.android.ClipboardEventSource
 import com.yagay.yauto.platform.android.ConfiguredBroadcastEventSource
@@ -40,6 +43,31 @@ class AutomationRuntimeService : Service() {
         sources += ClipboardEventSource(this)
         sources += ConfiguredBroadcastEventSource(this, graph.workspace)
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
+
+        AccessibilityRuntimeBridge.setListener { previous, current ->
+            val currentPayload = mapOf(
+                "package" to ConfigValue.StringValue(current.packageName),
+                "class" to ConfigValue.StringValue(current.className.orEmpty()),
+            )
+            dispatcher.dispatch(RuntimeEvent("android.event.window_changed", currentPayload, source = "accessibility.window"))
+            if (previous?.packageName != current.packageName) {
+                previous?.let {
+                    dispatcher.dispatch(
+                        RuntimeEvent(
+                            "android.event.app_background",
+                            mapOf(
+                                "package" to ConfigValue.StringValue(it.packageName),
+                                "class" to ConfigValue.StringValue(it.className.orEmpty()),
+                                "nextPackage" to ConfigValue.StringValue(current.packageName),
+                            ),
+                            source = "accessibility.window",
+                        )
+                    )
+                }
+                dispatcher.dispatch(RuntimeEvent("android.event.app_foreground", currentPayload, source = "accessibility.window"))
+            }
+        }
+
         sources.forEach { source ->
             runCatching { source.start(emitter) }
                 .onFailure { error ->
@@ -61,18 +89,19 @@ class AutomationRuntimeService : Service() {
                     }
                 }
         }
-        dispatcher.dispatch(com.yagay.yauto.core.model.RuntimeEvent("android.event.runtime_started", source = "android.runtime"), statesOnly = true)
+        dispatcher.dispatch(RuntimeEvent("android.event.runtime_started", source = "android.runtime"), statesOnly = true)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.getBooleanExtra("boot", false) == true) {
             RuntimeEventDispatcher((application as YAutoApplication).graph, scope).dispatch(
-                com.yagay.yauto.core.model.RuntimeEvent("android.event.boot", source = "android.boot"))
+                RuntimeEvent("android.event.boot", source = "android.boot"))
         }
         return START_STICKY
     }
 
     override fun onDestroy() {
+        AccessibilityRuntimeBridge.setListener(null)
         sources.asReversed().forEach { source -> runCatching { source.stop() } }
         sources.clear()
         scope.cancel()
