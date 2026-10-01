@@ -8,6 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import com.yagay.yauto.core.diagnostics.*
 import com.yagay.yauto.core.importer.ImportInput
+import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.merge
 import com.yagay.yauto.ui.design.YAutoTheme
@@ -31,6 +33,7 @@ class MainActivity : ComponentActivity() {
                 var collecting by remember { mutableStateOf(false) }
                 var workspace by remember { mutableStateOf(WorkspaceData()) }
                 var importSummary by remember { mutableStateOf<String?>(null) }
+                var runtimeSummary by remember { mutableStateOf<String?>(null) }
                 val scope = rememberCoroutineScope()
 
                 LaunchedEffect(Unit) { workspace = graph.workspace.load() }
@@ -53,6 +56,7 @@ class MainActivity : ComponentActivity() {
                         if (result.success) {
                             workspace = workspace.merge(result.bundle.automations, result.bundle.flows, result.bundle.globalVariables)
                             graph.workspace.save(workspace)
+                            graph.runtime.resetState()
                             importSummary = "${result.importerId}: 导入 ${result.bundle.automations.size} 个自动化、${result.bundle.flows.size} 个流程；${result.issues.size} 个兼容提示"
                         } else {
                             importSummary = "导入失败：${result.issues.firstOrNull()?.message ?: "未知格式"}"
@@ -83,8 +87,21 @@ class MainActivity : ComponentActivity() {
                         flowCount = workspace.flows.size,
                         importerNames = graph.importers.all().map { it.displayName },
                         importSummary = importSummary,
+                        runtimeSummary = runtimeSummary,
                         onOpenEditor = { page = "editor" },
                         onImport = { importLauncher.launch(arrayOf("application/json", "text/xml", "application/xml", "application/octet-stream", "*/*")) },
+                        onRunManual = {
+                            scope.launch {
+                                val result = graph.runtime.dispatch(
+                                    RuntimeEvent(
+                                        typeId = "core.event.manual",
+                                        payload = mapOf("name" to ConfigValue.StringValue("home-test")),
+                                        source = "ui",
+                                    )
+                                )
+                                runtimeSummary = "Runtime: 匹配并执行 ${result.runs.size} 个自动化"
+                            }
+                        },
                         onOpenDiagnostics = {
                             page = "diagnostics"
                             scope.launch { statuses = graph.diagnosticRegistry.all().map { it.status() } }

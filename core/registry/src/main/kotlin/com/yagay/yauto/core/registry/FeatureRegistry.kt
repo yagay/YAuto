@@ -7,6 +7,7 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.model.NodeId
+import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.model.Stability
 import java.util.concurrent.ConcurrentHashMap
 
@@ -61,6 +62,14 @@ data class FeatureExecutionContext(
     val tracer: ExecutionTracer,
 )
 
+data class EventMatchContext(
+    val executionId: ExecutionId,
+    val event: RuntimeEvent,
+    val variables: VariableAccess,
+    val capabilities: CapabilityClient,
+    val tracer: ExecutionTracer,
+)
+
 data class ActionExecutionResult(
     val success: Boolean,
     val value: ConfigValue = ConfigValue.NullValue,
@@ -69,6 +78,7 @@ data class ActionExecutionResult(
 
 fun interface ActionExecutor { suspend fun execute(feature: FeatureRef, context: FeatureExecutionContext): ActionExecutionResult }
 fun interface ConditionEvaluator { suspend fun evaluate(feature: FeatureRef, context: FeatureExecutionContext): Boolean }
+fun interface EventMatcher { suspend fun matches(feature: FeatureRef, context: EventMatchContext): Boolean }
 
 interface FeaturePack {
     val id: String
@@ -79,6 +89,8 @@ class FeatureRegistry {
     private val descriptors = ConcurrentHashMap<String, FeatureDescriptor>()
     private val actions = ConcurrentHashMap<String, ActionExecutor>()
     private val conditions = ConcurrentHashMap<String, ConditionEvaluator>()
+    private val events = ConcurrentHashMap<String, EventMatcher>()
+    private val states = ConcurrentHashMap<String, ConditionEvaluator>()
 
     fun registerAction(descriptor: FeatureDescriptor, executor: ActionExecutor) {
         require(descriptor.kind == FeatureKind.ACTION)
@@ -90,6 +102,18 @@ class FeatureRegistry {
         require(descriptor.kind == FeatureKind.CONDITION)
         registerDescriptor(descriptor)
         conditions[descriptor.id.value] = evaluator
+    }
+
+    fun registerEvent(descriptor: FeatureDescriptor, matcher: EventMatcher) {
+        require(descriptor.kind == FeatureKind.EVENT)
+        registerDescriptor(descriptor)
+        events[descriptor.id.value] = matcher
+    }
+
+    fun registerState(descriptor: FeatureDescriptor, evaluator: ConditionEvaluator) {
+        require(descriptor.kind == FeatureKind.STATE)
+        registerDescriptor(descriptor)
+        states[descriptor.id.value] = evaluator
     }
 
     fun registerDescriptor(descriptor: FeatureDescriptor) {
@@ -105,11 +129,15 @@ class FeatureRegistry {
             descriptors.remove(it)
             actions.remove(it)
             conditions.remove(it)
+            events.remove(it)
+            states.remove(it)
         }
     }
 
     fun descriptor(id: String): FeatureDescriptor? = descriptors[id]
     fun actionExecutor(id: String): ActionExecutor? = actions[id]
     fun conditionEvaluator(id: String): ConditionEvaluator? = conditions[id]
+    fun eventMatcher(id: String): EventMatcher? = events[id]
+    fun stateEvaluator(id: String): ConditionEvaluator? = states[id]
     fun allDescriptors(): List<FeatureDescriptor> = descriptors.values.sortedWith(compareBy<FeatureDescriptor> { it.category.name }.thenBy { it.title })
 }

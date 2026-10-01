@@ -14,8 +14,10 @@ fun HomeScreen(
     flowCount: Int,
     importerNames: List<String>,
     importSummary: String?,
+    runtimeSummary: String?,
     onOpenEditor: () -> Unit,
     onImport: () -> Unit,
+    onRunManual: () -> Unit,
     onOpenDiagnostics: () -> Unit,
 ) {
     var tab by remember { mutableIntStateOf(0) }
@@ -35,9 +37,11 @@ fun HomeScreen(
             Text("导入：${importerNames.joinToString()}", style = MaterialTheme.typography.bodySmall)
             Button(onClick = onOpenEditor, modifier = Modifier.fillMaxWidth()) { Text("新建自动化") }
             OutlinedButton(onClick = onImport, modifier = Modifier.fillMaxWidth()) { Text("导入 MacroDroid / ShortX / Tasker") }
+            OutlinedButton(onClick = onRunManual, modifier = Modifier.fillMaxWidth()) { Text("发送手动测试事件") }
             OutlinedButton(onClick = onOpenDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("诊断中心") }
             importSummary?.let { AssistChip(onClick = {}, label = { Text(it) }) }
-            Text("功能、导入器和诊断采集器均为独立注册模块，可单独增加或删除。", style = MaterialTheme.typography.bodyMedium)
+            runtimeSummary?.let { AssistChip(onClick = {}, label = { Text(it) }) }
+            Text("功能、导入器、Runtime 和诊断采集器均为独立模块，可单独增加或删除。", style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

@@ -25,6 +25,7 @@ dependencies {
     implementation(project(":core:capability"))
     implementation(project(":core:registry"))
     implementation(project(":core:engine"))
+    implementation(project(":core:runtime"))
     implementation(project(":core:storage"))
     implementation(project(":core:importer"))
     implementation(project(":feature:standard"))

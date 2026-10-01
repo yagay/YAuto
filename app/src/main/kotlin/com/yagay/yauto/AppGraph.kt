@@ -7,7 +7,8 @@ import com.yagay.yauto.core.diagnostics.*
 import com.yagay.yauto.core.importer.ImporterRegistry
 import com.yagay.yauto.core.logging.*
 import com.yagay.yauto.core.registry.FeatureRegistry
-import com.yagay.yauto.feature.standard.StandardFeaturePack
+import com.yagay.yauto.core.runtime.AutomationRuntime
+import com.yagay.yauto.feature.standard.StandardFeaturePacks
 import com.yagay.yauto.importer.macrodroid.MacroDroidImporter
 import com.yagay.yauto.importer.shortx.ShortXImporter
 import com.yagay.yauto.importer.tasker.TaskerImporter
@@ -38,9 +39,10 @@ class AppGraph(context: Context) {
     )
 
     val diagnostics = DiagnosticCoordinator(diagnosticRegistry)
+    val runtime = AutomationRuntime(workspace, features, capabilities, tracer)
 
     init {
-        features.install(StandardFeaturePack())
+        StandardFeaturePacks.all().forEach(features::install)
         features.install(AndroidFeaturePack(context.applicationContext))
         capabilities.register(RootBackend(rootShell))
 

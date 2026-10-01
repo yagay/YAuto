@@ -24,6 +24,7 @@ include(
     ":core:capability",
     ":core:registry",
     ":core:engine",
+    ":core:runtime",
     ":core:storage",
     ":core:importer",
     ":feature:standard",
