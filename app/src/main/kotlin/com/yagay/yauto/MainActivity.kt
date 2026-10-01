@@ -12,10 +12,10 @@ import com.yagay.yauto.core.model.*
 import com.yagay.yauto.core.storage.*
 import com.yagay.yauto.ui.design.YAutoTheme
 import com.yagay.yauto.ui.diagnostics.DiagnosticsScreen
-import com.yagay.yauto.ui.editor.AutomationEditorScreen
+import com.yagay.yauto.ui.editor.MacroAutomationEditorScreen
 import com.yagay.yauto.ui.editor.FlowEditorScreen
 import com.yagay.yauto.ui.editor.GlobalVariablesScreen
-import com.yagay.yauto.ui.home.HomeScreen
+import com.yagay.yauto.ui.home.MacroHomeScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -144,7 +144,7 @@ class MainActivity : ComponentActivity() {
                     title = { Text("正在保存") }, text = { CircularProgressIndicator() })
 
                 when (page) {
-                    "editor" -> AutomationEditorScreen(
+                    "editor" -> MacroAutomationEditorScreen(
                         flows = workspace.flows,
                         descriptors = graph.features.allDescriptors(),
                         initial = editingAutomation,
@@ -186,7 +186,7 @@ class MainActivity : ComponentActivity() {
                         onExport = { diagnosticsExportLauncher.launch("YAuto-diagnostic.json") },
                         onBack = { page = "home" },
                     )
-                    else -> HomeScreen(
+                    else -> MacroHomeScreen(
                         flows = workspace.flows,
                         onNewFlow = { editingFlow = null; page = "flow" },
                         onEditFlow = { editingFlow = it; page = "flow" },
