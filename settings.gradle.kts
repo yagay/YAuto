@@ -28,6 +28,7 @@ include(
     ":core:storage",
     ":core:importer",
     ":feature:standard",
+    ":plugin:api",
     ":importer:macrodroid",
     ":importer:shortx",
     ":importer:tasker",
