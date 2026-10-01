@@ -12,4 +12,5 @@ dependencies {
     implementation(project(":core:registry"))
     implementation(project(":core:importer"))
     implementation(libs.kotlinx.coroutines.core)
+    testImplementation(libs.junit)
 }
