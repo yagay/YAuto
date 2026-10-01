@@ -9,6 +9,7 @@ import java.util.UUID
 class ShortXImporter : AutomationImporter {
     override val id = "shortx"
     override val displayName = "ShortX"
+    private val json = Json { ignoreUnknownKeys = true }
 
     override fun confidence(input: ImportInput): Int {
         val text = input.utf8OrNull()?.trimStart().orEmpty()
@@ -25,7 +26,7 @@ class ShortXImporter : AutomationImporter {
     }
 
     private fun importJson(input: ImportInput, text: String): ImportResult = runCatching {
-        val root = Json { ignoreUnknownKeys = true }.parseToJsonElement(text)
+        val root = json.parseToJsonElement(text)
         val ruleObjects = when (root) {
             is JsonArray -> root.mapNotNull { it as? JsonObject }
             is JsonObject -> listOfNotNull(root["rules"] as? JsonArray, root["ruleList"] as? JsonArray).firstOrNull()?.mapNotNull { it as? JsonObject } ?: listOf(root)
@@ -36,11 +37,23 @@ class ShortXImporter : AutomationImporter {
             title = obj.str("title") ?: "Imported ShortX Rule ${i + 1}",
             description = obj.str("description"),
             enabled = obj.bool("isEnabled") ?: true,
-            facts = (obj["facts"] as? JsonArray)?.mapIndexed { n, v -> AnyStub("json.fact.$n", v.toString().encodeToByteArray()) }.orEmpty(),
-            conditions = (obj["conditions"] as? JsonArray)?.mapIndexed { n, v -> AnyStub("json.condition.$n", v.toString().encodeToByteArray()) }.orEmpty(),
-            actions = (obj["actions"] as? JsonArray)?.mapIndexed { n, v -> AnyStub("json.action.$n", v.toString().encodeToByteArray()) }.orEmpty(),
+            facts = (obj["facts"] as? JsonArray)?.mapIndexed { n, v -> jsonAny(v, "json.fact.$n") }.orEmpty(),
+            conditions = (obj["conditions"] as? JsonArray)?.mapIndexed { n, v -> jsonAny(v, "json.condition.$n") }.orEmpty(),
+            actions = (obj["actions"] as? JsonArray)?.mapIndexed { n, v -> jsonAny(v, "json.action.$n") }.orEmpty(),
         ) })
     }.getOrElse { failure(input, it) }
+
+    private fun jsonAny(element: JsonElement, fallbackType: String): AnyStub {
+        val obj = element as? JsonObject
+        val type = obj?.let {
+            sequenceOf("typeUrl", "type_url", "@type", "type", "className")
+                .mapNotNull { key -> (it[key] as? JsonPrimitive)?.contentOrNull }
+                .firstOrNull()
+        } ?: fallbackType
+        // JSON exports do not necessarily contain the binary protobuf payload, so keep the JSON
+        // itself as raw bytes. Native protobuf mappings are only attempted for binary Any payloads.
+        return AnyStub(type, element.toString().encodeToByteArray(), isJson = true)
+    }
 
     private fun importProto(input: ImportInput): ImportResult = runCatching {
         val rules = ShortXProtoReader.readRules(input.bytes)
@@ -52,13 +65,41 @@ class ShortXImporter : AutomationImporter {
         val issues = mutableListOf<CompatibilityIssue>()
         val trace = mutableListOf<ImportTrace>()
         val automations = rules.mapIndexed { index, rule ->
-            fun preserve(any: AnyStub, fallback: String, path: String): FeatureRef {
-                issues += CompatibilityIssue(ImportSeverity.WARNING, path, any.typeUrl, "ShortX Any payload preserved; add a mapper for native execution")
-                return sourceFeature(fallback, id, any.typeUrl.ifBlank { "UnknownAny" }, Base64.getEncoder().encodeToString(any.value))
+            fun preserve(any: AnyStub, fallback: String, path: String, suggested: String? = null): FeatureRef {
+                issues += CompatibilityIssue(
+                    ImportSeverity.WARNING,
+                    path,
+                    any.typeUrl,
+                    "ShortX payload preserved; native execution mapping is not available yet",
+                    suggestedFeatureId = suggested,
+                )
+                return sourceFeature(
+                    fallback,
+                    id,
+                    any.typeUrl.ifBlank { "UnknownAny" },
+                    if (any.isJson) any.value.toString(Charsets.UTF_8) else Base64.getEncoder().encodeToString(any.value),
+                )
             }
-            val events = rule.facts.mapIndexed { i, v -> preserve(v, CompatFeatureIds.SOURCE_EVENT, "rule[$index].fact[$i]") }
-            val predicates = rule.conditions.mapIndexed { i, v -> PredicateNode.Condition(preserve(v, CompatFeatureIds.SOURCE_CONDITION, "rule[$index].condition[$i]")) }
-            val actions = rule.actions.mapIndexed { i, v -> ActionNode.Action(NodeId(UUID.randomUUID().toString()), preserve(v, CompatFeatureIds.SOURCE_ACTION, "rule[$index].action[$i]")) }
+
+            val events = rule.facts.mapIndexed { i, v ->
+                preserve(v, CompatFeatureIds.SOURCE_EVENT, "rule[$index].fact[$i]")
+            }
+            val predicates = rule.conditions.mapIndexed { i, v ->
+                PredicateNode.Condition(preserve(v, CompatFeatureIds.SOURCE_CONDITION, "rule[$index].condition[$i]"))
+            }
+            val actions = rule.actions.mapIndexed { i, v ->
+                val feature = if (!v.isJson) ShortXMappings.nativeAction(v, id) else null
+                if (feature != null) {
+                    trace += ImportTrace("rule[$index].action[$i]", feature.typeId, "MAPPED", v.typeUrl)
+                    ActionNode.Action(NodeId(UUID.randomUUID().toString()), feature)
+                } else {
+                    val suggested = ShortXMappings.suggestedActionFeature(v.typeUrl)
+                    ActionNode.Action(
+                        NodeId(UUID.randomUUID().toString()),
+                        preserve(v, CompatFeatureIds.SOURCE_ACTION, "rule[$index].action[$i]", suggested),
+                    )
+                }
+            }
             val automation = Automation(
                 AutomationId("import-shortx-${rule.id}"),
                 rule.title.ifBlank { "Imported ShortX Rule ${index + 1}" },
@@ -79,7 +120,7 @@ class ShortXImporter : AutomationImporter {
     private fun JsonObject.bool(key: String) = (this[key] as? JsonPrimitive)?.booleanOrNull
 }
 
-internal data class AnyStub(val typeUrl: String, val value: ByteArray)
+internal data class AnyStub(val typeUrl: String, val value: ByteArray, val isJson: Boolean = false)
 internal data class RuleStub(
     val id: String,
     val title: String,
