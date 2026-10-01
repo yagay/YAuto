@@ -1,6 +1,7 @@
 package com.yagay.yauto
 
 import android.Manifest
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -50,6 +51,12 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     val notifications = remember(refresh) {
         Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
     }
+    val camera = remember(refresh) {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+    }
+    val dndPolicy = remember(refresh) {
+        context.getSystemService(NotificationManager::class.java).isNotificationPolicyAccessGranted
+    }
     val writeSettings = remember(refresh) { Settings.System.canWrite(context) }
     val accessibility = remember(refresh) {
         val component = ComponentName(context, YAutoAccessibilityService::class.java).flattenToString()
@@ -57,7 +64,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
             ?.split(':')
             ?.any { it.equals(component, ignoreCase = true) } == true
     }
-    val grantedCount = listOf(accessibility, writeSettings, notificationAccess, notifications).count { it }
+    val grantedCount = listOf(accessibility, writeSettings, notificationAccess, notifications, camera, dndPolicy).count { it }
 
     Scaffold(
         topBar = {
@@ -97,7 +104,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 item {
                     MacroItemRow(
                         "Android 权限",
-                        "$grantedCount / 4 个基础权限就绪",
+                        "$grantedCount / 6 个基础权限就绪",
                         MacroPalette.Constraint,
                         onClick = { page = RuntimeSettingsPage.PERMISSIONS },
                     )
@@ -131,6 +138,16 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 item {
                     PermissionCard("运行通知", notifications, "Android 13+ 前台运行服务需要通知权限。", if (notifications) "已允许" else "允许运行通知") {
                         if (!notifications && Build.VERSION.SDK_INT >= 33) permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+                item {
+                    PermissionCard("相机 / 手电筒", camera, "手电筒动作通过 CameraManager 控制闪光灯，需要相机运行时权限。", if (camera) "已允许" else "允许相机权限") {
+                        if (!camera) permissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                }
+                item {
+                    PermissionCard("勿扰模式", dndPolicy, "读取和修改 Android 的打扰过滤器需要通知策略访问。", "设置勿扰权限") {
+                        context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
                     }
                 }
             }
