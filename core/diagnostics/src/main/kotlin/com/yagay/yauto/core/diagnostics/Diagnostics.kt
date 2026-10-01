@@ -71,7 +71,9 @@ class DiagnosticCoordinator(
 ) {
     suspend fun snapshot(context: DiagnosticContext = DiagnosticContext()): DiagnosticSnapshot = coroutineScope {
         val collectors = registry.all()
-        val statusDeferred = collectors.map { async { runCatching { it.status() }.getOrElse { CollectorStatus(it.id, false, it.message) } } }
+        val statusDeferred = collectors.map { collector ->
+            async { runCatching { collector.status() }.getOrElse { error -> CollectorStatus(collector.id, false, error.message) } }
+        }
         val recordDeferred = collectors.map { collector ->
             async {
                 runCatching { collector.collect(context) }.getOrElse { error ->
