@@ -16,6 +16,7 @@ android {
 
 dependencies {
     implementation(project(":core:model"))
+    implementation(project(":ui:design"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.compose.ui)
     implementation(libs.compose.foundation)
