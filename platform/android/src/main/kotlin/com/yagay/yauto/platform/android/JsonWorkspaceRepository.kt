@@ -7,6 +7,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
+import android.util.AtomicFile
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class JsonWorkspaceRepository(
     context: Context,
@@ -14,19 +17,28 @@ class JsonWorkspaceRepository(
 ) : WorkspaceRepository {
     private val dir = File(context.filesDir, "workspace")
     private val file = File(dir, "workspace.json")
+    private val atomic = AtomicFile(file)
+    private val mutex = Mutex()
 
     override suspend fun load(): WorkspaceData = withContext(Dispatchers.IO) {
-        if (!file.exists()) return@withContext WorkspaceData()
-        runCatching { json.decodeFromString(WorkspaceData.serializer(), file.readText()) }.getOrElse { WorkspaceData() }
+        mutex.withLock {
+            if (!file.exists() && !File(dir, "workspace.json.bak").exists()) WorkspaceData()
+            else atomic.openRead().bufferedReader().use { json.decodeFromString(WorkspaceData.serializer(), it.readText()) }
+        }
     }
 
     override suspend fun save(data: WorkspaceData) = withContext(Dispatchers.IO) {
-        dir.mkdirs()
-        val tmp = File(dir, "workspace.json.tmp")
-        tmp.writeText(json.encodeToString(WorkspaceData.serializer(), data))
-        if (!tmp.renameTo(file)) {
-            file.writeText(tmp.readText())
-            tmp.delete()
+        mutex.withLock {
+            check(dir.isDirectory || dir.mkdirs()) { "Cannot create workspace directory" }
+            val bytes = json.encodeToString(WorkspaceData.serializer(), data).toByteArray(Charsets.UTF_8)
+            val stream = atomic.startWrite()
+            try {
+                stream.write(bytes)
+                atomic.finishWrite(stream)
+            } catch (error: Exception) {
+                atomic.failWrite(stream)
+                throw error
+            }
         }
     }
 }

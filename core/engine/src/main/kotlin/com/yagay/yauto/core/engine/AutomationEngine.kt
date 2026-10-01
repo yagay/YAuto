@@ -11,6 +11,14 @@ import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.registry.resolveVariables
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 import java.util.UUID
 
 fun interface FlowResolver { suspend fun resolve(id: FlowId): Flow? }
@@ -48,7 +56,11 @@ class AutomationEngine(
         trace(executionId, TraceKind.EXECUTION_START, "${automation.name}:$phase", automation)
 
         return try {
-            val signal = executeNodes(nodes, executionId, variables, automation, null, automation.executionPolicy.maxLoopIterations)
+            require(automation.executionPolicy.maxRuntimeMs > 0) { "Runtime limit must be positive" }
+            require(automation.executionPolicy.maxLoopIterations > 0) { "Loop limit must be positive" }
+            val signal = withTimeoutOrNull(automation.executionPolicy.maxRuntimeMs) {
+                executeNodes(nodes, executionId, variables, automation, null, automation.executionPolicy.maxLoopIterations)
+            } ?: Signal.Failure("Execution timed out after ${automation.executionPolicy.maxRuntimeMs} ms")
             val result = when (signal) {
                 is Signal.Failure -> EngineResult(false, executionId, variables = variables.snapshot(), error = signal.message)
                 is Signal.Return -> EngineResult(true, executionId, signal.value, variables.snapshot())
@@ -56,8 +68,14 @@ class AutomationEngine(
             }
             trace(executionId, TraceKind.EXECUTION_END, if (result.success) "Execution completed" else "Execution failed: ${result.error}", automation, success = result.success)
             result
-        } catch (t: Throwable) {
+        } catch (cancelled: CancellationException) {
+            withContext(NonCancellable) {
+                trace(executionId, TraceKind.EXECUTION_END, "Execution cancelled", automation, success = false, level = TraceLevel.WARN)
+            }
+            throw cancelled
+        } catch (t: Exception) {
             trace(executionId, TraceKind.ERROR, t.stackTraceToString().take(16_000), automation, success = false, level = TraceLevel.ERROR)
+            trace(executionId, TraceKind.EXECUTION_END, "Execution failed: ${t.message}", automation, success = false)
             EngineResult(false, executionId, variables = variables.snapshot(), error = t.message ?: t::class.simpleName)
         }
     }
@@ -71,6 +89,7 @@ class AutomationEngine(
         maxLoopIterations: Int,
     ): Signal {
         for (node in nodes) {
+            currentCoroutineContext().ensureActive()
             val start = System.currentTimeMillis()
             trace(executionId, TraceKind.NODE_START, node::class.simpleName ?: "node", automation, flow, node.id)
             val signal = executeNode(node, executionId, variables, automation, flow, maxLoopIterations)
@@ -107,6 +126,7 @@ class AutomationEngine(
             }
             is ActionNode.Repeat -> {
                 repeat(node.times.coerceIn(0, maxLoopIterations)) {
+                    currentCoroutineContext().ensureActive()
                     when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
                         Signal.Next, Signal.Continue -> Unit
                         Signal.Break -> return Signal.Next
@@ -118,6 +138,7 @@ class AutomationEngine(
             is ActionNode.While -> {
                 var count = 0
                 while (count++ < maxLoopIterations && evaluatePredicate(node.condition, executionId, node.id, variables)) {
+                    currentCoroutineContext().ensureActive()
                     when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
                         Signal.Next, Signal.Continue -> Unit
                         Signal.Break -> return Signal.Next
@@ -128,6 +149,7 @@ class AutomationEngine(
             }
             is ActionNode.ForEach -> {
                 for (value in node.values.take(maxLoopIterations)) {
+                    currentCoroutineContext().ensureActive()
                     variables.set(node.variableName, value)
                     when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
                         Signal.Next, Signal.Continue -> Unit
@@ -142,7 +164,13 @@ class AutomationEngine(
                 results.firstOrNull { it is Signal.Failure || it is Signal.Return } ?: Signal.Next
             }
             is ActionNode.Try -> {
-                val primary = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)
+                val primary = try {
+                    executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    Signal.Failure(error.message ?: error.javaClass.simpleName)
+                }
                 val handled = if (primary is Signal.Failure && node.onError.isNotEmpty()) {
                     variables.set("error.message", ConfigValue.StringValue(primary.message))
                     executeNodes(node.onError, executionId, variables, automation, flow, maxLoopIterations)
@@ -151,6 +179,8 @@ class AutomationEngine(
                 if (finalSignal != Signal.Next) finalSignal else handled
             }
             is ActionNode.CallFlow -> {
+                val depth = currentCoroutineContext()[FlowDepth]?.value ?: 0
+                if (depth >= 64) return Signal.Failure("Flow call depth exceeds 64")
                 val target = flowResolver.resolve(node.flowId) ?: return Signal.Failure("Unknown flow: ${node.flowId.value}")
                 val childInitial = variables.snapshot().toMutableMap()
                 node.input.forEach { (key, rawValue) ->
@@ -166,7 +196,10 @@ class AutomationEngine(
                 }
                 val childVariables = RuntimeVariables(childInitial)
                 trace(executionId, TraceKind.FLOW, "Call ${target.name}", automation, target, node.id)
-                when (val signal = executeNodes(target.actions, executionId, childVariables, automation, target, maxLoopIterations)) {
+                val flowSignal = withContext(FlowDepth(depth + 1)) {
+                    executeNodes(target.actions, executionId, childVariables, automation, target, maxLoopIterations)
+                }
+                when (val signal = flowSignal) {
                     is Signal.Failure -> signal
                     is Signal.Return -> { node.resultVariable?.let { variables.set(it, signal.value) }; Signal.Next }
                     else -> Signal.Next
@@ -205,5 +238,9 @@ class AutomationEngine(
         data object Continue : Signal
         data class Return(val value: ConfigValue) : Signal
         data class Failure(val message: String) : Signal
+    }
+
+    private class FlowDepth(val value: Int) : AbstractCoroutineContextElement(Key) {
+        companion object Key : CoroutineContext.Key<FlowDepth>
     }
 }

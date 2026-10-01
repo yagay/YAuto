@@ -48,6 +48,7 @@ class AutomationRuntime(
 ) {
     private val activeStates = ConcurrentHashMap<String, Boolean>()
     private val locks = ConcurrentHashMap<String, Mutex>()
+    private val evaluationLocks = ConcurrentHashMap<String, Mutex>()
     private val runningJobs = ConcurrentHashMap<String, Job>()
     private val expressions = SimpleExpressionEngine()
 
@@ -69,6 +70,7 @@ class AutomationRuntime(
         val runs = mutableListOf<RuntimeAutomationRun>()
 
         for (automation in workspace.automations.filter { it.enabled }) {
+            try {
             val variables = MapVariableAccess(buildMap {
                 workspace.globalVariables.forEach { (key, value) -> put(key, ConfigValue.StringValue(value)) }
                 putAll(automation.variables)
@@ -77,6 +79,7 @@ class AutomationRuntime(
                 put("event.source", ConfigValue.StringValue(event.source))
             })
 
+            val phases = evaluationLocks.getOrPut(automation.id.value) { Mutex() }.withLock {
             val eventMatches = automation.activation.events.isEmpty() || automation.activation.events.any {
                 matchEvent(it, event, variables, dispatchId)
             }
@@ -110,7 +113,7 @@ class AutomationRuntime(
             val gateOpen = statesMatch && conditionMatches
             val wasActive = activeStates[automation.id.value] ?: false
 
-            val phases = buildList {
+            buildList {
                 if (stateful) {
                     if (gateOpen && !wasActive) add(AutomationPhase.ENTER)
                     if (gateOpen && eventMatches) add(AutomationPhase.EVENT)
@@ -120,10 +123,19 @@ class AutomationRuntime(
                     add(AutomationPhase.EVENT)
                 }
             }
+            }
 
             if (phases.isNotEmpty()) {
                 val results = executeCoordinated(automation, phases, variables.snapshot(), flows)
                 if (results != null) runs += RuntimeAutomationRun(automation.id, phases, results)
+            }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                tracer.record(TraceEvent(dispatchId, kind = TraceKind.ERROR, level = TraceLevel.ERROR,
+                    timestampEpochMs = System.currentTimeMillis(), message = "Automation dispatch failed: ${error.message}",
+                    automationId = automation.id, success = false,
+                    attributes = mapOf("event.type" to event.typeId, "exception" to error.javaClass.name)))
             }
         }
         RuntimeDispatchResult(dispatchId, event, runs)

@@ -3,6 +3,7 @@ package com.yagay.yauto.core.capability
 import com.yagay.yauto.core.model.ConfigMap
 import com.yagay.yauto.core.model.ConfigValue
 import kotlinx.serialization.Serializable
+import kotlinx.coroutines.CancellationException
 
 @Serializable @JvmInline
 value class CapabilityId(val value: String)
@@ -90,8 +91,10 @@ class CapabilityBroker(
 
         val attempts = mutableListOf<CapabilityAttempt>()
         for (backend in candidates) {
-            val result = runCatching { backend.execute(request, environment) }.getOrElse {
-                CapabilityResult(false, message = it.message ?: it::class.simpleName)
+            val result = try { backend.execute(request, environment) } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                CapabilityResult(false, message = error.message ?: error::class.simpleName)
             }
             attempts += CapabilityAttempt(backend.id, result.success, result.message)
             if (result.success || !request.allowFallback) {

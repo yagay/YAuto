@@ -7,6 +7,7 @@ import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.RuntimeEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import java.util.UUID
 
 class RuntimeEventDispatcher(
@@ -17,7 +18,9 @@ class RuntimeEventDispatcher(
         scope.launch {
             try {
                 graph.runtime.dispatch(event)
-            } catch (error: Throwable) {
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
                 graph.tracer.record(
                     TraceEvent(
                         executionId = ExecutionId("runtime-${UUID.randomUUID()}"),
