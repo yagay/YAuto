@@ -21,9 +21,8 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
-}
 
-dependencies {
     implementation(project(":core:model"))
+    implementation(project(":core:registry"))
     implementation(project(":ui:design"))
 }

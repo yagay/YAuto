@@ -8,8 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import com.yagay.yauto.core.diagnostics.*
 import com.yagay.yauto.core.importer.ImportInput
-import com.yagay.yauto.core.model.ConfigValue
-import com.yagay.yauto.core.model.RuntimeEvent
+import com.yagay.yauto.core.model.*
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.merge
 import com.yagay.yauto.ui.design.YAutoTheme
@@ -29,6 +28,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             YAutoTheme {
                 var page by remember { mutableStateOf("home") }
+                var editingAutomation by remember { mutableStateOf<Automation?>(null) }
                 var statuses by remember { mutableStateOf<List<CollectorStatus>>(emptyList()) }
                 var diagnosticSnapshot by remember { mutableStateOf<DiagnosticSnapshot?>(null) }
                 var collecting by remember { mutableStateOf(false) }
@@ -38,6 +38,12 @@ class MainActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
 
                 LaunchedEffect(Unit) { workspace = graph.workspace.load() }
+
+                fun saveWorkspace(updated: WorkspaceData, resetId: AutomationId? = null) {
+                    workspace = updated
+                    resetId?.let(graph.runtime::resetState) ?: graph.runtime.resetState()
+                    scope.launch { graph.workspace.save(updated) }
+                }
 
                 val diagnosticsExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
                     val snapshot = diagnosticSnapshot
@@ -55,8 +61,9 @@ class MainActivity : ComponentActivity() {
                         }
                         graph.importReports.save(result)
                         if (result.success) {
-                            workspace = workspace.merge(result.bundle.automations, result.bundle.flows, result.bundle.globalVariables)
-                            graph.workspace.save(workspace)
+                            val updated = workspace.merge(result.bundle.automations, result.bundle.flows, result.bundle.globalVariables)
+                            workspace = updated
+                            graph.workspace.save(updated)
                             graph.runtime.resetState()
                             importSummary = "${result.importerId}: 导入 ${result.bundle.automations.size} 个自动化、${result.bundle.flows.size} 个流程；${result.issues.size} 个兼容提示"
                         } else {
@@ -66,7 +73,25 @@ class MainActivity : ComponentActivity() {
                 }
 
                 when (page) {
-                    "editor" -> AutomationEditorScreen { page = "home" }
+                    "editor" -> AutomationEditorScreen(
+                        descriptors = graph.features.allDescriptors(),
+                        initial = editingAutomation,
+                        onSave = { automation ->
+                            val exists = workspace.automations.any { it.id == automation.id }
+                            val automations = if (exists) {
+                                workspace.automations.map { if (it.id == automation.id) automation else it }
+                            } else {
+                                workspace.automations + automation
+                            }
+                            saveWorkspace(workspace.copy(automations = automations), automation.id)
+                            editingAutomation = null
+                            page = "home"
+                        },
+                        onBack = {
+                            editingAutomation = null
+                            page = "home"
+                        },
+                    )
                     "diagnostics" -> DiagnosticsScreen(
                         statuses = statuses,
                         snapshot = diagnosticSnapshot,
@@ -84,12 +109,31 @@ class MainActivity : ComponentActivity() {
                     )
                     else -> HomeScreen(
                         featureCount = graph.features.allDescriptors().size,
-                        automationCount = workspace.automations.size,
+                        automations = workspace.automations,
                         flowCount = workspace.flows.size,
                         importerNames = graph.importers.all().map { it.displayName },
                         importSummary = importSummary,
                         runtimeSummary = runtimeSummary,
-                        onOpenEditor = { page = "editor" },
+                        onNewAutomation = {
+                            editingAutomation = null
+                            page = "editor"
+                        },
+                        onEditAutomation = { automation ->
+                            editingAutomation = automation
+                            page = "editor"
+                        },
+                        onToggleAutomation = { automation, enabled ->
+                            val updated = workspace.copy(
+                                automations = workspace.automations.map {
+                                    if (it.id == automation.id) it.copy(enabled = enabled) else it
+                                }
+                            )
+                            saveWorkspace(updated, automation.id)
+                        },
+                        onDeleteAutomation = { automation ->
+                            val updated = workspace.copy(automations = workspace.automations.filterNot { it.id == automation.id })
+                            saveWorkspace(updated, automation.id)
+                        },
                         onImport = { importLauncher.launch(arrayOf("application/json", "text/xml", "application/xml", "application/octet-stream", "*/*")) },
                         onRunManual = {
                             scope.launch {
