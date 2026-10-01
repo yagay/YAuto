@@ -13,13 +13,26 @@ class YAutoAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         current = this
         super.onServiceConnected()
+        rootInActiveWindow?.let { root ->
+            AccessibilityRuntimeBridge.update(root.packageName?.toString(), root.className?.toString())
+        }
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) = Unit
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        event ?: return
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+            event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
+            event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+        ) {
+            AccessibilityRuntimeBridge.update(event.packageName?.toString(), event.className?.toString())
+        }
+    }
+
     override fun onInterrupt() = Unit
 
     override fun onDestroy() {
         if (current === this) current = null
+        AccessibilityRuntimeBridge.clearIfServiceStops()
         super.onDestroy()
     }
 
