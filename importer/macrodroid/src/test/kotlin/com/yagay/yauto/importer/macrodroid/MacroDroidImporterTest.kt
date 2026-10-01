@@ -22,6 +22,7 @@ class MacroDroidImporterTest {
         assertEquals("compat.source.action", guarded.typeId)
         assertTrue((guarded.config["source.raw"] as? ConfigValue.StringValue)?.value?.contains("UnknownConstraint") == true)
     }
+
     @Test
     fun `imports common single macro wrapper and native actions`() {
         val json = """
@@ -52,6 +53,57 @@ class MacroDroidImporterTest {
         assertEquals(2250.0, (actions[0].config["durationMs"] as ConfigValue.NumberValue).value, 0.0)
         assertEquals("hello", (actions[1].config["text"] as ConfigValue.StringValue).value)
         assertEquals("com.example.app", (actions[2].config["package"] as ConfigValue.StringValue).value)
+    }
+
+    @Test
+    fun `maps safe Android control actions from documented MacroDroid fields`() {
+        val json = """
+            {"macro":{"m_GUID":"controls","m_name":"Controls","m_triggerList":[],"m_actionList":[
+              {"m_classType":"SetVolumeAction","m_streamIndexArray":[false,true,false,false,false,false,false,false],"m_streamVolumeArray":[0,42,0,0,0,0,0,0],"m_variables":[null,null,null,null,null,null,null,null],"setInForeground":true},
+              {"m_classType":"SetBrightnessAction","setAutoBrightness":false,"setBrightnessValue":true,"m_brightnessPercent":65},
+              {"m_classType":"SetBrightnessAction","setAutoBrightness":true,"autoBrightnessOn":true,"setBrightnessValue":false},
+              {"m_classType":"SendIntentAction","m_target":"Broadcast","m_action":"com.example.ACTION","m_packageName":"com.example","m_extra1Name":"mode","m_extra1Value":"fast","m_extra1Type":1,"m_flags":32},
+              {"m_classType":"NotificationAction","m_notificationSubject":"Title","m_notificationText":"Body","notificatonId":77,"notificationChannelName":"Imported"}
+            ]}}
+        """.trimIndent()
+
+        val result = MacroDroidImporter().import(ImportInput("controls.macro", null, json.toByteArray()))
+        assertTrue(result.success)
+        val features = result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature }
+        assertEquals(
+            listOf(
+                "android.audio.media_volume.set",
+                "android.display.brightness.set",
+                "android.display.brightness.set",
+                "android.intent.send",
+                "android.notification.show",
+            ),
+            features.map { it.typeId },
+        )
+        assertEquals(42.0, (features[0].config["percent"] as ConfigValue.NumberValue).value, 0.0)
+        assertEquals(ConfigValue.BooleanValue(true), features[0].config["showUi"])
+        assertEquals(ConfigValue.StringValue("manual"), features[1].config["mode"])
+        assertEquals(65.0, (features[1].config["percent"] as ConfigValue.NumberValue).value, 0.0)
+        assertEquals(ConfigValue.StringValue("auto"), features[2].config["mode"])
+        assertEquals(ConfigValue.StringValue("broadcast"), features[3].config["target"])
+        assertEquals(ConfigValue.StringValue("mode"), features[3].config["extra1Key"])
+        assertEquals(ConfigValue.NumberValue(77.0), features[4].config["id"])
+    }
+
+    @Test
+    fun `keeps unsafe MacroDroid control variants as compatibility actions`() {
+        val json = """
+            {"macro":{"m_GUID":"unsafe","m_name":"Unsafe","m_triggerList":[],"m_actionList":[
+              {"m_classType":"SetVolumeAction","m_streamIndexArray":[true,true,false,false,false,false,false,false],"m_streamVolumeArray":[20,30,0,0,0,0,0,0]},
+              {"m_classType":"SetBrightnessAction","setAutoBrightness":true,"autoBrightnessOn":true,"setBrightnessValue":true,"m_brightnessPercent":50},
+              {"m_classType":"SendIntentAction","m_target":"Broadcast","m_action":"x","m_extra1Name":"enabled","m_extra1Value":"true","m_extra1Type":2},
+              {"m_classType":"NotificationAction","m_notificationSubject":"Tap me","m_notificationText":"Body","m_runMacroWhenPressed":true,"m_macroGUIDToRun":123}
+            ]}}
+        """.trimIndent()
+        val result = MacroDroidImporter().import(ImportInput("unsafe.macro", null, json.toByteArray()))
+        assertTrue(result.success)
+        assertTrue(result.bundle.automations.single().onEvent.all { (it as ActionNode.Action).feature.typeId == "compat.source.action" })
+        assertTrue(result.issues.size >= 4)
     }
 
     @Test
