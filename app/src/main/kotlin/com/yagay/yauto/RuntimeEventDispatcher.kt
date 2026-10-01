@@ -14,10 +14,10 @@ class RuntimeEventDispatcher(
     private val graph: AppGraph,
     private val scope: CoroutineScope,
 ) {
-    fun dispatch(event: RuntimeEvent) {
+    fun dispatch(event: RuntimeEvent, statesOnly: Boolean = false) {
         scope.launch {
             try {
-                graph.runtime.dispatch(event)
+                graph.runtime.dispatch(event, statesOnly)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {

@@ -52,7 +52,7 @@ class AutomationRuntime(
     private val runningJobs = ConcurrentHashMap<String, Job>()
     private val expressions = SimpleExpressionEngine()
 
-    suspend fun dispatch(event: RuntimeEvent): RuntimeDispatchResult = coroutineScope {
+    suspend fun dispatch(event: RuntimeEvent, statesOnly: Boolean = false): RuntimeDispatchResult = coroutineScope {
         val dispatchId = ExecutionId(UUID.randomUUID().toString())
         tracer.record(
             TraceEvent(
@@ -70,6 +70,7 @@ class AutomationRuntime(
         val runs = mutableListOf<RuntimeAutomationRun>()
 
         for (automation in workspace.automations.filter { it.enabled }) {
+            if (statesOnly && automation.activation.states.isEmpty()) continue
             try {
             val variables = MapVariableAccess(buildMap {
                 workspace.globalVariables.forEach { (key, value) -> put(key, ConfigValue.StringValue(value)) }
@@ -80,7 +81,7 @@ class AutomationRuntime(
             })
 
             val phases = evaluationLocks.getOrPut(automation.id.value) { Mutex() }.withLock {
-            val eventMatches = automation.activation.events.isEmpty() || automation.activation.events.any {
+            val eventMatches = !statesOnly && automation.activation.events.any {
                 matchEvent(it, event, variables, dispatchId)
             }
 

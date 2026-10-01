@@ -191,8 +191,10 @@ class AutomationEngine(
                 target.inputs.forEach {
                     val directKey = it.name
                     val inputKey = "input.${it.name}"
-                    if (inputKey !in childInitial) childInitial[inputKey] = it.defaultValue
-                    if (directKey !in childInitial) childInitial[directKey] = childInitial[inputKey] ?: it.defaultValue
+                    val value = node.input[it.name]?.resolveVariables(variables) ?: it.defaultValue
+                    if (it.required && value == ConfigValue.NullValue) return Signal.Failure("Missing required flow input: ${it.name}")
+                    childInitial[inputKey] = value
+                    childInitial[directKey] = value
                 }
                 val childVariables = RuntimeVariables(childInitial)
                 trace(executionId, TraceKind.FLOW, "Call ${target.name}", automation, target, node.id)

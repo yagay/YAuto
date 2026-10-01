@@ -38,6 +38,7 @@ fun AutomationEditorScreen(
     initial: Automation? = null,
     onSave: (Automation) -> Unit,
     onBack: () -> Unit,
+    flows: List<Flow> = emptyList(),
 ) {
     var name by remember(initial?.id) { mutableStateOf(initial?.name ?: "新自动化") }
     var enabled by remember(initial?.id) { mutableStateOf(initial?.enabled ?: true) }
@@ -158,6 +159,8 @@ fun AutomationEditorScreen(
                     title = "进入动作",
                     subtitle = "状态从不满足变为满足时执行。",
                     nodes = onEnter,
+                    onTreeChange = { onEnter = it },
+                    flows = flows,
                     descriptors = descriptors,
                     onAdd = { pickerTarget = EditTarget(EditorSection.ENTER) },
                     onEdit = { index, feature -> openFeatureEditor(EditorSection.ENTER, index, feature, descriptors) { t, d -> configTarget = t; configDescriptor = d } },
@@ -171,6 +174,8 @@ fun AutomationEditorScreen(
                     title = "事件动作",
                     subtitle = "事件命中时执行；普通事件自动化主要使用这里。",
                     nodes = onEvent,
+                    onTreeChange = { onEvent = it },
+                    flows = flows,
                     descriptors = descriptors,
                     onAdd = { pickerTarget = EditTarget(EditorSection.EVENT_ACTION) },
                     onEdit = { index, feature -> openFeatureEditor(EditorSection.EVENT_ACTION, index, feature, descriptors) { t, d -> configTarget = t; configDescriptor = d } },
@@ -184,6 +189,8 @@ fun AutomationEditorScreen(
                     title = "退出动作",
                     subtitle = "状态从满足变为不满足时执行。",
                     nodes = onExit,
+                    onTreeChange = { onExit = it },
+                    flows = flows,
                     descriptors = descriptors,
                     onAdd = { pickerTarget = EditTarget(EditorSection.EXIT) },
                     onEdit = { index, feature -> openFeatureEditor(EditorSection.EXIT, index, feature, descriptors) { t, d -> configTarget = t; configDescriptor = d } },
@@ -320,7 +327,10 @@ private fun ActionSection(
     onEdit: (Int, FeatureRef) -> Unit,
     onMove: (Int, Int) -> Unit,
     onDelete: (Int) -> Unit,
+    onTreeChange: (List<ActionNode>) -> Unit,
+    flows: List<Flow>,
 ) {
+    var treeOpen by remember { mutableStateOf(false) }
     YSectionCard(title, subtitle) {
         nodes.forEachIndexed { index, node ->
             val feature = (node as? ActionNode.Action)?.feature
@@ -337,7 +347,9 @@ private fun ActionSection(
             )
         }
         OutlinedButton(onClick = onAdd, modifier = Modifier.fillMaxWidth()) { Text("+ 添加动作") }
+        OutlinedButton(onClick = { treeOpen = true }, modifier = Modifier.fillMaxWidth()) { Text("编辑分支 / 循环 / 流程") }
     }
+    if (treeOpen) ActionTreeDialog(title, nodes, descriptors, flows, onDismiss = { treeOpen = false }, onSave = { onTreeChange(it); treeOpen = false })
 }
 
 @Composable
@@ -396,7 +408,7 @@ private fun VariableSection(
 }
 
 @Composable
-private fun FeaturePickerDialog(
+internal fun FeaturePickerDialog(
     kind: FeatureKind,
     descriptors: List<FeatureDescriptor>,
     onDismiss: () -> Unit,
@@ -438,7 +450,7 @@ private fun FeaturePickerDialog(
 }
 
 @Composable
-private fun FeatureConfigDialog(
+internal fun FeatureConfigDialog(
     descriptor: FeatureDescriptor,
     initial: FeatureRef?,
     onDismiss: () -> Unit,
@@ -499,6 +511,7 @@ private fun FeatureConfigDialog(
         confirmButton = {
             TextButton(onClick = {
                 val config = buildMap<String, ConfigValue> {
+                    putAll(initial?.config.orEmpty().filterKeys { key -> descriptor.fields.none { it.key == key } })
                     descriptor.fields.forEach { field ->
                         val raw = values[field.key].orEmpty()
                         when (field) {

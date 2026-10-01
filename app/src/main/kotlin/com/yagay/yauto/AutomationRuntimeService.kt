@@ -35,7 +35,7 @@ class AutomationRuntimeService : Service() {
         val dispatcher = RuntimeEventDispatcher(graph, scope)
         sources += SystemBroadcastEventSource(this)
         sources += NetworkEventSource(this)
-        val emitter = RuntimeEventEmitter(dispatcher::dispatch)
+        val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
         sources.forEach { source ->
             runCatching { source.start(emitter) }
                 .onFailure { error ->
@@ -57,7 +57,7 @@ class AutomationRuntimeService : Service() {
                     }
                 }
         }
-        dispatcher.dispatch(com.yagay.yauto.core.model.RuntimeEvent("android.event.runtime_started", source = "android.runtime"))
+        dispatcher.dispatch(com.yagay.yauto.core.model.RuntimeEvent("android.event.runtime_started", source = "android.runtime"), statesOnly = true)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY

@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.model.Automation
+import com.yagay.yauto.core.model.Flow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,15 +28,24 @@ fun HomeScreen(
     onImport: () -> Unit,
     onRunManual: () -> Unit,
     onOpenDiagnostics: () -> Unit,
+    flows: List<Flow> = emptyList(),
+    onNewFlow: () -> Unit = {},
+    onEditFlow: (Flow) -> Unit = {},
+    onDeleteFlow: (Flow) -> Unit = {},
+    onEditVariables: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
+    onBackup: () -> Unit = {},
+    onRestore: () -> Unit = {},
 ) {
     var tab by remember { mutableIntStateOf(0) }
     var pendingDelete by remember { mutableStateOf<Automation?>(null) }
+    var pendingFlowDelete by remember { mutableStateOf<Flow?>(null) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("YAuto") }) },
         bottomBar = {
             NavigationBar {
-                listOf("自动化", "流程", "界面", "变量", "日志").forEachIndexed { index, label ->
+                listOf("自动化", "流程", "变量", "日志").forEachIndexed { index, label ->
                     NavigationBarItem(selected = tab == index, onClick = { tab = index }, icon = {}, label = { Text(label) })
                 }
             }
@@ -54,9 +64,14 @@ fun HomeScreen(
             }
 
             item {
+                if (tab == 0) {
                 Button(onClick = onNewAutomation, modifier = Modifier.fillMaxWidth()) { Text("+ 新建自动化") }
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(onClick = onImport, modifier = Modifier.fillMaxWidth()) { Text("导入 MacroDroid / ShortX / Tasker") }
+                }
+                if (tab == 1) Button(onClick = onNewFlow, modifier = Modifier.fillMaxWidth()) { Text("+ 新建流程") }
+                if (tab == 2) Button(onClick = onEditVariables, modifier = Modifier.fillMaxWidth()) { Text("管理全局变量") }
+                if (tab == 3) Button(onClick = onOpenDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("打开诊断中心") }
             }
 
             importSummary?.let { summary ->
@@ -66,6 +81,19 @@ fun HomeScreen(
                 item { AssistChip(onClick = {}, label = { Text(summary) }) }
             }
 
+            if (tab == 1) {
+                if (flows.isEmpty()) item { Text("还没有流程。创建后可在动作中调用，也可编辑导入的流程。") }
+                items(flows, key = { it.id.value }) { flow ->
+                    Card(Modifier.fillMaxWidth().clickable { onEditFlow(flow) }) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text(flow.name, style = MaterialTheme.typography.titleMedium)
+                            Text("输入 ${flow.inputs.size} · 输出 ${flow.outputs.size} · 动作 ${flow.actions.size}")
+                            Row { TextButton(onClick = { onEditFlow(flow) }) { Text("编辑") }; TextButton(onClick = { pendingFlowDelete = flow }) { Text("删除") } }
+                        }
+                    }
+                }
+            }
+            if (tab == 0) {
             if (automations.isEmpty()) {
                 item {
                     Card(Modifier.fillMaxWidth()) {
@@ -119,14 +147,19 @@ fun HomeScreen(
                     }
                 }
             }
+            }
 
             item {
                 HorizontalDivider()
                 OutlinedButton(onClick = onRunManual, modifier = Modifier.fillMaxWidth()) { Text("发送手动测试事件") }
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(onClick = onOpenDiagnostics, modifier = Modifier.fillMaxWidth()) { Text("诊断中心") }
+                OutlinedButton(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) { Text("运行权限与后端") }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onBackup, modifier = Modifier.weight(1f)) { Text("备份") }
+                    OutlinedButton(onClick = onRestore, modifier = Modifier.weight(1f)) { Text("恢复") }
+                }
                 Spacer(Modifier.height(8.dp))
-                Text("Feature、Importer、Runtime 与 DiagnosticCollector 都通过 Registry 管理，可独立增加和删除。", style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -145,4 +178,8 @@ fun HomeScreen(
             dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text("取消") } },
         )
     }
+    pendingFlowDelete?.let { flow -> AlertDialog(onDismissRequest = { pendingFlowDelete = null }, title = { Text("删除流程？") },
+        text = { Text("删除“${flow.name}”。被规则引用的流程需要先移除调用。") },
+        confirmButton = { TextButton(onClick = { onDeleteFlow(flow); pendingFlowDelete = null }) { Text("删除") } },
+        dismissButton = { TextButton(onClick = { pendingFlowDelete = null }) { Text("取消") } }) }
 }
