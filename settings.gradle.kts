@@ -32,6 +32,7 @@ include(
     ":importer:shortx",
     ":importer:tasker",
     ":platform:android",
+    ":platform:accessibility",
     ":platform:root",
     ":platform:shizuku",
     ":platform:xposed",

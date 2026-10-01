@@ -12,6 +12,9 @@ import com.yagay.yauto.feature.standard.StandardFeaturePacks
 import com.yagay.yauto.importer.macrodroid.MacroDroidImporter
 import com.yagay.yauto.importer.shortx.ShortXImporter
 import com.yagay.yauto.importer.tasker.TaskerImporter
+import com.yagay.yauto.platform.accessibility.AccessibilityBackend
+import com.yagay.yauto.platform.accessibility.AccessibilityDiagnosticCollector
+import com.yagay.yauto.platform.accessibility.AccessibilityFeaturePack
 import com.yagay.yauto.platform.android.*
 import com.yagay.yauto.platform.root.*
 import com.yagay.yauto.platform.xposed.LsposedLogCollector
@@ -28,6 +31,7 @@ class AppGraph(context: Context) {
     val rootShell = RootShell()
     val shizuku = ShizukuBackend(context.applicationContext)
     val xposed = XposedBackend(context.applicationContext)
+    val accessibility = AccessibilityBackend()
     val workspace = JsonWorkspaceRepository(context.applicationContext)
     val importReports = JsonImportReportStore(context.applicationContext)
 
@@ -51,9 +55,12 @@ class AppGraph(context: Context) {
         features.install(AndroidControlFeaturePack(context.applicationContext))
         features.install(AndroidEventFeaturePack())
         features.install(AndroidStateFeaturePack(context.applicationContext))
+        features.install(AccessibilityFeaturePack())
+
         capabilities.register(RootBackend(rootShell))
         capabilities.register(shizuku)
         capabilities.register(xposed)
+        capabilities.register(accessibility)
 
         importers.register(MacroDroidImporter())
         importers.register(ShortXImporter())
@@ -62,6 +69,7 @@ class AppGraph(context: Context) {
         diagnosticRegistry.register(ExecutionFileDiagnosticCollector(context.applicationContext))
         diagnosticRegistry.register(ImportReportDiagnosticCollector(context.applicationContext))
         diagnosticRegistry.register(NotificationAccessDiagnosticCollector(context.applicationContext))
+        diagnosticRegistry.register(AccessibilityDiagnosticCollector())
         diagnosticRegistry.register(RootDiagnosticCollector(rootShell))
         diagnosticRegistry.register(LsposedLogCollector(rootShell))
         diagnosticRegistry.register(shizuku)

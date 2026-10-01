@@ -33,6 +33,7 @@ dependencies {
     implementation(project(":importer:shortx"))
     implementation(project(":importer:tasker"))
     implementation(project(":platform:android"))
+    implementation(project(":platform:accessibility"))
     implementation(project(":platform:root"))
     implementation(project(":platform:shizuku"))
     implementation(project(":platform:xposed"))
