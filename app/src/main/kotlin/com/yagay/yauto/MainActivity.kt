@@ -13,7 +13,7 @@ import com.yagay.yauto.core.storage.*
 import com.yagay.yauto.ui.design.YAutoTheme
 import com.yagay.yauto.ui.diagnostics.DiagnosticsScreen
 import com.yagay.yauto.ui.editor.MacroAutomationEditorScreen
-import com.yagay.yauto.ui.editor.FlowEditorScreen
+import com.yagay.yauto.ui.editor.MacroFlowEditorScreen
 import com.yagay.yauto.ui.editor.GlobalVariablesScreen
 import com.yagay.yauto.ui.home.MacroHomeScreen
 import kotlinx.coroutines.Dispatchers
@@ -164,9 +164,17 @@ class MainActivity : ComponentActivity() {
                             page = "home"
                         },
                     )
-                    "flow" -> FlowEditorScreen(editingFlow, graph.features.allDescriptors(), workspace.flows,
-                        onSave = { flow -> saveWorkspace(workspace.copy(flows = workspace.flows.filterNot { it.id == flow.id } + flow)); editingFlow = null; page = "home" },
-                        onBack = { editingFlow = null; page = "home" })
+                    "flow" -> MacroFlowEditorScreen(
+                        initial = editingFlow,
+                        descriptors = graph.features.allDescriptors(),
+                        flows = workspace.flows,
+                        onSave = { flow ->
+                            saveWorkspace(workspace.copy(flows = workspace.flows.filterNot { it.id == flow.id } + flow))
+                            editingFlow = null
+                            page = "home"
+                        },
+                        onBack = { editingFlow = null; page = "home" },
+                    )
                     "variables" -> GlobalVariablesScreen(workspace.globalVariables,
                         onSave = { saveWorkspace(workspace.copy(globalVariables = it)); page = "home" }, onBack = { page = "home" })
                     "settings" -> RuntimeSettingsScreen(graph, onBack = { page = "home" })
