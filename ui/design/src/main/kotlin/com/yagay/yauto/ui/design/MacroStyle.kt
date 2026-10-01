@@ -86,7 +86,10 @@ fun MacroItemRow(
         shape = RoundedCornerShape(7.dp),
         tonalElevation = 1.dp,
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Stretch) {
+        Row(
+            Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Box(Modifier.width(5.dp).fillMaxHeight().background(accent))
             Column(Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 10.dp)) {
                 Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
