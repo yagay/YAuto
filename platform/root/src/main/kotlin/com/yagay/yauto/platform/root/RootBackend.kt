@@ -12,8 +12,8 @@ class RootBackend(
 
     override suspend fun isAvailable(environment: RuntimeEnvironment): Boolean = environment.rootAvailable || shell.isAvailable()
     override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment): Boolean =
-        (request.capability == CapabilityIds.PRIVILEGED_SHELL && request.operationId == "system.shell.execute") ||
-        (request.capability == CapabilityIds.SYSTEM_UI && SystemOperations.shellCommand(request.operationId) != null)
+        request.capability == CapabilityIds.PRIVILEGED_SHELL ||
+            (request.capability == CapabilityIds.SYSTEM_UI && SystemOperations.shellCommand(request.operationId) != null)
 
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
         val command = if (request.capability == CapabilityIds.SYSTEM_UI) SystemOperations.shellCommand(request.operationId).orEmpty() else request.payload.string("command")
