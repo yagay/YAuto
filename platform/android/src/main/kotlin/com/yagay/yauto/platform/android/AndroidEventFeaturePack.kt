@@ -2,6 +2,7 @@ package com.yagay.yauto.platform.android
 
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
+import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 
@@ -24,16 +25,74 @@ class AndroidEventFeaturePack : FeaturePack {
         simpleEvent(registry, "android.event.airplane_mode_changed", "Airplane mode changed", FeatureCategory.NETWORK)
         simpleEvent(registry, "android.event.locale_changed", "Locale changed", FeatureCategory.SYSTEM)
         simpleEvent(registry, "android.event.timezone_changed", "Time zone changed", FeatureCategory.SYSTEM)
+        simpleEvent(registry, "android.event.time_changed", "System time changed", FeatureCategory.SYSTEM)
+        simpleEvent(registry, "android.event.date_changed", "Date changed", FeatureCategory.SYSTEM)
         simpleEvent(registry, "android.event.network_available", "Network available", FeatureCategory.NETWORK)
         simpleEvent(registry, "android.event.network_lost", "Network lost", FeatureCategory.NETWORK)
         simpleEvent(registry, "android.event.network_changed", "Network changed", FeatureCategory.NETWORK)
 
+        timeTickEvent(registry)
+        clipboardEvent(registry)
         packageEvent(registry, "android.event.package_added", "App installed")
         packageEvent(registry, "android.event.package_removed", "App removed")
         packageEvent(registry, "android.event.package_replaced", "App updated")
         notificationEvent(registry, "android.event.notification_posted", "Notification posted")
         notificationEvent(registry, "android.event.notification_removed", "Notification removed")
         broadcastEvent(registry)
+    }
+
+    private fun timeTickEvent(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.time_tick"), FeatureKind.EVENT,
+                "Time / every minute", "Run on Android's minute tick and optionally match hour, minute or ISO weekday",
+                FeatureCategory.SYSTEM,
+                fields = listOf(
+                    FieldSchema.Number("hour", "Hour (0-23)", min = 0.0, max = 23.0),
+                    FieldSchema.Number("minute", "Minute (0-59)", min = 0.0, max = 59.0),
+                    FieldSchema.Text("weekdays", "Weekdays (1=Mon … 7=Sun, comma separated)"),
+                ),
+                keywords = setOf("time", "clock", "minute", "schedule", "时间", "定时"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.time_tick") return@registerEvent false
+            val expectedHour = feature.config["hour"].numberOrNull()?.toInt()
+            val expectedMinute = feature.config["minute"].numberOrNull()?.toInt()
+            val actualHour = ctx.event.payload["hour"].numberOrNull()?.toInt()
+            val actualMinute = ctx.event.payload["minute"].numberOrNull()?.toInt()
+            val actualWeekday = ctx.event.payload["weekday"].numberOrNull()?.toInt()
+            if (expectedHour != null && actualHour != expectedHour) return@registerEvent false
+            if (expectedMinute != null && actualMinute != expectedMinute) return@registerEvent false
+            val weekdays = feature.config.string("weekdays").split(',').mapNotNull { it.trim().toIntOrNull() }.toSet()
+            weekdays.isEmpty() || actualWeekday in weekdays
+        }
+    }
+
+    private fun clipboardEvent(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.clipboard_changed"), FeatureKind.EVENT,
+                "Clipboard changed", "Run when the primary clipboard changes; clipboard text may be unavailable in the background on newer Android versions",
+                FeatureCategory.DEVICE,
+                fields = listOf(
+                    FieldSchema.Text("textContains", "Text contains"),
+                    FieldSchema.Choice("hasText", "Clipboard text", options = listOf("any", "has_text", "empty")),
+                ),
+                keywords = setOf("clipboard", "copy", "剪贴板", "复制"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.clipboard_changed") return@registerEvent false
+            val text = ctx.event.payload.string("text")
+            val contains = feature.config.string("textContains")
+            val textMode = feature.config.string("hasText", "any")
+            (contains.isBlank() || text.contains(contains, ignoreCase = true)) && when (textMode) {
+                "has_text" -> text.isNotEmpty()
+                "empty" -> text.isEmpty()
+                else -> true
+            }
+        }
     }
 
     private fun broadcastEvent(registry: FeatureRegistry) {
