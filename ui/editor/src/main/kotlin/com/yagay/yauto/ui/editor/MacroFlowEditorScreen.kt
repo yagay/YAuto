@@ -12,6 +12,7 @@ import com.yagay.yauto.core.model.*
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.ui.design.*
 import com.yagay.yauto.ui.design.R as TextR
+import java.util.Locale
 import java.util.UUID
 
 private enum class FlowParamSide { INPUT, OUTPUT }
@@ -335,9 +336,9 @@ private fun FlowParameterDialog(
                             if (allowDefault && default.isNotEmpty()) {
                                 when (type) {
                                     ValueType.NUMBER, ValueType.DURATION -> parseLocalizedDouble(default, locale)
-                                        ?.let(ConfigValue::NumberValue)
+                                        ?.let { ConfigValue.NumberValue(it) }
                                         ?: ConfigValue.StringValue(default)
-                                    ValueType.BOOLEAN -> when (default.trim().lowercase()) {
+                                    ValueType.BOOLEAN -> when (default.trim().lowercase(Locale.ROOT)) {
                                         "true" -> ConfigValue.BooleanValue(true)
                                         "false" -> ConfigValue.BooleanValue(false)
                                         else -> ConfigValue.StringValue(default)
