@@ -1,7 +1,6 @@
 package com.yagay.yauto.platform.android
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.pm.PackageManager
@@ -26,8 +25,14 @@ class AndroidConnectivityFeaturePack(context: Context) : FeaturePack {
     override fun install(registry: FeatureRegistry) {
         wifiState(registry, FeatureKind.STATE, "android.state.wifi_network")
         wifiState(registry, FeatureKind.CONDITION, "android.condition.wifi_network")
-        booleanState(registry, FeatureKind.STATE, "android.state.bluetooth_enabled", "Bluetooth enabled", ::bluetoothEnabled)
-        booleanState(registry, FeatureKind.CONDITION, "android.condition.bluetooth_enabled", "Bluetooth enabled", ::bluetoothEnabled)
+        booleanState(
+            registry, FeatureKind.STATE, "android.state.bluetooth_enabled", "Bluetooth enabled", ::bluetoothEnabled,
+            setOf(AccessRequirement.BLUETOOTH_CONNECT),
+        )
+        booleanState(
+            registry, FeatureKind.CONDITION, "android.condition.bluetooth_enabled", "Bluetooth enabled", ::bluetoothEnabled,
+            setOf(AccessRequirement.BLUETOOTH_CONNECT),
+        )
         booleanState(registry, FeatureKind.STATE, "android.state.airplane_mode", "Airplane mode", ::airplaneMode)
         booleanState(registry, FeatureKind.CONDITION, "android.condition.airplane_mode", "Airplane mode", ::airplaneMode)
 
@@ -40,6 +45,7 @@ class AndroidConnectivityFeaturePack(context: Context) : FeaturePack {
                     FieldSchema.Choice("connected", "Connection", options = listOf("any", "connected", "disconnected")),
                     FieldSchema.Text("ssid", "SSID contains"),
                 ),
+                accessRequirements = setOf(AccessRequirement.LOCATION),
                 keywords = setOf("wifi", "ssid", "network", "无线网络"), ownerPackId = id,
             )
         ) { feature, ctx ->
@@ -60,6 +66,7 @@ class AndroidConnectivityFeaturePack(context: Context) : FeaturePack {
                 "Bluetooth state changed", "Run when the Bluetooth adapter is enabled or disabled",
                 FeatureCategory.NETWORK,
                 fields = listOf(FieldSchema.Choice("state", "State", options = listOf("any", "on", "off"))),
+                accessRequirements = setOf(AccessRequirement.BLUETOOTH_CONNECT),
                 keywords = setOf("bluetooth", "bt", "蓝牙"), ownerPackId = id,
             )
         ) { feature, ctx ->
@@ -81,6 +88,7 @@ class AndroidConnectivityFeaturePack(context: Context) : FeaturePack {
                 FieldSchema.Text("ssid", "SSID contains"),
                 FieldSchema.Text("bssid", "BSSID exact"),
             ),
+            accessRequirements = setOf(AccessRequirement.LOCATION),
             keywords = setOf("wifi", "ssid", "bssid", "network", "无线网络"), ownerPackId = id,
         )
         val evaluator = ConditionEvaluator { feature, _ ->
@@ -97,10 +105,19 @@ class AndroidConnectivityFeaturePack(context: Context) : FeaturePack {
         if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator) else registry.registerCondition(descriptor, evaluator)
     }
 
-    private fun booleanState(registry: FeatureRegistry, kind: FeatureKind, typeId: String, title: String, query: () -> Boolean) {
+    private fun booleanState(
+        registry: FeatureRegistry,
+        kind: FeatureKind,
+        typeId: String,
+        title: String,
+        query: () -> Boolean,
+        accessRequirements: Set<AccessRequirement> = emptySet(),
+    ) {
         val descriptor = FeatureDescriptor(
             FeatureId(typeId), kind, title, "Evaluate current Android connectivity state", FeatureCategory.NETWORK,
-            fields = listOf(FieldSchema.Toggle("value", "Enabled / on")), ownerPackId = id,
+            fields = listOf(FieldSchema.Toggle("value", "Enabled / on")),
+            accessRequirements = accessRequirements,
+            ownerPackId = id,
         )
         val evaluator = ConditionEvaluator { feature, _ -> runCatching { query() == feature.config.boolean("value", true) }.getOrDefault(false) }
         if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator) else registry.registerCondition(descriptor, evaluator)
