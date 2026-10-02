@@ -55,6 +55,7 @@ class AppGraph(context: Context) {
         features.install(AndroidAppManagementFeaturePack(appContext))
         features.install(AndroidAdvancedSystemFeaturePack(appContext))
         features.install(AndroidPrivilegedUtilityFeaturePack(appContext))
+        features.install(AndroidPrivilegedStateFeaturePack())
         features.install(AndroidMediaDeviceFeaturePack(appContext))
         features.install(AndroidAudioFeaturePack(appContext))
         features.install(AndroidMediaTransportFeaturePack(appContext))
