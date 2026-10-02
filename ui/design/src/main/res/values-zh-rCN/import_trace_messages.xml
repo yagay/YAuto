@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_import_trace_actions">动作：%1$d</string>
+    <string name="runtime_import_trace_macrodroid_macro">触发器：%1$d；动作：%2$d；约束：%3$d</string>
+    <string name="runtime_import_trace_shortx_rule">事实：%1$d；条件：%2$d；动作：%3$d</string>
+    <string name="runtime_import_trace_tasker_profile">上下文：%1$d</string>
+</resources>
