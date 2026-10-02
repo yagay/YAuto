@@ -43,25 +43,37 @@ internal object ShortXFeatureSuggestions {
                 "SetScreenRotate" -> "android.display.auto_rotate.set"
                 "SetScreenTimeout" -> "android.display.screen_timeout.set"
                 "SetDarkModeEnabled" -> "android.display.dark_mode.set"
-                "StayAwake" -> "android.power.stay_awake.set"
+                "StayAwake", "ScreenStayAwake" -> "android.power.stay_awake.set"
                 "TTS" -> "android.tts.speak"
-                "WakeupScreen" -> "android.screen.wake"
+                "WakeupScreen", "ScreenOn" -> "android.screen.wake"
                 "InjectKeyCode" -> "android.input.keyevent"
-                "TakeScreenshot" -> "android.screenshot.capture"
+                "TakeScreenshot", "Screenshot" -> "android.screenshot.capture"
                 "MediaPlaybackAction" -> "android.media.transport"
+                "SetAppEnabled", "SetAppEnabledByPkg", "DisableApp", "DisableAppByPkg" -> "android.app.enabled.set"
+                "SetAppInactive", "SetAppInactiveByPkg" -> "android.app.inactive.set"
+                "SetAppSuspend", "SetAppSuspendByPkg" -> "android.app.suspended.set"
+                "GetAppInfo" -> "android.app.package_info"
+                "ScreenBrightness" -> "android.display.brightness.set"
                 else -> null
             }
             ".fact[" in sourcePath -> when (name) {
                 "DarkModeStatusChanged" -> "android.event.dark_mode_changed"
                 "NFCStatusChanged" -> "android.event.nfc_state_changed"
-                "ScreenRotate" -> "android.event.auto_rotate_changed"
+                "ScreenRotate", "ScreenRotateTrigger" -> "android.event.auto_rotate_changed"
                 "BatteryLevelChanged", "BatteryTemperatureChanged" -> "android.event.battery_changed"
                 "HeadsetPlug" -> "android.event.headset_changed"
+                "AppAdded" -> "android.event.package_added"
+                "AppRemoved" -> "android.event.package_removed"
+                "AppUpdated" -> "android.event.package_replaced"
+                "ClipboardContentChanged" -> "android.event.clipboard_changed"
                 else -> null
             }
             ".condition[" in sourcePath -> when (name) {
-                "BatteryPercent" -> "android.condition.battery_level"
+                "BatteryPercent", "BatteryLevel" -> "android.condition.battery_level"
+                "BatteryTemperature" -> "android.condition.battery_temperature"
                 "IsHeadsetPlug" -> "android.condition.headset_connected"
+                "AppIsRunning", "AppIsNotRunning" -> "android.condition.app_process_running"
+                "ScreenIsOn" -> "android.condition.screen"
                 else -> null
             }
             else -> null
