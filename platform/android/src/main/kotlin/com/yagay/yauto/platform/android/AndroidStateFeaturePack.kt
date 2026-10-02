@@ -4,9 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.location.LocationManager
 import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.nfc.NfcManager
 import android.os.BatteryManager
 import android.os.PowerManager
 import android.provider.Settings
@@ -26,6 +29,12 @@ interface AndroidStateReader {
     fun mediaVolumePercent(): Double?
     fun brightnessPercent(): Double?
     fun autoBrightness(): Boolean
+    fun nfcEnabled(): Boolean
+    fun locationEnabled(): Boolean
+    fun autoRotate(): Boolean
+    fun darkMode(): Boolean
+    fun stayAwakeWhileCharging(): Boolean
+    fun screenTimeoutMs(): Double?
 }
 
 class SystemAndroidStateReader(context: Context) : AndroidStateReader {
@@ -81,6 +90,29 @@ class SystemAndroidStateReader(context: Context) : AndroidStateReader {
             Settings.System.SCREEN_BRIGHTNESS_MODE,
             Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
         ) == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC
+
+    override fun nfcEnabled(): Boolean = runCatching {
+        context.getSystemService(NfcManager::class.java)?.defaultAdapter?.isEnabled == true
+    }.getOrDefault(false)
+
+    override fun locationEnabled(): Boolean = runCatching {
+        context.getSystemService(LocationManager::class.java).isLocationEnabled
+    }.getOrDefault(false)
+
+    override fun autoRotate(): Boolean = runCatching {
+        Settings.System.getInt(context.contentResolver, Settings.System.ACCELEROMETER_ROTATION, 0) == 1
+    }.getOrDefault(false)
+
+    override fun darkMode(): Boolean =
+        context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+
+    override fun stayAwakeWhileCharging(): Boolean = runCatching {
+        Settings.Global.getInt(context.contentResolver, Settings.Global.STAY_ON_WHILE_PLUGGED_IN, 0) != 0
+    }.getOrDefault(false)
+
+    override fun screenTimeoutMs(): Double? = runCatching {
+        Settings.System.getLong(context.contentResolver, Settings.System.SCREEN_OFF_TIMEOUT).toDouble()
+    }.getOrNull()
 }
 
 class AndroidStateFeaturePack(private val reader: AndroidStateReader) : FeaturePack {
@@ -91,6 +123,11 @@ class AndroidStateFeaturePack(private val reader: AndroidStateReader) : FeatureP
         booleanState(registry, "screen", "Screen on / off", FeatureCategory.DISPLAY, reader::screenOn)
         booleanState(registry, "charging", "Charging", FeatureCategory.DEVICE, reader::charging)
         booleanState(registry, "power_save", "Power saving mode", FeatureCategory.DEVICE, reader::powerSave)
+        booleanState(registry, "nfc_enabled", "NFC enabled", FeatureCategory.DEVICE, reader::nfcEnabled)
+        booleanState(registry, "location_enabled", "Location services enabled", FeatureCategory.DEVICE, reader::locationEnabled)
+        booleanState(registry, "auto_rotate", "Auto-rotate enabled", FeatureCategory.DISPLAY, reader::autoRotate)
+        booleanState(registry, "dark_mode", "Dark theme active", FeatureCategory.DISPLAY, reader::darkMode)
+        booleanState(registry, "stay_awake_while_charging", "Stay awake while charging", FeatureCategory.DEVICE, reader::stayAwakeWhileCharging)
         state(registry, "network", "Network type", FeatureCategory.NETWORK,
             listOf(FieldSchema.Choice("type", "Network type", true, listOf("connected", "none", "wifi", "cellular", "ethernet", "vpn", "bluetooth")))) { config, _ ->
             config.string("type", "connected") in reader.networkTypes()
@@ -128,6 +165,17 @@ class AndroidStateFeaturePack(private val reader: AndroidStateReader) : FeatureP
             if (!modeMatches) false
             else if (!config.boolean("compareLevel", true)) true
             else comparePercent(reader.brightnessPercent() ?: error("Brightness unavailable"), config)
+        }
+        state(registry, "screen_timeout", "Screen timeout", FeatureCategory.DISPLAY,
+            listOf(
+                FieldSchema.Duration("minMs", "Minimum timeout"),
+                FieldSchema.Duration("maxMs", "Maximum timeout"),
+            )) { config, _ ->
+            val current = reader.screenTimeoutMs() ?: error("Screen timeout unavailable")
+            val min = config["minMs"].numberOrNull() ?: 0.0
+            val max = config["maxMs"].numberOrNull() ?: 86_400_000.0
+            require(min.isFinite() && max.isFinite() && min >= 0.0 && max >= min) { "Invalid timeout range" }
+            current in min..max
         }
     }
 
