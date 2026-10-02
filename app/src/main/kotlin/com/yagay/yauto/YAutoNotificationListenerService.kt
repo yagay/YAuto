@@ -1,17 +1,30 @@
 package com.yagay.yauto
 
+import android.app.Notification
+import android.app.PendingIntent
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import com.yagay.yauto.platform.android.ActiveNotificationSnapshot
+import com.yagay.yauto.platform.android.NotificationControlBridge
+import com.yagay.yauto.platform.android.NotificationController
 import com.yagay.yauto.platform.android.NotificationRuntimeEventMapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 
-class YAutoNotificationListenerService : NotificationListenerService() {
+class YAutoNotificationListenerService : NotificationListenerService(), NotificationController {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val dispatcher by lazy {
-        RuntimeEventDispatcher((application as YAutoApplication).graph, scope)
+    private val dispatcher by lazy { RuntimeEventDispatcher((application as YAutoApplication).graph, scope) }
+
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        NotificationControlBridge.attach(this)
+    }
+
+    override fun onListenerDisconnected() {
+        if (NotificationControlBridge.current() === this) NotificationControlBridge.attach(null)
+        super.onListenerDisconnected()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -26,7 +39,42 @@ class YAutoNotificationListenerService : NotificationListenerService() {
         dispatcher.dispatch(NotificationRuntimeEventMapper.removed(sbn, reason))
     }
 
+    override fun snapshots(): List<ActiveNotificationSnapshot> = activeNotifications.orEmpty().map { sbn ->
+        val extras = sbn.notification.extras
+        ActiveNotificationSnapshot(
+            key = sbn.key,
+            packageName = sbn.packageName,
+            title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty(),
+            text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty(),
+            actionCount = sbn.notification.actions?.size ?: 0,
+            ongoing = sbn.isOngoing,
+        )
+    }
+
+    override fun dismiss(key: String): Boolean = runCatching {
+        cancelNotification(key)
+        true
+    }.getOrDefault(false)
+
+    override fun open(key: String): Boolean {
+        val sbn = activeNotifications.orEmpty().firstOrNull { it.key == key } ?: return false
+        return send(sbn.notification.contentIntent)
+    }
+
+    override fun invokeAction(key: String, index: Int): Boolean {
+        val sbn = activeNotifications.orEmpty().firstOrNull { it.key == key } ?: return false
+        val action = sbn.notification.actions?.getOrNull(index) ?: return false
+        return send(action.actionIntent)
+    }
+
+    private fun send(intent: PendingIntent?): Boolean = runCatching {
+        intent ?: return false
+        intent.send()
+        true
+    }.getOrDefault(false)
+
     override fun onDestroy() {
+        if (NotificationControlBridge.current() === this) NotificationControlBridge.attach(null)
         scope.cancel()
         super.onDestroy()
     }
