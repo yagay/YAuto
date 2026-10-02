@@ -85,6 +85,7 @@
     <string name="feature_android_dnd_set_description">Set Android interruption filter when notification policy access is granted</string>
 
     <string name="feature_android_state_notification_active_description">Check whether an active notification matches the selected filters</string>
+    <string name="feature_android_condition_notification_active_description">Check whether an active notification matches the selected filters</string>
 
     <string name="feature_android_event_qs_tile_description">Run when one of the three YAuto Quick Settings tiles is tapped</string>
     <string name="feature_android_qs_tile_configure_description">Change a YAuto tile label and active/inactive visual state</string>
