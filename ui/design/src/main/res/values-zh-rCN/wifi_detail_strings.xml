@@ -13,17 +13,29 @@
 
     <string name="feature_android_state_wifi_scan_match_title">Wi-Fi 扫描结果匹配</string>
     <string name="feature_android_state_wifi_scan_match_description">检查最近一次 Wi-Fi 扫描是否包含符合 SSID、BSSID、信号和频率条件的网络</string>
+    <string name="feature_android_state_wifi_scan_match_field_ssidcontains">SSID 包含</string>
+    <string name="feature_android_state_wifi_scan_match_field_bssid">BSSID 精确匹配</string>
+    <string name="feature_android_state_wifi_scan_match_field_minrssi">最低 RSSI（dBm）</string>
+    <string name="feature_android_state_wifi_scan_match_field_minfrequencymhz">最低频率（MHz）</string>
+    <string name="feature_android_state_wifi_scan_match_field_maxfrequencymhz">最高频率（MHz）</string>
+    <string name="feature_android_state_wifi_scan_match_field_value">存在匹配项</string>
+
     <string name="feature_android_condition_wifi_scan_match_title">Wi-Fi 扫描结果匹配</string>
     <string name="feature_android_condition_wifi_scan_match_description">检查最近一次 Wi-Fi 扫描是否包含符合 SSID、BSSID、信号和频率条件的网络</string>
+    <string name="feature_android_condition_wifi_scan_match_field_ssidcontains">SSID 包含</string>
+    <string name="feature_android_condition_wifi_scan_match_field_bssid">BSSID 精确匹配</string>
+    <string name="feature_android_condition_wifi_scan_match_field_minrssi">最低 RSSI（dBm）</string>
+    <string name="feature_android_condition_wifi_scan_match_field_minfrequencymhz">最低频率（MHz）</string>
+    <string name="feature_android_condition_wifi_scan_match_field_maxfrequencymhz">最高频率（MHz）</string>
+    <string name="feature_android_condition_wifi_scan_match_field_value">存在匹配项</string>
+
     <string name="feature_android_event_wifi_scan_results_title">Wi-Fi 扫描结果可用</string>
     <string name="feature_android_event_wifi_scan_results_description">Android 报告新的 Wi-Fi 扫描结果并且至少有一个结果符合筛选条件时触发</string>
-
-    <string name="feature_phrase_ssid_contains">SSID 包含</string>
-    <string name="feature_phrase_bssid_exact">BSSID 精确匹配</string>
-    <string name="feature_phrase_minimum_rssi_dbm">最低 RSSI（dBm）</string>
-    <string name="feature_phrase_minimum_frequency_mhz">最低频率（MHz）</string>
-    <string name="feature_phrase_maximum_frequency_mhz">最高频率（MHz）</string>
-    <string name="feature_phrase_match_exists">存在匹配项</string>
+    <string name="feature_android_event_wifi_scan_results_field_ssidcontains">SSID 包含</string>
+    <string name="feature_android_event_wifi_scan_results_field_bssid">BSSID 精确匹配</string>
+    <string name="feature_android_event_wifi_scan_results_field_minrssi">最低 RSSI（dBm）</string>
+    <string name="feature_android_event_wifi_scan_results_field_minfrequencymhz">最低频率（MHz）</string>
+    <string name="feature_android_event_wifi_scan_results_field_maxfrequencymhz">最高频率（MHz）</string>
 
     <string name="runtime_feature_wifi_scan_location_permission_missing">扫描 Wi-Fi 网络需要精确位置权限</string>
     <string name="runtime_feature_wifi_scan_start_failed">Android 未启动 Wi-Fi 扫描；扫描可能受到频率限制或当前不可用</string>
