@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_file_archive_zip_title">Create ZIP archive</string>
+    <string name="feature_file_archive_zip_description">Compress an accessible file or directory tree into a ZIP archive</string>
+    <string name="feature_file_archive_zip_field_source">Source path</string>
+    <string name="feature_file_archive_zip_field_destination">Destination ZIP path</string>
+    <string name="feature_file_archive_zip_field_includeroot">Include source directory name</string>
+    <string name="feature_file_archive_zip_field_overwrite">Overwrite destination</string>
+
+    <string name="feature_file_archive_unzip_title">Extract ZIP archive</string>
+    <string name="feature_file_archive_unzip_description">Extract a ZIP archive with path-traversal and extracted-size protection</string>
+    <string name="feature_file_archive_unzip_field_source">ZIP file path</string>
+    <string name="feature_file_archive_unzip_field_destination">Destination directory</string>
+    <string name="feature_file_archive_unzip_field_overwrite">Overwrite existing files</string>
+    <string name="feature_file_archive_unzip_field_maxextractedmb">Maximum extracted MB</string>
+
+    <string name="feature_file_hash_title">Hash file</string>
+    <string name="feature_file_hash_description">Calculate MD5, SHA-1 or SHA-256 for an accessible file</string>
+    <string name="feature_file_hash_field_path">File path</string>
+    <string name="feature_file_hash_field_algorithm">Algorithm</string>
+    <string name="feature_file_hash_field_resultvariable">Store hash in variable</string>
+
+    <string name="feature_file_metadata_title">Get file metadata</string>
+    <string name="feature_file_metadata_description">Read common metadata for an accessible file or directory into an object variable</string>
+    <string name="feature_file_metadata_field_path">Path</string>
+    <string name="feature_file_metadata_field_resultvariable">Store object in variable</string>
+
+    <string name="feature_file_state_size_range_title">File or directory size</string>
+    <string name="feature_file_state_size_range_description">Check whether an accessible file or directory tree is within a byte-size range</string>
+    <string name="feature_file_state_size_range_field_path">Path</string>
+    <string name="feature_file_state_size_range_field_minbytes">Minimum bytes</string>
+    <string name="feature_file_state_size_range_field_maxbytes">Maximum bytes</string>
+
+    <string name="feature_file_condition_size_range_title">File or directory size</string>
+    <string name="feature_file_condition_size_range_description">Check whether an accessible file or directory tree is within a byte-size range</string>
+    <string name="feature_file_condition_size_range_field_path">Path</string>
+    <string name="feature_file_condition_size_range_field_minbytes">Minimum bytes</string>
+    <string name="feature_file_condition_size_range_field_maxbytes">Maximum bytes</string>
+</resources>
