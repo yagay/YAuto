@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="flow_add_title">添加流程 / 动作块</string>
+    <string name="flow_edit_title">编辑流程 / 动作块</string>
+    <string name="flow_name">流程名称</string>
+    <string name="flow_description">说明</string>
+    <string name="flow_inputs">输入参数</string>
+    <string name="flow_inputs_subtitle">调用流程时传入，替代 %%par1 / %%par2 这类位置参数。</string>
+    <string name="flow_no_inputs">没有输入参数</string>
+    <string name="flow_parameter_required_suffix"> · 必填</string>
+    <string name="flow_default_suffix_format"> · 默认 %1$s</string>
+    <string name="flow_actions">动作</string>
+    <string name="flow_actions_subtitle">与自动化共用同一功能目录</string>
+    <string name="flow_structure">结构</string>
+    <string name="flow_add_action_hint">点击 ＋ 添加动作</string>
+    <string name="flow_outputs">输出参数</string>
+    <string name="flow_outputs_subtitle">调用者可按名称读取返回数据</string>
+    <string name="flow_no_outputs">没有输出参数</string>
+    <string name="flow_action_tree_title">流程动作结构</string>
+    <string name="flow_input_parameter">输入参数</string>
+    <string name="flow_output_parameter">输出参数</string>
+    <string name="flow_action_menu_title">动作操作</string>
+    <string name="flow_move_up">上移</string>
+    <string name="flow_move_down">下移</string>
+    <string name="flow_parameter_name">名称</string>
+    <string name="flow_parameter_type_format">类型：%1$s</string>
+    <string name="flow_parameter_required">必填</string>
+    <string name="flow_parameter_default">默认值</string>
+    <string name="common_confirm">确定</string>
+    <string name="node_if">条件分支</string>
+    <string name="node_switch">多路分支</string>
+    <string name="node_repeat_format">重复 %1$d 次</string>
+    <string name="node_while">条件循环</string>
+    <string name="node_foreach">遍历列表</string>
+    <string name="node_parallel">并行分支</string>
+    <string name="node_try">尝试 / 捕获</string>
+    <string name="node_call_flow_format">调用流程：%1$s</string>
+    <string name="node_return">返回</string>
+    <string name="node_break">退出循环</string>
+    <string name="node_continue">继续循环</string>
+</resources>
