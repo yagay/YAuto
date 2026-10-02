@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_storage_available_title">存储可用空间</string>
+    <string name="feature_android_state_storage_available_description">检查可访问文件系统路径的可用字节数</string>
+    <string name="feature_android_state_storage_available_field_path">文件系统路径</string>
+    <string name="feature_android_state_storage_available_field_minbytes">最小可用字节数</string>
+    <string name="feature_android_state_storage_available_field_maxbytes">最大可用字节数</string>
+    <string name="feature_android_condition_storage_available_title">存储可用空间</string>
+    <string name="feature_android_condition_storage_available_description">检查可访问文件系统路径的可用字节数</string>
+    <string name="feature_android_condition_storage_available_field_path">文件系统路径</string>
+    <string name="feature_android_condition_storage_available_field_minbytes">最小可用字节数</string>
+    <string name="feature_android_condition_storage_available_field_maxbytes">最大可用字节数</string>
+
+    <string name="feature_android_state_memory_available_title">可用内存</string>
+    <string name="feature_android_state_memory_available_description">检查 Android 可用 RAM 是否位于指定字节范围</string>
+    <string name="feature_android_state_memory_available_field_minbytes">最小可用字节数</string>
+    <string name="feature_android_state_memory_available_field_maxbytes">最大可用字节数</string>
+    <string name="feature_android_condition_memory_available_title">可用内存</string>
+    <string name="feature_android_condition_memory_available_description">检查 Android 可用 RAM 是否位于指定字节范围</string>
+    <string name="feature_android_condition_memory_available_field_minbytes">最小可用字节数</string>
+    <string name="feature_android_condition_memory_available_field_maxbytes">最大可用字节数</string>
+
+    <string name="feature_android_state_low_memory_title">低内存状态</string>
+    <string name="feature_android_state_low_memory_description">检查 Android ActivityManager 的低内存压力状态</string>
+    <string name="feature_android_state_low_memory_field_value">低内存</string>
+    <string name="feature_android_condition_low_memory_title">低内存状态</string>
+    <string name="feature_android_condition_low_memory_description">检查 Android ActivityManager 的低内存压力状态</string>
+    <string name="feature_android_condition_low_memory_field_value">低内存</string>
+
+    <string name="feature_android_state_uptime_range_title">设备运行时长范围</string>
+    <string name="feature_android_state_uptime_range_description">检查 Android 启动后的经过时间是否位于指定毫秒范围</string>
+    <string name="feature_android_state_uptime_range_field_minms">最短运行时长</string>
+    <string name="feature_android_state_uptime_range_field_maxms">最长运行时长</string>
+    <string name="feature_android_condition_uptime_range_title">设备运行时长范围</string>
+    <string name="feature_android_condition_uptime_range_description">检查 Android 启动后的经过时间是否位于指定毫秒范围</string>
+    <string name="feature_android_condition_uptime_range_field_minms">最短运行时长</string>
+    <string name="feature_android_condition_uptime_range_field_maxms">最长运行时长</string>
+
+    <string name="feature_android_state_thermal_level_title">温控严重程度</string>
+    <string name="feature_android_state_thermal_level_description">检查 Android 温控严重程度是否达到或超过指定等级</string>
+    <string name="feature_android_state_thermal_level_field_minimum">最低温控等级</string>
+    <string name="feature_android_condition_thermal_level_title">温控严重程度</string>
+    <string name="feature_android_condition_thermal_level_description">检查 Android 温控严重程度是否达到或超过指定等级</string>
+    <string name="feature_android_condition_thermal_level_field_minimum">最低温控等级</string>
+
+    <string name="feature_android_state_battery_health_title">电池健康状态</string>
+    <string name="feature_android_state_battery_health_description">匹配 Android 电池服务报告的电池健康状态</string>
+    <string name="feature_android_state_battery_health_field_health">电池健康状态</string>
+    <string name="feature_android_condition_battery_health_title">电池健康状态</string>
+    <string name="feature_android_condition_battery_health_description">匹配 Android 电池服务报告的电池健康状态</string>
+    <string name="feature_android_condition_battery_health_field_health">电池健康状态</string>
+</resources>
