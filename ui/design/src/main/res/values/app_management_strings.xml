@@ -13,6 +13,50 @@
     <string name="feature_android_app_background_kill_description">Ask Android to kill background processes for a package without force-stopping it</string>
     <string name="feature_android_app_background_kill_field_package">App / package</string>
 
+    <string name="feature_android_app_suspended_set_title">Suspend or unsuspend app</string>
+    <string name="feature_android_app_suspended_set_description">Suspend an installed package for the current user, or make it usable again</string>
+    <string name="feature_android_app_suspended_set_field_package">App / package</string>
+    <string name="feature_android_app_suspended_set_field_suspended">Suspended</string>
+
+    <string name="feature_android_app_uninstall_user_title">Uninstall app for current user</string>
+    <string name="feature_android_app_uninstall_user_description">Remove an installed package for the current Android user, optionally keeping its data</string>
+    <string name="feature_android_app_uninstall_user_field_package">App / package</string>
+    <string name="feature_android_app_uninstall_user_field_keepdata">Keep app data</string>
+
+    <string name="feature_android_app_install_existing_title">Restore existing app for current user</string>
+    <string name="feature_android_app_install_existing_description">Re-enable a package that still exists on the device but was removed for the current user</string>
+    <string name="feature_android_app_install_existing_field_package">Package name</string>
+
+    <string name="feature_android_app_permission_set_title">Grant or revoke app permission</string>
+    <string name="feature_android_app_permission_set_description">Grant or revoke a runtime permission for an installed package through Root or Shizuku</string>
+    <string name="feature_android_app_permission_set_field_package">App / package</string>
+    <string name="feature_android_app_permission_set_field_permission">Permission name</string>
+    <string name="feature_android_app_permission_set_field_granted">Granted</string>
+
+    <string name="feature_android_app_standby_bucket_set_title">Set app standby bucket</string>
+    <string name="feature_android_app_standby_bucket_set_description">Place an application in an Android app standby bucket for the current user</string>
+    <string name="feature_android_app_standby_bucket_set_field_package">App / package</string>
+    <string name="feature_android_app_standby_bucket_set_field_bucket">Standby bucket</string>
+    <string name="feature_android_app_standby_bucket_set_field_bucket_option_active">Active</string>
+    <string name="feature_android_app_standby_bucket_set_field_bucket_option_working_set">Working set</string>
+    <string name="feature_android_app_standby_bucket_set_field_bucket_option_frequent">Frequent</string>
+    <string name="feature_android_app_standby_bucket_set_field_bucket_option_rare">Rare</string>
+    <string name="feature_android_app_standby_bucket_set_field_bucket_option_restricted">Restricted</string>
+
+    <string name="feature_android_app_inactive_set_title">Set app inactive state</string>
+    <string name="feature_android_app_inactive_set_description">Mark an application inactive or active for Android app-idle policy</string>
+    <string name="feature_android_app_inactive_set_field_package">App / package</string>
+    <string name="feature_android_app_inactive_set_field_inactive">Inactive</string>
+
+    <string name="feature_android_app_details_open_title">Open app details</string>
+    <string name="feature_android_app_details_open_description">Open Android application details settings for an installed package</string>
+    <string name="feature_android_app_details_open_field_package">App / package</string>
+
+    <string name="feature_android_app_package_info_title">Get app package information</string>
+    <string name="feature_android_app_package_info_description">Read version, install times, UID and package flags into an object variable</string>
+    <string name="feature_android_app_package_info_field_package">App / package</string>
+    <string name="feature_android_app_package_info_field_resultvariable">Store object in variable</string>
+
     <string name="feature_android_state_app_enabled_title">App enabled</string>
     <string name="feature_android_state_app_enabled_description">Check whether an installed package is enabled for the current user</string>
     <string name="feature_android_state_app_enabled_field_package">App / package</string>
@@ -23,6 +67,16 @@
     <string name="feature_android_condition_app_enabled_field_package">App / package</string>
     <string name="feature_android_condition_app_enabled_field_value">Enabled</string>
 
+    <string name="feature_android_state_app_process_running_title">App process running</string>
+    <string name="feature_android_state_app_process_running_description">Check whether a package currently has a process by querying a privileged shell</string>
+    <string name="feature_android_state_app_process_running_field_package">App / package</string>
+    <string name="feature_android_state_app_process_running_field_value">Running</string>
+
+    <string name="feature_android_condition_app_process_running_title">App process running</string>
+    <string name="feature_android_condition_app_process_running_description">Check whether a package currently has a process by querying a privileged shell</string>
+    <string name="feature_android_condition_app_process_running_field_package">App / package</string>
+    <string name="feature_android_condition_app_process_running_field_value">Running</string>
+
     <string name="feature_android_device_reboot_title">Reboot device</string>
     <string name="feature_android_device_reboot_description">Reboot Android normally, to recovery, or to the bootloader through a privileged shell</string>
     <string name="feature_android_device_reboot_field_mode">Reboot mode</string>
@@ -30,6 +84,8 @@
     <string name="feature_android_device_reboot_field_mode_option_recovery">Recovery</string>
     <string name="feature_android_device_reboot_field_mode_option_bootloader">Bootloader</string>
 
-    <string name="runtime_feature_app_self_management_blocked">YAuto will not disable, clear data for, or kill its own package</string>
+    <string name="runtime_feature_app_self_management_blocked">YAuto blocks destructive app-management operations against its own package</string>
     <string name="runtime_feature_reboot_mode_invalid">Unknown reboot mode</string>
+    <string name="runtime_feature_invalid_permission_name">Invalid Android permission name</string>
+    <string name="runtime_feature_standby_bucket_invalid">Unknown app standby bucket</string>
 </resources>
