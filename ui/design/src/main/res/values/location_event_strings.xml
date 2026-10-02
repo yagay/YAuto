@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_location_update_title">Location update</string>
+    <string name="feature_android_event_location_update_description">Run when Android provides a location update that satisfies provider, accuracy, distance and interval filters</string>
+    <string name="feature_android_event_location_update_field_provider">Provider</string>
+    <string name="feature_android_event_location_update_field_provider_option_any">Any provider</string>
+    <string name="feature_android_event_location_update_field_provider_option_gps">GPS</string>
+    <string name="feature_android_event_location_update_field_provider_option_network">Network</string>
+    <string name="feature_android_event_location_update_field_provider_option_passive">Passive</string>
+    <string name="feature_android_event_location_update_field_maxaccuracymeters">Maximum accuracy radius (meters, 0 = any)</string>
+    <string name="feature_android_event_location_update_field_minimumdistancemeters">Minimum movement (meters)</string>
+    <string name="feature_android_event_location_update_field_minimumintervalms">Minimum time between updates</string>
+
+    <string name="feature_android_event_geofence_transition_title">Geofence transition</string>
+    <string name="feature_android_event_geofence_transition_description">Run when the device enters or exits a configured circular location radius</string>
+    <string name="feature_android_event_geofence_transition_field_latitude">Latitude</string>
+    <string name="feature_android_event_geofence_transition_field_longitude">Longitude</string>
+    <string name="feature_android_event_geofence_transition_field_radiusmeters">Radius meters</string>
+    <string name="feature_android_event_geofence_transition_field_transition">Transition</string>
+    <string name="feature_android_event_geofence_transition_field_transition_option_any">Enter or exit</string>
+    <string name="feature_android_event_geofence_transition_field_transition_option_enter">Enter</string>
+    <string name="feature_android_event_geofence_transition_field_transition_option_exit">Exit</string>
+    <string name="feature_android_event_geofence_transition_field_provider">Provider</string>
+    <string name="feature_android_event_geofence_transition_field_provider_option_any">Any provider</string>
+    <string name="feature_android_event_geofence_transition_field_provider_option_gps">GPS</string>
+    <string name="feature_android_event_geofence_transition_field_provider_option_network">Network</string>
+    <string name="feature_android_event_geofence_transition_field_provider_option_passive">Passive</string>
+    <string name="feature_android_event_geofence_transition_field_maxaccuracymeters">Maximum accuracy radius (meters, 0 = any)</string>
+    <string name="feature_android_event_geofence_transition_field_minimumdistancemeters">Location subscription movement (meters)</string>
+    <string name="feature_android_event_geofence_transition_field_minimumintervalms">Location subscription interval</string>
+    <string name="feature_android_event_geofence_transition_field_emitinitial">Emit current inside/outside state after subscription starts</string>
+</resources>
