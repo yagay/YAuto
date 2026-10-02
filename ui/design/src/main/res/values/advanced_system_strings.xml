@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_display_rotation_set_title">Set fixed screen rotation</string>
+    <string name="feature_android_display_rotation_set_description">Disable automatic rotation and lock Android to a selected display rotation</string>
+    <string name="feature_android_display_rotation_set_field_rotation">Rotation</string>
+    <string name="feature_android_display_rotation_set_field_rotation_option_0">0°</string>
+    <string name="feature_android_display_rotation_set_field_rotation_option_90">90°</string>
+    <string name="feature_android_display_rotation_set_field_rotation_option_180">180°</string>
+    <string name="feature_android_display_rotation_set_field_rotation_option_270">270°</string>
+
+    <string name="feature_android_display_font_scale_set_title">Set system font scale</string>
+    <string name="feature_android_display_font_scale_set_description">Change Android system font scaling through privileged settings</string>
+    <string name="feature_android_display_font_scale_set_field_scale">Font scale</string>
+
+    <string name="feature_android_display_animation_scale_set_title">Set system animation scale</string>
+    <string name="feature_android_display_animation_scale_set_description">Set Android window, transition and animator duration scales together</string>
+    <string name="feature_android_display_animation_scale_set_field_scale">Animation scale</string>
+
+    <string name="feature_android_display_size_set_title">Set display resolution override</string>
+    <string name="feature_android_display_size_set_description">Apply or reset Android wm display-size override</string>
+    <string name="feature_android_display_size_set_field_reset">Reset to physical size</string>
+    <string name="feature_android_display_size_set_field_width">Width pixels</string>
+    <string name="feature_android_display_size_set_field_height">Height pixels</string>
+
+    <string name="feature_android_display_density_set_title">Set display density override</string>
+    <string name="feature_android_display_density_set_description">Apply or reset Android wm display-density override</string>
+    <string name="feature_android_display_density_set_field_reset">Reset to physical density</string>
+    <string name="feature_android_display_density_set_field_dpi">Density DPI</string>
+
+    <string name="feature_android_network_data_saver_set_title">Set data saver</string>
+    <string name="feature_android_network_data_saver_set_description">Enable or disable Android background-data restriction through netpolicy</string>
+    <string name="feature_android_network_data_saver_set_field_enabled">Data saver enabled</string>
+
+    <string name="feature_android_network_private_dns_set_title">Set private DNS</string>
+    <string name="feature_android_network_private_dns_set_description">Set Android private DNS to off, automatic, or a validated hostname</string>
+    <string name="feature_android_network_private_dns_set_field_mode">Private DNS mode</string>
+    <string name="feature_android_network_private_dns_set_field_hostname">Private DNS hostname</string>
+    <string name="feature_android_network_private_dns_set_field_mode_option_off">Off</string>
+    <string name="feature_android_network_private_dns_set_field_mode_option_automatic">Automatic</string>
+    <string name="feature_android_network_private_dns_set_field_mode_option_hostname">Hostname</string>
+
+    <string name="feature_android_time_automatic_set_title">Set automatic time settings</string>
+    <string name="feature_android_time_automatic_set_description">Enable or disable Android automatic time and automatic time-zone settings</string>
+    <string name="feature_android_time_automatic_set_field_autotime">Automatic time</string>
+    <string name="feature_android_time_automatic_set_field_autotimezone">Automatic time zone</string>
+
+    <string name="feature_android_power_device_idle_set_title">Force or release device idle</string>
+    <string name="feature_android_power_device_idle_set_description">Force Android DeviceIdle into idle mode or release a previous forced-idle state</string>
+    <string name="feature_android_power_device_idle_set_field_forcedidle">Forced idle</string>
+
+    <string name="feature_android_device_shutdown_title">Shut down device</string>
+    <string name="feature_android_device_shutdown_description">Request a normal Android shutdown through the power service</string>
+
+    <string name="feature_android_state_auto_time_title">Automatic time settings</string>
+    <string name="feature_android_state_auto_time_description">Check Android automatic time and time-zone settings</string>
+    <string name="feature_android_state_auto_time_field_setting">Setting</string>
+    <string name="feature_android_state_auto_time_field_setting_option_time">Automatic time</string>
+    <string name="feature_android_state_auto_time_field_setting_option_time_zone">Automatic time zone</string>
+    <string name="feature_android_state_auto_time_field_value">Enabled</string>
+
+    <string name="feature_android_condition_auto_time_title">Automatic time settings</string>
+    <string name="feature_android_condition_auto_time_description">Check Android automatic time and time-zone settings</string>
+    <string name="feature_android_condition_auto_time_field_setting">Setting</string>
+    <string name="feature_android_condition_auto_time_field_setting_option_time">Automatic time</string>
+    <string name="feature_android_condition_auto_time_field_setting_option_time_zone">Automatic time zone</string>
+    <string name="feature_android_condition_auto_time_field_value">Enabled</string>
+
+    <string name="runtime_feature_rotation_invalid">Unknown display rotation</string>
+    <string name="runtime_feature_font_scale_invalid">Font scale must be between 0.5 and 2.0</string>
+    <string name="runtime_feature_animation_scale_invalid">Animation scale must be between 0 and 10</string>
+    <string name="runtime_feature_display_size_invalid">Display width and height are invalid</string>
+    <string name="runtime_feature_display_density_invalid">Display density is invalid</string>
+    <string name="runtime_feature_private_dns_invalid">Private DNS mode or hostname is invalid</string>
+</resources>
