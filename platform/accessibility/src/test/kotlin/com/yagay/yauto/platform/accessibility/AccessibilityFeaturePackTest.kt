@@ -9,6 +9,7 @@ import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.model.NodeId
 import com.yagay.yauto.core.model.RuntimeEvent
+import com.yagay.yauto.core.registry.EventMatchContext
 import com.yagay.yauto.core.registry.FeatureExecutionContext
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.registry.VariableAccess
@@ -20,17 +21,26 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AccessibilityFeaturePackTest {
-    private fun context(client: CapabilityClient, event: RuntimeEvent = RuntimeEvent("test")) = FeatureExecutionContext(
+    private val variables = object : VariableAccess {
+        override fun get(name: String): ConfigValue? = null
+        override fun set(name: String, value: ConfigValue) = Unit
+        override fun snapshot(): Map<String, ConfigValue> = emptyMap()
+    }
+
+    private fun context(client: CapabilityClient) = FeatureExecutionContext(
         executionId = ExecutionId("test"),
         nodeId = NodeId("node"),
-        variables = object : VariableAccess {
-            override fun get(name: String): ConfigValue? = null
-            override fun set(name: String, value: ConfigValue) = Unit
-            override fun snapshot(): Map<String, ConfigValue> = emptyMap()
-        },
+        variables = variables,
         capabilities = client,
         tracer = NoOpExecutionTracer,
+    )
+
+    private fun eventContext(client: CapabilityClient, event: RuntimeEvent) = EventMatchContext(
+        executionId = ExecutionId("event-test"),
         event = event,
+        variables = variables,
+        capabilities = client,
+        tracer = NoOpExecutionTracer,
     )
 
     @Test
@@ -118,6 +128,11 @@ class AccessibilityFeaturePackTest {
                 "class" to ConfigValue.StringValue("com.example.app.MainActivity"),
             ),
         )
-        assertTrue(registry.eventMatcher(feature.typeId)!!.matches(feature, context(CapabilityClient { CapabilityResult(false) }, event)))
+        assertTrue(
+            registry.eventMatcher(feature.typeId)!!.matches(
+                feature,
+                eventContext(CapabilityClient { CapabilityResult(false) }, event),
+            )
+        )
     }
 }
