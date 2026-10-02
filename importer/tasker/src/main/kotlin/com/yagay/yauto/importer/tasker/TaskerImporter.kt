@@ -66,7 +66,12 @@ class TaskerImporter : AutomationImporter {
                 source = SourceMetadata(id, def.id, "Task"),
             )
             flowsByTaskId[def.id] = flow
-            trace += ImportTrace("task[${def.id}]", flow.id.value, "IMPORTED", "${actionNodes.size} actions")
+            trace += ImportTrace(
+                "task[${def.id}]",
+                flow.id.value,
+                "IMPORTED",
+                userText("import.trace.actions", actionNodes.size),
+            )
         }
 
         val automations = mutableListOf<Automation>()
@@ -107,7 +112,12 @@ class TaskerImporter : AutomationImporter {
                 source = SourceMetadata(id, profileId, "Profile"),
             )
             automations += automation
-            trace += ImportTrace("profile[$profileId]", automation.id.value, "IMPORTED", "${contexts.size} contexts")
+            trace += ImportTrace(
+                "profile[$profileId]",
+                automation.id.value,
+                "IMPORTED",
+                userText("import.trace.tasker_profile", contexts.size),
+            )
         }
         ImportResult(id, true, ImportBundle(automations, flowsByTaskId.values.toList()), issues, trace)
     }.getOrElse { error ->
