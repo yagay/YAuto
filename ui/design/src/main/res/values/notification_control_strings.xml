@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_notification_dismiss_all_title">Dismiss matching notifications</string>
+    <string name="feature_android_notification_dismiss_all_description">Dismiss every active notification matching the selected filters and optionally store the number dismissed</string>
+    <string name="feature_android_notification_dismiss_all_field_resultvariable">Store dismissed count in variable</string>
+
+    <string name="feature_android_notification_action_title_title">Run notification action by title</string>
+    <string name="feature_android_notification_action_title_description">Invoke the first notification action button whose title matches the configured text</string>
+    <string name="feature_android_notification_action_title_field_actiontitle">Action title</string>
+    <string name="feature_android_notification_action_title_field_exactactiontitle">Exact action-title match</string>
+
+    <string name="feature_android_notification_query_title">Query active notifications</string>
+    <string name="feature_android_notification_query_description">Store matching active notifications and useful metadata as a list of objects</string>
+    <string name="feature_android_notification_query_field_maxcount">Maximum results</string>
+    <string name="feature_android_notification_query_field_order">Result order</string>
+    <string name="feature_android_notification_query_field_order_option_newest">Newest first</string>
+    <string name="feature_android_notification_query_field_order_option_oldest">Oldest first</string>
+    <string name="feature_android_notification_query_field_resultvariable">Store notification list in variable</string>
+
+    <string name="feature_android_notification_count_title">Count active notifications</string>
+    <string name="feature_android_notification_count_description">Count active notifications matching the selected filters and store the result in a variable</string>
+    <string name="feature_android_notification_count_field_resultvariable">Store count in variable</string>
+
+    <string name="feature_android_state_notification_count_title">Active notification count</string>
+    <string name="feature_android_state_notification_count_description">Compare the number of matching active notifications with a configured value</string>
+    <string name="feature_android_state_notification_count_field_operator">Comparison</string>
+    <string name="feature_android_state_notification_count_field_value">Notification count</string>
+    <string name="feature_android_condition_notification_count_title">Active notification count</string>
+    <string name="feature_android_condition_notification_count_description">Compare the number of matching active notifications with a configured value</string>
+    <string name="feature_android_condition_notification_count_field_operator">Comparison</string>
+    <string name="feature_android_condition_notification_count_field_value">Notification count</string>
+
+    <string name="runtime_feature_notification_operation_failed">No matching notification was found or the notification operation failed</string>
+</resources>
