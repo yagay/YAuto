@@ -26,6 +26,8 @@ object MacroDroidFeatureSuggestions {
                 "BatterySaverTrigger" -> "android.event.power_save_changed"
                 "DarkThemeTrigger" -> "android.event.dark_mode_changed"
                 "NFCStateTrigger" -> "android.event.nfc_state_changed"
+                "BatteryLevelTrigger", "BatteryTemperatureTrigger" -> "android.event.battery_changed"
+                "HeadphonesTrigger" -> "android.event.headset_changed"
                 else -> null
             }
             SourceFeatureKind.CONDITION -> when (sourceType) {
@@ -34,6 +36,9 @@ object MacroDroidFeatureSuggestions {
                 "DarkThemeConstraint" -> "android.condition.dark_mode"
                 "LocationModeConstraint" -> "android.condition.location_enabled"
                 "NFCStateConstraint" -> "android.condition.nfc_enabled"
+                "BatteryLevelConstraint" -> "android.condition.battery_level"
+                "BatteryTemperatureConstraint" -> "android.condition.battery_temperature"
+                "HeadphonesConnectionConstraint" -> "android.condition.headset_connected"
                 else -> null
             }
             SourceFeatureKind.STATE -> null
