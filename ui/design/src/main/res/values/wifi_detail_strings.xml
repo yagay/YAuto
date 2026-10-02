@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_wifi_connection_info_title">Get Wi-Fi connection details</string>
+    <string name="feature_android_wifi_connection_info_description">Store current Wi-Fi SSID, BSSID, RSSI, frequency, link speed and network validation details</string>
+    <string name="feature_android_wifi_connection_info_field_resultvariable">Store connection object in variable</string>
+
+    <string name="feature_android_wifi_scan_start_title">Start Wi-Fi scan</string>
+    <string name="feature_android_wifi_scan_start_description">Request a Wi-Fi scan; Android may throttle or reject repeated background scans</string>
+    <string name="feature_android_wifi_scan_results_title">Get Wi-Fi scan results</string>
+    <string name="feature_android_wifi_scan_results_description">Store the latest Android Wi-Fi scan results as structured objects</string>
+    <string name="feature_android_wifi_scan_results_field_maxcount">Maximum results</string>
+    <string name="feature_android_wifi_scan_results_field_resultvariable">Store scan result list in variable</string>
+
+    <string name="feature_android_state_wifi_scan_match_title">Wi-Fi scan result matches</string>
+    <string name="feature_android_state_wifi_scan_match_description">Check whether the latest Wi-Fi scan contains a network matching SSID, BSSID, signal and frequency filters</string>
+    <string name="feature_android_condition_wifi_scan_match_title">Wi-Fi scan result matches</string>
+    <string name="feature_android_condition_wifi_scan_match_description">Check whether the latest Wi-Fi scan contains a network matching SSID, BSSID, signal and frequency filters</string>
+    <string name="feature_android_event_wifi_scan_results_title">Wi-Fi scan results available</string>
+    <string name="feature_android_event_wifi_scan_results_description">Run when Android reports updated Wi-Fi scan results and at least one result matches the configured filters</string>
+
+    <string name="feature_phrase_ssid_contains">SSID contains</string>
+    <string name="feature_phrase_bssid_exact">BSSID exact</string>
+    <string name="feature_phrase_minimum_rssi_dbm">Minimum RSSI (dBm)</string>
+    <string name="feature_phrase_minimum_frequency_mhz">Minimum frequency (MHz)</string>
+    <string name="feature_phrase_maximum_frequency_mhz">Maximum frequency (MHz)</string>
+    <string name="feature_phrase_match_exists">Match exists</string>
+
+    <string name="runtime_feature_wifi_scan_location_permission_missing">Fine location permission is required to scan Wi-Fi networks</string>
+    <string name="runtime_feature_wifi_scan_start_failed">Android did not start a Wi-Fi scan; scanning may be throttled or unavailable</string>
+</resources>
