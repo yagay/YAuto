@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_notification_channel_name">YAuto automation runtime</string>
+    <string name="runtime_notification_channel_description">Keeps automation event monitoring and rule execution active</string>
+    <string name="runtime_notification_title">YAuto is running</string>
+    <string name="runtime_notification_text">Automation event monitoring is active</string>
+</resources>
