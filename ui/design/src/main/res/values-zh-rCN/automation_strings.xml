@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="automation_unnamed">未命名自动化</string>
+    <string name="automation_add_title">添加自动化</string>
+    <string name="automation_edit_title">编辑自动化</string>
+    <string name="automation_enabled">启用</string>
+    <string name="automation_name">自动化名称</string>
+    <string name="automation_triggers">触发器</string>
+    <string name="automation_triggers_subtitle">事件触发，或持续状态进入/退出</string>
+    <string name="automation_event_count_format">事件 %1$d</string>
+    <string name="automation_state_count_format">状态 %1$d</string>
+    <string name="automation_add_event_hint">点击 ＋ 添加触发器</string>
+    <string name="automation_add_state_hint">点击 ＋ 添加持续状态</string>
+    <string name="automation_actions">动作</string>
+    <string name="automation_actions_subtitle">按顺序执行；支持分支、循环、并行与调用流程</string>
+    <string name="automation_event_phase_count_format">事件 %1$d</string>
+    <string name="automation_enter_phase_count_format">进入 %1$d</string>
+    <string name="automation_exit_phase_count_format">退出 %1$d</string>
+    <string name="automation_add_action_hint">点击 ＋ 添加动作</string>
+    <string name="automation_constraints">约束</string>
+    <string name="automation_constraints_subtitle">只有约束满足时自动化才会继续</string>
+    <string name="automation_complex_condition_title">复杂条件组合</string>
+    <string name="automation_complex_condition_subtitle">从导入或旧规则保留，可在结构编辑器中继续维护。</string>
+    <string name="automation_no_constraints">没有约束：自动化不会被额外限制。</string>
+    <string name="automation_advanced_settings">高级设置</string>
+    <string name="automation_description">说明</string>
+    <string name="automation_local_variables">局部变量</string>
+    <string name="automation_add_local_variable">＋ 添加局部变量</string>
+    <string name="automation_conflict_policy">冲突策略</string>
+    <string name="automation_conflict_queue">排队运行</string>
+    <string name="automation_conflict_ignore_new">忽略新触发</string>
+    <string name="automation_conflict_cancel_previous">取消上次运行</string>
+    <string name="automation_conflict_parallel">并行运行</string>
+    <string name="automation_limits_format">最长运行 %1$d ms · 最大循环 %2$d</string>
+    <string name="automation_item_operations">项目操作</string>
+    <string name="automation_event_tree_title">事件动作结构</string>
+    <string name="automation_enter_tree_title">进入动作结构</string>
+    <string name="automation_exit_tree_title">退出动作结构</string>
+    <string name="automation_add_local_variable_title">添加局部变量</string>
+    <string name="automation_edit_local_variable_title">编辑局部变量</string>
+    <string name="automation_variable_name">变量名</string>
+</resources>
