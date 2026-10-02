@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_nfc_set_title">NFC</string>
+    <string name="feature_android_nfc_set_description">通过 Android NFC 服务开启或关闭 NFC</string>
+
+    <string name="feature_android_location_enabled_set_title">定位服务</string>
+    <string name="feature_android_location_enabled_set_description">为当前用户开启或关闭 Android 定位总开关</string>
+
+    <string name="feature_android_display_auto_rotate_set_title">自动旋转</string>
+    <string name="feature_android_display_auto_rotate_set_description">启用或停用 Android 屏幕自动旋转</string>
+
+    <string name="feature_android_display_screen_timeout_set_title">屏幕超时</string>
+    <string name="feature_android_display_screen_timeout_set_description">设置 Android 自动熄屏等待时间</string>
+    <string name="feature_android_display_screen_timeout_set_field_timeoutms">屏幕超时</string>
+
+    <string name="feature_android_display_dark_mode_set_title">深色主题</string>
+    <string name="feature_android_display_dark_mode_set_description">将 Android 系统夜间模式设置为浅色、深色或自动</string>
+    <string name="feature_android_display_dark_mode_set_field_mode">模式</string>
+    <string name="feature_android_display_dark_mode_set_field_mode_option_light">浅色</string>
+    <string name="feature_android_display_dark_mode_set_field_mode_option_dark">深色</string>
+    <string name="feature_android_display_dark_mode_set_field_mode_option_auto">自动</string>
+
+    <string name="feature_android_power_battery_saver_set_title">省电模式</string>
+    <string name="feature_android_power_battery_saver_set_description">开启或关闭 Android 低功耗模式</string>
+
+    <string name="feature_android_power_stay_awake_set_title">充电时保持唤醒</string>
+    <string name="feature_android_power_stay_awake_set_description">控制哪些充电来源会让屏幕保持唤醒</string>
+    <string name="feature_android_power_stay_awake_set_field_mode">保持唤醒模式</string>
+    <string name="feature_android_power_stay_awake_set_field_mode_option_off">关闭</string>
+    <string name="feature_android_power_stay_awake_set_field_mode_option_all">所有充电来源</string>
+    <string name="feature_android_power_stay_awake_set_field_mode_option_usb">USB</string>
+    <string name="feature_android_power_stay_awake_set_field_mode_option_ac">有线充电器</string>
+    <string name="feature_android_power_stay_awake_set_field_mode_option_wireless">无线充电器</string>
+
+    <string name="feature_android_state_nfc_enabled_title">NFC 已启用</string>
+    <string name="feature_android_condition_nfc_enabled_title">NFC 已启用</string>
+    <string name="feature_android_state_location_enabled_title">定位服务已启用</string>
+    <string name="feature_android_condition_location_enabled_title">定位服务已启用</string>
+    <string name="feature_android_state_auto_rotate_title">自动旋转已启用</string>
+    <string name="feature_android_condition_auto_rotate_title">自动旋转已启用</string>
+    <string name="feature_android_state_dark_mode_title">深色主题已启用</string>
+    <string name="feature_android_condition_dark_mode_title">深色主题已启用</string>
+    <string name="feature_android_state_stay_awake_while_charging_title">充电时保持唤醒</string>
+    <string name="feature_android_condition_stay_awake_while_charging_title">充电时保持唤醒</string>
+    <string name="feature_android_state_screen_timeout_title">屏幕超时</string>
+    <string name="feature_android_condition_screen_timeout_title">屏幕超时</string>
+    <string name="feature_android_state_screen_timeout_field_minms">最短超时</string>
+    <string name="feature_android_state_screen_timeout_field_maxms">最长超时</string>
+    <string name="feature_android_condition_screen_timeout_field_minms">最短超时</string>
+    <string name="feature_android_condition_screen_timeout_field_maxms">最长超时</string>
+</resources>
