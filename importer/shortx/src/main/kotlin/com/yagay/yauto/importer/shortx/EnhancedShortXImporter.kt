@@ -45,6 +45,9 @@ internal object ShortXFeatureSuggestions {
                 "SetDarkModeEnabled" -> "android.display.dark_mode.set"
                 "StayAwake" -> "android.power.stay_awake.set"
                 "TTS" -> "android.tts.speak"
+                "WakeupScreen" -> "android.screen.wake"
+                "InjectKeyCode" -> "android.input.keyevent"
+                "TakeScreenshot" -> "android.screenshot.capture"
                 else -> null
             }
             ".fact[" in sourcePath -> when (name) {
