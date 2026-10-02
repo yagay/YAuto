@@ -35,6 +35,7 @@ object AppLanguageManager {
             activity.getSystemService(LocaleManager::class.java).applicationLocales =
                 if (normalized.isBlank()) LocaleList.getEmptyLocaleList()
                 else LocaleList.forLanguageTags(normalized)
+            refreshRuntimeSurfaces(activity)
         } else {
             activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .edit()
@@ -42,9 +43,9 @@ object AppLanguageManager {
                 .apply()
             applySaved(activity.applicationContext)
             applyToResources(activity, normalized)
+            refreshRuntimeSurfaces(activity)
+            activity.recreate()
         }
-        refreshRuntimeSurfaces(activity)
-        activity.recreate()
     }
 
     fun applySaved(context: Context) {
