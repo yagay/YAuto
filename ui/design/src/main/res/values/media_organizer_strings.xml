@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_media_transport_title">Media transport control</string>
+    <string name="feature_android_media_transport_description">Send play, pause, next, previous, stop, fast-forward or rewind to the active media session</string>
+    <string name="feature_android_media_transport_field_command">Media command</string>
+    <string name="feature_android_media_transport_field_command_option_play_pause">Play / pause</string>
+    <string name="feature_android_media_transport_field_command_option_play">Play</string>
+    <string name="feature_android_media_transport_field_command_option_pause">Pause</string>
+    <string name="feature_android_media_transport_field_command_option_next">Next</string>
+    <string name="feature_android_media_transport_field_command_option_previous">Previous</string>
+    <string name="feature_android_media_transport_field_command_option_stop">Stop</string>
+    <string name="feature_android_media_transport_field_command_option_fast_forward">Fast-forward</string>
+    <string name="feature_android_media_transport_field_command_option_rewind">Rewind</string>
+
+    <string name="feature_android_alarm_set_title">Set alarm</string>
+    <string name="feature_android_alarm_set_description">Create an alarm in the user\'s alarm clock application</string>
+    <string name="feature_android_alarm_set_field_hour">Hour (0-23)</string>
+    <string name="feature_android_alarm_set_field_minute">Minute (0-59)</string>
+    <string name="feature_android_alarm_set_field_label">Alarm label</string>
+    <string name="feature_android_alarm_set_field_skipui">Create without showing alarm app</string>
+
+    <string name="feature_android_timer_set_title">Set timer</string>
+    <string name="feature_android_timer_set_description">Create a countdown timer in the user\'s clock application</string>
+    <string name="feature_android_timer_set_field_durationseconds">Duration seconds</string>
+    <string name="feature_android_timer_set_field_label">Timer label</string>
+    <string name="feature_android_timer_set_field_skipui">Create without showing clock app</string>
+
+    <string name="feature_android_calendar_event_add_title">Add calendar event</string>
+    <string name="feature_android_calendar_event_add_description">Open the calendar editor for an event relative to the current time</string>
+    <string name="feature_android_calendar_event_add_field_title">Event title</string>
+    <string name="feature_android_calendar_event_add_field_description">Description</string>
+    <string name="feature_android_calendar_event_add_field_location">Location</string>
+    <string name="feature_android_calendar_event_add_field_startdelayminutes">Start after minutes</string>
+    <string name="feature_android_calendar_event_add_field_durationminutes">Duration minutes</string>
+
+    <string name="runtime_feature_media_transport_command_invalid">Unknown media transport command</string>
+    <string name="runtime_feature_alarm_time_invalid">Alarm hour or minute is invalid</string>
+    <string name="runtime_feature_timer_duration_invalid">Timer duration must be a whole number from 1 to 604800 seconds</string>
+    <string name="runtime_feature_calendar_window_invalid">Calendar start delay or duration is invalid</string>
+</resources>
