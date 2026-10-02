@@ -85,6 +85,7 @@
     <string name="feature_android_dnd_set_description">获得通知策略权限后设置 Android 打扰过滤模式</string>
 
     <string name="feature_android_state_notification_active_description">检查活动通知是否符合选定的过滤条件</string>
+    <string name="feature_android_condition_notification_active_description">检查活动通知是否符合选定的过滤条件</string>
 
     <string name="feature_android_event_qs_tile_description">点击三个 YAuto 快速设置磁贴中的任意一个时触发</string>
     <string name="feature_android_qs_tile_configure_description">更改 YAuto 磁贴标签及启用/停用的视觉状态</string>
