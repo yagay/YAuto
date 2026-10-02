@@ -45,6 +45,8 @@ object MacroDroidFeatureSuggestions {
                 "SetWallpaperAction" -> "android.wallpaper.set"
                 "ReadFileAction" -> "file.read_text"
                 "WriteToFileAction" -> "file.write_text"
+                "SetAutoSyncAction" -> "android.sync.master.set"
+                "LaunchHomeScreenAction" -> "android.home.launch"
                 else -> null
             }
             SourceFeatureKind.EVENT -> when (sourceType) {
@@ -72,6 +74,10 @@ object MacroDroidFeatureSuggestions {
                 "SystemSettingConstraint" -> "android.condition.setting_matches"
                 "IpAddressConstraint" -> "android.condition.local_address_match"
                 "IsRootedConstraint", "ShizukuStateConstraint" -> "android.condition.privileged_backend_available"
+                "AutoSyncConstraint" -> "android.condition.master_sync"
+                "DeviceLockedConstraint" -> "android.condition.device_locked"
+                "MusicActiveConstraint" -> "android.condition.music_active"
+                "PriorityModeConstraint" -> "android.condition.dnd_filter"
                 else -> null
             }
             SourceFeatureKind.STATE -> null
