@@ -48,6 +48,7 @@ internal object ShortXFeatureSuggestions {
                 "WakeupScreen" -> "android.screen.wake"
                 "InjectKeyCode" -> "android.input.keyevent"
                 "TakeScreenshot" -> "android.screenshot.capture"
+                "MediaPlaybackAction" -> "android.media.transport"
                 else -> null
             }
             ".fact[" in sourcePath -> when (name) {
