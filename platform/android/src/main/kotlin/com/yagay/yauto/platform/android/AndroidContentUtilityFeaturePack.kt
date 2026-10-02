@@ -4,7 +4,6 @@ import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
-import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.string
@@ -13,6 +12,7 @@ import com.yagay.yauto.core.registry.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.net.URLConnection
 
 class AndroidContentUtilityFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.content_utility"
@@ -154,10 +154,8 @@ class AndroidContentUtilityFeaturePack(context: Context) : FeaturePack {
     }
 }
 
-internal fun guessMimeType(fileName: String): String {
-    val extension = fileName.substringAfterLast('.', "").lowercase()
-    return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: "application/octet-stream"
-}
+internal fun guessMimeType(fileName: String): String =
+    URLConnection.guessContentTypeFromName(fileName) ?: "application/octet-stream"
 
 internal fun wallpaperFlags(target: String): Int? = when (target) {
     "home" -> WallpaperManager.FLAG_SYSTEM
