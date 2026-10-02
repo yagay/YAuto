@@ -11,7 +11,7 @@ class AndroidEventFeaturePack : FeaturePack {
 
     override fun install(registry: FeatureRegistry) {
         simpleEvent(registry, "android.event.boot", "Device boot", FeatureCategory.SYSTEM)
-        simpleEvent(registry, "android.event.battery_changed", "Battery changed", FeatureCategory.DEVICE)
+        batteryEvent(registry)
         booleanEvent(registry, "android.event.power_save_changed", "Power saving mode changed", FeatureCategory.DEVICE, "enabled")
         simpleEvent(registry, "android.event.screen_on", "Screen on", FeatureCategory.DISPLAY)
         simpleEvent(registry, "android.event.screen_off", "Screen off", FeatureCategory.DISPLAY)
@@ -28,6 +28,7 @@ class AndroidEventFeaturePack : FeaturePack {
         booleanEvent(registry, "android.event.dark_mode_changed", "Dark theme changed", FeatureCategory.DISPLAY, "enabled")
         booleanEvent(registry, "android.event.auto_rotate_changed", "Auto-rotate changed", FeatureCategory.DISPLAY, "enabled")
         screenTimeoutEvent(registry)
+        headsetEvent(registry)
         simpleEvent(registry, "android.event.locale_changed", "Locale changed", FeatureCategory.SYSTEM)
         simpleEvent(registry, "android.event.timezone_changed", "Time zone changed", FeatureCategory.SYSTEM)
         simpleEvent(registry, "android.event.time_changed", "System time changed", FeatureCategory.SYSTEM)
@@ -44,6 +45,73 @@ class AndroidEventFeaturePack : FeaturePack {
         notificationEvent(registry, "android.event.notification_posted", "Notification posted")
         notificationEvent(registry, "android.event.notification_removed", "Notification removed")
         broadcastEvent(registry)
+    }
+
+    private fun batteryEvent(registry: FeatureRegistry) {
+        val typeId = "android.event.battery_changed"
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId(typeId), FeatureKind.EVENT,
+                "Battery changed", "Run when Android reports a battery update and optionally filter level or temperature",
+                FeatureCategory.DEVICE,
+                fields = listOf(
+                    FieldSchema.Number("minPercent", "Minimum percent", min = 0.0, max = 100.0),
+                    FieldSchema.Number("maxPercent", "Maximum percent", min = 0.0, max = 100.0),
+                    FieldSchema.Number("minTemperatureC", "Minimum temperature (°C)", min = -50.0, max = 150.0),
+                    FieldSchema.Number("maxTemperatureC", "Maximum temperature (°C)", min = -50.0, max = 150.0),
+                ),
+                keywords = setOf("battery", "level", "temperature", "charging"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != typeId) return@registerEvent false
+            val minPercent = feature.config["minPercent"].numberOrNull()
+            val maxPercent = feature.config["maxPercent"].numberOrNull()
+            val minTemp = feature.config["minTemperatureC"].numberOrNull()
+            val maxTemp = feature.config["maxTemperatureC"].numberOrNull()
+            if (minPercent != null || maxPercent != null) {
+                val actual = ctx.event.payload["percent"].numberOrNull() ?: return@registerEvent false
+                if (minPercent != null && actual < minPercent) return@registerEvent false
+                if (maxPercent != null && actual > maxPercent) return@registerEvent false
+            }
+            if (minTemp != null || maxTemp != null) {
+                val actual = ctx.event.payload["temperatureC"].numberOrNull() ?: return@registerEvent false
+                if (minTemp != null && actual < minTemp) return@registerEvent false
+                if (maxTemp != null && actual > maxTemp) return@registerEvent false
+            }
+            true
+        }
+    }
+
+    private fun headsetEvent(registry: FeatureRegistry) {
+        val typeId = "android.event.headset_changed"
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId(typeId), FeatureKind.EVENT,
+                "Headset connection changed", "Run when a wired, Bluetooth or USB headset is connected or disconnected",
+                FeatureCategory.AUDIO,
+                fields = listOf(
+                    FieldSchema.Choice("state", "Connection", options = listOf("any", "connected", "disconnected")),
+                    FieldSchema.Choice("category", "Headset type", options = listOf("any", "wired", "bluetooth", "usb")),
+                    FieldSchema.Text("nameContains", "Device name contains"),
+                ),
+                keywords = setOf("headset", "headphones", "earbuds", "audio device", "bluetooth", "usb"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != typeId) return@registerEvent false
+            val event = ctx.event.payload
+            val stateMatches = when (feature.config.string("state", "any")) {
+                "connected" -> event.boolean("connected")
+                "disconnected" -> !event.boolean("connected")
+                else -> true
+            }
+            val category = feature.config.string("category", "any")
+            val categoryMatches = category == "any" || event.string("category") == category
+            val nameContains = feature.config.string("nameContains")
+            stateMatches && categoryMatches &&
+                (nameContains.isBlank() || event.string("name").contains(nameContains, ignoreCase = true))
+        }
     }
 
     private fun timeTickEvent(registry: FeatureRegistry) {
