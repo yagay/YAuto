@@ -22,6 +22,7 @@ import com.yagay.yauto.platform.android.AndroidEventSource
 import com.yagay.yauto.platform.android.AudioDeviceEventSource
 import com.yagay.yauto.platform.android.BluetoothDeviceEventSource
 import com.yagay.yauto.platform.android.ClipboardEventSource
+import com.yagay.yauto.platform.android.CommunicationEventSource
 import com.yagay.yauto.platform.android.ConfiguredBroadcastEventSource
 import com.yagay.yauto.platform.android.ConfiguredLocationEventSource
 import com.yagay.yauto.platform.android.ConfiguredSensorEventSource
@@ -31,6 +32,7 @@ import com.yagay.yauto.platform.android.NetworkProfileEventSource
 import com.yagay.yauto.platform.android.RuntimeEventEmitter
 import com.yagay.yauto.platform.android.SurfaceRuntimeBridge
 import com.yagay.yauto.platform.android.SystemBroadcastEventSource
+import com.yagay.yauto.platform.android.WifiScanEventSource
 import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,10 +53,12 @@ class AutomationRuntimeService : Service() {
         sources += SystemBroadcastEventSource(this)
         sources += NetworkEventSource(this)
         sources += NetworkProfileEventSource(this)
+        sources += WifiScanEventSource(this)
         sources += ClipboardEventSource(this)
         sources += DeviceSettingEventSource(this)
         sources += AudioDeviceEventSource(this)
         sources += BluetoothDeviceEventSource(this)
+        sources += CommunicationEventSource(this)
         sources += ConfiguredBroadcastEventSource(this, graph.workspace)
         sources += ConfiguredSensorEventSource(this, graph.workspace)
         sources += ConfiguredLocationEventSource(this, graph.workspace)
