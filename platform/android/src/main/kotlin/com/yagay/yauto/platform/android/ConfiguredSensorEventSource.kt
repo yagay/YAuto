@@ -159,13 +159,17 @@ class ConfiguredSensorEventSource(
             else -> return null
         }
         if (manager.getDefaultSensor(type) == null) return null
-        val defaultInterval = if (feature.typeId == "android.event.shake") 1_000L else 500L
+        val interval = if (feature.typeId == "android.event.shake") {
+            feature.config.long("cooldownMs", 1_000L)
+        } else {
+            feature.config.long("minimumIntervalMs", 500L)
+        }.coerceIn(100L, 3_600_000L)
         return SensorRule(
             feature = feature,
             sensorName = sensorName,
             sensorType = type,
             key = sensorSubscriptionKey(feature),
-            minimumIntervalMs = feature.config.long("minimumIntervalMs", defaultInterval).coerceIn(100, 3_600_000),
+            minimumIntervalMs = interval,
         )
     }
 
