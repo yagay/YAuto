@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_location_radius_title">位置半径</string>
+    <string name="feature_android_state_location_radius_description">根据设备最后已知位置判断位于指定半径内或半径外</string>
+    <string name="feature_android_condition_location_radius_title">位置半径</string>
+    <string name="feature_android_condition_location_radius_description">根据设备最后已知位置判断位于指定半径内或半径外</string>
+
+    <string name="feature_android_state_location_radius_field_latitude">纬度</string>
+    <string name="feature_android_state_location_radius_field_longitude">经度</string>
+    <string name="feature_android_state_location_radius_field_radiusmeters">半径（米）</string>
+    <string name="feature_android_state_location_radius_field_inside">位于半径内</string>
+    <string name="feature_android_state_location_radius_field_maxageminutes">位置最大有效时间（分钟，0 = 不限制）</string>
+    <string name="feature_android_condition_location_radius_field_latitude">纬度</string>
+    <string name="feature_android_condition_location_radius_field_longitude">经度</string>
+    <string name="feature_android_condition_location_radius_field_radiusmeters">半径（米）</string>
+    <string name="feature_android_condition_location_radius_field_inside">位于半径内</string>
+    <string name="feature_android_condition_location_radius_field_maxageminutes">位置最大有效时间（分钟，0 = 不限制）</string>
+</resources>
