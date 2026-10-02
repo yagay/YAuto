@@ -10,6 +10,7 @@
     <string name="feature_android_audio_stop_description">停止由 YAuto 启动的音频，不影响其他应用</string>
 
     <string name="runtime_feature_playback_source_empty">播放源为空</string>
+    <string name="runtime_feature_playback_source_unsupported">播放源必须是绝对文件路径，或 content、file、Android 资源、HTTP、HTTPS URI</string>
     <string name="runtime_feature_playback_loop_wait_conflict">循环播放不能同时等待播放完成</string>
     <string name="runtime_feature_playback_failed">播放失败：%1$s</string>
     <string name="runtime_feature_playback_timeout">播放超时</string>
