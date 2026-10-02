@@ -16,16 +16,21 @@ class ShortcutDispatchActivity : Activity() {
         AutomationRuntimeService.start(this)
         val shortcutId = intent.getStringExtra("shortcutId").orEmpty()
         val command = intent.getStringExtra("command").orEmpty()
-        RuntimeEventDispatcher((application as YAutoApplication).graph, scope).dispatch(
-            RuntimeEvent(
-                "android.event.shortcut",
-                mapOf(
-                    "id" to ConfigValue.StringValue(shortcutId),
-                    "command" to ConfigValue.StringValue(command),
-                ),
-                source = "android.shortcut",
+        val graph = runCatching { (application as YAutoApplication).graph }
+            .onFailure { StartupFailureRecorder.record(this, "shortcut-dispatch:graph", it) }
+            .getOrNull()
+        if (graph != null) {
+            RuntimeEventDispatcher(graph, scope).dispatch(
+                RuntimeEvent(
+                    "android.event.shortcut",
+                    mapOf(
+                        "id" to ConfigValue.StringValue(shortcutId),
+                        "command" to ConfigValue.StringValue(command),
+                    ),
+                    source = "android.shortcut",
+                )
             )
-        )
+        }
         finish()
     }
 }
