@@ -127,7 +127,9 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                 fields = listOf(
                     FieldSchema.Choice("provider", "Provider", true, listOf("any", "gps", "network")),
                     FieldSchema.Variable("resultVariable", "Store location object", true),
-                ), keywords = setOf("location", "gps", "coordinates", "定位"), ownerPackId = id,
+                ),
+                accessRequirements = setOf(AccessRequirement.LOCATION),
+                keywords = setOf("location", "gps", "coordinates", "定位"), ownerPackId = id,
             )
         ) { feature, ctx ->
             val location = runCatching { bestLastLocation(feature.config.string("provider", "any")) }.getOrNull()
@@ -148,7 +150,9 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                 FieldSchema.Number("radiusMeters", "Radius (metres)", true, min = 1.0),
                 FieldSchema.Choice("provider", "Provider", true, listOf("any", "gps", "network")),
                 FieldSchema.Duration("maxAgeMs", "Maximum location age"),
-            ), keywords = setOf("location", "radius", "geofence", "gps", "位置范围"), ownerPackId = id,
+            ),
+            accessRequirements = setOf(AccessRequirement.LOCATION),
+            keywords = setOf("location", "radius", "geofence", "gps", "位置范围"), ownerPackId = id,
         )
         val evaluator = ConditionEvaluator { feature, _ ->
             val location = runCatching { bestLastLocation(feature.config.string("provider", "any")) }.getOrNull() ?: return@ConditionEvaluator false
