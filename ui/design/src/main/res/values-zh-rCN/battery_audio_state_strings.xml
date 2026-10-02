@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_battery_temperature_title">电池温度</string>
+    <string name="feature_android_state_battery_temperature_description">比较当前电池温度</string>
+    <string name="feature_android_state_battery_temperature_field_value">温度（°C）</string>
+    <string name="feature_android_condition_battery_temperature_title">电池温度</string>
+    <string name="feature_android_condition_battery_temperature_description">比较当前电池温度</string>
+    <string name="feature_android_condition_battery_temperature_field_value">温度（°C）</string>
+
+    <string name="feature_android_state_headset_connected_title">耳机已连接</string>
+    <string name="feature_android_state_headset_connected_description">检查当前是否连接了有线、蓝牙或 USB 耳机</string>
+    <string name="feature_android_state_headset_connected_field_value">已连接</string>
+    <string name="feature_android_condition_headset_connected_title">耳机已连接</string>
+    <string name="feature_android_condition_headset_connected_description">检查当前是否连接了有线、蓝牙或 USB 耳机</string>
+    <string name="feature_android_condition_headset_connected_field_value">已连接</string>
+
+    <string name="feature_android_event_battery_changed_title">电池状态已更改</string>
+    <string name="feature_android_event_battery_changed_description">Android 报告电池更新时触发，并可按电量或温度筛选</string>
+    <string name="feature_android_event_battery_changed_field_minpercent">最低电量百分比</string>
+    <string name="feature_android_event_battery_changed_field_maxpercent">最高电量百分比</string>
+    <string name="feature_android_event_battery_changed_field_mintemperaturec">最低温度（°C）</string>
+    <string name="feature_android_event_battery_changed_field_maxtemperaturec">最高温度（°C）</string>
+
+    <string name="feature_android_event_headset_changed_title">耳机连接已更改</string>
+    <string name="feature_android_event_headset_changed_description">有线、蓝牙或 USB 耳机连接或断开时触发</string>
+    <string name="feature_android_event_headset_changed_field_state">连接状态</string>
+    <string name="feature_android_event_headset_changed_field_state_option_any">任意</string>
+    <string name="feature_android_event_headset_changed_field_state_option_connected">已连接</string>
+    <string name="feature_android_event_headset_changed_field_state_option_disconnected">已断开</string>
+    <string name="feature_android_event_headset_changed_field_category">耳机类型</string>
+    <string name="feature_android_event_headset_changed_field_category_option_any">任意</string>
+    <string name="feature_android_event_headset_changed_field_category_option_wired">有线</string>
+    <string name="feature_android_event_headset_changed_field_category_option_bluetooth">蓝牙</string>
+    <string name="feature_android_event_headset_changed_field_category_option_usb">USB</string>
+    <string name="feature_android_event_headset_changed_field_namecontains">设备名称包含</string>
+</resources>
