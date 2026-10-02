@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_file_open_title">Open file</string>
+    <string name="feature_android_file_open_description">Open an accessible file in another Android app through a secure content URI</string>
+    <string name="feature_android_file_open_field_path">File path</string>
+    <string name="feature_android_file_open_field_mimetype">MIME type (blank = automatic)</string>
+
+    <string name="feature_android_file_share_title">Share file</string>
+    <string name="feature_android_file_share_description">Open Android\'s share sheet with an accessible file and optional accompanying text</string>
+    <string name="feature_android_file_share_field_path">File path</string>
+    <string name="feature_android_file_share_field_mimetype">MIME type (blank = automatic)</string>
+    <string name="feature_android_file_share_field_text">Optional text</string>
+
+    <string name="feature_android_wallpaper_set_title">Set wallpaper from file</string>
+    <string name="feature_android_wallpaper_set_description">Set the home screen, lock screen, or both wallpapers from a local image file</string>
+    <string name="feature_android_wallpaper_set_field_path">Image file path</string>
+    <string name="feature_android_wallpaper_set_field_target">Wallpaper target</string>
+    <string name="feature_android_wallpaper_set_field_target_option_home">Home screen</string>
+    <string name="feature_android_wallpaper_set_field_target_option_lock">Lock screen</string>
+    <string name="feature_android_wallpaper_set_field_target_option_both">Both</string>
+
+    <string name="feature_android_wallpaper_clear_title">Clear wallpaper</string>
+    <string name="feature_android_wallpaper_clear_description">Clear the home screen, lock screen, or both wallpapers and return to the system default</string>
+    <string name="feature_android_wallpaper_clear_field_target">Wallpaper target</string>
+    <string name="feature_android_wallpaper_clear_field_target_option_home">Home screen</string>
+    <string name="feature_android_wallpaper_clear_field_target_option_lock">Lock screen</string>
+    <string name="feature_android_wallpaper_clear_field_target_option_both">Both</string>
+
+    <string name="runtime_feature_wallpaper_target_invalid">Unknown wallpaper target</string>
+    <string name="runtime_feature_wallpaper_set_failed">Could not set wallpaper from the selected image</string>
+    <string name="runtime_feature_wallpaper_clear_failed">Could not clear wallpaper</string>
+</resources>
