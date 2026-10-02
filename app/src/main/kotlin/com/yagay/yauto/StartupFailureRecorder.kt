@@ -36,14 +36,8 @@ object StartupFailureRecorder {
         Log.e(TAG, "Startup component failed: $component", error)
         runCatching {
             synchronized(this) {
-                val dir = File(context.applicationContext.filesDir, DIRECTORY)
-                if (!dir.isDirectory && !dir.mkdirs()) return@runCatching
-                val file = File(dir, FILE_NAME)
-                if (file.length() >= MAX_BYTES) {
-                    val previous = File(dir, PREVIOUS_FILE_NAME)
-                    previous.delete()
-                    file.renameTo(previous)
-                }
+                val file = currentFile(context) ?: return@runCatching
+                rotateIfNeeded(file)
                 file.appendText(
                     buildString {
                         append(System.currentTimeMillis())
@@ -56,5 +50,33 @@ object StartupFailureRecorder {
                 )
             }
         }
+    }
+
+    fun read(context: Context, maxChars: Int = 120_000): String = runCatching {
+        buildList {
+            val dir = File(context.applicationContext.filesDir, DIRECTORY)
+            val previous = File(dir, PREVIOUS_FILE_NAME)
+            val current = File(dir, FILE_NAME)
+            if (previous.isFile) add(previous.readText())
+            if (current.isFile) add(current.readText())
+        }.joinToString("\n").takeLast(maxChars)
+    }.getOrDefault("")
+
+    fun hasEntries(context: Context): Boolean = runCatching {
+        val dir = File(context.applicationContext.filesDir, DIRECTORY)
+        File(dir, FILE_NAME).length() > 0L || File(dir, PREVIOUS_FILE_NAME).length() > 0L
+    }.getOrDefault(false)
+
+    private fun currentFile(context: Context): File? {
+        val dir = File(context.applicationContext.filesDir, DIRECTORY)
+        if (!dir.isDirectory && !dir.mkdirs()) return null
+        return File(dir, FILE_NAME)
+    }
+
+    private fun rotateIfNeeded(file: File) {
+        if (file.length() < MAX_BYTES) return
+        val previous = File(file.parentFile, PREVIOUS_FILE_NAME)
+        previous.delete()
+        file.renameTo(previous)
     }
 }
