@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_network_dns_resolve_title">Resolve DNS hostname</string>
+    <string name="feature_android_network_dns_resolve_description">Resolve a hostname and store all returned IP addresses in a list variable</string>
+    <string name="feature_android_network_dns_resolve_field_host">Hostname</string>
+    <string name="feature_android_network_dns_resolve_field_timeoutms">Timeout</string>
+    <string name="feature_android_network_dns_resolve_field_resultvariable">Store addresses in variable</string>
+
+    <string name="feature_android_network_local_addresses_title">Get local network addresses</string>
+    <string name="feature_android_network_local_addresses_description">List active network-interface addresses and store structured results in a variable</string>
+    <string name="feature_android_network_local_addresses_field_includeloopback">Include loopback</string>
+    <string name="feature_android_network_local_addresses_field_includeipv6">Include IPv6</string>
+    <string name="feature_android_network_local_addresses_field_resultvariable">Store address list in variable</string>
+
+    <string name="feature_android_state_tcp_reachable_title">TCP port reachable</string>
+    <string name="feature_android_state_tcp_reachable_description">Check whether a TCP connection can be established to a host and port within a bounded timeout</string>
+    <string name="feature_android_state_tcp_reachable_field_host">Host</string>
+    <string name="feature_android_state_tcp_reachable_field_port">Port</string>
+    <string name="feature_android_state_tcp_reachable_field_timeoutms">Connection timeout</string>
+    <string name="feature_android_state_tcp_reachable_field_value">Reachable</string>
+
+    <string name="feature_android_condition_tcp_reachable_title">TCP port reachable</string>
+    <string name="feature_android_condition_tcp_reachable_description">Check whether a TCP connection can be established to a host and port within a bounded timeout</string>
+    <string name="feature_android_condition_tcp_reachable_field_host">Host</string>
+    <string name="feature_android_condition_tcp_reachable_field_port">Port</string>
+    <string name="feature_android_condition_tcp_reachable_field_timeoutms">Connection timeout</string>
+    <string name="feature_android_condition_tcp_reachable_field_value">Reachable</string>
+
+    <string name="feature_android_network_tcp_wait_title">Wait for TCP port</string>
+    <string name="feature_android_network_tcp_wait_description">Wait until a TCP host and port become reachable, with a strict total timeout</string>
+    <string name="feature_android_network_tcp_wait_field_host">Host</string>
+    <string name="feature_android_network_tcp_wait_field_port">Port</string>
+    <string name="feature_android_network_tcp_wait_field_timeoutms">Total timeout</string>
+    <string name="feature_android_network_tcp_wait_field_intervalms">Retry interval</string>
+    <string name="feature_android_network_tcp_wait_field_resultvariable">Optional result variable</string>
+
+    <string name="runtime_feature_network_host_invalid">Hostname is empty or invalid</string>
+    <string name="runtime_feature_network_dns_failed">Could not resolve hostname %1$s</string>
+    <string name="runtime_feature_network_port_invalid">TCP port is invalid</string>
+    <string name="runtime_feature_network_host_port_invalid">TCP host or port is invalid</string>
+    <string name="runtime_feature_network_wait_timeout">Timed out waiting for %1$s:%2$d</string>
+</resources>
