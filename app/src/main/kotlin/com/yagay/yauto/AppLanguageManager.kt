@@ -3,6 +3,7 @@ package com.yagay.yauto
 import android.app.Activity
 import android.app.LocaleManager
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.LocaleList
@@ -41,8 +42,9 @@ object AppLanguageManager {
                 .apply()
             applySaved(activity.applicationContext)
             applyToResources(activity, normalized)
-            activity.recreate()
         }
+        refreshRuntimeSurfaces(activity)
+        activity.recreate()
     }
 
     fun applySaved(context: Context) {
@@ -62,6 +64,13 @@ object AppLanguageManager {
         ENGLISH -> ENGLISH
         SIMPLIFIED_CHINESE -> SIMPLIFIED_CHINESE
         else -> SYSTEM
+    }
+
+    private fun refreshRuntimeSurfaces(context: Context) {
+        context.startService(
+            Intent(context, AutomationRuntimeService::class.java)
+                .setAction(AutomationRuntimeService.ACTION_REFRESH_LOCALIZED_SURFACES)
+        )
     }
 
     @Suppress("DEPRECATION")
