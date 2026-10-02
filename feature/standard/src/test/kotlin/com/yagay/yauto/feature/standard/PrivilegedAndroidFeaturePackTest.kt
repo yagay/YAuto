@@ -63,6 +63,29 @@ class PrivilegedAndroidFeaturePackTest {
         assertEquals("root", captured?.preferredBackendId)
     }
 
+    @Test fun `registry wrapper applies backend to direct capability calls`() = runBlocking {
+        val registry = FeatureRegistry()
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("test.direct.capability"), FeatureKind.ACTION, "Direct", "Direct capability call",
+                FeatureCategory.SYSTEM, capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
+            )
+        ) { _, ctx ->
+            val result = ctx.capabilities.execute(CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "direct"))
+            ActionExecutionResult(result.success, result.value, result.message)
+        }
+        var captured: CapabilityRequest? = null
+        val feature = FeatureRef("test.direct.capability", config = mapOf(
+            FEATURE_BACKEND_CONFIG_KEY to ConfigValue.StringValue("shizuku"),
+        ))
+        val result = registry.actionExecutor(feature.typeId)!!.execute(feature, context(CapabilityClient { request ->
+            captured = request
+            CapabilityResult(true, backendId = request.preferredBackendId)
+        }))
+        assertTrue(result.success)
+        assertEquals("shizuku", captured?.preferredBackendId)
+    }
+
     @Test fun `broker auto falls back but explicit backend stays strict`() = runBlocking {
         class FakeBackend(
             override val id: String,
