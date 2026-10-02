@@ -38,6 +38,9 @@ class AndroidPlaybackFeaturePack(context: Context) : FeaturePack {
         ) { feature, ctx ->
             val source = feature.config.string("source").resolveVariables(ctx.variables).trim()
             if (source.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.playback_source_empty"))
+            if (!isSupportedPlaybackSource(source)) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.playback_source_unsupported"))
+            }
             val volume = (feature.config["volume"].numberOrNull() ?: 100.0).coerceIn(0.0, 100.0).toFloat() / 100f
             val loop = feature.config.boolean("loop")
             val wait = feature.config.boolean("waitForCompletion")
@@ -66,24 +69,8 @@ private class PlaybackController(private val context: Context) {
 
     suspend fun play(source: String, volume: Float, loop: Boolean, wait: Boolean): ActionExecutionResult {
         stop()
-        val player = runCatching {
-            withContext(Dispatchers.IO) {
-                MediaPlayer().apply {
-                    setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_MEDIA)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                            .build()
-                    )
-                    setVolume(volume, volume)
-                    isLooping = loop
-                    setSource(source)
-                    prepare()
-                }
-            }
-        }.getOrElse {
-            return ActionExecutionResult(false, message = userText("feature.playback_failed", it.message ?: it.javaClass.simpleName))
-        }
+        val player = preparePlayer(source, volume, loop)
+            ?: return ActionExecutionResult(false, message = userText("feature.playback_failed", source))
 
         val completion = CompletableDeferred<Boolean>()
         val started = runCatching {
@@ -111,7 +98,7 @@ private class PlaybackController(private val context: Context) {
             }
         }.isSuccess
         if (!started) {
-            runCatching { player.release() }
+            withContext(Dispatchers.Main.immediate) { runCatching { player.release() } }
             return ActionExecutionResult(false, message = userText("feature.playback_failed", source))
         }
         if (!wait) return ActionExecutionResult(true, ConfigValue.StringValue(source))
@@ -124,6 +111,38 @@ private class PlaybackController(private val context: Context) {
                 ActionExecutionResult(false, message = userText("feature.playback_timeout"))
             }
         }
+    }
+
+    private suspend fun preparePlayer(source: String, volume: Float, loop: Boolean): MediaPlayer? {
+        val prepared = CompletableDeferred<Boolean>()
+        val player = runCatching {
+            withContext(Dispatchers.Main.immediate) {
+                MediaPlayer().apply {
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build()
+                    )
+                    setVolume(volume, volume)
+                    isLooping = loop
+                    setSource(source)
+                    setOnPreparedListener { prepared.complete(true) }
+                    setOnErrorListener { _, _, _ ->
+                        prepared.complete(false)
+                        true
+                    }
+                    prepareAsync()
+                }
+            }
+        }.getOrNull() ?: return null
+
+        val ready = withTimeoutOrNull(PREPARE_TIMEOUT_MS) { prepared.await() } == true
+        if (!ready) {
+            withContext(Dispatchers.Main.immediate) { runCatching { player.release() } }
+            return null
+        }
+        return player
     }
 
     suspend fun stop() {
@@ -145,15 +164,21 @@ private class PlaybackController(private val context: Context) {
         when (uri.scheme?.lowercase()) {
             "content", "android.resource", "file" -> setDataSource(context, uri)
             "http", "https" -> setDataSource(source)
-            null -> {
-                require(source.startsWith('/')) { "Unsupported media source" }
-                setDataSource(source)
-            }
-            else -> error("Unsupported media source")
+            null -> setDataSource(source)
+            else -> error("unreachable")
         }
     }
 
     private companion object {
+        const val PREPARE_TIMEOUT_MS = 30_000L
         const val MAX_WAIT_MS = 60 * 60_000L
+    }
+}
+
+internal fun isSupportedPlaybackSource(source: String): Boolean {
+    if (source.startsWith('/')) return true
+    return when (Uri.parse(source).scheme?.lowercase()) {
+        "content", "android.resource", "file", "http", "https" -> true
+        else -> false
     }
 }
