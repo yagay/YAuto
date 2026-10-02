@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_wifi_network_title">Wi-Fi 网络</string>
+    <string name="feature_android_state_wifi_network_description">匹配当前 Wi-Fi 连接、SSID/BSSID 和信号范围</string>
+    <string name="feature_android_state_wifi_network_field_connected">连接状态</string>
+    <string name="feature_android_state_wifi_network_field_connected_option_any">任意</string>
+    <string name="feature_android_state_wifi_network_field_connected_option_connected">已连接</string>
+    <string name="feature_android_state_wifi_network_field_connected_option_disconnected">未连接</string>
+    <string name="feature_android_state_wifi_network_field_ssid">SSID 包含</string>
+    <string name="feature_android_state_wifi_network_field_bssid">精确 BSSID</string>
+    <string name="feature_android_state_wifi_network_field_minrssi">最低信号强度（dBm）</string>
+    <string name="feature_android_state_wifi_network_field_maxrssi">最高信号强度（dBm）</string>
+
+    <string name="feature_android_condition_wifi_network_title">Wi-Fi 网络</string>
+    <string name="feature_android_condition_wifi_network_description">匹配当前 Wi-Fi 连接、SSID/BSSID 和信号范围</string>
+    <string name="feature_android_condition_wifi_network_field_connected">连接状态</string>
+    <string name="feature_android_condition_wifi_network_field_connected_option_any">任意</string>
+    <string name="feature_android_condition_wifi_network_field_connected_option_connected">已连接</string>
+    <string name="feature_android_condition_wifi_network_field_connected_option_disconnected">未连接</string>
+    <string name="feature_android_condition_wifi_network_field_ssid">SSID 包含</string>
+    <string name="feature_android_condition_wifi_network_field_bssid">精确 BSSID</string>
+    <string name="feature_android_condition_wifi_network_field_minrssi">最低信号强度（dBm）</string>
+    <string name="feature_android_condition_wifi_network_field_maxrssi">最高信号强度（dBm）</string>
+
+    <string name="feature_android_event_wifi_changed_field_minrssi">最低信号强度（dBm）</string>
+    <string name="feature_android_event_wifi_changed_field_maxrssi">最高信号强度（dBm）</string>
+
+    <string name="feature_android_state_network_profile_title">当前活动网络</string>
+    <string name="feature_android_state_network_profile_description">匹配当前活动网络的传输类型、互联网验证和计费状态</string>
+    <string name="feature_android_state_network_profile_field_connected">已连接</string>
+    <string name="feature_android_state_network_profile_field_transport">网络类型</string>
+    <string name="feature_android_state_network_profile_field_transport_option_any">任意</string>
+    <string name="feature_android_state_network_profile_field_transport_option_wifi">Wi-Fi</string>
+    <string name="feature_android_state_network_profile_field_transport_option_cellular">移动网络</string>
+    <string name="feature_android_state_network_profile_field_transport_option_ethernet">以太网</string>
+    <string name="feature_android_state_network_profile_field_transport_option_vpn">VPN</string>
+    <string name="feature_android_state_network_profile_field_validated">互联网验证</string>
+    <string name="feature_android_state_network_profile_field_validated_option_any">任意</string>
+    <string name="feature_android_state_network_profile_field_validated_option_yes">是</string>
+    <string name="feature_android_state_network_profile_field_validated_option_no">否</string>
+    <string name="feature_android_state_network_profile_field_metered">计费网络</string>
+    <string name="feature_android_state_network_profile_field_metered_option_any">任意</string>
+    <string name="feature_android_state_network_profile_field_metered_option_yes">是</string>
+    <string name="feature_android_state_network_profile_field_metered_option_no">否</string>
+
+    <string name="feature_android_condition_network_profile_title">当前活动网络</string>
+    <string name="feature_android_condition_network_profile_description">匹配当前活动网络的传输类型、互联网验证和计费状态</string>
+    <string name="feature_android_condition_network_profile_field_connected">已连接</string>
+    <string name="feature_android_condition_network_profile_field_transport">网络类型</string>
+    <string name="feature_android_condition_network_profile_field_transport_option_any">任意</string>
+    <string name="feature_android_condition_network_profile_field_transport_option_wifi">Wi-Fi</string>
+    <string name="feature_android_condition_network_profile_field_transport_option_cellular">移动网络</string>
+    <string name="feature_android_condition_network_profile_field_transport_option_ethernet">以太网</string>
+    <string name="feature_android_condition_network_profile_field_transport_option_vpn">VPN</string>
+    <string name="feature_android_condition_network_profile_field_validated">互联网验证</string>
+    <string name="feature_android_condition_network_profile_field_validated_option_any">任意</string>
+    <string name="feature_android_condition_network_profile_field_validated_option_yes">是</string>
+    <string name="feature_android_condition_network_profile_field_validated_option_no">否</string>
+    <string name="feature_android_condition_network_profile_field_metered">计费网络</string>
+    <string name="feature_android_condition_network_profile_field_metered_option_any">任意</string>
+    <string name="feature_android_condition_network_profile_field_metered_option_yes">是</string>
+    <string name="feature_android_condition_network_profile_field_metered_option_no">否</string>
+
+    <string name="feature_android_state_bluetooth_audio_device_title">蓝牙音频设备</string>
+    <string name="feature_android_state_bluetooth_audio_device_description">按名称或地址匹配当前已连接的蓝牙音频设备</string>
+    <string name="feature_android_state_bluetooth_audio_device_field_connected">已连接</string>
+    <string name="feature_android_state_bluetooth_audio_device_field_namecontains">设备名称包含</string>
+    <string name="feature_android_state_bluetooth_audio_device_field_address">精确设备地址</string>
+    <string name="feature_android_condition_bluetooth_audio_device_title">蓝牙音频设备</string>
+    <string name="feature_android_condition_bluetooth_audio_device_description">按名称或地址匹配当前已连接的蓝牙音频设备</string>
+    <string name="feature_android_condition_bluetooth_audio_device_field_connected">已连接</string>
+    <string name="feature_android_condition_bluetooth_audio_device_field_namecontains">设备名称包含</string>
+    <string name="feature_android_condition_bluetooth_audio_device_field_address">精确设备地址</string>
+</resources>
