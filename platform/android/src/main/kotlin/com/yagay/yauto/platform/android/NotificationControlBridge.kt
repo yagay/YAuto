@@ -7,6 +7,13 @@ data class ActiveNotificationSnapshot(
     val text: String,
     val actionCount: Int,
     val ongoing: Boolean,
+    val actionTitles: List<String> = emptyList(),
+    val postTimeEpochMs: Long = 0L,
+    val notificationId: Int = 0,
+    val tag: String = "",
+    val channelId: String = "",
+    val category: String = "",
+    val groupKey: String = "",
 )
 
 interface NotificationController {
@@ -16,10 +23,12 @@ interface NotificationController {
     fun invokeAction(key: String, index: Int): Boolean
 }
 
-/** Process-local bridge. The app's NotificationListenerService owns the Android objects. */
 object NotificationControlBridge {
     @Volatile private var controller: NotificationController? = null
 
-    fun attach(value: NotificationController?) { controller = value }
+    fun attach(value: NotificationController?) {
+        controller = value
+    }
+
     fun current(): NotificationController? = controller
 }
