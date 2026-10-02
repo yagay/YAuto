@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="diagnostics_title">诊断中心</string>
+    <string name="diagnostics_refresh">刷新</string>
+    <string name="diagnostics_collecting_short">收集中</string>
+    <string name="diagnostics_header">诊断与执行日志</string>
+    <string name="diagnostics_header_detail">按来源分组查看；Root、LSPosed、SystemUI、system_server、导入报告和 YAuto 执行记录都使用同一结构。</string>
+    <string name="diagnostics_local_only">诊断只在本机生成，不会自动上传。</string>
+    <string name="diagnostics_collecting">正在收集…</string>
+    <string name="diagnostics_collect">收集诊断</string>
+    <string name="diagnostics_export_json">导出 JSON</string>
+    <string name="diagnostics_sources">来源</string>
+    <string name="diagnostics_source_summary_format">%1$d 条记录</string>
+    <string name="diagnostics_source_summary_errors_format">%1$d 条记录 · %2$d 个错误</string>
+    <string name="diagnostics_collectors">采集器状态</string>
+    <string name="diagnostics_collectors_unchecked">尚未检查采集器。</string>
+    <string name="diagnostics_available">可用</string>
+    <string name="diagnostics_unavailable">不可用</string>
+    <string name="diagnostics_record_count_format">%1$d 条记录</string>
+    <string name="diagnostics_no_source_records_format">当前没有 %1$s 记录。</string>
+    <string name="diagnostics_severity_title_format">%1$s · %2$s</string>
+    <string name="diagnostics_source_severity_format">%1$s · %2$s</string>
+    <string name="diagnostics_time_format">时间：%1$s</string>
+    <string name="diagnostics_context_execution_format">Execution：%1$s</string>
+    <string name="diagnostics_context_automation_format">Automation：%1$s</string>
+    <string name="diagnostics_context_flow_format">Flow：%1$s</string>
+    <string name="diagnostics_context_feature_format">Feature：%1$s</string>
+    <string name="diagnostics_context_backend_format">Backend：%1$s</string>
+    <string name="diagnostics_details">详情</string>
+    <string name="diagnostics_attributes">属性</string>
+    <string name="diagnostics_source_yauto">YAuto / 执行记录</string>
+    <string name="diagnostics_source_android">Android / Accessibility / Shizuku</string>
+    <string name="diagnostics_source_root">Root</string>
+    <string name="diagnostics_source_lsposed">LSPosed</string>
+    <string name="diagnostics_source_system_ui">SystemUI</string>
+    <string name="diagnostics_source_system_server">system_server</string>
+    <string name="diagnostics_source_zygote">Zygote</string>
+    <string name="diagnostics_source_importer">导入 / 兼容</string>
+    <string name="diagnostics_severity_debug">调试</string>
+    <string name="diagnostics_severity_info">信息</string>
+    <string name="diagnostics_severity_warning">警告</string>
+    <string name="diagnostics_severity_error">错误</string>
+</resources>
