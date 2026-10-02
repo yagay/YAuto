@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.graphics.Path
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -26,6 +27,17 @@ class YAutoAccessibilityService : AccessibilityService() {
         ) {
             AccessibilityRuntimeBridge.update(event.packageName?.toString(), event.className?.toString())
         }
+    }
+
+    override fun onKeyEvent(event: KeyEvent): Boolean {
+        AccessibilityRuntimeBridge.dispatchKey(
+            keyCode = event.keyCode,
+            action = event.action,
+            repeatCount = event.repeatCount,
+            metaState = event.metaState,
+            deviceId = event.deviceId,
+        )
+        return false
     }
 
     override fun onInterrupt() = Unit
