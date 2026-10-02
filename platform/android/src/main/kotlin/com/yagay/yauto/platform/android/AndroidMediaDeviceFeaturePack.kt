@@ -92,6 +92,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 "Torch / flashlight", "Turn the first available flash unit on or off",
                 FeatureCategory.DEVICE,
                 fields = listOf(FieldSchema.Toggle("enabled", "Torch on")),
+                accessRequirements = setOf(AccessRequirement.CAMERA),
                 keywords = setOf("torch", "flashlight", "flash", "手电筒", "闪光灯"),
                 ownerPackId = id,
             )
@@ -117,6 +118,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 "Do Not Disturb", "Set Android interruption filter when notification policy access is granted",
                 FeatureCategory.DEVICE,
                 fields = listOf(FieldSchema.Choice("mode", "Mode", true, listOf("all", "priority", "alarms", "none"))),
+                accessRequirements = setOf(AccessRequirement.DND_POLICY),
                 keywords = setOf("dnd", "do not disturb", "silent", "勿扰"),
                 ownerPackId = id,
             )
@@ -159,6 +161,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
             title = "Do Not Disturb mode",
             category = FeatureCategory.DEVICE,
             fields = listOf(FieldSchema.Choice("mode", "Mode", true, listOf("all", "priority", "alarms", "none"))),
+            accessRequirements = setOf(AccessRequirement.DND_POLICY),
         ) { feature ->
             val manager = context.getSystemService(NotificationManager::class.java)
             val actual = when (manager.currentInterruptionFilter) {
@@ -177,15 +180,18 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
         title: String,
         category: FeatureCategory,
         fields: List<FieldSchema>,
+        accessRequirements: Set<AccessRequirement> = emptySet(),
         evaluate: (FeatureRef) -> Boolean,
     ) {
         val stateId = "android.state.$key"
         val conditionId = "android.condition.$key"
         registry.registerState(
-            FeatureDescriptor(FeatureId(stateId), FeatureKind.STATE, title, "Evaluate current Android state", category, fields = fields, ownerPackId = id)
+            FeatureDescriptor(FeatureId(stateId), FeatureKind.STATE, title, "Evaluate current Android state", category,
+                fields = fields, accessRequirements = accessRequirements, ownerPackId = id)
         ) { feature, _ -> runCatching { evaluate(feature) }.getOrDefault(false) }
         registry.registerCondition(
-            FeatureDescriptor(FeatureId(conditionId), FeatureKind.CONDITION, title, "Evaluate current Android state", category, fields = fields, ownerPackId = id)
+            FeatureDescriptor(FeatureId(conditionId), FeatureKind.CONDITION, title, "Evaluate current Android state", category,
+                fields = fields, accessRequirements = accessRequirements, ownerPackId = id)
         ) { feature, _ -> runCatching { evaluate(feature) }.getOrDefault(false) }
     }
 }
