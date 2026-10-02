@@ -46,6 +46,8 @@
     <string name="value_text">Text</string>
     <string name="value_number">Number</string>
     <string name="value_boolean">Boolean</string>
+    <string name="value_true">Yes</string>
+    <string name="value_false">No</string>
     <string name="value_null">Null</string>
     <string name="value_list">List</string>
     <string name="value_object">Object</string>
