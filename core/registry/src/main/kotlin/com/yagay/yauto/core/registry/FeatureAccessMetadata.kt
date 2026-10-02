@@ -38,20 +38,20 @@ fun FeatureDescriptor.resolvedImplementationOptions(): List<FeatureImplementatio
     return when (capabilities.single()) {
         CapabilityIds.PRIVILEGED_SHELL -> listOf(
             FeatureImplementationOption(
-                backendId = "shizuku",
-                title = "Shizuku",
-                summary = "通过 Shizuku UserService 以 shell 权限执行。",
-                requirements = setOf(AccessRequirement.SHIZUKU),
-                pros = listOf("不需要把 Root 直接授权给 YAuto", "权限范围通常比 Root 更收敛", "关闭 Shizuku 后能力立即失效，易于控制"),
-                cons = listOf("依赖 Shizuku 服务持续可用", "部分命令受 shell UID 权限限制", "重启后可能需要重新启动 Shizuku"),
-            ),
-            FeatureImplementationOption(
                 backendId = "root",
                 title = "Root",
                 summary = "通过 su 以最高系统权限执行。",
                 requirements = setOf(AccessRequirement.ROOT),
                 pros = listOf("权限范围最完整", "多数 shell / 包管理操作兼容性最好", "不依赖 Shizuku 服务"),
                 cons = listOf("授予权限更高，误操作影响更大", "需要 Root 管理器授权", "部分应用会关注设备 Root 环境"),
+            ),
+            FeatureImplementationOption(
+                backendId = "shizuku",
+                title = "Shizuku",
+                summary = "通过 Shizuku UserService 以 shell 权限执行。",
+                requirements = setOf(AccessRequirement.SHIZUKU),
+                pros = listOf("不需要把 Root 直接授权给 YAuto", "权限范围通常比 Root 更收敛", "关闭 Shizuku 后能力立即失效，易于控制"),
+                cons = listOf("依赖 Shizuku 服务持续可用", "部分命令受 shell UID 权限限制", "重启后可能需要重新启动 Shizuku"),
             ),
         )
         CapabilityIds.SYSTEM_UI -> listOf(
@@ -133,7 +133,9 @@ fun FeatureDescriptor.withAccessEditorMetadata(): FeatureDescriptor {
         FieldSchema.Choice(
             key = FEATURE_BACKEND_CONFIG_KEY,
             label = buildString {
-                append("实现方式（留空或 auto = 自动推荐）")
+                append("实现方式（auto = 按可用性和后端优先级自动选择；允许时可 fallback）")
+                append("\n\nAuto\n优点：无需为不同设备手动维护实现方式；当前后端失败时可尝试下一可用后端。")
+                append("\n缺点：设备权限/服务状态变化后，实际使用的 backend 可能变化；日志会记录最终 backend。")
                 options.forEach { option ->
                     append("\n\n")
                     append(option.title)
