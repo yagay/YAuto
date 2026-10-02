@@ -20,6 +20,7 @@ import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
 import com.yagay.yauto.platform.android.AndroidEventSource
 import com.yagay.yauto.platform.android.AudioDeviceEventSource
+import com.yagay.yauto.platform.android.BluetoothDeviceEventSource
 import com.yagay.yauto.platform.android.ClipboardEventSource
 import com.yagay.yauto.platform.android.ConfiguredBroadcastEventSource
 import com.yagay.yauto.platform.android.ConfiguredLocationEventSource
@@ -53,6 +54,7 @@ class AutomationRuntimeService : Service() {
         sources += ClipboardEventSource(this)
         sources += DeviceSettingEventSource(this)
         sources += AudioDeviceEventSource(this)
+        sources += BluetoothDeviceEventSource(this)
         sources += ConfiguredBroadcastEventSource(this, graph.workspace)
         sources += ConfiguredSensorEventSource(this, graph.workspace)
         sources += ConfiguredLocationEventSource(this, graph.workspace)
