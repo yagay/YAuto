@@ -73,6 +73,7 @@ class AppGraph(context: Context) {
         features.install(AndroidHttpFeaturePack())
         features.install(AndroidFileFeaturePack())
         features.install(AndroidArchiveFeaturePack())
+        features.install(AndroidContentUtilityFeaturePack(appContext))
         features.install(AndroidEventFeaturePack())
         features.install(AndroidStateFeaturePack(appContext))
         features.install(AndroidNotificationControlFeaturePack())
