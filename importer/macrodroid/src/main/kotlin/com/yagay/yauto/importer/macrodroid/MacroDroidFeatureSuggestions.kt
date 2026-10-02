@@ -38,6 +38,13 @@ object MacroDroidFeatureSuggestions {
                 "SecureSettingsAction", "SystemSettingAction" -> "android.settings.value.put"
                 "GetInstalledAppsAction" -> "android.app.installed.list"
                 "UpdateClipboardAction" -> "android.clipboard.set"
+                "JsonParseAction" -> "data.json.parse"
+                "JsonOutputAction" -> "data.json.stringify"
+                "UDPCommandAction" -> "android.network.udp.send"
+                "OpenFileAction" -> "android.file.open"
+                "SetWallpaperAction" -> "android.wallpaper.set"
+                "ReadFileAction" -> "file.read_text"
+                "WriteToFileAction" -> "file.write_text"
                 else -> null
             }
             SourceFeatureKind.EVENT -> when (sourceType) {
@@ -62,6 +69,9 @@ object MacroDroidFeatureSuggestions {
                 "ApplicationInstalledConstraint" -> "android.condition.app_installed"
                 "TimeSinceBootConstraint" -> "android.condition.uptime_range"
                 "TimeOfDayConstraint" -> "time.condition.time_window"
+                "SystemSettingConstraint" -> "android.condition.setting_matches"
+                "IpAddressConstraint" -> "android.condition.local_address_match"
+                "IsRootedConstraint", "ShizukuStateConstraint" -> "android.condition.privileged_backend_available"
                 else -> null
             }
             SourceFeatureKind.STATE -> null
