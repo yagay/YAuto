@@ -47,6 +47,7 @@ enum class AccessRequirement(val id: String, val label: String) {
     WRITE_SETTINGS("write_settings", "修改系统设置"),
     CAMERA("camera", "相机"),
     LOCATION("location", "位置"),
+    BLUETOOTH_CONNECT("bluetooth_connect", "附近设备 / 蓝牙"),
     DND_POLICY("dnd_policy", "勿扰模式访问"),
     DEVICE_ADMIN("device_admin", "设备管理器"),
 }
