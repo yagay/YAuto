@@ -46,6 +46,7 @@
     <string name="feature_data_json_array_length_field_path">可选 JSON 路径</string>
     <string name="feature_data_json_array_length_field_resultvariable">将长度保存到变量</string>
 
+    <string name="runtime_feature_variable_missing">变量 %1$s 不存在</string>
     <string name="runtime_feature_json_path_invalid">JSON 路径无效</string>
     <string name="runtime_feature_json_path_not_found">找不到 JSON 路径</string>
     <string name="runtime_feature_json_value_invalid">配置的 JSON 值无效</string>
