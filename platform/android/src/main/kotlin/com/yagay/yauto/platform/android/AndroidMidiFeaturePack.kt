@@ -25,7 +25,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 class AndroidMidiFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.midi"
-    private val manager = context.applicationContext.getSystemService(MidiManager::class.java)
+    private val manager: MidiManager? = context.applicationContext.getSystemService(MidiManager::class.java)
 
     override fun install(registry: FeatureRegistry) {
         registerQuery(registry)
@@ -68,6 +68,9 @@ class AndroidMidiFeaturePack(context: Context) : FeaturePack {
                 keywords = setOf("midi", "send", "bytes", "sysex", "note"), ownerPackId = id,
             )
         ) { feature, _ ->
+            if (manager == null) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.midi_unavailable"))
+            }
             val deviceId = feature.config["deviceId"].numberOrNull()?.toInt()
                 ?: return@registerAction ActionExecutionResult(false, message = userText("feature.midi_device_id_invalid"))
             val portNumber = feature.config["inputPort"].numberOrNull()?.toInt()
@@ -138,12 +141,14 @@ class AndroidMidiFeaturePack(context: Context) : FeaturePack {
     )
 
     @Suppress("DEPRECATION")
-    private fun midiDevices(): List<MidiDeviceInfo> = runCatching { manager.devices.toList() }.getOrDefault(emptyList())
+    private fun midiDevices(): List<MidiDeviceInfo> =
+        manager?.let { midiManager -> runCatching { midiManager.devices.toList() }.getOrDefault(emptyList()) }.orEmpty()
 
     private suspend fun openDevice(info: MidiDeviceInfo): MidiDevice? {
+        val midiManager = manager ?: return null
         val opened = CompletableDeferred<MidiDevice?>()
         runCatching {
-            manager.openDevice(info, { device -> if (!opened.isCompleted) opened.complete(device) }, Handler(Looper.getMainLooper()))
+            midiManager.openDevice(info, { device -> if (!opened.isCompleted) opened.complete(device) }, Handler(Looper.getMainLooper()))
         }.onFailure { if (!opened.isCompleted) opened.complete(null) }
         return withTimeoutOrNull(5_000L) { opened.await() }
     }
