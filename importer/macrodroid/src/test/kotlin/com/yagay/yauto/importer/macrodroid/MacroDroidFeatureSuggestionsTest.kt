@@ -32,6 +32,13 @@ class MacroDroidFeatureSuggestionsTest {
         assertEquals("android.settings.value.put", mapper.targetId("SystemSettingAction", SourceFeatureKind.ACTION))
         assertEquals("android.app.installed.list", mapper.targetId("GetInstalledAppsAction", SourceFeatureKind.ACTION))
         assertEquals("android.clipboard.set", mapper.targetId("UpdateClipboardAction", SourceFeatureKind.ACTION))
+        assertEquals("data.json.parse", mapper.targetId("JsonParseAction", SourceFeatureKind.ACTION))
+        assertEquals("data.json.stringify", mapper.targetId("JsonOutputAction", SourceFeatureKind.ACTION))
+        assertEquals("android.network.udp.send", mapper.targetId("UDPCommandAction", SourceFeatureKind.ACTION))
+        assertEquals("android.file.open", mapper.targetId("OpenFileAction", SourceFeatureKind.ACTION))
+        assertEquals("android.wallpaper.set", mapper.targetId("SetWallpaperAction", SourceFeatureKind.ACTION))
+        assertEquals("file.read_text", mapper.targetId("ReadFileAction", SourceFeatureKind.ACTION))
+        assertEquals("file.write_text", mapper.targetId("WriteToFileAction", SourceFeatureKind.ACTION))
     }
 
     @Test fun `device state sources suggest event and condition features`() {
@@ -50,6 +57,10 @@ class MacroDroidFeatureSuggestionsTest {
         assertEquals("android.condition.app_installed", mapper.targetId("ApplicationInstalledConstraint", SourceFeatureKind.CONDITION))
         assertEquals("android.condition.uptime_range", mapper.targetId("TimeSinceBootConstraint", SourceFeatureKind.CONDITION))
         assertEquals("time.condition.time_window", mapper.targetId("TimeOfDayConstraint", SourceFeatureKind.CONDITION))
+        assertEquals("android.condition.setting_matches", mapper.targetId("SystemSettingConstraint", SourceFeatureKind.CONDITION))
+        assertEquals("android.condition.local_address_match", mapper.targetId("IpAddressConstraint", SourceFeatureKind.CONDITION))
+        assertEquals("android.condition.privileged_backend_available", mapper.targetId("IsRootedConstraint", SourceFeatureKind.CONDITION))
+        assertEquals("android.condition.privileged_backend_available", mapper.targetId("ShizukuStateConstraint", SourceFeatureKind.CONDITION))
     }
 
     @Test fun `existing mappings still fall through to original mapper`() {
