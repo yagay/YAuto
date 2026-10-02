@@ -4,6 +4,7 @@ import com.yagay.yauto.core.importer.*
 import com.yagay.yauto.core.model.*
 import kotlinx.serialization.json.*
 import java.util.Base64
+import java.util.Locale
 import java.util.UUID
 
 class ShortXImporter : AutomationImporter {
@@ -14,7 +15,7 @@ class ShortXImporter : AutomationImporter {
     override fun confidence(input: ImportInput): Int {
         val text = input.utf8OrNull()?.trimStart().orEmpty()
         if (text.startsWith("{") && listOf("facts", "conditions", "actions", "ruleList").count { it in text } >= 2) return 90
-        val name = input.fileName.orEmpty().lowercase()
+        val name = input.fileName.orEmpty().lowercase(Locale.ROOT)
         if ("shortx" in name || name.endsWith(".rule") || name.endsWith(".pb") || name.endsWith(".proto")) return 60
         return if (input.bytes.isNotEmpty() && input.bytes.size < 20_000_000) 5 else 0
     }
@@ -109,7 +110,12 @@ class ShortXImporter : AutomationImporter {
                 description = rule.description,
                 source = SourceMetadata(id, rule.id, "Rule"),
             )
-            trace += ImportTrace("rule[$index]", automation.id.value, "IMPORTED", "${events.size} facts, ${predicates.size} conditions, ${actions.size} actions")
+            trace += ImportTrace(
+                "rule[$index]",
+                automation.id.value,
+                "IMPORTED",
+                userText("import.trace.shortx_rule", events.size, predicates.size, actions.size),
+            )
             automation
         }
         return ImportResult(id, true, ImportBundle(automations = automations), issues, trace)
