@@ -6,12 +6,26 @@
     <string name="feature_android_audio_play_field_volume">Volume percent</string>
     <string name="feature_android_audio_play_field_loop">Loop playback</string>
     <string name="feature_android_audio_play_field_waitforcompletion">Wait for playback to finish</string>
+    <string name="feature_android_audio_pause_title">Pause YAuto audio</string>
+    <string name="feature_android_audio_pause_description">Pause audio currently played by YAuto</string>
+    <string name="feature_android_audio_resume_title">Resume YAuto audio</string>
+    <string name="feature_android_audio_resume_description">Resume paused audio currently owned by YAuto</string>
     <string name="feature_android_audio_stop_title">Stop YAuto audio</string>
     <string name="feature_android_audio_stop_description">Stop audio started by YAuto without affecting other apps</string>
+    <string name="feature_android_audio_seek_title">Seek YAuto audio</string>
+    <string name="feature_android_audio_seek_description">Move the current YAuto playback position to an absolute time in milliseconds</string>
+    <string name="feature_android_audio_seek_field_positionms">Playback position</string>
+    <string name="feature_android_audio_playback_volume_set_title">Set YAuto playback volume</string>
+    <string name="feature_android_audio_playback_volume_set_description">Change volume for the current YAuto playback session without changing system media volume</string>
+    <string name="feature_android_audio_playback_volume_set_field_volume">Volume percent</string>
+    <string name="feature_android_audio_playback_info_title">Get YAuto playback information</string>
+    <string name="feature_android_audio_playback_info_description">Store source, playing state, position, duration, looping and volume for the current YAuto playback session</string>
+    <string name="feature_android_audio_playback_info_field_resultvariable">Store playback object</string>
 
     <string name="runtime_feature_playback_source_empty">Playback source is empty</string>
     <string name="runtime_feature_playback_source_unsupported">Playback source must be an absolute file path or a content, file, Android resource, HTTP, or HTTPS URI</string>
     <string name="runtime_feature_playback_loop_wait_conflict">Loop playback cannot also wait for playback to finish</string>
     <string name="runtime_feature_playback_failed">Playback failed: %1$s</string>
     <string name="runtime_feature_playback_timeout">Playback timed out</string>
+    <string name="runtime_feature_playback_not_active">No active YAuto playback session</string>
 </resources>
