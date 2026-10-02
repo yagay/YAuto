@@ -105,6 +105,7 @@ class AndroidControlFeaturePack(
                     FieldSchema.Choice("mode", "Mode", true, listOf("manual", "auto")),
                     FieldSchema.Number("percent", "Brightness percent", min = 0.0, max = 100.0),
                 ),
+                accessRequirements = setOf(AccessRequirement.WRITE_SETTINGS),
                 keywords = setOf("brightness", "display", "亮度"),
                 ownerPackId = id,
             )
@@ -210,6 +211,7 @@ class AndroidControlFeaturePack(
                     FieldSchema.Text("channelName", "Channel name"),
                     FieldSchema.Toggle("ongoing", "Ongoing / persistent"),
                 ),
+                accessRequirements = setOf(AccessRequirement.POST_NOTIFICATIONS),
                 keywords = setOf("notification", "通知"),
                 ownerPackId = id,
             )
