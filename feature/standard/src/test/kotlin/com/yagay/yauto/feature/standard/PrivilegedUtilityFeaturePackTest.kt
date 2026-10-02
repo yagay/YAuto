@@ -127,7 +127,7 @@ class PrivilegedUtilityFeaturePackTest {
     @Test fun `screen recording uses bounded screenrecord command and stores path`() = runBlocking {
         val registry = FeatureRegistry().apply { install(PrivilegedUtilityFeaturePack()) }
         val vars = Vars()
-        var command = ""
+        var captured: CapabilityRequest? = null
         val path = "/sdcard/Download/YAuto/demo record.mp4"
         val result = registry.actionExecutor("android.screen.record")!!.execute(
             FeatureRef("android.screen.record", config = mapOf(
@@ -137,12 +137,16 @@ class PrivilegedUtilityFeaturePackTest {
                 "resultVariable" to ConfigValue.StringValue("recording"),
             )),
             context(CapabilityClient { request ->
-                command = (request.payload["command"] as ConfigValue.StringValue).value
+                captured = request
                 CapabilityResult(true, backendId = "root")
             }, vars),
         )
         assertTrue(result.success)
-        assertEquals("mkdir -p '/sdcard/Download/YAuto' && screenrecord --time-limit 45 --bit-rate 8000000 '/sdcard/Download/YAuto/demo record.mp4'", command)
+        assertEquals(
+            "mkdir -p '/sdcard/Download/YAuto' && screenrecord --time-limit 45 --bit-rate 8000000 '/sdcard/Download/YAuto/demo record.mp4'",
+            (captured?.payload?.get("command") as ConfigValue.StringValue).value,
+        )
+        assertEquals(60_000.0, (captured?.payload?.get("timeoutMs") as ConfigValue.NumberValue).value, 0.0)
         assertEquals(ConfigValue.StringValue(path), vars.get("recording"))
     }
 
