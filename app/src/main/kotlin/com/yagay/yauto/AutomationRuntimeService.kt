@@ -53,21 +53,29 @@ class AutomationRuntimeService : Service() {
             stopSelf()
             return
         }
-        val graph = (application as YAutoApplication).graph
+        val graph = runCatching { (application as YAutoApplication).graph }
+            .onFailure { StartupFailureRecorder.record(this, "runtime:graph", it) }
+            .getOrNull()
+        if (graph == null) {
+            stopSelf()
+            return
+        }
         val dispatcher = RuntimeEventDispatcher(graph, scope)
-        sources += SystemBroadcastEventSource(this)
-        sources += NetworkEventSource(this)
-        sources += NetworkProfileEventSource(this)
-        sources += WifiScanEventSource(this)
-        sources += ClipboardEventSource(this)
-        sources += DeviceSettingEventSource(this)
-        sources += AudioDeviceEventSource(this)
-        sources += BluetoothDeviceEventSource(this)
-        sources += CommunicationEventSource(this)
-        sources += MidiDeviceEventSource(this)
-        sources += ConfiguredBroadcastEventSource(this, graph.workspace)
-        sources += ConfiguredSensorEventSource(this, graph.workspace)
-        sources += ConfiguredLocationEventSource(this, graph.workspace)
+
+        addSource("system-broadcast") { SystemBroadcastEventSource(this) }
+        addSource("network") { NetworkEventSource(this) }
+        addSource("network-profile") { NetworkProfileEventSource(this) }
+        addSource("wifi-scan") { WifiScanEventSource(this) }
+        addSource("clipboard") { ClipboardEventSource(this) }
+        addSource("device-setting") { DeviceSettingEventSource(this) }
+        addSource("audio-device") { AudioDeviceEventSource(this) }
+        addSource("bluetooth-device") { BluetoothDeviceEventSource(this) }
+        addSource("communication") { CommunicationEventSource(this) }
+        addSource("midi-device") { MidiDeviceEventSource(this) }
+        addSource("configured-broadcast") { ConfiguredBroadcastEventSource(this, graph.workspace) }
+        addSource("configured-sensor") { ConfiguredSensorEventSource(this, graph.workspace) }
+        addSource("configured-location") { ConfiguredLocationEventSource(this, graph.workspace) }
+
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
         SurfaceRuntimeBridge.attach(emitter)
 
@@ -130,6 +138,7 @@ class AutomationRuntimeService : Service() {
         sources.forEach { source ->
             runCatching { source.start(emitter) }
                 .onFailure { error ->
+                    StartupFailureRecorder.record(this, "event-source:${source.id}:start", error)
                     scope.launch {
                         graph.tracer.record(
                             TraceEvent(
@@ -163,9 +172,14 @@ class AutomationRuntimeService : Service() {
             return START_STICKY
         }
         if (intent?.getBooleanExtra("boot", false) == true) {
-            RuntimeEventDispatcher((application as YAutoApplication).graph, scope).dispatch(
-                RuntimeEvent("android.event.boot", source = "android.boot")
-            )
+            runCatching { (application as YAutoApplication).graph }
+                .onFailure { StartupFailureRecorder.record(this, "runtime:boot-graph", it) }
+                .getOrNull()
+                ?.let { graph ->
+                    RuntimeEventDispatcher(graph, scope).dispatch(
+                        RuntimeEvent("android.event.boot", source = "android.boot")
+                    )
+                }
         }
         return START_STICKY
     }
@@ -182,11 +196,21 @@ class AutomationRuntimeService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    private fun addSource(component: String, factory: () -> AndroidEventSource) {
+        try {
+            sources += factory()
+        } catch (error: Throwable) {
+            if (error is VirtualMachineError || error is ThreadDeath) throw error
+            StartupFailureRecorder.record(this, "event-source:$component:construct", error)
+        }
+    }
+
     private fun promoteToForeground(): Boolean = runCatching {
         startForeground(NOTIFICATION_ID, createNotification())
         true
     }.getOrElse { error ->
         Log.e(TAG, "Unable to promote automation runtime to foreground", error)
+        StartupFailureRecorder.record(this, "runtime:foreground", error)
         false
     }
 
@@ -226,6 +250,7 @@ class AutomationRuntimeService : Service() {
             true
         }.getOrElse { error ->
             Log.e(TAG, "Unable to start automation runtime service", error)
+            StartupFailureRecorder.record(context, "runtime:start", error)
             false
         }
     }
