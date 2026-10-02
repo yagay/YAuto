@@ -18,6 +18,12 @@ class AndroidStateFeaturePackTest {
         var mediaPercent: Double? = 40.0
         var brightness: Double? = 60.0
         var automaticBrightness = false
+        var nfc = true
+        var location = true
+        var rotate = true
+        var dark = false
+        var stayAwake = false
+        var timeoutMs: Double? = 30_000.0
         var failure = false
         override fun screenOn(): Boolean { if (failure) error("unavailable"); return on }
         override fun networkTypes() = types
@@ -28,6 +34,12 @@ class AndroidStateFeaturePackTest {
         override fun mediaVolumePercent() = mediaPercent
         override fun brightnessPercent() = brightness
         override fun autoBrightness() = automaticBrightness
+        override fun nfcEnabled() = nfc
+        override fun locationEnabled() = location
+        override fun autoRotate() = rotate
+        override fun darkMode() = dark
+        override fun stayAwakeWhileCharging() = stayAwake
+        override fun screenTimeoutMs() = timeoutMs
     }
     private val reader = Reader()
     private val registry = FeatureRegistry().apply { install(AndroidStateFeaturePack(reader)) }
@@ -43,7 +55,7 @@ class AndroidStateFeaturePackTest {
         registry.stateEvaluator("android.state.$key")!!.evaluate(FeatureRef("android.state.$key", config = config), ctx)
 
     @Test fun `registry states query current values and remain removable as a pack`() = runBlocking {
-        assertEquals(16, registry.allDescriptors().size)
+        assertEquals(28, registry.allDescriptors().size)
         assertTrue(matches("screen"))
         reader.on = false
         assertFalse(matches("screen"))
@@ -60,6 +72,35 @@ class AndroidStateFeaturePackTest {
         registry.uninstallPack("android.state")
         assertTrue(registry.allDescriptors().isEmpty())
         assertNull(registry.stateEvaluator("android.state.screen"))
+    }
+
+    @Test fun `new device states are live and configurable`() = runBlocking {
+        assertTrue(matches("nfc_enabled"))
+        reader.nfc = false
+        assertTrue(matches("nfc_enabled", mapOf("value" to ConfigValue.BooleanValue(false))))
+
+        assertTrue(matches("location_enabled"))
+        reader.location = false
+        assertTrue(matches("location_enabled", mapOf("value" to ConfigValue.BooleanValue(false))))
+
+        assertTrue(matches("auto_rotate"))
+        reader.rotate = false
+        assertTrue(matches("auto_rotate", mapOf("value" to ConfigValue.BooleanValue(false))))
+
+        assertFalse(matches("dark_mode"))
+        reader.dark = true
+        assertTrue(matches("dark_mode"))
+
+        assertFalse(matches("stay_awake_while_charging"))
+        reader.stayAwake = true
+        assertTrue(matches("stay_awake_while_charging"))
+
+        assertTrue(matches("screen_timeout", mapOf(
+            "minMs" to ConfigValue.NumberValue(20_000.0),
+            "maxMs" to ConfigValue.NumberValue(40_000.0),
+        )))
+        reader.timeoutMs = 60_000.0
+        assertFalse(matches("screen_timeout", mapOf("maxMs" to ConfigValue.NumberValue(40_000.0))))
     }
 
     @Test fun `media volume and brightness comparisons use current live values`() = runBlocking {
