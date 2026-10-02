@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.yagay.yauto.core.logging.TraceEvent
@@ -89,6 +90,26 @@ class AutomationRuntimeService : Service() {
                 )
             }
         }
+        AccessibilityRuntimeBridge.setKeyListener { key ->
+            val action = when (key.action) {
+                KeyEvent.ACTION_DOWN -> "down"
+                KeyEvent.ACTION_UP -> "up"
+                else -> "other"
+            }
+            dispatcher.dispatch(
+                RuntimeEvent(
+                    typeId = "android.event.hardware_key",
+                    payload = mapOf(
+                        "keyCode" to ConfigValue.NumberValue(key.keyCode.toDouble()),
+                        "action" to ConfigValue.StringValue(action),
+                        "repeatCount" to ConfigValue.NumberValue(key.repeatCount.toDouble()),
+                        "metaState" to ConfigValue.NumberValue(key.metaState.toDouble()),
+                        "deviceId" to ConfigValue.NumberValue(key.deviceId.toDouble()),
+                    ),
+                    source = "accessibility.key",
+                )
+            )
+        }
 
         sources.forEach { source ->
             runCatching { source.start(emitter) }
@@ -132,6 +153,7 @@ class AutomationRuntimeService : Service() {
 
     override fun onDestroy() {
         AccessibilityRuntimeBridge.setListener(null)
+        AccessibilityRuntimeBridge.setKeyListener(null)
         SurfaceRuntimeBridge.attach(null)
         sources.asReversed().forEach { source -> runCatching { source.stop() } }
         sources.clear()
