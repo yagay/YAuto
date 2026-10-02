@@ -35,18 +35,21 @@ class PrivilegedAndroidFeaturePackTest {
         assertEquals("pm clear 'com.example.app'", (captured?.payload?.get("command") as ConfigValue.StringValue).value)
     }
 
-    @Test fun `privileged descriptors expose backend choices and tradeoffs`() {
+    @Test fun `privileged descriptors expose language neutral backend choices`() {
         val registry = FeatureRegistry().apply { install(PrivilegedAndroidFeaturePack()) }
         val descriptor = requireNotNull(registry.descriptor("android.app.clear_data"))
-        assertTrue(descriptor.description.contains("Shizuku"))
-        assertTrue(descriptor.description.contains("Root"))
         val backend = descriptor.fields.filterIsInstance<FieldSchema.Choice>()
             .first { it.key == FEATURE_BACKEND_CONFIG_KEY }
         assertEquals(listOf("auto", "root", "shizuku"), backend.options)
-        assertTrue(backend.label.contains("优点："))
-        assertTrue(backend.label.contains("缺点："))
-        assertTrue(backend.label.contains("不需要把 Root 直接授权给 YAuto"))
-        assertTrue(backend.label.contains("可 fallback"))
+        assertEquals(FEATURE_BACKEND_CONFIG_KEY, backend.label)
+        assertEquals(
+            listOf("root", "shizuku"),
+            descriptor.resolvedImplementationOptions().mapNotNull { it.backendId },
+        )
+        assertEquals(
+            setOf(AccessRequirement.ROOT, AccessRequirement.SHIZUKU),
+            descriptor.resolvedAccessRequirements(),
+        )
     }
 
     @Test fun `system ui exposes LSPosed Root and Shizuku implementations`() {
@@ -55,11 +58,12 @@ class PrivilegedAndroidFeaturePackTest {
         val backend = descriptor.fields.filterIsInstance<FieldSchema.Choice>()
             .first { it.key == FEATURE_BACKEND_CONFIG_KEY }
         assertEquals(listOf("auto", "lsposed", "root", "shizuku"), backend.options)
-        assertTrue(descriptor.description.contains("LSPosed"))
-        assertTrue(backend.label.contains("需要重启目标进程或设备"))
+        val implementations = descriptor.resolvedImplementationOptions()
+        assertEquals(listOf("lsposed", "root", "shizuku"), implementations.mapNotNull { it.backendId })
+        assertTrue(implementations.first { it.backendId == "lsposed" }.restartRequired)
     }
 
-    @Test fun `Shamiko and Zygisk remain environment labels not fake backends`() {
+    @Test fun `Shamiko and Zygisk remain environment requirements not fake backends`() {
         val registry = FeatureRegistry()
         registry.registerAction(
             FeatureDescriptor(
@@ -69,9 +73,11 @@ class PrivilegedAndroidFeaturePackTest {
             )
         ) { _, _ -> ActionExecutionResult(true) }
         val descriptor = requireNotNull(registry.descriptor("test.environment.only"))
-        assertTrue(descriptor.description.contains("Root"))
-        assertTrue(descriptor.description.contains("Zygisk"))
-        assertTrue(descriptor.description.contains("Shamiko"))
+        assertEquals(
+            setOf(AccessRequirement.ROOT, AccessRequirement.ZYGISK, AccessRequirement.SHAMIKO),
+            descriptor.resolvedAccessRequirements(),
+        )
+        assertTrue(descriptor.resolvedImplementationOptions().isEmpty())
         assertTrue(descriptor.fields.none { it.key == FEATURE_BACKEND_CONFIG_KEY })
     }
 
