@@ -17,6 +17,7 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.screen.wake", ShortXFeatureSuggestions.target("WakeupScreen", path))
         assertEquals("android.input.keyevent", ShortXFeatureSuggestions.target("InjectKeyCode", path))
         assertEquals("android.screenshot.capture", ShortXFeatureSuggestions.target("TakeScreenshot", path))
+        assertEquals("android.media.transport", ShortXFeatureSuggestions.target("MediaPlaybackAction", path))
     }
 
     @Test fun `facts suggest matching change events`() {
