@@ -4,10 +4,8 @@ import android.content.Context
 import android.nfc.NfcAdapter
 import android.nfc.NfcManager
 import com.yagay.yauto.core.model.ConfigValue
-import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.ActionExecutionResult
-import com.yagay.yauto.core.registry.ConditionEvaluator
 import com.yagay.yauto.core.registry.FeatureCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureId
@@ -39,9 +37,6 @@ class AndroidNfcFeaturePack(context: Context) : FeaturePack {
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
         }
-
-        registerEnabled(registry, FeatureKind.STATE, "android.state.nfc_enabled")
-        registerEnabled(registry, FeatureKind.CONDITION, "android.condition.nfc_enabled")
 
         registry.registerEvent(
             FeatureDescriptor(
@@ -78,21 +73,6 @@ class AndroidNfcFeaturePack(context: Context) : FeaturePack {
                 (textFilter.isBlank() || texts.any { it.contains(textFilter, ignoreCase = true) }) &&
                 (uriFilter.isBlank() || uris.any { it.contains(uriFilter, ignoreCase = true) })
         }
-    }
-
-    private fun registerEnabled(registry: FeatureRegistry, kind: FeatureKind, typeId: String) {
-        val descriptor = FeatureDescriptor(
-            FeatureId(typeId), kind,
-            "NFC enabled", "Check whether this device has NFC hardware and the NFC adapter is enabled",
-            FeatureCategory.DEVICE,
-            fields = listOf(FieldSchema.Toggle("value", "Enabled")),
-            keywords = setOf("nfc", "enabled", "adapter"), ownerPackId = id,
-        )
-        val evaluator = ConditionEvaluator { feature, _ ->
-            val enabled = runCatching { adapter?.isEnabled == true }.getOrDefault(false)
-            enabled == feature.config.boolean("value", true)
-        }
-        if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator) else registry.registerCondition(descriptor, evaluator)
     }
 }
 
