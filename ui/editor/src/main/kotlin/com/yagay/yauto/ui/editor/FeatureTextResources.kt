@@ -104,6 +104,12 @@ internal fun localizedFieldLabelShared(descriptorId: String, field: FieldSchema)
 internal fun localizedChoiceOptionShared(descriptorId: String, fieldKey: String, option: String): String =
     rememberFeatureTextResolver().choiceOption(descriptorId, fieldKey, option)
 
-internal fun resourceKey(value: String): String = value.lowercase(Locale.ROOT).map {
-    if (it.isLetterOrDigit()) it else '_'
-}.joinToString("").replace(Regex("_+"), "_").trim('_')
+internal fun resourceKey(value: String): String {
+    val normalized = value.lowercase(Locale.ROOT).map {
+        if (it.isLetterOrDigit()) it else '_'
+    }.joinToString("").replace(Regex("_+"), "_").trim('_')
+    if (normalized.isNotEmpty()) return normalized
+    // Pure-symbol values such as ==, !=, >= and <= previously collapsed to the same empty key.
+    // Encode their Unicode code points so every machine option has a deterministic resource key.
+    return "symbol_" + value.joinToString("_") { it.code.toString(16) }
+}
