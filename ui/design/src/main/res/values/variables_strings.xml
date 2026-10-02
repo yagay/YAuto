@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="variables_title">Global variables</string>
+    <string name="variables_add_title">Add variable</string>
+    <string name="variables_edit_title">Edit variable</string>
+    <string name="variables_description">Available to all automations and flows. Variable pickers reference names; the current workspace format stores string values.</string>
+    <string name="variables_search">Search variables</string>
+    <string name="variables_empty">No global variables yet.</string>
+    <string name="variables_no_match">No matching variables.</string>
+    <string name="variables_empty_value">(empty string)</string>
+    <string name="variables_name">Variable name</string>
+    <string name="variables_name_required">Variable name cannot be empty</string>
+    <string name="variables_name_duplicate">A variable with this name already exists</string>
+    <string name="variables_name_hint">Reference it from templates through the variable picker</string>
+    <string name="variables_value">Value</string>
+    <string name="variables_save">Save variable</string>
+</resources>
