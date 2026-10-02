@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_tts_speak_title">Speak text</string>
+    <string name="feature_android_tts_speak_description">Speak text using the Android text-to-speech engine</string>
+    <string name="feature_android_tts_speak_field_text">Text</string>
+    <string name="feature_android_tts_speak_field_languagetag">Language tag</string>
+    <string name="feature_android_tts_speak_field_rate">Speech rate</string>
+    <string name="feature_android_tts_speak_field_pitch">Pitch</string>
+    <string name="feature_android_tts_speak_field_waitforcompletion">Wait for speech to finish</string>
+
+    <string name="runtime_feature_tts_text_empty">Text to speak is empty.</string>
+    <string name="runtime_feature_tts_unavailable">Android text-to-speech is unavailable or failed to initialize.</string>
+    <string name="runtime_feature_tts_failed">Text-to-speech playback failed.</string>
+    <string name="runtime_feature_tts_timeout">Text-to-speech playback did not finish before the safety timeout.</string>
+</resources>
