@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_core_event_manual_title">手动事件</string>
+    <string name="feature_core_event_manual_description">当 YAuto 收到手动运行时事件时触发</string>
+    <string name="feature_core_delay_description">等待一段时间后继续执行</string>
+    <string name="feature_core_log_description">将消息写入执行追踪</string>
+    <string name="feature_core_boolean_description">静态布尔条件</string>
+
+    <string name="feature_data_text_split_description">将文本拆分到列表变量</string>
+    <string name="feature_data_text_join_description">将列表变量合并为文本</string>
+    <string name="feature_data_regex_extract_description">将正则匹配结果或指定捕获组提取到列表</string>
+    <string name="feature_data_hash_description">使用 SHA-256、SHA-1 或 MD5 对 UTF-8 文本计算哈希</string>
+    <string name="feature_data_random_number_description">生成包含上下限的随机整数</string>
+    <string name="feature_data_uuid_description">生成随机 UUID 字符串</string>
+
+    <string name="feature_system_shell_execute_title">执行 Shell 命令</string>
+    <string name="feature_system_shell_execute_description">通过最佳可用的特权 Shell 后端执行命令</string>
+
+    <string name="feature_variable_set_description">设置运行时变量</string>
+    <string name="feature_variable_clear_description">清除运行时变量</string>
+    <string name="feature_variable_copy_description">将一个运行时变量复制到另一个变量</string>
+    <string name="feature_variable_increment_description">给变量增加一个数值</string>
+    <string name="feature_variable_toggle_description">反转布尔变量的值</string>
+    <string name="feature_variable_list_append_description">向列表变量追加一个值</string>
+    <string name="feature_variable_list_get_description">按从 0 开始的索引读取列表项</string>
+    <string name="feature_variable_list_remove_description">按从 0 开始的索引移除列表项</string>
+    <string name="feature_variable_object_put_description">设置对象/映射变量中的键值</string>
+    <string name="feature_variable_object_get_description">读取对象/映射变量中的键值</string>
+    <string name="feature_variable_text_replace_description">替换文本中的字面内容或正则表达式匹配项</string>
+    <string name="feature_variable_exists_description">检查变量是否存在且不为空</string>
+    <string name="feature_variable_number_compare_description">将变量与一个数值比较</string>
+    <string name="feature_variable_list_size_description">比较列表变量的大小</string>
+
+    <string name="feature_android_event_window_changed_description">当无障碍服务检测到不同的前台应用包或 Activity 时触发</string>
+
+    <string name="feature_android_audio_volume_set_description">按百分比设置媒体、铃声、通知、闹钟、系统或通话音量</string>
+    <string name="feature_android_audio_volume_adjust_description">提高、降低、静音或取消静音 Android 音频流</string>
+    <string name="feature_android_audio_ringer_mode_set_description">设置正常、振动或静音铃声模式；设备策略或勿扰规则可能限制静音模式</string>
+    <string name="feature_android_audio_microphone_mute_set_description">通过 AudioManager 将 Android 麦克风静音或取消静音</string>
+    <string name="feature_android_audio_speakerphone_set_description">开启或关闭通话免提扬声器路由</string>
+
+    <string name="feature_android_event_wifi_changed_description">当 Android 报告 Wi-Fi 连接或信号状态变化时触发</string>
+    <string name="feature_android_event_bluetooth_state_description">当蓝牙适配器启用或停用时触发</string>
+
+    <string name="feature_android_audio_media_volume_set_description">按百分比设置音乐/媒体音频流音量</string>
+    <string name="feature_android_vibrate_description">按可配置的时长和振幅使设备振动</string>
+    <string name="feature_android_display_brightness_set_description">设置手动亮度或启用自动亮度</string>
+    <string name="feature_android_intent_send_description">启动 Activity/Service 或发送 Android 广播</string>
+    <string name="feature_android_notification_show_description">发布一条 YAuto 系统通知</string>
+    <string name="feature_android_notification_cancel_description">取消之前由 YAuto 发布的通知</string>
+    <string name="feature_android_app_force_stop_description">通过 Root 或 Shizuku 强制停止应用包</string>
+
+    <string name="feature_android_device_info_description">将常用 Android 构建/设备属性保存到对象变量</string>
+    <string name="feature_android_storage_info_description">读取文件系统路径的总空间、空闲空间和可用字节数</string>
+    <string name="feature_android_sensor_read_description">从常用 Android 硬件传感器读取一次数值</string>
+    <string name="feature_android_location_last_known_description">读取最新的 GPS/网络最后已知位置，不启动持续后台定位</string>
+
+    <string name="feature_android_event_time_tick_description">在 Android 每分钟时钟事件触发时运行，并可按小时、分钟或 ISO 星期匹配</string>
+    <string name="feature_android_event_clipboard_changed_description">当主剪贴板变化时触发；较新 Android 版本在后台时可能无法读取剪贴板文本</string>
+    <string name="feature_android_event_broadcast_title">Android 广播</string>
+    <string name="feature_android_event_broadcast_description">接收配置的 Android 广播动作，并可匹配简单的额外参数</string>
+
+    <string name="feature_android_event_external_command_description">收到通过身份验证的 YAuto 命令广播时触发</string>
+    <string name="feature_android_external_command_token_generate_description">替换外部命令认证令牌并保存到变量</string>
+    <string name="feature_android_external_command_token_set_description">设置自定义认证令牌；建议使用足够长的随机值</string>
+    <string name="feature_android_external_command_disable_description">移除认证令牌，使外部命令广播被忽略</string>
+
+    <string name="feature_android_toast_show_description">显示 Android Toast 提示</string>
+    <string name="feature_android_app_launch_description">启动已安装的应用</string>
+    <string name="feature_android_uri_open_description">打开网页链接或 Android URI</string>
+    <string name="feature_android_clipboard_set_description">将文本写入 Android 剪贴板</string>
+    <string name="feature_android_share_text_description">用文本打开 Android 系统分享面板</string>
+
+    <string name="feature_file_read_text_description">将 UTF-8 文本文件读入运行时变量；仍受 Android 存储访问规则限制</string>
+    <string name="feature_file_write_text_description">写入或追加 UTF-8 文本，并可自动创建父目录</string>
+    <string name="feature_file_delete_description">删除文件，或在启用时递归删除目录</string>
+    <string name="feature_file_mkdir_description">创建目录及缺失的父目录</string>
+    <string name="feature_file_list_description">将目录中的子项绝对路径保存到列表变量</string>
+
+    <string name="feature_android_http_request_description">发送 HTTP 请求，并以结构化结果提供状态、正文和响应头</string>
+
+    <string name="feature_android_media_control_description">发送标准 Android 媒体传输控制命令</string>
+    <string name="feature_android_clipboard_get_description">在 Android 允许后台访问剪贴板时，将当前剪贴板文本读入变量</string>
+    <string name="feature_android_torch_set_description">开启或关闭第一个可用的闪光灯单元</string>
+    <string name="feature_android_dnd_set_description">获得通知策略权限后设置 Android 打扰过滤模式</string>
+
+    <string name="feature_android_state_notification_active_description">检查活动通知是否符合选定的过滤条件</string>
+
+    <string name="feature_android_event_qs_tile_description">点击三个 YAuto 快速设置磁贴中的任意一个时触发</string>
+    <string name="feature_android_qs_tile_configure_description">更改 YAuto 磁贴标签及启用/停用的视觉状态</string>
+
+    <string name="feature_android_event_sensor_value_description">当选定硬件传感器数值满足比较条件时触发</string>
+    <string name="feature_android_event_shake_description">当加速度传感器的线性幅值超过阈值时触发</string>
+
+    <string name="feature_android_event_shortcut_description">打开 YAuto 桌面快捷方式时触发</string>
+    <string name="feature_android_shortcut_create_description">创建或更新动态快捷方式，并可请求固定到主屏幕</string>
+    <string name="feature_android_shortcut_remove_description">按 ID 移除 YAuto 动态快捷方式；固定快捷方式的移除由启动器控制</string>
+
+    <string name="feature_surface_overlay_show_description">显示或替换轻量级可交互悬浮面板</string>
+    <string name="feature_surface_overlay_hide_description">按 ID 隐藏 Surface</string>
+    <string name="feature_surface_overlay_hide_all_description">移除所有 YAuto 悬浮 Surface</string>
+    <string name="feature_android_event_surface_action_description">YAuto Surface 按钮或生命周期动作触发时运行</string>
+</resources>
