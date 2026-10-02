@@ -19,6 +19,7 @@ RESOURCE_ICON_CHARS = {"＋", "⋮", "▶", "◀", "✓", "✕", "×", "⌂", "�
 HARDCODED_DISPLAY_SEPARATOR = re.compile(r'(?:joinToString|append)\(\s*"\s*(?:·|\+|/)\s*"\s*\)|\+\s*"\s*(?:·|\*|/|\+)\s*"')
 RAW_ENUM_TEXT = re.compile(r'\bText\s*\(\s*(?:type|kind|category|policy|phase|state)\.name\b|\bstringResource\([^\n,]+,\s*(?:type|kind|category|policy|phase|state)\.name\b')
 RAW_CAPABILITY_BADGE = re.compile(r'\bCapabilityBadge\s*\(\s*(?:it|capability|id)\.value(?:\.substringAfterLast\([^)]*\))?\s*\)')
+FORMAT_TOKEN = re.compile(r"(?<!%)%(?!%)(?:\d+\$)?[a-zA-Z]")
 
 # Dedicated localization catalogs are the only Kotlin files allowed to contain translated CJK.
 CJK_KOTLIN_ALLOW: set[Path] = set()
@@ -29,6 +30,10 @@ def main_kotlin_files():
         if any(part in {"build", ".gradle"} for part in path.parts):
             continue
         yield path
+
+
+def is_translatable(node: ET.Element) -> bool:
+    return node.attrib.get("translatable", "true").lower() != "false"
 
 
 def resource_keys(folder: Path, failures: list[str]) -> set[str]:
@@ -42,7 +47,7 @@ def resource_keys(folder: Path, failures: list[str]) -> set[str]:
             raise RuntimeError(f"Invalid resource XML {path}: {exc}")
         for node in root.findall("string"):
             name = node.attrib.get("name")
-            if name:
+            if name and is_translatable(node):
                 if name in out:
                     raise RuntimeError(f"Duplicate string resource {name} in {path}")
                 out.add(name)
@@ -62,11 +67,7 @@ def line_number(text: str, offset: int) -> int:
 
 
 def call_windows(text: str, name: str):
-    """Yield balanced Kotlin call expressions for a named call.
-
-    This deliberately skips parentheses inside quoted strings/chars and avoids leaking into a
-    following constructor, which keeps the localization guard precise without a Kotlin parser.
-    """
+    """Yield balanced Kotlin call expressions for a named call."""
     token = name + "("
     start = 0
     while True:
@@ -96,6 +97,47 @@ def call_windows(text: str, name: str):
             i += 1
         yield idx, text[idx:i]
         start = max(i, idx + len(token))
+
+
+def values_map(folder: Path) -> dict[str, str]:
+    out: dict[str, str] = {}
+    if not folder.exists():
+        return out
+    for xml in folder.glob("*.xml"):
+        root = ET.parse(xml).getroot()
+        for node in root.findall("string"):
+            name = node.attrib.get("name")
+            if name and is_translatable(node):
+                if name in out:
+                    raise RuntimeError(f"Duplicate string resource {name} in {xml}")
+                out[name] = "".join(node.itertext()).strip()
+    return out
+
+
+def string_arrays(folder: Path) -> dict[str, list[str]]:
+    out: dict[str, list[str]] = {}
+    if not folder.exists():
+        return out
+    for xml in folder.glob("*.xml"):
+        root = ET.parse(xml).getroot()
+        for node in root.findall("string-array"):
+            name = node.attrib.get("name")
+            if not name or not is_translatable(node):
+                continue
+            if name in out:
+                raise RuntimeError(f"Duplicate string-array resource {name} in {xml}")
+            out[name] = ["".join(item.itertext()).strip() for item in node.findall("item")]
+    return out
+
+
+def locale_name(folder: Path) -> str | None:
+    qualifier = folder.name.removeprefix("values-")
+    if re.fullmatch(r"[a-z]{2,3}(?:-r[A-Z]{2})?", qualifier):
+        parts = qualifier.split("-r", 1)
+        return parts[0] if len(parts) == 1 else f"{parts[0]}-{parts[1]}"
+    if qualifier.startswith("b+"):
+        return qualifier[2:].replace("+", "-")
+    return None
 
 
 def main() -> int:
@@ -143,7 +185,8 @@ def main() -> int:
             if match:
                 failures.append(f"{feature_resolver}:{line_number(resolver_text, match.start())}: raw FeatureDescriptor display fallback is forbidden")
 
-    # Android manifests must not hardcode human-readable labels/descriptions.
+    # Android manifests must not hardcode human-readable labels/descriptions. Machine metadata may
+    # be referenced through a non-translatable resource so it stays stable across app locales.
     for path in ROOT.glob("**/src/main/AndroidManifest.xml"):
         text = path.read_text(encoding="utf-8")
         for attr in ("label", "description"):
@@ -151,36 +194,21 @@ def main() -> int:
                 value = m.group(1)
                 if value and not value.startswith("@") and not value.startswith("${"):
                     failures.append(f"{path}: hardcoded android:{attr}={value!r}; use @string/ resource")
+        if "android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" in text:
+            m = re.search(
+                r'android:name="android\.app\.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"[\s\S]{0,240}?android:value="([^"]+)"',
+                text,
+            )
+            if not m or m.group(1) != "@string/fgs_special_use_subtype":
+                failures.append(f"{path}: special-use foreground-service subtype must reference @string/fgs_special_use_subtype")
 
     # Resource parity is automatic for every string-bearing Android module and every locale
-    # directory. Adding a module or language therefore cannot silently bypass localization checks.
-    format_token = re.compile(r"(?<!%)%(?!%)(?:\d+\$)?[a-zA-Z]")
-
-    def values_map(folder: Path) -> dict[str, str]:
-        out: dict[str, str] = {}
-        if not folder.exists():
-            return out
-        for xml in folder.glob("*.xml"):
-            root = ET.parse(xml).getroot()
-            for node in root.findall("string"):
-                name = node.attrib.get("name")
-                if name:
-                    out[name] = "".join(node.itertext()).strip()
-        return out
-
-    def locale_name(folder: Path) -> str | None:
-        qualifier = folder.name.removeprefix("values-")
-        if re.fullmatch(r"[a-z]{2,3}(?:-r[A-Z]{2})?", qualifier):
-            parts = qualifier.split("-r", 1)
-            return parts[0] if len(parts) == 1 else f"{parts[0]}-{parts[1]}"
-        if qualifier.startswith("b+"):
-            return qualifier[2:].replace("+", "-")
-        return None
-
+    # directory. Non-translatable machine resources are deliberately excluded from locale parity.
     discovered_locales: set[str] = set()
     for default in sorted(ROOT.glob("**/src/main/res/values")):
         base = values_map(default)
-        if not base:
+        base_arrays = string_arrays(default)
+        if not base and not base_arrays:
             continue
         module = default.parent
         zh_dir = module / "values-zh-rCN"
@@ -192,16 +220,34 @@ def main() -> int:
             assert locale is not None
             discovered_locales.add(locale)
             translated = values_map(locale_dir)
+            translated_arrays = string_arrays(locale_dir)
             for missing in sorted(base.keys() - translated.keys()):
                 failures.append(f"{module}: missing {locale} string resource: {missing}")
             for extra in sorted(translated.keys() - base.keys()):
-                failures.append(f"{module}: {locale} resource has no default counterpart: {extra}")
+                failures.append(f"{module}: {locale} resource has no translatable default counterpart: {extra}")
             for name in sorted(base.keys() & translated.keys()):
-                if sorted(format_token.findall(base[name])) != sorted(format_token.findall(translated[name])):
+                if sorted(FORMAT_TOKEN.findall(base[name])) != sorted(FORMAT_TOKEN.findall(translated[name])):
                     failures.append(
                         f"{locale_dir}: format placeholders differ for {name}: "
-                        f"default={format_token.findall(base[name])}, locale={format_token.findall(translated[name])}"
+                        f"default={FORMAT_TOKEN.findall(base[name])}, locale={FORMAT_TOKEN.findall(translated[name])}"
                     )
+            for missing in sorted(base_arrays.keys() - translated_arrays.keys()):
+                failures.append(f"{module}: missing {locale} string-array resource: {missing}")
+            for extra in sorted(translated_arrays.keys() - base_arrays.keys()):
+                failures.append(f"{module}: {locale} string-array has no translatable default counterpart: {extra}")
+            for name in sorted(base_arrays.keys() & translated_arrays.keys()):
+                expected = base_arrays[name]
+                actual = translated_arrays[name]
+                if len(expected) != len(actual):
+                    failures.append(
+                        f"{locale_dir}: string-array length differs for {name}: default={len(expected)}, locale={len(actual)}"
+                    )
+                    continue
+                for index, (base_item, translated_item) in enumerate(zip(expected, actual)):
+                    if sorted(FORMAT_TOKEN.findall(base_item)) != sorted(FORMAT_TOKEN.findall(translated_item)):
+                        failures.append(
+                            f"{locale_dir}: string-array placeholders differ for {name}[{index}]"
+                        )
 
     locale_config = Path("app/src/main/res/xml/locales_config.xml")
     if locale_config.exists():
@@ -257,7 +303,7 @@ def main() -> int:
     if failures:
         print("Localization guard failed:\n" + "\n".join(failures))
         return 1
-    print("Localization guard passed: visible copy, icon semantics, locale parity, format placeholders, machine-label boundaries and runtime/import/diagnostic messages are localization-safe.")
+    print("Localization guard passed: visible copy, locale parity, string arrays, placeholders, machine metadata and runtime/import/diagnostic messages are localization-safe.")
     return 0
 
 
