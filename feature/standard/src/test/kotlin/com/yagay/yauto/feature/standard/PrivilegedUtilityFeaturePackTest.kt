@@ -7,6 +7,7 @@ import com.yagay.yauto.core.logging.NoOpExecutionTracer
 import com.yagay.yauto.core.model.*
 import com.yagay.yauto.core.registry.FeatureExecutionContext
 import com.yagay.yauto.core.registry.FeatureRegistry
+import com.yagay.yauto.core.registry.VariableAccess
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
