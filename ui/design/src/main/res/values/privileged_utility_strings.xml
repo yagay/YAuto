@@ -27,4 +27,60 @@
     <string name="feature_android_screenshot_capture_description">Capture the current display to a PNG file in shared storage</string>
     <string name="feature_android_screenshot_capture_field_path">PNG path (blank = Downloads/YAuto)</string>
     <string name="feature_android_screenshot_capture_field_resultvariable">Store saved path in variable</string>
+
+    <string name="feature_android_settings_value_get_title">Get Android setting</string>
+    <string name="feature_android_settings_value_get_description">Read a System, Global or Secure settings value through a privileged shell</string>
+    <string name="feature_android_settings_value_get_field_namespace">Settings namespace</string>
+    <string name="feature_android_settings_value_get_field_namespace_option_system">System</string>
+    <string name="feature_android_settings_value_get_field_namespace_option_global">Global</string>
+    <string name="feature_android_settings_value_get_field_namespace_option_secure">Secure</string>
+    <string name="feature_android_settings_value_get_field_key">Setting key</string>
+    <string name="feature_android_settings_value_get_field_resultvariable">Store value in variable</string>
+
+    <string name="feature_android_settings_value_put_title">Write Android setting</string>
+    <string name="feature_android_settings_value_put_description">Write a System, Global or Secure settings value through a privileged shell</string>
+    <string name="feature_android_settings_value_put_field_namespace">Settings namespace</string>
+    <string name="feature_android_settings_value_put_field_namespace_option_system">System</string>
+    <string name="feature_android_settings_value_put_field_namespace_option_global">Global</string>
+    <string name="feature_android_settings_value_put_field_namespace_option_secure">Secure</string>
+    <string name="feature_android_settings_value_put_field_key">Setting key</string>
+    <string name="feature_android_settings_value_put_field_value">Setting value</string>
+
+    <string name="feature_android_settings_value_delete_title">Delete Android setting</string>
+    <string name="feature_android_settings_value_delete_description">Delete a System, Global or Secure settings key through a privileged shell</string>
+    <string name="feature_android_settings_value_delete_field_namespace">Settings namespace</string>
+    <string name="feature_android_settings_value_delete_field_namespace_option_system">System</string>
+    <string name="feature_android_settings_value_delete_field_namespace_option_global">Global</string>
+    <string name="feature_android_settings_value_delete_field_namespace_option_secure">Secure</string>
+    <string name="feature_android_settings_value_delete_field_key">Setting key</string>
+
+    <string name="feature_android_system_property_get_title">Get Android system property</string>
+    <string name="feature_android_system_property_get_description">Read one Android system property with getprop and store the text in a variable</string>
+    <string name="feature_android_system_property_get_field_key">Property key</string>
+    <string name="feature_android_system_property_get_field_resultvariable">Store value in variable</string>
+
+    <string name="feature_android_app_appop_get_title">Get app operation mode</string>
+    <string name="feature_android_app_appop_get_description">Read Android AppOps state for an application and operation name</string>
+    <string name="feature_android_app_appop_get_field_package">App / package</string>
+    <string name="feature_android_app_appop_get_field_operation">App operation</string>
+    <string name="feature_android_app_appop_get_field_resultvariable">Store command output</string>
+
+    <string name="feature_android_app_appop_set_title">Set app operation mode</string>
+    <string name="feature_android_app_appop_set_description">Set an Android AppOps operation to allow, ignore, deny, default or foreground</string>
+    <string name="feature_android_app_appop_set_field_package">App / package</string>
+    <string name="feature_android_app_appop_set_field_operation">App operation</string>
+    <string name="feature_android_app_appop_set_field_mode">AppOps mode</string>
+    <string name="feature_android_app_appop_set_field_mode_option_allow">Allow</string>
+    <string name="feature_android_app_appop_set_field_mode_option_ignore">Ignore</string>
+    <string name="feature_android_app_appop_set_field_mode_option_deny">Deny</string>
+    <string name="feature_android_app_appop_set_field_mode_option_default">Default</string>
+    <string name="feature_android_app_appop_set_field_mode_option_foreground">Foreground only</string>
+
+    <string name="feature_android_app_component_enabled_set_title">Enable or disable app component</string>
+    <string name="feature_android_app_component_enabled_set_description">Enable or disable one Android component by package and class name</string>
+    <string name="feature_android_app_component_enabled_set_field_package">App / package</string>
+    <string name="feature_android_app_component_enabled_set_field_class">Component class</string>
+    <string name="feature_android_app_component_enabled_set_field_enabled">Enabled</string>
+
+    <string name="runtime_feature_privileged_input_invalid">Invalid value for privileged system operation</string>
 </resources>
