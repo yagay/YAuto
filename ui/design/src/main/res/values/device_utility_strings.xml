@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_android_clipboard_get_title">Get clipboard text</string>
-    <string name="feature_android_clipboard_get_description">Read the first clipboard item as text and store it in a variable when Android allows clipboard access</string>
     <string name="feature_android_clipboard_get_field_resultvariable">Store text in variable</string>
 
     <string name="feature_android_clipboard_clear_title">Clear clipboard</string>
