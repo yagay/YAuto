@@ -25,6 +25,8 @@ fun GlobalVariablesScreen(
     var values by remember { mutableStateOf(initial) }
     var query by remember { mutableStateOf("") }
     var draft by remember { mutableStateOf<VariableDraft?>(null) }
+    val locale = currentEditorLocale()
+    val nameComparator = remember(locale) { localizedStringComparator(locale) }
 
     Scaffold(
         topBar = {
@@ -71,10 +73,10 @@ fun GlobalVariablesScreen(
                 },
             )
         } else {
-            val filtered = remember(values, query) {
+            val filtered = remember(values, query, nameComparator) {
                 values.entries
                     .filter { query.isBlank() || it.key.contains(query, true) || it.value.contains(query, true) }
-                    .sortedBy { it.key.lowercase() }
+                    .sortedWith { left, right -> nameComparator.compare(left.key, right.key) }
             }
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
