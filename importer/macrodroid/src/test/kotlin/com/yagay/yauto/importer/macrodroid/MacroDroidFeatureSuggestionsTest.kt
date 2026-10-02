@@ -5,7 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MacroDroidFeatureSuggestionsTest {
-    @Test fun `device controls suggest native YAuto features`() {
+    @Test fun `device and app controls suggest native YAuto features`() {
         val mapper = MacroDroidFeatureSuggestions.mapper
         assertEquals("android.nfc.set", mapper.targetId("SetNFCAction", SourceFeatureKind.ACTION))
         assertEquals("android.location.enabled.set", mapper.targetId("SetLocationModeAction", SourceFeatureKind.ACTION))
@@ -21,6 +21,17 @@ class MacroDroidFeatureSuggestionsTest {
         assertEquals("android.media.transport", mapper.targetId("ControlMediaAction", SourceFeatureKind.ACTION))
         assertEquals("android.alarm.set", mapper.targetId("SetAlarmClockAction", SourceFeatureKind.ACTION))
         assertEquals("android.calendar.event.add", mapper.targetId("AddCalendarEntryAction", SourceFeatureKind.ACTION))
+        assertEquals("android.app.data.clear", mapper.targetId("ClearAppDataAction", SourceFeatureKind.ACTION))
+        assertEquals("android.app.background.kill", mapper.targetId("KillBackgroundAppAction", SourceFeatureKind.ACTION))
+        assertEquals("android.app.enabled.set", mapper.targetId("DisableAppAction", SourceFeatureKind.ACTION))
+        assertEquals("android.display.density.set", mapper.targetId("DisplayDensityAction", SourceFeatureKind.ACTION))
+        assertEquals("android.display.font_scale.set", mapper.targetId("FontScaleAction", SourceFeatureKind.ACTION))
+        assertEquals("android.display.rotation.set", mapper.targetId("ForceScreenRotationAction", SourceFeatureKind.ACTION))
+        assertEquals("android.device.reboot", mapper.targetId("RebootAction", SourceFeatureKind.ACTION))
+        assertEquals("android.settings.value.put", mapper.targetId("SecureSettingsAction", SourceFeatureKind.ACTION))
+        assertEquals("android.settings.value.put", mapper.targetId("SystemSettingAction", SourceFeatureKind.ACTION))
+        assertEquals("android.app.installed.list", mapper.targetId("GetInstalledAppsAction", SourceFeatureKind.ACTION))
+        assertEquals("android.clipboard.set", mapper.targetId("UpdateClipboardAction", SourceFeatureKind.ACTION))
     }
 
     @Test fun `device state sources suggest event and condition features`() {
@@ -35,12 +46,13 @@ class MacroDroidFeatureSuggestionsTest {
         assertEquals("android.condition.nfc_enabled", mapper.targetId("NFCStateConstraint", SourceFeatureKind.CONDITION))
         assertEquals("android.condition.battery_temperature", mapper.targetId("BatteryTemperatureConstraint", SourceFeatureKind.CONDITION))
         assertEquals("android.condition.headset_connected", mapper.targetId("HeadphonesConnectionConstraint", SourceFeatureKind.CONDITION))
+        assertEquals("android.condition.app_enabled", mapper.targetId("AppEnabledConstraint", SourceFeatureKind.CONDITION))
+        assertEquals("android.condition.app_installed", mapper.targetId("ApplicationInstalledConstraint", SourceFeatureKind.CONDITION))
+        assertEquals("android.condition.uptime_range", mapper.targetId("TimeSinceBootConstraint", SourceFeatureKind.CONDITION))
+        assertEquals("time.condition.time_window", mapper.targetId("TimeOfDayConstraint", SourceFeatureKind.CONDITION))
     }
 
     @Test fun `existing mappings still fall through to original mapper`() {
-        assertEquals(
-            "core.delay",
-            MacroDroidFeatureSuggestions.mapper.targetId("PauseAction", SourceFeatureKind.ACTION),
-        )
+        assertEquals("core.delay", MacroDroidFeatureSuggestions.mapper.targetId("PauseAction", SourceFeatureKind.ACTION))
     }
 }
