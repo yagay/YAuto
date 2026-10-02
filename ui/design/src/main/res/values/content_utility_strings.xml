@@ -26,6 +26,7 @@
     <string name="feature_android_wallpaper_clear_field_target_option_lock">Lock screen</string>
     <string name="feature_android_wallpaper_clear_field_target_option_both">Both</string>
 
+    <string name="runtime_feature_file_not_found">File does not exist or cannot be read</string>
     <string name="runtime_feature_wallpaper_target_invalid">Unknown wallpaper target</string>
     <string name="runtime_feature_wallpaper_set_failed">Could not set wallpaper from the selected image</string>
     <string name="runtime_feature_wallpaper_clear_failed">Could not clear wallpaper</string>
