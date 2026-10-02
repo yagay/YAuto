@@ -101,6 +101,7 @@ internal object ShortXFeatureSuggestions {
                 "CurrentActivity", "AppHasWindowFocus" -> "android.condition.app_foreground"
                 "AppHasNotification" -> "android.condition.notification_active"
                 "TimeInRange" -> "time.condition.time_window"
+                "KeyguardIsLocked" -> "android.condition.device_locked"
                 else -> null
             }
             else -> null
