@@ -164,6 +164,7 @@ class AndroidEventFeaturePack : FeaturePack {
                     FieldSchema.Text("textContains", "Text contains"),
                     FieldSchema.Choice("ongoing", "Ongoing notification", options = listOf("any", "only", "exclude")),
                 ),
+                accessRequirements = setOf(AccessRequirement.NOTIFICATION_LISTENER),
                 keywords = setOf("notification", "通知", "message"),
                 ownerPackId = id,
             )
