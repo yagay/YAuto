@@ -7,7 +7,7 @@ import androidx.compose.ui.res.stringResource
 import com.yagay.yauto.core.registry.FeatureDescriptor
 
 @Composable
-internal fun localizedFeatureTitleShared(descriptor: FeatureDescriptor): String = localizedFeatureText(
+internal fun localizedFeatureTitle(descriptor: FeatureDescriptor): String = localizedFeatureText(
     key = "feature_${resourceKey(descriptor.id.value)}_title",
     fallback = descriptor.title,
 )
