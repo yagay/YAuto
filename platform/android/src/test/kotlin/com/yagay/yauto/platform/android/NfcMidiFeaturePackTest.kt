@@ -15,7 +15,7 @@ class NfcMidiFeaturePackTest {
     @Test fun `MIDI hex parser accepts common separators`() {
         assertArrayEquals(byteArrayOf(0x90.toByte(), 0x3C, 0x7F), parseMidiHex("90 3c:7F"))
         assertArrayEquals(byteArrayOf(0x80.toByte(), 0x3C, 0x00), parseMidiHex("80-3C-00"))
-        assertNull(parseMidiHex("9 03C"))
+        assertNull(parseMidiHex("90 3"))
         assertNull(parseMidiHex("90 GG"))
     }
 
