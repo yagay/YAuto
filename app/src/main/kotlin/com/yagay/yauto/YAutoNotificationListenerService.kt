@@ -40,14 +40,23 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
     }
 
     override fun snapshots(): List<ActiveNotificationSnapshot> = activeNotifications.orEmpty().map { sbn ->
-        val extras = sbn.notification.extras
+        val notification = sbn.notification
+        val extras = notification.extras
+        val actions = notification.actions.orEmpty()
         ActiveNotificationSnapshot(
             key = sbn.key,
             packageName = sbn.packageName,
             title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty(),
             text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty(),
-            actionCount = sbn.notification.actions?.size ?: 0,
+            actionCount = actions.size,
             ongoing = sbn.isOngoing,
+            actionTitles = actions.map { it.title?.toString().orEmpty() },
+            postTimeEpochMs = sbn.postTime,
+            notificationId = sbn.id,
+            tag = sbn.tag.orEmpty(),
+            channelId = notification.channelId.orEmpty(),
+            category = notification.category.orEmpty(),
+            groupKey = sbn.groupKey.orEmpty(),
         )
     }
 
