@@ -11,8 +11,9 @@ private object AndroidUserTextResolver {
     fun install(context: Context) {
         val appContext = context.applicationContext
         installUserTextResolver { code, args ->
+            val localizedContext = AppLanguageManager.localizedContext(appContext)
             val id = resourceIds.getOrPut(code) {
-                appContext.resources.getIdentifier(resourceName(code), "string", appContext.packageName)
+                localizedContext.resources.getIdentifier(resourceName(code), "string", localizedContext.packageName)
             }
             if (id == 0) {
                 // Missing translations are a CI error. Keep a stable diagnostic key instead of
@@ -20,7 +21,8 @@ private object AndroidUserTextResolver {
                 code
             } else {
                 runCatching {
-                    if (args.isEmpty()) appContext.getString(id) else appContext.getString(id, *args)
+                    if (args.isEmpty()) localizedContext.getString(id)
+                    else localizedContext.getString(id, *args)
                 }.getOrElse { code }
             }
         }
