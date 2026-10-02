@@ -44,7 +44,12 @@ class MacroDroidImporter(
                 description = block.string("m_description", "description"),
                 source = SourceMetadata(id, sourceId = sourceId, sourceType = "ActionBlock"),
             ).also {
-                trace += ImportTrace("actionBlock[$index]", it.id.value, "IMPORTED", "${actions.size} actions")
+                trace += ImportTrace(
+                    "actionBlock[$index]",
+                    it.id.value,
+                    "IMPORTED",
+                    userText("import.trace.actions", actions.size),
+                )
             }
         }
 
@@ -72,7 +77,12 @@ class MacroDroidImporter(
                 description = obj.string("m_description", "description"),
                 source = SourceMetadata(id, sourceId = sourceId, sourceType = "Macro"),
             )
-            trace += ImportTrace("macro[$index]", automation.id.value, "IMPORTED", "${events.size} triggers, ${actions.size} actions, ${conditions.size} constraints")
+            trace += ImportTrace(
+                "macro[$index]",
+                automation.id.value,
+                "IMPORTED",
+                userText("import.trace.macrodroid_macro", events.size, actions.size, conditions.size),
+            )
             automation
         }
         ImportResult(id, true, ImportBundle(automations = automations, flows = flows), issues, trace)
