@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_network_dns_resolve_title">解析 DNS 主机名</string>
+    <string name="feature_android_network_dns_resolve_description">解析主机名，并把返回的全部 IP 地址保存到列表变量</string>
+    <string name="feature_android_network_dns_resolve_field_host">主机名</string>
+    <string name="feature_android_network_dns_resolve_field_timeoutms">超时</string>
+    <string name="feature_android_network_dns_resolve_field_resultvariable">保存地址到变量</string>
+
+    <string name="feature_android_network_local_addresses_title">获取本机网络地址</string>
+    <string name="feature_android_network_local_addresses_description">列出活动网卡地址，并把结构化结果保存到变量</string>
+    <string name="feature_android_network_local_addresses_field_includeloopback">包含回环地址</string>
+    <string name="feature_android_network_local_addresses_field_includeipv6">包含 IPv6</string>
+    <string name="feature_android_network_local_addresses_field_resultvariable">保存地址列表到变量</string>
+
+    <string name="feature_android_state_tcp_reachable_title">TCP 端口可达</string>
+    <string name="feature_android_state_tcp_reachable_description">检查是否能在限定超时内建立到指定主机和端口的 TCP 连接</string>
+    <string name="feature_android_state_tcp_reachable_field_host">主机</string>
+    <string name="feature_android_state_tcp_reachable_field_port">端口</string>
+    <string name="feature_android_state_tcp_reachable_field_timeoutms">连接超时</string>
+    <string name="feature_android_state_tcp_reachable_field_value">可达</string>
+
+    <string name="feature_android_condition_tcp_reachable_title">TCP 端口可达</string>
+    <string name="feature_android_condition_tcp_reachable_description">检查是否能在限定超时内建立到指定主机和端口的 TCP 连接</string>
+    <string name="feature_android_condition_tcp_reachable_field_host">主机</string>
+    <string name="feature_android_condition_tcp_reachable_field_port">端口</string>
+    <string name="feature_android_condition_tcp_reachable_field_timeoutms">连接超时</string>
+    <string name="feature_android_condition_tcp_reachable_field_value">可达</string>
+
+    <string name="feature_android_network_tcp_wait_title">等待 TCP 端口</string>
+    <string name="feature_android_network_tcp_wait_description">等待指定 TCP 主机和端口变为可达，并设置严格的总超时</string>
+    <string name="feature_android_network_tcp_wait_field_host">主机</string>
+    <string name="feature_android_network_tcp_wait_field_port">端口</string>
+    <string name="feature_android_network_tcp_wait_field_timeoutms">总超时</string>
+    <string name="feature_android_network_tcp_wait_field_intervalms">重试间隔</string>
+    <string name="feature_android_network_tcp_wait_field_resultvariable">可选结果变量</string>
+
+    <string name="runtime_feature_network_host_invalid">主机名为空或无效</string>
+    <string name="runtime_feature_network_dns_failed">无法解析主机名 %1$s</string>
+    <string name="runtime_feature_network_port_invalid">TCP 端口无效</string>
+    <string name="runtime_feature_network_host_port_invalid">TCP 主机或端口无效</string>
+    <string name="runtime_feature_network_wait_timeout">等待 %1$s:%2$d 超时</string>
+</resources>
