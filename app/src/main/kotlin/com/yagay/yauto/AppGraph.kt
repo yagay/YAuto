@@ -57,6 +57,8 @@ class AppGraph(context: Context) {
         features.install(AndroidPlaybackFeaturePack(appContext))
         features.install(AndroidDeviceDataFeaturePack(appContext))
         features.install(AndroidConnectivityFeaturePack(appContext))
+        features.install(AndroidNetworkProfileEventFeaturePack())
+        features.install(AndroidBluetoothAudioEventFeaturePack())
         features.install(AndroidLocationRadiusFeaturePack(appContext))
         features.install(AndroidHttpFeaturePack())
         features.install(AndroidFileFeaturePack())
