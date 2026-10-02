@@ -114,6 +114,10 @@ class AutomationRuntimeService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_REFRESH_LOCALIZED_SURFACES) {
+            startForeground(NOTIFICATION_ID, createNotification())
+            return START_STICKY
+        }
         if (intent?.getBooleanExtra("boot", false) == true) {
             RuntimeEventDispatcher((application as YAutoApplication).graph, scope).dispatch(
                 RuntimeEvent("android.event.boot", source = "android.boot")
@@ -134,27 +138,29 @@ class AutomationRuntimeService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotification(): Notification {
+        val localizedContext = AppLanguageManager.localizedContext(this)
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
-                getString(TextR.string.runtime_notification_channel_name),
+                localizedContext.getString(TextR.string.runtime_notification_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = getString(TextR.string.runtime_notification_channel_description)
+                description = localizedContext.getString(TextR.string.runtime_notification_channel_description)
                 setShowBadge(false)
             }
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_popup_sync)
-            .setContentTitle(getString(TextR.string.runtime_notification_title))
-            .setContentText(getString(TextR.string.runtime_notification_text))
+            .setContentTitle(localizedContext.getString(TextR.string.runtime_notification_title))
+            .setContentText(localizedContext.getString(TextR.string.runtime_notification_text))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .build()
     }
 
     companion object {
+        const val ACTION_REFRESH_LOCALIZED_SURFACES = "com.yagay.yauto.action.REFRESH_LOCALIZED_SURFACES"
         private const val CHANNEL_ID = "yauto_runtime"
         private const val NOTIFICATION_ID = 1001
 
