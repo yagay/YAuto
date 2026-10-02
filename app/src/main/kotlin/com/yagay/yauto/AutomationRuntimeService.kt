@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -48,7 +49,10 @@ class AutomationRuntimeService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(NOTIFICATION_ID, createNotification())
+        if (!promoteToForeground()) {
+            stopSelf()
+            return
+        }
         val graph = (application as YAutoApplication).graph
         val dispatcher = RuntimeEventDispatcher(graph, scope)
         sources += SystemBroadcastEventSource(this)
@@ -152,7 +156,10 @@ class AutomationRuntimeService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_REFRESH_LOCALIZED_SURFACES) {
-            startForeground(NOTIFICATION_ID, createNotification())
+            if (!promoteToForeground()) {
+                stopSelf()
+                return START_NOT_STICKY
+            }
             return START_STICKY
         }
         if (intent?.getBooleanExtra("boot", false) == true) {
@@ -174,6 +181,14 @@ class AutomationRuntimeService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun promoteToForeground(): Boolean = runCatching {
+        startForeground(NOTIFICATION_ID, createNotification())
+        true
+    }.getOrElse { error ->
+        Log.e(TAG, "Unable to promote automation runtime to foreground", error)
+        false
+    }
 
     private fun createNotification(): Notification {
         val localizedContext = AppLanguageManager.localizedContext(this)
@@ -201,12 +216,17 @@ class AutomationRuntimeService : Service() {
         const val ACTION_REFRESH_LOCALIZED_SURFACES = "com.yagay.yauto.action.REFRESH_LOCALIZED_SURFACES"
         private const val CHANNEL_ID = "yauto_runtime"
         private const val NOTIFICATION_ID = 1001
+        private const val TAG = "YAutoRuntime"
 
-        fun start(context: Context, boot: Boolean = false) {
+        fun start(context: Context, boot: Boolean = false): Boolean = runCatching {
             ContextCompat.startForegroundService(
                 context,
                 Intent(context, AutomationRuntimeService::class.java).putExtra("boot", boot),
             )
+            true
+        }.getOrElse { error ->
+            Log.e(TAG, "Unable to start automation runtime service", error)
+            false
         }
     }
 }
