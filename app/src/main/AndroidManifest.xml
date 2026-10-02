@@ -47,7 +47,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="user-configured automation event monitoring and execution" />
+                android:value="@string/fgs_special_use_subtype" />
         </service>
 
         <service
