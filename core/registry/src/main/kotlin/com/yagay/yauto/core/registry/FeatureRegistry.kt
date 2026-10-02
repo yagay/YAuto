@@ -2,6 +2,7 @@ package com.yagay.yauto.core.registry
 
 import com.yagay.yauto.core.capability.CapabilityClient
 import com.yagay.yauto.core.capability.CapabilityId
+import com.yagay.yauto.core.capability.preferBackend
 import com.yagay.yauto.core.logging.ExecutionTracer
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.ExecutionId
@@ -123,25 +124,33 @@ class FeatureRegistry {
     fun registerAction(descriptor: FeatureDescriptor, executor: ActionExecutor) {
         require(descriptor.kind == FeatureKind.ACTION)
         registerDescriptor(descriptor)
-        actions[descriptor.id.value] = executor
+        actions[descriptor.id.value] = ActionExecutor { feature, context ->
+            executor.execute(feature, context.withFeatureBackend(feature))
+        }
     }
 
     fun registerCondition(descriptor: FeatureDescriptor, evaluator: ConditionEvaluator) {
         require(descriptor.kind == FeatureKind.CONDITION)
         registerDescriptor(descriptor)
-        conditions[descriptor.id.value] = evaluator
+        conditions[descriptor.id.value] = ConditionEvaluator { feature, context ->
+            evaluator.evaluate(feature, context.withFeatureBackend(feature))
+        }
     }
 
     fun registerEvent(descriptor: FeatureDescriptor, matcher: EventMatcher) {
         require(descriptor.kind == FeatureKind.EVENT)
         registerDescriptor(descriptor)
-        events[descriptor.id.value] = matcher
+        events[descriptor.id.value] = EventMatcher { feature, context ->
+            matcher.matches(feature, context.withFeatureBackend(feature))
+        }
     }
 
     fun registerState(descriptor: FeatureDescriptor, evaluator: ConditionEvaluator) {
         require(descriptor.kind == FeatureKind.STATE)
         registerDescriptor(descriptor)
-        states[descriptor.id.value] = evaluator
+        states[descriptor.id.value] = ConditionEvaluator { feature, context ->
+            evaluator.evaluate(feature, context.withFeatureBackend(feature))
+        }
     }
 
     fun registerDescriptor(descriptor: FeatureDescriptor) {
@@ -170,3 +179,9 @@ class FeatureRegistry {
     fun stateEvaluator(id: String): ConditionEvaluator? = states[id]
     fun allDescriptors(): List<FeatureDescriptor> = descriptors.values.sortedWith(compareBy<FeatureDescriptor> { it.category.name }.thenBy { it.title })
 }
+
+private fun FeatureExecutionContext.withFeatureBackend(feature: FeatureRef): FeatureExecutionContext =
+    copy(capabilities = capabilities.preferBackend(feature.preferredBackendId()))
+
+private fun EventMatchContext.withFeatureBackend(feature: FeatureRef): EventMatchContext =
+    copy(capabilities = capabilities.preferBackend(feature.preferredBackendId()))
