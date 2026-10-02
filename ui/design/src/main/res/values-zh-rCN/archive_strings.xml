@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_file_archive_zip_title">创建 ZIP 压缩包</string>
+    <string name="feature_file_archive_zip_description">把可访问的文件或目录树压缩为 ZIP 压缩包</string>
+    <string name="feature_file_archive_zip_field_source">源路径</string>
+    <string name="feature_file_archive_zip_field_destination">目标 ZIP 路径</string>
+    <string name="feature_file_archive_zip_field_includeroot">包含源目录名称</string>
+    <string name="feature_file_archive_zip_field_overwrite">覆盖目标文件</string>
+
+    <string name="feature_file_archive_unzip_title">解压 ZIP 压缩包</string>
+    <string name="feature_file_archive_unzip_description">解压 ZIP，并防止路径穿越和解压数据超出限制</string>
+    <string name="feature_file_archive_unzip_field_source">ZIP 文件路径</string>
+    <string name="feature_file_archive_unzip_field_destination">目标目录</string>
+    <string name="feature_file_archive_unzip_field_overwrite">覆盖已有文件</string>
+    <string name="feature_file_archive_unzip_field_maxextractedmb">最大解压 MB</string>
+
+    <string name="feature_file_hash_title">计算文件哈希</string>
+    <string name="feature_file_hash_description">计算可访问文件的 MD5、SHA-1 或 SHA-256</string>
+    <string name="feature_file_hash_field_path">文件路径</string>
+    <string name="feature_file_hash_field_algorithm">算法</string>
+    <string name="feature_file_hash_field_resultvariable">保存哈希到变量</string>
+
+    <string name="feature_file_metadata_title">获取文件元数据</string>
+    <string name="feature_file_metadata_description">读取可访问文件或目录的常用元数据并保存到对象变量</string>
+    <string name="feature_file_metadata_field_path">路径</string>
+    <string name="feature_file_metadata_field_resultvariable">保存对象到变量</string>
+
+    <string name="feature_file_state_size_range_title">文件或目录大小</string>
+    <string name="feature_file_state_size_range_description">检查可访问文件或目录树是否位于指定字节大小范围内</string>
+    <string name="feature_file_state_size_range_field_path">路径</string>
+    <string name="feature_file_state_size_range_field_minbytes">最小字节数</string>
+    <string name="feature_file_state_size_range_field_maxbytes">最大字节数</string>
+
+    <string name="feature_file_condition_size_range_title">文件或目录大小</string>
+    <string name="feature_file_condition_size_range_description">检查可访问文件或目录树是否位于指定字节大小范围内</string>
+    <string name="feature_file_condition_size_range_field_path">路径</string>
+    <string name="feature_file_condition_size_range_field_minbytes">最小字节数</string>
+    <string name="feature_file_condition_size_range_field_maxbytes">最大字节数</string>
+</resources>
