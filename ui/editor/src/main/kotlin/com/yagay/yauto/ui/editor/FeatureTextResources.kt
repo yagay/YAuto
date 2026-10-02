@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
+import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.registry.FeatureCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FieldSchema
@@ -14,6 +14,7 @@ import java.util.Locale
 internal class FeatureTextResolver(private val context: Context) {
     private val locale: Locale
         get() = context.resources.configuration.locales[0] ?: Locale.getDefault()
+
     fun title(descriptor: FeatureDescriptor): String =
         resource("feature_${resourceKey(descriptor.id.value)}_title")
             ?: phrase(descriptor.title)
@@ -104,12 +105,36 @@ internal fun localizedFieldLabelShared(descriptorId: String, field: FieldSchema)
 internal fun localizedChoiceOptionShared(descriptorId: String, fieldKey: String, option: String): String =
     rememberFeatureTextResolver().choiceOption(descriptorId, fieldKey, option)
 
+/**
+ * Map.Entry.value is an open getter, so Kotlin cannot smart-cast repeated `entry.value` accesses.
+ * The feature-summary branches already verify StringValue before reading this editor-only property.
+ */
+internal val ConfigValue.value: String
+    get() = (this as? ConfigValue.StringValue)?.value.orEmpty()
+
 internal fun resourceKey(value: String): String {
-    val normalized = value.lowercase(Locale.ROOT).map {
-        if (it.isLetterOrDigit()) it else '_'
-    }.joinToString("").replace(Regex("_+"), "_").trim('_')
-    if (normalized.isNotEmpty()) return normalized
+    val normalized = StringBuilder(value.length)
+    var previousWasSeparator = false
+    value.lowercase(Locale.ROOT).forEach { character ->
+        if (character.isLetterOrDigit()) {
+            normalized.append(character)
+            previousWasSeparator = false
+        } else if (normalized.isNotEmpty() && !previousWasSeparator) {
+            normalized.append('_')
+            previousWasSeparator = true
+        }
+    }
+    while (normalized.isNotEmpty() && normalized.last() == '_') {
+        normalized.setLength(normalized.length - 1)
+    }
+    if (normalized.isNotEmpty()) return normalized.toString()
+
     // Pure-symbol values such as ==, !=, >= and <= previously collapsed to the same empty key.
     // Encode their Unicode code points so every machine option has a deterministic resource key.
-    return "symbol_" + value.joinToString("_") { it.code.toString(16) }
+    val encoded = StringBuilder("symbol_")
+    value.forEachIndexed { index, character ->
+        if (index > 0) encoded.append('_')
+        encoded.append(character.code.toString(16))
+    }
+    return encoded.toString()
 }
