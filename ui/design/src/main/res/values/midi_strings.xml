@@ -42,6 +42,7 @@
     <string name="feature_android_event_midi_device_status_field_manufacturercontains">Manufacturer contains</string>
     <string name="feature_android_event_midi_device_status_field_productcontains">Product contains</string>
 
+    <string name="runtime_feature_midi_unavailable">MIDI service is not available on this device</string>
     <string name="runtime_feature_midi_device_id_invalid">MIDI device ID is invalid</string>
     <string name="runtime_feature_midi_port_invalid">MIDI input port number is invalid</string>
     <string name="runtime_feature_midi_hex_invalid">MIDI data must contain an even number of hexadecimal digits</string>
