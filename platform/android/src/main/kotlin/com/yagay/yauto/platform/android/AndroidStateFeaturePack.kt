@@ -24,6 +24,7 @@ interface AndroidStateReader {
     fun networkTypes(): Set<String>
     fun charging(): Boolean
     fun batteryPercent(): Double?
+    fun batteryTemperatureC(): Double?
     fun powerSave(): Boolean
     fun appInstalled(packageName: String): Boolean
     fun mediaVolumePercent(): Double?
@@ -35,6 +36,7 @@ interface AndroidStateReader {
     fun darkMode(): Boolean
     fun stayAwakeWhileCharging(): Boolean
     fun screenTimeoutMs(): Double?
+    fun headsetConnected(): Boolean
 }
 
 class SystemAndroidStateReader(context: Context) : AndroidStateReader {
@@ -44,10 +46,15 @@ class SystemAndroidStateReader(context: Context) : AndroidStateReader {
     override fun powerSave() = power.isPowerSaveMode
     override fun charging() = context.getSystemService(BatteryManager::class.java).isCharging
     override fun batteryPercent(): Double? {
-        val battery = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)) ?: return null
+        val battery = batteryIntent() ?: return null
         val level = battery.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         val scale = battery.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
         return if (level >= 0 && scale > 0 && level <= scale) level * 100.0 / scale else null
+    }
+    override fun batteryTemperatureC(): Double? {
+        val temperatureTenths = batteryIntent()?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE)
+            ?: return null
+        return if (temperatureTenths == Int.MIN_VALUE) null else temperatureTenths / 10.0
     }
     override fun networkTypes(): Set<String> {
         val manager = context.getSystemService(ConnectivityManager::class.java)
@@ -113,6 +120,15 @@ class SystemAndroidStateReader(context: Context) : AndroidStateReader {
     override fun screenTimeoutMs(): Double? = runCatching {
         Settings.System.getLong(context.contentResolver, Settings.System.SCREEN_OFF_TIMEOUT).toDouble()
     }.getOrNull()
+
+    override fun headsetConnected(): Boolean = runCatching {
+        context.getSystemService(AudioManager::class.java)
+            .getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+            .any { it.yautoHeadsetCategory() != null }
+    }.getOrDefault(false)
+
+    private fun batteryIntent(): Intent? =
+        context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
 }
 
 class AndroidStateFeaturePack(private val reader: AndroidStateReader) : FeaturePack {
@@ -128,6 +144,7 @@ class AndroidStateFeaturePack(private val reader: AndroidStateReader) : FeatureP
         booleanState(registry, "auto_rotate", "Auto-rotate enabled", FeatureCategory.DISPLAY, reader::autoRotate)
         booleanState(registry, "dark_mode", "Dark theme active", FeatureCategory.DISPLAY, reader::darkMode)
         booleanState(registry, "stay_awake_while_charging", "Stay awake while charging", FeatureCategory.DEVICE, reader::stayAwakeWhileCharging)
+        booleanState(registry, "headset_connected", "Headset connected", FeatureCategory.AUDIO, reader::headsetConnected)
         state(registry, "network", "Network type", FeatureCategory.NETWORK,
             listOf(FieldSchema.Choice("type", "Network type", true, listOf("connected", "none", "wifi", "cellular", "ethernet", "vpn", "bluetooth")))) { config, _ ->
             config.string("type", "connected") in reader.networkTypes()
@@ -139,6 +156,19 @@ class AndroidStateFeaturePack(private val reader: AndroidStateReader) : FeatureP
             require(min.isFinite() && max.isFinite() && min in 0.0..100.0 && max in min..100.0) { "Invalid battery range" }
             val level = reader.batteryPercent() ?: error("Battery level unavailable")
             level in min..max
+        }
+        state(registry, "battery_temperature", "Battery temperature", FeatureCategory.DEVICE,
+            listOf(
+                FieldSchema.Choice("operator", "Operator", true, listOf("<", "<=", "==", ">=", ">")),
+                FieldSchema.Number("value", "Temperature (°C)", true, min = -50.0, max = 150.0),
+            )) { config, _ ->
+            compareNumber(
+                reader.batteryTemperatureC() ?: error("Battery temperature unavailable"),
+                config,
+                min = -50.0,
+                max = 150.0,
+                equalityTolerance = 0.05,
+            )
         }
         state(registry, "app_installed", "App installed", FeatureCategory.APP,
             listOf(FieldSchema.AppPicker("package", "App / package", true), FieldSchema.Toggle("value", "Installed"))) { config, ctx ->
@@ -193,13 +223,22 @@ class AndroidStateFeaturePack(private val reader: AndroidStateReader) : FeatureP
             comparePercent(query() ?: error("$title unavailable"), config)
         }
 
-    private fun comparePercent(actual: Double, config: ConfigMap): Boolean {
-        val expected = config["value"].numberOrNull() ?: 0.0
-        require(expected.isFinite() && expected in 0.0..100.0) { "Invalid percentage" }
+    private fun comparePercent(actual: Double, config: ConfigMap): Boolean =
+        compareNumber(actual, config, min = 0.0, max = 100.0, equalityTolerance = 0.5)
+
+    private fun compareNumber(
+        actual: Double,
+        config: ConfigMap,
+        min: Double,
+        max: Double,
+        equalityTolerance: Double,
+    ): Boolean {
+        val expected = config["value"].numberOrNull() ?: min
+        require(expected.isFinite() && expected in min..max) { "Invalid numeric comparison value" }
         return when (config.string("operator", "==")) {
             "<" -> actual < expected
             "<=" -> actual <= expected
-            "==" -> kotlin.math.abs(actual - expected) < 0.5
+            "==" -> kotlin.math.abs(actual - expected) <= equalityTolerance
             ">=" -> actual >= expected
             ">" -> actual > expected
             else -> false
