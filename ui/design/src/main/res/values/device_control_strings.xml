@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_nfc_set_title">NFC</string>
+    <string name="feature_android_nfc_set_description">Turn NFC on or off using Android\'s NFC service</string>
+
+    <string name="feature_android_location_enabled_set_title">Location services</string>
+    <string name="feature_android_location_enabled_set_description">Turn the Android master location switch on or off for the current user</string>
+
+    <string name="feature_android_display_auto_rotate_set_title">Auto-rotate</string>
+    <string name="feature_android_display_auto_rotate_set_description">Enable or disable Android automatic screen rotation</string>
+
+    <string name="feature_android_display_screen_timeout_set_title">Screen timeout</string>
+    <string name="feature_android_display_screen_timeout_set_description">Set the Android screen-off timeout</string>
+    <string name="feature_android_display_screen_timeout_set_field_timeoutms">Screen timeout</string>
+
+    <string name="feature_android_display_dark_mode_set_title">Dark theme</string>
+    <string name="feature_android_display_dark_mode_set_description">Set Android system night mode to light, dark or automatic</string>
+    <string name="feature_android_display_dark_mode_set_field_mode">Mode</string>
+    <string name="feature_android_display_dark_mode_set_field_mode_option_light">Light</string>
+    <string name="feature_android_display_dark_mode_set_field_mode_option_dark">Dark</string>
+    <string name="feature_android_display_dark_mode_set_field_mode_option_auto">Automatic</string>
+
+    <string name="feature_android_power_battery_saver_set_title">Battery saver</string>
+    <string name="feature_android_power_battery_saver_set_description">Turn Android low-power mode on or off</string>
+
+    <string name="feature_android_power_stay_awake_set_title">Stay awake while charging</string>
+    <string name="feature_android_power_stay_awake_set_description">Control which charging sources keep the screen awake</string>
+    <string name="feature_android_power_stay_awake_set_field_mode">Stay awake mode</string>
+    <string name="feature_android_power_stay_awake_set_field_mode_option_off">Off</string>
+    <string name="feature_android_power_stay_awake_set_field_mode_option_all">All charging sources</string>
+    <string name="feature_android_power_stay_awake_set_field_mode_option_usb">USB</string>
+    <string name="feature_android_power_stay_awake_set_field_mode_option_ac">AC charger</string>
+    <string name="feature_android_power_stay_awake_set_field_mode_option_wireless">Wireless charger</string>
+
+    <string name="feature_android_state_nfc_enabled_title">NFC enabled</string>
+    <string name="feature_android_condition_nfc_enabled_title">NFC enabled</string>
+    <string name="feature_android_state_location_enabled_title">Location services enabled</string>
+    <string name="feature_android_condition_location_enabled_title">Location services enabled</string>
+    <string name="feature_android_state_auto_rotate_title">Auto-rotate enabled</string>
+    <string name="feature_android_condition_auto_rotate_title">Auto-rotate enabled</string>
+    <string name="feature_android_state_dark_mode_title">Dark theme active</string>
+    <string name="feature_android_condition_dark_mode_title">Dark theme active</string>
+    <string name="feature_android_state_stay_awake_while_charging_title">Stay awake while charging</string>
+    <string name="feature_android_condition_stay_awake_while_charging_title">Stay awake while charging</string>
+    <string name="feature_android_state_screen_timeout_title">Screen timeout</string>
+    <string name="feature_android_condition_screen_timeout_title">Screen timeout</string>
+    <string name="feature_android_state_screen_timeout_field_minms">Minimum timeout</string>
+    <string name="feature_android_state_screen_timeout_field_maxms">Maximum timeout</string>
+    <string name="feature_android_condition_screen_timeout_field_minms">Minimum timeout</string>
+    <string name="feature_android_condition_screen_timeout_field_maxms">Maximum timeout</string>
+</resources>
