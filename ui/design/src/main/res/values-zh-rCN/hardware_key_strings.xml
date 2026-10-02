@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_hardware_key_title">实体按键</string>
+    <string name="feature_android_event_hardware_key_description">当无障碍服务报告实体按键按下或抬起事件时运行</string>
+    <string name="feature_android_event_hardware_key_field_keycode">Android 按键码</string>
+    <string name="feature_android_event_hardware_key_field_action">按键动作</string>
+    <string name="feature_android_event_hardware_key_field_action_option_any">任意</string>
+    <string name="feature_android_event_hardware_key_field_action_option_down">按下</string>
+    <string name="feature_android_event_hardware_key_field_action_option_up">抬起</string>
+    <string name="feature_android_event_hardware_key_field_initialonly">忽略长按产生的重复按下事件</string>
+</resources>
