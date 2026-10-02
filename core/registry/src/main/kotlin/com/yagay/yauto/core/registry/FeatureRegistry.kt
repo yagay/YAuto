@@ -34,32 +34,29 @@ sealed interface FieldSchema {
     data class Choice(override val key: String, override val label: String, override val required: Boolean = false, val options: List<String>) : FieldSchema
 }
 
-enum class AccessRequirement(val id: String, val label: String) {
-    ROOT("root", "Root"),
-    SHIZUKU("shizuku", "Shizuku"),
-    LSPOSED("lsposed", "LSPosed"),
-    SHAMIKO("shamiko", "Shamiko"),
-    ZYGISK("zygisk", "Zygisk"),
-    ACCESSIBILITY("accessibility", "Accessibility"),
-    NOTIFICATION_LISTENER("notification_listener", "通知监听"),
-    POST_NOTIFICATIONS("post_notifications", "通知权限"),
-    OVERLAY("overlay", "悬浮窗"),
-    WRITE_SETTINGS("write_settings", "修改系统设置"),
-    CAMERA("camera", "相机"),
-    LOCATION("location", "位置"),
-    BLUETOOTH_CONNECT("bluetooth_connect", "附近设备 / 蓝牙"),
-    DND_POLICY("dnd_policy", "勿扰模式访问"),
-    DEVICE_ADMIN("device_admin", "设备管理器"),
+/** Stable machine requirements. Human-readable labels live in Android resources. */
+enum class AccessRequirement(val id: String) {
+    ROOT("root"),
+    SHIZUKU("shizuku"),
+    LSPOSED("lsposed"),
+    SHAMIKO("shamiko"),
+    ZYGISK("zygisk"),
+    ACCESSIBILITY("accessibility"),
+    NOTIFICATION_LISTENER("notification_listener"),
+    POST_NOTIFICATIONS("post_notifications"),
+    OVERLAY("overlay"),
+    WRITE_SETTINGS("write_settings"),
+    CAMERA("camera"),
+    LOCATION("location"),
+    BLUETOOTH_CONNECT("bluetooth_connect"),
+    DND_POLICY("dnd_policy"),
+    DEVICE_ADMIN("device_admin"),
 }
 
+/** Language-neutral implementation metadata. UI copy is resolved by backendId in the Android layer. */
 data class FeatureImplementationOption(
-    /** CapabilityBackend.id. Use null only for a non-Broker implementation described by the feature itself. */
     val backendId: String?,
-    val title: String,
-    val summary: String,
     val requirements: Set<AccessRequirement> = emptySet(),
-    val pros: List<String> = emptyList(),
-    val cons: List<String> = emptyList(),
     val restartRequired: Boolean = false,
 )
 
@@ -76,9 +73,7 @@ data class FeatureDescriptor(
     val stability: Stability = Stability.STABLE,
     val keywords: Set<String> = emptySet(),
     val ownerPackId: String = "core",
-    /** Extra environment requirements that cannot be inferred from CapabilityId, e.g. Shamiko/Zygisk. */
     val accessRequirements: Set<AccessRequirement> = emptySet(),
-    /** Explicit alternatives override the built-in capability-derived implementation catalog. */
     val implementationOptions: List<FeatureImplementationOption> = emptyList(),
 )
 
@@ -182,7 +177,9 @@ class FeatureRegistry {
     fun conditionEvaluator(id: String): ConditionEvaluator? = conditions[id]
     fun eventMatcher(id: String): EventMatcher? = events[id]
     fun stateEvaluator(id: String): ConditionEvaluator? = states[id]
-    fun allDescriptors(): List<FeatureDescriptor> = descriptors.values.sortedWith(compareBy<FeatureDescriptor> { it.category.name }.thenBy { it.title })
+    fun allDescriptors(): List<FeatureDescriptor> = descriptors.values.sortedWith(
+        compareBy<FeatureDescriptor> { it.category.name }.thenBy { it.title }
+    )
 }
 
 private fun FeatureExecutionContext.withFeatureBackend(feature: FeatureRef): FeatureExecutionContext =
