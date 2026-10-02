@@ -15,6 +15,9 @@ class MacroDroidFeatureSuggestionsTest {
         assertEquals("android.power.battery_saver.set", mapper.targetId("BatterySaverAction", SourceFeatureKind.ACTION))
         assertEquals("android.power.stay_awake.set", mapper.targetId("KeepAwakeAction", SourceFeatureKind.ACTION))
         assertEquals("android.tts.speak", mapper.targetId("SpeakTextAction", SourceFeatureKind.ACTION))
+        assertEquals("android.screen.wake", mapper.targetId("ScreenOnAction", SourceFeatureKind.ACTION))
+        assertEquals("android.input.keyevent", mapper.targetId("InputKeyEventAction", SourceFeatureKind.ACTION))
+        assertEquals("android.screenshot.capture", mapper.targetId("TakeScreenshotAction", SourceFeatureKind.ACTION))
     }
 
     @Test fun `device state sources suggest event and condition features`() {
@@ -22,8 +25,13 @@ class MacroDroidFeatureSuggestionsTest {
         assertEquals("android.event.nfc_state_changed", mapper.targetId("NFCStateTrigger", SourceFeatureKind.EVENT))
         assertEquals("android.event.auto_rotate_changed", mapper.targetId("AutoRotateChangeTrigger", SourceFeatureKind.EVENT))
         assertEquals("android.event.dark_mode_changed", mapper.targetId("DarkThemeTrigger", SourceFeatureKind.EVENT))
+        assertEquals("android.event.battery_changed", mapper.targetId("BatteryLevelTrigger", SourceFeatureKind.EVENT))
+        assertEquals("android.event.battery_changed", mapper.targetId("BatteryTemperatureTrigger", SourceFeatureKind.EVENT))
+        assertEquals("android.event.headset_changed", mapper.targetId("HeadphonesTrigger", SourceFeatureKind.EVENT))
         assertEquals("android.condition.location_enabled", mapper.targetId("LocationModeConstraint", SourceFeatureKind.CONDITION))
         assertEquals("android.condition.nfc_enabled", mapper.targetId("NFCStateConstraint", SourceFeatureKind.CONDITION))
+        assertEquals("android.condition.battery_temperature", mapper.targetId("BatteryTemperatureConstraint", SourceFeatureKind.CONDITION))
+        assertEquals("android.condition.headset_connected", mapper.targetId("HeadphonesConnectionConstraint", SourceFeatureKind.CONDITION))
     }
 
     @Test fun `existing mappings still fall through to original mapper`() {
