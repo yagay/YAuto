@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_app_enabled_set_title">启用或停用应用</string>
+    <string name="feature_android_app_enabled_set_description">通过 Root 或 Shizuku 启用或停用已安装应用</string>
+    <string name="feature_android_app_enabled_set_field_package">应用 / 包名</string>
+    <string name="feature_android_app_enabled_set_field_enabled">已启用</string>
+
+    <string name="feature_android_app_data_clear_title">清除应用数据</string>
+    <string name="feature_android_app_data_clear_description">通过 Root 或 Shizuku 清除已安装应用的全部用户数据</string>
+    <string name="feature_android_app_data_clear_field_package">应用 / 包名</string>
+
+    <string name="feature_android_app_background_kill_title">结束应用后台进程</string>
+    <string name="feature_android_app_background_kill_description">让 Android 结束应用的后台进程，但不执行强制停止</string>
+    <string name="feature_android_app_background_kill_field_package">应用 / 包名</string>
+
+    <string name="feature_android_state_app_enabled_title">应用已启用</string>
+    <string name="feature_android_state_app_enabled_description">检查当前用户下指定应用是否处于启用状态</string>
+    <string name="feature_android_state_app_enabled_field_package">应用 / 包名</string>
+    <string name="feature_android_state_app_enabled_field_value">已启用</string>
+
+    <string name="feature_android_condition_app_enabled_title">应用已启用</string>
+    <string name="feature_android_condition_app_enabled_description">检查当前用户下指定应用是否处于启用状态</string>
+    <string name="feature_android_condition_app_enabled_field_package">应用 / 包名</string>
+    <string name="feature_android_condition_app_enabled_field_value">已启用</string>
+
+    <string name="feature_android_device_reboot_title">重启设备</string>
+    <string name="feature_android_device_reboot_description">通过特权 Shell 正常重启 Android，或重启到 Recovery / Bootloader</string>
+    <string name="feature_android_device_reboot_field_mode">重启模式</string>
+    <string name="feature_android_device_reboot_field_mode_option_normal">正常重启</string>
+    <string name="feature_android_device_reboot_field_mode_option_recovery">Recovery</string>
+    <string name="feature_android_device_reboot_field_mode_option_bootloader">Bootloader</string>
+
+    <string name="runtime_feature_app_self_management_blocked">YAuto 不允许停用、清除数据或结束自身包</string>
+    <string name="runtime_feature_reboot_mode_invalid">未知的重启模式</string>
+</resources>
