@@ -18,6 +18,7 @@ import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
 import com.yagay.yauto.platform.android.AndroidEventSource
+import com.yagay.yauto.platform.android.AudioDeviceEventSource
 import com.yagay.yauto.platform.android.ClipboardEventSource
 import com.yagay.yauto.platform.android.ConfiguredBroadcastEventSource
 import com.yagay.yauto.platform.android.ConfiguredSensorEventSource
@@ -47,6 +48,7 @@ class AutomationRuntimeService : Service() {
         sources += NetworkEventSource(this)
         sources += ClipboardEventSource(this)
         sources += DeviceSettingEventSource(this)
+        sources += AudioDeviceEventSource(this)
         sources += ConfiguredBroadcastEventSource(this, graph.workspace)
         sources += ConfiguredSensorEventSource(this, graph.workspace)
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
