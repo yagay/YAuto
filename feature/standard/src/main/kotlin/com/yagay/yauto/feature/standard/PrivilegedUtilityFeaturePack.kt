@@ -77,16 +77,46 @@ class PrivilegedUtilityFeaturePack : FeaturePack {
             }
             val parent = path.substringBeforeLast('/', "/sdcard/Download/YAuto")
             val command = "mkdir -p ${shellQuote(parent)} && screencap -p ${shellQuote(path)}"
-            val result = ctx.executeCapability(
-                featureId = feature.typeId,
-                request = CapabilityRequest(
-                    CapabilityIds.PRIVILEGED_SHELL,
-                    feature.typeId,
-                    mapOf("command" to ConfigValue.StringValue(command)),
-                    preferredBackendId = feature.preferredBackendId(),
+            val result = executeShellRaw(feature, ctx, command)
+            if (!result.success) return@registerAction result
+            val output = ConfigValue.StringValue(path)
+            feature.config.string("resultVariable").trim().takeIf { it.isNotEmpty() }?.let { ctx.variables.set(it, output) }
+            ActionExecutionResult(true, output)
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.screen.record"), FeatureKind.ACTION,
+                "Record screen", "Record the display to an MP4 file for a bounded duration using Android screenrecord",
+                FeatureCategory.DISPLAY,
+                capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
+                fields = listOf(
+                    FieldSchema.Text("path", "MP4 path (blank = Downloads/YAuto)"),
+                    FieldSchema.Number("durationSeconds", "Duration seconds", min = 1.0, max = 180.0),
+                    FieldSchema.Number("bitrateMbps", "Bitrate Mbps", min = 1.0, max = 100.0),
+                    FieldSchema.Variable("resultVariable", "Store saved path in variable"),
                 ),
+                keywords = setOf("screen record", "screenrecord", "video", "mp4", "capture"),
+                ownerPackId = id,
             )
-            if (!result.success) return@registerAction ActionExecutionResult(false, result.value, result.message)
+        ) { feature, ctx ->
+            val rawPath = feature.config.string("path").resolveVariables(ctx.variables).trim()
+            val path = runCatching { screenRecordingPath(rawPath) }.getOrElse {
+                return@registerAction ActionExecutionResult(false, message = it.message ?: userText("feature.screen_record_path_invalid"))
+            }
+            val duration = (feature.config["durationSeconds"].numberOrNull() ?: 30.0).toInt()
+            if (duration !in 1..180) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.screen_record_duration_invalid"))
+            }
+            val bitrateMbps = feature.config["bitrateMbps"].numberOrNull()
+            if (bitrateMbps != null && (bitrateMbps < 1.0 || bitrateMbps > 100.0 || !bitrateMbps.isFinite())) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.screen_record_bitrate_invalid"))
+            }
+            val parent = path.substringBeforeLast('/', "/sdcard/Download/YAuto")
+            val bitrateArg = bitrateMbps?.let { " --bit-rate ${(it * 1_000_000.0).toLong()}" }.orEmpty()
+            val command = "mkdir -p ${shellQuote(parent)} && screenrecord --time-limit $duration$bitrateArg ${shellQuote(path)}"
+            val result = executeShellRaw(feature, ctx, command)
+            if (!result.success) return@registerAction result
             val output = ConfigValue.StringValue(path)
             feature.config.string("resultVariable").trim().takeIf { it.isNotEmpty() }?.let { ctx.variables.set(it, output) }
             ActionExecutionResult(true, output)
@@ -94,6 +124,12 @@ class PrivilegedUtilityFeaturePack : FeaturePack {
     }
 
     private suspend fun executeShell(
+        feature: com.yagay.yauto.core.model.FeatureRef,
+        ctx: FeatureExecutionContext,
+        command: String,
+    ): ActionExecutionResult = executeShellRaw(feature, ctx, command)
+
+    private suspend fun executeShellRaw(
         feature: com.yagay.yauto.core.model.FeatureRef,
         ctx: FeatureExecutionContext,
         command: String,
@@ -112,12 +148,26 @@ class PrivilegedUtilityFeaturePack : FeaturePack {
 
     private fun screenshotPath(raw: String): String {
         val path = raw.ifBlank { "/sdcard/Download/YAuto/screenshot-${System.currentTimeMillis()}.png" }
-        require(path.startsWith("/sdcard/") || path.startsWith("/storage/emulated/0/")) {
-            userText("feature.screenshot_path_shared_storage_required")
-        }
+        requireSharedStorage(path, "feature.screenshot_path_shared_storage_required")
         require(path.endsWith(".png", ignoreCase = true)) { userText("feature.screenshot_path_png_required") }
-        require(path.none { it == '\n' || it == '\r' || it == '\u0000' }) { userText("feature.screenshot_path_invalid") }
+        requireSafePath(path, "feature.screenshot_path_invalid")
         return path
+    }
+
+    private fun screenRecordingPath(raw: String): String {
+        val path = raw.ifBlank { "/sdcard/Download/YAuto/screenrecord-${System.currentTimeMillis()}.mp4" }
+        requireSharedStorage(path, "feature.screen_record_path_shared_storage_required")
+        require(path.endsWith(".mp4", ignoreCase = true)) { userText("feature.screen_record_path_mp4_required") }
+        requireSafePath(path, "feature.screen_record_path_invalid")
+        return path
+    }
+
+    private fun requireSharedStorage(path: String, key: String) {
+        require(path.startsWith("/sdcard/") || path.startsWith("/storage/emulated/0/")) { userText(key) }
+    }
+
+    private fun requireSafePath(path: String, key: String) {
+        require(path.none { it == '\n' || it == '\r' || it == '\u0000' }) { userText(key) }
     }
 
     private fun shellQuote(value: String): String = "'" + value.replace("'", "'\\''") + "'"
