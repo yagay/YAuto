@@ -46,6 +46,8 @@
     <string name="value_text">文本</string>
     <string name="value_number">数字</string>
     <string name="value_boolean">布尔</string>
+    <string name="value_true">是</string>
+    <string name="value_false">否</string>
     <string name="value_null">空值</string>
     <string name="value_list">列表</string>
     <string name="value_object">对象</string>
