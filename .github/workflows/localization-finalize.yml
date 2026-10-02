@@ -25,6 +25,26 @@ jobs:
           gradle-version: '9.4.1'
       - name: Apply final localization migration
         run: python3 tools/finalize_localization.py
+      - name: Remove language-specific aliases from Kotlin sets
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          cjk = re.compile(r'[\u3400-\u4dbf\u4e00-\u9fff]')
+          pattern = re.compile(r'setOf\((.*?)\)', re.S)
+          for path in Path('.').glob('**/src/main/kotlin/**/*.kt'):
+              text = path.read_text(encoding='utf-8')
+              def repl(match):
+                  inner = match.group(1)
+                  literals = re.findall(r'"(?:\\.|[^"\\])*"', inner)
+                  if not literals or not any(cjk.search(x) for x in literals):
+                      return match.group(0)
+                  kept = [x for x in literals if not cjk.search(x)]
+                  return 'setOf(' + ', '.join(kept) + ')'
+              updated = pattern.sub(repl, text)
+              if updated != text:
+                  path.write_text(updated, encoding='utf-8')
+          PY
       - name: Localization guard
         run: python3 .github/scripts/check-localization.py
       - name: Unit tests
