@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_nfc_info_title">Get NFC information</string>
+    <string name="feature_android_nfc_info_description">Store whether NFC hardware is available and currently enabled</string>
+    <string name="feature_android_nfc_info_field_resultvariable">Store NFC object in variable</string>
+
+    <string name="feature_android_state_nfc_enabled_title">NFC enabled</string>
+    <string name="feature_android_state_nfc_enabled_description">Check whether this device has NFC hardware and the NFC adapter is enabled</string>
+    <string name="feature_android_state_nfc_enabled_field_value">Enabled</string>
+    <string name="feature_android_condition_nfc_enabled_title">NFC enabled</string>
+    <string name="feature_android_condition_nfc_enabled_description">Check whether this device has NFC hardware and the NFC adapter is enabled</string>
+    <string name="feature_android_condition_nfc_enabled_field_value">Enabled</string>
+
+    <string name="feature_android_event_nfc_tag_title">NFC tag discovered</string>
+    <string name="feature_android_event_nfc_tag_description">Run when Android routes an NFC tag to YAuto and optionally match UID, technology, text or URI records</string>
+    <string name="feature_android_event_nfc_tag_field_kind">Discovery type</string>
+    <string name="feature_android_event_nfc_tag_field_kind_option_any">Any</string>
+    <string name="feature_android_event_nfc_tag_field_kind_option_ndef">NDEF</string>
+    <string name="feature_android_event_nfc_tag_field_kind_option_tech">Technology</string>
+    <string name="feature_android_event_nfc_tag_field_kind_option_tag">Tag</string>
+    <string name="feature_android_event_nfc_tag_field_uidhex">UID hex exact</string>
+    <string name="feature_android_event_nfc_tag_field_uidprefix">UID hex prefix</string>
+    <string name="feature_android_event_nfc_tag_field_techcontains">Technology name contains</string>
+    <string name="feature_android_event_nfc_tag_field_textcontains">NDEF text contains</string>
+    <string name="feature_android_event_nfc_tag_field_uricontains">NDEF URI contains</string>
+</resources>
