@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="variables_title">全局变量</string>
+    <string name="variables_add_title">添加变量</string>
+    <string name="variables_edit_title">编辑变量</string>
+    <string name="variables_description">可被所有自动化和流程读取。变量选择器使用名称引用；当前工作区格式保留字符串值。</string>
+    <string name="variables_search">搜索变量</string>
+    <string name="variables_empty">还没有全局变量。</string>
+    <string name="variables_no_match">没有匹配的变量。</string>
+    <string name="variables_empty_value">（空字符串）</string>
+    <string name="variables_name">变量名称</string>
+    <string name="variables_name_required">变量名不能为空</string>
+    <string name="variables_name_duplicate">已有同名变量</string>
+    <string name="variables_name_hint">在模板中可通过变量选择器引用</string>
+    <string name="variables_value">值</string>
+    <string name="variables_save">保存变量</string>
+</resources>
