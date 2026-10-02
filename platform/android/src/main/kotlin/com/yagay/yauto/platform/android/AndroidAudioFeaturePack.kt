@@ -35,7 +35,7 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 val value = (min + (max - min) * percent / 100.0).roundToInt().coerceIn(min, max)
                 audio.setStreamVolume(stream, value, if (feature.config.boolean("showUi")) AudioManager.FLAG_SHOW_UI else 0)
                 ActionExecutionResult(true, ConfigValue.NumberValue(percent))
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -61,7 +61,7 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 audio.adjustStreamVolume(stream(feature.config.string("stream", "media")), adjustment,
                     if (feature.config.boolean("showUi")) AudioManager.FLAG_SHOW_UI else 0)
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -79,7 +79,7 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 else -> AudioManager.RINGER_MODE_NORMAL
             }
             runCatching { audio.ringerMode = mode; ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -92,7 +92,7 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, _ ->
             runCatching { @Suppress("DEPRECATION") audio.isMicrophoneMute = feature.config.boolean("enabled", true); ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -105,7 +105,7 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, _ ->
             runCatching { @Suppress("DEPRECATION") audio.isSpeakerphoneOn = feature.config.boolean("enabled", true); ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
         stateAndCondition(registry, "ringer_mode", "Ringer mode",

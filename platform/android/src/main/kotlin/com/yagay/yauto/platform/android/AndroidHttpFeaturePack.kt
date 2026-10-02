@@ -36,7 +36,7 @@ class AndroidHttpFeaturePack : FeaturePack {
         ) { feature, ctx ->
             val url = feature.config.string("url").resolveVariables(ctx.variables).trim()
             if (!(url.startsWith("https://") || url.startsWith("http://"))) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.http_url_required", "URL must use http:// or https://"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.http_url_required"))
             }
             val method = feature.config.string("method", "GET").uppercase()
             val headers = parseHeaders(feature.config.string("headers").resolveVariables(ctx.variables))
@@ -96,7 +96,7 @@ class AndroidHttpFeaturePack : FeaturePack {
                 )
             )
             ActionExecutionResult(status in 200..399, value, if (status in 200..399) null else "HTTP $status")
-        }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+        }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
             .also { connection?.disconnect() }
     }
 

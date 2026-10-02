@@ -110,6 +110,22 @@ def main() -> int:
             if ANDROID_VISIBLE_LITERAL.search(line) or TOAST_LITERAL.search(line):
                 failures.append(f"{path}:{line_no}: hardcoded Android-visible text must use localized resources/userText(): {line.strip()}")
 
+    # userText call sites must carry only a stable key and formatting args. A literal second
+    # argument is a language-specific fallback and defeats the Android resource architecture.
+    for path in kotlin:
+        text = path.read_text(encoding="utf-8")
+        for match in re.finditer(r'userText\(\s*"[^"]+"\s*,\s*"', text):
+            failures.append(f"{path}:{line_number(text, match.start())}: remove language-specific userText fallback; keep only key + args")
+
+    # Feature UI must never expose raw descriptor prose when a resource is missing.
+    feature_resolver = Path("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FeatureTextResources.kt")
+    if feature_resolver.exists():
+        resolver_text = feature_resolver.read_text(encoding="utf-8")
+        for pattern in (r'else\s+descriptor\.title', r'else\s+descriptor\.description', r'else\s+field\.label', r'else\s+option'):
+            match = re.search(pattern, resolver_text)
+            if match:
+                failures.append(f"{feature_resolver}:{line_number(resolver_text, match.start())}: raw FeatureDescriptor display fallback is forbidden")
+
     # Android manifests must not hardcode human-readable labels/descriptions.
     for path in ROOT.glob("**/src/main/AndroidManifest.xml"):
         text = path.read_text(encoding="utf-8")

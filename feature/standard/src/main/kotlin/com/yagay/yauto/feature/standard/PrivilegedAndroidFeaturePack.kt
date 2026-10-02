@@ -103,7 +103,7 @@ class PrivilegedAndroidFeaturePack : FeaturePack {
                 capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL), fields = fields, keywords = keywords, ownerPackId = id)
         ) { feature, ctx ->
             val shell = runCatching { command(feature, ctx) }.getOrElse {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName))
             }
             val result = ctx.executeCapability(featureId = typeId,
                 request = CapabilityRequest(

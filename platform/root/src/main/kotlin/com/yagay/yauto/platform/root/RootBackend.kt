@@ -18,7 +18,7 @@ class RootBackend(
 
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
         val command = if (request.capability == CapabilityIds.SYSTEM_UI) SystemOperations.shellCommand(request.operationId).orEmpty() else request.payload.string("command")
-        if (command.isBlank()) return CapabilityResult(false, message = userText("capability.shell_empty", "Shell command is empty"))
+        if (command.isBlank()) return CapabilityResult(false, message = userText("capability.shell_empty"))
         val out = shell.run(command)
         return CapabilityResult(
             success = out.exitCode == 0 && !out.timedOut,

@@ -83,7 +83,7 @@ class DiagnosticCoordinator(
                             source = DiagnosticSource.YAUTO,
                             timestampEpochMs = System.currentTimeMillis(),
                             severity = DiagnosticSeverity.ERROR,
-                            title = userText("diagnostics.collector_failed", "Collector failed: %s", collector.id),
+                            title = userText("diagnostics.collector_failed", collector.id),
                             message = error.stackTraceToString().take(16_000),
                             context = context,
                         )

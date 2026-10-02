@@ -17,8 +17,8 @@ class CompatibilityFeaturePack : FeaturePack {
         ).forEach { (typeId, kind) ->
             registry.registerDescriptor(
                 FeatureDescriptor(
-                    FeatureId(typeId), kind, userText("compat.imported_item", "Imported source item"),
-                    userText("compat.imported_item_description", "Preserved source item waiting for a native mapping"),
+                    FeatureId(typeId), kind, userText("compat.imported_item"),
+                    userText("compat.imported_item_description"),
                     FeatureCategory.COMPATIBILITY,
                     stability = Stability.DEPRECATED,
                     ownerPackId = id,
@@ -28,15 +28,15 @@ class CompatibilityFeaturePack : FeaturePack {
 
         registry.registerAction(
             FeatureDescriptor(
-                FeatureId(CompatFeatureIds.SOURCE_ACTION), FeatureKind.ACTION, userText("compat.imported_action", "Imported source action"),
-                userText("compat.imported_action_description", "Preserved source action waiting for a native mapping"),
+                FeatureId(CompatFeatureIds.SOURCE_ACTION), FeatureKind.ACTION, userText("compat.imported_action"),
+                userText("compat.imported_action_description"),
                 FeatureCategory.COMPATIBILITY,
                 stability = Stability.DEPRECATED,
                 ownerPackId = id,
             )
         ) { feature, _ ->
             val source = feature.config.string("source.type", "unknown")
-            ActionExecutionResult(false, message = userText("compat.action_not_mapped", "Imported action is not mapped yet: %s", source))
+            ActionExecutionResult(false, message = userText("compat.action_not_mapped", source))
         }
     }
 }

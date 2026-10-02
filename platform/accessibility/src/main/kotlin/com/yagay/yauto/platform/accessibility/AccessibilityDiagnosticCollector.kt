@@ -16,7 +16,7 @@ class AccessibilityDiagnosticCollector : DiagnosticCollector {
         return CollectorStatus(
             collectorId = id,
             available = available,
-            message = if (available) userText("diagnostics.accessibility.connected", "YAuto Accessibility Service connected") else userText("diagnostics.accessibility.disconnected", "Accessibility Service not connected"),
+            message = if (available) userText("diagnostics.accessibility.connected") else userText("diagnostics.accessibility.disconnected"),
         )
     }
 
@@ -27,8 +27,8 @@ class AccessibilityDiagnosticCollector : DiagnosticCollector {
                 source = DiagnosticSource.ANDROID,
                 timestampEpochMs = System.currentTimeMillis(),
                 severity = if (connected) DiagnosticSeverity.INFO else DiagnosticSeverity.WARNING,
-                title = userText("diagnostics.accessibility.title", "Accessibility backend"),
-                message = if (connected) userText("diagnostics.accessibility.ready", "YAuto Accessibility Service is connected and ready") else userText("diagnostics.accessibility.not_connected", "YAuto Accessibility Service is not connected"),
+                title = userText("diagnostics.accessibility.title"),
+                message = if (connected) userText("diagnostics.accessibility.ready") else userText("diagnostics.accessibility.not_connected"),
                 context = context,
                 attributes = mapOf(
                     "backend" to "accessibility",

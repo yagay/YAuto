@@ -62,7 +62,7 @@ class AndroidNotificationControlFeaturePack : FeaturePack {
             )
         ) { feature, _ ->
             val controller = NotificationControlBridge.current()
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.notification_listener_disconnected", "Notification listener is not connected"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.notification_listener_disconnected"))
             val ok = runCatching { block(controller, NotificationMatch.from(feature), feature) }.getOrDefault(false)
             ActionExecutionResult(ok, message = if (ok) null else "No matching notification or operation failed")
         }

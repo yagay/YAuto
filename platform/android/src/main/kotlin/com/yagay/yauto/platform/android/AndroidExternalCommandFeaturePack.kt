@@ -64,7 +64,7 @@ class AndroidExternalCommandFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, ctx ->
             val token = feature.config.string("token").resolveVariables(ctx.variables)
-            if (token.length < 16) ActionExecutionResult(false, message = userText("feature.token_too_short", "Token must be at least 16 characters"))
+            if (token.length < 16) ActionExecutionResult(false, message = userText("feature.token_too_short"))
             else { tokens.set(token); ActionExecutionResult(true) }
         }
 

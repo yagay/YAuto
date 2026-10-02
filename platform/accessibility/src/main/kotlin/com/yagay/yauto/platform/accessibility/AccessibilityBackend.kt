@@ -27,7 +27,7 @@ class AccessibilityBackend : CapabilityBackend {
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult =
         withContext(Dispatchers.Main.immediate) {
             val service = YAutoAccessibilityService.current
-                ?: return@withContext CapabilityResult(false, message = userText("diagnostics.accessibility.not_connected", "YAuto Accessibility Service is not connected"))
+                ?: return@withContext CapabilityResult(false, message = userText("diagnostics.accessibility.not_connected"))
 
             when (request.operationId) {
                 AccessibilityOperations.FIND_TEXT -> {
@@ -80,7 +80,7 @@ class AccessibilityBackend : CapabilityBackend {
                         request.payload.long("durationMs", 300),
                     )
                 }
-                else -> return@withContext CapabilityResult(false, message = userText("accessibility.unsupported_operation", "Unsupported accessibility operation: %s", request.operationId))
+                else -> return@withContext CapabilityResult(false, message = userText("accessibility.unsupported_operation", request.operationId))
             }
             CapabilityResult(
                 success = completed,

@@ -14,28 +14,25 @@ import java.util.Locale
 internal class FeatureTextResolver(private val context: Context) {
     private val locale: Locale
         get() = context.resources.configuration.locales[0] ?: Locale.getDefault()
-    private val chinese: Boolean
-        get() = locale.language.equals("zh", ignoreCase = true)
-
     fun title(descriptor: FeatureDescriptor): String =
         resource("feature_${resourceKey(descriptor.id.value)}_title")
             ?: phrase(descriptor.title)
-            ?: if (chinese) genericTitle(descriptor) else descriptor.title
+            ?: genericTitle(descriptor)
 
     fun description(descriptor: FeatureDescriptor): String =
         resource("feature_${resourceKey(descriptor.id.value)}_description")
-            ?: if (chinese) context.getString(TextR.string.feature_generic_description_format, title(descriptor))
-            else descriptor.description
+            ?: phrase(descriptor.description)
+            ?: context.getString(TextR.string.feature_generic_description_format, title(descriptor))
 
     fun fieldLabel(descriptorId: String, field: FieldSchema): String =
         resource("feature_${resourceKey(descriptorId)}_field_${resourceKey(field.key)}")
             ?: phrase(field.label)
-            ?: if (chinese) context.getString(TextR.string.feature_generic_parameter) else field.label
+            ?: context.getString(TextR.string.feature_generic_parameter)
 
     fun choiceOption(descriptorId: String, fieldKey: String, option: String): String =
         resource("feature_${resourceKey(descriptorId)}_field_${resourceKey(fieldKey)}_option_${resourceKey(option)}")
             ?: phrase(option)
-            ?: if (chinese) context.getString(TextR.string.feature_generic_option) else option
+            ?: context.getString(TextR.string.feature_generic_option)
 
     fun matches(descriptor: FeatureDescriptor, query: String): Boolean {
         if (query.isBlank()) return true

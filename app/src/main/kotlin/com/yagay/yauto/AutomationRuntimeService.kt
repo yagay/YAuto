@@ -96,7 +96,7 @@ class AutomationRuntimeService : Service() {
                                 kind = TraceKind.ERROR,
                                 level = TraceLevel.ERROR,
                                 timestampEpochMs = System.currentTimeMillis(),
-                                message = userText("runtime.event_source_failed", "Event source failed to start: %s: %s", source.id, error.message ?: error::class.simpleName.orEmpty()),
+                                message = userText("runtime.event_source_failed", source.id, error.message ?: error::class.simpleName.orEmpty()),
                                 success = false,
                                 attributes = mapOf(
                                     "eventSource" to source.id,

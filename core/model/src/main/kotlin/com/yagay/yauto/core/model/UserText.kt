@@ -1,15 +1,13 @@
 package com.yagay.yauto.core.model
 
-import java.util.Locale
-
 /**
  * Stable localization boundary for non-Android core/platform code.
  *
- * Core emits stable message keys and a default fallback. Android installs a resource-backed
- * resolver at process start, so adding languages only requires Android resource files. Headless
- * JVM tests/tools keep using the fallback without depending on android.* APIs.
+ * Production Android installs a resource-backed resolver from Application.onCreate(). Core only
+ * emits stable message keys plus formatting arguments, so adding a language never requires a
+ * business-logic source change. Headless JVM tools/tests fall back to the stable key.
  */
-typealias UserTextResolver = (code: String, fallback: String?, args: Array<out Any?>) -> String
+typealias UserTextResolver = (code: String, args: Array<out Any?>) -> String
 
 object UserText {
     @Volatile
@@ -23,21 +21,11 @@ object UserText {
         resolver = null
     }
 
-    fun text(code: String, fallback: String? = null, vararg args: Any?): String {
-        resolver?.let { installed ->
-            return installed(code, fallback, args)
-        }
-        return formatFallback(fallback ?: code, args)
-    }
-
-    private fun formatFallback(pattern: String, args: Array<out Any?>): String {
-        if (args.isEmpty()) return pattern
-        return runCatching { String.format(Locale.getDefault(), pattern, *args) }.getOrElse { pattern }
-    }
+    fun text(code: String, vararg args: Any?): String =
+        resolver?.invoke(code, args) ?: code
 }
 
 fun installUserTextResolver(resolver: UserTextResolver) = UserText.install(resolver)
 fun resetUserTextResolver() = UserText.reset()
 
-fun userText(code: String, fallback: String? = null, vararg args: Any?): String =
-    UserText.text(code, fallback, *args)
+fun userText(code: String, vararg args: Any?): String = UserText.text(code, *args)

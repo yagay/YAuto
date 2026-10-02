@@ -73,9 +73,9 @@ class AndroidCommunicationFeaturePack(context: Context) : FeaturePack {
         ) { feature, ctx ->
             runCatching {
                 val intent = build(feature, ctx).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                if (intent.resolveActivity(context.packageManager) == null) return@runCatching ActionExecutionResult(false, message = userText("feature.no_compatible_app", "No compatible application found"))
+                if (intent.resolveActivity(context.packageManager) == null) return@runCatching ActionExecutionResult(false, message = userText("feature.no_compatible_app"))
                 context.startActivity(intent); ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
     }
 }

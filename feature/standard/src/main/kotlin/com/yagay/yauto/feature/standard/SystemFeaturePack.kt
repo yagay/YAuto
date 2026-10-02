@@ -40,7 +40,7 @@ class SystemFeaturePack : FeaturePack {
             )
         ) { feature, ctx ->
             val command = feature.config.string("command").resolveVariables(ctx.variables)
-            if (command.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("capability.shell_empty", "Shell command is empty"))
+            if (command.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("capability.shell_empty"))
             val result = ctx.executeCapability(
                 featureId = feature.typeId,
                 request = CapabilityRequest(

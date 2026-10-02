@@ -10,16 +10,18 @@ private object AndroidUserTextResolver {
 
     fun install(context: Context) {
         val appContext = context.applicationContext
-        installUserTextResolver { code, fallback, args ->
+        installUserTextResolver { code, args ->
             val id = resourceIds.getOrPut(code) {
                 appContext.resources.getIdentifier(resourceName(code), "string", appContext.packageName)
             }
-            if (id != 0) {
+            if (id == 0) {
+                // Missing translations are a CI error. Keep a stable diagnostic key instead of
+                // falling back to language-specific business-source prose.
+                code
+            } else {
                 runCatching {
                     if (args.isEmpty()) appContext.getString(id) else appContext.getString(id, *args)
-                }.getOrElse { formatFallback(fallback ?: code, args) }
-            } else {
-                formatFallback(fallback ?: code, args)
+                }.getOrElse { code }
             }
         }
     }
@@ -37,11 +39,6 @@ private object AndroidUserTextResolver {
             }
         }
     }.trimEnd('_')
-
-    private fun formatFallback(pattern: String, args: Array<out Any?>): String {
-        if (args.isEmpty()) return pattern
-        return runCatching { String.format(Locale.getDefault(), pattern, *args) }.getOrElse { pattern }
-    }
 }
 
 fun installAndroidUserTextResolver(context: Context) = AndroidUserTextResolver.install(context)

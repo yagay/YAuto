@@ -59,7 +59,7 @@ class AutomationRuntime(
                 executionId = dispatchId,
                 kind = TraceKind.TRIGGER,
                 timestampEpochMs = event.timestampEpochMs,
-                message = userText("runtime.event", "Runtime event: %s", event.typeId),
+                message = userText("runtime.event", event.typeId),
                 featureId = event.typeId,
                 attributes = event.payload.mapValues { (_, value) -> value.asTraceText() },
             )
@@ -95,7 +95,7 @@ class AutomationRuntime(
                             kind = TraceKind.STATE,
                             level = TraceLevel.WARN,
                             timestampEpochMs = System.currentTimeMillis(),
-                            message = userText("runtime.no_state_evaluator", "No state evaluator: %s", state.typeId),
+                            message = userText("runtime.no_state_evaluator", state.typeId),
                             automationId = automation.id,
                             featureId = state.typeId,
                             success = false,
@@ -134,7 +134,7 @@ class AutomationRuntime(
                 throw cancelled
             } catch (error: Exception) {
                 tracer.record(TraceEvent(dispatchId, kind = TraceKind.ERROR, level = TraceLevel.ERROR,
-                    timestampEpochMs = System.currentTimeMillis(), message = userText("runtime.dispatch_failed", "Automation dispatch failed: %s", error.message.orEmpty()),
+                    timestampEpochMs = System.currentTimeMillis(), message = userText("runtime.dispatch_failed", error.message.orEmpty()),
                     automationId = automation.id, success = false,
                     attributes = mapOf("event.type" to event.typeId, "exception" to error.javaClass.name)))
             }
@@ -180,7 +180,7 @@ class AutomationRuntime(
                         kind = TraceKind.CONDITION,
                         level = TraceLevel.WARN,
                         timestampEpochMs = System.currentTimeMillis(),
-                        message = userText("runtime.no_condition_evaluator", "No condition evaluator: %s", predicate.feature.typeId),
+                        message = userText("runtime.no_condition_evaluator", predicate.feature.typeId),
                         automationId = automationId,
                         featureId = predicate.feature.typeId,
                         success = false,

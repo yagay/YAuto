@@ -56,7 +56,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 audio.dispatchMediaKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0))
                 audio.dispatchMediaKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0))
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
@@ -72,7 +72,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, ctx ->
             val variable = feature.config.string("resultVariable").trim()
-            if (variable.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.result_variable_empty", "Result variable is empty"))
+            if (variable.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.result_variable_empty"))
             runCatching {
                 val clipboard = context.getSystemService(ClipboardManager::class.java)
                 val clip = clipboard.primaryClip
@@ -81,7 +81,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 ctx.variables.set(variable, value)
                 ActionExecutionResult(true, value)
             }.getOrElse {
-                ActionExecutionResult(false, message = userText("feature.clipboard_unavailable", "Clipboard is unavailable: %s", it.message ?: it.javaClass.simpleName))
+                ActionExecutionResult(false, message = userText("feature.clipboard_unavailable", it.message ?: it.javaClass.simpleName))
             }
         }
     }
@@ -99,7 +99,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, _ ->
             if (context.checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.camera_permission_denied", "Camera permission is not granted"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.camera_permission_denied"))
             }
             runCatching {
                 val manager = context.getSystemService(CameraManager::class.java)
@@ -108,7 +108,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 } ?: error("No camera flash is available")
                 manager.setTorchMode(cameraId, feature.config["enabled"].let { (it as? ConfigValue.BooleanValue)?.value ?: true })
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
@@ -126,7 +126,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
         ) { feature, _ ->
             val manager = context.getSystemService(NotificationManager::class.java)
             if (!manager.isNotificationPolicyAccessGranted) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.notification_policy_denied", "Notification policy access is not granted"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.notification_policy_denied"))
             }
             val filter = when (feature.config.string("mode", "all")) {
                 "priority" -> NotificationManager.INTERRUPTION_FILTER_PRIORITY
@@ -137,7 +137,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
             runCatching {
                 manager.setInterruptionFilter(filter)
                 ActionExecutionResult(true, ConfigValue.StringValue(feature.config.string("mode", "all")))
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
     }
 

@@ -17,7 +17,7 @@ class NotificationAccessDiagnosticCollector(
     override suspend fun status(): CollectorStatus = CollectorStatus(
         collectorId = id,
         available = enabled(),
-        message = if (enabled()) userText("diagnostics.notification.granted", "Notification listener access granted") else userText("diagnostics.notification.denied", "Notification listener access is not granted"),
+        message = if (enabled()) userText("diagnostics.notification.granted") else userText("diagnostics.notification.denied"),
     )
 
     override suspend fun collect(context: DiagnosticContext): List<DiagnosticRecord> = listOf(
@@ -25,8 +25,8 @@ class NotificationAccessDiagnosticCollector(
             source = DiagnosticSource.ANDROID,
             timestampEpochMs = System.currentTimeMillis(),
             severity = if (enabled()) DiagnosticSeverity.INFO else DiagnosticSeverity.WARNING,
-            title = userText("diagnostics.notification.title", "Notification listener access"),
-            message = if (enabled()) userText("diagnostics.enabled", "Enabled") else userText("diagnostics.disabled", "Disabled"),
+            title = userText("diagnostics.notification.title"),
+            message = if (enabled()) userText("diagnostics.enabled") else userText("diagnostics.disabled"),
             context = context,
         )
     )

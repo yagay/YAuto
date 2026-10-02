@@ -12,7 +12,7 @@ class VariableFeaturePack : FeaturePack {
                 fields = listOf(FieldSchema.Text("name", "Variable name", true), FieldSchema.Text("value", "Value")), ownerPackId = id)
         ) { feature, ctx ->
             val name = feature.config.string("name")
-            if (name.isBlank()) ActionExecutionResult(false, message = userText("feature.variable_name_empty", "Variable name is empty"))
+            if (name.isBlank()) ActionExecutionResult(false, message = userText("feature.variable_name_empty"))
             else { ctx.variables.set(name, (feature.config["value"] ?: ConfigValue.NullValue).resolveVariables(ctx.variables)); ActionExecutionResult(true) }
         }
         registry.registerAction(
@@ -20,7 +20,7 @@ class VariableFeaturePack : FeaturePack {
                 fields = listOf(FieldSchema.Variable("name", "Variable", true)), ownerPackId = id)
         ) { feature, ctx ->
             val name = feature.config.string("name")
-            if (name.isBlank()) ActionExecutionResult(false, message = userText("feature.variable_name_empty", "Variable name is empty")) else { ctx.variables.set(name, ConfigValue.NullValue); ActionExecutionResult(true) }
+            if (name.isBlank()) ActionExecutionResult(false, message = userText("feature.variable_name_empty")) else { ctx.variables.set(name, ConfigValue.NullValue); ActionExecutionResult(true) }
         }
         registry.registerAction(
             FeatureDescriptor(FeatureId("variable.copy"), FeatureKind.ACTION, "Copy variable", "Copy one runtime variable to another", FeatureCategory.VARIABLE,
@@ -28,7 +28,7 @@ class VariableFeaturePack : FeaturePack {
         ) { feature, ctx ->
             val source = feature.config.string("source"); val destination = feature.config.string("destination")
             val value = ctx.variables.get(source) ?: ConfigValue.NullValue
-            if (destination.isBlank()) ActionExecutionResult(false, message = userText("feature.destination_variable_empty", "Destination variable is empty"))
+            if (destination.isBlank()) ActionExecutionResult(false, message = userText("feature.destination_variable_empty"))
             else { ctx.variables.set(destination, value); ActionExecutionResult(true, value) }
         }
         registry.registerAction(
@@ -36,7 +36,7 @@ class VariableFeaturePack : FeaturePack {
                 fields = listOf(FieldSchema.Variable("name", "Variable", true), FieldSchema.Number("amount", "Amount")), ownerPackId = id)
         ) { feature, ctx ->
             val name = feature.config.string("name")
-            if (name.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.variable_name_empty", "Variable name is empty"))
+            if (name.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.variable_name_empty"))
             val current = ctx.variables.get(name).asNumber() ?: 0.0
             val amount = feature.config["amount"].asNumber() ?: 1.0
             val value = ConfigValue.NumberValue(current + amount)
@@ -47,7 +47,7 @@ class VariableFeaturePack : FeaturePack {
                 fields = listOf(FieldSchema.Variable("name", "Variable", true)), ownerPackId = id)
         ) { feature, ctx ->
             val name = feature.config.string("name")
-            if (name.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.variable_name_empty", "Variable name is empty"))
+            if (name.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.variable_name_empty"))
             val value = ConfigValue.BooleanValue(!(ctx.variables.get(name).booleanOrNull() ?: false))
             ctx.variables.set(name, value); ActionExecutionResult(true, value)
         }
@@ -66,9 +66,9 @@ class VariableFeaturePack : FeaturePack {
                 fields = listOf(FieldSchema.Variable("name", "List variable", true), FieldSchema.Number("index", "Index", true, min = 0.0), FieldSchema.Text("resultVariable", "Destination variable", true)), ownerPackId = id)
         ) { feature, ctx ->
             val values = (ctx.variables.get(feature.config.string("name")) as? ConfigValue.ListValue)?.value
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.variable_not_list", "Variable is not a list"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.variable_not_list"))
             val index = feature.config["index"].asNumber()?.toInt() ?: 0
-            val value = values.getOrNull(index) ?: return@registerAction ActionExecutionResult(false, message = userText("feature.list_index_out_of_bounds", "List index out of bounds"))
+            val value = values.getOrNull(index) ?: return@registerAction ActionExecutionResult(false, message = userText("feature.list_index_out_of_bounds"))
             ctx.variables.set(feature.config.string("resultVariable"), value); ActionExecutionResult(true, value)
         }
         registry.registerAction(
@@ -77,9 +77,9 @@ class VariableFeaturePack : FeaturePack {
         ) { feature, ctx ->
             val name = feature.config.string("name")
             val values = (ctx.variables.get(name) as? ConfigValue.ListValue)?.value?.toMutableList()
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.variable_not_list", "Variable is not a list"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.variable_not_list"))
             val index = feature.config["index"].asNumber()?.toInt() ?: 0
-            if (index !in values.indices) return@registerAction ActionExecutionResult(false, message = userText("feature.list_index_out_of_bounds", "List index out of bounds"))
+            if (index !in values.indices) return@registerAction ActionExecutionResult(false, message = userText("feature.list_index_out_of_bounds"))
             values.removeAt(index); val output = ConfigValue.ListValue(values); ctx.variables.set(name, output); ActionExecutionResult(true, output)
         }
         registry.registerAction(
@@ -87,7 +87,7 @@ class VariableFeaturePack : FeaturePack {
                 fields = listOf(FieldSchema.Variable("name", "Object variable", true), FieldSchema.Text("key", "Key", true), FieldSchema.Text("value", "Value")), keywords = setOf("map", "object", "dictionary"), ownerPackId = id)
         ) { feature, ctx ->
             val name = feature.config.string("name"); val key = feature.config.string("key")
-            if (key.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.key_empty", "Key is empty"))
+            if (key.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.key_empty"))
             val current = (ctx.variables.get(name) as? ConfigValue.ObjectValue)?.value.orEmpty()
             val value = (feature.config["value"] ?: ConfigValue.NullValue).resolveVariables(ctx.variables)
             val output = ConfigValue.ObjectValue(current + (key to value)); ctx.variables.set(name, output); ActionExecutionResult(true, output)
@@ -97,7 +97,7 @@ class VariableFeaturePack : FeaturePack {
                 fields = listOf(FieldSchema.Variable("name", "Object variable", true), FieldSchema.Text("key", "Key", true), FieldSchema.Text("resultVariable", "Destination variable", true)), ownerPackId = id)
         ) { feature, ctx ->
             val objectValue = (ctx.variables.get(feature.config.string("name")) as? ConfigValue.ObjectValue)?.value
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.variable_not_object", "Variable is not an object"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.variable_not_object"))
             val value = objectValue[feature.config.string("key")] ?: ConfigValue.NullValue
             ctx.variables.set(feature.config.string("resultVariable"), value); ActionExecutionResult(true, value)
         }
@@ -108,7 +108,7 @@ class VariableFeaturePack : FeaturePack {
             val name = feature.config.string("name"); val source = ctx.variables.get(name).asText()
             val find = feature.config.string("find").resolveVariables(ctx.variables); val replacement = feature.config.string("replacement").resolveVariables(ctx.variables)
             val outputText = runCatching { if (feature.config.boolean("regex")) Regex(find).replace(source, replacement) else source.replace(find, replacement) }
-                .getOrElse { return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+                .getOrElse { return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
             val output = ConfigValue.StringValue(outputText); ctx.variables.set(name, output); ActionExecutionResult(true, output)
         }
 

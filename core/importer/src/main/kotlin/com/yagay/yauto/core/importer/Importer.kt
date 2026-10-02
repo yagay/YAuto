@@ -78,6 +78,6 @@ class ImporterRegistry {
         ?: ImportResult(
             importerId = "unknown",
             success = false,
-            issues = listOf(CompatibilityIssue(ImportSeverity.ERROR, input.fileName ?: "input", message = userText("import.no_compatible_importer", "No compatible importer found"))),
+            issues = listOf(CompatibilityIssue(ImportSeverity.ERROR, input.fileName ?: "input", message = userText("import.no_compatible_importer"))),
         )
 }

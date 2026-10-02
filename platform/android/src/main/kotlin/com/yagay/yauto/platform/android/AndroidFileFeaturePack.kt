@@ -38,7 +38,7 @@ class AndroidFileFeaturePack : FeaturePack {
                     val value = ConfigValue.StringValue(file.readText(Charsets.UTF_8))
                     ctx.variables.set(variable, value)
                     ActionExecutionResult(true, value)
-                }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+                }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
             }
         }
 
@@ -62,7 +62,7 @@ class AndroidFileFeaturePack : FeaturePack {
                 val text = feature.config.string("text").resolveVariables(ctx.variables)
                 if (feature.config.boolean("append")) file.appendText(text, Charsets.UTF_8) else file.writeText(text, Charsets.UTF_8)
                 ActionExecutionResult(true, ConfigValue.NumberValue(file.length().toDouble()))
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         } }
 
         binaryFileAction(registry, "file.copy", "Copy file / directory", "Copy a file or directory tree", false)
@@ -81,7 +81,7 @@ class AndroidFileFeaturePack : FeaturePack {
                 if (!file.exists()) return@runCatching ActionExecutionResult(true)
                 val ok = if (file.isDirectory && feature.config.boolean("recursive")) file.deleteRecursively() else file.delete()
                 ActionExecutionResult(ok, message = if (ok) null else "Delete failed")
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         } }
 
         registry.registerAction(
@@ -96,7 +96,7 @@ class AndroidFileFeaturePack : FeaturePack {
                 val file = File(feature.config.string("path").resolveVariables(ctx.variables))
                 val ok = file.isDirectory || file.mkdirs()
                 ActionExecutionResult(ok, message = if (ok) null else "Could not create directory")
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         } }
 
         registry.registerAction(
@@ -120,7 +120,7 @@ class AndroidFileFeaturePack : FeaturePack {
                 val output = ConfigValue.ListValue(values)
                 ctx.variables.set(feature.config.string("resultVariable"), output)
                 ActionExecutionResult(true, output)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         } }
 
         registerExists(registry, FeatureKind.STATE, "file.state.exists")
@@ -147,7 +147,7 @@ class AndroidFileFeaturePack : FeaturePack {
                     .also { if (it) source.deleteRecursively() }
                 else source.copyRecursively(destination, overwrite = feature.config.boolean("overwrite"))
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         } }
     }
 

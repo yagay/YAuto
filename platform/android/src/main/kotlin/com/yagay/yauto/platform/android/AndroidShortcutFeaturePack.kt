@@ -49,7 +49,7 @@ class AndroidShortcutFeaturePack(context: Context) : FeaturePack {
             val id = feature.config.string("id").resolveVariables(ctx.variables).trim()
             val label = feature.config.string("label").resolveVariables(ctx.variables).trim()
             val command = feature.config.string("command").resolveVariables(ctx.variables)
-            if (id.isBlank() || label.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.shortcut_id_label_required", "Shortcut ID and label are required"))
+            if (id.isBlank() || label.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.shortcut_id_label_required"))
             runCatching {
                 val intent = Intent(Intent.ACTION_VIEW).setClassName(context.packageName, "${context.packageName}.ShortcutDispatchActivity")
                     .putExtra("shortcutId", id).putExtra("command", command)
@@ -62,7 +62,7 @@ class AndroidShortcutFeaturePack(context: Context) : FeaturePack {
                 manager.addDynamicShortcuts(listOf(shortcut))
                 if (feature.config.boolean("requestPinned") && manager.isRequestPinShortcutSupported) manager.requestPinShortcut(shortcut, null)
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -75,7 +75,7 @@ class AndroidShortcutFeaturePack(context: Context) : FeaturePack {
         ) { feature, ctx ->
             val id = feature.config.string("id").resolveVariables(ctx.variables).trim()
             runCatching { manager.removeDynamicShortcuts(listOf(id)); ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
     }
 }

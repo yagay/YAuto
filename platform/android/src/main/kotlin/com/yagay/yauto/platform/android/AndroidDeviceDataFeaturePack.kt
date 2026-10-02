@@ -85,7 +85,7 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                 ))
                 ctx.variables.set(feature.config.string("resultVariable"), output)
                 ActionExecutionResult(true, output)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
@@ -110,10 +110,10 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                 else -> Sensor.TYPE_ACCELEROMETER
             }
             val sensor = sensors.getDefaultSensor(type)
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.sensor_unavailable", "Sensor is not available"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.sensor_unavailable"))
             val timeout = feature.config.long("timeoutMs", 5_000).coerceIn(250, 30_000)
             val output = readSensor(sensor, timeout)
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.sensor_timeout", "Sensor read timed out"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.sensor_timeout"))
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
         }
@@ -134,7 +134,7 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, ctx ->
             val location = runCatching { bestLastLocation(feature.config.string("provider", "any")) }.getOrNull()
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.location_unavailable", "Location permission missing or no last known location"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.location_unavailable"))
             val output = locationValue(location)
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)

@@ -70,7 +70,7 @@ class AndroidQuickSettingsFeaturePack(private val controller: QuickSettingsTileC
             val label = feature.config.string("label").resolveVariables(ctx.variables)
             val state = feature.config.string("state", "inactive")
             runCatching { controller.configure(slot, label, state); ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
+                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
     }
 }
