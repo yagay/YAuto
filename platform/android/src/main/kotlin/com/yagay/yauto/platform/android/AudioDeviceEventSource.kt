@@ -60,19 +60,17 @@ class AudioDeviceEventSource(context: Context) : AndroidEventSource {
     }
 
     private fun emit(device: AudioDeviceInfo, category: String, connected: Boolean) {
-        emitter?.emit(
-            RuntimeEvent(
-                typeId = "android.event.headset_changed",
-                payload = mapOf(
-                    "connected" to ConfigValue.BooleanValue(connected),
-                    "category" to ConfigValue.StringValue(category),
-                    "name" to ConfigValue.StringValue(device.productName?.toString().orEmpty()),
-                    "address" to ConfigValue.StringValue(device.address.orEmpty()),
-                    "deviceType" to ConfigValue.NumberValue(device.type.toDouble()),
-                ),
-                source = id,
-            )
+        val payload = mapOf(
+            "connected" to ConfigValue.BooleanValue(connected),
+            "category" to ConfigValue.StringValue(category),
+            "name" to ConfigValue.StringValue(device.productName?.toString().orEmpty()),
+            "address" to ConfigValue.StringValue(device.address.orEmpty()),
+            "deviceType" to ConfigValue.NumberValue(device.type.toDouble()),
         )
+        emitter?.emit(RuntimeEvent("android.event.headset_changed", payload, source = id))
+        if (category == "bluetooth") {
+            emitter?.emit(RuntimeEvent("android.event.bluetooth_audio_device_changed", payload, source = id))
+        }
     }
 }
 
