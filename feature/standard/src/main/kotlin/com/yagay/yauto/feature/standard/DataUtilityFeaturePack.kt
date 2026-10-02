@@ -192,7 +192,7 @@ class DataUtilityFeaturePack : FeaturePack {
                 "upper" -> text.uppercase()
                 "lower" -> text.lowercase()
                 "trim" -> text.trim()
-                else -> return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "invalid text transformation"))
+                else -> return@registerAction ActionExecutionResult(false, message = userText("feature.text_transformation_invalid"))
             }
             storeText(feature.config.string("resultVariable"), output, ctx)
         }
