@@ -90,9 +90,12 @@ def locale_name(folder: Path) -> str | None:
 
 
 def resource_key(value: str) -> str:
-    value = value.lower()
-    normalized = "".join(ch if ch.isalnum() else "_" for ch in value)
-    return re.sub(r"_+", "_", normalized).strip("_")
+    lowered = value.lower()
+    normalized = "".join(ch if ch.isalnum() else "_" for ch in lowered)
+    normalized = re.sub(r"_+", "_", normalized).strip("_")
+    if normalized:
+        return normalized
+    return "symbol_" + "_".join(format(ord(ch), "x") for ch in value)
 
 
 def call_windows(text_value: str, name: str):
@@ -146,8 +149,6 @@ def localizable(
 def main() -> int:
     failures: list[str] = []
 
-    # Feature phrases are a semantic fallback catalog. A generic placeholder may satisfy key
-    # parity while still presenting completely wrong UI copy, so reject known placeholder values.
     feature_en_path = ROOT / "ui/design/src/main/res/values/feature_phrases.xml"
     feature_zh_path = ROOT / "ui/design/src/main/res/values-zh-rCN/feature_phrases.xml"
     feature_en = strings(feature_en_path)
@@ -174,10 +175,6 @@ def main() -> int:
                 f"{feature_zh_path}: protocol/technical token {name} must remain {required!r}, got {actual!r}"
             )
 
-    # Every literal first-party FeatureDescriptor must resolve its user-visible title,
-    # description, field labels and literal Choice options through either an exact resource or the
-    # semantic phrase catalog. Generic category/parameter fallbacks are reserved for unknown or
-    # externally supplied features, never for built-in descriptors.
     resources_en = all_strings(ROOT / "ui/design/src/main/res/values")
     resources_zh = all_strings(ROOT / "ui/design/src/main/res/values-zh-rCN")
     descriptor_count = 0
@@ -246,9 +243,6 @@ def main() -> int:
     if descriptor_count == 0:
         failures.append("No literal built-in FeatureDescriptor definitions were checked; localization coverage parser is stale")
 
-    # Plural resources have language-specific quantity categories, so locale files do not need the
-    # same categories. They do need the same plural keys, an 'other' case, and compatible format
-    # arguments.
     for default in sorted(ROOT.glob("**/src/main/res/values")):
         base = plurals(default)
         if not base:
@@ -280,8 +274,6 @@ def main() -> int:
                             f"default={expected_tokens}, locale={actual_tokens}"
                         )
 
-    # Locale-sensitive UI must not regress to default-locale lowercase sorting, raw ConfigValue
-    # rendering, or dot-only numeric input.
     for path in sorted(ROOT.glob("ui/**/src/main/kotlin/**/*.kt")):
         source = path.read_text(encoding="utf-8")
         for match in re.finditer(r'\.sortedBy\s*\{[^\n}]*\.lowercase\(\)', source):
@@ -297,7 +289,6 @@ def main() -> int:
         if "parseLocalizedDouble(" not in source:
             failures.append(f"{feature_picker}: numeric editor input must use locale-aware parsing")
 
-    # Directional navigation icons must mirror automatically before any RTL language is added.
     for relative in (
         "ui/design/src/main/res/drawable/ic_back.xml",
         "ui/design/src/main/res/drawable/ic_chevron_right.xml",
@@ -307,8 +298,6 @@ def main() -> int:
         if 'android:autoMirrored="true"' not in source:
             failures.append(f"{path}: directional icon must declare android:autoMirrored=\"true\"")
 
-    # The foreground-service subtype is declaration metadata for the platform, not UI copy. Keep
-    # it stable and explicitly non-translatable while referencing it from the manifest.
     manifest_strings = ROOT / "ui/design/src/main/res/values/manifest_strings.xml"
     if manifest_strings.exists():
         root = ET.parse(manifest_strings).getroot()
@@ -318,8 +307,6 @@ def main() -> int:
     else:
         failures.append(f"{manifest_strings}: missing machine-stable FGS subtype resource")
 
-    # Imported report status values may remain stable machine codes, but human-readable summary
-    # text attached to IMPORTED traces must go through userText().
     for path in sorted(ROOT.glob("importer/**/src/main/kotlin/**/*.kt")):
         source = path.read_text(encoding="utf-8")
         for offset, snippet in call_windows(source, "ImportTrace"):
