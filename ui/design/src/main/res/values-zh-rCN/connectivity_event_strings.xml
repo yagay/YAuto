@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_network_profile_changed_title">活动网络变化</string>
+    <string name="feature_android_event_network_profile_changed_description">当活动网络类型、互联网验证或计费状态变化时运行</string>
+    <string name="feature_android_event_network_profile_changed_field_connected">连接状态</string>
+    <string name="feature_android_event_network_profile_changed_field_connected_option_any">任意</string>
+    <string name="feature_android_event_network_profile_changed_field_connected_option_connected">已连接</string>
+    <string name="feature_android_event_network_profile_changed_field_connected_option_disconnected">已断开</string>
+    <string name="feature_android_event_network_profile_changed_field_transport">网络类型</string>
+    <string name="feature_android_event_network_profile_changed_field_transport_option_any">任意</string>
+    <string name="feature_android_event_network_profile_changed_field_transport_option_wifi">Wi-Fi</string>
+    <string name="feature_android_event_network_profile_changed_field_transport_option_cellular">移动网络</string>
+    <string name="feature_android_event_network_profile_changed_field_transport_option_ethernet">以太网</string>
+    <string name="feature_android_event_network_profile_changed_field_transport_option_vpn">VPN</string>
+    <string name="feature_android_event_network_profile_changed_field_validated">互联网验证</string>
+    <string name="feature_android_event_network_profile_changed_field_validated_option_any">任意</string>
+    <string name="feature_android_event_network_profile_changed_field_validated_option_yes">是</string>
+    <string name="feature_android_event_network_profile_changed_field_validated_option_no">否</string>
+    <string name="feature_android_event_network_profile_changed_field_metered">计费网络</string>
+    <string name="feature_android_event_network_profile_changed_field_metered_option_any">任意</string>
+    <string name="feature_android_event_network_profile_changed_field_metered_option_yes">是</string>
+    <string name="feature_android_event_network_profile_changed_field_metered_option_no">否</string>
+
+    <string name="feature_android_event_bluetooth_audio_device_changed_title">蓝牙音频设备变化</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_description">当蓝牙音频设备连接或断开时运行，并可按名称或地址筛选</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_field_state">连接状态</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_field_state_option_any">任意</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_field_state_option_connected">已连接</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_field_state_option_disconnected">已断开</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_field_namecontains">设备名称包含</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_field_address">精确设备地址</string>
+</resources>
