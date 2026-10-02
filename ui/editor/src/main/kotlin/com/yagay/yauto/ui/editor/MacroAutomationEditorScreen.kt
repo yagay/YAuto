@@ -7,11 +7,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.model.*
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.ui.design.*
+import com.yagay.yauto.ui.design.R as TextR
 import java.util.UUID
 
 private enum class MacroActionPhase { EVENT, ENTER, EXIT }
@@ -47,9 +49,13 @@ fun MacroAutomationEditorScreen(
     val originalCondition = initial?.activation?.condition
     val simpleInitial = remember(initial?.id) { simpleConditions(originalCondition) }
     var conditions by remember(initial?.id) { mutableStateOf(simpleInitial.orEmpty()) }
-    var preservedComplex by remember(initial?.id) { mutableStateOf(if (simpleInitial == null) originalCondition else null) }
+    var preservedComplex by remember(initial?.id) {
+        mutableStateOf(if (simpleInitial == null) originalCondition else null)
+    }
 
-    var activationMode by remember { mutableStateOf(if (events.isNotEmpty() || states.isEmpty()) ActivationMode.EVENT else ActivationMode.STATE) }
+    var activationMode by remember {
+        mutableStateOf(if (events.isNotEmpty() || states.isEmpty()) ActivationMode.EVENT else ActivationMode.STATE)
+    }
     var actionPhase by remember { mutableStateOf(MacroActionPhase.EVENT) }
     var request by remember { mutableStateOf<MacroEditRequest?>(null) }
     var menu by remember { mutableStateOf<Pair<String, Int>?>(null) }
@@ -59,6 +65,7 @@ fun MacroAutomationEditorScreen(
 
     val runtimeLimit = policy.maxRuntimeMs
     val loopLimit = policy.maxLoopIterations
+    val unnamedAutomation = stringResource(TextR.string.automation_unnamed)
 
     fun save() {
         val simple = conditions.map { PredicateNode.Condition(it) }
@@ -72,7 +79,7 @@ fun MacroAutomationEditorScreen(
         onSave(
             Automation(
                 id = initial?.id ?: AutomationId(UUID.randomUUID().toString()),
-                name = name.trim().ifBlank { "未命名自动化" },
+                name = name.trim().ifBlank { unnamedAutomation },
                 enabled = enabled,
                 workspaceId = initial?.workspaceId,
                 activation = Activation(events = events, states = states, condition = predicate),
@@ -90,13 +97,20 @@ fun MacroAutomationEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (initial == null) "添加自动化" else "编辑自动化") },
+                title = {
+                    Text(
+                        stringResource(
+                            if (initial == null) TextR.string.automation_add_title
+                            else TextR.string.automation_edit_title
+                        )
+                    )
+                },
                 navigationIcon = { TextButton(onClick = onBack) { Text("‹") } },
                 actions = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("启用", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(TextR.string.automation_enabled), style = MaterialTheme.typography.labelMedium)
                         Switch(enabled, { enabled = it })
-                        TextButton(onClick = ::save) { Text("保存") }
+                        TextButton(onClick = ::save) { Text(stringResource(TextR.string.common_save)) }
                     }
                 },
             )
@@ -112,19 +126,21 @@ fun MacroAutomationEditorScreen(
                     name,
                     { name = it },
                     Modifier.fillMaxWidth(),
-                    label = { Text("自动化名称") },
+                    label = { Text(stringResource(TextR.string.automation_name)) },
                     singleLine = true,
                 )
             }
 
             item {
                 MacroSection(
-                    title = "触发器",
+                    title = stringResource(TextR.string.automation_triggers),
                     color = MacroPalette.Trigger,
                     count = events.size + states.size,
-                    subtitle = "事件触发，或持续状态进入/退出",
+                    subtitle = stringResource(TextR.string.automation_triggers_subtitle),
                     onAdd = {
-                        request = MacroEditRequest(if (activationMode == ActivationMode.EVENT) FeatureKind.EVENT else FeatureKind.STATE)
+                        request = MacroEditRequest(
+                            if (activationMode == ActivationMode.EVENT) FeatureKind.EVENT else FeatureKind.STATE
+                        )
                     },
                 ) {
                     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
@@ -132,16 +148,27 @@ fun MacroAutomationEditorScreen(
                             selected = activationMode == ActivationMode.EVENT,
                             onClick = { activationMode = ActivationMode.EVENT },
                             shape = SegmentedButtonDefaults.itemShape(0, 2),
-                        ) { Text("事件 ${events.size}") }
+                        ) {
+                            Text(stringResource(TextR.string.automation_event_count_format, events.size))
+                        }
                         SegmentedButton(
                             selected = activationMode == ActivationMode.STATE,
                             onClick = { activationMode = ActivationMode.STATE },
                             shape = SegmentedButtonDefaults.itemShape(1, 2),
-                        ) { Text("状态 ${states.size}") }
+                        ) {
+                            Text(stringResource(TextR.string.automation_state_count_format, states.size))
+                        }
                     }
                     val activationItems = if (activationMode == ActivationMode.EVENT) events else states
                     val kind = if (activationMode == ActivationMode.EVENT) FeatureKind.EVENT else FeatureKind.STATE
-                    if (activationItems.isEmpty()) EmptyHint(if (kind == FeatureKind.EVENT) "点击 ＋ 添加触发器" else "点击 ＋ 添加持续状态")
+                    if (activationItems.isEmpty()) {
+                        EmptyHint(
+                            stringResource(
+                                if (kind == FeatureKind.EVENT) TextR.string.automation_add_event_hint
+                                else TextR.string.automation_add_state_hint
+                            )
+                        )
+                    }
                     activationItems.forEachIndexed { index, feature ->
                         MacroItemRow(
                             title = featureTitle(feature, descriptors),
@@ -156,20 +183,22 @@ fun MacroAutomationEditorScreen(
 
             item {
                 MacroSection(
-                    title = "动作",
+                    title = stringResource(TextR.string.automation_actions),
                     color = MacroPalette.Action,
                     count = onEvent.size + onEnter.size + onExit.size,
-                    subtitle = "按顺序执行；支持分支、循环、并行与调用流程",
+                    subtitle = stringResource(TextR.string.automation_actions_subtitle),
                     onAdd = { request = MacroEditRequest(FeatureKind.ACTION, actionPhase = actionPhase) },
                     trailing = {
-                        TextButton(onClick = { treePhase = actionPhase }) { Text("结构", color = androidx.compose.ui.graphics.Color.White) }
+                        TextButton(onClick = { treePhase = actionPhase }) {
+                            Text(stringResource(TextR.string.flow_structure), color = androidx.compose.ui.graphics.Color.White)
+                        }
                     },
                 ) {
                     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                         val phases = listOf(
-                            MacroActionPhase.EVENT to "事件 ${onEvent.size}",
-                            MacroActionPhase.ENTER to "进入 ${onEnter.size}",
-                            MacroActionPhase.EXIT to "退出 ${onExit.size}",
+                            MacroActionPhase.EVENT to stringResource(TextR.string.automation_event_phase_count_format, onEvent.size),
+                            MacroActionPhase.ENTER to stringResource(TextR.string.automation_enter_phase_count_format, onEnter.size),
+                            MacroActionPhase.EXIT to stringResource(TextR.string.automation_exit_phase_count_format, onExit.size),
                         )
                         phases.forEachIndexed { index, pair ->
                             SegmentedButton(
@@ -184,7 +213,7 @@ fun MacroAutomationEditorScreen(
                         MacroActionPhase.ENTER -> onEnter
                         MacroActionPhase.EXIT -> onExit
                     }
-                    if (nodes.isEmpty()) EmptyHint("点击 ＋ 添加动作")
+                    if (nodes.isEmpty()) EmptyHint(stringResource(TextR.string.automation_add_action_hint))
                     nodes.forEachIndexed { index, node ->
                         val feature = (node as? ActionNode.Action)?.feature
                         MacroItemRow(
@@ -192,8 +221,11 @@ fun MacroAutomationEditorScreen(
                             subtitle = feature?.let(::featureSummary),
                             accent = MacroPalette.Action,
                             onClick = {
-                                if (feature != null) request = MacroEditRequest(FeatureKind.ACTION, index, feature, actionPhase)
-                                else treePhase = actionPhase
+                                if (feature != null) {
+                                    request = MacroEditRequest(FeatureKind.ACTION, index, feature, actionPhase)
+                                } else {
+                                    treePhase = actionPhase
+                                }
                             },
                             onMenu = { menu = "action:${actionPhase.name}" to index },
                         )
@@ -203,21 +235,23 @@ fun MacroAutomationEditorScreen(
 
             item {
                 MacroSection(
-                    title = "约束",
+                    title = stringResource(TextR.string.automation_constraints),
                     color = MacroPalette.Constraint,
                     count = conditions.size + if (preservedComplex != null) 1 else 0,
-                    subtitle = "只有约束满足时自动化才会继续",
+                    subtitle = stringResource(TextR.string.automation_constraints_subtitle),
                     onAdd = { request = MacroEditRequest(FeatureKind.CONDITION) },
                 ) {
                     if (preservedComplex != null) {
                         MacroItemRow(
-                            title = "复杂条件组合",
-                            subtitle = "从旧规则保留；可在结构编辑器中继续维护",
+                            title = stringResource(TextR.string.automation_complex_condition_title),
+                            subtitle = stringResource(TextR.string.automation_complex_condition_subtitle),
                             accent = MacroPalette.Constraint,
                             onClick = {},
                         )
                     }
-                    if (conditions.isEmpty() && preservedComplex == null) EmptyHint("没有约束：自动化不会被额外限制")
+                    if (conditions.isEmpty() && preservedComplex == null) {
+                        EmptyHint(stringResource(TextR.string.automation_no_constraints))
+                    }
                     conditions.forEachIndexed { index, feature ->
                         MacroItemRow(
                             title = featureTitle(feature, descriptors),
@@ -234,36 +268,62 @@ fun MacroAutomationEditorScreen(
                 Card(Modifier.fillMaxWidth().clickable { advanced = !advanced }) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("高级设置", Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                            Text(
+                                stringResource(TextR.string.automation_advanced_settings),
+                                Modifier.weight(1f),
+                                fontWeight = FontWeight.SemiBold,
+                            )
                             Text(if (advanced) "⌃" else "⌄")
                         }
                         if (advanced) {
-                            OutlinedTextField(description, { description = it }, Modifier.fillMaxWidth(), label = { Text("说明") }, minLines = 2)
-                            Text("局部变量", fontWeight = FontWeight.Medium)
+                            OutlinedTextField(
+                                description,
+                                { description = it },
+                                Modifier.fillMaxWidth(),
+                                label = { Text(stringResource(TextR.string.automation_description)) },
+                                minLines = 2,
+                            )
+                            Text(stringResource(TextR.string.automation_local_variables), fontWeight = FontWeight.Medium)
                             variables.forEach { (key, value) ->
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                     Column(Modifier.weight(1f).clickable { variableEdit = key to value.asText() }) {
                                         Text(key)
                                         Text(value.asText(), style = MaterialTheme.typography.bodySmall)
                                     }
-                                    TextButton(onClick = { variables = variables - key }) { Text("删除") }
+                                    TextButton(onClick = { variables = variables - key }) {
+                                        Text(stringResource(TextR.string.common_delete))
+                                    }
                                 }
                             }
-                            OutlinedButton(onClick = { variableEdit = null to "" }, modifier = Modifier.fillMaxWidth()) { Text("＋ 添加局部变量") }
+                            OutlinedButton(
+                                onClick = { variableEdit = null to "" },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text(stringResource(TextR.string.automation_add_local_variable)) }
                             HorizontalDivider()
-                            Text("冲突策略", fontWeight = FontWeight.Medium)
+                            Text(stringResource(TextR.string.automation_conflict_policy), fontWeight = FontWeight.Medium)
                             listOf(
-                                ConflictPolicy.QUEUE to "排队运行",
-                                ConflictPolicy.IGNORE_NEW to "忽略新触发",
-                                ConflictPolicy.CANCEL_PREVIOUS to "取消上次运行",
-                                ConflictPolicy.PARALLEL to "并行运行",
+                                ConflictPolicy.QUEUE to stringResource(TextR.string.automation_conflict_queue),
+                                ConflictPolicy.IGNORE_NEW to stringResource(TextR.string.automation_conflict_ignore_new),
+                                ConflictPolicy.CANCEL_PREVIOUS to stringResource(TextR.string.automation_conflict_cancel_previous),
+                                ConflictPolicy.PARALLEL to stringResource(TextR.string.automation_conflict_parallel),
                             ).forEach { (value, label) ->
-                                Row(Modifier.fillMaxWidth().clickable { policy = policy.copy(conflictPolicy = value) }, verticalAlignment = Alignment.CenterVertically) {
-                                    RadioButton(policy.conflictPolicy == value, { policy = policy.copy(conflictPolicy = value) })
+                                Row(
+                                    Modifier.fillMaxWidth().clickable {
+                                        policy = policy.copy(conflictPolicy = value)
+                                    },
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    RadioButton(
+                                        policy.conflictPolicy == value,
+                                        { policy = policy.copy(conflictPolicy = value) },
+                                    )
                                     Text(label)
                                 }
                             }
-                            Text("最长运行 ${runtimeLimit} ms · 最大循环 $loopLimit", style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                stringResource(TextR.string.automation_limits_format, runtimeLimit, loopLimit),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
                         }
                     }
                 }
@@ -307,52 +367,68 @@ fun MacroAutomationEditorScreen(
         }
         AlertDialog(
             onDismissRequest = { menu = null },
-            title = { Text("项目操作") },
+            title = { Text(stringResource(TextR.string.automation_item_operations)) },
             text = {
                 Column {
-                    TextButton(enabled = index > 0, onClick = {
-                        when {
-                            section == "event" -> events = events.moveItem(index, index - 1)
-                            section == "state" -> states = states.moveItem(index, index - 1)
-                            section == "condition" -> conditions = conditions.moveItem(index, index - 1)
-                            section.startsWith("action:") -> when (MacroActionPhase.valueOf(section.substringAfter(':'))) {
-                                MacroActionPhase.EVENT -> onEvent = onEvent.moveItem(index, index - 1)
-                                MacroActionPhase.ENTER -> onEnter = onEnter.moveItem(index, index - 1)
-                                MacroActionPhase.EXIT -> onExit = onExit.moveItem(index, index - 1)
+                    TextButton(
+                        enabled = index > 0,
+                        onClick = {
+                            when {
+                                section == "event" -> events = events.moveItem(index, index - 1)
+                                section == "state" -> states = states.moveItem(index, index - 1)
+                                section == "condition" -> conditions = conditions.moveItem(index, index - 1)
+                                section.startsWith("action:") -> when (
+                                    MacroActionPhase.valueOf(section.substringAfter(':'))
+                                ) {
+                                    MacroActionPhase.EVENT -> onEvent = onEvent.moveItem(index, index - 1)
+                                    MacroActionPhase.ENTER -> onEnter = onEnter.moveItem(index, index - 1)
+                                    MacroActionPhase.EXIT -> onExit = onExit.moveItem(index, index - 1)
+                                }
                             }
-                        }
-                        menu = null
-                    }) { Text("上移") }
-                    TextButton(enabled = index < size - 1, onClick = {
-                        when {
-                            section == "event" -> events = events.moveItem(index, index + 1)
-                            section == "state" -> states = states.moveItem(index, index + 1)
-                            section == "condition" -> conditions = conditions.moveItem(index, index + 1)
-                            section.startsWith("action:") -> when (MacroActionPhase.valueOf(section.substringAfter(':'))) {
-                                MacroActionPhase.EVENT -> onEvent = onEvent.moveItem(index, index + 1)
-                                MacroActionPhase.ENTER -> onEnter = onEnter.moveItem(index, index + 1)
-                                MacroActionPhase.EXIT -> onExit = onExit.moveItem(index, index + 1)
+                            menu = null
+                        },
+                    ) { Text(stringResource(TextR.string.flow_move_up)) }
+                    TextButton(
+                        enabled = index < size - 1,
+                        onClick = {
+                            when {
+                                section == "event" -> events = events.moveItem(index, index + 1)
+                                section == "state" -> states = states.moveItem(index, index + 1)
+                                section == "condition" -> conditions = conditions.moveItem(index, index + 1)
+                                section.startsWith("action:") -> when (
+                                    MacroActionPhase.valueOf(section.substringAfter(':'))
+                                ) {
+                                    MacroActionPhase.EVENT -> onEvent = onEvent.moveItem(index, index + 1)
+                                    MacroActionPhase.ENTER -> onEnter = onEnter.moveItem(index, index + 1)
+                                    MacroActionPhase.EXIT -> onExit = onExit.moveItem(index, index + 1)
+                                }
                             }
-                        }
-                        menu = null
-                    }) { Text("下移") }
-                    TextButton(onClick = {
-                        when {
-                            section == "event" -> events = events.removeItem(index)
-                            section == "state" -> states = states.removeItem(index)
-                            section == "condition" -> conditions = conditions.removeItem(index)
-                            section.startsWith("action:") -> when (MacroActionPhase.valueOf(section.substringAfter(':'))) {
-                                MacroActionPhase.EVENT -> onEvent = onEvent.removeItem(index)
-                                MacroActionPhase.ENTER -> onEnter = onEnter.removeItem(index)
-                                MacroActionPhase.EXIT -> onExit = onExit.removeItem(index)
+                            menu = null
+                        },
+                    ) { Text(stringResource(TextR.string.flow_move_down)) }
+                    TextButton(
+                        onClick = {
+                            when {
+                                section == "event" -> events = events.removeItem(index)
+                                section == "state" -> states = states.removeItem(index)
+                                section == "condition" -> conditions = conditions.removeItem(index)
+                                section.startsWith("action:") -> when (
+                                    MacroActionPhase.valueOf(section.substringAfter(':'))
+                                ) {
+                                    MacroActionPhase.EVENT -> onEvent = onEvent.removeItem(index)
+                                    MacroActionPhase.ENTER -> onEnter = onEnter.removeItem(index)
+                                    MacroActionPhase.EXIT -> onExit = onExit.removeItem(index)
+                                }
                             }
-                        }
-                        menu = null
-                    }) { Text("删除") }
+                            menu = null
+                        },
+                    ) { Text(stringResource(TextR.string.common_delete)) }
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { menu = null }) { Text("取消") } },
+            dismissButton = {
+                TextButton(onClick = { menu = null }) { Text(stringResource(TextR.string.common_cancel)) }
+            },
         )
     }
 
@@ -363,11 +439,13 @@ fun MacroAutomationEditorScreen(
             MacroActionPhase.EXIT -> onExit
         }
         ActionTreeDialog(
-            title = when (phase) {
-                MacroActionPhase.EVENT -> "事件动作结构"
-                MacroActionPhase.ENTER -> "进入动作结构"
-                MacroActionPhase.EXIT -> "退出动作结构"
-            },
+            title = stringResource(
+                when (phase) {
+                    MacroActionPhase.EVENT -> TextR.string.automation_event_tree_title
+                    MacroActionPhase.ENTER -> TextR.string.automation_enter_tree_title
+                    MacroActionPhase.EXIT -> TextR.string.automation_exit_tree_title
+                }
+            ),
             initial = nodes,
             descriptors = descriptors,
             flows = flows,
@@ -388,23 +466,44 @@ fun MacroAutomationEditorScreen(
         var variableValue by remember(oldName, oldValue) { mutableStateOf(oldValue) }
         AlertDialog(
             onDismissRequest = { variableEdit = null },
-            title = { Text(if (oldName == null) "添加局部变量" else "编辑局部变量") },
+            title = {
+                Text(
+                    stringResource(
+                        if (oldName == null) TextR.string.automation_add_local_variable_title
+                        else TextR.string.automation_edit_local_variable_title
+                    )
+                )
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(variableName, { variableName = it }, label = { Text("变量名") }, singleLine = true)
-                    OutlinedTextField(variableValue, { variableValue = it }, label = { Text("值") })
+                    OutlinedTextField(
+                        variableName,
+                        { variableName = it },
+                        label = { Text(stringResource(TextR.string.automation_variable_name)) },
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        variableValue,
+                        { variableValue = it },
+                        label = { Text(stringResource(TextR.string.variables_value)) },
+                    )
                 }
             },
             confirmButton = {
-                TextButton(enabled = variableName.isNotBlank(), onClick = {
-                    variables = variables.toMutableMap().apply {
-                        oldName?.takeIf { it != variableName.trim() }?.let(::remove)
-                        put(variableName.trim(), ConfigValue.StringValue(variableValue))
-                    }
-                    variableEdit = null
-                }) { Text("确定") }
+                TextButton(
+                    enabled = variableName.isNotBlank(),
+                    onClick = {
+                        variables = variables.toMutableMap().apply {
+                            oldName?.takeIf { it != variableName.trim() }?.let(::remove)
+                            put(variableName.trim(), ConfigValue.StringValue(variableValue))
+                        }
+                        variableEdit = null
+                    },
+                ) { Text(stringResource(TextR.string.common_confirm)) }
             },
-            dismissButton = { TextButton(onClick = { variableEdit = null }) { Text("取消") } },
+            dismissButton = {
+                TextButton(onClick = { variableEdit = null }) { Text(stringResource(TextR.string.common_cancel)) }
+            },
         )
     }
 }
@@ -412,31 +511,40 @@ fun MacroAutomationEditorScreen(
 @Composable
 private fun EmptyHint(text: String) {
     Box(Modifier.fillMaxWidth().padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
-        Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }
 
+@Composable
 private fun featureTitle(feature: FeatureRef, descriptors: List<FeatureDescriptor>): String =
-    descriptors.firstOrNull { it.id.value == feature.typeId }?.title ?: feature.typeId
+    descriptors.firstOrNull { it.id.value == feature.typeId }?.let { localizedFeatureTitle(it) } ?: feature.typeId
 
 private fun featureSummary(feature: FeatureRef): String = feature.config.entries
     .filterNot { it.key.startsWith("source.") }
     .take(3)
     .joinToString(" · ") { "${it.key}=${it.value.asText()}" }
 
+@Composable
 private fun actionNodeTitle(node: ActionNode, flows: List<Flow>): String = when (node) {
     is ActionNode.Action -> node.feature.typeId
-    is ActionNode.If -> "条件分支"
-    is ActionNode.Switch -> "多路分支"
-    is ActionNode.Repeat -> "重复 ${node.times} 次"
-    is ActionNode.While -> "条件循环"
-    is ActionNode.ForEach -> "遍历列表"
-    is ActionNode.Parallel -> "并行分支"
-    is ActionNode.Try -> "尝试 / 捕获"
-    is ActionNode.CallFlow -> "调用流程：${flows.firstOrNull { it.id == node.flowId }?.name ?: node.flowId.value}"
-    is ActionNode.Return -> "返回"
-    is ActionNode.Break -> "退出循环"
-    is ActionNode.Continue -> "继续循环"
+    is ActionNode.If -> stringResource(TextR.string.node_if)
+    is ActionNode.Switch -> stringResource(TextR.string.node_switch)
+    is ActionNode.Repeat -> stringResource(TextR.string.node_repeat_format, node.times)
+    is ActionNode.While -> stringResource(TextR.string.node_while)
+    is ActionNode.ForEach -> stringResource(TextR.string.node_foreach)
+    is ActionNode.Parallel -> stringResource(TextR.string.node_parallel)
+    is ActionNode.Try -> stringResource(TextR.string.node_try)
+    is ActionNode.CallFlow -> stringResource(
+        TextR.string.node_call_flow_format,
+        flows.firstOrNull { it.id == node.flowId }?.name ?: node.flowId.value,
+    )
+    is ActionNode.Return -> stringResource(TextR.string.node_return)
+    is ActionNode.Break -> stringResource(TextR.string.node_break)
+    is ActionNode.Continue -> stringResource(TextR.string.node_continue)
 }
 
 private fun ConfigValue.asText(): String = when (this) {
@@ -457,18 +565,25 @@ private fun <T> List<T>.removeItem(index: Int): List<T> =
     if (index !in indices) this else toMutableList().apply { removeAt(index) }
 
 private fun List<FeatureRef>.upsertFeature(index: Int?, feature: FeatureRef): List<FeatureRef> =
-    if (index == null || index !in indices) this + feature else toMutableList().apply { this[index] = feature }
+    if (index == null || index !in indices) this + feature
+    else toMutableList().apply { this[index] = feature }
 
 private fun List<ActionNode>.upsertActionFeature(index: Int?, feature: FeatureRef): List<ActionNode> =
-    if (index == null || index !in indices) this + ActionNode.Action(NodeId(UUID.randomUUID().toString()), feature)
-    else toMutableList().apply {
-        val old = this[index] as? ActionNode.Action
-        this[index] = old?.copy(feature = feature) ?: ActionNode.Action(NodeId(UUID.randomUUID().toString()), feature)
+    if (index == null || index !in indices) {
+        this + ActionNode.Action(NodeId(UUID.randomUUID().toString()), feature)
+    } else {
+        toMutableList().apply {
+            val old = this[index] as? ActionNode.Action
+            this[index] = old?.copy(feature = feature)
+                ?: ActionNode.Action(NodeId(UUID.randomUUID().toString()), feature)
+        }
     }
 
 private fun simpleConditions(node: PredicateNode?): List<FeatureRef>? = when (node) {
     null -> emptyList()
     is PredicateNode.Condition -> listOf(node.feature)
-    is PredicateNode.All -> node.children.mapNotNull { (it as? PredicateNode.Condition)?.feature }.takeIf { it.size == node.children.size }
+    is PredicateNode.All -> node.children
+        .mapNotNull { (it as? PredicateNode.Condition)?.feature }
+        .takeIf { it.size == node.children.size }
     else -> null
 }
