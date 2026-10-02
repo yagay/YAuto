@@ -4,9 +4,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Configuration
+import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import android.nfc.NfcAdapter
 import android.os.Build
 import android.os.PowerManager
 import com.yagay.yauto.core.model.ConfigValue
@@ -32,10 +35,21 @@ class SystemBroadcastEventSource(
     private val context = context.applicationContext
     private val started = AtomicBoolean(false)
     private var emitter: RuntimeEventEmitter? = null
+    private var lastDarkMode: Boolean? = null
 
     private val systemReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val action = intent?.action ?: return
+            if (action == NfcAdapter.ACTION_ADAPTER_STATE_CHANGED) {
+                val state = intent.getIntExtra(NfcAdapter.EXTRA_ADAPTER_STATE, NfcAdapter.STATE_OFF)
+                if (state != NfcAdapter.STATE_ON && state != NfcAdapter.STATE_OFF) return
+            }
+            if (action == Intent.ACTION_CONFIGURATION_CHANGED) {
+                val darkMode = currentDarkMode()
+                if (lastDarkMode == darkMode) return
+                lastDarkMode = darkMode
+            }
+
             val typeId = when (action) {
                 Intent.ACTION_SCREEN_ON -> "android.event.screen_on"
                 Intent.ACTION_SCREEN_OFF -> "android.event.screen_off"
@@ -49,6 +63,9 @@ class SystemBroadcastEventSource(
                 Intent.ACTION_DEVICE_STORAGE_LOW -> "android.event.storage_low"
                 Intent.ACTION_DEVICE_STORAGE_OK -> "android.event.storage_okay"
                 Intent.ACTION_AIRPLANE_MODE_CHANGED -> "android.event.airplane_mode_changed"
+                NfcAdapter.ACTION_ADAPTER_STATE_CHANGED -> "android.event.nfc_state_changed"
+                LocationManager.MODE_CHANGED_ACTION -> "android.event.location_mode_changed"
+                Intent.ACTION_CONFIGURATION_CHANGED -> "android.event.dark_mode_changed"
                 Intent.ACTION_LOCALE_CHANGED -> "android.event.locale_changed"
                 Intent.ACTION_TIMEZONE_CHANGED -> "android.event.timezone_changed"
                 Intent.ACTION_TIME_TICK -> "android.event.time_tick"
@@ -60,6 +77,42 @@ class SystemBroadcastEventSource(
                 put("action", ConfigValue.StringValue(action))
                 if (action == Intent.ACTION_AIRPLANE_MODE_CHANGED && intent.hasExtra("state")) {
                     put("state", ConfigValue.BooleanValue(intent.getBooleanExtra("state", false)))
+                }
+                if (action == NfcAdapter.ACTION_ADAPTER_STATE_CHANGED) {
+                    put(
+                        "enabled",
+                        ConfigValue.BooleanValue(
+                            intent.getIntExtra(NfcAdapter.EXTRA_ADAPTER_STATE, NfcAdapter.STATE_OFF) == NfcAdapter.STATE_ON
+                        ),
+                    )
+                }
+                if (action == LocationManager.MODE_CHANGED_ACTION) {
+                    val enabled = runCatching {
+                        this@SystemBroadcastEventSource.context.getSystemService(LocationManager::class.java).isLocationEnabled
+                    }.getOrDefault(false)
+                    put("enabled", ConfigValue.BooleanValue(enabled))
+                }
+                if (action == Intent.ACTION_CONFIGURATION_CHANGED) {
+                    put("enabled", ConfigValue.BooleanValue(currentDarkMode()))
+                }
+                if (action == PowerManager.ACTION_POWER_SAVE_MODE_CHANGED) {
+                    put(
+                        "enabled",
+                        ConfigValue.BooleanValue(
+                            this@SystemBroadcastEventSource.context.getSystemService(PowerManager::class.java).isPowerSaveMode
+                        ),
+                    )
+                }
+                if (action == Intent.ACTION_BATTERY_CHANGED) {
+                    val level = intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)
+                    val scale = intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1)
+                    if (level >= 0 && scale > 0) {
+                        put("percent", ConfigValue.NumberValue(level * 100.0 / scale))
+                    }
+                    val temperatureTenths = intent.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE)
+                    if (temperatureTenths != Int.MIN_VALUE) {
+                        put("temperatureC", ConfigValue.NumberValue(temperatureTenths / 10.0))
+                    }
                 }
                 if (action in setOf(Intent.ACTION_TIME_TICK, Intent.ACTION_TIME_CHANGED, Intent.ACTION_DATE_CHANGED, Intent.ACTION_TIMEZONE_CHANGED)) {
                     putAll(currentTimePayload())
@@ -95,6 +148,7 @@ class SystemBroadcastEventSource(
     override fun start(emitter: RuntimeEventEmitter) {
         if (!started.compareAndSet(false, true)) return
         this.emitter = emitter
+        lastDarkMode = currentDarkMode()
 
         val systemFilter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
@@ -107,8 +161,11 @@ class SystemBroadcastEventSource(
             addAction(Intent.ACTION_BATTERY_CHANGED)
             addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED)
             addAction(Intent.ACTION_DEVICE_STORAGE_LOW)
-            addAction(Intent.ACTION_DEVICE_STORAGE_OK)
+            addAction(Intent.ACTION_DEVICE_STORAGE_OKAY)
             addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)
+            addAction(NfcAdapter.ACTION_ADAPTER_STATE_CHANGED)
+            addAction(LocationManager.MODE_CHANGED_ACTION)
+            addAction(Intent.ACTION_CONFIGURATION_CHANGED)
             addAction(Intent.ACTION_LOCALE_CHANGED)
             addAction(Intent.ACTION_TIMEZONE_CHANGED)
             addAction(Intent.ACTION_TIME_TICK)
@@ -135,6 +192,7 @@ class SystemBroadcastEventSource(
         runCatching { context.unregisterReceiver(systemReceiver) }
         runCatching { context.unregisterReceiver(packageReceiver) }
         emitter = null
+        lastDarkMode = null
     }
 
     private fun register(receiver: BroadcastReceiver, filter: IntentFilter) {
@@ -145,6 +203,9 @@ class SystemBroadcastEventSource(
             context.registerReceiver(receiver, filter)
         }
     }
+
+    private fun currentDarkMode(): Boolean =
+        context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 
     private fun currentTimePayload(): Map<String, ConfigValue> {
         val now = ZonedDateTime.now()
