@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="automation_unnamed">Unnamed automation</string>
+    <string name="automation_add_title">Add automation</string>
+    <string name="automation_edit_title">Edit automation</string>
+    <string name="automation_enabled">Enabled</string>
+    <string name="automation_name">Automation name</string>
+    <string name="automation_triggers">Triggers</string>
+    <string name="automation_triggers_subtitle">Start from events or enter/exit persistent states</string>
+    <string name="automation_event_count_format">Events %1$d</string>
+    <string name="automation_state_count_format">States %1$d</string>
+    <string name="automation_add_event_hint">Tap ＋ to add a trigger</string>
+    <string name="automation_add_state_hint">Tap ＋ to add a persistent state</string>
+    <string name="automation_actions">Actions</string>
+    <string name="automation_actions_subtitle">Runs in order; supports branches, loops, parallel execution and flow calls</string>
+    <string name="automation_event_phase_count_format">Event %1$d</string>
+    <string name="automation_enter_phase_count_format">Enter %1$d</string>
+    <string name="automation_exit_phase_count_format">Exit %1$d</string>
+    <string name="automation_add_action_hint">Tap ＋ to add an action</string>
+    <string name="automation_constraints">Constraints</string>
+    <string name="automation_constraints_subtitle">The automation continues only while its constraints are satisfied</string>
+    <string name="automation_complex_condition_title">Complex condition group</string>
+    <string name="automation_complex_condition_subtitle">Preserved from an imported or older rule; keep maintaining it in the structure editor.</string>
+    <string name="automation_no_constraints">No constraints: the automation has no additional restriction.</string>
+    <string name="automation_advanced_settings">Advanced settings</string>
+    <string name="automation_description">Description</string>
+    <string name="automation_local_variables">Local variables</string>
+    <string name="automation_add_local_variable">＋ Add local variable</string>
+    <string name="automation_conflict_policy">Conflict policy</string>
+    <string name="automation_conflict_queue">Queue runs</string>
+    <string name="automation_conflict_ignore_new">Ignore new trigger</string>
+    <string name="automation_conflict_cancel_previous">Cancel previous run</string>
+    <string name="automation_conflict_parallel">Run in parallel</string>
+    <string name="automation_limits_format">Max runtime %1$d ms · max loops %2$d</string>
+    <string name="automation_item_operations">Item operations</string>
+    <string name="automation_event_tree_title">Event action structure</string>
+    <string name="automation_enter_tree_title">Enter action structure</string>
+    <string name="automation_exit_tree_title">Exit action structure</string>
+    <string name="automation_add_local_variable_title">Add local variable</string>
+    <string name="automation_edit_local_variable_title">Edit local variable</string>
+    <string name="automation_variable_name">Variable name</string>
+</resources>
