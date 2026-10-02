@@ -12,6 +12,33 @@
     <string name="feature_android_network_local_addresses_field_includeipv6">Include IPv6</string>
     <string name="feature_android_network_local_addresses_field_resultvariable">Store address list in variable</string>
 
+    <string name="feature_android_network_udp_send_title">Send UDP datagram</string>
+    <string name="feature_android_network_udp_send_description">Send UTF-8 text to a UDP host and port, including broadcast destinations when enabled</string>
+    <string name="feature_android_network_udp_send_field_host">Host</string>
+    <string name="feature_android_network_udp_send_field_port">Port</string>
+    <string name="feature_android_network_udp_send_field_text">Text</string>
+    <string name="feature_android_network_udp_send_field_broadcast">Allow broadcast</string>
+
+    <string name="feature_android_state_local_address_match_title">Local IP address matches</string>
+    <string name="feature_android_state_local_address_match_description">Check active local network interfaces for an address and interface-name match</string>
+    <string name="feature_android_state_local_address_match_field_addresscontains">Address contains</string>
+    <string name="feature_android_state_local_address_match_field_interfacecontains">Interface contains</string>
+    <string name="feature_android_state_local_address_match_field_family">Address family</string>
+    <string name="feature_android_state_local_address_match_field_family_option_any">Any</string>
+    <string name="feature_android_state_local_address_match_field_family_option_ipv4">IPv4</string>
+    <string name="feature_android_state_local_address_match_field_family_option_ipv6">IPv6</string>
+    <string name="feature_android_state_local_address_match_field_value">Match exists</string>
+
+    <string name="feature_android_condition_local_address_match_title">Local IP address matches</string>
+    <string name="feature_android_condition_local_address_match_description">Check active local network interfaces for an address and interface-name match</string>
+    <string name="feature_android_condition_local_address_match_field_addresscontains">Address contains</string>
+    <string name="feature_android_condition_local_address_match_field_interfacecontains">Interface contains</string>
+    <string name="feature_android_condition_local_address_match_field_family">Address family</string>
+    <string name="feature_android_condition_local_address_match_field_family_option_any">Any</string>
+    <string name="feature_android_condition_local_address_match_field_family_option_ipv4">IPv4</string>
+    <string name="feature_android_condition_local_address_match_field_family_option_ipv6">IPv6</string>
+    <string name="feature_android_condition_local_address_match_field_value">Match exists</string>
+
     <string name="feature_android_state_tcp_reachable_title">TCP port reachable</string>
     <string name="feature_android_state_tcp_reachable_description">Check whether a TCP connection can be established to a host and port within a bounded timeout</string>
     <string name="feature_android_state_tcp_reachable_field_host">Host</string>
@@ -39,4 +66,6 @@
     <string name="runtime_feature_network_port_invalid">TCP port is invalid</string>
     <string name="runtime_feature_network_host_port_invalid">TCP host or port is invalid</string>
     <string name="runtime_feature_network_wait_timeout">Timed out waiting for %1$s:%2$d</string>
+    <string name="runtime_feature_network_udp_payload_too_large">UDP payload exceeds the maximum datagram size</string>
+    <string name="runtime_feature_network_udp_send_failed">Could not send UDP datagram to %1$s:%2$d</string>
 </resources>
