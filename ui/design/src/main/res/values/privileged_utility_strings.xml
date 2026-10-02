@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_screen_wake_title">Wake screen</string>
+    <string name="feature_android_screen_wake_description">Wake the display through an Android input key event</string>
+
+    <string name="feature_android_input_keyevent_title">Send key event</string>
+    <string name="feature_android_input_keyevent_description">Send a common Android key event through a privileged shell backend</string>
+    <string name="feature_android_input_keyevent_field_key">Key</string>
+    <string name="feature_android_input_keyevent_field_key_option_back">Back</string>
+    <string name="feature_android_input_keyevent_field_key_option_home">Home</string>
+    <string name="feature_android_input_keyevent_field_key_option_recents">Recents</string>
+    <string name="feature_android_input_keyevent_field_key_option_enter">Enter</string>
+    <string name="feature_android_input_keyevent_field_key_option_tab">Tab</string>
+    <string name="feature_android_input_keyevent_field_key_option_escape">Escape</string>
+    <string name="feature_android_input_keyevent_field_key_option_volume_up">Volume up</string>
+    <string name="feature_android_input_keyevent_field_key_option_volume_down">Volume down</string>
+    <string name="feature_android_input_keyevent_field_key_option_volume_mute">Mute</string>
+    <string name="feature_android_input_keyevent_field_key_option_media_play_pause">Play / pause</string>
+    <string name="feature_android_input_keyevent_field_key_option_media_next">Next track</string>
+    <string name="feature_android_input_keyevent_field_key_option_media_previous">Previous track</string>
+    <string name="feature_android_input_keyevent_field_key_option_camera">Camera</string>
+    <string name="feature_android_input_keyevent_field_key_option_custom">Custom</string>
+    <string name="feature_android_input_keyevent_field_customkeycode">Custom Android key code</string>
+    <string name="feature_android_input_keyevent_field_longpress">Long press</string>
+
+    <string name="feature_android_screenshot_capture_title">Capture screenshot</string>
+    <string name="feature_android_screenshot_capture_description">Capture the current display to a PNG file in shared storage</string>
+    <string name="feature_android_screenshot_capture_field_path">PNG path (blank = Downloads/YAuto)</string>
+    <string name="feature_android_screenshot_capture_field_resultvariable">Store saved path in variable</string>
+</resources>
