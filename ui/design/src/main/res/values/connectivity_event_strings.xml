@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_network_profile_changed_title">Active network changed</string>
+    <string name="feature_android_event_network_profile_changed_description">Run when the active network transport, validation or metered state changes</string>
+    <string name="feature_android_event_network_profile_changed_field_connected">Connection</string>
+    <string name="feature_android_event_network_profile_changed_field_connected_option_any">Any</string>
+    <string name="feature_android_event_network_profile_changed_field_connected_option_connected">Connected</string>
+    <string name="feature_android_event_network_profile_changed_field_connected_option_disconnected">Disconnected</string>
+    <string name="feature_android_event_network_profile_changed_field_transport">Transport</string>
+    <string name="feature_android_event_network_profile_changed_field_transport_option_any">Any</string>
+    <string name="feature_android_event_network_profile_changed_field_transport_option_wifi">Wi-Fi</string>
+    <string name="feature_android_event_network_profile_changed_field_transport_option_cellular">Cellular</string>
+    <string name="feature_android_event_network_profile_changed_field_transport_option_ethernet">Ethernet</string>
+    <string name="feature_android_event_network_profile_changed_field_transport_option_vpn">VPN</string>
+    <string name="feature_android_event_network_profile_changed_field_validated">Internet validation</string>
+    <string name="feature_android_event_network_profile_changed_field_validated_option_any">Any</string>
+    <string name="feature_android_event_network_profile_changed_field_validated_option_yes">Yes</string>
+    <string name="feature_android_event_network_profile_changed_field_validated_option_no">No</string>
+    <string name="feature_android_event_network_profile_changed_field_metered">Metered network</string>
+    <string name="feature_android_event_network_profile_changed_field_metered_option_any">Any</string>
+    <string name="feature_android_event_network_profile_changed_field_metered_option_yes">Yes</string>
+    <string name="feature_android_event_network_profile_changed_field_metered_option_no">No</string>
+
+    <string name="feature_android_event_bluetooth_audio_device_changed_title">Bluetooth audio device changed</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_description">Run when a Bluetooth audio route connects or disconnects and optionally match its name or address</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_field_state">Connection</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_field_state_option_any">Any</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_field_state_option_connected">Connected</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_field_state_option_disconnected">Disconnected</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_field_namecontains">Device name contains</string>
+    <string name="feature_android_event_bluetooth_audio_device_changed_field_address">Device address exact</string>
+</resources>
