@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_core_event_manual_title">Manual event</string>
+    <string name="feature_core_event_manual_description">Run when YAuto receives a manual runtime event</string>
+    <string name="feature_core_delay_description">Wait before continuing</string>
+    <string name="feature_core_log_description">Write a message to the execution trace</string>
+    <string name="feature_core_boolean_description">Static boolean condition</string>
+
+    <string name="feature_data_text_split_description">Split text into a list variable</string>
+    <string name="feature_data_text_join_description">Join a list variable into text</string>
+    <string name="feature_data_regex_extract_description">Extract regex matches or one capture group into a list</string>
+    <string name="feature_data_hash_description">Hash UTF-8 text with SHA-256, SHA-1 or MD5</string>
+    <string name="feature_data_random_number_description">Generate an inclusive random integer</string>
+    <string name="feature_data_uuid_description">Generate a random UUID string</string>
+
+    <string name="feature_system_shell_execute_title">Run shell command</string>
+    <string name="feature_system_shell_execute_description">Execute a command through the best available privileged shell backend</string>
+
+    <string name="feature_variable_set_description">Set a runtime variable</string>
+    <string name="feature_variable_clear_description">Clear a runtime variable</string>
+    <string name="feature_variable_copy_description">Copy one runtime variable to another</string>
+    <string name="feature_variable_increment_description">Add a number to a variable</string>
+    <string name="feature_variable_toggle_description">Invert a boolean variable</string>
+    <string name="feature_variable_list_append_description">Append a value to a list variable</string>
+    <string name="feature_variable_list_get_description">Read a list item by zero-based index</string>
+    <string name="feature_variable_list_remove_description">Remove a list item by zero-based index</string>
+    <string name="feature_variable_object_put_description">Set a key on an object/map variable</string>
+    <string name="feature_variable_object_get_description">Read a key from an object/map variable</string>
+    <string name="feature_variable_text_replace_description">Replace literal or regular-expression matches in text</string>
+    <string name="feature_variable_exists_description">Check that a variable is present and not null</string>
+    <string name="feature_variable_number_compare_description">Compare a variable with a number</string>
+    <string name="feature_variable_list_size_description">Compare the size of a list variable</string>
+
+    <string name="feature_android_event_window_changed_description">Run whenever Accessibility reports a different foreground package or Activity</string>
+
+    <string name="feature_android_audio_volume_set_description">Set media, ringtone, notification, alarm, system or voice-call volume by percentage</string>
+    <string name="feature_android_audio_volume_adjust_description">Raise, lower, mute or unmute an Android audio stream</string>
+    <string name="feature_android_audio_ringer_mode_set_description">Set normal, vibrate or silent ringer mode. Device policy/DND rules may restrict silent mode.</string>
+    <string name="feature_android_audio_microphone_mute_set_description">Mute or unmute the Android microphone through AudioManager</string>
+    <string name="feature_android_audio_speakerphone_set_description">Turn communication speakerphone routing on or off</string>
+
+    <string name="feature_android_event_wifi_changed_description">Run when Android reports a Wi-Fi connection or signal state change</string>
+    <string name="feature_android_event_bluetooth_state_description">Run when the Bluetooth adapter is enabled or disabled</string>
+
+    <string name="feature_android_audio_media_volume_set_description">Set the music/media stream volume by percentage</string>
+    <string name="feature_android_vibrate_description">Vibrate the device for a configurable duration and amplitude</string>
+    <string name="feature_android_display_brightness_set_description">Set manual brightness or enable automatic brightness</string>
+    <string name="feature_android_intent_send_description">Start an activity/service or send an Android broadcast</string>
+    <string name="feature_android_notification_show_description">Post a YAuto system notification</string>
+    <string name="feature_android_notification_cancel_description">Cancel a notification previously posted by YAuto</string>
+    <string name="feature_android_app_force_stop_description">Force stop a package through Root or Shizuku</string>
+
+    <string name="feature_android_device_info_description">Store common Android build/device properties in an object variable</string>
+    <string name="feature_android_storage_info_description">Read total/free/available bytes for a filesystem path</string>
+    <string name="feature_android_sensor_read_description">Capture one value from a common Android hardware sensor</string>
+    <string name="feature_android_location_last_known_description">Read the newest last-known GPS/network location without starting continuous background tracking</string>
+
+    <string name="feature_android_event_time_tick_description">Run on Android's minute tick and optionally match hour, minute or ISO weekday</string>
+    <string name="feature_android_event_clipboard_changed_description">Run when the primary clipboard changes; clipboard text may be unavailable in the background on newer Android versions</string>
+    <string name="feature_android_event_broadcast_title">Android broadcast</string>
+    <string name="feature_android_event_broadcast_description">Receive a configured Android broadcast action and optionally match simple extras</string>
+
+    <string name="feature_android_event_external_command_description">Run when an authenticated YAuto command broadcast is received</string>
+    <string name="feature_android_external_command_token_generate_description">Replace the external-command authentication token and store it in a variable</string>
+    <string name="feature_android_external_command_token_set_description">Set a custom authentication token; use a long random value</string>
+    <string name="feature_android_external_command_disable_description">Remove the authentication token so external command broadcasts are ignored</string>
+
+    <string name="feature_android_toast_show_description">Show an Android toast</string>
+    <string name="feature_android_app_launch_description">Launch an installed application</string>
+    <string name="feature_android_uri_open_description">Open a web link or Android URI</string>
+    <string name="feature_android_clipboard_set_description">Put text on the Android clipboard</string>
+    <string name="feature_android_share_text_description">Open Android's share sheet with text</string>
+
+    <string name="feature_file_read_text_description">Read a UTF-8 text file into a runtime variable. Android storage access rules still apply.</string>
+    <string name="feature_file_write_text_description">Write or append UTF-8 text; parent directories can be created automatically</string>
+    <string name="feature_file_delete_description">Delete a file, or recursively delete a directory when enabled</string>
+    <string name="feature_file_mkdir_description">Create a directory and any missing parent directories</string>
+    <string name="feature_file_list_description">Store child absolute paths from a directory in a list variable</string>
+
+    <string name="feature_android_http_request_description">Send an HTTP request and expose status, body and response headers as structured output</string>
+
+    <string name="feature_android_media_control_description">Send a standard Android media transport command</string>
+    <string name="feature_android_clipboard_get_description">Read the current clipboard text into a variable when Android permits background clipboard access</string>
+    <string name="feature_android_torch_set_description">Turn the first available flash unit on or off</string>
+    <string name="feature_android_dnd_set_description">Set Android interruption filter when notification policy access is granted</string>
+
+    <string name="feature_android_state_notification_active_description">Check whether an active notification matches the selected filters</string>
+
+    <string name="feature_android_event_qs_tile_description">Run when one of the three YAuto Quick Settings tiles is tapped</string>
+    <string name="feature_android_qs_tile_configure_description">Change a YAuto tile label and active/inactive visual state</string>
+
+    <string name="feature_android_event_sensor_value_description">Run when a selected hardware sensor value satisfies a comparison</string>
+    <string name="feature_android_event_shake_description">Run when accelerometer linear magnitude exceeds a threshold</string>
+
+    <string name="feature_android_event_shortcut_description">Run when a YAuto launcher shortcut is opened</string>
+    <string name="feature_android_shortcut_create_description">Create/update a dynamic shortcut and optionally request a pinned home-screen shortcut</string>
+    <string name="feature_android_shortcut_remove_description">Remove a YAuto dynamic shortcut by ID (launchers control pinned shortcut removal)</string>
+
+    <string name="feature_surface_overlay_show_description">Show or replace a lightweight interactive overlay panel</string>
+    <string name="feature_surface_overlay_hide_description">Hide a Surface by ID</string>
+    <string name="feature_surface_overlay_hide_all_description">Remove every YAuto overlay Surface</string>
+    <string name="feature_android_event_surface_action_description">Run when a YAuto Surface button or lifecycle action fires</string>
+</resources>
