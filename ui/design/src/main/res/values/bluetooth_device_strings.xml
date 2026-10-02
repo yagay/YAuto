@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_bluetooth_discovery_start_title">Start Bluetooth discovery</string>
+    <string name="feature_android_bluetooth_discovery_start_description">Request classic Bluetooth device discovery; Android scan permission and system throttling still apply</string>
+    <string name="feature_android_bluetooth_discovery_stop_title">Stop Bluetooth discovery</string>
+    <string name="feature_android_bluetooth_discovery_stop_description">Cancel an active classic Bluetooth discovery started by YAuto or another app</string>
+    <string name="feature_android_bluetooth_paired_query_title">Get paired Bluetooth devices</string>
+    <string name="feature_android_bluetooth_paired_query_description">Store bonded Bluetooth device names, addresses and bond states as structured objects</string>
+    <string name="feature_android_bluetooth_paired_query_field_resultvariable">Store device list in variable</string>
+
+    <string name="feature_android_state_bluetooth_device_bonded_title">Bluetooth device bonded</string>
+    <string name="feature_android_state_bluetooth_device_bonded_description">Check whether a bonded Bluetooth device matches a name or exact address</string>
+    <string name="feature_android_condition_bluetooth_device_bonded_title">Bluetooth device bonded</string>
+    <string name="feature_android_condition_bluetooth_device_bonded_description">Check whether a bonded Bluetooth device matches a name or exact address</string>
+    <string name="feature_android_state_bluetooth_device_bonded_field_namecontains">Device name contains</string>
+    <string name="feature_android_state_bluetooth_device_bonded_field_address">Device address exact</string>
+    <string name="feature_android_state_bluetooth_device_bonded_field_value">Match exists</string>
+    <string name="feature_android_condition_bluetooth_device_bonded_field_namecontains">Device name contains</string>
+    <string name="feature_android_condition_bluetooth_device_bonded_field_address">Device address exact</string>
+    <string name="feature_android_condition_bluetooth_device_bonded_field_value">Match exists</string>
+
+    <string name="feature_android_event_bluetooth_device_connection_title">Bluetooth device connection</string>
+    <string name="feature_android_event_bluetooth_device_connection_description">Run when a classic Bluetooth device connects or disconnects</string>
+    <string name="feature_android_event_bluetooth_device_connection_field_namecontains">Device name contains</string>
+    <string name="feature_android_event_bluetooth_device_connection_field_address">Device address exact</string>
+    <string name="feature_android_event_bluetooth_device_connection_field_state">Connection</string>
+    <string name="feature_android_event_bluetooth_device_connection_field_state_option_any">Any</string>
+    <string name="feature_android_event_bluetooth_device_connection_field_state_option_connected">Connected</string>
+    <string name="feature_android_event_bluetooth_device_connection_field_state_option_disconnected">Disconnected</string>
+
+    <string name="feature_android_event_bluetooth_device_found_title">Bluetooth device discovered</string>
+    <string name="feature_android_event_bluetooth_device_found_description">Run when classic Bluetooth discovery finds a nearby device</string>
+    <string name="feature_android_event_bluetooth_device_found_field_namecontains">Device name contains</string>
+    <string name="feature_android_event_bluetooth_device_found_field_address">Device address exact</string>
+    <string name="feature_android_event_bluetooth_device_found_field_minrssi">Minimum RSSI (dBm)</string>
+
+    <string name="feature_android_event_bluetooth_bond_changed_title">Bluetooth bond changed</string>
+    <string name="feature_android_event_bluetooth_bond_changed_description">Run when a Bluetooth device pairing state changes</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_namecontains">Device name contains</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_address">Device address exact</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_bondstate">Bond state</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_bondstate_option_any">Any</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_bondstate_option_none">Not bonded</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_bondstate_option_bonding">Pairing</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_bondstate_option_bonded">Bonded</string>
+
+    <string name="runtime_feature_bluetooth_scan_permission_missing">Bluetooth scan permission is not granted</string>
+    <string name="runtime_feature_bluetooth_connect_permission_missing">Bluetooth connect permission is not granted</string>
+    <string name="runtime_feature_bluetooth_discovery_failed">Bluetooth discovery could not be changed</string>
+</resources>
