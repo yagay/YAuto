@@ -154,9 +154,9 @@ internal fun appEnabledCommand(packageName: String, enabled: Boolean): String =
     if (enabled) "pm enable --user current $packageName" else "pm disable-user --user current $packageName"
 
 internal fun rebootCommand(mode: String): String? = when (mode) {
-    "normal" -> "reboot"
-    "recovery" -> "reboot recovery"
-    "bootloader" -> "reboot bootloader"
+    "normal" -> "svc power reboot"
+    "recovery" -> "svc power reboot recovery"
+    "bootloader" -> "svc power reboot bootloader"
     else -> null
 }
 
