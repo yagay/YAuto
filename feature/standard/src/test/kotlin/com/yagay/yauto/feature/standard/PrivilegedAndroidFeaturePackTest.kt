@@ -171,6 +171,7 @@ class PrivilegedAndroidFeaturePackTest {
             "android.wifi.set" to false,
             "android.mobile_data.set" to true,
             "android.bluetooth.set" to false,
+            "android.nfc.set" to true,
         )) {
             registry.actionExecutor(id)!!.execute(
                 FeatureRef(id, config = mapOf("enabled" to ConfigValue.BooleanValue(enabled))),
@@ -180,11 +181,53 @@ class PrivilegedAndroidFeaturePackTest {
         assertEquals("svc wifi disable", commands["android.wifi.set"])
         assertEquals("svc data enable", commands["android.mobile_data.set"])
         assertEquals("svc bluetooth disable", commands["android.bluetooth.set"])
+        assertEquals("svc nfc enable", commands["android.nfc.set"])
+    }
+
+    @Test fun `device controls emit stable Android shell commands`() = runBlocking {
+        val registry = FeatureRegistry().apply { install(PrivilegedAndroidFeaturePack()) }
+        val commands = mutableMapOf<String, String>()
+        val client = CapabilityClient { request ->
+            commands[request.operationId] = (request.payload["command"] as ConfigValue.StringValue).value
+            CapabilityResult(true, backendId = "root")
+        }
+        suspend fun execute(id: String, config: ConfigMap) {
+            val result = registry.actionExecutor(id)!!.execute(FeatureRef(id, config = config), context(client))
+            assertTrue(result.success)
+        }
+
+        execute("android.location.enabled.set", mapOf("enabled" to ConfigValue.BooleanValue(false)))
+        execute("android.display.auto_rotate.set", mapOf("enabled" to ConfigValue.BooleanValue(true)))
+        execute("android.display.screen_timeout.set", mapOf("timeoutMs" to ConfigValue.NumberValue(60_000.0)))
+        execute("android.display.dark_mode.set", mapOf("mode" to ConfigValue.StringValue("dark")))
+        execute("android.power.battery_saver.set", mapOf("enabled" to ConfigValue.BooleanValue(true)))
+        execute("android.power.stay_awake.set", mapOf("mode" to ConfigValue.StringValue("wireless")))
+
+        assertEquals("cmd location set-location-enabled false", commands["android.location.enabled.set"])
+        assertEquals("settings put system accelerometer_rotation 1", commands["android.display.auto_rotate.set"])
+        assertEquals("settings put system screen_off_timeout 60000", commands["android.display.screen_timeout.set"])
+        assertEquals("cmd uimode night yes", commands["android.display.dark_mode.set"])
+        assertEquals("cmd power set-mode 1", commands["android.power.battery_saver.set"])
+        assertEquals("svc power stayon wireless", commands["android.power.stay_awake.set"])
+    }
+
+    @Test fun `screen timeout rejects unsafe values before shell execution`() = runBlocking {
+        val registry = FeatureRegistry().apply { install(PrivilegedAndroidFeaturePack()) }
+        var invoked = false
+        val result = registry.actionExecutor("android.display.screen_timeout.set")!!.execute(
+            FeatureRef("android.display.screen_timeout.set", config = mapOf("timeoutMs" to ConfigValue.NumberValue(999.0))),
+            context(CapabilityClient {
+                invoked = true
+                CapabilityResult(true)
+            }),
+        )
+        assertFalse(result.success)
+        assertFalse(invoked)
     }
 
     @Test fun `whole pack can be removed cleanly`() {
         val registry = FeatureRegistry().apply { install(PrivilegedAndroidFeaturePack()) }
-        assertEquals(11, registry.allDescriptors().count { it.ownerPackId == "standard.android.privileged" })
+        assertEquals(18, registry.allDescriptors().count { it.ownerPackId == "standard.android.privileged" })
         registry.uninstallPack("standard.android.privileged")
         assertTrue(registry.allDescriptors().none { it.ownerPackId == "standard.android.privileged" })
     }
