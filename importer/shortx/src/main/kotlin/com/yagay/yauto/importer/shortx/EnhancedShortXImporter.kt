@@ -51,6 +51,13 @@ internal object ShortXFeatureSuggestions {
                 "DarkModeStatusChanged" -> "android.event.dark_mode_changed"
                 "NFCStatusChanged" -> "android.event.nfc_state_changed"
                 "ScreenRotate" -> "android.event.auto_rotate_changed"
+                "BatteryLevelChanged", "BatteryTemperatureChanged" -> "android.event.battery_changed"
+                "HeadsetPlug" -> "android.event.headset_changed"
+                else -> null
+            }
+            ".condition[" in sourcePath -> when (name) {
+                "BatteryPercent" -> "android.condition.battery_level"
+                "IsHeadsetPlug" -> "android.condition.headset_connected"
                 else -> null
             }
             else -> null
