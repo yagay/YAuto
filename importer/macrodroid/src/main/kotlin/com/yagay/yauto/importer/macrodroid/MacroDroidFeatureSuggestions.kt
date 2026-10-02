@@ -19,6 +19,9 @@ object MacroDroidFeatureSuggestions {
                 "BatterySaverAction" -> "android.power.battery_saver.set"
                 "KeepAwakeAction" -> "android.power.stay_awake.set"
                 "SpeakTextAction" -> "android.tts.speak"
+                "ScreenOnAction" -> "android.screen.wake"
+                "InputKeyEventAction" -> "android.input.keyevent"
+                "TakeScreenshotAction" -> "android.screenshot.capture"
                 else -> null
             }
             SourceFeatureKind.EVENT -> when (sourceType) {
