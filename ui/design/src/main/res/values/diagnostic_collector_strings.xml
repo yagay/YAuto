@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="diagnostics_collector_execution_logs">Execution logs</string>
+    <string name="diagnostics_collector_import_reports">Import reports</string>
+    <string name="diagnostics_collector_notification_access">Notification access</string>
+    <string name="diagnostics_collector_accessibility">Accessibility service</string>
+    <string name="diagnostics_collector_root">Root environment</string>
+    <string name="diagnostics_collector_lsposed_logs">LSPosed logs</string>
+    <string name="diagnostics_collector_shizuku">Shizuku backend</string>
+    <string name="diagnostics_collector_lsposed_backend">LSPosed backend</string>
+    <string name="diagnostics_collector_unknown_format">Collector: %1$s</string>
+</resources>
