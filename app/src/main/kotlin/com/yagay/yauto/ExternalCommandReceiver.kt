@@ -18,17 +18,23 @@ class ExternalCommandReceiver : BroadcastReceiver() {
         val pending = goAsync()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         AutomationRuntimeService.start(context)
-        RuntimeEventDispatcher((context.applicationContext as YAutoApplication).graph, scope).dispatch(
-            RuntimeEvent(
-                "android.event.external_command",
-                mapOf(
-                    "name" to ConfigValue.StringValue(intent.getStringExtra("name").orEmpty()),
-                    "payload" to ConfigValue.StringValue(intent.getStringExtra("payload").orEmpty()),
-                    "senderPackage" to ConfigValue.StringValue(intent.getStringExtra("senderPackage").orEmpty()),
-                ),
-                source = "android.external_command",
+        val app = context.applicationContext as? YAutoApplication
+        val graph = runCatching { app?.graph }
+            .onFailure { StartupFailureRecorder.record(context, "external-command:graph", it) }
+            .getOrNull()
+        if (graph != null) {
+            RuntimeEventDispatcher(graph, scope).dispatch(
+                RuntimeEvent(
+                    "android.event.external_command",
+                    mapOf(
+                        "name" to ConfigValue.StringValue(intent.getStringExtra("name").orEmpty()),
+                        "payload" to ConfigValue.StringValue(intent.getStringExtra("payload").orEmpty()),
+                        "senderPackage" to ConfigValue.StringValue(intent.getStringExtra("senderPackage").orEmpty()),
+                    ),
+                    source = "android.external_command",
+                )
             )
-        )
+        }
         pending.finish()
     }
 
