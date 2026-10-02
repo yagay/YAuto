@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_app_installed_list_title">List installed applications</string>
+    <string name="feature_android_app_installed_list_description">Store installed package names in a list variable with optional system-app and disabled-app filtering</string>
+    <string name="feature_android_app_installed_list_field_includesystem">Include system apps</string>
+    <string name="feature_android_app_installed_list_field_includedisabled">Include disabled apps</string>
+    <string name="feature_android_app_installed_list_field_resultvariable">Store package list in variable</string>
+
+    <string name="feature_android_state_app_installed_title">Application installed</string>
+    <string name="feature_android_state_app_installed_description">Check whether a package exists for the current Android user</string>
+    <string name="feature_android_state_app_installed_field_package">Package name</string>
+    <string name="feature_android_state_app_installed_field_value">Installed</string>
+    <string name="feature_android_condition_app_installed_title">Application installed</string>
+    <string name="feature_android_condition_app_installed_description">Check whether a package exists for the current Android user</string>
+    <string name="feature_android_condition_app_installed_field_package">Package name</string>
+    <string name="feature_android_condition_app_installed_field_value">Installed</string>
+</resources>
