@@ -43,8 +43,7 @@ class AndroidPrivilegedUtilityFeaturePack(context: Context) : FeaturePack {
                 ?: return@registerAction invalidStructuredInput()
             val result = executeShell("android.settings.value.get", command, ctx)
             if (!result.success) return@registerAction ActionExecutionResult(false, result.value, result.message)
-            val text = shellStdout(result.value).trimEnd('\r', '\n')
-            val output = ConfigValue.StringValue(text)
+            val output = ConfigValue.StringValue(shellStdout(result.value).trimEnd('\r', '\n'))
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
         }
@@ -256,4 +255,4 @@ private val APP_OP_MODES = setOf("allow", "ignore", "deny", "default", "foregrou
 private val SETTING_KEY = Regex("[A-Za-z0-9_.:-]{1,128}")
 private val PROPERTY_NAME = Regex("[A-Za-z0-9_.-]{1,128}")
 private val APP_OP_NAME = Regex("[A-Za-z0-9_]{1,128}")
-private val COMPONENT_CLASS = Regex("\\.?[A-Za-z_][A-Za-z0-9_$]*(?:\\.[A-Za-z_][A-Za-z0-9_$]*)+")
+private val COMPONENT_CLASS = Regex("(?:\\.[A-Za-z_][A-Za-z0-9_$]*|[A-Za-z_][A-Za-z0-9_$]*(?:\\.[A-Za-z_][A-Za-z0-9_$]*)*)")
