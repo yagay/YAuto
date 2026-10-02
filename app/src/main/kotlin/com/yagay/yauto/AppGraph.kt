@@ -16,6 +16,7 @@ import com.yagay.yauto.importer.tasker.TaskerImporter
 import com.yagay.yauto.platform.accessibility.AccessibilityBackend
 import com.yagay.yauto.platform.accessibility.AccessibilityDiagnosticCollector
 import com.yagay.yauto.platform.accessibility.AccessibilityFeaturePack
+import com.yagay.yauto.platform.accessibility.AccessibilityKeyFeaturePack
 import com.yagay.yauto.platform.android.*
 import com.yagay.yauto.platform.root.*
 import com.yagay.yauto.platform.xposed.LsposedLogCollector
@@ -67,6 +68,7 @@ class AppGraph(context: Context) {
         features.install(AndroidSurfaceFeaturePack(overlaySurfaces))
         features.install(AndroidExternalCommandFeaturePack(appContext))
         features.install(AccessibilityFeaturePack())
+        features.install(AccessibilityKeyFeaturePack())
 
         capabilities.register(RootBackend(rootShell))
         capabilities.register(shizuku)
