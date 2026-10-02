@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_app_installed_list_title">列出已安装应用</string>
+    <string name="feature_android_app_installed_list_description">把已安装包名保存到列表变量，并可筛选系统应用和停用应用</string>
+    <string name="feature_android_app_installed_list_field_includesystem">包含系统应用</string>
+    <string name="feature_android_app_installed_list_field_includedisabled">包含已停用应用</string>
+    <string name="feature_android_app_installed_list_field_resultvariable">保存包名列表到变量</string>
+
+    <string name="feature_android_state_app_installed_title">应用已安装</string>
+    <string name="feature_android_state_app_installed_description">检查当前 Android 用户下是否存在指定包</string>
+    <string name="feature_android_state_app_installed_field_package">包名</string>
+    <string name="feature_android_state_app_installed_field_value">已安装</string>
+    <string name="feature_android_condition_app_installed_title">应用已安装</string>
+    <string name="feature_android_condition_app_installed_description">检查当前 Android 用户下是否存在指定包</string>
+    <string name="feature_android_condition_app_installed_field_package">包名</string>
+    <string name="feature_android_condition_app_installed_field_value">已安装</string>
+</resources>
