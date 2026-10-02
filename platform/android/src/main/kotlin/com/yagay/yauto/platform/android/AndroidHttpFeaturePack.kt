@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import com.yagay.yauto.core.model.userText
 
 class AndroidHttpFeaturePack : FeaturePack {
     override val id = "android.http"
@@ -29,13 +30,13 @@ class AndroidHttpFeaturePack : FeaturePack {
                     FieldSchema.Duration("readTimeoutMs", "Read timeout"),
                     FieldSchema.Variable("resultVariable", "Store response object"),
                 ),
-                keywords = setOf("http", "https", "api", "webhook", "request", "网络请求"),
+                keywords = setOf("http", "https", "api", "webhook", "request"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->
             val url = feature.config.string("url").resolveVariables(ctx.variables).trim()
             if (!(url.startsWith("https://") || url.startsWith("http://"))) {
-                return@registerAction ActionExecutionResult(false, message = "URL must use http:// or https://")
+                return@registerAction ActionExecutionResult(false, message = userText("feature.http_url_required", "URL must use http:// or https://"))
             }
             val method = feature.config.string("method", "GET").uppercase()
             val headers = parseHeaders(feature.config.string("headers").resolveVariables(ctx.variables))
@@ -95,7 +96,7 @@ class AndroidHttpFeaturePack : FeaturePack {
                 )
             )
             ActionExecutionResult(status in 200..399, value, if (status in 200..399) null else "HTTP $status")
-        }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+        }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
             .also { connection?.disconnect() }
     }
 

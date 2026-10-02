@@ -8,6 +8,7 @@ import android.graphics.drawable.Icon
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
+import com.yagay.yauto.core.model.userText
 
 class AndroidShortcutFeaturePack(context: Context) : FeaturePack {
     override val id = "android.shortcuts"
@@ -21,7 +22,7 @@ class AndroidShortcutFeaturePack(context: Context) : FeaturePack {
                 "YAuto shortcut", "Run when a YAuto launcher shortcut is opened",
                 FeatureCategory.APP,
                 fields = listOf(FieldSchema.Text("id", "Shortcut ID"), FieldSchema.Text("command", "Command")),
-                keywords = setOf("shortcut", "launcher", "home screen", "快捷方式"), ownerPackId = id,
+                keywords = setOf("shortcut", "launcher", "home screen"), ownerPackId = id,
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.shortcut") return@registerEvent false
@@ -42,13 +43,13 @@ class AndroidShortcutFeaturePack(context: Context) : FeaturePack {
                     FieldSchema.Text("command", "Command"),
                     FieldSchema.Toggle("requestPinned", "Request pinned home-screen shortcut"),
                 ),
-                keywords = setOf("shortcut", "launcher", "home screen", "快捷方式"), ownerPackId = id,
+                keywords = setOf("shortcut", "launcher", "home screen"), ownerPackId = id,
             )
         ) { feature, ctx ->
             val id = feature.config.string("id").resolveVariables(ctx.variables).trim()
             val label = feature.config.string("label").resolveVariables(ctx.variables).trim()
             val command = feature.config.string("command").resolveVariables(ctx.variables)
-            if (id.isBlank() || label.isBlank()) return@registerAction ActionExecutionResult(false, message = "Shortcut ID and label are required")
+            if (id.isBlank() || label.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.shortcut_id_label_required", "Shortcut ID and label are required"))
             runCatching {
                 val intent = Intent(Intent.ACTION_VIEW).setClassName(context.packageName, "${context.packageName}.ShortcutDispatchActivity")
                     .putExtra("shortcutId", id).putExtra("command", command)
@@ -61,7 +62,7 @@ class AndroidShortcutFeaturePack(context: Context) : FeaturePack {
                 manager.addDynamicShortcuts(listOf(shortcut))
                 if (feature.config.boolean("requestPinned") && manager.isRequestPinShortcutSupported) manager.requestPinShortcut(shortcut, null)
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -74,7 +75,7 @@ class AndroidShortcutFeaturePack(context: Context) : FeaturePack {
         ) { feature, ctx ->
             val id = feature.config.string("id").resolveVariables(ctx.variables).trim()
             runCatching { manager.removeDynamicShortcuts(listOf(id)); ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
     }
 }

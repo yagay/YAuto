@@ -39,7 +39,7 @@ fun GlobalVariablesScreen(
                     )
                 },
                 navigationIcon = {
-                    TextButton(onClick = { if (draft != null) draft = null else onBack() }) { Text("‹") }
+                    TextButton(onClick = { if (draft != null) draft = null else onBack() }) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_back), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_back)) }
                 },
                 actions = {
                     if (draft == null) {
@@ -50,7 +50,7 @@ fun GlobalVariablesScreen(
         },
         floatingActionButton = {
             if (draft == null) {
-                FloatingActionButton(onClick = { draft = VariableDraft(null, "", "") }) { Text("＋") }
+                FloatingActionButton(onClick = { draft = VariableDraft(null, "", "") }) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_add), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_add)) }
             }
         },
     ) { padding ->

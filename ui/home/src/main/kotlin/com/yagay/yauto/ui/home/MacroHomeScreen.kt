@@ -70,7 +70,7 @@ fun MacroHomeScreen(
                         )
                     }
                 },
-                actions = { TextButton(onClick = onNewAutomation) { Text("＋") } },
+                actions = { TextButton(onClick = onNewAutomation) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_add), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_add)) } },
             )
         },
         bottomBar = {
@@ -190,7 +190,7 @@ private fun HomeDashboard(
             item {
                 Card(Modifier.aspectRatio(1.08f)) {
                     Column(Modifier.fillMaxSize().padding(10.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                        Text("i", style = MaterialTheme.typography.headlineMedium)
+                        androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_info), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_information))
                         Column {
                             Text(stringResource(R.string.home_capability_overview), fontWeight = FontWeight.SemiBold)
                             Text(stringResource(R.string.home_registered_features_format, featureCount), style = MaterialTheme.typography.labelSmall)
@@ -288,7 +288,7 @@ private fun SettingsPage(
 
 @Composable
 private fun SettingsRow(title: String, subtitle: String, onClick: () -> Unit) {
-    ListItem(headlineContent = { Text(title, fontWeight = FontWeight.Medium) }, supportingContent = { Text(subtitle) }, trailingContent = { Text("›") }, modifier = Modifier.clickable(onClick = onClick))
+    ListItem(headlineContent = { Text(title, fontWeight = FontWeight.Medium) }, supportingContent = { Text(subtitle) }, trailingContent = { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_chevron_right), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_open_details)) }, modifier = Modifier.clickable(onClick = onClick))
     HorizontalDivider()
 }
 

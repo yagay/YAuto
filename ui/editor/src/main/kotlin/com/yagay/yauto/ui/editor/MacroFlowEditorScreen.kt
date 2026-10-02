@@ -41,7 +41,7 @@ fun MacroFlowEditorScreen(
                 title = {
                     Text(stringResource(if (initial == null) TextR.string.flow_add_title else TextR.string.flow_edit_title))
                 },
-                navigationIcon = { TextButton(onClick = onBack) { Text("‹") } },
+                navigationIcon = { TextButton(onClick = onBack) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_back), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_back)) } },
                 actions = {
                     TextButton(
                         enabled = name.isNotBlank(),

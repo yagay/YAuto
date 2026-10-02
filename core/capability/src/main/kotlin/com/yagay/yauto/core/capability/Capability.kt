@@ -4,6 +4,7 @@ import com.yagay.yauto.core.model.ConfigMap
 import com.yagay.yauto.core.model.ConfigValue
 import kotlinx.serialization.Serializable
 import kotlinx.coroutines.CancellationException
+import com.yagay.yauto.core.model.userText
 
 @Serializable @JvmInline
 value class CapabilityId(val value: String)
@@ -120,8 +121,8 @@ class CapabilityBroker(
         val candidates = supported.filter { it.isAvailable(environment) }
         if (candidates.isEmpty()) {
             val message = request.preferredBackendId?.let {
-                "Selected backend '$it' is unavailable or does not support ${request.capability.value}"
-            } ?: "No backend available for ${request.capability.value}"
+                userText("capability.selected_backend_unavailable", "Selected backend '%s' is unavailable or does not support %s", it, request.capability.value)
+            } ?: userText("capability.no_backend_available", "No backend is available for %s", request.capability.value)
             return CapabilityResult(false, message = message)
         }
 
@@ -130,7 +131,7 @@ class CapabilityBroker(
             val result = try { backend.execute(request, environment) } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                CapabilityResult(false, message = error.message ?: error::class.simpleName)
+                CapabilityResult(false, message = userText("capability.backend_error", "Backend error: %s", error.message ?: error::class.simpleName.orEmpty()))
             }
             attempts += CapabilityAttempt(backend.id, result.success, result.message)
             if (result.success || !request.allowFallback || request.preferredBackendId != null) {
@@ -139,7 +140,7 @@ class CapabilityBroker(
         }
         return CapabilityResult(
             success = false,
-            message = "All backends failed for ${request.operationId}",
+            message = userText("capability.all_backends_failed", "All backends failed for %s", request.operationId),
             attempts = attempts,
         )
     }

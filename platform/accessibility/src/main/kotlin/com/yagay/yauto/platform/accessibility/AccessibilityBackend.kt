@@ -12,6 +12,7 @@ import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.yagay.yauto.core.model.userText
 
 class AccessibilityBackend : CapabilityBackend {
     override val id: String = "accessibility"
@@ -26,7 +27,7 @@ class AccessibilityBackend : CapabilityBackend {
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult =
         withContext(Dispatchers.Main.immediate) {
             val service = YAutoAccessibilityService.current
-                ?: return@withContext CapabilityResult(false, message = "YAuto Accessibility Service is not connected")
+                ?: return@withContext CapabilityResult(false, message = userText("diagnostics.accessibility.not_connected", "YAuto Accessibility Service is not connected"))
 
             when (request.operationId) {
                 AccessibilityOperations.FIND_TEXT -> {
@@ -79,7 +80,7 @@ class AccessibilityBackend : CapabilityBackend {
                         request.payload.long("durationMs", 300),
                     )
                 }
-                else -> return@withContext CapabilityResult(false, message = "Unsupported accessibility operation: ${request.operationId}")
+                else -> return@withContext CapabilityResult(false, message = userText("accessibility.unsupported_operation", "Unsupported accessibility operation: %s", request.operationId))
             }
             CapabilityResult(
                 success = completed,

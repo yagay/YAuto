@@ -13,6 +13,7 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
+import com.yagay.yauto.core.model.userText
 
 /** High-frequency device controls shared by MacroDroid/Tasker/ShortX style automations. */
 class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
@@ -37,7 +38,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 fields = listOf(FieldSchema.Choice("command", "Command", true, listOf(
                     "play_pause", "play", "pause", "next", "previous", "stop"
                 ))),
-                keywords = setOf("media", "play", "pause", "next", "previous", "音乐", "播放"),
+                keywords = setOf("media", "play", "pause", "next", "previous"),
                 ownerPackId = id,
             )
         ) { feature, _ ->
@@ -55,7 +56,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 audio.dispatchMediaKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0))
                 audio.dispatchMediaKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0))
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
@@ -66,12 +67,12 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 "Read clipboard", "Read the current clipboard text into a variable when Android permits background clipboard access",
                 FeatureCategory.DEVICE,
                 fields = listOf(FieldSchema.Variable("resultVariable", "Store text in variable", true)),
-                keywords = setOf("clipboard", "paste", "剪贴板"),
+                keywords = setOf("clipboard", "paste"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->
             val variable = feature.config.string("resultVariable").trim()
-            if (variable.isBlank()) return@registerAction ActionExecutionResult(false, message = "Result variable is empty")
+            if (variable.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.result_variable_empty", "Result variable is empty"))
             runCatching {
                 val clipboard = context.getSystemService(ClipboardManager::class.java)
                 val clip = clipboard.primaryClip
@@ -80,7 +81,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 ctx.variables.set(variable, value)
                 ActionExecutionResult(true, value)
             }.getOrElse {
-                ActionExecutionResult(false, message = "Clipboard is unavailable: ${it.message ?: it.javaClass.simpleName}")
+                ActionExecutionResult(false, message = userText("feature.clipboard_unavailable", "Clipboard is unavailable: %s", it.message ?: it.javaClass.simpleName))
             }
         }
     }
@@ -93,12 +94,12 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.DEVICE,
                 fields = listOf(FieldSchema.Toggle("enabled", "Torch on")),
                 accessRequirements = setOf(AccessRequirement.CAMERA),
-                keywords = setOf("torch", "flashlight", "flash", "手电筒", "闪光灯"),
+                keywords = setOf("torch", "flashlight", "flash"),
                 ownerPackId = id,
             )
         ) { feature, _ ->
             if (context.checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                return@registerAction ActionExecutionResult(false, message = "Camera permission is not granted")
+                return@registerAction ActionExecutionResult(false, message = userText("feature.camera_permission_denied", "Camera permission is not granted"))
             }
             runCatching {
                 val manager = context.getSystemService(CameraManager::class.java)
@@ -107,7 +108,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 } ?: error("No camera flash is available")
                 manager.setTorchMode(cameraId, feature.config["enabled"].let { (it as? ConfigValue.BooleanValue)?.value ?: true })
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
@@ -119,13 +120,13 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.DEVICE,
                 fields = listOf(FieldSchema.Choice("mode", "Mode", true, listOf("all", "priority", "alarms", "none"))),
                 accessRequirements = setOf(AccessRequirement.DND_POLICY),
-                keywords = setOf("dnd", "do not disturb", "silent", "勿扰"),
+                keywords = setOf("dnd", "do not disturb", "silent"),
                 ownerPackId = id,
             )
         ) { feature, _ ->
             val manager = context.getSystemService(NotificationManager::class.java)
             if (!manager.isNotificationPolicyAccessGranted) {
-                return@registerAction ActionExecutionResult(false, message = "Notification policy access is not granted")
+                return@registerAction ActionExecutionResult(false, message = userText("feature.notification_policy_denied", "Notification policy access is not granted"))
             }
             val filter = when (feature.config.string("mode", "all")) {
                 "priority" -> NotificationManager.INTERRUPTION_FILTER_PRIORITY
@@ -136,7 +137,7 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
             runCatching {
                 manager.setInterruptionFilter(filter)
                 ActionExecutionResult(true, ConfigValue.StringValue(feature.config.string("mode", "all")))
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
     }
 

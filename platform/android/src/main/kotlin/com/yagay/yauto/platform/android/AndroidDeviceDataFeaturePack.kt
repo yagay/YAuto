@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import kotlin.coroutines.resume
+import com.yagay.yauto.core.model.userText
 
 class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
     override val id = "android.device.data"
@@ -45,7 +46,7 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.device.info"), FeatureKind.ACTION, "Get device information",
                 "Store common Android build/device properties in an object variable", FeatureCategory.DEVICE,
                 fields = listOf(FieldSchema.Variable("resultVariable", "Store object in variable", true)),
-                keywords = setOf("device", "model", "sdk", "build", "设备信息"), ownerPackId = id,
+                keywords = setOf("device", "model", "sdk", "build"), ownerPackId = id,
             )
         ) { feature, ctx ->
             val output = ConfigValue.ObjectValue(mapOf(
@@ -70,7 +71,7 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.storage.info"), FeatureKind.ACTION, "Get storage information",
                 "Read total/free/available bytes for a filesystem path", FeatureCategory.FILE,
                 fields = listOf(FieldSchema.Text("path", "Path"), FieldSchema.Variable("resultVariable", "Store object in variable", true)),
-                keywords = setOf("storage", "disk", "free space", "存储空间"), ownerPackId = id,
+                keywords = setOf("storage", "disk", "free space"), ownerPackId = id,
             )
         ) { feature, ctx ->
             val path = feature.config.string("path").resolveVariables(ctx.variables).ifBlank { context.filesDir.absolutePath }
@@ -84,7 +85,7 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                 ))
                 ctx.variables.set(feature.config.string("resultVariable"), output)
                 ActionExecutionResult(true, output)
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
@@ -97,7 +98,7 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                     FieldSchema.Choice("sensor", "Sensor", true, listOf("accelerometer", "gyroscope", "light", "proximity", "magnetic_field", "pressure")),
                     FieldSchema.Duration("timeoutMs", "Timeout"),
                     FieldSchema.Variable("resultVariable", "Store object in variable", true),
-                ), keywords = setOf("sensor", "accelerometer", "light", "proximity", "传感器"), ownerPackId = id,
+                ), keywords = setOf("sensor", "accelerometer", "light", "proximity"), ownerPackId = id,
             )
         ) { feature, ctx ->
             val type = when (feature.config.string("sensor", "accelerometer")) {
@@ -109,10 +110,10 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                 else -> Sensor.TYPE_ACCELEROMETER
             }
             val sensor = sensors.getDefaultSensor(type)
-                ?: return@registerAction ActionExecutionResult(false, message = "Sensor is not available")
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.sensor_unavailable", "Sensor is not available"))
             val timeout = feature.config.long("timeoutMs", 5_000).coerceIn(250, 30_000)
             val output = readSensor(sensor, timeout)
-                ?: return@registerAction ActionExecutionResult(false, message = "Sensor read timed out")
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.sensor_timeout", "Sensor read timed out"))
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
         }
@@ -129,11 +130,11 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                     FieldSchema.Variable("resultVariable", "Store location object", true),
                 ),
                 accessRequirements = setOf(AccessRequirement.LOCATION),
-                keywords = setOf("location", "gps", "coordinates", "定位"), ownerPackId = id,
+                keywords = setOf("location", "gps", "coordinates"), ownerPackId = id,
             )
         ) { feature, ctx ->
             val location = runCatching { bestLastLocation(feature.config.string("provider", "any")) }.getOrNull()
-                ?: return@registerAction ActionExecutionResult(false, message = "Location permission missing or no last known location")
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.location_unavailable", "Location permission missing or no last known location"))
             val output = locationValue(location)
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
@@ -152,7 +153,7 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                 FieldSchema.Duration("maxAgeMs", "Maximum location age"),
             ),
             accessRequirements = setOf(AccessRequirement.LOCATION),
-            keywords = setOf("location", "radius", "geofence", "gps", "位置范围"), ownerPackId = id,
+            keywords = setOf("location", "radius", "geofence", "gps"), ownerPackId = id,
         )
         val evaluator = ConditionEvaluator { feature, _ ->
             val location = runCatching { bestLastLocation(feature.config.string("provider", "any")) }.getOrNull() ?: return@ConditionEvaluator false

@@ -8,6 +8,7 @@ import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 import kotlin.math.roundToInt
+import com.yagay.yauto.core.model.userText
 
 class AndroidAudioFeaturePack(context: Context) : FeaturePack {
     override val id = "android.audio"
@@ -23,7 +24,7 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                     streamField(),
                     FieldSchema.Number("percent", "Volume percent", true, min = 0.0, max = 100.0),
                     FieldSchema.Toggle("showUi", "Show system volume UI"),
-                ), keywords = setOf("volume", "ring", "alarm", "notification", "音量", "铃声"), ownerPackId = id,
+                ), keywords = setOf("volume", "ring", "alarm", "notification"), ownerPackId = id,
             )
         ) { feature, _ ->
             runCatching {
@@ -34,7 +35,7 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 val value = (min + (max - min) * percent / 100.0).roundToInt().coerceIn(min, max)
                 audio.setStreamVolume(stream, value, if (feature.config.boolean("showUi")) AudioManager.FLAG_SHOW_UI else 0)
                 ActionExecutionResult(true, ConfigValue.NumberValue(percent))
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -46,7 +47,7 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                     streamField(),
                     FieldSchema.Choice("direction", "Adjustment", true, listOf("raise", "lower", "mute", "unmute", "toggle_mute")),
                     FieldSchema.Toggle("showUi", "Show system volume UI"),
-                ), keywords = setOf("volume up", "volume down", "mute", "静音"), ownerPackId = id,
+                ), keywords = setOf("volume up", "volume down", "mute"), ownerPackId = id,
             )
         ) { feature, _ ->
             val adjustment = when (feature.config.string("direction", "raise")) {
@@ -60,7 +61,7 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 audio.adjustStreamVolume(stream(feature.config.string("stream", "media")), adjustment,
                     if (feature.config.boolean("showUi")) AudioManager.FLAG_SHOW_UI else 0)
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -69,7 +70,7 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 "Set normal, vibrate or silent ringer mode. Device policy/DND rules may restrict silent mode.",
                 FeatureCategory.AUDIO,
                 fields = listOf(FieldSchema.Choice("mode", "Mode", true, listOf("normal", "vibrate", "silent"))),
-                keywords = setOf("ringer", "silent", "vibrate", "铃声模式", "静音"), ownerPackId = id,
+                keywords = setOf("ringer", "silent", "vibrate"), ownerPackId = id,
             )
         ) { feature, _ ->
             val mode = when (feature.config.string("mode", "normal")) {
@@ -78,7 +79,7 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 else -> AudioManager.RINGER_MODE_NORMAL
             }
             runCatching { audio.ringerMode = mode; ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -87,11 +88,11 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 "Mute or unmute the Android microphone through AudioManager",
                 FeatureCategory.AUDIO,
                 fields = listOf(FieldSchema.Toggle("enabled", "Muted")),
-                keywords = setOf("microphone", "mic", "mute", "麦克风"), ownerPackId = id,
+                keywords = setOf("microphone", "mic", "mute"), ownerPackId = id,
             )
         ) { feature, _ ->
             runCatching { @Suppress("DEPRECATION") audio.isMicrophoneMute = feature.config.boolean("enabled", true); ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -100,11 +101,11 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 "Turn communication speakerphone routing on or off",
                 FeatureCategory.AUDIO,
                 fields = listOf(FieldSchema.Toggle("enabled", "Speakerphone on")),
-                keywords = setOf("speaker", "speakerphone", "扬声器"), ownerPackId = id,
+                keywords = setOf("speaker", "speakerphone"), ownerPackId = id,
             )
         ) { feature, _ ->
             runCatching { @Suppress("DEPRECATION") audio.isSpeakerphoneOn = feature.config.boolean("enabled", true); ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
 
         stateAndCondition(registry, "ringer_mode", "Ringer mode",

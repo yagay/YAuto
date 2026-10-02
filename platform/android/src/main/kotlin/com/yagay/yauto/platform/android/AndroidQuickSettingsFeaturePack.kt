@@ -8,6 +8,7 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
+import com.yagay.yauto.core.model.userText
 
 class QuickSettingsTileController(context: Context) {
     private val context = context.applicationContext
@@ -44,7 +45,7 @@ class AndroidQuickSettingsFeaturePack(private val controller: QuickSettingsTileC
                 "Quick Settings tile", "Run when one of the three YAuto Quick Settings tiles is tapped",
                 FeatureCategory.UI_AUTOMATION,
                 fields = listOf(FieldSchema.Number("slot", "Tile slot (1-3)", true, min = 1.0, max = 3.0)),
-                keywords = setOf("quick settings", "tile", "qs", "磁贴", "快捷设置"), ownerPackId = id,
+                keywords = setOf("quick settings", "tile", "qs"), ownerPackId = id,
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.qs_tile") return@registerEvent false
@@ -62,14 +63,14 @@ class AndroidQuickSettingsFeaturePack(private val controller: QuickSettingsTileC
                     FieldSchema.Text("label", "Label"),
                     FieldSchema.Choice("state", "State", true, listOf("active", "inactive", "unavailable")),
                 ),
-                keywords = setOf("quick settings", "tile", "label", "state", "磁贴"), ownerPackId = id,
+                keywords = setOf("quick settings", "tile", "label", "state"), ownerPackId = id,
             )
         ) { feature, ctx ->
             val slot = feature.config["slot"].numberOrNull()?.toInt() ?: 1
             val label = feature.config.string("label").resolveVariables(ctx.variables)
             val state = feature.config.string("state", "inactive")
             runCatching { controller.configure(slot, label, state); ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
     }
 }

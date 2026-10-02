@@ -11,6 +11,7 @@ import java.security.MessageDigest
 import java.util.Base64
 import java.util.UUID
 import kotlin.random.Random
+import com.yagay.yauto.core.model.userText
 
 class DataFeaturePack : FeaturePack {
     override val id = "standard.data"
@@ -32,7 +33,7 @@ class DataFeaturePack : FeaturePack {
             val delimiter = feature.config.string("delimiter").resolveVariables(ctx.variables)
             val values = runCatching {
                 if (feature.config.boolean("regex")) text.split(Regex(delimiter)) else text.split(delimiter)
-            }.getOrElse { return@registerAction ActionExecutionResult(false, message = it.message) }
+            }.getOrElse { return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
             val output = ConfigValue.ListValue(values.map(ConfigValue::StringValue))
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
@@ -50,7 +51,7 @@ class DataFeaturePack : FeaturePack {
             )
         ) { feature, ctx ->
             val list = (ctx.variables.get(feature.config.string("name")) as? ConfigValue.ListValue)?.value
-                ?: return@registerAction ActionExecutionResult(false, message = "Variable is not a list")
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.variable_not_list", "Variable is not a list"))
             val output = ConfigValue.StringValue(list.joinToString(feature.config.string("delimiter")) { it.textValue() })
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
@@ -75,7 +76,7 @@ class DataFeaturePack : FeaturePack {
                 Regex(pattern).findAll(text)
                     .mapNotNull { match: MatchResult -> match.groups[group]?.value }
                     .toList()
-            }.getOrElse { return@registerAction ActionExecutionResult(false, message = it.message) }
+            }.getOrElse { return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
             val output = ConfigValue.ListValue(matches.map(ConfigValue::StringValue))
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
@@ -101,7 +102,7 @@ class DataFeaturePack : FeaturePack {
             val algorithm = feature.config.string("algorithm", "SHA-256")
             val value = runCatching {
                 MessageDigest.getInstance(algorithm).digest(text.toByteArray(StandardCharsets.UTF_8)).joinToString("") { "%02x".format(it) }
-            }.getOrElse { return@registerAction ActionExecutionResult(false, message = it.message) }
+            }.getOrElse { return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
             val output = ConfigValue.StringValue(value)
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
@@ -115,12 +116,12 @@ class DataFeaturePack : FeaturePack {
                     FieldSchema.Number("min", "Minimum", true),
                     FieldSchema.Number("max", "Maximum", true),
                     FieldSchema.Variable("resultVariable", "Store number in variable", true),
-                ), keywords = setOf("random", "number", "随机"), ownerPackId = id,
+                ), keywords = setOf("random", "number"), ownerPackId = id,
             )
         ) { feature, ctx ->
             val min = (feature.config["min"] as? ConfigValue.NumberValue)?.value?.toLong() ?: 0
             val max = (feature.config["max"] as? ConfigValue.NumberValue)?.value?.toLong() ?: 0
-            if (max < min) return@registerAction ActionExecutionResult(false, message = "Maximum is below minimum")
+            if (max < min) return@registerAction ActionExecutionResult(false, message = userText("feature.maximum_below_minimum", "Maximum is below minimum"))
             val number = if (max == Long.MAX_VALUE) Random.nextLong(min, max) else Random.nextLong(min, max + 1)
             val output = ConfigValue.NumberValue(number.toDouble())
             ctx.variables.set(feature.config.string("resultVariable"), output)
@@ -151,7 +152,7 @@ class DataFeaturePack : FeaturePack {
         ) { feature, ctx ->
             val input = feature.config.string("text").resolveVariables(ctx.variables)
             val output = runCatching { ConfigValue.StringValue(transform(input)) }
-                .getOrElse { return@registerAction ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+                .getOrElse { return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
         }

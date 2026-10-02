@@ -2,6 +2,7 @@ package com.yagay.yauto.platform.android
 
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
+import com.yagay.yauto.core.model.userText
 
 class AndroidNotificationControlFeaturePack : FeaturePack {
     override val id = "android.notification.control"
@@ -28,7 +29,7 @@ class AndroidNotificationControlFeaturePack : FeaturePack {
             FeatureCategory.NOTIFICATION,
             fields = fields,
             accessRequirements = setOf(AccessRequirement.NOTIFICATION_LISTENER),
-            keywords = setOf("notification", "active", "exists", "通知存在"), ownerPackId = id,
+            keywords = setOf("notification", "active", "exists"), ownerPackId = id,
         )
         val conditionDescriptor = stateDescriptor.copy(
             id = FeatureId("android.condition.notification_active"),
@@ -56,12 +57,12 @@ class AndroidNotificationControlFeaturePack : FeaturePack {
                 FeatureId(id), FeatureKind.ACTION, title, description, FeatureCategory.NOTIFICATION,
                 fields = filterFields() + extra,
                 accessRequirements = setOf(AccessRequirement.NOTIFICATION_LISTENER),
-                keywords = setOf("notification", "dismiss", "open", "action", "通知", "点击通知"),
+                keywords = setOf("notification", "dismiss", "open", "action"),
                 ownerPackId = this.id,
             )
         ) { feature, _ ->
             val controller = NotificationControlBridge.current()
-                ?: return@registerAction ActionExecutionResult(false, message = "Notification listener is not connected")
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.notification_listener_disconnected", "Notification listener is not connected"))
             val ok = runCatching { block(controller, NotificationMatch.from(feature), feature) }.getOrDefault(false)
             ActionExecutionResult(ok, message = if (ok) null else "No matching notification or operation failed")
         }

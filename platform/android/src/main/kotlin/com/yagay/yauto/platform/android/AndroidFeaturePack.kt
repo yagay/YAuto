@@ -8,6 +8,7 @@ import android.net.Uri
 import android.widget.Toast
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
+import com.yagay.yauto.core.model.userText
 
 class AndroidFeaturePack(
     private val context: Context,
@@ -37,7 +38,7 @@ class AndroidFeaturePack(
         ) { feature, ctx ->
             val pkg = feature.config.string("package").resolveVariables(ctx.variables)
             val intent = context.packageManager.getLaunchIntentForPackage(pkg)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            if (intent == null) ActionExecutionResult(false, message = "No launch intent for $pkg")
+            if (intent == null) ActionExecutionResult(false, message = userText("feature.no_launch_intent", "No launch intent is available for %s", pkg))
             else {
                 context.startActivity(intent)
                 ActionExecutionResult(true)
@@ -53,10 +54,10 @@ class AndroidFeaturePack(
             )
         ) { feature, ctx ->
             val uri = feature.config.string("uri").resolveVariables(ctx.variables)
-            if (uri.isBlank()) return@registerAction ActionExecutionResult(false, message = "URI is empty")
+            if (uri.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.uri_empty", "URI is empty"))
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             runCatching { context.startActivity(intent) }
-                .fold({ ActionExecutionResult(true) }, { ActionExecutionResult(false, message = it.message) })
+                .fold({ ActionExecutionResult(true) }, { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) })
         }
 
         registry.registerAction(
@@ -91,7 +92,7 @@ class AndroidFeaturePack(
             val title = feature.config.string("title").resolveVariables(ctx.variables)
             val chooser = Intent.createChooser(share, title.ifBlank { null }).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             runCatching { context.startActivity(chooser) }
-                .fold({ ActionExecutionResult(true) }, { ActionExecutionResult(false, message = it.message) })
+                .fold({ ActionExecutionResult(true) }, { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) })
         }
     }
 }

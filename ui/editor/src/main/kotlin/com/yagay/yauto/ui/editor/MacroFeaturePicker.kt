@@ -116,14 +116,11 @@ fun MacroFeaturePickerDialog(
                                 }
                             }
                         ) {
-                            Text(
-                                if (page == PickerPage.Categories) {
-                                    stringResource(TextR.string.common_close)
-                                } else {
-                                    "‹"
-                                },
-                                color = Color.White,
-                            )
+                            if (page == PickerPage.Categories) {
+                                Text(stringResource(TextR.string.common_close), color = Color.White)
+                            } else {
+                                androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_back), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_back), tint = Color.White)
+                            }
                         }
                     },
                 )
@@ -295,7 +292,7 @@ private fun CategoryRow(title: String, subtitle: String, onClick: () -> Unit) {
     ListItem(
         headlineContent = { Text(title, fontWeight = FontWeight.Medium) },
         supportingContent = { Text(subtitle) },
-        trailingContent = { Text("›") },
+        trailingContent = { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_chevron_right), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_open_details)) },
         modifier = Modifier.clickable(onClick = onClick),
     )
     HorizontalDivider()

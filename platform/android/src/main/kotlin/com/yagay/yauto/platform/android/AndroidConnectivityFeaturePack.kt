@@ -46,7 +46,7 @@ class AndroidConnectivityFeaturePack(context: Context) : FeaturePack {
                     FieldSchema.Text("ssid", "SSID contains"),
                 ),
                 accessRequirements = setOf(AccessRequirement.LOCATION),
-                keywords = setOf("wifi", "ssid", "network", "无线网络"), ownerPackId = id,
+                keywords = setOf("wifi", "ssid", "network"), ownerPackId = id,
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.wifi_changed") return@registerEvent false
@@ -67,7 +67,7 @@ class AndroidConnectivityFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.NETWORK,
                 fields = listOf(FieldSchema.Choice("state", "State", options = listOf("any", "on", "off"))),
                 accessRequirements = setOf(AccessRequirement.BLUETOOTH_CONNECT),
-                keywords = setOf("bluetooth", "bt", "蓝牙"), ownerPackId = id,
+                keywords = setOf("bluetooth", "bt"), ownerPackId = id,
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.bluetooth_state") return@registerEvent false
@@ -89,7 +89,7 @@ class AndroidConnectivityFeaturePack(context: Context) : FeaturePack {
                 FieldSchema.Text("bssid", "BSSID exact"),
             ),
             accessRequirements = setOf(AccessRequirement.LOCATION),
-            keywords = setOf("wifi", "ssid", "bssid", "network", "无线网络"), ownerPackId = id,
+            keywords = setOf("wifi", "ssid", "bssid", "network"), ownerPackId = id,
         )
         val evaluator = ConditionEvaluator { feature, _ ->
             val current = currentWifi()

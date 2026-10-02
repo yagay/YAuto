@@ -26,7 +26,7 @@ class AndroidSurfaceFeaturePack(
                     FieldSchema.Duration("autoHideMs", "Auto hide after"),
                 ),
                 accessRequirements = setOf(AccessRequirement.OVERLAY),
-                keywords = setOf("overlay", "surface", "floating", "panel", "button", "悬浮", "面板"),
+                keywords = setOf("overlay", "surface", "floating", "panel", "button"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->
@@ -49,7 +49,7 @@ class AndroidSurfaceFeaturePack(
                 "Hide overlay surface", "Hide a Surface by ID",
                 FeatureCategory.UI_AUTOMATION,
                 fields = listOf(FieldSchema.Text("surfaceId", "Surface ID", true)),
-                keywords = setOf("overlay", "surface", "hide", "悬浮"), ownerPackId = id,
+                keywords = setOf("overlay", "surface", "hide"), ownerPackId = id,
             )
         ) { feature, ctx ->
             val id = feature.config.string("surfaceId").resolveVariables(ctx.variables).trim()
@@ -61,7 +61,7 @@ class AndroidSurfaceFeaturePack(
                 FeatureId("surface.overlay.hide_all"), FeatureKind.ACTION,
                 "Hide all overlay surfaces", "Remove every YAuto overlay Surface",
                 FeatureCategory.UI_AUTOMATION,
-                keywords = setOf("overlay", "surface", "hide all", "悬浮"), ownerPackId = id,
+                keywords = setOf("overlay", "surface", "hide all"), ownerPackId = id,
             )
         ) { _, _ -> controller.hideAll(); ActionExecutionResult(true) }
 
@@ -74,7 +74,7 @@ class AndroidSurfaceFeaturePack(
                     FieldSchema.Text("surfaceId", "Surface ID"),
                     FieldSchema.Text("action", "Action name"),
                 ),
-                keywords = setOf("surface", "overlay", "button", "event", "悬浮"), ownerPackId = id,
+                keywords = setOf("surface", "overlay", "button", "event"), ownerPackId = id,
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.surface_action") return@registerEvent false

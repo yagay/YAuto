@@ -8,6 +8,7 @@ import com.yagay.yauto.core.registry.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import com.yagay.yauto.core.model.userText
 
 class AndroidFileFeaturePack : FeaturePack {
     override val id = "android.files"
@@ -23,7 +24,7 @@ class AndroidFileFeaturePack : FeaturePack {
                     FieldSchema.Variable("resultVariable", "Store text in variable", true),
                     FieldSchema.Number("maxBytes", "Maximum bytes", min = 1.0, max = 10_485_760.0),
                 ),
-                keywords = setOf("file", "read", "text", "读取文件"), ownerPackId = id,
+                keywords = setOf("file", "read", "text"), ownerPackId = id,
             )
         ) { feature, ctx ->
             val path = feature.config.string("path").resolveVariables(ctx.variables)
@@ -37,7 +38,7 @@ class AndroidFileFeaturePack : FeaturePack {
                     val value = ConfigValue.StringValue(file.readText(Charsets.UTF_8))
                     ctx.variables.set(variable, value)
                     ActionExecutionResult(true, value)
-                }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+                }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
             }
         }
 
@@ -52,7 +53,7 @@ class AndroidFileFeaturePack : FeaturePack {
                     FieldSchema.Toggle("append", "Append"),
                     FieldSchema.Toggle("createParents", "Create parent directories"),
                 ),
-                keywords = setOf("file", "write", "append", "save", "写文件"), ownerPackId = id,
+                keywords = setOf("file", "write", "append", "save"), ownerPackId = id,
             )
         ) { feature, ctx -> withContext(Dispatchers.IO) {
             runCatching {
@@ -61,7 +62,7 @@ class AndroidFileFeaturePack : FeaturePack {
                 val text = feature.config.string("text").resolveVariables(ctx.variables)
                 if (feature.config.boolean("append")) file.appendText(text, Charsets.UTF_8) else file.writeText(text, Charsets.UTF_8)
                 ActionExecutionResult(true, ConfigValue.NumberValue(file.length().toDouble()))
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         } }
 
         binaryFileAction(registry, "file.copy", "Copy file / directory", "Copy a file or directory tree", false)
@@ -72,7 +73,7 @@ class AndroidFileFeaturePack : FeaturePack {
                 FeatureId("file.delete"), FeatureKind.ACTION, "Delete file / directory",
                 "Delete a file, or recursively delete a directory when enabled", FeatureCategory.FILE,
                 fields = listOf(FieldSchema.Text("path", "Path", true), FieldSchema.Toggle("recursive", "Recursive directory delete")),
-                keywords = setOf("file", "delete", "folder", "删除"), ownerPackId = id,
+                keywords = setOf("file", "delete", "folder"), ownerPackId = id,
             )
         ) { feature, ctx -> withContext(Dispatchers.IO) {
             runCatching {
@@ -80,7 +81,7 @@ class AndroidFileFeaturePack : FeaturePack {
                 if (!file.exists()) return@runCatching ActionExecutionResult(true)
                 val ok = if (file.isDirectory && feature.config.boolean("recursive")) file.deleteRecursively() else file.delete()
                 ActionExecutionResult(ok, message = if (ok) null else "Delete failed")
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         } }
 
         registry.registerAction(
@@ -88,14 +89,14 @@ class AndroidFileFeaturePack : FeaturePack {
                 FeatureId("file.mkdir"), FeatureKind.ACTION, "Create directory",
                 "Create a directory and any missing parent directories", FeatureCategory.FILE,
                 fields = listOf(FieldSchema.Text("path", "Directory path", true)),
-                keywords = setOf("folder", "directory", "mkdir", "创建目录"), ownerPackId = id,
+                keywords = setOf("folder", "directory", "mkdir"), ownerPackId = id,
             )
         ) { feature, ctx -> withContext(Dispatchers.IO) {
             runCatching {
                 val file = File(feature.config.string("path").resolveVariables(ctx.variables))
                 val ok = file.isDirectory || file.mkdirs()
                 ActionExecutionResult(ok, message = if (ok) null else "Could not create directory")
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         } }
 
         registry.registerAction(
@@ -107,7 +108,7 @@ class AndroidFileFeaturePack : FeaturePack {
                     FieldSchema.Variable("resultVariable", "Store list in variable", true),
                     FieldSchema.Toggle("includeHidden", "Include hidden files"),
                 ),
-                keywords = setOf("folder", "list", "files", "目录列表"), ownerPackId = id,
+                keywords = setOf("folder", "list", "files"), ownerPackId = id,
             )
         ) { feature, ctx -> withContext(Dispatchers.IO) {
             runCatching {
@@ -119,7 +120,7 @@ class AndroidFileFeaturePack : FeaturePack {
                 val output = ConfigValue.ListValue(values)
                 ctx.variables.set(feature.config.string("resultVariable"), output)
                 ActionExecutionResult(true, output)
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         } }
 
         registerExists(registry, FeatureKind.STATE, "file.state.exists")
@@ -146,7 +147,7 @@ class AndroidFileFeaturePack : FeaturePack {
                     .also { if (it) source.deleteRecursively() }
                 else source.copyRecursively(destination, overwrite = feature.config.boolean("overwrite"))
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         } }
     }
 
@@ -156,7 +157,7 @@ class AndroidFileFeaturePack : FeaturePack {
             fields = listOf(
                 FieldSchema.Text("path", "Path", true),
                 FieldSchema.Choice("type", "Type", true, listOf("any", "file", "directory")),
-            ), keywords = setOf("file", "exists", "directory", "文件存在"), ownerPackId = id,
+            ), keywords = setOf("file", "exists", "directory"), ownerPackId = id,
         )
         val evaluator = ConditionEvaluator { feature, ctx ->
             val file = File(feature.config.string("path").resolveVariables(ctx.variables))

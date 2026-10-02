@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
+import com.yagay.yauto.core.model.userText
 
 class AndroidCommunicationFeaturePack(context: Context) : FeaturePack {
     override val id = "android.communication"
@@ -12,16 +13,16 @@ class AndroidCommunicationFeaturePack(context: Context) : FeaturePack {
 
     override fun install(registry: FeatureRegistry) {
         intentAction(registry, "android.phone.dial", "Dial phone number", "Open the system dialer with a number", FeatureCategory.APP,
-            listOf(FieldSchema.Text("number", "Phone number", true)), setOf("dial", "phone", "call", "拨号")) { feature, ctx ->
+            listOf(FieldSchema.Text("number", "Phone number", true)), setOf("dial", "phone", "call")) { feature, ctx ->
             Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(feature.config.string("number").resolveVariables(ctx.variables))}"))
         }
         intentAction(registry, "android.sms.compose", "Compose SMS", "Open the default SMS app with recipient and message prefilled", FeatureCategory.APP,
-            listOf(FieldSchema.Text("number", "Phone number"), FieldSchema.Text("message", "Message", multiline = true)), setOf("sms", "message", "短信")) { feature, ctx ->
+            listOf(FieldSchema.Text("number", "Phone number"), FieldSchema.Text("message", "Message", multiline = true)), setOf("sms", "message")) { feature, ctx ->
             Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${Uri.encode(feature.config.string("number").resolveVariables(ctx.variables))}"))
                 .putExtra("sms_body", feature.config.string("message").resolveVariables(ctx.variables))
         }
         intentAction(registry, "android.email.compose", "Compose email", "Open an email application with recipient, subject and body", FeatureCategory.APP,
-            listOf(FieldSchema.Text("to", "Recipient"), FieldSchema.Text("subject", "Subject"), FieldSchema.Text("body", "Body", multiline = true)), setOf("email", "mail", "邮件")) { feature, ctx ->
+            listOf(FieldSchema.Text("to", "Recipient"), FieldSchema.Text("subject", "Subject"), FieldSchema.Text("body", "Body", multiline = true)), setOf("email", "mail")) { feature, ctx ->
             val recipient = feature.config.string("to").resolveVariables(ctx.variables)
             Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${Uri.encode(recipient)}")).apply {
                 putExtra(Intent.EXTRA_SUBJECT, feature.config.string("subject").resolveVariables(ctx.variables))
@@ -29,7 +30,7 @@ class AndroidCommunicationFeaturePack(context: Context) : FeaturePack {
             }
         }
         intentAction(registry, "android.maps.open", "Open map location", "Open a geo coordinate or search query in a maps application", FeatureCategory.APP,
-            listOf(FieldSchema.Text("query", "Place / query"), FieldSchema.Number("latitude", "Latitude", min = -90.0, max = 90.0), FieldSchema.Number("longitude", "Longitude", min = -180.0, max = 180.0)), setOf("maps", "location", "geo", "地图")) { feature, ctx ->
+            listOf(FieldSchema.Text("query", "Place / query"), FieldSchema.Number("latitude", "Latitude", min = -90.0, max = 90.0), FieldSchema.Number("longitude", "Longitude", min = -180.0, max = 180.0)), setOf("maps", "location", "geo")) { feature, ctx ->
             val query = feature.config.string("query").resolveVariables(ctx.variables)
             val lat = (feature.config["latitude"] as? com.yagay.yauto.core.model.ConfigValue.NumberValue)?.value
             val lon = (feature.config["longitude"] as? com.yagay.yauto.core.model.ConfigValue.NumberValue)?.value
@@ -41,7 +42,7 @@ class AndroidCommunicationFeaturePack(context: Context) : FeaturePack {
             Intent(Intent.ACTION_VIEW, Uri.parse(uri))
         }
         intentAction(registry, "android.settings.open", "Open Android settings", "Open a common Android settings page", FeatureCategory.SYSTEM,
-            listOf(FieldSchema.Choice("page", "Settings page", true, listOf("main", "wifi", "bluetooth", "display", "sound", "location", "apps", "accessibility", "notification_listener"))), setOf("settings", "wifi settings", "系统设置")) { feature, _ ->
+            listOf(FieldSchema.Choice("page", "Settings page", true, listOf("main", "wifi", "bluetooth", "display", "sound", "location", "apps", "accessibility", "notification_listener"))), setOf("settings", "wifi settings")) { feature, _ ->
             val action = when (feature.config.string("page", "main")) {
                 "wifi" -> android.provider.Settings.ACTION_WIFI_SETTINGS
                 "bluetooth" -> android.provider.Settings.ACTION_BLUETOOTH_SETTINGS
@@ -72,9 +73,9 @@ class AndroidCommunicationFeaturePack(context: Context) : FeaturePack {
         ) { feature, ctx ->
             runCatching {
                 val intent = build(feature, ctx).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                if (intent.resolveActivity(context.packageManager) == null) return@runCatching ActionExecutionResult(false, message = "No compatible application found")
+                if (intent.resolveActivity(context.packageManager) == null) return@runCatching ActionExecutionResult(false, message = userText("feature.no_compatible_app", "No compatible application found"))
                 context.startActivity(intent); ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
     }
 }

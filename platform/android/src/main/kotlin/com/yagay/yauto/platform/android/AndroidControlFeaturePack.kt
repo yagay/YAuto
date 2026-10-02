@@ -22,6 +22,7 @@ import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 import kotlin.math.roundToInt
+import com.yagay.yauto.core.model.userText
 
 /**
  * Common Android controls kept separate from the base interaction pack so the whole group can be
@@ -53,7 +54,7 @@ class AndroidControlFeaturePack(
                     FieldSchema.Number("percent", "Volume percent", true, min = 0.0, max = 100.0),
                     FieldSchema.Toggle("showUi", "Show system volume UI"),
                 ),
-                keywords = setOf("volume", "media", "music", "音量"),
+                keywords = setOf("volume", "media", "music"),
                 ownerPackId = id,
             )
         ) { feature, _ ->
@@ -66,7 +67,7 @@ class AndroidControlFeaturePack(
                 val flags = if (feature.config.boolean("showUi")) AudioManager.FLAG_SHOW_UI else 0
                 audio.setStreamVolume(AudioManager.STREAM_MUSIC, value, flags)
                 ActionExecutionResult(true, ConfigValue.NumberValue(percent))
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
@@ -80,7 +81,7 @@ class AndroidControlFeaturePack(
                     FieldSchema.Duration("durationMs", "Duration"),
                     FieldSchema.Number("amplitude", "Amplitude (1-255)", min = 1.0, max = 255.0),
                 ),
-                keywords = setOf("vibrate", "haptic", "震动"),
+                keywords = setOf("vibrate", "haptic"),
                 ownerPackId = id,
             )
         ) { feature, _ ->
@@ -91,7 +92,7 @@ class AndroidControlFeaturePack(
                 val vibrator = context.getSystemService(VibratorManager::class.java).defaultVibrator
                 vibrator.vibrate(VibrationEffect.createOneShot(duration, amplitude))
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
@@ -106,12 +107,12 @@ class AndroidControlFeaturePack(
                     FieldSchema.Number("percent", "Brightness percent", min = 0.0, max = 100.0),
                 ),
                 accessRequirements = setOf(AccessRequirement.WRITE_SETTINGS),
-                keywords = setOf("brightness", "display", "亮度"),
+                keywords = setOf("brightness", "display"),
                 ownerPackId = id,
             )
         ) { feature, _ ->
             if (!Settings.System.canWrite(context)) {
-                return@registerAction ActionExecutionResult(false, message = "Modify system settings access is not granted")
+                return@registerAction ActionExecutionResult(false, message = userText("feature.modify_settings_denied", "Modify system settings access is not granted"))
             }
             runCatching {
                 when (feature.config.string("mode", "manual")) {
@@ -135,7 +136,7 @@ class AndroidControlFeaturePack(
                     }
                 }
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
@@ -193,7 +194,7 @@ class AndroidControlFeaturePack(
                     else -> context.sendBroadcast(intent)
                 }
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
@@ -212,12 +213,12 @@ class AndroidControlFeaturePack(
                     FieldSchema.Toggle("ongoing", "Ongoing / persistent"),
                 ),
                 accessRequirements = setOf(AccessRequirement.POST_NOTIFICATIONS),
-                keywords = setOf("notification", "通知"),
+                keywords = setOf("notification"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->
             if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                return@registerAction ActionExecutionResult(false, message = "Notification permission is not granted")
+                return@registerAction ActionExecutionResult(false, message = userText("feature.notification_permission_denied", "Notification permission is not granted"))
             }
             runCatching {
                 val manager = context.getSystemService(NotificationManager::class.java)
@@ -235,7 +236,7 @@ class AndroidControlFeaturePack(
                 val notificationId = feature.config.long("id", 1001).toInt()
                 manager.notify(notificationId, notification)
                 ActionExecutionResult(true, ConfigValue.NumberValue(notificationId.toDouble()))
-            }.getOrElse { ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", "Operation failed: %s", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
@@ -268,7 +269,7 @@ class AndroidControlFeaturePack(
         ) { feature, ctx ->
             val packageName = feature.config.string("package").resolveVariables(ctx.variables).trim()
             if (!PACKAGE_NAME.matches(packageName)) {
-                return@registerAction ActionExecutionResult(false, message = "Invalid package name")
+                return@registerAction ActionExecutionResult(false, message = userText("feature.invalid_package_name", "Invalid package name"))
             }
             val result = ctx.capabilities.execute(
                 CapabilityRequest(

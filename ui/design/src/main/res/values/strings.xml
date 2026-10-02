@@ -35,7 +35,7 @@
     <string name="home_delete_flow_title">Delete flow?</string>
     <string name="home_delete_flow_message">Delete “%1$s”. The operation will be blocked if it is still referenced by an automation.</string>
     <string name="home_tile_add_automation">Add automation</string>
-    <string name="home_tile_add_automation_subtitle">Trigger → Action → Constraint</string>
+    <string name="home_tile_add_automation_subtitle">Trigger, action and constraint</string>
     <string name="home_tile_automations">Automations</string>
     <string name="home_tile_automations_subtitle">%1$d rules</string>
     <string name="home_tile_flows">Flows / action blocks</string>
@@ -55,13 +55,13 @@
     <string name="home_tile_manual_run_subtitle">Send a test trigger</string>
     <string name="home_capability_overview">Capability overview</string>
     <string name="home_registered_features_format">%1$d registered features</string>
-    <string name="home_add_automation_button">＋ Add automation</string>
+    <string name="home_add_automation_button">Add automation</string>
     <string name="home_no_automations_title">No automations yet</string>
     <string name="home_no_automations_message">Create one with the button above, or import MacroDroid / Tasker / ShortX from Settings.</string>
     <string name="home_trigger_count_format">Triggers %1$d</string>
     <string name="home_state_count_format">States %1$d</string>
     <string name="home_action_count_format">Actions %1$d</string>
-    <string name="home_add_flow_button">＋ Add flow / action block</string>
+    <string name="home_add_flow_button">Add flow / action block</string>
     <string name="home_no_flows_title">No flows yet</string>
     <string name="home_no_flows_message">A flow is a reusable action block that can be called by multiple automations.</string>
     <string name="home_flow_summary_format">Inputs %1$d · Outputs %2$d · Actions %3$d</string>
@@ -175,7 +175,7 @@
     <string name="feature_picker_usage_hint">Use: category → feature → parameters. Favorite common features; used features automatically appear in Recent.</string>
     <string name="feature_picker_recent_subtitle_format">Recently configured features · %1$d items</string>
     <string name="feature_picker_favorites_subtitle_format">Pinned common features · %1$d items</string>
-    <string name="feature_picker_favorite_hint">Tap ⋮ to favorite or unfavorite</string>
+    <string name="feature_picker_favorite_hint">Use More options to add or remove a favorite</string>
     <string name="feature_picker_feature_id_format">Feature ID: %1$s</string>
     <string name="feature_picker_min_api_format">Minimum Android API %1$d</string>
     <string name="feature_picker_no_parameters">This feature has no extra parameters.</string>
@@ -241,4 +241,11 @@
     <string name="implementation_accessibility_con_1">Depends on accessible UI nodes</string>
     <string name="implementation_accessibility_con_2">Some apps hide or custom-render their UI</string>
     <string name="implementation_accessibility_con_3">Capabilities are limited while the screen is off</string>
+    <string name="icon_back">Back</string>
+    <string name="icon_add">Add</string>
+    <string name="icon_more_options">More options</string>
+    <string name="icon_move_up">Move up</string>
+    <string name="icon_move_down">Move down</string>
+    <string name="icon_open_details">Open details</string>
+    <string name="icon_information">Information</string>
 </resources>

@@ -21,7 +21,7 @@ class TimeFeaturePack(private val clock: Clock = Clock.systemDefaultZone()) : Fe
                 FieldSchema.Text("start", "Start (HH:mm)", true),
                 FieldSchema.Text("end", "End (HH:mm)", true),
             ),
-            setOf("time", "schedule", "clock", "时间", "时段"),
+            setOf("time", "schedule", "clock"),
         ) { feature ->
             val start = parseTime(feature.config.string("start"))
             val end = parseTime(feature.config.string("end"))
@@ -37,7 +37,7 @@ class TimeFeaturePack(private val clock: Clock = Clock.systemDefaultZone()) : Fe
             "Day of week",
             "Match ISO weekdays: 1=Monday through 7=Sunday",
             listOf(FieldSchema.Text("days", "Days (comma separated, 1-7)", true)),
-            setOf("weekday", "day", "week", "星期", "周"),
+            setOf("weekday", "day", "week"),
         ) { feature ->
             val days = feature.config.string("days").split(',').mapNotNull { it.trim().toIntOrNull() }.toSet()
             require(days.isNotEmpty() && days.all { it in 1..7 }) { "Days must contain ISO weekday numbers 1-7" }
@@ -53,7 +53,7 @@ class TimeFeaturePack(private val clock: Clock = Clock.systemDefaultZone()) : Fe
                 FieldSchema.Text("start", "Start date (yyyy-MM-dd)", true),
                 FieldSchema.Text("end", "End date (yyyy-MM-dd)", true),
             ),
-            setOf("date", "calendar", "range", "日期"),
+            setOf("date", "calendar", "range"),
         ) { feature ->
             val start = LocalDate.parse(feature.config.string("start"), DateTimeFormatter.ISO_LOCAL_DATE)
             val end = LocalDate.parse(feature.config.string("end"), DateTimeFormatter.ISO_LOCAL_DATE)

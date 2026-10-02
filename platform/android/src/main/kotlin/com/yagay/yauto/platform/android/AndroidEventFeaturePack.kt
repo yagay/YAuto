@@ -52,7 +52,7 @@ class AndroidEventFeaturePack : FeaturePack {
                     FieldSchema.Number("minute", "Minute (0-59)", min = 0.0, max = 59.0),
                     FieldSchema.Text("weekdays", "Weekdays (1=Mon … 7=Sun, comma separated)"),
                 ),
-                keywords = setOf("time", "clock", "minute", "schedule", "时间", "定时"),
+                keywords = setOf("time", "clock", "minute", "schedule"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->
@@ -79,7 +79,7 @@ class AndroidEventFeaturePack : FeaturePack {
                     FieldSchema.Text("textContains", "Text contains"),
                     FieldSchema.Choice("hasText", "Clipboard text", options = listOf("any", "has_text", "empty")),
                 ),
-                keywords = setOf("clipboard", "copy", "剪贴板", "复制"),
+                keywords = setOf("clipboard", "copy"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->
@@ -165,7 +165,7 @@ class AndroidEventFeaturePack : FeaturePack {
                     FieldSchema.Choice("ongoing", "Ongoing notification", options = listOf("any", "only", "exclude")),
                 ),
                 accessRequirements = setOf(AccessRequirement.NOTIFICATION_LISTENER),
-                keywords = setOf("notification", "通知", "message"),
+                keywords = setOf("notification", "message"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->

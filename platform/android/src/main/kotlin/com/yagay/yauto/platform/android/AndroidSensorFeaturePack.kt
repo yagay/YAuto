@@ -22,7 +22,7 @@ class AndroidSensorFeaturePack : FeaturePack {
                     FieldSchema.Number("threshold", "Threshold", true),
                     FieldSchema.Duration("minimumIntervalMs", "Minimum time between matches"),
                 ),
-                keywords = setOf("sensor", "light", "proximity", "accelerometer", "gyroscope", "传感器"),
+                keywords = setOf("sensor", "light", "proximity", "accelerometer", "gyroscope"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->
@@ -45,7 +45,7 @@ class AndroidSensorFeaturePack : FeaturePack {
                     FieldSchema.Number("threshold", "Shake threshold", min = 1.0, max = 40.0),
                     FieldSchema.Duration("cooldownMs", "Minimum time between shakes"),
                 ),
-                keywords = setOf("shake", "accelerometer", "motion", "摇一摇"),
+                keywords = setOf("shake", "accelerometer", "motion"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->

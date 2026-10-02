@@ -35,7 +35,7 @@
     <string name="home_delete_flow_title">删除流程？</string>
     <string name="home_delete_flow_message">删除“%1$s”。仍被自动化引用时会被阻止。</string>
     <string name="home_tile_add_automation">添加自动化</string>
-    <string name="home_tile_add_automation_subtitle">触发 → 动作 → 约束</string>
+    <string name="home_tile_add_automation_subtitle">触发器、动作和约束</string>
     <string name="home_tile_automations">自动化</string>
     <string name="home_tile_automations_subtitle">%1$d 条规则</string>
     <string name="home_tile_flows">流程 / 动作块</string>
@@ -55,13 +55,13 @@
     <string name="home_tile_manual_run_subtitle">发送测试触发器</string>
     <string name="home_capability_overview">能力概览</string>
     <string name="home_registered_features_format">%1$d 个已注册功能</string>
-    <string name="home_add_automation_button">＋ 添加自动化</string>
+    <string name="home_add_automation_button">添加自动化</string>
     <string name="home_no_automations_title">还没有自动化</string>
     <string name="home_no_automations_message">点击上方按钮新建，或在设置页导入 MacroDroid / Tasker / ShortX。</string>
     <string name="home_trigger_count_format">触发 %1$d</string>
     <string name="home_state_count_format">状态 %1$d</string>
     <string name="home_action_count_format">动作 %1$d</string>
-    <string name="home_add_flow_button">＋ 添加流程 / 动作块</string>
+    <string name="home_add_flow_button">添加流程 / 动作块</string>
     <string name="home_no_flows_title">还没有流程</string>
     <string name="home_no_flows_message">流程相当于可复用的动作块，可被多个自动化调用。</string>
     <string name="home_flow_summary_format">输入 %1$d · 输出 %2$d · 动作 %3$d</string>
@@ -175,7 +175,7 @@
     <string name="feature_picker_usage_hint">统一使用：分类 → 功能 → 参数。常用功能可收藏，使用后自动进入最近列表。</string>
     <string name="feature_picker_recent_subtitle_format">最近配置过的功能 · %1$d 项</string>
     <string name="feature_picker_favorites_subtitle_format">固定常用功能 · %1$d 项</string>
-    <string name="feature_picker_favorite_hint">点击 ⋮ 可收藏/取消收藏</string>
+    <string name="feature_picker_favorite_hint">使用“更多选项”添加或取消收藏</string>
     <string name="feature_picker_feature_id_format">功能 ID：%1$s</string>
     <string name="feature_picker_min_api_format">最低 Android API %1$d</string>
     <string name="feature_picker_no_parameters">此功能没有额外参数。</string>
@@ -241,4 +241,11 @@
     <string name="implementation_accessibility_con_1">依赖界面节点可访问性</string>
     <string name="implementation_accessibility_con_2">部分应用会屏蔽或自绘 UI</string>
     <string name="implementation_accessibility_con_3">屏幕关闭时能力有限</string>
+    <string name="icon_back">返回</string>
+    <string name="icon_add">添加</string>
+    <string name="icon_more_options">更多选项</string>
+    <string name="icon_move_up">上移</string>
+    <string name="icon_move_down">下移</string>
+    <string name="icon_open_details">查看详情</string>
+    <string name="icon_information">信息</string>
 </resources>

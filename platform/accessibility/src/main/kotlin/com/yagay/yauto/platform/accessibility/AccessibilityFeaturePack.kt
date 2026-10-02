@@ -10,18 +10,18 @@ class AccessibilityFeaturePack : FeaturePack {
     override val id: String = "accessibility.actions"
 
     override fun install(registry: FeatureRegistry) {
-        action(registry, AccessibilityOperations.CLICK_TEXT, "Click text", "Find visible text in the active window and click the nearest clickable node", listOf(FieldSchema.Text("text", "Text", true), FieldSchema.Toggle("exact", "Exact text match")), setOf("click", "text", "ui", "accessibility", "点击文本"))
-        action(registry, AccessibilityOperations.LONG_CLICK_TEXT, "Long-click text", "Find visible text and perform the nearest supported long-click action", listOf(FieldSchema.Text("text", "Text", true), FieldSchema.Toggle("exact", "Exact text match")), setOf("long click", "long press", "text", "ui", "长按"))
+        action(registry, AccessibilityOperations.CLICK_TEXT, "Click text", "Find visible text in the active window and click the nearest clickable node", listOf(FieldSchema.Text("text", "Text", true), FieldSchema.Toggle("exact", "Exact text match")), setOf("click", "text", "ui", "accessibility"))
+        action(registry, AccessibilityOperations.LONG_CLICK_TEXT, "Long-click text", "Find visible text and perform the nearest supported long-click action", listOf(FieldSchema.Text("text", "Text", true), FieldSchema.Toggle("exact", "Exact text match")), setOf("long click", "long press", "text", "ui"))
         action(registry, AccessibilityOperations.CLICK_VIEW_ID, "Click View ID", "Find a view by resource ID and click the nearest clickable node", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("view id", "resource id", "ui", "accessibility"))
         action(registry, AccessibilityOperations.CLICK_DESCRIPTION, "Click content description", "Find a node by accessibility content description and click it", listOf(FieldSchema.Text("description", "Content description", true), FieldSchema.Toggle("exact", "Exact match")), setOf("content description", "accessibility label", "click", "ui"))
-        action(registry, AccessibilityOperations.INPUT_TEXT, "Input text", "Set text on the currently focused editable accessibility node", listOf(FieldSchema.Text("text", "Text", true, multiline = true)), setOf("input", "type", "text", "accessibility", "输入"))
-        action(registry, AccessibilityOperations.INPUT_TEXT_VIEW_ID, "Set text by View ID", "Set text directly on an editable node found by resource ID", listOf(FieldSchema.Text("viewId", "View ID", true), FieldSchema.Text("text", "Text", true, multiline = true)), setOf("input", "view id", "set text", "ui", "输入"))
+        action(registry, AccessibilityOperations.INPUT_TEXT, "Input text", "Set text on the currently focused editable accessibility node", listOf(FieldSchema.Text("text", "Text", true, multiline = true)), setOf("input", "type", "text", "accessibility"))
+        action(registry, AccessibilityOperations.INPUT_TEXT_VIEW_ID, "Set text by View ID", "Set text directly on an editable node found by resource ID", listOf(FieldSchema.Text("viewId", "View ID", true), FieldSchema.Text("text", "Text", true, multiline = true)), setOf("input", "view id", "set text", "ui"))
         action(registry, AccessibilityOperations.GLOBAL_ACTION, "Global UI action", "Perform an Android accessibility global action", listOf(FieldSchema.Choice("action", "Action", true, listOf("back", "home", "recents", "notifications", "quick_settings", "power_dialog", "lock_screen"))), setOf("back", "home", "recents", "quick settings", "accessibility"))
         action(registry, AccessibilityOperations.SCROLL, "Scroll UI", "Scroll the first suitable scrollable node in the active window", listOf(FieldSchema.Choice("direction", "Direction", true, listOf("forward", "backward", "up", "down", "left", "right"))), setOf("scroll", "page", "ui", "swipe"))
         action(registry, AccessibilityOperations.TAP, "Tap coordinates", "Dispatch a tap gesture at screen coordinates", listOf(FieldSchema.Number("x", "X", true, min = 0.0), FieldSchema.Number("y", "Y", true, min = 0.0), FieldSchema.Duration("durationMs", "Press duration")), setOf("tap", "gesture", "coordinate", "accessibility"))
         action(registry, AccessibilityOperations.SWIPE, "Swipe", "Dispatch a swipe gesture between screen coordinates", listOf(FieldSchema.Number("x1", "Start X", true, min = 0.0), FieldSchema.Number("y1", "Start Y", true, min = 0.0), FieldSchema.Number("x2", "End X", true, min = 0.0), FieldSchema.Number("y2", "End Y", true, min = 0.0), FieldSchema.Duration("durationMs", "Duration")), setOf("swipe", "gesture", "accessibility"))
 
-        condition(registry, "accessibility.condition.text_present", AccessibilityOperations.FIND_TEXT, "Text on screen", "Check whether text/content description is currently visible", listOf(FieldSchema.Text("text", "Text", true), FieldSchema.Toggle("exact", "Exact text match")), setOf("text present", "screen text", "ui", "accessibility", "文字"))
+        condition(registry, "accessibility.condition.text_present", AccessibilityOperations.FIND_TEXT, "Text on screen", "Check whether text/content description is currently visible", listOf(FieldSchema.Text("text", "Text", true), FieldSchema.Toggle("exact", "Exact text match")), setOf("text present", "screen text", "ui", "accessibility"))
         condition(registry, "accessibility.condition.view_id_present", AccessibilityOperations.FIND_VIEW_ID, "View ID on screen", "Check whether a resource ID exists in the active window", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("view id", "resource id", "exists", "ui"))
 
         foregroundEvent(registry, "android.event.app_foreground", "App became foreground")
@@ -32,7 +32,7 @@ class AccessibilityFeaturePack : FeaturePack {
                 "Run whenever Accessibility reports a different foreground package or Activity", FeatureCategory.APP,
                 capabilities = setOf(CapabilityIds.ACCESSIBILITY),
                 fields = listOf(FieldSchema.AppPicker("package", "App / package"), FieldSchema.Text("classContains", "Activity / class contains")),
-                keywords = setOf("foreground", "activity", "window", "app", "前台", "应用切换"), ownerPackId = id,
+                keywords = setOf("foreground", "activity", "window", "app"), ownerPackId = id,
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.window_changed") return@registerEvent false
@@ -49,7 +49,7 @@ class AccessibilityFeaturePack : FeaturePack {
                 FeatureId(typeId), FeatureKind.EVENT, title, "Match application foreground transitions from Accessibility windows", FeatureCategory.APP,
                 capabilities = setOf(CapabilityIds.ACCESSIBILITY),
                 fields = listOf(FieldSchema.AppPicker("package", "App / package", true), FieldSchema.Text("classContains", "Activity / class contains")),
-                keywords = setOf("foreground", "background", "app", "activity", "前台", "后台"), ownerPackId = id,
+                keywords = setOf("foreground", "background", "app", "activity"), ownerPackId = id,
             )
         ) { feature, ctx ->
             ctx.event.typeId == typeId && matchForeground(feature, ctx.event.payload.string("package"), ctx.event.payload.string("class"))
@@ -61,7 +61,7 @@ class AccessibilityFeaturePack : FeaturePack {
             FeatureId(typeId), kind, "App in foreground", "Check the current foreground application reported by Accessibility", FeatureCategory.APP,
             capabilities = setOf(CapabilityIds.ACCESSIBILITY),
             fields = listOf(FieldSchema.AppPicker("package", "App / package", true), FieldSchema.Text("classContains", "Activity / class contains")),
-            keywords = setOf("foreground", "current app", "activity", "前台应用"), ownerPackId = id,
+            keywords = setOf("foreground", "current app", "activity"), ownerPackId = id,
         )
         val evaluator = ConditionEvaluator { feature, _ ->
             val current = AccessibilityRuntimeBridge.currentWindow() ?: return@ConditionEvaluator false

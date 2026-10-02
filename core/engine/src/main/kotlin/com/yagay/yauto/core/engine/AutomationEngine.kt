@@ -53,7 +53,12 @@ class AutomationEngine(
             AutomationPhase.EVENT -> automation.onEvent
             AutomationPhase.EXIT -> automation.onExit
         }
-        trace(executionId, TraceKind.EXECUTION_START, "${automation.name}:$phase", automation)
+        val phaseLabel = when (phase) {
+            AutomationPhase.ENTER -> userText("engine.phase_enter", "Enter")
+            AutomationPhase.EVENT -> userText("engine.phase_event", "Event")
+            AutomationPhase.EXIT -> userText("engine.phase_exit", "Exit")
+        }
+        trace(executionId, TraceKind.EXECUTION_START, userText("engine.execution_start", "Execution started: %s · %s", automation.name, phaseLabel), automation)
 
         return try {
             require(automation.executionPolicy.maxRuntimeMs > 0) { userText("engine.runtime_limit_positive", "Runtime limit must be positive") }
@@ -75,8 +80,8 @@ class AutomationEngine(
             throw cancelled
         } catch (t: Exception) {
             trace(executionId, TraceKind.ERROR, t.stackTraceToString().take(16_000), automation, success = false, level = TraceLevel.ERROR)
-            trace(executionId, TraceKind.EXECUTION_END, "Execution failed: ${t.message}", automation, success = false)
-            EngineResult(false, executionId, variables = variables.snapshot(), error = t.message ?: t::class.simpleName)
+            trace(executionId, TraceKind.EXECUTION_END, userText("engine.execution_failed", "Execution failed: %s", t.message ?: t::class.simpleName.orEmpty()), automation, success = false)
+            EngineResult(false, executionId, variables = variables.snapshot(), error = userText("engine.execution_failed", "Execution failed: %s", t.message ?: t::class.simpleName.orEmpty()))
         }
     }
 
@@ -91,9 +96,9 @@ class AutomationEngine(
         for (node in nodes) {
             currentCoroutineContext().ensureActive()
             val start = System.currentTimeMillis()
-            trace(executionId, TraceKind.NODE_START, node::class.simpleName ?: "node", automation, flow, node.id)
+            trace(executionId, TraceKind.NODE_START, userText("engine.node_start", "Node started"), automation, flow, node.id)
             val signal = executeNode(node, executionId, variables, automation, flow, maxLoopIterations)
-            trace(executionId, TraceKind.NODE_END, node::class.simpleName ?: "node", automation, flow, node.id, success = signal !is Signal.Failure, durationMs = System.currentTimeMillis() - start)
+            trace(executionId, TraceKind.NODE_END, userText("engine.node_end", "Node completed"), automation, flow, node.id, success = signal !is Signal.Failure, durationMs = System.currentTimeMillis() - start)
             if (signal != Signal.Next) return signal
         }
         return Signal.Next
@@ -112,7 +117,7 @@ class AutomationEngine(
                 if (!node.enabled) Signal.Next else {
                     val executor = registry.actionExecutor(node.feature.typeId)
                         ?: return Signal.Failure(userText("engine.unknown_action", "Unknown action: %s", node.feature.typeId))
-                    trace(executionId, TraceKind.ACTION, "Start ${node.feature.typeId}", automation, flow, node.id, node.feature.typeId)
+                    trace(executionId, TraceKind.ACTION, userText("engine.action_start", "Start action: %s", node.feature.typeId), automation, flow, node.id, node.feature.typeId)
                     val result = executor.execute(node.feature, FeatureExecutionContext(executionId, node.id, variables, capabilities, tracer))
                     trace(executionId, TraceKind.ACTION, result.message ?: node.feature.typeId, automation, flow, node.id, node.feature.typeId, result.success)
                     if (result.success) Signal.Next else Signal.Failure(result.message ?: userText("engine.action_failed", "Action failed: %s", node.feature.typeId))
@@ -172,13 +177,13 @@ class AutomationEngine(
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
-                    Signal.Failure(error.message ?: error.javaClass.simpleName)
+                    Signal.Failure(userText("feature.operation_failed", "Operation failed: %s", error.message ?: error.javaClass.simpleName))
                 }
                 val handled = if (primary is Signal.Failure && node.onError.isNotEmpty()) {
                     variables.set("error.message", ConfigValue.StringValue(primary.message))
                     try { executeNodes(node.onError, executionId, variables, automation, flow, maxLoopIterations) }
                     catch (cancelled: CancellationException) { throw cancelled }
-                    catch (error: Exception) { Signal.Failure(error.message ?: error.javaClass.simpleName) }
+                    catch (error: Exception) { Signal.Failure(userText("feature.operation_failed", "Operation failed: %s", error.message ?: error.javaClass.simpleName)) }
                 } else primary
                 val finalSignal = executeNodes(node.finallyActions, executionId, variables, automation, flow, maxLoopIterations)
                 if (finalSignal != Signal.Next) finalSignal else handled
@@ -202,7 +207,7 @@ class AutomationEngine(
                     childInitial[directKey] = value
                 }
                 val childVariables = RuntimeVariables(childInitial)
-                trace(executionId, TraceKind.FLOW, "Call ${target.name}", automation, target, node.id)
+                trace(executionId, TraceKind.FLOW, userText("engine.flow_call", "Call flow: %s", target.name), automation, target, node.id)
                 val flowSignal = withContext(FlowDepth(depth + 1)) {
                     executeNodes(target.actions, executionId, childVariables, automation, target, maxLoopIterations)
                 }
@@ -227,7 +232,7 @@ class AutomationEngine(
         is PredicateNode.Condition -> {
             val evaluator = registry.conditionEvaluator(predicate.feature.typeId) ?: error(userText("engine.unknown_condition", "Unknown condition: %s", predicate.feature.typeId))
             val result = evaluator.evaluate(predicate.feature, FeatureExecutionContext(executionId, nodeId, variables, capabilities, tracer))
-            trace(executionId, TraceKind.CONDITION, "${predicate.feature.typeId} = $result", nodeId = nodeId, featureId = predicate.feature.typeId, success = result)
+            trace(executionId, TraceKind.CONDITION, userText("engine.condition_result", "Condition %s: %s", predicate.feature.typeId, if (result) userText("value.true", "True") else userText("value.false", "False")), nodeId = nodeId, featureId = predicate.feature.typeId, success = result)
             result
         }
     }

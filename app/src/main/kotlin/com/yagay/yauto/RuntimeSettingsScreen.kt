@@ -101,7 +101,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 navigationIcon = {
                     TextButton(onClick = {
                         if (page == RuntimeSettingsPage.OVERVIEW) onBack() else page = RuntimeSettingsPage.OVERVIEW
-                    }) { Text("‹") }
+                    }) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_back), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_back)) }
                 },
             )
         },

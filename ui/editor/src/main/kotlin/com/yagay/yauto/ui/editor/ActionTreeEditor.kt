@@ -66,13 +66,13 @@ fun ActionTreeDialog(
                                         onClick = {
                                             nodes = nodes.toMutableList().apply { add(index - 1, removeAt(index)) }
                                         },
-                                    ) { Text("↑") }
+                                    ) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_arrow_up), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_move_up)) }
                                     TextButton(
                                         enabled = index < nodes.lastIndex,
                                         onClick = {
                                             nodes = nodes.toMutableList().apply { add(index + 1, removeAt(index)) }
                                         },
-                                    ) { Text("↓") }
+                                    ) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_arrow_down), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_move_down)) }
                                     TextButton(onClick = { nodes = nodes.filterNot { it.id == node.id } }) {
                                         Text(stringResource(TextR.string.common_delete))
                                     }

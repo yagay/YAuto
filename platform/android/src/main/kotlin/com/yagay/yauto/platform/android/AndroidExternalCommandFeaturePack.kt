@@ -5,6 +5,7 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 import java.util.UUID
+import com.yagay.yauto.core.model.userText
 
 class ExternalCommandTokenStore(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("yauto_external_commands", Context.MODE_PRIVATE)
@@ -30,7 +31,7 @@ class AndroidExternalCommandFeaturePack(context: Context) : FeaturePack {
                     FieldSchema.Text("name", "Command name"),
                     FieldSchema.Text("payloadContains", "Payload contains"),
                 ),
-                keywords = setOf("command", "external", "adb", "tasker", "broadcast", "外部命令"), ownerPackId = id,
+                keywords = setOf("command", "external", "adb", "tasker", "broadcast"), ownerPackId = id,
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.external_command") return@registerEvent false
@@ -63,7 +64,7 @@ class AndroidExternalCommandFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, ctx ->
             val token = feature.config.string("token").resolveVariables(ctx.variables)
-            if (token.length < 16) ActionExecutionResult(false, message = "Token must be at least 16 characters")
+            if (token.length < 16) ActionExecutionResult(false, message = userText("feature.token_too_short", "Token must be at least 16 characters"))
             else { tokens.set(token); ActionExecutionResult(true) }
         }
 

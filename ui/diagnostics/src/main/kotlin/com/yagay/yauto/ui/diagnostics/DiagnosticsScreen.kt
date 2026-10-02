@@ -56,7 +56,7 @@ fun DiagnosticsScreen(
                             is DiagnosticPage.Source -> DiagnosticPage.Overview
                             is DiagnosticPage.Record -> DiagnosticPage.Source(current.source)
                         }
-                    }) { Text("‹") }
+                    }) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_back), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_back)) }
                 },
                 actions = {
                     if (page == DiagnosticPage.Overview) {

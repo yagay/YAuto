@@ -3,6 +3,7 @@ package com.yagay.yauto.platform.root
 import com.yagay.yauto.core.capability.*
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 
 class RootBackend(
     private val shell: RootShell,
@@ -17,7 +18,7 @@ class RootBackend(
 
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
         val command = if (request.capability == CapabilityIds.SYSTEM_UI) SystemOperations.shellCommand(request.operationId).orEmpty() else request.payload.string("command")
-        if (command.isBlank()) return CapabilityResult(false, message = "Shell command is empty")
+        if (command.isBlank()) return CapabilityResult(false, message = userText("capability.shell_empty", "Shell command is empty"))
         val out = shell.run(command)
         return CapabilityResult(
             success = out.exitCode == 0 && !out.timedOut,

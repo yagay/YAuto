@@ -6,6 +6,7 @@ import com.yagay.yauto.core.capability.SystemOperations
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
+import com.yagay.yauto.core.model.userText
 
 class SystemFeaturePack : FeaturePack {
     override val id: String = "standard.system"
@@ -39,7 +40,7 @@ class SystemFeaturePack : FeaturePack {
             )
         ) { feature, ctx ->
             val command = feature.config.string("command").resolveVariables(ctx.variables)
-            if (command.isBlank()) return@registerAction ActionExecutionResult(false, message = "Shell command is empty")
+            if (command.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("capability.shell_empty", "Shell command is empty"))
             val result = ctx.executeCapability(
                 featureId = feature.typeId,
                 request = CapabilityRequest(

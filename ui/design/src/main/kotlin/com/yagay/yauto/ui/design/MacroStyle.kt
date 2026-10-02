@@ -60,7 +60,7 @@ fun MacroSection(
             trailing()
             if (onAdd != null) {
                 TextButton(onClick = onAdd, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
-                    Text("＋", color = Color.White, style = MaterialTheme.typography.headlineSmall)
+                    androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_add), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_add), tint = Color.White)
                 }
             }
         }
@@ -99,7 +99,7 @@ fun MacroItemRow(
                 }
             }
             if (onMenu != null) {
-                TextButton(onClick = onMenu, modifier = Modifier.align(Alignment.CenterVertically)) { Text("⋮") }
+                IconButton(onClick = onMenu, modifier = Modifier.align(Alignment.CenterVertically)) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_more), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_more_options)) }
             }
         }
     }
@@ -122,7 +122,7 @@ fun MacroHomeTile(
             Modifier.fillMaxSize().padding(12.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text("＋", color = Color.White.copy(alpha = .9f), style = MaterialTheme.typography.headlineMedium)
+            androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_add), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_add), tint = Color.White.copy(alpha = .9f))
             Column {
                 Text(title, color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleSmall)
                 subtitle?.takeIf { it.isNotBlank() }?.let {
