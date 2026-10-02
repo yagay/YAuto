@@ -62,6 +62,7 @@ class AppGraph(context: Context) {
         features.install(AndroidOrganizerFeaturePack(appContext))
         features.install(AndroidDeviceDataFeaturePack(appContext))
         features.install(AndroidDeviceUtilityFeaturePack(appContext))
+        features.install(AndroidResourceStateFeaturePack(appContext))
         features.install(AndroidConnectivityFeaturePack(appContext))
         features.install(AndroidNetworkUtilityFeaturePack())
         features.install(AndroidNetworkProfileEventFeaturePack())
