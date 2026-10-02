@@ -23,9 +23,7 @@ class PrivilegedUtilityFeaturePack : FeaturePack {
                 keywords = setOf("wake", "screen on", "display", "keyevent"),
                 ownerPackId = id,
             )
-        ) { feature, ctx ->
-            executeShell(feature, ctx, "input keyevent 224")
-        }
+        ) { feature, ctx -> executeShell(feature, ctx, "input keyevent 224") }
 
         registry.registerAction(
             FeatureDescriptor(
@@ -115,7 +113,7 @@ class PrivilegedUtilityFeaturePack : FeaturePack {
             val parent = path.substringBeforeLast('/', "/sdcard/Download/YAuto")
             val bitrateArg = bitrateMbps?.let { " --bit-rate ${(it * 1_000_000.0).toLong()}" }.orEmpty()
             val command = "mkdir -p ${shellQuote(parent)} && screenrecord --time-limit $duration$bitrateArg ${shellQuote(path)}"
-            val result = executeShellRaw(feature, ctx, command)
+            val result = executeShellRaw(feature, ctx, command, timeoutMs = duration * 1_000L + SCREEN_RECORD_FINISH_GRACE_MS)
             if (!result.success) return@registerAction result
             val output = ConfigValue.StringValue(path)
             feature.config.string("resultVariable").trim().takeIf { it.isNotEmpty() }?.let { ctx.variables.set(it, output) }
@@ -133,13 +131,18 @@ class PrivilegedUtilityFeaturePack : FeaturePack {
         feature: com.yagay.yauto.core.model.FeatureRef,
         ctx: FeatureExecutionContext,
         command: String,
+        timeoutMs: Long? = null,
     ): ActionExecutionResult {
+        val payload = buildMap<String, ConfigValue> {
+            put("command", ConfigValue.StringValue(command))
+            timeoutMs?.let { put("timeoutMs", ConfigValue.NumberValue(it.toDouble())) }
+        }
         val result = ctx.executeCapability(
             featureId = feature.typeId,
             request = CapabilityRequest(
                 CapabilityIds.PRIVILEGED_SHELL,
                 feature.typeId,
-                mapOf("command" to ConfigValue.StringValue(command)),
+                payload,
                 preferredBackendId = feature.preferredBackendId(),
             ),
         )
@@ -173,6 +176,7 @@ class PrivilegedUtilityFeaturePack : FeaturePack {
     private fun shellQuote(value: String): String = "'" + value.replace("'", "'\\''") + "'"
 
     private companion object {
+        const val SCREEN_RECORD_FINISH_GRACE_MS = 15_000L
         val KEY_CODES = mapOf(
             "back" to 4,
             "home" to 3,
