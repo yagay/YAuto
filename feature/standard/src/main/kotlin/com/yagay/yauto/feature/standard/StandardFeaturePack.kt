@@ -9,6 +9,7 @@ object StandardFeaturePacks {
         DataFeaturePack(),
         TimeFeaturePack(),
         PrivilegedAndroidFeaturePack(),
+        PrivilegedUtilityFeaturePack(),
         SystemFeaturePack(),
         CompatibilityFeaturePack(),
     )
