@@ -27,23 +27,48 @@
 
     <string name="feature_android_state_network_profile_title">Active network</string>
     <string name="feature_android_state_network_profile_description">Match the active network transport, internet validation and metered state</string>
+    <string name="feature_android_state_network_profile_field_connected">Connected</string>
+    <string name="feature_android_state_network_profile_field_transport">Transport</string>
+    <string name="feature_android_state_network_profile_field_transport_option_any">Any</string>
+    <string name="feature_android_state_network_profile_field_transport_option_wifi">Wi-Fi</string>
+    <string name="feature_android_state_network_profile_field_transport_option_cellular">Cellular</string>
+    <string name="feature_android_state_network_profile_field_transport_option_ethernet">Ethernet</string>
+    <string name="feature_android_state_network_profile_field_transport_option_vpn">VPN</string>
+    <string name="feature_android_state_network_profile_field_validated">Internet validation</string>
+    <string name="feature_android_state_network_profile_field_validated_option_any">Any</string>
+    <string name="feature_android_state_network_profile_field_validated_option_yes">Yes</string>
+    <string name="feature_android_state_network_profile_field_validated_option_no">No</string>
+    <string name="feature_android_state_network_profile_field_metered">Metered network</string>
+    <string name="feature_android_state_network_profile_field_metered_option_any">Any</string>
+    <string name="feature_android_state_network_profile_field_metered_option_yes">Yes</string>
+    <string name="feature_android_state_network_profile_field_metered_option_no">No</string>
+
     <string name="feature_android_condition_network_profile_title">Active network</string>
     <string name="feature_android_condition_network_profile_description">Match the active network transport, internet validation and metered state</string>
+    <string name="feature_android_condition_network_profile_field_connected">Connected</string>
+    <string name="feature_android_condition_network_profile_field_transport">Transport</string>
+    <string name="feature_android_condition_network_profile_field_transport_option_any">Any</string>
+    <string name="feature_android_condition_network_profile_field_transport_option_wifi">Wi-Fi</string>
+    <string name="feature_android_condition_network_profile_field_transport_option_cellular">Cellular</string>
+    <string name="feature_android_condition_network_profile_field_transport_option_ethernet">Ethernet</string>
+    <string name="feature_android_condition_network_profile_field_transport_option_vpn">VPN</string>
+    <string name="feature_android_condition_network_profile_field_validated">Internet validation</string>
+    <string name="feature_android_condition_network_profile_field_validated_option_any">Any</string>
+    <string name="feature_android_condition_network_profile_field_validated_option_yes">Yes</string>
+    <string name="feature_android_condition_network_profile_field_validated_option_no">No</string>
+    <string name="feature_android_condition_network_profile_field_metered">Metered network</string>
+    <string name="feature_android_condition_network_profile_field_metered_option_any">Any</string>
+    <string name="feature_android_condition_network_profile_field_metered_option_yes">Yes</string>
+    <string name="feature_android_condition_network_profile_field_metered_option_no">No</string>
 
     <string name="feature_android_state_bluetooth_audio_device_title">Bluetooth audio device</string>
     <string name="feature_android_state_bluetooth_audio_device_description">Match a currently connected Bluetooth audio route by name or address</string>
+    <string name="feature_android_state_bluetooth_audio_device_field_connected">Connected</string>
+    <string name="feature_android_state_bluetooth_audio_device_field_namecontains">Device name contains</string>
+    <string name="feature_android_state_bluetooth_audio_device_field_address">Device address exact</string>
     <string name="feature_android_condition_bluetooth_audio_device_title">Bluetooth audio device</string>
     <string name="feature_android_condition_bluetooth_audio_device_description">Match a currently connected Bluetooth audio route by name or address</string>
-
-    <string name="feature_phrase_connected">Connected</string>
-    <string name="feature_phrase_transport">Transport</string>
-    <string name="feature_phrase_internet_validation">Internet validation</string>
-    <string name="feature_phrase_metered_network">Metered network</string>
-    <string name="feature_phrase_device_address_exact">Device address exact</string>
-    <string name="feature_phrase_minimum_signal_dbm">Minimum signal (dBm)</string>
-    <string name="feature_phrase_maximum_signal_dbm">Maximum signal (dBm)</string>
-    <string name="feature_phrase_cellular">Cellular</string>
-    <string name="feature_phrase_ethernet">Ethernet</string>
-    <string name="feature_phrase_yes">Yes</string>
-    <string name="feature_phrase_no">No</string>
+    <string name="feature_android_condition_bluetooth_audio_device_field_connected">Connected</string>
+    <string name="feature_android_condition_bluetooth_audio_device_field_namecontains">Device name contains</string>
+    <string name="feature_android_condition_bluetooth_audio_device_field_address">Device address exact</string>
 </resources>
