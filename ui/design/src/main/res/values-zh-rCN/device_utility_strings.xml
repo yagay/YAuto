@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_android_clipboard_get_title">读取剪贴板文本</string>
-    <string name="feature_android_clipboard_get_description">在 Android 允许访问剪贴板时读取第一项文本并保存到变量</string>
     <string name="feature_android_clipboard_get_field_resultvariable">保存文本到变量</string>
 
     <string name="feature_android_clipboard_clear_title">清空剪贴板</string>
