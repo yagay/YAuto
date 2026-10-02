@@ -6,11 +6,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.model.*
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.ui.design.*
+import com.yagay.yauto.ui.design.R as TextR
 import java.util.UUID
 
 private enum class FlowParamSide { INPUT, OUTPUT }
@@ -37,22 +38,27 @@ fun MacroFlowEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (initial == null) "添加流程 / 动作块" else "编辑流程 / 动作块") },
+                title = {
+                    Text(stringResource(if (initial == null) TextR.string.flow_add_title else TextR.string.flow_edit_title))
+                },
                 navigationIcon = { TextButton(onClick = onBack) { Text("‹") } },
                 actions = {
-                    TextButton(enabled = name.isNotBlank(), onClick = {
-                        onSave(
-                            Flow(
-                                id = initial?.id ?: FlowId(UUID.randomUUID().toString()),
-                                name = name.trim(),
-                                inputs = inputs,
-                                outputs = outputs,
-                                actions = actions,
-                                description = description.trim().ifBlank { null },
-                                source = initial?.source,
+                    TextButton(
+                        enabled = name.isNotBlank(),
+                        onClick = {
+                            onSave(
+                                Flow(
+                                    id = initial?.id ?: FlowId(UUID.randomUUID().toString()),
+                                    name = name.trim(),
+                                    inputs = inputs,
+                                    outputs = outputs,
+                                    actions = actions,
+                                    description = description.trim().ifBlank { null },
+                                    source = initial?.source,
+                                )
                             )
-                        )
-                    }) { Text("保存") }
+                        },
+                    ) { Text(stringResource(TextR.string.common_save)) }
                 },
             )
         }
@@ -63,19 +69,39 @@ fun MacroFlowEditorScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item {
-                OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("流程名称") }, singleLine = true)
+                OutlinedTextField(
+                    name,
+                    { name = it },
+                    Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(TextR.string.flow_name)) },
+                    singleLine = true,
+                )
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(description, { description = it }, Modifier.fillMaxWidth(), label = { Text("说明") }, minLines = 2)
+                OutlinedTextField(
+                    description,
+                    { description = it },
+                    Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(TextR.string.flow_description)) },
+                    minLines = 2,
+                )
             }
             item {
-                MacroSection("输入参数", MacroPalette.Flow, count = inputs.size, subtitle = "调用流程时传入，替代 %par1 / %par2", onAdd = {
-                    paramEdit = Triple(FlowParamSide.INPUT, null, null)
-                }) {
-                    if (inputs.isEmpty()) FlowEmpty("没有输入参数")
+                MacroSection(
+                    stringResource(TextR.string.flow_inputs),
+                    MacroPalette.Flow,
+                    count = inputs.size,
+                    subtitle = stringResource(TextR.string.flow_inputs_subtitle),
+                    onAdd = { paramEdit = Triple(FlowParamSide.INPUT, null, null) },
+                ) {
+                    if (inputs.isEmpty()) FlowEmpty(stringResource(TextR.string.flow_no_inputs))
                     inputs.forEachIndexed { index, parameter ->
                         MacroItemRow(
                             title = parameter.name,
-                            subtitle = "${parameter.type}${if (parameter.required) " · 必填" else ""}${defaultLabel(parameter)}",
+                            subtitle = buildString {
+                                append(parameter.type.name)
+                                if (parameter.required) append(stringResource(TextR.string.flow_parameter_required_suffix))
+                                append(defaultLabel(parameter))
+                            },
                             accent = MacroPalette.Flow,
                             onClick = { paramEdit = Triple(FlowParamSide.INPUT, index, parameter) },
                             onMenu = { inputs = inputs.filterIndexed { i, _ -> i != index } },
@@ -85,33 +111,47 @@ fun MacroFlowEditorScreen(
             }
             item {
                 MacroSection(
-                    "动作",
+                    stringResource(TextR.string.flow_actions),
                     MacroPalette.Action,
                     count = actions.size,
-                    subtitle = "与自动化共用同一功能目录",
+                    subtitle = stringResource(TextR.string.flow_actions_subtitle),
                     onAdd = { picker = null to null },
-                    trailing = { TextButton(onClick = { tree = true }) { Text("结构", color = androidx.compose.ui.graphics.Color.White) } },
+                    trailing = {
+                        TextButton(onClick = { tree = true }) {
+                            Text(stringResource(TextR.string.flow_structure), color = androidx.compose.ui.graphics.Color.White)
+                        }
+                    },
                 ) {
-                    if (actions.isEmpty()) FlowEmpty("点击 ＋ 添加动作")
+                    if (actions.isEmpty()) FlowEmpty(stringResource(TextR.string.flow_add_action_hint))
                     actions.forEachIndexed { index, node ->
                         val feature = (node as? ActionNode.Action)?.feature
                         MacroItemRow(
-                            title = if (feature != null) descriptors.firstOrNull { it.id.value == feature.typeId }?.title ?: feature.typeId else flowNodeTitle(node, flows),
-                            subtitle = feature?.config?.entries?.filterNot { it.key.startsWith("source.") }?.take(3)?.joinToString(" · ") { "${it.key}=${flowValueText(it.value)}" },
-                            accent = MacroPalette.Action,
-                            onClick = {
-                                if (feature != null) picker = index to feature else tree = true
+                            title = if (feature != null) {
+                                descriptors.firstOrNull { it.id.value == feature.typeId }?.let { localizedFeatureTitle(it) }
+                                    ?: feature.typeId
+                            } else {
+                                flowNodeTitle(node, flows)
                             },
+                            subtitle = feature?.config?.entries
+                                ?.filterNot { it.key.startsWith("source.") }
+                                ?.take(3)
+                                ?.joinToString(" · ") { "${it.key}=${flowValueText(it.value)}" },
+                            accent = MacroPalette.Action,
+                            onClick = { if (feature != null) picker = index to feature else tree = true },
                             onMenu = { actionMenu = index },
                         )
                     }
                 }
             }
             item {
-                MacroSection("输出参数", MacroPalette.Constraint, count = outputs.size, subtitle = "调用者可按名称读取返回数据", onAdd = {
-                    paramEdit = Triple(FlowParamSide.OUTPUT, null, null)
-                }) {
-                    if (outputs.isEmpty()) FlowEmpty("没有输出参数")
+                MacroSection(
+                    stringResource(TextR.string.flow_outputs),
+                    MacroPalette.Constraint,
+                    count = outputs.size,
+                    subtitle = stringResource(TextR.string.flow_outputs_subtitle),
+                    onAdd = { paramEdit = Triple(FlowParamSide.OUTPUT, null, null) },
+                ) {
+                    if (outputs.isEmpty()) FlowEmpty(stringResource(TextR.string.flow_no_outputs))
                     outputs.forEachIndexed { index, parameter ->
                         MacroItemRow(
                             title = parameter.name,
@@ -137,7 +177,8 @@ fun MacroFlowEditorScreen(
                     actions + ActionNode.Action(NodeId(UUID.randomUUID().toString()), selected)
                 } else actions.toMutableList().apply {
                     val old = this[index] as? ActionNode.Action
-                    this[index] = old?.copy(feature = selected) ?: ActionNode.Action(NodeId(UUID.randomUUID().toString()), selected)
+                    this[index] = old?.copy(feature = selected)
+                        ?: ActionNode.Action(NodeId(UUID.randomUUID().toString()), selected)
                 }
                 picker = null
             },
@@ -146,18 +187,23 @@ fun MacroFlowEditorScreen(
 
     if (tree) {
         ActionTreeDialog(
-            title = "流程动作结构",
+            title = stringResource(TextR.string.flow_action_tree_title),
             initial = actions,
             descriptors = descriptors,
             flows = flows,
             onDismiss = { tree = false },
-            onSave = { actions = it; tree = false },
+            onSave = {
+                actions = it
+                tree = false
+            },
         )
     }
 
     paramEdit?.let { (side, index, initialParam) ->
         FlowParameterDialog(
-            title = if (side == FlowParamSide.INPUT) "输入参数" else "输出参数",
+            title = stringResource(
+                if (side == FlowParamSide.INPUT) TextR.string.flow_input_parameter else TextR.string.flow_output_parameter
+            ),
             initial = initialParam,
             allowDefault = side == FlowParamSide.INPUT,
             onDismiss = { paramEdit = null },
@@ -172,16 +218,35 @@ fun MacroFlowEditorScreen(
     actionMenu?.let { index ->
         AlertDialog(
             onDismissRequest = { actionMenu = null },
-            title = { Text("动作操作") },
+            title = { Text(stringResource(TextR.string.flow_action_menu_title)) },
             text = {
                 Column {
-                    TextButton(enabled = index > 0, onClick = { actions = actions.moveFlowItem(index, index - 1); actionMenu = null }) { Text("上移") }
-                    TextButton(enabled = index < actions.lastIndex, onClick = { actions = actions.moveFlowItem(index, index + 1); actionMenu = null }) { Text("下移") }
-                    TextButton(onClick = { actions = actions.filterIndexed { i, _ -> i != index }; actionMenu = null }) { Text("删除") }
+                    TextButton(
+                        enabled = index > 0,
+                        onClick = {
+                            actions = actions.moveFlowItem(index, index - 1)
+                            actionMenu = null
+                        },
+                    ) { Text(stringResource(TextR.string.flow_move_up)) }
+                    TextButton(
+                        enabled = index < actions.lastIndex,
+                        onClick = {
+                            actions = actions.moveFlowItem(index, index + 1)
+                            actionMenu = null
+                        },
+                    ) { Text(stringResource(TextR.string.flow_move_down)) }
+                    TextButton(
+                        onClick = {
+                            actions = actions.filterIndexed { i, _ -> i != index }
+                            actionMenu = null
+                        },
+                    ) { Text(stringResource(TextR.string.common_delete)) }
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { actionMenu = null }) { Text("取消") } },
+            dismissButton = {
+                TextButton(onClick = { actionMenu = null }) { Text(stringResource(TextR.string.common_cancel)) }
+            },
         )
     }
 }
@@ -197,32 +262,75 @@ private fun FlowParameterDialog(
     var name by remember(initial?.name) { mutableStateOf(initial?.name.orEmpty()) }
     var type by remember(initial?.name) { mutableStateOf(initial?.type ?: ValueType.STRING) }
     var required by remember(initial?.name) { mutableStateOf(initial?.required ?: false) }
-    var default by remember(initial?.name) { mutableStateOf(initial?.defaultValue?.let(::flowValueText).orEmpty()) }
+    var default by remember(initial?.name) {
+        mutableStateOf(initial?.defaultValue?.let(::flowValueText).orEmpty())
+    }
     var typeMenu by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("名称") }, singleLine = true)
+                OutlinedTextField(
+                    name,
+                    { name = it },
+                    Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(TextR.string.flow_parameter_name)) },
+                    singleLine = true,
+                )
                 Box {
-                    OutlinedButton(onClick = { typeMenu = true }, modifier = Modifier.fillMaxWidth()) { Text("类型：${type.name}") }
+                    OutlinedButton(onClick = { typeMenu = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(TextR.string.flow_parameter_type_format, type.name))
+                    }
                     DropdownMenu(typeMenu, { typeMenu = false }) {
-                        ValueType.entries.forEach { item -> DropdownMenuItem({ Text(item.name) }, onClick = { type = item; typeMenu = false }) }
+                        ValueType.entries.forEach { item ->
+                            DropdownMenuItem(
+                                text = { Text(item.name) },
+                                onClick = {
+                                    type = item
+                                    typeMenu = false
+                                },
+                            )
+                        }
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("必填", Modifier.weight(1f)); Switch(required, { required = it })
+                    Text(stringResource(TextR.string.flow_parameter_required), Modifier.weight(1f))
+                    Switch(required, { required = it })
                 }
-                if (allowDefault) OutlinedTextField(default, { default = it }, Modifier.fillMaxWidth(), label = { Text("默认值") })
+                if (allowDefault) {
+                    OutlinedTextField(
+                        default,
+                        { default = it },
+                        Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(TextR.string.flow_parameter_default)) },
+                    )
+                }
             }
         },
         confirmButton = {
-            TextButton(enabled = name.isNotBlank(), onClick = {
-                onSave(FlowParameter(name.trim(), type, required, if (allowDefault && default.isNotEmpty()) ConfigValue.StringValue(default) else ConfigValue.NullValue))
-            }) { Text("确定") }
+            TextButton(
+                enabled = name.isNotBlank(),
+                onClick = {
+                    onSave(
+                        FlowParameter(
+                            name.trim(),
+                            type,
+                            required,
+                            if (allowDefault && default.isNotEmpty()) {
+                                ConfigValue.StringValue(default)
+                            } else {
+                                ConfigValue.NullValue
+                            },
+                        )
+                    )
+                },
+            ) { Text(stringResource(TextR.string.common_confirm)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(TextR.string.common_cancel)) }
+        },
     )
 }
 
@@ -241,24 +349,29 @@ private fun <T> List<T>.moveFlowItem(from: Int, to: Int): List<T> {
     return toMutableList().apply { add(to, removeAt(from)) }
 }
 
+@Composable
 private fun defaultLabel(parameter: FlowParameter): String = when (parameter.defaultValue) {
     ConfigValue.NullValue -> ""
-    else -> " · 默认 ${flowValueText(parameter.defaultValue)}"
+    else -> stringResource(TextR.string.flow_default_suffix_format, flowValueText(parameter.defaultValue))
 }
 
+@Composable
 private fun flowNodeTitle(node: ActionNode, flows: List<Flow>): String = when (node) {
     is ActionNode.Action -> node.feature.typeId
-    is ActionNode.If -> "条件分支"
-    is ActionNode.Switch -> "多路分支"
-    is ActionNode.Repeat -> "重复 ${node.times} 次"
-    is ActionNode.While -> "条件循环"
-    is ActionNode.ForEach -> "遍历列表"
-    is ActionNode.Parallel -> "并行分支"
-    is ActionNode.Try -> "尝试 / 捕获"
-    is ActionNode.CallFlow -> "调用流程：${flows.firstOrNull { it.id == node.flowId }?.name ?: node.flowId.value}"
-    is ActionNode.Return -> "返回"
-    is ActionNode.Break -> "退出循环"
-    is ActionNode.Continue -> "继续循环"
+    is ActionNode.If -> stringResource(TextR.string.node_if)
+    is ActionNode.Switch -> stringResource(TextR.string.node_switch)
+    is ActionNode.Repeat -> stringResource(TextR.string.node_repeat_format, node.times)
+    is ActionNode.While -> stringResource(TextR.string.node_while)
+    is ActionNode.ForEach -> stringResource(TextR.string.node_foreach)
+    is ActionNode.Parallel -> stringResource(TextR.string.node_parallel)
+    is ActionNode.Try -> stringResource(TextR.string.node_try)
+    is ActionNode.CallFlow -> stringResource(
+        TextR.string.node_call_flow_format,
+        flows.firstOrNull { it.id == node.flowId }?.name ?: node.flowId.value,
+    )
+    is ActionNode.Return -> stringResource(TextR.string.node_return)
+    is ActionNode.Break -> stringResource(TextR.string.node_break)
+    is ActionNode.Continue -> stringResource(TextR.string.node_continue)
 }
 
 private fun flowValueText(value: ConfigValue): String = when (value) {
