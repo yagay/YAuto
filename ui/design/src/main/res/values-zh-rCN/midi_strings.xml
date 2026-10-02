@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_midi_devices_query_title">获取 MIDI 设备</string>
+    <string name="feature_android_midi_devices_query_description">保存当前可用的 Android MIDI 设备及其输入/输出端口</string>
+    <string name="feature_android_midi_devices_query_field_namecontains">设备名称包含</string>
+    <string name="feature_android_midi_devices_query_field_manufacturercontains">制造商包含</string>
+    <string name="feature_android_midi_devices_query_field_productcontains">产品名称包含</string>
+    <string name="feature_android_midi_devices_query_field_resultvariable">保存 MIDI 设备列表到变量</string>
+
+    <string name="feature_android_midi_send_title">发送 MIDI 字节</string>
+    <string name="feature_android_midi_send_description">将十六进制 MIDI 字节发送到所选 Android MIDI 设备的输入端口</string>
+    <string name="feature_android_midi_send_field_deviceid">MIDI 设备 ID</string>
+    <string name="feature_android_midi_send_field_inputport">输入端口编号</string>
+    <string name="feature_android_midi_send_field_hex">十六进制 MIDI 字节</string>
+
+    <string name="feature_android_state_midi_device_present_title">MIDI 设备存在</string>
+    <string name="feature_android_state_midi_device_present_description">检查当前可用的 Android MIDI 设备是否符合身份筛选条件</string>
+    <string name="feature_android_condition_midi_device_present_title">MIDI 设备存在</string>
+    <string name="feature_android_condition_midi_device_present_description">检查当前可用的 Android MIDI 设备是否符合身份筛选条件</string>
+    <string name="feature_android_state_midi_device_present_field_namecontains">设备名称包含</string>
+    <string name="feature_android_state_midi_device_present_field_manufacturercontains">制造商包含</string>
+    <string name="feature_android_state_midi_device_present_field_productcontains">产品名称包含</string>
+    <string name="feature_android_state_midi_device_present_field_value">存在匹配项</string>
+    <string name="feature_android_condition_midi_device_present_field_namecontains">设备名称包含</string>
+    <string name="feature_android_condition_midi_device_present_field_manufacturercontains">制造商包含</string>
+    <string name="feature_android_condition_midi_device_present_field_productcontains">产品名称包含</string>
+    <string name="feature_android_condition_midi_device_present_field_value">存在匹配项</string>
+
+    <string name="feature_android_event_midi_device_added_title">MIDI 设备已添加</string>
+    <string name="feature_android_event_midi_device_added_description">Android 报告此 MIDI 设备生命周期事件且设备符合筛选条件时触发</string>
+    <string name="feature_android_event_midi_device_removed_title">MIDI 设备已移除</string>
+    <string name="feature_android_event_midi_device_removed_description">Android 报告此 MIDI 设备生命周期事件且设备符合筛选条件时触发</string>
+    <string name="feature_android_event_midi_device_status_title">MIDI 设备状态变化</string>
+    <string name="feature_android_event_midi_device_status_description">Android 报告此 MIDI 设备生命周期事件且设备符合筛选条件时触发</string>
+    <string name="feature_android_event_midi_device_added_field_namecontains">设备名称包含</string>
+    <string name="feature_android_event_midi_device_added_field_manufacturercontains">制造商包含</string>
+    <string name="feature_android_event_midi_device_added_field_productcontains">产品名称包含</string>
+    <string name="feature_android_event_midi_device_removed_field_namecontains">设备名称包含</string>
+    <string name="feature_android_event_midi_device_removed_field_manufacturercontains">制造商包含</string>
+    <string name="feature_android_event_midi_device_removed_field_productcontains">产品名称包含</string>
+    <string name="feature_android_event_midi_device_status_field_namecontains">设备名称包含</string>
+    <string name="feature_android_event_midi_device_status_field_manufacturercontains">制造商包含</string>
+    <string name="feature_android_event_midi_device_status_field_productcontains">产品名称包含</string>
+
+    <string name="runtime_feature_midi_device_id_invalid">MIDI 设备 ID 无效</string>
+    <string name="runtime_feature_midi_port_invalid">MIDI 输入端口编号无效</string>
+    <string name="runtime_feature_midi_hex_invalid">MIDI 数据必须包含偶数个十六进制数字</string>
+    <string name="runtime_feature_midi_hex_size_invalid">MIDI 数据必须包含 1 到 %1$d 个字节</string>
+    <string name="runtime_feature_midi_device_not_found">MIDI 设备 %1$d 当前不可用</string>
+    <string name="runtime_feature_midi_open_failed">无法打开 MIDI 设备 %1$d</string>
+    <string name="runtime_feature_midi_port_open_failed">无法打开 MIDI 输入端口 %1$d</string>
+</resources>
