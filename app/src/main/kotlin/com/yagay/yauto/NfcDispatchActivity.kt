@@ -37,10 +37,19 @@ class NfcDispatchActivity : Activity() {
             return
         }
         AutomationRuntimeService.start(this)
-        val graph = (application as YAutoApplication).graph
+        val graph = runCatching { (application as YAutoApplication).graph }
+            .onFailure { StartupFailureRecorder.record(this, "nfc-dispatch:graph", it) }
+            .getOrNull()
+        if (graph == null) {
+            finish()
+            return
+        }
         scope.launch {
             try {
                 graph.runtime.dispatch(event)
+            } catch (error: Throwable) {
+                if (error is VirtualMachineError || error is ThreadDeath) throw error
+                StartupFailureRecorder.record(this@NfcDispatchActivity, "nfc-dispatch:runtime", error)
             } finally {
                 finish()
             }
