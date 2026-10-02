@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_data_json_parse_title">Parse JSON</string>
+    <string name="feature_data_json_parse_description">Parse JSON text into a structured YAuto variable</string>
+    <string name="feature_data_json_parse_field_text">JSON text</string>
+    <string name="feature_data_json_parse_field_resultvariable">Store parsed value in variable</string>
+
+    <string name="feature_data_json_stringify_title">Convert value to JSON</string>
+    <string name="feature_data_json_stringify_description">Serialize a YAuto variable as compact or pretty JSON text</string>
+    <string name="feature_data_json_stringify_field_name">Source variable</string>
+    <string name="feature_data_json_stringify_field_pretty">Pretty print</string>
+    <string name="feature_data_json_stringify_field_resultvariable">Store JSON text in variable</string>
+
+    <string name="feature_data_json_path_get_title">Read JSON path</string>
+    <string name="feature_data_json_path_get_description">Read a value from an object/list variable using a path such as user.items[0].name</string>
+    <string name="feature_data_json_path_get_field_name">Source variable</string>
+    <string name="feature_data_json_path_get_field_path">JSON path</string>
+    <string name="feature_data_json_path_get_field_resultvariable">Store result in variable</string>
+
+    <string name="feature_data_json_path_set_title">Write JSON path</string>
+    <string name="feature_data_json_path_set_description">Set or replace a value inside an object/list variable using a JSON path</string>
+    <string name="feature_data_json_path_set_field_name">Target variable</string>
+    <string name="feature_data_json_path_set_field_path">JSON path</string>
+    <string name="feature_data_json_path_set_field_value">Value</string>
+    <string name="feature_data_json_path_set_field_valuetype">Value type</string>
+    <string name="feature_data_json_path_set_field_valuetype_option_string">Text</string>
+    <string name="feature_data_json_path_set_field_valuetype_option_number">Number</string>
+    <string name="feature_data_json_path_set_field_valuetype_option_boolean">Boolean</string>
+    <string name="feature_data_json_path_set_field_valuetype_option_null">Null</string>
+    <string name="feature_data_json_path_set_field_valuetype_option_json">JSON</string>
+
+    <string name="feature_data_json_path_remove_title">Remove JSON path</string>
+    <string name="feature_data_json_path_remove_description">Remove an object key or list item from a structured variable</string>
+    <string name="feature_data_json_path_remove_field_name">Target variable</string>
+    <string name="feature_data_json_path_remove_field_path">JSON path</string>
+
+    <string name="feature_data_json_keys_title">Get object keys</string>
+    <string name="feature_data_json_keys_description">Store the keys of an object variable or JSON-path object as a list</string>
+    <string name="feature_data_json_keys_field_name">Source variable</string>
+    <string name="feature_data_json_keys_field_path">Optional JSON path</string>
+    <string name="feature_data_json_keys_field_resultvariable">Store key list in variable</string>
+
+    <string name="feature_data_json_array_length_title">Get array length</string>
+    <string name="feature_data_json_array_length_description">Read the size of a list variable or list at a JSON path</string>
+    <string name="feature_data_json_array_length_field_name">Source variable</string>
+    <string name="feature_data_json_array_length_field_path">Optional JSON path</string>
+    <string name="feature_data_json_array_length_field_resultvariable">Store length in variable</string>
+
+    <string name="runtime_feature_json_path_invalid">Invalid JSON path</string>
+    <string name="runtime_feature_json_path_not_found">JSON path was not found</string>
+    <string name="runtime_feature_json_value_invalid">The configured JSON value is invalid</string>
+    <string name="runtime_feature_json_object_required">The selected value is not an object</string>
+</resources>
