@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_tts_speak_title">朗读文本</string>
+    <string name="feature_android_tts_speak_description">使用 Android 文字转语音引擎朗读文本</string>
+    <string name="feature_android_tts_speak_field_text">文本</string>
+    <string name="feature_android_tts_speak_field_languagetag">语言标签</string>
+    <string name="feature_android_tts_speak_field_rate">语速</string>
+    <string name="feature_android_tts_speak_field_pitch">音调</string>
+    <string name="feature_android_tts_speak_field_waitforcompletion">等待朗读完成</string>
+
+    <string name="runtime_feature_tts_text_empty">要朗读的文本为空。</string>
+    <string name="runtime_feature_tts_unavailable">Android 文字转语音不可用或初始化失败。</string>
+    <string name="runtime_feature_tts_failed">文字转语音播放失败。</string>
+    <string name="runtime_feature_tts_timeout">文字转语音在安全超时时间内未完成。</string>
+</resources>
