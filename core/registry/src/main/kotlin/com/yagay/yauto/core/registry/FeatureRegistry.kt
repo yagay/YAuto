@@ -33,6 +33,30 @@ sealed interface FieldSchema {
     data class Choice(override val key: String, override val label: String, override val required: Boolean = false, val options: List<String>) : FieldSchema
 }
 
+enum class AccessRequirement(val id: String, val label: String) {
+    ROOT("root", "Root"),
+    SHIZUKU("shizuku", "Shizuku"),
+    LSPOSED("lsposed", "LSPosed"),
+    SHAMIKO("shamiko", "Shamiko"),
+    ZYGISK("zygisk", "Zygisk"),
+    ACCESSIBILITY("accessibility", "Accessibility"),
+    NOTIFICATION_LISTENER("notification_listener", "通知监听"),
+    OVERLAY("overlay", "悬浮窗"),
+    WRITE_SETTINGS("write_settings", "修改系统设置"),
+    DEVICE_ADMIN("device_admin", "设备管理器"),
+}
+
+data class FeatureImplementationOption(
+    /** CapabilityBackend.id. Use null only for a non-Broker implementation described by the feature itself. */
+    val backendId: String?,
+    val title: String,
+    val summary: String,
+    val requirements: Set<AccessRequirement> = emptySet(),
+    val pros: List<String> = emptyList(),
+    val cons: List<String> = emptyList(),
+    val restartRequired: Boolean = false,
+)
+
 data class FeatureDescriptor(
     val id: FeatureId,
     val kind: FeatureKind,
@@ -46,6 +70,10 @@ data class FeatureDescriptor(
     val stability: Stability = Stability.STABLE,
     val keywords: Set<String> = emptySet(),
     val ownerPackId: String = "core",
+    /** Extra environment requirements that cannot be inferred from CapabilityId, e.g. Shamiko/Zygisk. */
+    val accessRequirements: Set<AccessRequirement> = emptySet(),
+    /** Explicit alternatives override the built-in capability-derived implementation catalog. */
+    val implementationOptions: List<FeatureImplementationOption> = emptyList(),
 )
 
 interface VariableAccess {
