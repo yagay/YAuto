@@ -12,9 +12,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class MidiDeviceEventSource(context: Context) : AndroidEventSource {
     override val id: String = "android.midi.devices"
-    private val manager = context.applicationContext.getSystemService(MidiManager::class.java)
+    private val manager: MidiManager? = context.applicationContext.getSystemService(MidiManager::class.java)
     private val started = AtomicBoolean(false)
-    private val thread = HandlerThread("YAutoMidiEvents")
+    private var thread: HandlerThread? = null
     @Volatile private var emitter: RuntimeEventEmitter? = null
 
     private val callback = object : MidiManager.DeviceCallback() {
@@ -42,17 +42,28 @@ class MidiDeviceEventSource(context: Context) : AndroidEventSource {
         }
     }
 
+    @Suppress("DEPRECATION")
     override fun start(emitter: RuntimeEventEmitter) {
+        val midiManager = manager ?: return
         if (!started.compareAndSet(false, true)) return
         this.emitter = emitter
-        thread.start()
-        manager.registerDeviceCallback(callback, Handler(thread.looper))
+        val eventThread = HandlerThread("YAutoMidiEvents").also { it.start() }
+        thread = eventThread
+        runCatching { midiManager.registerDeviceCallback(callback, Handler(eventThread.looper)) }
+            .onFailure {
+                started.set(false)
+                this.emitter = null
+                thread = null
+                eventThread.quitSafely()
+                throw it
+            }
     }
 
     override fun stop() {
         if (!started.compareAndSet(true, false)) return
-        runCatching { manager.unregisterDeviceCallback(callback) }
-        thread.quitSafely()
+        manager?.let { midiManager -> runCatching { midiManager.unregisterDeviceCallback(callback) } }
+        thread?.quitSafely()
+        thread = null
         emitter = null
     }
 
