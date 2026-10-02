@@ -45,7 +45,10 @@ def android_format(value: str) -> str:
 
 
 def xml_text(value: str) -> str:
-    return html.escape(android_format(value), quote=False).replace("'", '&apos;')
+    # AAPT requires apostrophes in string resources to be escaped with a backslash. XML entities
+    # such as &apos; are decoded before AAPT validates the string, so they are not sufficient.
+    escaped = android_format(value).replace("'", "\\'")
+    return html.escape(escaped, quote=False)
 
 
 def write_runtime_resources(en: dict[str, str], zh: dict[str, str]) -> None:
