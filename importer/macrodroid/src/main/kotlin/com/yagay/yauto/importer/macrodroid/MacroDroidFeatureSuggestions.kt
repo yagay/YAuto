@@ -22,6 +22,9 @@ object MacroDroidFeatureSuggestions {
                 "ScreenOnAction" -> "android.screen.wake"
                 "InputKeyEventAction" -> "android.input.keyevent"
                 "TakeScreenshotAction" -> "android.screenshot.capture"
+                "ControlMediaAction" -> "android.media.transport"
+                "SetAlarmClockAction" -> "android.alarm.set"
+                "AddCalendarEntryAction" -> "android.calendar.event.add"
                 else -> null
             }
             SourceFeatureKind.EVENT -> when (sourceType) {
