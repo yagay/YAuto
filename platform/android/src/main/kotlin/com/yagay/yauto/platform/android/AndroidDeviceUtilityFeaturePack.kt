@@ -22,7 +22,6 @@ class AndroidDeviceUtilityFeaturePack(context: Context) : FeaturePack {
     private val clipboard = context.applicationContext.getSystemService(ClipboardManager::class.java)
 
     override fun install(registry: FeatureRegistry) {
-        registerClipboardGet(registry)
         registerClipboardClear(registry)
         registerClipboardState(registry, FeatureKind.STATE, "android.state.clipboard_content")
         registerClipboardState(registry, FeatureKind.CONDITION, "android.condition.clipboard_content")
@@ -34,25 +33,6 @@ class AndroidDeviceUtilityFeaturePack(context: Context) : FeaturePack {
         registerUptime(registry)
         registerThermal(registry)
         registerLocaleInfo(registry)
-    }
-
-    private fun registerClipboardGet(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.clipboard.get"), FeatureKind.ACTION,
-                "Get clipboard text", "Read the first clipboard item as text and store it in a variable when Android allows clipboard access",
-                FeatureCategory.DEVICE,
-                fields = listOf(FieldSchema.Variable("resultVariable", "Store text in variable", true)),
-                keywords = setOf("clipboard", "paste", "text", "copy"), ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            runCatching {
-                val text = clipboard.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString().orEmpty()
-                val output = ConfigValue.StringValue(text)
-                ctx.variables.set(feature.config.string("resultVariable"), output)
-                ActionExecutionResult(true, output)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
-        }
     }
 
     private fun registerClipboardClear(registry: FeatureRegistry) {
