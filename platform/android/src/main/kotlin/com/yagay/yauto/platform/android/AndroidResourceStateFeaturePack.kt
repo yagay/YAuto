@@ -122,11 +122,13 @@ class AndroidResourceStateFeaturePack(context: Context) : FeaturePack {
         keywords: Set<String>,
         evaluate: (com.yagay.yauto.core.model.FeatureRef) -> Boolean,
     ) {
+        val stateId = "android.state.$key"
+        val conditionId = "android.condition.$key"
         val state = FeatureDescriptor(
-            FeatureId("android.state.$key"), FeatureKind.STATE, title, description, category,
+            FeatureId(stateId), FeatureKind.STATE, title, description, category,
             fields = fields, keywords = keywords, ownerPackId = id,
         )
-        val condition = state.copy(id = FeatureId("android.condition.$key"), kind = FeatureKind.CONDITION)
+        val condition = state.copy(id = FeatureId(conditionId), kind = FeatureKind.CONDITION)
         registry.registerState(state) { feature, _ -> runCatching { evaluate(feature) }.getOrDefault(false) }
         registry.registerCondition(condition) { feature, _ -> runCatching { evaluate(feature) }.getOrDefault(false) }
     }
