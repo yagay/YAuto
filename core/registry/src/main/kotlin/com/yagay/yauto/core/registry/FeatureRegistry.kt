@@ -42,8 +42,12 @@ enum class AccessRequirement(val id: String, val label: String) {
     ZYGISK("zygisk", "Zygisk"),
     ACCESSIBILITY("accessibility", "Accessibility"),
     NOTIFICATION_LISTENER("notification_listener", "通知监听"),
+    POST_NOTIFICATIONS("post_notifications", "通知权限"),
     OVERLAY("overlay", "悬浮窗"),
     WRITE_SETTINGS("write_settings", "修改系统设置"),
+    CAMERA("camera", "相机"),
+    LOCATION("location", "位置"),
+    DND_POLICY("dnd_policy", "勿扰模式访问"),
     DEVICE_ADMIN("device_admin", "设备管理器"),
 }
 
