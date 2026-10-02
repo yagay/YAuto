@@ -23,6 +23,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.4.1'
+      - name: Remove mistaken Shamiko metadata
+        run: python3 tools/remove_shamiko.py
       - name: Remove language-specific Kotlin fallbacks
         run: python3 tools/remove_localization_fallbacks.py
       - name: Localization guard
@@ -40,5 +42,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add core feature platform ui app importer gradle .github/scripts/check-localization.py
-          git commit -m "refactor: remove language-specific Kotlin fallbacks"
+          git commit -m "fix: remove mistaken Shamiko metadata"
           git push origin HEAD:localization-final-scan
