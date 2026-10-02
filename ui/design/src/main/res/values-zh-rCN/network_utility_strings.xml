@@ -12,6 +12,33 @@
     <string name="feature_android_network_local_addresses_field_includeipv6">包含 IPv6</string>
     <string name="feature_android_network_local_addresses_field_resultvariable">保存地址列表到变量</string>
 
+    <string name="feature_android_network_udp_send_title">发送 UDP 数据报</string>
+    <string name="feature_android_network_udp_send_description">向指定 UDP 主机和端口发送 UTF-8 文本，并可允许广播目标</string>
+    <string name="feature_android_network_udp_send_field_host">主机</string>
+    <string name="feature_android_network_udp_send_field_port">端口</string>
+    <string name="feature_android_network_udp_send_field_text">文本</string>
+    <string name="feature_android_network_udp_send_field_broadcast">允许广播</string>
+
+    <string name="feature_android_state_local_address_match_title">本机 IP 地址匹配</string>
+    <string name="feature_android_state_local_address_match_description">检查活动网卡中是否存在匹配的地址和网卡名称</string>
+    <string name="feature_android_state_local_address_match_field_addresscontains">地址包含</string>
+    <string name="feature_android_state_local_address_match_field_interfacecontains">网卡名称包含</string>
+    <string name="feature_android_state_local_address_match_field_family">地址类型</string>
+    <string name="feature_android_state_local_address_match_field_family_option_any">任意</string>
+    <string name="feature_android_state_local_address_match_field_family_option_ipv4">IPv4</string>
+    <string name="feature_android_state_local_address_match_field_family_option_ipv6">IPv6</string>
+    <string name="feature_android_state_local_address_match_field_value">存在匹配项</string>
+
+    <string name="feature_android_condition_local_address_match_title">本机 IP 地址匹配</string>
+    <string name="feature_android_condition_local_address_match_description">检查活动网卡中是否存在匹配的地址和网卡名称</string>
+    <string name="feature_android_condition_local_address_match_field_addresscontains">地址包含</string>
+    <string name="feature_android_condition_local_address_match_field_interfacecontains">网卡名称包含</string>
+    <string name="feature_android_condition_local_address_match_field_family">地址类型</string>
+    <string name="feature_android_condition_local_address_match_field_family_option_any">任意</string>
+    <string name="feature_android_condition_local_address_match_field_family_option_ipv4">IPv4</string>
+    <string name="feature_android_condition_local_address_match_field_family_option_ipv6">IPv6</string>
+    <string name="feature_android_condition_local_address_match_field_value">存在匹配项</string>
+
     <string name="feature_android_state_tcp_reachable_title">TCP 端口可达</string>
     <string name="feature_android_state_tcp_reachable_description">检查是否能在限定超时内建立到指定主机和端口的 TCP 连接</string>
     <string name="feature_android_state_tcp_reachable_field_host">主机</string>
@@ -39,4 +66,6 @@
     <string name="runtime_feature_network_port_invalid">TCP 端口无效</string>
     <string name="runtime_feature_network_host_port_invalid">TCP 主机或端口无效</string>
     <string name="runtime_feature_network_wait_timeout">等待 %1$s:%2$d 超时</string>
+    <string name="runtime_feature_network_udp_payload_too_large">UDP 数据超过单个数据报允许的最大大小</string>
+    <string name="runtime_feature_network_udp_send_failed">无法向 %1$s:%2$d 发送 UDP 数据报</string>
 </resources>
