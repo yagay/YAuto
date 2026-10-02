@@ -45,7 +45,7 @@ fun MacroGlobalVariablesScreen(
             VariableEditorPage(
                 Modifier.padding(padding),
                 current,
-                existingNames = values.keys - current.originalName,
+                existingNames = current.originalName?.let { values.keys - it } ?: values.keys,
                 onChange = { draft = it },
                 onSave = { updated ->
                     val clean = updated.name.trim()
