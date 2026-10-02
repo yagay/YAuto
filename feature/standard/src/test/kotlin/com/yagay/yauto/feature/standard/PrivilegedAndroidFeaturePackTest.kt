@@ -31,7 +31,64 @@ class PrivilegedAndroidFeaturePackTest {
         assertTrue(result.success)
         assertEquals(CapabilityIds.PRIVILEGED_SHELL, captured?.capability)
         assertEquals("android.app.clear_data", captured?.operationId)
+        assertNull(captured?.preferredBackendId)
         assertEquals("pm clear 'com.example.app'", (captured?.payload?.get("command") as ConfigValue.StringValue).value)
+    }
+
+    @Test fun `privileged descriptors expose backend choices and tradeoffs`() {
+        val registry = FeatureRegistry().apply { install(PrivilegedAndroidFeaturePack()) }
+        val descriptor = requireNotNull(registry.descriptor("android.app.clear_data"))
+        assertTrue(descriptor.description.contains("Shizuku"))
+        assertTrue(descriptor.description.contains("Root"))
+        val backend = descriptor.fields.filterIsInstance<FieldSchema.Choice>()
+            .first { it.key == FEATURE_BACKEND_CONFIG_KEY }
+        assertEquals(listOf("auto", "shizuku", "root"), backend.options)
+        assertTrue(backend.label.contains("优点："))
+        assertTrue(backend.label.contains("缺点："))
+        assertTrue(backend.label.contains("不需要把 Root 直接授权给 YAuto"))
+    }
+
+    @Test fun `selected backend is forwarded by privileged feature`() = runBlocking {
+        val registry = FeatureRegistry().apply { install(PrivilegedAndroidFeaturePack()) }
+        var captured: CapabilityRequest? = null
+        val feature = FeatureRef("android.app.clear_data", config = mapOf(
+            "package" to ConfigValue.StringValue("com.example.app"),
+            FEATURE_BACKEND_CONFIG_KEY to ConfigValue.StringValue("root"),
+        ))
+        val result = registry.actionExecutor(feature.typeId)!!.execute(feature, context(CapabilityClient { request ->
+            captured = request
+            CapabilityResult(true, backendId = "root")
+        }))
+        assertTrue(result.success)
+        assertEquals("root", captured?.preferredBackendId)
+    }
+
+    @Test fun `broker auto falls back but explicit backend stays strict`() = runBlocking {
+        class FakeBackend(
+            override val id: String,
+            override val priority: Int,
+            private val succeeds: Boolean,
+        ) : CapabilityBackend {
+            override suspend fun isAvailable(environment: RuntimeEnvironment) = true
+            override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) =
+                request.capability == CapabilityIds.PRIVILEGED_SHELL
+            override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment) =
+                CapabilityResult(succeeds, message = if (succeeds) null else "$id failed")
+        }
+
+        val broker = CapabilityBroker(
+            environmentProvider = { RuntimeEnvironment(31) },
+            backends = listOf(FakeBackend("root", 80, false), FakeBackend("shizuku", 70, true)),
+        )
+        val auto = broker.execute(CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "test"))
+        assertTrue(auto.success)
+        assertEquals("shizuku", auto.backendId)
+        assertEquals(listOf("root", "shizuku"), auto.attempts.map { it.backendId })
+
+        val rootOnly = broker.execute(CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "test", preferredBackendId = "root"))
+        assertFalse(rootOnly.success)
+        assertEquals("root", rootOnly.backendId)
+        assertEquals(listOf("root"), rootOnly.attempts.map { it.backendId })
     }
 
     @Test fun `invalid package fails before capability invocation`() = runBlocking {
