@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_time_now_title">获取当前时间</string>
+    <string name="feature_time_now_description">保存当前 Unix 纪元毫秒时间戳</string>
+    <string name="feature_time_now_field_resultvariable">将时间戳保存到变量</string>
+
+    <string name="feature_time_format_title">格式化时间戳</string>
+    <string name="feature_time_format_description">使用日期时间格式和时区格式化纪元毫秒时间戳</string>
+    <string name="feature_time_format_field_timestampms">时间戳（毫秒）</string>
+    <string name="feature_time_format_field_pattern">日期时间格式</string>
+    <string name="feature_time_format_field_zone">时区（留空 = 系统）</string>
+    <string name="feature_time_format_field_resultvariable">将格式化文本保存到变量</string>
+
+    <string name="feature_time_parse_title">解析日期和时间</string>
+    <string name="feature_time_parse_description">使用日期时间格式和时区将文本解析为纪元毫秒时间戳</string>
+    <string name="feature_time_parse_field_text">日期时间文本</string>
+    <string name="feature_time_parse_field_pattern">日期时间格式</string>
+    <string name="feature_time_parse_field_zone">时区（留空 = 系统）</string>
+    <string name="feature_time_parse_field_resultvariable">将时间戳保存到变量</string>
+
+    <string name="feature_time_add_title">时间戳加减</string>
+    <string name="feature_time_add_description">对纪元毫秒时间戳增加或减少指定时间单位</string>
+    <string name="feature_time_add_field_timestampms">时间戳（毫秒）</string>
+    <string name="feature_time_add_field_amount">数量</string>
+    <string name="feature_time_add_field_unit">单位</string>
+    <string name="feature_time_add_field_resultvariable">将时间戳保存到变量</string>
+    <string name="feature_time_add_field_unit_option_milliseconds">毫秒</string>
+    <string name="feature_time_add_field_unit_option_seconds">秒</string>
+    <string name="feature_time_add_field_unit_option_minutes">分钟</string>
+    <string name="feature_time_add_field_unit_option_hours">小时</string>
+    <string name="feature_time_add_field_unit_option_days">天</string>
+    <string name="feature_time_add_field_unit_option_weeks">周</string>
+
+    <string name="feature_time_difference_title">计算时间差</string>
+    <string name="feature_time_difference_description">计算两个纪元毫秒时间戳之间的有符号时间差</string>
+    <string name="feature_time_difference_field_fromms">起始时间戳（毫秒）</string>
+    <string name="feature_time_difference_field_toms">结束时间戳（毫秒）</string>
+    <string name="feature_time_difference_field_unit">结果单位</string>
+    <string name="feature_time_difference_field_resultvariable">将时间差保存到变量</string>
+    <string name="feature_time_difference_field_unit_option_milliseconds">毫秒</string>
+    <string name="feature_time_difference_field_unit_option_seconds">秒</string>
+    <string name="feature_time_difference_field_unit_option_minutes">分钟</string>
+    <string name="feature_time_difference_field_unit_option_hours">小时</string>
+    <string name="feature_time_difference_field_unit_option_days">天</string>
+
+    <string name="feature_time_fields_title">获取日期时间字段</string>
+    <string name="feature_time_fields_description">按选定时区将时间戳转换为本地日期和时间字段</string>
+    <string name="feature_time_fields_field_timestampms">时间戳（毫秒）</string>
+    <string name="feature_time_fields_field_zone">时区（留空 = 系统）</string>
+    <string name="feature_time_fields_field_resultvariable">将日期时间对象保存到变量</string>
+
+    <string name="feature_time_wait_until_title">等待到指定时间</string>
+    <string name="feature_time_wait_until_description">暂停流程直到目标纪元毫秒时间，并受最大等待时间限制</string>
+    <string name="feature_time_wait_until_field_timestampms">目标时间戳（毫秒）</string>
+    <string name="feature_time_wait_until_field_maxwaitms">最大等待时间</string>
+
+    <string name="feature_time_state_timestamp_compare_title">比较时间戳</string>
+    <string name="feature_time_state_timestamp_compare_description">比较两个纪元毫秒时间戳</string>
+    <string name="feature_time_state_timestamp_compare_field_leftms">左侧时间戳（毫秒）</string>
+    <string name="feature_time_state_timestamp_compare_field_operator">比较方式</string>
+    <string name="feature_time_state_timestamp_compare_field_rightms">右侧时间戳（毫秒）</string>
+    <string name="feature_time_condition_timestamp_compare_title">比较时间戳</string>
+    <string name="feature_time_condition_timestamp_compare_description">比较两个纪元毫秒时间戳</string>
+    <string name="feature_time_condition_timestamp_compare_field_leftms">左侧时间戳（毫秒）</string>
+    <string name="feature_time_condition_timestamp_compare_field_operator">比较方式</string>
+    <string name="feature_time_condition_timestamp_compare_field_rightms">右侧时间戳（毫秒）</string>
+
+    <string name="runtime_feature_time_invalid_timestamp">无效的时间戳</string>
+    <string name="runtime_feature_time_invalid_format">日期时间格式或时区无效</string>
+    <string name="runtime_feature_time_invalid_zone">无效的时区</string>
+    <string name="runtime_feature_time_parse_failed">无法使用所选格式解析日期时间文本</string>
+    <string name="runtime_feature_time_invalid_unit">无效的时间单位</string>
+    <string name="runtime_feature_time_overflow">时间戳运算超出支持范围</string>
+    <string name="runtime_feature_time_wait_exceeds_limit">目标时间超过配置的最大等待时间</string>
+</resources>
