@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_time_now_title">Get current time</string>
+    <string name="feature_time_now_description">Store the current Unix epoch time in milliseconds</string>
+    <string name="feature_time_now_field_resultvariable">Store timestamp in variable</string>
+
+    <string name="feature_time_format_title">Format timestamp</string>
+    <string name="feature_time_format_description">Format an epoch-millisecond timestamp using a date-time pattern and time zone</string>
+    <string name="feature_time_format_field_timestampms">Timestamp (ms)</string>
+    <string name="feature_time_format_field_pattern">Date-time pattern</string>
+    <string name="feature_time_format_field_zone">Time zone (blank = system)</string>
+    <string name="feature_time_format_field_resultvariable">Store formatted text in variable</string>
+
+    <string name="feature_time_parse_title">Parse date and time</string>
+    <string name="feature_time_parse_description">Parse text with a date-time pattern and time zone into epoch milliseconds</string>
+    <string name="feature_time_parse_field_text">Date-time text</string>
+    <string name="feature_time_parse_field_pattern">Date-time pattern</string>
+    <string name="feature_time_parse_field_zone">Time zone (blank = system)</string>
+    <string name="feature_time_parse_field_resultvariable">Store timestamp in variable</string>
+
+    <string name="feature_time_add_title">Add to timestamp</string>
+    <string name="feature_time_add_description">Add or subtract a duration unit from an epoch-millisecond timestamp</string>
+    <string name="feature_time_add_field_timestampms">Timestamp (ms)</string>
+    <string name="feature_time_add_field_amount">Amount</string>
+    <string name="feature_time_add_field_unit">Unit</string>
+    <string name="feature_time_add_field_resultvariable">Store timestamp in variable</string>
+    <string name="feature_time_add_field_unit_option_milliseconds">Milliseconds</string>
+    <string name="feature_time_add_field_unit_option_seconds">Seconds</string>
+    <string name="feature_time_add_field_unit_option_minutes">Minutes</string>
+    <string name="feature_time_add_field_unit_option_hours">Hours</string>
+    <string name="feature_time_add_field_unit_option_days">Days</string>
+    <string name="feature_time_add_field_unit_option_weeks">Weeks</string>
+
+    <string name="feature_time_difference_title">Timestamp difference</string>
+    <string name="feature_time_difference_description">Calculate the signed difference between two epoch-millisecond timestamps</string>
+    <string name="feature_time_difference_field_fromms">From timestamp (ms)</string>
+    <string name="feature_time_difference_field_toms">To timestamp (ms)</string>
+    <string name="feature_time_difference_field_unit">Result unit</string>
+    <string name="feature_time_difference_field_resultvariable">Store difference in variable</string>
+    <string name="feature_time_difference_field_unit_option_milliseconds">Milliseconds</string>
+    <string name="feature_time_difference_field_unit_option_seconds">Seconds</string>
+    <string name="feature_time_difference_field_unit_option_minutes">Minutes</string>
+    <string name="feature_time_difference_field_unit_option_hours">Hours</string>
+    <string name="feature_time_difference_field_unit_option_days">Days</string>
+
+    <string name="feature_time_fields_title">Get date-time fields</string>
+    <string name="feature_time_fields_description">Convert a timestamp to local date/time fields in a selected time zone</string>
+    <string name="feature_time_fields_field_timestampms">Timestamp (ms)</string>
+    <string name="feature_time_fields_field_zone">Time zone (blank = system)</string>
+    <string name="feature_time_fields_field_resultvariable">Store date-time object</string>
+
+    <string name="feature_time_wait_until_title">Wait until timestamp</string>
+    <string name="feature_time_wait_until_description">Pause the flow until the target epoch-millisecond time, with a safety limit</string>
+    <string name="feature_time_wait_until_field_timestampms">Target timestamp (ms)</string>
+    <string name="feature_time_wait_until_field_maxwaitms">Maximum wait</string>
+
+    <string name="feature_time_state_timestamp_compare_title">Compare timestamps</string>
+    <string name="feature_time_state_timestamp_compare_description">Compare two epoch-millisecond timestamps</string>
+    <string name="feature_time_state_timestamp_compare_field_leftms">Left timestamp (ms)</string>
+    <string name="feature_time_state_timestamp_compare_field_operator">Comparison</string>
+    <string name="feature_time_state_timestamp_compare_field_rightms">Right timestamp (ms)</string>
+    <string name="feature_time_condition_timestamp_compare_title">Compare timestamps</string>
+    <string name="feature_time_condition_timestamp_compare_description">Compare two epoch-millisecond timestamps</string>
+    <string name="feature_time_condition_timestamp_compare_field_leftms">Left timestamp (ms)</string>
+    <string name="feature_time_condition_timestamp_compare_field_operator">Comparison</string>
+    <string name="feature_time_condition_timestamp_compare_field_rightms">Right timestamp (ms)</string>
+
+    <string name="runtime_feature_time_invalid_timestamp">Invalid timestamp</string>
+    <string name="runtime_feature_time_invalid_format">Invalid date-time pattern or time zone</string>
+    <string name="runtime_feature_time_invalid_zone">Invalid time zone</string>
+    <string name="runtime_feature_time_parse_failed">Date-time text could not be parsed with the selected pattern</string>
+    <string name="runtime_feature_time_invalid_unit">Invalid time unit</string>
+    <string name="runtime_feature_time_overflow">Timestamp arithmetic overflowed the supported range</string>
+    <string name="runtime_feature_time_wait_exceeds_limit">Target time exceeds the configured maximum wait</string>
+</resources>
