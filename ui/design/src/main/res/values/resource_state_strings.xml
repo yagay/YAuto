@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_storage_available_title">Storage available space</string>
+    <string name="feature_android_state_storage_available_description">Check available bytes for an accessible filesystem path</string>
+    <string name="feature_android_state_storage_available_field_path">Filesystem path</string>
+    <string name="feature_android_state_storage_available_field_minbytes">Minimum available bytes</string>
+    <string name="feature_android_state_storage_available_field_maxbytes">Maximum available bytes</string>
+    <string name="feature_android_condition_storage_available_title">Storage available space</string>
+    <string name="feature_android_condition_storage_available_description">Check available bytes for an accessible filesystem path</string>
+    <string name="feature_android_condition_storage_available_field_path">Filesystem path</string>
+    <string name="feature_android_condition_storage_available_field_minbytes">Minimum available bytes</string>
+    <string name="feature_android_condition_storage_available_field_maxbytes">Maximum available bytes</string>
+
+    <string name="feature_android_state_memory_available_title">Available memory</string>
+    <string name="feature_android_state_memory_available_description">Check Android available RAM against a byte range</string>
+    <string name="feature_android_state_memory_available_field_minbytes">Minimum available bytes</string>
+    <string name="feature_android_state_memory_available_field_maxbytes">Maximum available bytes</string>
+    <string name="feature_android_condition_memory_available_title">Available memory</string>
+    <string name="feature_android_condition_memory_available_description">Check Android available RAM against a byte range</string>
+    <string name="feature_android_condition_memory_available_field_minbytes">Minimum available bytes</string>
+    <string name="feature_android_condition_memory_available_field_maxbytes">Maximum available bytes</string>
+
+    <string name="feature_android_state_low_memory_title">Low memory state</string>
+    <string name="feature_android_state_low_memory_description">Check Android ActivityManager low-memory pressure state</string>
+    <string name="feature_android_state_low_memory_field_value">Low memory</string>
+    <string name="feature_android_condition_low_memory_title">Low memory state</string>
+    <string name="feature_android_condition_low_memory_description">Check Android ActivityManager low-memory pressure state</string>
+    <string name="feature_android_condition_low_memory_field_value">Low memory</string>
+
+    <string name="feature_android_state_uptime_range_title">Device uptime range</string>
+    <string name="feature_android_state_uptime_range_description">Check elapsed Android realtime since boot against a millisecond range</string>
+    <string name="feature_android_state_uptime_range_field_minms">Minimum uptime</string>
+    <string name="feature_android_state_uptime_range_field_maxms">Maximum uptime</string>
+    <string name="feature_android_condition_uptime_range_title">Device uptime range</string>
+    <string name="feature_android_condition_uptime_range_description">Check elapsed Android realtime since boot against a millisecond range</string>
+    <string name="feature_android_condition_uptime_range_field_minms">Minimum uptime</string>
+    <string name="feature_android_condition_uptime_range_field_maxms">Maximum uptime</string>
+
+    <string name="feature_android_state_thermal_level_title">Thermal severity</string>
+    <string name="feature_android_state_thermal_level_description">Check whether Android thermal severity is at or above the selected level</string>
+    <string name="feature_android_state_thermal_level_field_minimum">Minimum thermal level</string>
+    <string name="feature_android_condition_thermal_level_title">Thermal severity</string>
+    <string name="feature_android_condition_thermal_level_description">Check whether Android thermal severity is at or above the selected level</string>
+    <string name="feature_android_condition_thermal_level_field_minimum">Minimum thermal level</string>
+
+    <string name="feature_android_state_battery_health_title">Battery health state</string>
+    <string name="feature_android_state_battery_health_description">Match Android battery health reported by the battery service</string>
+    <string name="feature_android_state_battery_health_field_health">Battery health</string>
+    <string name="feature_android_condition_battery_health_title">Battery health state</string>
+    <string name="feature_android_condition_battery_health_description">Match Android battery health reported by the battery service</string>
+    <string name="feature_android_condition_battery_health_field_health">Battery health</string>
+</resources>
