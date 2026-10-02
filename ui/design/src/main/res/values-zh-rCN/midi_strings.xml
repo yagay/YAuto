@@ -42,6 +42,7 @@
     <string name="feature_android_event_midi_device_status_field_manufacturercontains">制造商包含</string>
     <string name="feature_android_event_midi_device_status_field_productcontains">产品名称包含</string>
 
+    <string name="runtime_feature_midi_unavailable">此设备没有可用的 MIDI 服务</string>
     <string name="runtime_feature_midi_device_id_invalid">MIDI 设备 ID 无效</string>
     <string name="runtime_feature_midi_port_invalid">MIDI 输入端口编号无效</string>
     <string name="runtime_feature_midi_hex_invalid">MIDI 数据必须包含偶数个十六进制数字</string>
