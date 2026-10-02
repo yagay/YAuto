@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_media_transport_title">媒体播放控制</string>
+    <string name="feature_android_media_transport_description">向当前媒体会话发送播放、暂停、下一首、上一首、停止、快进或快退命令</string>
+    <string name="feature_android_media_transport_field_command">媒体命令</string>
+    <string name="feature_android_media_transport_field_command_option_play_pause">播放 / 暂停</string>
+    <string name="feature_android_media_transport_field_command_option_play">播放</string>
+    <string name="feature_android_media_transport_field_command_option_pause">暂停</string>
+    <string name="feature_android_media_transport_field_command_option_next">下一首</string>
+    <string name="feature_android_media_transport_field_command_option_previous">上一首</string>
+    <string name="feature_android_media_transport_field_command_option_stop">停止</string>
+    <string name="feature_android_media_transport_field_command_option_fast_forward">快进</string>
+    <string name="feature_android_media_transport_field_command_option_rewind">快退</string>
+
+    <string name="feature_android_alarm_set_title">设置闹钟</string>
+    <string name="feature_android_alarm_set_description">在系统闹钟应用中创建闹钟</string>
+    <string name="feature_android_alarm_set_field_hour">小时（0-23）</string>
+    <string name="feature_android_alarm_set_field_minute">分钟（0-59）</string>
+    <string name="feature_android_alarm_set_field_label">闹钟标签</string>
+    <string name="feature_android_alarm_set_field_skipui">创建后不显示闹钟应用</string>
+
+    <string name="feature_android_timer_set_title">设置倒计时</string>
+    <string name="feature_android_timer_set_description">在系统时钟应用中创建倒计时</string>
+    <string name="feature_android_timer_set_field_durationseconds">持续秒数</string>
+    <string name="feature_android_timer_set_field_label">倒计时标签</string>
+    <string name="feature_android_timer_set_field_skipui">创建后不显示时钟应用</string>
+
+    <string name="feature_android_calendar_event_add_title">添加日历事件</string>
+    <string name="feature_android_calendar_event_add_description">打开日历事件编辑器，并按当前时间的相对偏移创建事件</string>
+    <string name="feature_android_calendar_event_add_field_title">事件标题</string>
+    <string name="feature_android_calendar_event_add_field_description">说明</string>
+    <string name="feature_android_calendar_event_add_field_location">地点</string>
+    <string name="feature_android_calendar_event_add_field_startdelayminutes">多少分钟后开始</string>
+    <string name="feature_android_calendar_event_add_field_durationminutes">持续分钟数</string>
+
+    <string name="runtime_feature_media_transport_command_invalid">未知的媒体播放控制命令</string>
+    <string name="runtime_feature_alarm_time_invalid">闹钟小时或分钟无效</string>
+    <string name="runtime_feature_timer_duration_invalid">倒计时必须是 1 到 604800 秒之间的整数</string>
+    <string name="runtime_feature_calendar_window_invalid">日历事件的开始延迟或持续时间无效</string>
+</resources>
