@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_phrase_symbol_3d_3d">==</string>
+    <string name="feature_phrase_symbol_21_3d">!=</string>
+    <string name="feature_phrase_symbol_3e">&gt;</string>
+    <string name="feature_phrase_symbol_3e_3d">&gt;=</string>
+    <string name="feature_phrase_symbol_3c">&lt;</string>
+    <string name="feature_phrase_symbol_3c_3d">&lt;=</string>
+</resources>
