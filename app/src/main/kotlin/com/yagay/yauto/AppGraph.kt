@@ -57,6 +57,7 @@ class AppGraph(context: Context) {
         features.install(AndroidHttpFeaturePack())
         features.install(AndroidEventFeaturePack())
         features.install(AndroidStateFeaturePack(context.applicationContext))
+        features.install(AndroidNotificationControlFeaturePack())
         features.install(AccessibilityFeaturePack())
 
         capabilities.register(RootBackend(rootShell))
