@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -64,7 +65,13 @@ fun MacroHomeScreen(
                     Column {
                         Text(stringResource(R.string.app_name), fontWeight = FontWeight.Bold)
                         Text(
-                            stringResource(R.string.home_summary_format, automations.size, flowCount, featureCount),
+                            localizedList(
+                                listOf(
+                                    pluralStringResource(R.plurals.count_automation, automations.size, automations.size),
+                                    pluralStringResource(R.plurals.count_flow, flowCount, flowCount),
+                                    pluralStringResource(R.plurals.count_feature, featureCount, featureCount),
+                                )
+                            ),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -169,8 +176,18 @@ private fun HomeDashboard(
 ) {
     val tiles = listOf(
         HomeTile(stringResource(R.string.home_tile_add_automation), stringResource(R.string.home_tile_add_automation_subtitle), MacroPalette.Trigger, onNewAutomation),
-        HomeTile(stringResource(R.string.home_tile_automations), stringResource(R.string.home_tile_automations_subtitle, automations.size), MacroPalette.Action, onShowAutomations),
-        HomeTile(stringResource(R.string.home_tile_flows), stringResource(R.string.home_tile_flows_subtitle, flows.size), MacroPalette.Flow, onShowFlows),
+        HomeTile(
+            stringResource(R.string.home_tile_automations),
+            pluralStringResource(R.plurals.count_rule, automations.size, automations.size),
+            MacroPalette.Action,
+            onShowAutomations,
+        ),
+        HomeTile(
+            stringResource(R.string.home_tile_flows),
+            pluralStringResource(R.plurals.count_reusable_flow, flows.size, flows.size),
+            MacroPalette.Flow,
+            onShowFlows,
+        ),
         HomeTile(stringResource(R.string.home_tile_import_export), localizedList(importerNames), MacroPalette.Utility, onImport),
         HomeTile(stringResource(R.string.home_tile_variables), stringResource(R.string.home_tile_variables_subtitle), MacroPalette.Variable, onVariables),
         HomeTile(stringResource(R.string.home_tile_logs), stringResource(R.string.home_tile_logs_subtitle), MacroPalette.Diagnostics, onDiagnostics),
@@ -198,7 +215,10 @@ private fun HomeDashboard(
                         androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_info), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_information))
                         Column {
                             Text(stringResource(R.string.home_capability_overview), fontWeight = FontWeight.SemiBold)
-                            Text(stringResource(R.string.home_registered_features_format, featureCount), style = MaterialTheme.typography.labelSmall)
+                            Text(
+                                pluralStringResource(R.plurals.count_feature, featureCount, featureCount),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
                         }
                     }
                 }
@@ -232,9 +252,21 @@ private fun AutomationList(
                         Switch(automation.enabled, { onToggle(automation, it) })
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        AssistChip(onClick = {}, label = { Text(stringResource(R.string.home_trigger_count_format, automation.activation.events.size)) })
-                        AssistChip(onClick = {}, label = { Text(stringResource(R.string.home_state_count_format, automation.activation.states.size)) })
-                        AssistChip(onClick = {}, label = { Text(stringResource(R.string.home_action_count_format, automation.onEnter.size + automation.onEvent.size + automation.onExit.size)) })
+                        val triggerCount = automation.activation.events.size
+                        val stateCount = automation.activation.states.size
+                        val actionCount = automation.onEnter.size + automation.onEvent.size + automation.onExit.size
+                        AssistChip(
+                            onClick = {},
+                            label = { Text(pluralStringResource(R.plurals.count_trigger, triggerCount, triggerCount)) },
+                        )
+                        AssistChip(
+                            onClick = {},
+                            label = { Text(pluralStringResource(R.plurals.count_state, stateCount, stateCount)) },
+                        )
+                        AssistChip(
+                            onClick = {},
+                            label = { Text(pluralStringResource(R.plurals.count_action, actionCount, actionCount)) },
+                        )
                     }
                     Row {
                         TextButton(onClick = { onEdit(automation) }) { Text(stringResource(R.string.common_edit)) }
@@ -256,7 +288,16 @@ private fun FlowList(modifier: Modifier, flows: List<Flow>, onNew: () -> Unit, o
             Card(Modifier.fillMaxWidth().clickable { onEdit(flow) }) {
                 Column(Modifier.padding(12.dp)) {
                     Text(flow.name, fontWeight = FontWeight.SemiBold)
-                    Text(stringResource(R.string.home_flow_summary_format, flow.inputs.size, flow.outputs.size, flow.actions.size), style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        localizedList(
+                            listOf(
+                                pluralStringResource(R.plurals.count_input, flow.inputs.size, flow.inputs.size),
+                                pluralStringResource(R.plurals.count_output, flow.outputs.size, flow.outputs.size),
+                                pluralStringResource(R.plurals.count_action, flow.actions.size, flow.actions.size),
+                            )
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                     Row {
                         TextButton(onClick = { onEdit(flow) }) { Text(stringResource(R.string.common_edit)) }
                         Spacer(Modifier.weight(1f))
