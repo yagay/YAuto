@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_setting_matches_title">Android 设置值匹配</string>
+    <string name="feature_android_state_setting_matches_description">通过 Root/Shizuku 读取 System、Global 或 Secure 设置值并进行比较</string>
+    <string name="feature_android_state_setting_matches_field_namespace">设置命名空间</string>
+    <string name="feature_android_state_setting_matches_field_key">设置键</string>
+    <string name="feature_android_state_setting_matches_field_operator">比较方式</string>
+    <string name="feature_android_state_setting_matches_field_operator_option_equals">等于</string>
+    <string name="feature_android_state_setting_matches_field_operator_option_not_equals">不等于</string>
+    <string name="feature_android_state_setting_matches_field_operator_option_contains">包含</string>
+    <string name="feature_android_state_setting_matches_field_operator_option_not_contains">不包含</string>
+    <string name="feature_android_state_setting_matches_field_operator_option_regex">正则表达式</string>
+    <string name="feature_android_state_setting_matches_field_expected">期望值</string>
+    <string name="feature_android_state_setting_matches_field_namespace_option_system">System</string>
+    <string name="feature_android_state_setting_matches_field_namespace_option_global">Global</string>
+    <string name="feature_android_state_setting_matches_field_namespace_option_secure">Secure</string>
+
+    <string name="feature_android_condition_setting_matches_title">Android 设置值匹配</string>
+    <string name="feature_android_condition_setting_matches_description">通过 Root/Shizuku 读取 System、Global 或 Secure 设置值并进行比较</string>
+    <string name="feature_android_condition_setting_matches_field_namespace">设置命名空间</string>
+    <string name="feature_android_condition_setting_matches_field_key">设置键</string>
+    <string name="feature_android_condition_setting_matches_field_operator">比较方式</string>
+    <string name="feature_android_condition_setting_matches_field_operator_option_equals">等于</string>
+    <string name="feature_android_condition_setting_matches_field_operator_option_not_equals">不等于</string>
+    <string name="feature_android_condition_setting_matches_field_operator_option_contains">包含</string>
+    <string name="feature_android_condition_setting_matches_field_operator_option_not_contains">不包含</string>
+    <string name="feature_android_condition_setting_matches_field_operator_option_regex">正则表达式</string>
+    <string name="feature_android_condition_setting_matches_field_expected">期望值</string>
+    <string name="feature_android_condition_setting_matches_field_namespace_option_system">System</string>
+    <string name="feature_android_condition_setting_matches_field_namespace_option_global">Global</string>
+    <string name="feature_android_condition_setting_matches_field_namespace_option_secure">Secure</string>
+
+    <string name="feature_android_state_system_property_matches_title">系统属性匹配</string>
+    <string name="feature_android_state_system_property_matches_description">通过 Root/Shizuku 读取 Android getprop 属性并比较文本</string>
+    <string name="feature_android_state_system_property_matches_field_key">属性键</string>
+    <string name="feature_android_state_system_property_matches_field_operator">比较方式</string>
+    <string name="feature_android_state_system_property_matches_field_operator_option_equals">等于</string>
+    <string name="feature_android_state_system_property_matches_field_operator_option_not_equals">不等于</string>
+    <string name="feature_android_state_system_property_matches_field_operator_option_contains">包含</string>
+    <string name="feature_android_state_system_property_matches_field_operator_option_not_contains">不包含</string>
+    <string name="feature_android_state_system_property_matches_field_operator_option_regex">正则表达式</string>
+    <string name="feature_android_state_system_property_matches_field_expected">期望值</string>
+
+    <string name="feature_android_condition_system_property_matches_title">系统属性匹配</string>
+    <string name="feature_android_condition_system_property_matches_description">通过 Root/Shizuku 读取 Android getprop 属性并比较文本</string>
+    <string name="feature_android_condition_system_property_matches_field_key">属性键</string>
+    <string name="feature_android_condition_system_property_matches_field_operator">比较方式</string>
+    <string name="feature_android_condition_system_property_matches_field_operator_option_equals">等于</string>
+    <string name="feature_android_condition_system_property_matches_field_operator_option_not_equals">不等于</string>
+    <string name="feature_android_condition_system_property_matches_field_operator_option_contains">包含</string>
+    <string name="feature_android_condition_system_property_matches_field_operator_option_not_contains">不包含</string>
+    <string name="feature_android_condition_system_property_matches_field_operator_option_regex">正则表达式</string>
+    <string name="feature_android_condition_system_property_matches_field_expected">期望值</string>
+
+    <string name="feature_android_state_privileged_backend_available_title">特权后端可用</string>
+    <string name="feature_android_state_privileged_backend_available_description">检查 Root 或 Shizuku 当前是否可用于特权 Shell 操作</string>
+    <string name="feature_android_state_privileged_backend_available_field_backend">后端</string>
+    <string name="feature_android_state_privileged_backend_available_field_backend_option_root">Root</string>
+    <string name="feature_android_state_privileged_backend_available_field_backend_option_shizuku">Shizuku</string>
+    <string name="feature_android_state_privileged_backend_available_field_value">可用</string>
+
+    <string name="feature_android_condition_privileged_backend_available_title">特权后端可用</string>
+    <string name="feature_android_condition_privileged_backend_available_description">检查 Root 或 Shizuku 当前是否可用于特权 Shell 操作</string>
+    <string name="feature_android_condition_privileged_backend_available_field_backend">后端</string>
+    <string name="feature_android_condition_privileged_backend_available_field_backend_option_root">Root</string>
+    <string name="feature_android_condition_privileged_backend_available_field_backend_option_shizuku">Shizuku</string>
+    <string name="feature_android_condition_privileged_backend_available_field_value">可用</string>
+
+    <string name="feature_android_state_appop_mode_title">应用操作模式</string>
+    <string name="feature_android_state_appop_mode_description">检查指定应用操作当前的 Android AppOps 模式</string>
+    <string name="feature_android_state_appop_mode_field_package">应用 / 包名</string>
+    <string name="feature_android_state_appop_mode_field_operation">应用操作</string>
+    <string name="feature_android_state_appop_mode_field_mode">期望模式</string>
+    <string name="feature_android_state_appop_mode_field_mode_option_allow">允许</string>
+    <string name="feature_android_state_appop_mode_field_mode_option_ignore">忽略</string>
+    <string name="feature_android_state_appop_mode_field_mode_option_deny">拒绝</string>
+    <string name="feature_android_state_appop_mode_field_mode_option_default">默认</string>
+    <string name="feature_android_state_appop_mode_field_mode_option_foreground">仅前台</string>
+    <string name="feature_android_state_appop_mode_field_mode_option_errored">错误</string>
+
+    <string name="feature_android_condition_appop_mode_title">应用操作模式</string>
+    <string name="feature_android_condition_appop_mode_description">检查指定应用操作当前的 Android AppOps 模式</string>
+    <string name="feature_android_condition_appop_mode_field_package">应用 / 包名</string>
+    <string name="feature_android_condition_appop_mode_field_operation">应用操作</string>
+    <string name="feature_android_condition_appop_mode_field_mode">期望模式</string>
+    <string name="feature_android_condition_appop_mode_field_mode_option_allow">允许</string>
+    <string name="feature_android_condition_appop_mode_field_mode_option_ignore">忽略</string>
+    <string name="feature_android_condition_appop_mode_field_mode_option_deny">拒绝</string>
+    <string name="feature_android_condition_appop_mode_field_mode_option_default">默认</string>
+    <string name="feature_android_condition_appop_mode_field_mode_option_foreground">仅前台</string>
+    <string name="feature_android_condition_appop_mode_field_mode_option_errored">错误</string>
+</resources>
