@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_location_update_title">位置更新</string>
+    <string name="feature_android_event_location_update_description">当 Android 提供符合定位来源、精度、移动距离和时间间隔条件的位置更新时触发</string>
+    <string name="feature_android_event_location_update_field_provider">定位来源</string>
+    <string name="feature_android_event_location_update_field_provider_option_any">任意来源</string>
+    <string name="feature_android_event_location_update_field_provider_option_gps">GPS</string>
+    <string name="feature_android_event_location_update_field_provider_option_network">网络定位</string>
+    <string name="feature_android_event_location_update_field_provider_option_passive">被动定位</string>
+    <string name="feature_android_event_location_update_field_maxaccuracymeters">最大精度半径（米，0 = 不限制）</string>
+    <string name="feature_android_event_location_update_field_minimumdistancemeters">最小移动距离（米）</string>
+    <string name="feature_android_event_location_update_field_minimumintervalms">两次更新的最小间隔</string>
+
+    <string name="feature_android_event_geofence_transition_title">地理围栏变化</string>
+    <string name="feature_android_event_geofence_transition_description">当设备进入或离开设定的圆形位置范围时触发</string>
+    <string name="feature_android_event_geofence_transition_field_latitude">纬度</string>
+    <string name="feature_android_event_geofence_transition_field_longitude">经度</string>
+    <string name="feature_android_event_geofence_transition_field_radiusmeters">半径（米）</string>
+    <string name="feature_android_event_geofence_transition_field_transition">变化类型</string>
+    <string name="feature_android_event_geofence_transition_field_transition_option_any">进入或离开</string>
+    <string name="feature_android_event_geofence_transition_field_transition_option_enter">进入</string>
+    <string name="feature_android_event_geofence_transition_field_transition_option_exit">离开</string>
+    <string name="feature_android_event_geofence_transition_field_provider">定位来源</string>
+    <string name="feature_android_event_geofence_transition_field_provider_option_any">任意来源</string>
+    <string name="feature_android_event_geofence_transition_field_provider_option_gps">GPS</string>
+    <string name="feature_android_event_geofence_transition_field_provider_option_network">网络定位</string>
+    <string name="feature_android_event_geofence_transition_field_provider_option_passive">被动定位</string>
+    <string name="feature_android_event_geofence_transition_field_maxaccuracymeters">最大精度半径（米，0 = 不限制）</string>
+    <string name="feature_android_event_geofence_transition_field_minimumdistancemeters">位置订阅最小移动距离（米）</string>
+    <string name="feature_android_event_geofence_transition_field_minimumintervalms">位置订阅间隔</string>
+    <string name="feature_android_event_geofence_transition_field_emitinitial">订阅开始后立即发送当前范围内/外状态</string>
+</resources>
