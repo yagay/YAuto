@@ -17,16 +17,27 @@ class ShizukuShellService : IShizukuShell.Stub() {
         running[requestId] = job
         if (cancelled.remove(requestId)) job.cancel()
         try {
-        val output = BoundedProcessRunner.run(listOf("sh", "-c", command), timeoutMs.coerceIn(1, 120_000))
-        Bundle().apply {
-            putInt("exitCode", output.exitCode); putString("stdout", output.stdout)
-            putString("stderr", output.stderr); putBoolean("timedOut", output.timedOut)
+            val output = BoundedProcessRunner.run(listOf("sh", "-c", command), timeoutMs.coerceIn(1, MAX_TIMEOUT_MS))
+            Bundle().apply {
+                putInt("exitCode", output.exitCode)
+                putString("stdout", output.stdout)
+                putString("stderr", output.stderr)
+                putBoolean("timedOut", output.timedOut)
+            }
+        } finally {
+            running.remove(requestId, job)
+            cancelled.remove(requestId)
         }
-        } finally { running.remove(requestId, job); cancelled.remove(requestId) }
     }
+
     override fun cancel(requestId: String) {
         if (requestId.length !in 1..64) return
         running[requestId]?.cancel() ?: run { if (cancelled.size < 128) cancelled.add(requestId) }
     }
+
     override fun destroy() { exitProcess(0) }
+
+    private companion object {
+        const val MAX_TIMEOUT_MS = 300_000L
+    }
 }
