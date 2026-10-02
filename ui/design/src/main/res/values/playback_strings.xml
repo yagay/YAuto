@@ -10,6 +10,7 @@
     <string name="feature_android_audio_stop_description">Stop audio started by YAuto without affecting other apps</string>
 
     <string name="runtime_feature_playback_source_empty">Playback source is empty</string>
+    <string name="runtime_feature_playback_source_unsupported">Playback source must be an absolute file path or a content, file, Android resource, HTTP, or HTTPS URI</string>
     <string name="runtime_feature_playback_loop_wait_conflict">Loop playback cannot also wait for playback to finish</string>
     <string name="runtime_feature_playback_failed">Playback failed: %1$s</string>
     <string name="runtime_feature_playback_timeout">Playback timed out</string>
