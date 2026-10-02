@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="count_automation">
+        <item quantity="one">%1$d automation</item>
+        <item quantity="other">%1$d automations</item>
+    </plurals>
+    <plurals name="count_flow">
+        <item quantity="one">%1$d flow</item>
+        <item quantity="other">%1$d flows</item>
+    </plurals>
+    <plurals name="count_feature">
+        <item quantity="one">%1$d feature</item>
+        <item quantity="other">%1$d features</item>
+    </plurals>
+    <plurals name="count_rule">
+        <item quantity="one">%1$d rule</item>
+        <item quantity="other">%1$d rules</item>
+    </plurals>
+    <plurals name="count_reusable_flow">
+        <item quantity="one">%1$d reusable flow</item>
+        <item quantity="other">%1$d reusable flows</item>
+    </plurals>
+    <plurals name="count_trigger">
+        <item quantity="one">%1$d trigger</item>
+        <item quantity="other">%1$d triggers</item>
+    </plurals>
+    <plurals name="count_state">
+        <item quantity="one">%1$d state</item>
+        <item quantity="other">%1$d states</item>
+    </plurals>
+    <plurals name="count_action">
+        <item quantity="one">%1$d action</item>
+        <item quantity="other">%1$d actions</item>
+    </plurals>
+    <plurals name="count_input">
+        <item quantity="one">%1$d input</item>
+        <item quantity="other">%1$d inputs</item>
+    </plurals>
+    <plurals name="count_output">
+        <item quantity="one">%1$d output</item>
+        <item quantity="other">%1$d outputs</item>
+    </plurals>
+    <plurals name="count_result">
+        <item quantity="one">%1$d result</item>
+        <item quantity="other">%1$d results</item>
+    </plurals>
+    <plurals name="count_item">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <plurals name="count_record">
+        <item quantity="one">%1$d record</item>
+        <item quantity="other">%1$d records</item>
+    </plurals>
+    <plurals name="count_error">
+        <item quantity="one">%1$d error</item>
+        <item quantity="other">%1$d errors</item>
+    </plurals>
+</resources>
