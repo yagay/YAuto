@@ -128,12 +128,20 @@ fun MacroFlowEditorScreen(
                             ?.filterNot { it.key.startsWith("source.") }
                             ?.take(3)
                             ?.map { entry ->
-                                val label = descriptor?.let { owner ->
-                                    owner.fields.firstOrNull { it.key == entry.key }?.let { field ->
-                                        localizedFieldLabelShared(owner.id.value, field)
-                                    }
-                                } ?: entry.key
-                                stringResource(TextR.string.flow_config_entry_format, label, flowValueText(entry.value))
+                                val field = descriptor?.fields?.firstOrNull { it.key == entry.key }
+                                val label = if (descriptor != null && field != null) {
+                                    localizedFieldLabelShared(descriptor.id.value, field)
+                                } else {
+                                    entry.key
+                                }
+                                val value = if (
+                                    descriptor != null && field is FieldSchema.Choice && entry.value is ConfigValue.StringValue
+                                ) {
+                                    localizedChoiceOptionShared(descriptor.id.value, field.key, entry.value.value)
+                                } else {
+                                    localizedConfigValue(entry.value)
+                                }
+                                stringResource(TextR.string.flow_config_entry_format, label, value)
                             }
                             ?.let { localizedList(it) }
                         MacroItemRow(
@@ -264,11 +272,12 @@ private fun FlowParameterDialog(
     onDismiss: () -> Unit,
     onSave: (FlowParameter) -> Unit,
 ) {
+    val locale = currentEditorLocale()
     var name by remember(initial?.name) { mutableStateOf(initial?.name.orEmpty()) }
     var type by remember(initial?.name) { mutableStateOf(initial?.type ?: ValueType.STRING) }
     var required by remember(initial?.name) { mutableStateOf(initial?.required ?: false) }
-    var default by remember(initial?.name) {
-        mutableStateOf(initial?.defaultValue?.let(::flowValueText).orEmpty())
+    var default by remember(initial?.name, locale) {
+        mutableStateOf(editorConfigValueText(initial?.defaultValue, locale))
     }
     var typeMenu by remember { mutableStateOf(false) }
 
@@ -324,7 +333,17 @@ private fun FlowParameterDialog(
                             type,
                             required,
                             if (allowDefault && default.isNotEmpty()) {
-                                ConfigValue.StringValue(default)
+                                when (type) {
+                                    ValueType.NUMBER, ValueType.DURATION -> parseLocalizedDouble(default, locale)
+                                        ?.let(ConfigValue::NumberValue)
+                                        ?: ConfigValue.StringValue(default)
+                                    ValueType.BOOLEAN -> when (default.trim().lowercase()) {
+                                        "true" -> ConfigValue.BooleanValue(true)
+                                        "false" -> ConfigValue.BooleanValue(false)
+                                        else -> ConfigValue.StringValue(default)
+                                    }
+                                    else -> ConfigValue.StringValue(default)
+                                }
                             } else {
                                 ConfigValue.NullValue
                             },
@@ -360,7 +379,7 @@ private fun flowParameterSummary(parameter: FlowParameter): String {
         add(valueTypeLabel(parameter.type))
         if (parameter.required) add(stringResource(TextR.string.flow_parameter_required))
         if (parameter.defaultValue != ConfigValue.NullValue) {
-            add(stringResource(TextR.string.flow_default_value_format, flowValueText(parameter.defaultValue)))
+            add(stringResource(TextR.string.flow_default_value_format, localizedConfigValue(parameter.defaultValue)))
         }
     }
     return localizedList(parts)
@@ -404,13 +423,4 @@ private fun flowNodeTitle(node: ActionNode, flows: List<Flow>): String = when (n
     is ActionNode.Return -> stringResource(TextR.string.node_return)
     is ActionNode.Break -> stringResource(TextR.string.node_break)
     is ActionNode.Continue -> stringResource(TextR.string.node_continue)
-}
-
-private fun flowValueText(value: ConfigValue): String = when (value) {
-    ConfigValue.NullValue -> ""
-    is ConfigValue.StringValue -> value.value
-    is ConfigValue.NumberValue -> if (value.value % 1.0 == 0.0) value.value.toLong().toString() else value.value.toString()
-    is ConfigValue.BooleanValue -> value.value.toString()
-    is ConfigValue.ListValue -> value.value.joinToString(",") { flowValueText(it) }
-    is ConfigValue.ObjectValue -> value.value.entries.joinToString(",") { "${it.key}=${flowValueText(it.value)}" }
 }
