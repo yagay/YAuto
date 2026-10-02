@@ -17,7 +17,7 @@ private data class VariableDraft(val originalName: String?, val name: String, va
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MacroGlobalVariablesScreen(
+fun GlobalVariablesScreen(
     initial: Map<String, String>,
     onSave: (Map<String, String>) -> Unit,
     onBack: () -> Unit,
