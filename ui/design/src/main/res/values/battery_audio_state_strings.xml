@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_battery_temperature_title">Battery temperature</string>
+    <string name="feature_android_state_battery_temperature_description">Compare the current battery temperature</string>
+    <string name="feature_android_state_battery_temperature_field_value">Temperature (°C)</string>
+    <string name="feature_android_condition_battery_temperature_title">Battery temperature</string>
+    <string name="feature_android_condition_battery_temperature_description">Compare the current battery temperature</string>
+    <string name="feature_android_condition_battery_temperature_field_value">Temperature (°C)</string>
+
+    <string name="feature_android_state_headset_connected_title">Headset connected</string>
+    <string name="feature_android_state_headset_connected_description">Check whether a wired, Bluetooth or USB headset is currently connected</string>
+    <string name="feature_android_state_headset_connected_field_value">Connected</string>
+    <string name="feature_android_condition_headset_connected_title">Headset connected</string>
+    <string name="feature_android_condition_headset_connected_description">Check whether a wired, Bluetooth or USB headset is currently connected</string>
+    <string name="feature_android_condition_headset_connected_field_value">Connected</string>
+
+    <string name="feature_android_event_battery_changed_title">Battery changed</string>
+    <string name="feature_android_event_battery_changed_description">Run when Android reports a battery update and optionally filter level or temperature</string>
+    <string name="feature_android_event_battery_changed_field_minpercent">Minimum percent</string>
+    <string name="feature_android_event_battery_changed_field_maxpercent">Maximum percent</string>
+    <string name="feature_android_event_battery_changed_field_mintemperaturec">Minimum temperature (°C)</string>
+    <string name="feature_android_event_battery_changed_field_maxtemperaturec">Maximum temperature (°C)</string>
+
+    <string name="feature_android_event_headset_changed_title">Headset connection changed</string>
+    <string name="feature_android_event_headset_changed_description">Run when a wired, Bluetooth or USB headset is connected or disconnected</string>
+    <string name="feature_android_event_headset_changed_field_state">Connection</string>
+    <string name="feature_android_event_headset_changed_field_state_option_any">Any</string>
+    <string name="feature_android_event_headset_changed_field_state_option_connected">Connected</string>
+    <string name="feature_android_event_headset_changed_field_state_option_disconnected">Disconnected</string>
+    <string name="feature_android_event_headset_changed_field_category">Headset type</string>
+    <string name="feature_android_event_headset_changed_field_category_option_any">Any</string>
+    <string name="feature_android_event_headset_changed_field_category_option_wired">Wired</string>
+    <string name="feature_android_event_headset_changed_field_category_option_bluetooth">Bluetooth</string>
+    <string name="feature_android_event_headset_changed_field_category_option_usb">USB</string>
+    <string name="feature_android_event_headset_changed_field_namecontains">Device name contains</string>
+</resources>
