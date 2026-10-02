@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_clipboard_get_title">Get clipboard text</string>
+    <string name="feature_android_clipboard_get_description">Read the first clipboard item as text and store it in a variable when Android allows clipboard access</string>
+    <string name="feature_android_clipboard_get_field_resultvariable">Store text in variable</string>
+
+    <string name="feature_android_clipboard_clear_title">Clear clipboard</string>
+    <string name="feature_android_clipboard_clear_description">Clear the current Android primary clipboard clip</string>
+
+    <string name="feature_android_state_clipboard_content_title">Clipboard has content</string>
+    <string name="feature_android_state_clipboard_content_description">Check whether Android currently exposes a non-empty primary clipboard clip</string>
+    <string name="feature_android_state_clipboard_content_field_value">Has content</string>
+    <string name="feature_android_condition_clipboard_content_title">Clipboard has content</string>
+    <string name="feature_android_condition_clipboard_content_description">Check whether Android currently exposes a non-empty primary clipboard clip</string>
+    <string name="feature_android_condition_clipboard_content_field_value">Has content</string>
+
+    <string name="feature_android_battery_info_title">Get battery information</string>
+    <string name="feature_android_battery_info_description">Read battery level, health, temperature, voltage, charging source and hardware counters</string>
+    <string name="feature_android_battery_info_field_resultvariable">Store battery object</string>
+
+    <string name="feature_android_state_charging_source_title">Charging source</string>
+    <string name="feature_android_state_charging_source_description">Match the current Android battery charging source</string>
+    <string name="feature_android_state_charging_source_field_source">Charging source</string>
+    <string name="feature_android_condition_charging_source_title">Charging source</string>
+    <string name="feature_android_condition_charging_source_description">Match the current Android battery charging source</string>
+    <string name="feature_android_condition_charging_source_field_source">Charging source</string>
+    <string name="feature_android_state_charging_source_field_source_option_none">Not charging</string>
+    <string name="feature_android_state_charging_source_field_source_option_ac">AC charger</string>
+    <string name="feature_android_state_charging_source_field_source_option_usb">USB</string>
+    <string name="feature_android_state_charging_source_field_source_option_wireless">Wireless</string>
+    <string name="feature_android_state_charging_source_field_source_option_dock">Dock</string>
+    <string name="feature_android_state_charging_source_field_source_option_any_charging">Any charging source</string>
+    <string name="feature_android_condition_charging_source_field_source_option_none">Not charging</string>
+    <string name="feature_android_condition_charging_source_field_source_option_ac">AC charger</string>
+    <string name="feature_android_condition_charging_source_field_source_option_usb">USB</string>
+    <string name="feature_android_condition_charging_source_field_source_option_wireless">Wireless</string>
+    <string name="feature_android_condition_charging_source_field_source_option_dock">Dock</string>
+    <string name="feature_android_condition_charging_source_field_source_option_any_charging">Any charging source</string>
+
+    <string name="feature_android_memory_info_title">Get memory information</string>
+    <string name="feature_android_memory_info_description">Read Android system memory totals and low-memory status into an object variable</string>
+    <string name="feature_android_memory_info_field_resultvariable">Store memory object</string>
+
+    <string name="feature_android_display_metrics_title">Get display metrics</string>
+    <string name="feature_android_display_metrics_description">Read current application display pixel and density metrics into an object variable</string>
+    <string name="feature_android_display_metrics_field_resultvariable">Store display object</string>
+
+    <string name="feature_android_device_uptime_title">Get device uptime</string>
+    <string name="feature_android_device_uptime_description">Read elapsed realtime, awake uptime and estimated boot epoch time</string>
+    <string name="feature_android_device_uptime_field_resultvariable">Store uptime object</string>
+
+    <string name="feature_android_device_thermal_status_title">Get thermal status</string>
+    <string name="feature_android_device_thermal_status_description">Read Android PowerManager thermal status into an object variable</string>
+    <string name="feature_android_device_thermal_status_field_resultvariable">Store thermal object</string>
+
+    <string name="feature_android_locale_info_title">Get locale and time-zone information</string>
+    <string name="feature_android_locale_info_description">Read configured Android locales, time zone and 12/24-hour preference</string>
+    <string name="feature_android_locale_info_field_resultvariable">Store locale object</string>
+
+    <string name="runtime_feature_battery_unavailable">Battery information is unavailable</string>
+</resources>
