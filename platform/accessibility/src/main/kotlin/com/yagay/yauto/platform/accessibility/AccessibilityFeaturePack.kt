@@ -30,6 +30,7 @@ class AccessibilityFeaturePack : FeaturePack {
             FeatureDescriptor(
                 FeatureId("android.event.window_changed"), FeatureKind.EVENT, "Foreground window changed",
                 "Run whenever Accessibility reports a different foreground package or Activity", FeatureCategory.APP,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
                 fields = listOf(FieldSchema.AppPicker("package", "App / package"), FieldSchema.Text("classContains", "Activity / class contains")),
                 keywords = setOf("foreground", "activity", "window", "app", "前台", "应用切换"), ownerPackId = id,
             )
@@ -46,6 +47,7 @@ class AccessibilityFeaturePack : FeaturePack {
         registry.registerEvent(
             FeatureDescriptor(
                 FeatureId(typeId), FeatureKind.EVENT, title, "Match application foreground transitions from Accessibility windows", FeatureCategory.APP,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
                 fields = listOf(FieldSchema.AppPicker("package", "App / package", true), FieldSchema.Text("classContains", "Activity / class contains")),
                 keywords = setOf("foreground", "background", "app", "activity", "前台", "后台"), ownerPackId = id,
             )
