@@ -58,10 +58,11 @@ class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContrac
         if (command.isBlank()) return CapabilityResult(false, message = userText("capability.shell_empty"))
         val binder = connect()
         val requestId = UUID.randomUUID().toString()
+        val timeoutMs = request.payload.long("timeoutMs", DEFAULT_TIMEOUT_MS).coerceIn(1, MAX_TIMEOUT_MS)
         val output = suspendCancellableCoroutine<android.os.Bundle> { continuation ->
             val call = ipcScope.launch {
                 try {
-                    val result = binder.execute(requestId, command, request.payload.long("timeoutMs", 10_000).coerceIn(1, 120_000))
+                    val result = binder.execute(requestId, command, timeoutMs)
                     if (continuation.isActive) continuation.resume(result)
                 } catch (error: Exception) { if (continuation.isActive) continuation.resumeWithException(error) }
             }
@@ -79,4 +80,9 @@ class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContrac
     override suspend fun collect(context: DiagnosticContext) = listOf(DiagnosticRecord(DiagnosticSource.ANDROID,
         System.currentTimeMillis(), title = userText("diagnostics.shizuku.title"), message = status().message.orEmpty(), context = context,
         attributes = mapOf("connected" to isAvailable().toString(), "permission" to hasPermission().toString())))
+
+    private companion object {
+        const val DEFAULT_TIMEOUT_MS = 10_000L
+        const val MAX_TIMEOUT_MS = 300_000L
+    }
 }
