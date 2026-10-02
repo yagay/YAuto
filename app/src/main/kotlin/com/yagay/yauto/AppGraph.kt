@@ -51,6 +51,7 @@ class AppGraph(context: Context) {
         features.install(AndroidFeaturePack(appContext))
         features.install(AndroidCommunicationFeaturePack(appContext))
         features.install(AndroidControlFeaturePack(appContext))
+        features.install(AndroidPackageQueryFeaturePack(appContext))
         features.install(AndroidAppManagementFeaturePack(appContext))
         features.install(AndroidAdvancedSystemFeaturePack(appContext))
         features.install(AndroidPrivilegedUtilityFeaturePack(appContext))
