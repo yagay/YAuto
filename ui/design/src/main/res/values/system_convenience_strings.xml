@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_sync_master_set_title">Set master sync</string>
+    <string name="feature_android_sync_master_set_description">Enable or disable Android\'s global account synchronization switch</string>
+    <string name="feature_android_sync_master_set_field_enabled">Enabled</string>
+
+    <string name="feature_android_state_master_sync_title">Master sync enabled</string>
+    <string name="feature_android_state_master_sync_description">Check Android\'s global account synchronization switch</string>
+    <string name="feature_android_state_master_sync_field_value">Enabled / true</string>
+    <string name="feature_android_condition_master_sync_title">Master sync enabled</string>
+    <string name="feature_android_condition_master_sync_description">Check Android\'s global account synchronization switch</string>
+    <string name="feature_android_condition_master_sync_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_device_locked_title">Device locked</string>
+    <string name="feature_android_state_device_locked_description">Check whether Android currently considers the device locked</string>
+    <string name="feature_android_state_device_locked_field_value">Enabled / true</string>
+    <string name="feature_android_condition_device_locked_title">Device locked</string>
+    <string name="feature_android_condition_device_locked_description">Check whether Android currently considers the device locked</string>
+    <string name="feature_android_condition_device_locked_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_music_active_title">Music playback active</string>
+    <string name="feature_android_state_music_active_description">Check whether Android AudioManager currently reports active music playback</string>
+    <string name="feature_android_state_music_active_field_value">Enabled / true</string>
+    <string name="feature_android_condition_music_active_title">Music playback active</string>
+    <string name="feature_android_condition_music_active_description">Check whether Android AudioManager currently reports active music playback</string>
+    <string name="feature_android_condition_music_active_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_network_metered_title">Active network metered</string>
+    <string name="feature_android_state_network_metered_description">Check whether Android marks the active network as metered</string>
+    <string name="feature_android_state_network_metered_field_value">Enabled / true</string>
+    <string name="feature_android_condition_network_metered_title">Active network metered</string>
+    <string name="feature_android_condition_network_metered_description">Check whether Android marks the active network as metered</string>
+    <string name="feature_android_condition_network_metered_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_data_saver_status_title">Data saver status</string>
+    <string name="feature_android_state_data_saver_status_description">Match Android\'s background-data restriction status for YAuto on the active system</string>
+    <string name="feature_android_state_data_saver_status_field_status">Data saver status</string>
+    <string name="feature_android_state_data_saver_status_field_status_option_disabled">Disabled</string>
+    <string name="feature_android_state_data_saver_status_field_status_option_enabled">Enabled</string>
+    <string name="feature_android_state_data_saver_status_field_status_option_whitelisted">Enabled, YAuto exempt</string>
+    <string name="feature_android_condition_data_saver_status_title">Data saver status</string>
+    <string name="feature_android_condition_data_saver_status_description">Match Android\'s background-data restriction status for YAuto on the active system</string>
+    <string name="feature_android_condition_data_saver_status_field_status">Data saver status</string>
+    <string name="feature_android_condition_data_saver_status_field_status_option_disabled">Disabled</string>
+    <string name="feature_android_condition_data_saver_status_field_status_option_enabled">Enabled</string>
+    <string name="feature_android_condition_data_saver_status_field_status_option_whitelisted">Enabled, YAuto exempt</string>
+
+    <string name="feature_android_state_dnd_filter_title">Do Not Disturb filter</string>
+    <string name="feature_android_state_dnd_filter_description">Match Android\'s current interruption filter reported by NotificationManager</string>
+    <string name="feature_android_state_dnd_filter_field_filter">Interruption filter</string>
+    <string name="feature_android_state_dnd_filter_field_filter_option_all">All notifications</string>
+    <string name="feature_android_state_dnd_filter_field_filter_option_priority">Priority only</string>
+    <string name="feature_android_state_dnd_filter_field_filter_option_alarms">Alarms only</string>
+    <string name="feature_android_state_dnd_filter_field_filter_option_none">None</string>
+    <string name="feature_android_state_dnd_filter_field_filter_option_unknown">Unknown</string>
+    <string name="feature_android_condition_dnd_filter_title">Do Not Disturb filter</string>
+    <string name="feature_android_condition_dnd_filter_description">Match Android\'s current interruption filter reported by NotificationManager</string>
+    <string name="feature_android_condition_dnd_filter_field_filter">Interruption filter</string>
+    <string name="feature_android_condition_dnd_filter_field_filter_option_all">All notifications</string>
+    <string name="feature_android_condition_dnd_filter_field_filter_option_priority">Priority only</string>
+    <string name="feature_android_condition_dnd_filter_field_filter_option_alarms">Alarms only</string>
+    <string name="feature_android_condition_dnd_filter_field_filter_option_none">None</string>
+    <string name="feature_android_condition_dnd_filter_field_filter_option_unknown">Unknown</string>
+
+    <string name="feature_android_home_launch_title">Go to home screen</string>
+    <string name="feature_android_home_launch_description">Open the default Android home screen without requiring Accessibility</string>
+
+    <string name="feature_android_settings_page_open_title">Open Android settings page</string>
+    <string name="feature_android_settings_page_open_description">Open a common Android system settings page, optionally scoped to YAuto when supported</string>
+    <string name="feature_android_settings_page_open_field_page">Settings page</string>
+    <string name="feature_android_settings_page_open_field_page_option_general">General settings</string>
+    <string name="feature_android_settings_page_open_field_page_option_wifi">Wi-Fi</string>
+    <string name="feature_android_settings_page_open_field_page_option_bluetooth">Bluetooth</string>
+    <string name="feature_android_settings_page_open_field_page_option_location">Location</string>
+    <string name="feature_android_settings_page_open_field_page_option_nfc">NFC</string>
+    <string name="feature_android_settings_page_open_field_page_option_accessibility">Accessibility</string>
+    <string name="feature_android_settings_page_open_field_page_option_notification_listener">Notification access</string>
+    <string name="feature_android_settings_page_open_field_page_option_battery_saver">Battery saver</string>
+    <string name="feature_android_settings_page_open_field_page_option_usage_access">Usage access</string>
+    <string name="feature_android_settings_page_open_field_page_option_overlay">Display over other apps</string>
+    <string name="feature_android_settings_page_open_field_page_option_write_settings">Modify system settings</string>
+    <string name="feature_android_settings_page_open_field_page_option_dnd">Do Not Disturb access</string>
+
+    <string name="runtime_feature_settings_page_invalid">Unknown Android settings page</string>
+</resources>
