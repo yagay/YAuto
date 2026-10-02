@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_bluetooth_discovery_start_title">开始蓝牙设备发现</string>
+    <string name="feature_android_bluetooth_discovery_start_description">请求经典蓝牙设备发现；仍受 Android 扫描权限和系统频率限制</string>
+    <string name="feature_android_bluetooth_discovery_stop_title">停止蓝牙设备发现</string>
+    <string name="feature_android_bluetooth_discovery_stop_description">取消由 YAuto 或其他应用启动的经典蓝牙设备发现</string>
+    <string name="feature_android_bluetooth_paired_query_title">获取已配对蓝牙设备</string>
+    <string name="feature_android_bluetooth_paired_query_description">将已配对蓝牙设备的名称、地址和配对状态保存为结构化对象列表</string>
+    <string name="feature_android_bluetooth_paired_query_field_resultvariable">保存设备列表到变量</string>
+
+    <string name="feature_android_state_bluetooth_device_bonded_title">蓝牙设备已配对</string>
+    <string name="feature_android_state_bluetooth_device_bonded_description">检查是否存在名称或精确地址匹配的已配对蓝牙设备</string>
+    <string name="feature_android_condition_bluetooth_device_bonded_title">蓝牙设备已配对</string>
+    <string name="feature_android_condition_bluetooth_device_bonded_description">检查是否存在名称或精确地址匹配的已配对蓝牙设备</string>
+    <string name="feature_android_state_bluetooth_device_bonded_field_namecontains">设备名称包含</string>
+    <string name="feature_android_state_bluetooth_device_bonded_field_address">设备地址精确匹配</string>
+    <string name="feature_android_state_bluetooth_device_bonded_field_value">存在匹配项</string>
+    <string name="feature_android_condition_bluetooth_device_bonded_field_namecontains">设备名称包含</string>
+    <string name="feature_android_condition_bluetooth_device_bonded_field_address">设备地址精确匹配</string>
+    <string name="feature_android_condition_bluetooth_device_bonded_field_value">存在匹配项</string>
+
+    <string name="feature_android_event_bluetooth_device_connection_title">蓝牙设备连接变化</string>
+    <string name="feature_android_event_bluetooth_device_connection_description">经典蓝牙设备连接或断开时触发</string>
+    <string name="feature_android_event_bluetooth_device_connection_field_namecontains">设备名称包含</string>
+    <string name="feature_android_event_bluetooth_device_connection_field_address">设备地址精确匹配</string>
+    <string name="feature_android_event_bluetooth_device_connection_field_state">连接状态</string>
+    <string name="feature_android_event_bluetooth_device_connection_field_state_option_any">任意</string>
+    <string name="feature_android_event_bluetooth_device_connection_field_state_option_connected">已连接</string>
+    <string name="feature_android_event_bluetooth_device_connection_field_state_option_disconnected">已断开</string>
+
+    <string name="feature_android_event_bluetooth_device_found_title">发现蓝牙设备</string>
+    <string name="feature_android_event_bluetooth_device_found_description">经典蓝牙扫描发现附近设备时触发</string>
+    <string name="feature_android_event_bluetooth_device_found_field_namecontains">设备名称包含</string>
+    <string name="feature_android_event_bluetooth_device_found_field_address">设备地址精确匹配</string>
+    <string name="feature_android_event_bluetooth_device_found_field_minrssi">最低 RSSI（dBm）</string>
+
+    <string name="feature_android_event_bluetooth_bond_changed_title">蓝牙配对状态变化</string>
+    <string name="feature_android_event_bluetooth_bond_changed_description">蓝牙设备配对状态变化时触发</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_namecontains">设备名称包含</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_address">设备地址精确匹配</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_bondstate">配对状态</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_bondstate_option_any">任意</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_bondstate_option_none">未配对</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_bondstate_option_bonding">正在配对</string>
+    <string name="feature_android_event_bluetooth_bond_changed_field_bondstate_option_bonded">已配对</string>
+
+    <string name="runtime_feature_bluetooth_scan_permission_missing">尚未授予蓝牙扫描权限</string>
+    <string name="runtime_feature_bluetooth_connect_permission_missing">尚未授予蓝牙连接权限</string>
+    <string name="runtime_feature_bluetooth_discovery_failed">无法更改蓝牙设备发现状态</string>
+</resources>
