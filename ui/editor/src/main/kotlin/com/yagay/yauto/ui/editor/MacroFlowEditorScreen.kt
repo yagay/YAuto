@@ -1,25 +1,23 @@
 package com.yagay.yauto.ui.editor
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.model.*
-import com.yagay.yauto.core.registry.*
+import com.yagay.yauto.core.registry.FeatureDescriptor
+import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.ui.design.*
 import com.yagay.yauto.ui.design.R as TextR
-import java.util.UUID
-
-private enum class FlowParamSide { INPUT, OUTPUT }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MacroFlowEditorScreen(
-    initial: Flow? = null,
+    initial: Flow?,
     descriptors: List<FeatureDescriptor>,
     flows: List<Flow>,
     onSave: (Flow) -> Unit,
@@ -31,77 +29,83 @@ fun MacroFlowEditorScreen(
     var outputs by remember(initial?.id) { mutableStateOf(initial?.outputs.orEmpty()) }
     var actions by remember(initial?.id) { mutableStateOf(initial?.actions.orEmpty()) }
     var picker by remember { mutableStateOf<Pair<Int?, FeatureRef?>?>(null) }
-    var tree by remember { mutableStateOf(false) }
-    var paramEdit by remember { mutableStateOf<Triple<FlowParamSide, Int?, FlowParameter?>?>(null) }
+    var inputEditor by remember { mutableStateOf<Pair<Int?, FlowParameter?>?>(null) }
+    var outputEditor by remember { mutableStateOf<Pair<Int?, FlowParameter?>?>(null) }
     var actionMenu by remember { mutableStateOf<Int?>(null) }
+    var tree by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(if (initial == null) TextR.string.flow_add_title else TextR.string.flow_edit_title))
+                    Text(
+                        stringResource(
+                            if (initial == null) TextR.string.flow_add_title else TextR.string.flow_edit_title
+                        )
+                    )
                 },
-                navigationIcon = { TextButton(onClick = onBack) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_back), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_back)) } },
+                navigationIcon = {
+                    TextButton(onClick = onBack) {
+                        Icon(
+                            painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_back),
+                            contentDescription = stringResource(com.yagay.yauto.ui.design.R.string.icon_back),
+                        )
+                    }
+                },
                 actions = {
                     TextButton(
                         enabled = name.isNotBlank(),
                         onClick = {
                             onSave(
                                 Flow(
-                                    id = initial?.id ?: FlowId(UUID.randomUUID().toString()),
+                                    id = initial?.id ?: FlowId.random(),
                                     name = name.trim(),
+                                    description = description.trim().takeIf { it.isNotEmpty() },
                                     inputs = inputs,
                                     outputs = outputs,
                                     actions = actions,
-                                    description = description.trim().ifBlank { null },
-                                    source = initial?.source,
                                 )
                             )
-                        },
+                        }
                     ) { Text(stringResource(TextR.string.common_save)) }
                 },
             )
         }
     ) { padding ->
-        androidx.compose.foundation.lazy.LazyColumn(
+        LazyColumn(
             Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 OutlinedTextField(
-                    name,
-                    { name = it },
-                    Modifier.fillMaxWidth(),
+                    value = name,
+                    onValueChange = { name = it },
                     label = { Text(stringResource(TextR.string.flow_name)) },
+                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
-                Spacer(Modifier.height(8.dp))
+            }
+            item {
                 OutlinedTextField(
-                    description,
-                    { description = it },
-                    Modifier.fillMaxWidth(),
+                    value = description,
+                    onValueChange = { description = it },
                     label = { Text(stringResource(TextR.string.flow_description)) },
+                    modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
                 )
             }
             item {
                 MacroSection(
                     stringResource(TextR.string.flow_inputs),
-                    MacroPalette.Flow,
+                    MacroPalette.Variable,
                     count = inputs.size,
                     subtitle = stringResource(TextR.string.flow_inputs_subtitle),
-                    onAdd = { paramEdit = Triple(FlowParamSide.INPUT, null, null) },
+                    onAdd = { inputEditor = null to null },
                 ) {
                     if (inputs.isEmpty()) FlowEmpty(stringResource(TextR.string.flow_no_inputs))
                     inputs.forEachIndexed { index, parameter ->
-                        MacroItemRow(
-                            title = parameter.name,
-                            subtitle = flowParameterSummary(parameter),
-                            accent = MacroPalette.Flow,
-                            onClick = { paramEdit = Triple(FlowParamSide.INPUT, index, parameter) },
-                            onMenu = { inputs = inputs.filterIndexed { i, _ -> i != index } },
-                        )
+                        FlowParameterRow(parameter, onClick = { inputEditor = index to parameter })
                     }
                 }
             }
@@ -135,7 +139,7 @@ fun MacroFlowEditorScreen(
                                 } ?: entry.key
                                 stringResource(TextR.string.flow_config_entry_format, label, flowValueText(entry.value))
                             }
-                            ?.let(::localizedList)
+                            ?.let { localizedList(it) }
                         MacroItemRow(
                             title = descriptor?.let { localizedFeatureTitle(it) }
                                 ?: feature?.typeId
@@ -154,17 +158,11 @@ fun MacroFlowEditorScreen(
                     MacroPalette.Constraint,
                     count = outputs.size,
                     subtitle = stringResource(TextR.string.flow_outputs_subtitle),
-                    onAdd = { paramEdit = Triple(FlowParamSide.OUTPUT, null, null) },
+                    onAdd = { outputEditor = null to null },
                 ) {
                     if (outputs.isEmpty()) FlowEmpty(stringResource(TextR.string.flow_no_outputs))
                     outputs.forEachIndexed { index, parameter ->
-                        MacroItemRow(
-                            title = parameter.name,
-                            subtitle = valueTypeLabel(parameter.type),
-                            accent = MacroPalette.Constraint,
-                            onClick = { paramEdit = Triple(FlowParamSide.OUTPUT, index, parameter) },
-                            onMenu = { outputs = outputs.filterIndexed { i, _ -> i != index } },
-                        )
+                        FlowParameterRow(parameter, onClick = { outputEditor = index to parameter })
                     }
                 }
             }
@@ -178,22 +176,95 @@ fun MacroFlowEditorScreen(
             initial = feature,
             onDismiss = { picker = null },
             onPick = { selected ->
-                actions = if (index == null || index !in actions.indices) {
-                    actions + ActionNode.Action(NodeId(UUID.randomUUID().toString()), selected)
-                } else actions.toMutableList().apply {
-                    val old = this[index] as? ActionNode.Action
-                    this[index] = old?.copy(feature = selected)
-                        ?: ActionNode.Action(NodeId(UUID.randomUUID().toString()), selected)
+                actions = if (index == null) {
+                    actions + ActionNode.Action(selected)
+                } else {
+                    actions.toMutableList().also { it[index] = ActionNode.Action(selected) }
                 }
                 picker = null
             },
         )
     }
 
+    inputEditor?.let { (index, parameter) ->
+        FlowParameterDialog(
+            title = stringResource(
+                if (parameter == null) TextR.string.flow_input_parameter else TextR.string.flow_input_parameter
+            ),
+            initial = parameter,
+            onDismiss = { inputEditor = null },
+            onDelete = if (index != null) {
+                {
+                    inputs = inputs.toMutableList().also { it.removeAt(index) }
+                    inputEditor = null
+                }
+            } else null,
+            onSave = { updated ->
+                inputs = if (index == null) inputs + updated
+                else inputs.toMutableList().also { it[index] = updated }
+                inputEditor = null
+            },
+        )
+    }
+
+    outputEditor?.let { (index, parameter) ->
+        FlowParameterDialog(
+            title = stringResource(TextR.string.flow_output_parameter),
+            initial = parameter,
+            onDismiss = { outputEditor = null },
+            onDelete = if (index != null) {
+                {
+                    outputs = outputs.toMutableList().also { it.removeAt(index) }
+                    outputEditor = null
+                }
+            } else null,
+            onSave = { updated ->
+                outputs = if (index == null) outputs + updated
+                else outputs.toMutableList().also { it[index] = updated }
+                outputEditor = null
+            },
+        )
+    }
+
+    actionMenu?.let { index ->
+        val node = actions.getOrNull(index)
+        AlertDialog(
+            onDismissRequest = { actionMenu = null },
+            title = { Text(stringResource(TextR.string.flow_action_menu_title)) },
+            text = {
+                Column {
+                    if (index > 0) {
+                        TextButton(onClick = {
+                            actions = actions.toMutableList().also {
+                                val item = it.removeAt(index)
+                                it.add(index - 1, item)
+                            }
+                            actionMenu = null
+                        }) { Text(stringResource(TextR.string.flow_move_up)) }
+                    }
+                    if (index < actions.lastIndex) {
+                        TextButton(onClick = {
+                            actions = actions.toMutableList().also {
+                                val item = it.removeAt(index)
+                                it.add(index + 1, item)
+                            }
+                            actionMenu = null
+                        }) { Text(stringResource(TextR.string.flow_move_down)) }
+                    }
+                    TextButton(onClick = {
+                        actions = actions.toMutableList().also { it.removeAt(index) }
+                        actionMenu = null
+                    }) { Text(stringResource(TextR.string.common_delete)) }
+                }
+            },
+            confirmButton = {},
+        )
+    }
+
     if (tree) {
-        ActionTreeDialog(
+        ActionTreeEditorDialog(
             title = stringResource(TextR.string.flow_action_tree_title),
-            initial = actions,
+            nodes = actions,
             descriptors = descriptors,
             flows = flows,
             onDismiss = { tree = false },
@@ -203,74 +274,37 @@ fun MacroFlowEditorScreen(
             },
         )
     }
+}
 
-    paramEdit?.let { (side, index, initialParam) ->
-        FlowParameterDialog(
-            title = stringResource(
-                if (side == FlowParamSide.INPUT) TextR.string.flow_input_parameter else TextR.string.flow_output_parameter
-            ),
-            initial = initialParam,
-            allowDefault = side == FlowParamSide.INPUT,
-            onDismiss = { paramEdit = null },
-            onSave = { parameter ->
-                if (side == FlowParamSide.INPUT) inputs = inputs.upsertParameter(index, parameter)
-                else outputs = outputs.upsertParameter(index, parameter)
-                paramEdit = null
-            },
-        )
-    }
-
-    actionMenu?.let { index ->
-        AlertDialog(
-            onDismissRequest = { actionMenu = null },
-            title = { Text(stringResource(TextR.string.flow_action_menu_title)) },
-            text = {
-                Column {
-                    TextButton(
-                        enabled = index > 0,
-                        onClick = {
-                            actions = actions.moveFlowItem(index, index - 1)
-                            actionMenu = null
-                        },
-                    ) { Text(stringResource(TextR.string.flow_move_up)) }
-                    TextButton(
-                        enabled = index < actions.lastIndex,
-                        onClick = {
-                            actions = actions.moveFlowItem(index, index + 1)
-                            actionMenu = null
-                        },
-                    ) { Text(stringResource(TextR.string.flow_move_down)) }
-                    TextButton(
-                        onClick = {
-                            actions = actions.filterIndexed { i, _ -> i != index }
-                            actionMenu = null
-                        },
-                    ) { Text(stringResource(TextR.string.common_delete)) }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { actionMenu = null }) { Text(stringResource(TextR.string.common_cancel)) }
-            },
-        )
-    }
+@Composable
+private fun FlowParameterRow(parameter: FlowParameter, onClick: () -> Unit) {
+    val suffix = buildList {
+        if (parameter.required) add(stringResource(TextR.string.flow_parameter_required_suffix))
+        parameter.defaultValue?.let {
+            add(stringResource(TextR.string.flow_default_suffix_format, flowValueText(it)))
+        }
+    }.joinToString("")
+    ListItem(
+        headlineContent = { Text(parameter.name) },
+        supportingContent = { Text(flowValueTypeLabel(parameter.type) + suffix) },
+        modifier = Modifier.fillMaxWidth(),
+    )
+    TextButton(onClick = onClick) { Text(stringResource(TextR.string.common_edit)) }
 }
 
 @Composable
 private fun FlowParameterDialog(
     title: String,
     initial: FlowParameter?,
-    allowDefault: Boolean,
     onDismiss: () -> Unit,
+    onDelete: (() -> Unit)?,
     onSave: (FlowParameter) -> Unit,
 ) {
-    var name by remember(initial?.name) { mutableStateOf(initial?.name.orEmpty()) }
-    var type by remember(initial?.name) { mutableStateOf(initial?.type ?: ValueType.STRING) }
-    var required by remember(initial?.name) { mutableStateOf(initial?.required ?: false) }
-    var default by remember(initial?.name) {
-        mutableStateOf(initial?.defaultValue?.let(::flowValueText).orEmpty())
-    }
-    var typeMenu by remember { mutableStateOf(false) }
+    var name by remember(initial) { mutableStateOf(initial?.name.orEmpty()) }
+    var type by remember(initial) { mutableStateOf(initial?.type ?: ValueType.STRING) }
+    var required by remember(initial) { mutableStateOf(initial?.required ?: false) }
+    var defaultText by remember(initial) { mutableStateOf(initial?.defaultValue.editorText()) }
+    val types = ValueType.entries
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -278,40 +312,29 @@ private fun FlowParameterDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
-                    name,
-                    { name = it },
-                    Modifier.fillMaxWidth(),
+                    value = name,
+                    onValueChange = { name = it },
                     label = { Text(stringResource(TextR.string.flow_parameter_name)) },
                     singleLine = true,
                 )
-                Box {
-                    OutlinedButton(onClick = { typeMenu = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(TextR.string.flow_parameter_type_format, valueTypeLabel(type)))
-                    }
-                    DropdownMenu(typeMenu, { typeMenu = false }) {
-                        ValueType.entries.forEach { item ->
-                            DropdownMenuItem(
-                                text = { Text(valueTypeLabel(item)) },
-                                onClick = {
-                                    type = item
-                                    typeMenu = false
-                                },
-                            )
-                        }
+                Text(stringResource(TextR.string.flow_parameter_type_format, flowValueTypeLabel(type)))
+                types.forEach { option ->
+                    Row {
+                        RadioButton(selected = type == option, onClick = { type = option })
+                        TextButton(onClick = { type = option }) { Text(flowValueTypeLabel(option)) }
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(TextR.string.flow_parameter_required), Modifier.weight(1f))
-                    Switch(required, { required = it })
+                Row {
+                    Checkbox(checked = required, onCheckedChange = { required = it })
+                    TextButton(onClick = { required = !required }) {
+                        Text(stringResource(TextR.string.flow_parameter_required))
+                    }
                 }
-                if (allowDefault) {
-                    OutlinedTextField(
-                        default,
-                        { default = it },
-                        Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(TextR.string.flow_parameter_default)) },
-                    )
-                }
+                OutlinedTextField(
+                    value = defaultText,
+                    onValueChange = { defaultText = it },
+                    label = { Text(stringResource(TextR.string.flow_parameter_default)) },
+                )
             }
         },
         confirmButton = {
@@ -320,54 +343,28 @@ private fun FlowParameterDialog(
                 onClick = {
                     onSave(
                         FlowParameter(
-                            name.trim(),
-                            type,
-                            required,
-                            if (allowDefault && default.isNotEmpty()) {
-                                ConfigValue.StringValue(default)
-                            } else {
-                                ConfigValue.NullValue
-                            },
+                            name = name.trim(),
+                            type = type,
+                            required = required,
+                            defaultValue = defaultText.takeIf { it.isNotBlank() }?.let { ConfigValue.StringValue(it) },
                         )
                     )
-                },
+                }
             ) { Text(stringResource(TextR.string.common_confirm)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(TextR.string.common_cancel)) }
+            Row {
+                onDelete?.let { delete ->
+                    TextButton(onClick = delete) { Text(stringResource(TextR.string.common_delete)) }
+                }
+                TextButton(onClick = onDismiss) { Text(stringResource(TextR.string.common_cancel)) }
+            }
         },
     )
 }
 
 @Composable
-private fun FlowEmpty(text: String) {
-    Box(Modifier.fillMaxWidth().padding(10.dp), contentAlignment = Alignment.Center) {
-        Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-private fun List<FlowParameter>.upsertParameter(index: Int?, value: FlowParameter): List<FlowParameter> =
-    if (index == null || index !in indices) this + value else toMutableList().apply { this[index] = value }
-
-private fun <T> List<T>.moveFlowItem(from: Int, to: Int): List<T> {
-    if (from !in indices || to !in indices || from == to) return this
-    return toMutableList().apply { add(to, removeAt(from)) }
-}
-
-@Composable
-private fun flowParameterSummary(parameter: FlowParameter): String {
-    val parts = buildList {
-        add(valueTypeLabel(parameter.type))
-        if (parameter.required) add(stringResource(TextR.string.flow_parameter_required))
-        if (parameter.defaultValue != ConfigValue.NullValue) {
-            add(stringResource(TextR.string.flow_default_value_format, flowValueText(parameter.defaultValue)))
-        }
-    }
-    return localizedList(parts)
-}
-
-@Composable
-private fun valueTypeLabel(type: ValueType): String = stringResource(
+private fun flowValueTypeLabel(type: ValueType): String = stringResource(
     when (type) {
         ValueType.STRING -> TextR.string.flow_value_type_string
         ValueType.NUMBER -> TextR.string.flow_value_type_number
@@ -396,21 +393,38 @@ private fun flowNodeTitle(node: ActionNode, flows: List<Flow>): String = when (n
     is ActionNode.While -> stringResource(TextR.string.node_while)
     is ActionNode.ForEach -> stringResource(TextR.string.node_foreach)
     is ActionNode.Parallel -> stringResource(TextR.string.node_parallel)
-    is ActionNode.Try -> stringResource(TextR.string.node_try)
+    is ActionNode.TryCatch -> stringResource(TextR.string.node_try)
     is ActionNode.CallFlow -> stringResource(
         TextR.string.node_call_flow_format,
         flows.firstOrNull { it.id == node.flowId }?.name ?: node.flowId.value,
     )
     is ActionNode.Return -> stringResource(TextR.string.node_return)
-    is ActionNode.Break -> stringResource(TextR.string.node_break)
-    is ActionNode.Continue -> stringResource(TextR.string.node_continue)
+    ActionNode.Break -> stringResource(TextR.string.node_break)
+    ActionNode.Continue -> stringResource(TextR.string.node_continue)
 }
 
+private fun ConfigValue?.editorText(): String = when (this) {
+    null, ConfigValue.NullValue -> ""
+    is ConfigValue.StringValue -> value
+    is ConfigValue.NumberValue -> value.toString()
+    is ConfigValue.BooleanValue -> value.toString()
+    is ConfigValue.ListValue -> value.joinToString(",") { it.editorText() }
+    is ConfigValue.ObjectValue -> value.entries.joinToString(",") { "${it.key}=${it.value.editorText()}" }
+}
+
+@Composable
 private fun flowValueText(value: ConfigValue): String = when (value) {
-    ConfigValue.NullValue -> ""
     is ConfigValue.StringValue -> value.value
-    is ConfigValue.NumberValue -> if (value.value % 1.0 == 0.0) value.value.toLong().toString() else value.value.toString()
-    is ConfigValue.BooleanValue -> value.value.toString()
-    is ConfigValue.ListValue -> value.value.joinToString(",") { flowValueText(it) }
-    is ConfigValue.ObjectValue -> value.value.entries.joinToString(",") { "${it.key}=${flowValueText(it.value)}" }
+    is ConfigValue.NumberValue -> value.value.toString()
+    is ConfigValue.BooleanValue -> stringResource(
+        if (value.value) TextR.string.runtime_value_true else TextR.string.runtime_value_false
+    )
+    ConfigValue.NullValue -> stringResource(TextR.string.value_null)
+    is ConfigValue.ListValue -> "[${value.value.joinToString(", ") { it.editorText() }}]"
+    is ConfigValue.ObjectValue -> "{${value.value.entries.joinToString(", ") { "${it.key}=${it.value.editorText()}" }}}"
+}
+
+@Composable
+private fun FlowEmpty(text: String) {
+    Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
