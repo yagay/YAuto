@@ -14,6 +14,9 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.display.dark_mode.set", ShortXFeatureSuggestions.target("SetDarkModeEnabled", path))
         assertEquals("android.power.stay_awake.set", ShortXFeatureSuggestions.target("StayAwake", path))
         assertEquals("android.tts.speak", ShortXFeatureSuggestions.target("TTS", path))
+        assertEquals("android.screen.wake", ShortXFeatureSuggestions.target("WakeupScreen", path))
+        assertEquals("android.input.keyevent", ShortXFeatureSuggestions.target("InjectKeyCode", path))
+        assertEquals("android.screenshot.capture", ShortXFeatureSuggestions.target("TakeScreenshot", path))
     }
 
     @Test fun `facts suggest matching change events`() {
@@ -21,11 +24,22 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.event.dark_mode_changed", ShortXFeatureSuggestions.target("DarkModeStatusChanged", path))
         assertEquals("android.event.nfc_state_changed", ShortXFeatureSuggestions.target("NFCStatusChanged", path))
         assertEquals("android.event.auto_rotate_changed", ShortXFeatureSuggestions.target("ScreenRotate", path))
+        assertEquals("android.event.battery_changed", ShortXFeatureSuggestions.target("BatteryLevelChanged", path))
+        assertEquals("android.event.battery_changed", ShortXFeatureSuggestions.target("BatteryTemperatureChanged", path))
+        assertEquals("android.event.headset_changed", ShortXFeatureSuggestions.target("HeadsetPlug", path))
     }
 
-    @Test fun `ambiguous toggles are deliberately not guessed`() {
+    @Test fun `conditions suggest compatible current states`() {
+        val path = "rule[0].condition[0]"
+        assertEquals("android.condition.battery_level", ShortXFeatureSuggestions.target("BatteryPercent", path))
+        assertEquals("android.condition.headset_connected", ShortXFeatureSuggestions.target("IsHeadsetPlug", path))
+    }
+
+    @Test fun `ambiguous toggles and different semantics are deliberately not guessed`() {
         assertNull(ShortXFeatureSuggestions.target("ToggleNFC", "rule[0].action[0]"))
         assertNull(ShortXFeatureSuggestions.target("ToggleDarkMode", "rule[0].action[0]"))
         assertNull(ShortXFeatureSuggestions.target("RequireScreenRotate", "rule[0].condition[0]"))
+        assertNull(ShortXFeatureSuggestions.target("InjectCombineKeyCode", "rule[0].action[0]"))
+        assertNull(ShortXFeatureSuggestions.target("AreaScreenshot", "rule[0].action[0]"))
     }
 }
