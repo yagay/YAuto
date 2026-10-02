@@ -35,17 +35,9 @@ class AppGraph(context: Context) {
     val workspace = JsonWorkspaceRepository(context.applicationContext)
     val importReports = JsonImportReportStore(context.applicationContext)
 
-    val capabilities = CapabilityBroker(
-        environmentProvider = {
-            RuntimeEnvironment(
-                sdkInt = Build.VERSION.SDK_INT,
-                manufacturer = Build.MANUFACTURER,
-                brand = Build.BRAND,
-                model = Build.MODEL,
-            )
-        }
-    )
-
+    val capabilities = CapabilityBroker(environmentProvider = {
+        RuntimeEnvironment(sdkInt = Build.VERSION.SDK_INT, manufacturer = Build.MANUFACTURER, brand = Build.BRAND, model = Build.MODEL)
+    })
     val diagnostics = DiagnosticCoordinator(diagnosticRegistry)
     val runtime = AutomationRuntime(workspace, features, capabilities, tracer)
 
@@ -54,6 +46,7 @@ class AppGraph(context: Context) {
         features.install(AndroidFeaturePack(context.applicationContext))
         features.install(AndroidControlFeaturePack(context.applicationContext))
         features.install(AndroidMediaDeviceFeaturePack(context.applicationContext))
+        features.install(AndroidAudioFeaturePack(context.applicationContext))
         features.install(AndroidHttpFeaturePack())
         features.install(AndroidFileFeaturePack())
         features.install(AndroidEventFeaturePack())
@@ -61,14 +54,8 @@ class AppGraph(context: Context) {
         features.install(AndroidNotificationControlFeaturePack())
         features.install(AccessibilityFeaturePack())
 
-        capabilities.register(RootBackend(rootShell))
-        capabilities.register(shizuku)
-        capabilities.register(xposed)
-        capabilities.register(accessibility)
-
-        importers.register(MacroDroidImporter())
-        importers.register(ShortXImporter())
-        importers.register(TaskerImporter())
+        capabilities.register(RootBackend(rootShell)); capabilities.register(shizuku); capabilities.register(xposed); capabilities.register(accessibility)
+        importers.register(MacroDroidImporter()); importers.register(ShortXImporter()); importers.register(TaskerImporter())
 
         diagnosticRegistry.register(ExecutionFileDiagnosticCollector(context.applicationContext))
         diagnosticRegistry.register(ImportReportDiagnosticCollector(context.applicationContext))
@@ -76,7 +63,6 @@ class AppGraph(context: Context) {
         diagnosticRegistry.register(AccessibilityDiagnosticCollector())
         diagnosticRegistry.register(RootDiagnosticCollector(rootShell))
         diagnosticRegistry.register(LsposedLogCollector(rootShell))
-        diagnosticRegistry.register(shizuku)
-        diagnosticRegistry.register(xposed)
+        diagnosticRegistry.register(shizuku); diagnosticRegistry.register(xposed)
     }
 }
