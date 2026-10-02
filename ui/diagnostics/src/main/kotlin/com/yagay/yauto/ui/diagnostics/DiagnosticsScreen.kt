@@ -7,11 +7,13 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.diagnostics.*
 import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
+import com.yagay.yauto.ui.design.R as TextR
 
 private sealed interface DiagnosticPage {
     data object Overview : DiagnosticPage
@@ -38,7 +40,7 @@ fun DiagnosticsScreen(
                 title = {
                     Text(
                         when (val current = page) {
-                            DiagnosticPage.Overview -> "诊断中心"
+                            DiagnosticPage.Overview -> stringResource(TextR.string.diagnostics_title)
                             is DiagnosticPage.Source -> sourceLabel(current.source)
                             is DiagnosticPage.Record -> current.record.title
                         }
@@ -47,7 +49,10 @@ fun DiagnosticsScreen(
                 navigationIcon = {
                     TextButton(onClick = {
                         page = when (val current = page) {
-                            DiagnosticPage.Overview -> { onBack(); DiagnosticPage.Overview }
+                            DiagnosticPage.Overview -> {
+                                onBack()
+                                DiagnosticPage.Overview
+                            }
                             is DiagnosticPage.Source -> DiagnosticPage.Overview
                             is DiagnosticPage.Record -> DiagnosticPage.Source(current.source)
                         }
@@ -55,7 +60,14 @@ fun DiagnosticsScreen(
                 },
                 actions = {
                     if (page == DiagnosticPage.Overview) {
-                        TextButton(onClick = onCollect, enabled = !collecting) { Text(if (collecting) "收集中" else "刷新") }
+                        TextButton(onClick = onCollect, enabled = !collecting) {
+                            Text(
+                                stringResource(
+                                    if (collecting) TextR.string.diagnostics_collecting_short
+                                    else TextR.string.diagnostics_refresh
+                                )
+                            )
+                        }
                     }
                 },
             )
@@ -63,18 +75,11 @@ fun DiagnosticsScreen(
     ) { padding ->
         when (val current = page) {
             DiagnosticPage.Overview -> DiagnosticOverview(
-                Modifier.padding(padding),
-                statuses,
-                records,
-                snapshot != null,
-                collecting,
-                onCollect,
-                onExport,
-                onSource = { page = DiagnosticPage.Source(it) },
+                Modifier.padding(padding), statuses, records, snapshot != null, collecting,
+                onCollect, onExport, onSource = { page = DiagnosticPage.Source(it) },
             )
             is DiagnosticPage.Source -> DiagnosticSourcePage(
-                Modifier.padding(padding),
-                current.source,
+                Modifier.padding(padding), current.source,
                 records.filter { it.source == current.source },
                 onRecord = { page = DiagnosticPage.Record(it, current.source) },
             )
@@ -102,39 +107,65 @@ private fun DiagnosticOverview(
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MacroPalette.Diagnostics.copy(alpha = .10f))) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("诊断与执行日志", fontWeight = FontWeight.SemiBold)
-                    Text("按来源分组查看；Root、LSPosed、SystemUI、system_server、导入报告和 YAuto 执行记录都使用同一结构。", style = MaterialTheme.typography.bodySmall)
-                    Text("诊断只在本机生成，不会自动上传。", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(TextR.string.diagnostics_header), fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(TextR.string.diagnostics_header_detail), style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(TextR.string.diagnostics_local_only), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onCollect, enabled = !collecting, modifier = Modifier.weight(1f)) { Text(if (collecting) "正在收集…" else "收集诊断") }
-                OutlinedButton(onClick = onExport, enabled = hasSnapshot && !collecting, modifier = Modifier.weight(1f)) { Text("导出 JSON") }
+                Button(onClick = onCollect, enabled = !collecting, modifier = Modifier.weight(1f)) {
+                    Text(
+                        stringResource(
+                            if (collecting) TextR.string.diagnostics_collecting
+                            else TextR.string.diagnostics_collect
+                        )
+                    )
+                }
+                OutlinedButton(
+                    onClick = onExport,
+                    enabled = hasSnapshot && !collecting,
+                    modifier = Modifier.weight(1f),
+                ) { Text(stringResource(TextR.string.diagnostics_export_json)) }
             }
         }
-        item { Text("来源", fontWeight = FontWeight.SemiBold) }
+        item { Text(stringResource(TextR.string.diagnostics_sources), fontWeight = FontWeight.SemiBold) }
         items(DiagnosticSource.entries, key = { it.name }) { source ->
             val sourceRecords = records.filter { it.source == source }
             val errors = sourceRecords.count { it.severity == DiagnosticSeverity.ERROR }
             MacroItemRow(
                 title = sourceLabel(source),
-                subtitle = buildString {
-                    append("${sourceRecords.size} 条记录")
-                    if (errors > 0) append(" · $errors 个错误")
+                subtitle = if (errors > 0) {
+                    stringResource(TextR.string.diagnostics_source_summary_errors_format, sourceRecords.size, errors)
+                } else {
+                    stringResource(TextR.string.diagnostics_source_summary_format, sourceRecords.size)
                 },
                 accent = sourceAccent(source),
                 onClick = { onSource(source) },
             )
         }
-        item { Text("采集器状态", fontWeight = FontWeight.SemiBold) }
-        if (statuses.isEmpty()) item { Text("尚未检查采集器。", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        item { Text(stringResource(TextR.string.diagnostics_collectors), fontWeight = FontWeight.SemiBold) }
+        if (statuses.isEmpty()) {
+            item {
+                Text(
+                    stringResource(TextR.string.diagnostics_collectors_unchecked),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         items(statuses, key = { it.collectorId }) { status ->
             ListItem(
                 headlineContent = { Text(status.collectorId) },
                 supportingContent = { status.message?.let { Text(it) } },
-                trailingContent = { Text(if (status.available) "可用" else "不可用") },
+                trailingContent = {
+                    Text(
+                        stringResource(
+                            if (status.available) TextR.string.diagnostics_available
+                            else TextR.string.diagnostics_unavailable
+                        )
+                    )
+                },
             )
             HorizontalDivider()
         }
@@ -154,12 +185,26 @@ private fun DiagnosticSourcePage(
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         item {
-            Text("${records.size} 条记录", style = MaterialTheme.typography.labelLarge)
+            Text(
+                stringResource(TextR.string.diagnostics_record_count_format, records.size),
+                style = MaterialTheme.typography.labelLarge,
+            )
         }
-        if (records.isEmpty()) item { Text("当前没有 ${sourceLabel(source)} 记录。", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        if (records.isEmpty()) {
+            item {
+                Text(
+                    stringResource(TextR.string.diagnostics_no_source_records_format, sourceLabel(source)),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         items(records.asReversed(), key = { "${it.timestampEpochMs}:${it.title}:${it.message.hashCode()}" }) { record ->
             MacroItemRow(
-                title = "${severityLabel(record.severity)} · ${record.title}",
+                title = stringResource(
+                    TextR.string.diagnostics_severity_title_format,
+                    severityLabel(record.severity),
+                    record.title,
+                ),
                 subtitle = record.message.lineSequence().firstOrNull().orEmpty().take(180),
                 accent = severityAccent(record.severity),
                 onClick = { onRecord(record) },
@@ -178,40 +223,66 @@ private fun DiagnosticRecordPage(modifier: Modifier, record: DiagnosticRecord) {
         item {
             Card {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Text("${sourceLabel(record.source)} · ${severityLabel(record.severity)}", fontWeight = FontWeight.SemiBold)
-                    Text("时间：${record.timestampEpochMs}", style = MaterialTheme.typography.labelSmall)
-                    record.context.executionId?.let { Text("Execution：$it", style = MaterialTheme.typography.labelSmall) }
-                    record.context.automationId?.let { Text("Automation：$it", style = MaterialTheme.typography.labelSmall) }
-                    record.context.flowId?.let { Text("Flow：$it", style = MaterialTheme.typography.labelSmall) }
-                    record.context.featureId?.let { Text("Feature：$it", style = MaterialTheme.typography.labelSmall) }
-                    record.context.backendId?.let { Text("Backend：$it", style = MaterialTheme.typography.labelSmall) }
+                    Text(
+                        stringResource(
+                            TextR.string.diagnostics_source_severity_format,
+                            sourceLabel(record.source),
+                            severityLabel(record.severity),
+                        ),
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        stringResource(TextR.string.diagnostics_time_format, record.timestampEpochMs.toString()),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                    record.context.executionId?.let {
+                        Text(stringResource(TextR.string.diagnostics_context_execution_format, it), style = MaterialTheme.typography.labelSmall)
+                    }
+                    record.context.automationId?.let {
+                        Text(stringResource(TextR.string.diagnostics_context_automation_format, it), style = MaterialTheme.typography.labelSmall)
+                    }
+                    record.context.flowId?.let {
+                        Text(stringResource(TextR.string.diagnostics_context_flow_format, it), style = MaterialTheme.typography.labelSmall)
+                    }
+                    record.context.featureId?.let {
+                        Text(stringResource(TextR.string.diagnostics_context_feature_format, it), style = MaterialTheme.typography.labelSmall)
+                    }
+                    record.context.backendId?.let {
+                        Text(stringResource(TextR.string.diagnostics_context_backend_format, it), style = MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
         }
         item {
-            Text("详情", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(TextR.string.diagnostics_details), fontWeight = FontWeight.SemiBold)
             SelectionContainer { Text(record.message) }
         }
         if (record.attributes.isNotEmpty()) {
-            item { Text("属性", fontWeight = FontWeight.SemiBold) }
+            item { Text(stringResource(TextR.string.diagnostics_attributes), fontWeight = FontWeight.SemiBold) }
             items(record.attributes.entries.toList(), key = { it.key }) { (key, value) ->
-                ListItem(headlineContent = { Text(key) }, supportingContent = { SelectionContainer { Text(value) } })
+                ListItem(
+                    headlineContent = { Text(key) },
+                    supportingContent = { SelectionContainer { Text(value) } },
+                )
                 HorizontalDivider()
             }
         }
     }
 }
 
-private fun sourceLabel(source: DiagnosticSource): String = when (source) {
-    DiagnosticSource.YAUTO -> "YAuto / 执行记录"
-    DiagnosticSource.ANDROID -> "Android / Accessibility / Shizuku"
-    DiagnosticSource.ROOT -> "Root"
-    DiagnosticSource.LSPOSED -> "LSPosed"
-    DiagnosticSource.SYSTEM_UI -> "SystemUI"
-    DiagnosticSource.SYSTEM_SERVER -> "system_server"
-    DiagnosticSource.ZYGOTE -> "Zygote"
-    DiagnosticSource.IMPORTER -> "导入 / 兼容"
-}
+@Composable
+private fun sourceLabel(source: DiagnosticSource): String = stringResource(
+    when (source) {
+        DiagnosticSource.YAUTO -> TextR.string.diagnostics_source_yauto
+        DiagnosticSource.ANDROID -> TextR.string.diagnostics_source_android
+        DiagnosticSource.ROOT -> TextR.string.diagnostics_source_root
+        DiagnosticSource.LSPOSED -> TextR.string.diagnostics_source_lsposed
+        DiagnosticSource.SYSTEM_UI -> TextR.string.diagnostics_source_system_ui
+        DiagnosticSource.SYSTEM_SERVER -> TextR.string.diagnostics_source_system_server
+        DiagnosticSource.ZYGOTE -> TextR.string.diagnostics_source_zygote
+        DiagnosticSource.IMPORTER -> TextR.string.diagnostics_source_importer
+    }
+)
 
 private fun sourceAccent(source: DiagnosticSource) = when (source) {
     DiagnosticSource.YAUTO -> MacroPalette.Action
@@ -224,12 +295,15 @@ private fun sourceAccent(source: DiagnosticSource) = when (source) {
     DiagnosticSource.IMPORTER -> MacroPalette.Variable
 }
 
-private fun severityLabel(severity: DiagnosticSeverity): String = when (severity) {
-    DiagnosticSeverity.DEBUG -> "调试"
-    DiagnosticSeverity.INFO -> "信息"
-    DiagnosticSeverity.WARNING -> "警告"
-    DiagnosticSeverity.ERROR -> "错误"
-}
+@Composable
+private fun severityLabel(severity: DiagnosticSeverity): String = stringResource(
+    when (severity) {
+        DiagnosticSeverity.DEBUG -> TextR.string.diagnostics_severity_debug
+        DiagnosticSeverity.INFO -> TextR.string.diagnostics_severity_info
+        DiagnosticSeverity.WARNING -> TextR.string.diagnostics_severity_warning
+        DiagnosticSeverity.ERROR -> TextR.string.diagnostics_severity_error
+    }
+)
 
 private fun severityAccent(severity: DiagnosticSeverity) = when (severity) {
     DiagnosticSeverity.DEBUG -> MacroPalette.Utility
