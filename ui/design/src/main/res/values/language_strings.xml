@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="language_title">App language</string>
+    <string name="language_subtitle">Choose the language used by YAuto</string>
+    <string name="language_system">Follow system</string>
+    <string name="language_english">English</string>
+    <string name="language_simplified_chinese">Simplified Chinese</string>
+    <string name="language_current_format">Current: %1$s</string>
+    <string name="language_android_12_hint">On Android 12, YAuto stores this choice locally. Android 13 and later also expose it in system App language settings.</string>
+</resources>
