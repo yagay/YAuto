@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_location_radius_title">Location radius</string>
+    <string name="feature_android_state_location_radius_description">Check whether the latest known device location is inside or outside a radius</string>
+    <string name="feature_android_condition_location_radius_title">Location radius</string>
+    <string name="feature_android_condition_location_radius_description">Check whether the latest known device location is inside or outside a radius</string>
+
+    <string name="feature_android_state_location_radius_field_latitude">Latitude</string>
+    <string name="feature_android_state_location_radius_field_longitude">Longitude</string>
+    <string name="feature_android_state_location_radius_field_radiusmeters">Radius meters</string>
+    <string name="feature_android_state_location_radius_field_inside">Inside radius</string>
+    <string name="feature_android_state_location_radius_field_maxageminutes">Maximum location age (minutes, 0 = any)</string>
+    <string name="feature_android_condition_location_radius_field_latitude">Latitude</string>
+    <string name="feature_android_condition_location_radius_field_longitude">Longitude</string>
+    <string name="feature_android_condition_location_radius_field_radiusmeters">Radius meters</string>
+    <string name="feature_android_condition_location_radius_field_inside">Inside radius</string>
+    <string name="feature_android_condition_location_radius_field_maxageminutes">Maximum location age (minutes, 0 = any)</string>
+</resources>
