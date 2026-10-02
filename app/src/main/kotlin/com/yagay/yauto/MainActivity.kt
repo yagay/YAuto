@@ -144,14 +144,16 @@ class MainActivity : ComponentActivity() {
 
                 val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
                     if (uri != null) operation {
-                        val result = withContext(Dispatchers.IO) {
+                        val importer = withContext(Dispatchers.IO) {
                             val message = getString(TextR.string.main_import_too_large)
                             val bytes = contentResolver.openInputStream(uri)
                                 ?.use { it.readBoundedBytes(20 * 1024 * 1024, message) }
                                 ?: byteArrayOf()
-                            graph.importers.import(
-                                ImportInput(uri.lastPathSegment, contentResolver.getType(uri), bytes)
-                            )
+                            val input = ImportInput(uri.lastPathSegment, contentResolver.getType(uri), bytes)
+                            graph.importers.bestFor(input) to input
+                        }
+                        val result = withContext(Dispatchers.IO) {
+                            importer.first?.import(importer.second) ?: graph.importers.import(importer.second)
                         }
                         graph.importReports.save(result)
                         if (result.success) {
@@ -161,9 +163,10 @@ class MainActivity : ComponentActivity() {
                                 result.bundle.globalVariables,
                             )
                             saveWorkspace(updated) {
+                                val importerName = importer.first?.displayName ?: result.importerId
                                 importSummary = getString(
                                     TextR.string.main_import_summary_format,
-                                    result.importerId,
+                                    importerName,
                                     result.bundle.automations.size,
                                     result.bundle.flows.size,
                                     result.issues.size,
