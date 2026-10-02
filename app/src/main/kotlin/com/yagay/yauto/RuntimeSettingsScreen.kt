@@ -54,6 +54,11 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     val camera = remember(refresh) {
         ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
     }
+    val location = remember(refresh) {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    }
+    val overlay = remember(refresh) { Settings.canDrawOverlays(context) }
     val dndPolicy = remember(refresh) {
         context.getSystemService(NotificationManager::class.java).isNotificationPolicyAccessGranted
     }
@@ -64,7 +69,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
             ?.split(':')
             ?.any { it.equals(component, ignoreCase = true) } == true
     }
-    val grantedCount = listOf(accessibility, writeSettings, notificationAccess, notifications, camera, dndPolicy).count { it }
+    val grantedCount = listOf(accessibility, writeSettings, notificationAccess, notifications, camera, location, overlay, dndPolicy).count { it }
 
     Scaffold(
         topBar = {
@@ -104,7 +109,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 item {
                     MacroItemRow(
                         "Android 权限",
-                        "$grantedCount / 6 个基础权限就绪",
+                        "$grantedCount / 8 个基础权限就绪",
                         MacroPalette.Constraint,
                         onClick = { page = RuntimeSettingsPage.PERMISSIONS },
                     )
@@ -132,9 +137,9 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 contentPadding = PaddingValues(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                item { PermissionCard("UI 自动化 / Accessibility", accessibility, "点击、长按、View ID、输入文字、滚动、手势和屏幕内容条件需要此服务。", "设置 Accessibility") { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) } }
+                item { PermissionCard("UI 自动化 / Accessibility", accessibility, "点击、长按、View ID、输入文字、滚动、手势、前台应用和屏幕内容条件需要此服务。", "设置 Accessibility") { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) } }
                 item { PermissionCard("修改系统设置", writeSettings, "手动亮度等受保护系统设置需要此特殊权限。", "允许修改系统设置") { context.startActivity(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:${context.packageName}"))) } }
-                item { PermissionCard("通知监听", notificationAccess, "通知发布、移除和通知内容触发器需要通知监听访问。", "设置通知监听") { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) } }
+                item { PermissionCard("通知监听", notificationAccess, "通知发布、移除、内容触发器以及关闭/打开/点击现有通知需要通知监听访问。", "设置通知监听") { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) } }
                 item {
                     PermissionCard("运行通知", notifications, "Android 13+ 前台运行服务需要通知权限。", if (notifications) "已允许" else "允许运行通知") {
                         if (!notifications && Build.VERSION.SDK_INT >= 33) permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -143,6 +148,16 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 item {
                     PermissionCard("相机 / 手电筒", camera, "手电筒动作通过 CameraManager 控制闪光灯，需要相机运行时权限。", if (camera) "已允许" else "允许相机权限") {
                         if (!camera) permissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                }
+                item {
+                    PermissionCard("位置", location, "读取最后已知位置和位置半径状态/约束需要前台位置权限；当前不会申请后台持续定位权限。", if (location) "已允许" else "允许位置权限") {
+                        if (!location) permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }
+                }
+                item {
+                    PermissionCard("显示在其他应用上层", overlay, "Surface / 悬浮面板需要系统悬浮窗权限。", if (overlay) "已允许" else "允许悬浮窗") {
+                        context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")))
                     }
                 }
                 item {
