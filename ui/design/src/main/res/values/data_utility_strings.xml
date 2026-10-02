@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_data_math_calculate_title">Calculate numbers</string>
+    <string name="feature_data_math_calculate_description">Apply a common arithmetic operation to two numbers and store the result</string>
+    <string name="feature_data_math_calculate_field_a">First number</string>
+    <string name="feature_data_math_calculate_field_operation">Operation</string>
+    <string name="feature_data_math_calculate_field_b">Second number</string>
+    <string name="feature_data_math_calculate_field_resultvariable">Store result in variable</string>
+    <string name="feature_data_math_calculate_field_operation_option_add">Add</string>
+    <string name="feature_data_math_calculate_field_operation_option_subtract">Subtract</string>
+    <string name="feature_data_math_calculate_field_operation_option_multiply">Multiply</string>
+    <string name="feature_data_math_calculate_field_operation_option_divide">Divide</string>
+    <string name="feature_data_math_calculate_field_operation_option_modulo">Modulo</string>
+    <string name="feature_data_math_calculate_field_operation_option_power">Power</string>
+    <string name="feature_data_math_calculate_field_operation_option_min">Minimum</string>
+    <string name="feature_data_math_calculate_field_operation_option_max">Maximum</string>
+
+    <string name="feature_data_math_round_title">Round number</string>
+    <string name="feature_data_math_round_description">Round, floor or ceil a number with optional decimal precision</string>
+    <string name="feature_data_math_round_field_value">Number</string>
+    <string name="feature_data_math_round_field_mode">Rounding mode</string>
+    <string name="feature_data_math_round_field_decimals">Decimal places</string>
+    <string name="feature_data_math_round_field_resultvariable">Store result in variable</string>
+    <string name="feature_data_math_round_field_mode_option_round">Round</string>
+    <string name="feature_data_math_round_field_mode_option_floor">Floor</string>
+    <string name="feature_data_math_round_field_mode_option_ceil">Ceil</string>
+
+    <string name="feature_data_math_clamp_title">Clamp number</string>
+    <string name="feature_data_math_clamp_description">Keep a number inside an inclusive minimum and maximum range</string>
+    <string name="feature_data_math_clamp_field_value">Number</string>
+    <string name="feature_data_math_clamp_field_min">Minimum</string>
+    <string name="feature_data_math_clamp_field_max">Maximum</string>
+    <string name="feature_data_math_clamp_field_resultvariable">Store result in variable</string>
+
+    <string name="feature_data_random_decimal_title">Random decimal</string>
+    <string name="feature_data_random_decimal_description">Generate a random decimal number between an inclusive minimum and maximum</string>
+    <string name="feature_data_random_decimal_field_min">Minimum</string>
+    <string name="feature_data_random_decimal_field_max">Maximum</string>
+    <string name="feature_data_random_decimal_field_decimals">Decimal places</string>
+    <string name="feature_data_random_decimal_field_resultvariable">Store number in variable</string>
+
+    <string name="feature_data_text_length_title">Get text length</string>
+    <string name="feature_data_text_length_description">Count Unicode characters in text and store the result</string>
+    <string name="feature_data_text_length_field_text">Text</string>
+    <string name="feature_data_text_length_field_resultvariable">Store length in variable</string>
+
+    <string name="feature_data_text_substring_title">Extract substring</string>
+    <string name="feature_data_text_substring_description">Extract text using a zero-based start index and optional character count</string>
+    <string name="feature_data_text_substring_field_text">Text</string>
+    <string name="feature_data_text_substring_field_start">Start index</string>
+    <string name="feature_data_text_substring_field_length">Character count</string>
+    <string name="feature_data_text_substring_field_resultvariable">Store text in variable</string>
+
+    <string name="feature_data_text_case_title">Change text case</string>
+    <string name="feature_data_text_case_description">Convert text to upper case, lower case, or trim surrounding whitespace</string>
+    <string name="feature_data_text_case_field_text">Text</string>
+    <string name="feature_data_text_case_field_mode">Text transformation</string>
+    <string name="feature_data_text_case_field_resultvariable">Store text in variable</string>
+    <string name="feature_data_text_case_field_mode_option_upper">Upper case</string>
+    <string name="feature_data_text_case_field_mode_option_lower">Lower case</string>
+    <string name="feature_data_text_case_field_mode_option_trim">Trim whitespace</string>
+
+    <string name="feature_data_list_sort_title">Sort list</string>
+    <string name="feature_data_list_sort_description">Sort a list as text or numeric values</string>
+    <string name="feature_data_list_sort_field_name">List variable</string>
+    <string name="feature_data_list_sort_field_type">Sort as</string>
+    <string name="feature_data_list_sort_field_order">Sort order</string>
+    <string name="feature_data_list_sort_field_resultvariable">Store list in variable</string>
+    <string name="feature_data_list_sort_field_type_option_text">Text</string>
+    <string name="feature_data_list_sort_field_type_option_number">Number</string>
+    <string name="feature_data_list_sort_field_order_option_ascending">Ascending</string>
+    <string name="feature_data_list_sort_field_order_option_descending">Descending</string>
+
+    <string name="feature_data_list_reverse_title">Reverse list</string>
+    <string name="feature_data_list_reverse_description">Reverse the order of items in a list</string>
+    <string name="feature_data_list_reverse_field_name">List variable</string>
+    <string name="feature_data_list_reverse_field_resultvariable">Store list in variable</string>
+
+    <string name="feature_data_list_distinct_title">Remove duplicate list items</string>
+    <string name="feature_data_list_distinct_description">Keep only the first occurrence of each list value</string>
+    <string name="feature_data_list_distinct_field_name">List variable</string>
+    <string name="feature_data_list_distinct_field_resultvariable">Store list in variable</string>
+
+    <string name="runtime_feature_math_invalid_operation">The selected math operation is invalid or produced a non-finite result</string>
+    <string name="runtime_feature_text_index_out_of_range">Text start index is outside the available text</string>
+</resources>
