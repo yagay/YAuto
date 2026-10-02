@@ -105,7 +105,12 @@ class PrivilegedAndroidFeaturePack : FeaturePack {
                 return@registerAction ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName)
             }
             val result = ctx.executeCapability(featureId = typeId,
-                request = CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, typeId, mapOf("command" to ConfigValue.StringValue(shell))))
+                request = CapabilityRequest(
+                    CapabilityIds.PRIVILEGED_SHELL,
+                    typeId,
+                    mapOf("command" to ConfigValue.StringValue(shell)),
+                    preferredBackendId = feature.preferredBackendId(),
+                ))
             ActionExecutionResult(result.success, result.value, result.message)
         }
     }
