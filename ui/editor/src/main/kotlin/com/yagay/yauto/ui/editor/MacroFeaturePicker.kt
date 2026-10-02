@@ -1,5 +1,8 @@
 package com.yagay.yauto.ui.editor
 
+import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -22,12 +26,8 @@ import com.yagay.yauto.ui.design.CapabilityBadge
 import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
 
-private data class CatalogCategory(
-    val id: String,
-    val title: String,
-    val subtitle: String,
-    val order: Int,
-)
+private data class CatalogCategory(val id: String, val title: String, val subtitle: String, val order: Int)
+private data class InstalledApp(val label: String, val packageName: String, val system: Boolean)
 
 private sealed interface PickerPage {
     data object Categories : PickerPage
@@ -44,30 +44,35 @@ fun MacroFeaturePickerDialog(
     onDismiss: () -> Unit,
     onPick: (FeatureRef) -> Unit,
 ) {
-    val editable = remember(descriptors, kind) {
-        descriptors.filter { it.kind == kind && it.category != FeatureCategory.COMPATIBILITY }
-    }
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("yauto_feature_picker", Context.MODE_PRIVATE) }
+    val editable = remember(descriptors, kind) { descriptors.filter { it.kind == kind && it.category != FeatureCategory.COMPATIBILITY } }
     val initialDescriptor = initial?.let { ref -> editable.firstOrNull { it.id.value == ref.typeId } }
-    var page by remember(initial?.typeId) {
-        mutableStateOf<PickerPage>(initialDescriptor?.let { PickerPage.Configure(it, null) } ?: PickerPage.Categories)
-    }
+    var page by remember(initial?.typeId) { mutableStateOf<PickerPage>(initialDescriptor?.let { PickerPage.Configure(it, null) } ?: PickerPage.Categories) }
     var query by remember { mutableStateOf("") }
+    var favorites by remember(kind) { mutableStateOf(loadIds(prefs.getString(favoriteKey(kind), ""))) }
+    var recent by remember(kind) { mutableStateOf(loadIds(prefs.getString(recentKey(kind), ""))) }
     val accent = kindAccent(kind)
+
+    fun toggleFavorite(id: String) {
+        favorites = if (id in favorites) favorites - id else favorites + id
+        prefs.edit().putString(favoriteKey(kind), favorites.joinToString("\n")).apply()
+    }
+    fun recordRecent(id: String) {
+        recent = (listOf(id) + recent.filterNot { it == id }).take(12)
+        prefs.edit().putString(recentKey(kind), recent.joinToString("\n")).apply()
+    }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = accent, titleContentColor = Color.White),
-                    title = {
-                        Text(
-                            when (val p = page) {
-                                PickerPage.Categories -> "选择${kindLabel(kind)}"
-                                is PickerPage.Features -> p.category.title
-                                is PickerPage.Configure -> p.descriptor.title
-                            }
-                        )
-                    },
+                    title = { Text(when (val p = page) {
+                        PickerPage.Categories -> "选择${kindLabel(kind)}"
+                        is PickerPage.Features -> p.category.title
+                        is PickerPage.Configure -> p.descriptor.title
+                    }) },
                     navigationIcon = {
                         TextButton(onClick = {
                             page = when (val p = page) {
@@ -82,30 +87,22 @@ fun MacroFeaturePickerDialog(
         ) { padding ->
             when (val p = page) {
                 PickerPage.Categories -> CategoryPage(
-                    modifier = Modifier.padding(padding),
-                    kind = kind,
-                    descriptors = editable,
-                    query = query,
+                    Modifier.padding(padding), kind, editable, query, favorites, recent,
                     onQuery = { query = it },
                     onCategory = { page = PickerPage.Features(it); query = "" },
                     onFeature = { page = PickerPage.Configure(it, null) },
+                    onFavorite = ::toggleFavorite,
                 )
                 is PickerPage.Features -> FeatureListPage(
-                    modifier = Modifier.padding(padding),
-                    kind = kind,
-                    category = p.category,
-                    descriptors = editable,
-                    query = query,
+                    Modifier.padding(padding), kind, p.category, editable, query, favorites, recent,
                     onQuery = { query = it },
                     onFeature = { page = PickerPage.Configure(it, p.category) },
+                    onFavorite = ::toggleFavorite,
                 )
                 is PickerPage.Configure -> FeatureConfigurePage(
-                    modifier = Modifier.padding(padding),
-                    descriptor = p.descriptor,
-                    initial = initial?.takeIf { it.typeId == p.descriptor.id.value },
-                    accent = accent,
-                    onSave = onPick,
-                )
+                    Modifier.padding(padding), p.descriptor,
+                    initial?.takeIf { it.typeId == p.descriptor.id.value }, accent,
+                ) { feature -> recordRecent(feature.typeId); onPick(feature) }
             }
         }
     }
@@ -117,62 +114,58 @@ private fun CategoryPage(
     kind: FeatureKind,
     descriptors: List<FeatureDescriptor>,
     query: String,
+    favorites: Set<String>,
+    recent: List<String>,
     onQuery: (String) -> Unit,
     onCategory: (CatalogCategory) -> Unit,
     onFeature: (FeatureDescriptor) -> Unit,
+    onFavorite: (String) -> Unit,
 ) {
-    val categories = remember(descriptors, kind) {
-        descriptors.groupBy { catalogCategory(kind, it) }
-            .keys.sortedBy { it.order }
-    }
-    val search = remember(descriptors, query) {
-        if (query.isBlank()) emptyList() else descriptors.filter { descriptorMatches(it, query) }
-    }
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp),
-    ) {
-        item {
-            OutlinedTextField(
-                value = query,
-                onValueChange = onQuery,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("搜索${kindLabel(kind)}") },
-                singleLine = true,
-            )
-        }
+    val categories = remember(descriptors, kind) { descriptors.groupBy { catalogCategory(kind, it) }.keys.sortedBy { it.order } }
+    val search = remember(descriptors, query) { if (query.isBlank()) emptyList() else descriptors.filter { descriptorMatches(it, query) } }
+    val recentCount = recent.count { id -> descriptors.any { it.id.value == id } }
+    val favoriteCount = favorites.count { id -> descriptors.any { it.id.value == id } }
+    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        item { OutlinedTextField(query, onQuery, Modifier.fillMaxWidth(), label = { Text("搜索${kindLabel(kind)}") }, singleLine = true) }
         if (query.isBlank()) {
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = kindAccent(kind).copy(alpha = .10f))) {
                     Column(Modifier.padding(12.dp)) {
                         Text(kindHelp(kind), fontWeight = FontWeight.SemiBold)
-                        Text("先选择分类，再选择具体功能。搜索可以直接跨分类查找。", style = MaterialTheme.typography.bodySmall)
+                        Text("统一使用：分类 → 功能 → 参数。常用功能可收藏，使用后自动进入最近列表。", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
+            if (recentCount > 0) item { CategoryRow("最近使用", "最近配置过的功能 · $recentCount 项") { onCategory(CatalogCategory("__recent", "最近使用", "最近配置过的功能", -20)) } }
+            if (favoriteCount > 0) item { CategoryRow("★ 收藏", "固定常用功能 · $favoriteCount 项") { onCategory(CatalogCategory("__favorites", "收藏", "固定常用功能", -10)) } }
             items(categories, key = { it.id }) { category ->
                 val count = descriptors.count { catalogCategory(kind, it).id == category.id }
-                ListItem(
-                    headlineContent = { Text(category.title, fontWeight = FontWeight.Medium) },
-                    supportingContent = { Text("${category.subtitle} · $count 项") },
-                    trailingContent = { Text("›") },
-                    modifier = Modifier.clickable { onCategory(category) },
-                )
-                HorizontalDivider()
+                CategoryRow(category.title, "${category.subtitle} · $count 项") { onCategory(category) }
             }
         } else {
             item { Text("搜索结果 ${search.size}", style = MaterialTheme.typography.labelLarge) }
             items(search, key = { it.id.value }) { descriptor ->
                 MacroItemRow(
-                    title = descriptor.title,
+                    title = (if (descriptor.id.value in favorites) "★ " else "") + descriptor.title,
                     subtitle = "${catalogCategory(kind, descriptor).title} · ${descriptor.description}",
                     accent = kindAccent(kind),
                     onClick = { onFeature(descriptor) },
+                    onMenu = { onFavorite(descriptor.id.value) },
                 )
             }
         }
     }
+}
+
+@Composable
+private fun CategoryRow(title: String, subtitle: String, onClick: () -> Unit) {
+    ListItem(
+        headlineContent = { Text(title, fontWeight = FontWeight.Medium) },
+        supportingContent = { Text(subtitle) },
+        trailingContent = { Text("›") },
+        modifier = Modifier.clickable(onClick = onClick),
+    )
+    HorizontalDivider()
 }
 
 @Composable
@@ -182,81 +175,62 @@ private fun FeatureListPage(
     category: CatalogCategory,
     descriptors: List<FeatureDescriptor>,
     query: String,
+    favorites: Set<String>,
+    recent: List<String>,
     onQuery: (String) -> Unit,
     onFeature: (FeatureDescriptor) -> Unit,
+    onFavorite: (String) -> Unit,
 ) {
-    val features = remember(descriptors, category, query) {
-        descriptors.filter { catalogCategory(kind, it).id == category.id }
-            .filter { query.isBlank() || descriptorMatches(it, query) }
-            .sortedBy { it.title.lowercase() }
-    }
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp),
-    ) {
-        item {
-            OutlinedTextField(query, onQuery, Modifier.fillMaxWidth(), label = { Text("在 ${category.title} 中搜索") }, singleLine = true)
+    val features = remember(descriptors, category, query, favorites, recent) {
+        val base = when (category.id) {
+            "__recent" -> recent.mapNotNull { id -> descriptors.firstOrNull { it.id.value == id } }
+            "__favorites" -> descriptors.filter { it.id.value in favorites }.sortedBy { it.title.lowercase() }
+            else -> descriptors.filter { catalogCategory(kind, it).id == category.id }.sortedBy { it.title.lowercase() }
         }
-        item { Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        base.filter { query.isBlank() || descriptorMatches(it, query) }
+    }
+    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        item { OutlinedTextField(query, onQuery, Modifier.fillMaxWidth(), label = { Text("在 ${category.title} 中搜索") }, singleLine = true) }
+        item { Text(category.subtitle + " · 点击 ⋮ 可收藏/取消收藏", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         items(features, key = { it.id.value }) { descriptor ->
             MacroItemRow(
-                title = descriptor.title,
+                title = (if (descriptor.id.value in favorites) "★ " else "") + descriptor.title,
                 subtitle = descriptor.description,
                 accent = kindAccent(kind),
                 onClick = { onFeature(descriptor) },
+                onMenu = { onFavorite(descriptor.id.value) },
             )
         }
     }
 }
 
 @Composable
-private fun FeatureConfigurePage(
-    modifier: Modifier,
-    descriptor: FeatureDescriptor,
-    initial: FeatureRef?,
-    accent: Color,
-    onSave: (FeatureRef) -> Unit,
-) {
-    val initialTexts = remember(descriptor.id.value, initial) {
-        descriptor.fields.associate { it.key to initial?.config?.get(it.key).editorText() }
-    }
+private fun FeatureConfigurePage(modifier: Modifier, descriptor: FeatureDescriptor, initial: FeatureRef?, accent: Color, onSave: (FeatureRef) -> Unit) {
+    val initialTexts = remember(descriptor.id.value, initial) { descriptor.fields.associate { it.key to initial?.config?.get(it.key).editorText() } }
     var values by remember(descriptor.id.value, initial) { mutableStateOf(initialTexts) }
     val valid = descriptor.fields.all { field -> fieldValid(field, values[field.key].orEmpty()) }
-
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Card(colors = CardDefaults.cardColors(containerColor = accent.copy(alpha = .10f))) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(descriptor.description)
                     Text("功能 ID：${descriptor.id.value}", style = MaterialTheme.typography.labelSmall)
                     if (descriptor.minSdk > 31) Text("最低 Android API ${descriptor.minSdk}", style = MaterialTheme.typography.labelSmall)
-                    if (descriptor.capabilities.isNotEmpty()) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            descriptor.capabilities.take(4).forEach { CapabilityBadge(it.value.substringAfterLast('.')) }
-                        }
+                    if (descriptor.capabilities.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        descriptor.capabilities.take(4).forEach { CapabilityBadge(it.value.substringAfterLast('.')) }
                     }
                 }
             }
         }
-        if (descriptor.fields.isEmpty()) {
-            item { Text("此功能没有额外参数。", style = MaterialTheme.typography.bodyMedium) }
-        }
-        items(descriptor.fields, key = { it.key }) { field ->
-            FieldEditor(field, values[field.key].orEmpty()) { values = values + (field.key to it) }
-        }
+        if (descriptor.fields.isEmpty()) item { Text("此功能没有额外参数。", style = MaterialTheme.typography.bodyMedium) }
+        items(descriptor.fields, key = { it.key }) { field -> FieldEditor(field, values[field.key].orEmpty()) { values = values + (field.key to it) } }
         item {
             Button(
                 onClick = {
                     val config = buildMap<String, ConfigValue> {
                         putAll(initial?.config.orEmpty().filterKeys { key -> descriptor.fields.none { it.key == key } })
                         descriptor.fields.forEach { field ->
-                            val raw = values[field.key].orEmpty()
-                            val old = initial?.config?.get(field.key)
+                            val raw = values[field.key].orEmpty(); val old = initial?.config?.get(field.key)
                             if (old != null && raw == initialTexts[field.key]) put(field.key, old)
                             else when (field) {
                                 is FieldSchema.Toggle -> put(field.key, ConfigValue.BooleanValue(raw.toBooleanStrictOrNull() ?: false))
@@ -266,9 +240,7 @@ private fun FeatureConfigurePage(
                         }
                     }
                     onSave(FeatureRef(descriptor.id.value, descriptor.schemaVersion, config))
-                },
-                enabled = valid,
-                modifier = Modifier.fillMaxWidth(),
+                }, enabled = valid, modifier = Modifier.fillMaxWidth()
             ) { Text(if (initial == null) "添加${kindLabel(descriptor.kind)}" else "保存") }
         }
     }
@@ -281,31 +253,20 @@ private fun FieldEditor(field: FieldSchema, value: String, onValue: (String) -> 
             Column(Modifier.weight(1f)) { Text(field.label); if (field.required) Text("必填", style = MaterialTheme.typography.labelSmall) }
             Switch(value.toBooleanStrictOrNull() ?: false, { onValue(it.toString()) })
         }
-        is FieldSchema.Choice -> {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(field.label, fontWeight = FontWeight.Medium)
-                field.options.forEach { option ->
-                    Row(
-                        Modifier.fillMaxWidth().clickable { onValue(option) },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(value == option, { onValue(option) })
-                        Text(option)
-                    }
-                }
-            }
+        is FieldSchema.Choice -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(field.label, fontWeight = FontWeight.Medium)
+            field.options.forEach { option -> Row(Modifier.fillMaxWidth().clickable { onValue(option) }, verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(value == option, { onValue(option) }); Text(option)
+            } }
         }
+        is FieldSchema.AppPicker -> InstalledAppField(field, value, onValue)
         else -> {
             val numeric = field is FieldSchema.Number || field is FieldSchema.Duration
             OutlinedTextField(
-                value = value,
-                onValueChange = onValue,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(field.label + if (field.required) " *" else "") },
+                value, onValue, Modifier.fillMaxWidth(), label = { Text(field.label + if (field.required) " *" else "") },
                 minLines = if (field is FieldSchema.Text && field.multiline) 3 else 1,
                 keyboardOptions = if (numeric) KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default,
                 supportingText = when (field) {
-                    is FieldSchema.AppPicker -> ({ Text("输入包名；后续统一接入应用选择器") })
                     is FieldSchema.Variable -> ({ Text("输入变量名，可使用模板变量") })
                     is FieldSchema.Duration -> ({ Text("毫秒") })
                     else -> null
@@ -315,6 +276,62 @@ private fun FieldEditor(field: FieldSchema, value: String, onValue: (String) -> 
     }
 }
 
+@Composable
+private fun InstalledAppField(field: FieldSchema.AppPicker, value: String, onValue: (String) -> Unit) {
+    val context = LocalContext.current
+    var show by remember { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        OutlinedTextField(value, onValue, Modifier.fillMaxWidth(), label = { Text(field.label + if (field.required) " *" else "") }, singleLine = true,
+            supportingText = { Text("可直接输入包名，或从已安装应用中选择") })
+        OutlinedButton(onClick = { show = true }, modifier = Modifier.fillMaxWidth()) { Text("选择已安装应用") }
+    }
+    if (show) InstalledAppDialog(context, value, onDismiss = { show = false }) { onValue(it); show = false }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun InstalledAppDialog(context: Context, current: String, onDismiss: () -> Unit, onPick: (String) -> Unit) {
+    var query by remember { mutableStateOf("") }
+    var includeSystem by remember { mutableStateOf(false) }
+    val apps = remember { installedApps(context) }
+    val filtered = remember(apps, query, includeSystem) {
+        apps.filter { (includeSystem || !it.system) && (query.isBlank() || it.label.contains(query, true) || it.packageName.contains(query, true)) }
+    }
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Scaffold(topBar = { TopAppBar(title = { Text("选择应用") }, navigationIcon = { TextButton(onClick = onDismiss) { Text("关闭") } }) }) { padding ->
+            LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                item { OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), label = { Text("搜索应用或包名") }, singleLine = true) }
+                item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text("显示系统应用", Modifier.weight(1f)); Switch(includeSystem, { includeSystem = it }) } }
+                items(filtered, key = { it.packageName }) { app ->
+                    ListItem(
+                        headlineContent = { Text(app.label, fontWeight = if (app.packageName == current) FontWeight.Bold else FontWeight.Normal) },
+                        supportingContent = { Text(app.packageName) },
+                        trailingContent = { if (app.system) Text("系统", style = MaterialTheme.typography.labelSmall) },
+                        modifier = Modifier.clickable { onPick(app.packageName) },
+                    )
+                    HorizontalDivider()
+                }
+            }
+        }
+    }
+}
+
+@Suppress("DEPRECATION")
+private fun installedApps(context: Context): List<InstalledApp> = runCatching {
+    val pm = context.packageManager
+    pm.getInstalledApplications(PackageManager.GET_META_DATA).map { info ->
+        InstalledApp(
+            label = runCatching { pm.getApplicationLabel(info).toString() }.getOrDefault(info.packageName),
+            packageName = info.packageName,
+            system = (info.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
+        )
+    }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.label })
+}.getOrDefault(emptyList())
+
+private fun loadIds(raw: String?): List<String> = raw.orEmpty().lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.distinct().toList()
+private fun favoriteKey(kind: FeatureKind) = "favorites_${kind.name.lowercase()}"
+private fun recentKey(kind: FeatureKind) = "recent_${kind.name.lowercase()}"
+
 private fun fieldValid(field: FieldSchema, raw: String): Boolean = when (field) {
     is FieldSchema.Number -> (raw.isBlank() && !field.required) || raw.toDoubleOrNull()?.let { n -> n.isFinite() && (field.min?.let { n >= it } ?: true) && (field.max?.let { n <= it } ?: true) } == true
     is FieldSchema.Duration -> (raw.isBlank() && !field.required) || raw.toDoubleOrNull()?.let { it.isFinite() && it >= 0 } == true
@@ -323,24 +340,9 @@ private fun fieldValid(field: FieldSchema, raw: String): Boolean = when (field) 
     else -> !field.required || raw.isNotBlank()
 }
 
-private fun descriptorMatches(descriptor: FeatureDescriptor, query: String): Boolean =
-    listOf(descriptor.title, descriptor.description, descriptor.id.value, descriptor.keywords.joinToString(" "))
-        .any { it.contains(query, ignoreCase = true) }
-
-private fun kindAccent(kind: FeatureKind): Color = when (kind) {
-    FeatureKind.EVENT -> MacroPalette.Trigger
-    FeatureKind.STATE -> MacroPalette.State
-    FeatureKind.ACTION -> MacroPalette.Action
-    FeatureKind.CONDITION -> MacroPalette.Constraint
-}
-
-private fun kindLabel(kind: FeatureKind): String = when (kind) {
-    FeatureKind.EVENT -> "触发器"
-    FeatureKind.STATE -> "状态"
-    FeatureKind.ACTION -> "动作"
-    FeatureKind.CONDITION -> "约束"
-}
-
+private fun descriptorMatches(descriptor: FeatureDescriptor, query: String): Boolean = listOf(descriptor.title, descriptor.description, descriptor.id.value, descriptor.keywords.joinToString(" ")).any { it.contains(query, true) }
+private fun kindAccent(kind: FeatureKind): Color = when (kind) { FeatureKind.EVENT -> MacroPalette.Trigger; FeatureKind.STATE -> MacroPalette.State; FeatureKind.ACTION -> MacroPalette.Action; FeatureKind.CONDITION -> MacroPalette.Constraint }
+private fun kindLabel(kind: FeatureKind): String = when (kind) { FeatureKind.EVENT -> "触发器"; FeatureKind.STATE -> "状态"; FeatureKind.ACTION -> "动作"; FeatureKind.CONDITION -> "约束" }
 private fun kindHelp(kind: FeatureKind): String = when (kind) {
     FeatureKind.EVENT -> "触发器是瞬时事件，任一触发器命中即可启动自动化。"
     FeatureKind.STATE -> "状态持续存在，可用于进入/退出自动化。"
