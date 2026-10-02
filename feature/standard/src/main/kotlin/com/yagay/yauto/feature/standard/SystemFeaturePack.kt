@@ -15,7 +15,10 @@ class SystemFeaturePack : FeaturePack {
             SystemOperations.COLLAPSE_PANELS to "Collapse system panels").forEach { (operation, title) ->
             registry.registerAction(FeatureDescriptor(FeatureId(operation), FeatureKind.ACTION, title,
                 "Use an authorized system backend", FeatureCategory.SYSTEM, capabilities = setOf(CapabilityIds.SYSTEM_UI), ownerPackId = id)) { feature, ctx ->
-                val result = ctx.executeCapability(feature.typeId, CapabilityRequest(CapabilityIds.SYSTEM_UI, operation))
+                val result = ctx.executeCapability(
+                    feature.typeId,
+                    CapabilityRequest(CapabilityIds.SYSTEM_UI, operation, preferredBackendId = feature.preferredBackendId()),
+                )
                 ActionExecutionResult(result.success, result.value, result.message)
             }
         }
@@ -43,6 +46,7 @@ class SystemFeaturePack : FeaturePack {
                     capability = CapabilityIds.PRIVILEGED_SHELL,
                     operationId = "system.shell.execute",
                     payload = mapOf("command" to ConfigValue.StringValue(command)),
+                    preferredBackendId = feature.preferredBackendId(),
                 )
             )
             val variable = feature.config.string("resultVariable")
