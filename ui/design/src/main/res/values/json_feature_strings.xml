@@ -46,6 +46,7 @@
     <string name="feature_data_json_array_length_field_path">Optional JSON path</string>
     <string name="feature_data_json_array_length_field_resultvariable">Store length in variable</string>
 
+    <string name="runtime_feature_variable_missing">Variable %1$s does not exist</string>
     <string name="runtime_feature_json_path_invalid">Invalid JSON path</string>
     <string name="runtime_feature_json_path_not_found">JSON path was not found</string>
     <string name="runtime_feature_json_value_invalid">The configured JSON value is invalid</string>
