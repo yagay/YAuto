@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_diagnostics_startup_failures_available">检测到之前的启动失败记录。</string>
+    <string name="runtime_diagnostics_startup_failures_empty">没有记录到启动失败。</string>
+    <string name="runtime_diagnostics_startup_failures_title">启动失败日志</string>
+</resources>
