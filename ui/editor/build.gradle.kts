@@ -23,6 +23,7 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
 
     implementation(project(":core:model"))
+    implementation(project(":core:capability"))
     implementation(project(":core:registry"))
     implementation(project(":ui:design"))
 }
