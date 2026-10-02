@@ -48,4 +48,21 @@
     <string name="feature_android_state_screen_timeout_field_maxms">Maximum timeout</string>
     <string name="feature_android_condition_screen_timeout_field_minms">Minimum timeout</string>
     <string name="feature_android_condition_screen_timeout_field_maxms">Maximum timeout</string>
+
+    <string name="feature_android_event_power_save_changed_title">Power saving mode changed</string>
+    <string name="feature_android_event_power_save_changed_description">Run when Android power saving mode changes</string>
+    <string name="feature_android_event_airplane_mode_changed_title">Airplane mode changed</string>
+    <string name="feature_android_event_airplane_mode_changed_description">Run when airplane mode changes</string>
+    <string name="feature_android_event_nfc_state_changed_title">NFC state changed</string>
+    <string name="feature_android_event_nfc_state_changed_description">Run when NFC is turned on or off</string>
+    <string name="feature_android_event_location_mode_changed_title">Location services changed</string>
+    <string name="feature_android_event_location_mode_changed_description">Run when the Android master location switch changes</string>
+    <string name="feature_android_event_dark_mode_changed_title">Dark theme changed</string>
+    <string name="feature_android_event_dark_mode_changed_description">Run when the effective Android dark theme state changes</string>
+    <string name="feature_android_event_auto_rotate_changed_title">Auto-rotate changed</string>
+    <string name="feature_android_event_auto_rotate_changed_description">Run when automatic screen rotation is enabled or disabled</string>
+    <string name="feature_android_event_screen_timeout_changed_title">Screen timeout changed</string>
+    <string name="feature_android_event_screen_timeout_changed_description">Run when the Android screen-off timeout setting changes</string>
+    <string name="feature_android_event_screen_timeout_changed_field_minms">Minimum timeout</string>
+    <string name="feature_android_event_screen_timeout_changed_field_maxms">Maximum timeout</string>
 </resources>
