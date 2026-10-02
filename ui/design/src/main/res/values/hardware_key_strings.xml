@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_hardware_key_title">Hardware key</string>
+    <string name="feature_android_event_hardware_key_description">Run when Accessibility reports a hardware key down or up event</string>
+    <string name="feature_android_event_hardware_key_field_keycode">Android key code</string>
+    <string name="feature_android_event_hardware_key_field_action">Key action</string>
+    <string name="feature_android_event_hardware_key_field_action_option_any">Any</string>
+    <string name="feature_android_event_hardware_key_field_action_option_down">Key down</string>
+    <string name="feature_android_event_hardware_key_field_action_option_up">Key up</string>
+    <string name="feature_android_event_hardware_key_field_initialonly">Ignore repeated key-down events</string>
+</resources>
