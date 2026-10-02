@@ -12,6 +12,11 @@ class YAutoApplication : Application() {
 
     val graph: AppGraph by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         runCatching { AppGraph(this) }
+            .onSuccess { graph ->
+                runCatching {
+                    graph.diagnosticRegistry.register(StartupFailureDiagnosticCollector(this))
+                }.onFailure { StartupFailureRecorder.record(this, "diagnostic:startup-failures", it) }
+            }
             .onFailure { StartupFailureRecorder.record(this, "app-graph", it) }
             .getOrThrow()
     }
