@@ -8,7 +8,9 @@ const val FEATURE_BACKEND_CONFIG_KEY = "__backend"
 
 fun FeatureRef.preferredBackendId(): String? =
     (config[FEATURE_BACKEND_CONFIG_KEY] as? ConfigValue.StringValue)?.value
-        ?.takeIf { it.isNotBlank() && it != "auto" }
+        ?.trim()
+        ?.lowercase()
+        ?.takeIf { it.isNotBlank() && it != "auto" && it != "自动" }
 
 fun FeatureDescriptor.resolvedAccessRequirements(): Set<AccessRequirement> = buildSet {
     addAll(accessRequirements)
@@ -113,4 +115,45 @@ fun FeatureDescriptor.accessSummary(): String {
     } else {
         "需要：" + requirements.joinToString(" / ") { it.label }
     }
+}
+
+/**
+ * Keeps privilege presentation centralized. The existing schema editor automatically renders the generated
+ * backend Choice field, so new privileged features get the same UI without custom Compose screens.
+ */
+fun FeatureDescriptor.withAccessEditorMetadata(): FeatureDescriptor {
+    val requirements = resolvedAccessRequirements()
+    val options = resolvedImplementationOptions()
+    if (requirements.isEmpty() && options.isEmpty()) return this
+
+    val access = accessSummary()
+    val decoratedDescription = if (description.contains(access)) description else "$access · $description"
+    val selectableBackends = options.mapNotNull { it.backendId }.distinct()
+    val backendField = if (selectableBackends.size > 1 && fields.none { it.key == FEATURE_BACKEND_CONFIG_KEY }) {
+        FieldSchema.Choice(
+            key = FEATURE_BACKEND_CONFIG_KEY,
+            label = buildString {
+                append("实现方式（留空或 auto = 自动推荐）")
+                options.forEach { option ->
+                    append("\n\n")
+                    append(option.title)
+                    append(" [")
+                    append(option.requirements.joinToString("+") { it.label })
+                    append("]：")
+                    append(option.summary)
+                    if (option.pros.isNotEmpty()) append("\n优点：").append(option.pros.joinToString("；"))
+                    if (option.cons.isNotEmpty()) append("\n缺点：").append(option.cons.joinToString("；"))
+                    if (option.restartRequired) append("\n注意：Hook/作用域变化后可能需要重启目标进程或设备。")
+                }
+            },
+            required = false,
+            options = listOf("auto") + selectableBackends,
+        )
+    } else null
+
+    return copy(
+        description = decoratedDescription,
+        fields = if (backendField == null) fields else listOf(backendField) + fields,
+        keywords = keywords + requirements.map { it.label.lowercase() } + options.map { it.title.lowercase() },
+    )
 }
