@@ -22,6 +22,7 @@ import com.yagay.yauto.platform.android.AndroidEventSource
 import com.yagay.yauto.platform.android.AudioDeviceEventSource
 import com.yagay.yauto.platform.android.ClipboardEventSource
 import com.yagay.yauto.platform.android.ConfiguredBroadcastEventSource
+import com.yagay.yauto.platform.android.ConfiguredLocationEventSource
 import com.yagay.yauto.platform.android.ConfiguredSensorEventSource
 import com.yagay.yauto.platform.android.DeviceSettingEventSource
 import com.yagay.yauto.platform.android.NetworkEventSource
@@ -54,6 +55,7 @@ class AutomationRuntimeService : Service() {
         sources += AudioDeviceEventSource(this)
         sources += ConfiguredBroadcastEventSource(this, graph.workspace)
         sources += ConfiguredSensorEventSource(this, graph.workspace)
+        sources += ConfiguredLocationEventSource(this, graph.workspace)
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
         SurfaceRuntimeBridge.attach(emitter)
 
