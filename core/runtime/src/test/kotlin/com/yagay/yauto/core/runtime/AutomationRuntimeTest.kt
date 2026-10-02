@@ -31,7 +31,7 @@ class AutomationRuntimeTest {
         }
         val result = AutomationRuntime(repository, registry, CapabilityClient { CapabilityResult(false) }, tracer).dispatch(RuntimeEvent("test"))
         assertEquals(listOf(AutomationId("healthy")), result.runs.map { it.automationId })
-        assertEquals(AutomationId("broken"), tracer.snapshot().first { it.message.startsWith("Automation dispatch failed") }.automationId)
+        assertEquals(AutomationId("broken"), tracer.snapshot().first { it.message == "runtime.dispatch_failed" }.automationId)
     }
 
     @Test fun `concurrent state dispatch enters once`() = runBlocking {
