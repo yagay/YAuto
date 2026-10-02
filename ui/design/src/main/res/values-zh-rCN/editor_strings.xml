@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="editor_select_kind_format">选择%1$s</string>
+    <string name="editor_add_kind_format">添加%1$s</string>
+    <string name="editor_required">必填</string>
+    <string name="editor_system_app">系统</string>
+    <string name="editor_show_system_apps">显示系统应用</string>
+    <string name="editor_category_count_format">%1$s · %2$d 项</string>
+    <string name="editor_favorite_prefix">★ %1$s</string>
+    <string name="editor_feature_search_subtitle_format">%1$s · %2$s</string>
+
+    <string name="kind_event">触发器</string>
+    <string name="kind_state">状态</string>
+    <string name="kind_action">动作</string>
+    <string name="kind_condition">约束</string>
+    <string name="kind_event_help">触发器是瞬时事件，任一触发器命中即可启动自动化。</string>
+    <string name="kind_state_help">状态会持续存在，可用于自动化的进入和退出切换。</string>
+    <string name="kind_action_help">动作按顺序执行，也可以使用分支、循环、并行和流程。</string>
+    <string name="kind_condition_help">约束用于限制自动化或动作何时可以执行。</string>
+
+    <string name="category_core">核心</string>
+    <string name="category_core_subtitle">核心自动化与流程控制功能</string>
+    <string name="category_app">应用</string>
+    <string name="category_app_subtitle">应用、包、组件与前后台状态</string>
+    <string name="category_device">设备</string>
+    <string name="category_device_subtitle">电源、硬件、传感器与设备状态</string>
+    <string name="category_network">网络</string>
+    <string name="category_network_subtitle">Wi-Fi、移动数据、Bluetooth 与连接状态</string>
+    <string name="category_display">显示</string>
+    <string name="category_display_subtitle">屏幕、亮度与显示状态</string>
+    <string name="category_audio">声音</string>
+    <string name="category_audio_subtitle">音量、媒体与音频状态</string>
+    <string name="category_notification">通知</string>
+    <string name="category_notification_subtitle">通知事件、状态与操作</string>
+    <string name="category_file">文件</string>
+    <string name="category_file_subtitle">文件、存储与数据操作</string>
+    <string name="category_variable">变量</string>
+    <string name="category_variable_subtitle">变量与数据转换</string>
+    <string name="category_flow">流程</string>
+    <string name="category_flow_subtitle">分支、循环、可复用流程与执行控制</string>
+    <string name="category_ui_automation">UI 自动化</string>
+    <string name="category_ui_automation_subtitle">Accessibility、手势、悬浮窗与界面自动化</string>
+    <string name="category_system">系统</string>
+    <string name="category_system_subtitle">Android 系统服务与受保护操作</string>
+    <string name="category_script">脚本</string>
+    <string name="category_script_subtitle">Shell、脚本、HTTP 与可编程动作</string>
+    <string name="category_advanced">高级</string>
+    <string name="category_advanced_subtitle">Root、Shizuku、LSPosed 与高级集成</string>
+
+    <string name="implementation_auto_title">自动</string>
+    <string name="implementation_root_title">Root</string>
+    <string name="implementation_shizuku_title">Shizuku</string>
+    <string name="implementation_lsposed_title">LSPosed</string>
+    <string name="implementation_accessibility_title">Accessibility</string>
+</resources>
