@@ -39,7 +39,6 @@ enum class AccessRequirement(val id: String) {
     ROOT("root"),
     SHIZUKU("shizuku"),
     LSPOSED("lsposed"),
-    SHAMIKO("shamiko"),
     ZYGISK("zygisk"),
     ACCESSIBILITY("accessibility"),
     NOTIFICATION_LISTENER("notification_listener"),

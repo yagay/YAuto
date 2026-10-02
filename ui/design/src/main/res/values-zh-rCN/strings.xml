@@ -150,9 +150,6 @@
     <string name="backend_lsposed_detail">系统服务桥接只暴露明确白名单操作，避免单个功能把 Hook 逻辑散落到各模块。</string>
     <string name="backend_check_status">检查状态</string>
     <string name="backend_authorize_refresh">授权 / 刷新</string>
-    <string name="backend_environment_title">Zygisk / Shamiko（环境兼容）</string>
-    <string name="backend_environment_detail">它们是环境/兼容组件，不是 YAuto 执行后端。只有功能真正依赖时才显示为要求。</string>
-    <string name="backend_environment_status">不作为执行后端</string>
 
     <string name="engine_capability_broker_title">Capability Broker</string>
     <string name="engine_capability_broker_detail">同一个语义功能只定义一次；运行时按可用性选择 Android / Accessibility / Shizuku / Root / LSPosed 实现。</string>
@@ -193,7 +190,6 @@
     <string name="access_root">Root</string>
     <string name="access_shizuku">Shizuku</string>
     <string name="access_lsposed">LSPosed</string>
-    <string name="access_shamiko">Shamiko</string>
     <string name="access_zygisk">Zygisk</string>
     <string name="access_accessibility">Accessibility</string>
     <string name="access_notification_listener">通知监听</string>

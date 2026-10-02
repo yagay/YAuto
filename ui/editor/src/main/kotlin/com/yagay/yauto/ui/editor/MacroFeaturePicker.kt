@@ -847,7 +847,6 @@ private fun accessRequirementResource(requirement: AccessRequirement): Int = whe
     AccessRequirement.ROOT -> TextR.string.access_root
     AccessRequirement.SHIZUKU -> TextR.string.access_shizuku
     AccessRequirement.LSPOSED -> TextR.string.access_lsposed
-    AccessRequirement.SHAMIKO -> TextR.string.access_shamiko
     AccessRequirement.ZYGISK -> TextR.string.access_zygisk
     AccessRequirement.ACCESSIBILITY -> TextR.string.access_accessibility
     AccessRequirement.NOTIFICATION_LISTENER -> TextR.string.access_notification_listener

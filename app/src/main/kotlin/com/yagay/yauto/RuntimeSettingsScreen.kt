@@ -281,12 +281,6 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         }
                     }
                 }
-                item {
-                    EngineCard(
-                        stringResource(TextR.string.backend_environment_title),
-                        stringResource(TextR.string.backend_environment_detail),
-                    )
-                }
             }
 
             RuntimeSettingsPage.ENGINE -> LazyColumn(

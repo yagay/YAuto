@@ -63,24 +63,6 @@ class PrivilegedAndroidFeaturePackTest {
         assertTrue(implementations.first { it.backendId == "lsposed" }.restartRequired)
     }
 
-    @Test fun `Shamiko and Zygisk remain environment requirements not fake backends`() {
-        val registry = FeatureRegistry()
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("test.environment.only"), FeatureKind.ACTION,
-                "Environment only", "Test environment metadata", FeatureCategory.ADVANCED,
-                accessRequirements = setOf(AccessRequirement.ROOT, AccessRequirement.ZYGISK, AccessRequirement.SHAMIKO),
-            )
-        ) { _, _ -> ActionExecutionResult(true) }
-        val descriptor = requireNotNull(registry.descriptor("test.environment.only"))
-        assertEquals(
-            setOf(AccessRequirement.ROOT, AccessRequirement.ZYGISK, AccessRequirement.SHAMIKO),
-            descriptor.resolvedAccessRequirements(),
-        )
-        assertTrue(descriptor.resolvedImplementationOptions().isEmpty())
-        assertTrue(descriptor.fields.none { it.key == FEATURE_BACKEND_CONFIG_KEY })
-    }
-
     @Test fun `selected backend is forwarded by privileged feature`() = runBlocking {
         val registry = FeatureRegistry().apply { install(PrivilegedAndroidFeaturePack()) }
         var captured: CapabilityRequest? = null
