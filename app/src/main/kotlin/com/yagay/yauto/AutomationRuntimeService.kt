@@ -27,6 +27,7 @@ import com.yagay.yauto.platform.android.ConfiguredBroadcastEventSource
 import com.yagay.yauto.platform.android.ConfiguredLocationEventSource
 import com.yagay.yauto.platform.android.ConfiguredSensorEventSource
 import com.yagay.yauto.platform.android.DeviceSettingEventSource
+import com.yagay.yauto.platform.android.MidiDeviceEventSource
 import com.yagay.yauto.platform.android.NetworkEventSource
 import com.yagay.yauto.platform.android.NetworkProfileEventSource
 import com.yagay.yauto.platform.android.RuntimeEventEmitter
@@ -59,6 +60,7 @@ class AutomationRuntimeService : Service() {
         sources += AudioDeviceEventSource(this)
         sources += BluetoothDeviceEventSource(this)
         sources += CommunicationEventSource(this)
+        sources += MidiDeviceEventSource(this)
         sources += ConfiguredBroadcastEventSource(this, graph.workspace)
         sources += ConfiguredSensorEventSource(this, graph.workspace)
         sources += ConfiguredLocationEventSource(this, graph.workspace)
