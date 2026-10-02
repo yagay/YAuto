@@ -9,6 +9,7 @@ import com.yagay.yauto.core.logging.*
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.runtime.AutomationRuntime
 import com.yagay.yauto.feature.standard.StandardFeaturePacks
+import com.yagay.yauto.importer.macrodroid.MacroDroidFeatureSuggestions
 import com.yagay.yauto.importer.macrodroid.MacroDroidImporter
 import com.yagay.yauto.importer.shortx.ShortXImporter
 import com.yagay.yauto.importer.tasker.TaskerImporter
@@ -71,7 +72,7 @@ class AppGraph(context: Context) {
         capabilities.register(xposed)
         capabilities.register(accessibility)
 
-        importers.register(MacroDroidImporter())
+        importers.register(MacroDroidImporter(mapper = MacroDroidFeatureSuggestions.mapper))
         importers.register(ShortXImporter())
         importers.register(TaskerImporter())
 
