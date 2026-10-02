@@ -44,6 +44,7 @@ class AppGraph(context: Context) {
     init {
         StandardFeaturePacks.all().forEach(features::install)
         features.install(AndroidFeaturePack(context.applicationContext))
+        features.install(AndroidCommunicationFeaturePack(context.applicationContext))
         features.install(AndroidControlFeaturePack(context.applicationContext))
         features.install(AndroidMediaDeviceFeaturePack(context.applicationContext))
         features.install(AndroidAudioFeaturePack(context.applicationContext))
