@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_refresh">Refresh</string>
+    <string name="diagnostics_collecting_short">Collecting</string>
+    <string name="diagnostics_header">Diagnostics and execution logs</string>
+    <string name="diagnostics_header_detail">Browse by source. Root, LSPosed, SystemUI, system_server, import reports and YAuto execution records all use the same structure.</string>
+    <string name="diagnostics_local_only">Diagnostics are generated locally and are not uploaded automatically.</string>
+    <string name="diagnostics_collecting">Collecting…</string>
+    <string name="diagnostics_collect">Collect diagnostics</string>
+    <string name="diagnostics_export_json">Export JSON</string>
+    <string name="diagnostics_sources">Sources</string>
+    <string name="diagnostics_source_summary_format">%1$d records</string>
+    <string name="diagnostics_source_summary_errors_format">%1$d records · %2$d errors</string>
+    <string name="diagnostics_collectors">Collector status</string>
+    <string name="diagnostics_collectors_unchecked">Collectors have not been checked yet.</string>
+    <string name="diagnostics_available">Available</string>
+    <string name="diagnostics_unavailable">Unavailable</string>
+    <string name="diagnostics_record_count_format">%1$d records</string>
+    <string name="diagnostics_no_source_records_format">No %1$s records are available.</string>
+    <string name="diagnostics_severity_title_format">%1$s · %2$s</string>
+    <string name="diagnostics_source_severity_format">%1$s · %2$s</string>
+    <string name="diagnostics_time_format">Time: %1$s</string>
+    <string name="diagnostics_context_execution_format">Execution: %1$s</string>
+    <string name="diagnostics_context_automation_format">Automation: %1$s</string>
+    <string name="diagnostics_context_flow_format">Flow: %1$s</string>
+    <string name="diagnostics_context_feature_format">Feature: %1$s</string>
+    <string name="diagnostics_context_backend_format">Backend: %1$s</string>
+    <string name="diagnostics_details">Details</string>
+    <string name="diagnostics_attributes">Attributes</string>
+    <string name="diagnostics_source_yauto">YAuto / execution</string>
+    <string name="diagnostics_source_android">Android / Accessibility / Shizuku</string>
+    <string name="diagnostics_source_root">Root</string>
+    <string name="diagnostics_source_lsposed">LSPosed</string>
+    <string name="diagnostics_source_system_ui">SystemUI</string>
+    <string name="diagnostics_source_system_server">system_server</string>
+    <string name="diagnostics_source_zygote">Zygote</string>
+    <string name="diagnostics_source_importer">Import / compatibility</string>
+    <string name="diagnostics_severity_debug">Debug</string>
+    <string name="diagnostics_severity_info">Info</string>
+    <string name="diagnostics_severity_warning">Warning</string>
+    <string name="diagnostics_severity_error">Error</string>
+</resources>
