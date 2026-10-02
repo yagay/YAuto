@@ -84,6 +84,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
         accessibility, writeSettings, notificationAccess, notifications, camera,
         location, bluetooth, overlay, dndPolicy,
     ).count { it }
+    val currentLanguageTag = remember(refresh) { AppLanguageManager.currentTag(context) }
 
     Scaffold(
         topBar = {
@@ -122,6 +123,14 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                             )
                         }
                     }
+                }
+                item {
+                    LanguageCard(
+                        selectedTag = currentLanguageTag,
+                        onSelect = { tag ->
+                            (context as? android.app.Activity)?.let { AppLanguageManager.set(it, tag) }
+                        },
+                    )
                 }
                 item {
                     MacroItemRow(
@@ -294,6 +303,35 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 item { EngineCard(stringResource(TextR.string.engine_execution_safety_title), stringResource(TextR.string.engine_execution_safety_detail)) }
                 item { EngineCard(stringResource(TextR.string.engine_execution_trace_title), stringResource(TextR.string.engine_execution_trace_detail)) }
             }
+        }
+    }
+}
+
+@Composable
+private fun LanguageCard(selectedTag: String, onSelect: (String) -> Unit) {
+    val options = listOf(
+        AppLanguageManager.SYSTEM to stringResource(TextR.string.language_system),
+        AppLanguageManager.ENGLISH to stringResource(TextR.string.language_english),
+        AppLanguageManager.SIMPLIFIED_CHINESE to stringResource(TextR.string.language_simplified_chinese),
+    )
+    val selectedLabel = options.firstOrNull { it.first == selectedTag }?.second
+        ?: options.first().second
+
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(stringResource(TextR.string.language_title), fontWeight = FontWeight.SemiBold)
+            Text(stringResource(TextR.string.language_subtitle), style = MaterialTheme.typography.bodySmall)
+            Text(
+                stringResource(TextR.string.language_current_format, selectedLabel),
+                style = MaterialTheme.typography.labelMedium,
+            )
+            options.forEach { (tag, label) ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    RadioButton(selected = selectedTag == tag, onClick = { onSelect(tag) })
+                    TextButton(onClick = { onSelect(tag) }) { Text(label) }
+                }
+            }
+            Text(stringResource(TextR.string.language_android_12_hint), style = MaterialTheme.typography.labelSmall)
         }
     }
 }
