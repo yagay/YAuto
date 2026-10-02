@@ -26,7 +26,7 @@ jobs:
       - name: Remove language-specific Kotlin fallbacks
         run: python3 tools/remove_localization_fallbacks.py
       - name: Finalize visible localization formatting
-        run: python3 tools/finalize_display_localization_v2.py
+        run: python3 tools/finalize_display_localization_v3.py
       - name: Localization guard
         run: python3 .github/scripts/check-localization.py
       - name: Unit tests
