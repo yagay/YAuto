@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_generic_title_format">%1$s feature</string>
+    <string name="feature_generic_description_format">Configure the %1$s automation feature.</string>
+    <string name="feature_generic_parameter">Parameter</string>
+    <string name="feature_generic_option">Option</string>
+</resources>

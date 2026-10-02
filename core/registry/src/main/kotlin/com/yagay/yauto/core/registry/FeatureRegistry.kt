@@ -154,7 +154,9 @@ class FeatureRegistry {
     }
 
     fun registerDescriptor(descriptor: FeatureDescriptor) {
-        val decorated = descriptor.withAccessEditorMetadata()
+        val decorated = descriptor.withAccessEditorMetadata().copy(
+            keywords = descriptor.keywords.filterNot(::containsCjk).toSet(),
+        )
         val existing = descriptors.putIfAbsent(decorated.id.value, decorated)
         require(existing == null || existing == decorated) { "Feature ID collision: ${decorated.id.value}" }
     }
@@ -187,3 +189,5 @@ private fun FeatureExecutionContext.withFeatureBackend(feature: FeatureRef): Fea
 
 private fun EventMatchContext.withFeatureBackend(feature: FeatureRef): EventMatchContext =
     copy(capabilities = capabilities.preferBackend(feature.preferredBackendId()))
+
+private fun containsCjk(value: String): Boolean = value.any { it.code in 0x3400..0x4DBF || it.code in 0x4E00..0x9FFF }

@@ -2,7 +2,7 @@
     <application>
         <service
             android:name="com.yagay.yauto.platform.accessibility.YAutoAccessibilityService"
-            android:label="YAuto UI 自动化"
+            android:label="@string/yauto_accessibility_label"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>

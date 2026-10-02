@@ -1,5 +1,6 @@
 package com.yagay.yauto.core.diagnostics
 
+import com.yagay.yauto.core.model.userText
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.Serializable
@@ -82,7 +83,7 @@ class DiagnosticCoordinator(
                             source = DiagnosticSource.YAUTO,
                             timestampEpochMs = System.currentTimeMillis(),
                             severity = DiagnosticSeverity.ERROR,
-                            title = "Collector failed: ${collector.id}",
+                            title = userText("diagnostics.collector_failed", "Collector failed: %s", collector.id),
                             message = error.stackTraceToString().take(16_000),
                             context = context,
                         )

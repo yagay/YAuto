@@ -2,6 +2,7 @@ package com.yagay.yauto.core.importer
 
 import com.yagay.yauto.core.model.Automation
 import com.yagay.yauto.core.model.Flow
+import com.yagay.yauto.core.model.userText
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -77,6 +78,6 @@ class ImporterRegistry {
         ?: ImportResult(
             importerId = "unknown",
             success = false,
-            issues = listOf(CompatibilityIssue(ImportSeverity.ERROR, input.fileName ?: "input", message = "No compatible importer found")),
+            issues = listOf(CompatibilityIssue(ImportSeverity.ERROR, input.fileName ?: "input", message = userText("import.no_compatible_importer", "No compatible importer found"))),
         )
 }

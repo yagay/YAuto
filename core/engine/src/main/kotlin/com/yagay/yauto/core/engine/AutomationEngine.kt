@@ -56,21 +56,21 @@ class AutomationEngine(
         trace(executionId, TraceKind.EXECUTION_START, "${automation.name}:$phase", automation)
 
         return try {
-            require(automation.executionPolicy.maxRuntimeMs > 0) { "Runtime limit must be positive" }
-            require(automation.executionPolicy.maxLoopIterations > 0) { "Loop limit must be positive" }
+            require(automation.executionPolicy.maxRuntimeMs > 0) { userText("engine.runtime_limit_positive", "Runtime limit must be positive") }
+            require(automation.executionPolicy.maxLoopIterations > 0) { userText("engine.loop_limit_positive", "Loop limit must be positive") }
             val signal = withTimeoutOrNull(automation.executionPolicy.maxRuntimeMs) {
                 executeNodes(nodes, executionId, variables, automation, null, automation.executionPolicy.maxLoopIterations)
-            } ?: Signal.Failure("Execution timed out after ${automation.executionPolicy.maxRuntimeMs} ms")
+            } ?: Signal.Failure(userText("engine.execution_timeout", "Execution timed out after %s ms", automation.executionPolicy.maxRuntimeMs))
             val result = when (signal) {
                 is Signal.Failure -> EngineResult(false, executionId, variables = variables.snapshot(), error = signal.message)
                 is Signal.Return -> EngineResult(true, executionId, signal.value, variables.snapshot())
                 Signal.Break, Signal.Continue, Signal.Next -> EngineResult(true, executionId, variables = variables.snapshot())
             }
-            trace(executionId, TraceKind.EXECUTION_END, if (result.success) "Execution completed" else "Execution failed: ${result.error}", automation, success = result.success)
+            trace(executionId, TraceKind.EXECUTION_END, if (result.success) userText("engine.execution_completed", "Execution completed") else userText("engine.execution_failed", "Execution failed: %s", result.error.orEmpty()), automation, success = result.success)
             result
         } catch (cancelled: CancellationException) {
             withContext(NonCancellable) {
-                trace(executionId, TraceKind.EXECUTION_END, "Execution cancelled", automation, success = false, level = TraceLevel.WARN)
+                trace(executionId, TraceKind.EXECUTION_END, userText("engine.execution_cancelled", "Execution cancelled"), automation, success = false, level = TraceLevel.WARN)
             }
             throw cancelled
         } catch (t: Exception) {
@@ -111,11 +111,11 @@ class AutomationEngine(
             is ActionNode.Action -> {
                 if (!node.enabled) Signal.Next else {
                     val executor = registry.actionExecutor(node.feature.typeId)
-                        ?: return Signal.Failure("Unknown action: ${node.feature.typeId}")
+                        ?: return Signal.Failure(userText("engine.unknown_action", "Unknown action: %s", node.feature.typeId))
                     trace(executionId, TraceKind.ACTION, "Start ${node.feature.typeId}", automation, flow, node.id, node.feature.typeId)
                     val result = executor.execute(node.feature, FeatureExecutionContext(executionId, node.id, variables, capabilities, tracer))
                     trace(executionId, TraceKind.ACTION, result.message ?: node.feature.typeId, automation, flow, node.id, node.feature.typeId, result.success)
-                    if (result.success) Signal.Next else Signal.Failure(result.message ?: "Action failed: ${node.feature.typeId}")
+                    if (result.success) Signal.Next else Signal.Failure(result.message ?: userText("engine.action_failed", "Action failed: %s", node.feature.typeId))
                 }
             }
             is ActionNode.If -> executeNodes(if (evaluatePredicate(node.condition, executionId, node.id, variables)) node.thenActions else node.elseActions, executionId, variables, automation, flow, maxLoopIterations)
@@ -125,7 +125,7 @@ class AutomationEngine(
                 executeNodes(branch, executionId, variables, automation, flow, maxLoopIterations)
             }
             is ActionNode.Repeat -> {
-                if (node.times !in 0..maxLoopIterations) return Signal.Failure("Repeat count exceeds loop limit or is negative")
+                if (node.times !in 0..maxLoopIterations) return Signal.Failure(userText("engine.repeat_limit", "Repeat count exceeds the loop limit or is negative"))
                 repeat(node.times) {
                     currentCoroutineContext().ensureActive()
                     when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
@@ -140,7 +140,7 @@ class AutomationEngine(
                 var count = 0
                 while (evaluatePredicate(node.condition, executionId, node.id, variables)) {
                     currentCoroutineContext().ensureActive()
-                    if (count++ >= maxLoopIterations) return Signal.Failure("While loop limit exceeded")
+                    if (count++ >= maxLoopIterations) return Signal.Failure(userText("engine.while_limit", "While-loop limit exceeded"))
                     when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
                         Signal.Next, Signal.Continue -> Unit
                         Signal.Break -> return Signal.Next
@@ -150,7 +150,7 @@ class AutomationEngine(
                 Signal.Next
             }
             is ActionNode.ForEach -> {
-                if (node.values.size > maxLoopIterations) return Signal.Failure("ForEach count exceeds loop limit")
+                if (node.values.size > maxLoopIterations) return Signal.Failure(userText("engine.foreach_limit", "For-each count exceeds the loop limit"))
                 for (value in node.values) {
                     currentCoroutineContext().ensureActive()
                     variables.set(node.variableName, value)
@@ -185,8 +185,8 @@ class AutomationEngine(
             }
             is ActionNode.CallFlow -> {
                 val depth = currentCoroutineContext()[FlowDepth]?.value ?: 0
-                if (depth >= 64) return Signal.Failure("Flow call depth exceeds 64")
-                val target = flowResolver.resolve(node.flowId) ?: return Signal.Failure("Unknown flow: ${node.flowId.value}")
+                if (depth >= 64) return Signal.Failure(userText("engine.flow_depth", "Flow call depth exceeds 64"))
+                val target = flowResolver.resolve(node.flowId) ?: return Signal.Failure(userText("engine.unknown_flow", "Unknown flow: %s", node.flowId.value))
                 val childInitial = variables.snapshot().toMutableMap()
                 node.input.forEach { (key, rawValue) ->
                     val value = rawValue.resolveVariables(variables)
@@ -197,7 +197,7 @@ class AutomationEngine(
                     val directKey = it.name
                     val inputKey = "input.${it.name}"
                     val value = node.input[it.name]?.resolveVariables(variables) ?: it.defaultValue
-                    if (it.required && value == ConfigValue.NullValue) return Signal.Failure("Missing required flow input: ${it.name}")
+                    if (it.required && value == ConfigValue.NullValue) return Signal.Failure(userText("engine.missing_flow_input", "Missing required flow input: %s", it.name))
                     childInitial[inputKey] = value
                     childInitial[directKey] = value
                 }
@@ -225,7 +225,7 @@ class AutomationEngine(
         is PredicateNode.Literal -> predicate.value
         is PredicateNode.Expression -> expressions.evaluateBoolean(predicate.expression, variables)
         is PredicateNode.Condition -> {
-            val evaluator = registry.conditionEvaluator(predicate.feature.typeId) ?: error("Unknown condition: ${predicate.feature.typeId}")
+            val evaluator = registry.conditionEvaluator(predicate.feature.typeId) ?: error(userText("engine.unknown_condition", "Unknown condition: %s", predicate.feature.typeId))
             val result = evaluator.evaluate(predicate.feature, FeatureExecutionContext(executionId, nodeId, variables, capabilities, tracer))
             trace(executionId, TraceKind.CONDITION, "${predicate.feature.typeId} = $result", nodeId = nodeId, featureId = predicate.feature.typeId, success = result)
             result

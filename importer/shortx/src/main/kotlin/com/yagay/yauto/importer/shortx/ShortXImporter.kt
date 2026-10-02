@@ -34,7 +34,7 @@ class ShortXImporter : AutomationImporter {
         }
         fromRules(ruleObjects.mapIndexed { i, obj -> RuleStub(
             id = obj.str("id") ?: "rule-$i",
-            title = obj.str("title") ?: "Imported ShortX Rule ${i + 1}",
+            title = obj.str("title") ?: userText("import.shortx.rule_name", "Imported ShortX Rule %s", i + 1),
             description = obj.str("description"),
             enabled = obj.bool("isEnabled") ?: true,
             facts = (obj["facts"] as? JsonArray)?.mapIndexed { n, v -> jsonAny(v, "json.fact.$n") }.orEmpty(),
@@ -57,7 +57,7 @@ class ShortXImporter : AutomationImporter {
 
     private fun importProto(input: ImportInput): ImportResult = runCatching {
         val rules = ShortXProtoReader.readRules(input.bytes)
-        if (rules.isEmpty()) error("No ShortX Rule/RuleList/RuleSetList structure recognized")
+        if (rules.isEmpty()) error(userText("import.shortx.structure_unrecognized", "No ShortX Rule/RuleList/RuleSetList structure was recognized"))
         fromRules(rules)
     }.getOrElse { failure(input, it) }
 
@@ -70,7 +70,7 @@ class ShortXImporter : AutomationImporter {
                     ImportSeverity.WARNING,
                     path,
                     any.typeUrl,
-                    "ShortX payload preserved; native execution mapping is not available yet",
+                    userText("import.shortx.payload_preserved", "ShortX payload was preserved; a native execution mapping is not available yet"),
                     suggestedFeatureId = suggested,
                 )
                 return sourceFeature(
@@ -102,7 +102,7 @@ class ShortXImporter : AutomationImporter {
             }
             val automation = Automation(
                 AutomationId("import-shortx-${rule.id}"),
-                rule.title.ifBlank { "Imported ShortX Rule ${index + 1}" },
+                rule.title.ifBlank { userText("import.shortx.rule_name", "Imported ShortX Rule %s", index + 1) },
                 enabled = rule.enabled,
                 activation = Activation(events = events, condition = if (predicates.isEmpty()) null else PredicateNode.All(predicates)),
                 onEvent = actions,
@@ -115,7 +115,7 @@ class ShortXImporter : AutomationImporter {
         return ImportResult(id, true, ImportBundle(automations = automations), issues, trace)
     }
 
-    private fun failure(input: ImportInput, error: Throwable) = ImportResult(id, false, issues = listOf(CompatibilityIssue(ImportSeverity.ERROR, input.fileName ?: "input", message = error.message ?: "ShortX import failed")))
+    private fun failure(input: ImportInput, error: Throwable) = ImportResult(id, false, issues = listOf(CompatibilityIssue(ImportSeverity.ERROR, input.fileName ?: "input", message = error.message ?: userText("import.shortx.failed", "ShortX import failed"))))
     private fun JsonObject.str(key: String) = (this[key] as? JsonPrimitive)?.contentOrNull
     private fun JsonObject.bool(key: String) = (this[key] as? JsonPrimitive)?.booleanOrNull
 }

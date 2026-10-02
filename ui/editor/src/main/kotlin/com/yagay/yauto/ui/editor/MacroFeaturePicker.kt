@@ -187,8 +187,9 @@ private fun CategoryPage(
     val categories = remember(descriptors) {
         descriptors.map { catalogCategory(it.category) }.distinctBy { it.id }.sortedBy { it.order }
     }
-    val search = remember(descriptors, query) {
-        if (query.isBlank()) emptyList() else descriptors.filter { descriptorMatches(it, query) }
+    val textResolver = rememberFeatureTextResolver()
+    val search = remember(descriptors, query, textResolver) {
+        if (query.isBlank()) emptyList() else descriptors.filter { textResolver.matches(it, query) }
     }
     val recentCount = recent.count { id -> descriptors.any { it.id.value == id } }
     val favoriteCount = favorites.count { id -> descriptors.any { it.id.value == id } }
@@ -278,7 +279,7 @@ private fun CategoryPage(
                     subtitle = stringResource(
                         TextR.string.editor_feature_search_subtitle_format,
                         stringResource(catalogCategory(descriptor.category).titleRes),
-                        localizedFeatureDescription(descriptor),
+                        localizedFeatureDescriptionShared(descriptor),
                     ),
                     accent = kindAccent(kind),
                     onClick = { onFeature(descriptor) },
@@ -313,14 +314,15 @@ private fun FeatureListPage(
     onFeature: (FeatureDescriptor) -> Unit,
     onFavorite: (String) -> Unit,
 ) {
-    val features = remember(descriptors, categoryPage, query, favorites, recent) {
+    val textResolver = rememberFeatureTextResolver()
+    val features = remember(descriptors, categoryPage, query, favorites, recent, textResolver) {
         val base = when (categoryPage.special) {
             "recent" -> recent.mapNotNull { id -> descriptors.firstOrNull { it.id.value == id } }
             "favorites" -> descriptors.filter { it.id.value in favorites }
             else -> descriptors.filter { it.category.name.lowercase() == categoryPage.category.id }
         }
-        base.filter { query.isBlank() || descriptorMatches(it, query) }
-            .sortedBy { it.title.lowercase() }
+        base.filter { query.isBlank() || textResolver.matches(it, query) }
+            .sortedBy { textResolver.title(it).lowercase() }
     }
     val title = categoryTitle(categoryPage)
     val subtitle = categorySubtitle(categoryPage)
@@ -354,7 +356,7 @@ private fun FeatureListPage(
                 } else {
                     localizedTitle
                 },
-                subtitle = localizedFeatureDescription(descriptor),
+                subtitle = localizedFeatureDescriptionShared(descriptor),
                 accent = kindAccent(kind),
                 onClick = { onFeature(descriptor) },
                 onMenu = { onFavorite(descriptor.id.value) },
@@ -385,7 +387,7 @@ private fun FeatureConfigurePage(
         item {
             Card(colors = CardDefaults.cardColors(containerColor = accent.copy(alpha = .10f))) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(localizedFeatureDescription(descriptor))
+                    Text(localizedFeatureDescriptionShared(descriptor))
                     Text(
                         stringResource(TextR.string.feature_picker_feature_id_format, descriptor.id.value),
                         style = MaterialTheme.typography.labelSmall,
@@ -581,7 +583,7 @@ private fun FieldEditor(
     value: String,
     onValue: (String) -> Unit,
 ) {
-    val label = localizedFieldLabel(descriptorId, field)
+    val label = localizedFieldLabelShared(descriptorId, field)
     when (field) {
         is FieldSchema.Toggle -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -600,7 +602,7 @@ private fun FieldEditor(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     RadioButton(value == option, { onValue(option) })
-                    Text(localizedChoiceOption(descriptorId, field.key, option))
+                    Text(localizedChoiceOptionShared(descriptorId, field.key, option))
                 }
             }
         }
@@ -637,7 +639,7 @@ private fun InstalledAppField(
 ) {
     val context = LocalContext.current
     var show by remember { mutableStateOf(false) }
-    val label = localizedFieldLabel(descriptorId, field)
+    val label = localizedFieldLabelShared(descriptorId, field)
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         OutlinedTextField(
             value = value,
@@ -775,12 +777,6 @@ private fun fieldValid(field: FieldSchema, raw: String): Boolean = when (field) 
     else -> !field.required || raw.isNotBlank()
 }
 
-private fun descriptorMatches(descriptor: FeatureDescriptor, query: String): Boolean = listOf(
-    descriptor.title,
-    descriptor.description,
-    descriptor.id.value,
-    descriptor.keywords.joinToString(" "),
-).any { it.contains(query, true) }
 
 private fun kindAccent(kind: FeatureKind): Color = when (kind) {
     FeatureKind.EVENT -> MacroPalette.Trigger
@@ -841,42 +837,6 @@ private fun categorySubtitle(page: PickerPage.Features): String = when (page.spe
     else -> stringResource(page.category.subtitleRes)
 }
 
-@Composable
-private fun localizedFeatureTitle(descriptor: FeatureDescriptor): String = localizedResourceOverride(
-    key = "feature_${resourceKey(descriptor.id.value)}_title",
-    fallback = descriptor.title,
-)
-
-@Composable
-private fun localizedFeatureDescription(descriptor: FeatureDescriptor): String = localizedResourceOverride(
-    key = "feature_${resourceKey(descriptor.id.value)}_description",
-    fallback = descriptor.description,
-)
-
-@Composable
-private fun localizedFieldLabel(descriptorId: String, field: FieldSchema): String = localizedResourceOverride(
-    key = "feature_${resourceKey(descriptorId)}_field_${resourceKey(field.key)}",
-    fallback = field.label,
-)
-
-@Composable
-private fun localizedChoiceOption(descriptorId: String, fieldKey: String, option: String): String = localizedResourceOverride(
-    key = "feature_${resourceKey(descriptorId)}_field_${resourceKey(fieldKey)}_option_${resourceKey(option)}",
-    fallback = option,
-)
-
-@Composable
-private fun localizedResourceOverride(key: String, fallback: String): String {
-    val context = LocalContext.current
-    val id = remember(key, context.packageName) {
-        context.resources.getIdentifier(key, "string", context.packageName)
-    }
-    return if (id != 0) stringResource(id) else fallback
-}
-
-private fun resourceKey(value: String): String = value.lowercase().map {
-    if (it.isLetterOrDigit()) it else '_'
-}.joinToString("").replace(Regex("_+"), "_").trim('_')
 
 @Composable
 private fun accessRequirementLabel(requirement: AccessRequirement): String = stringResource(accessRequirementResource(requirement))

@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import com.yagay.yauto.core.capability.*
 import com.yagay.yauto.core.diagnostics.*
+import com.yagay.yauto.core.model.userText
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
@@ -24,7 +25,7 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
     override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) = request.capability == CapabilityIds.SYSTEM_UI && request.operationId in supportedOperations()
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
         val result = request(request.operationId)
-        return CapabilityResult(result?.getBoolean("success") == true, id, message = result?.getString("error") ?: if (result == null) "LSPosed bridge did not respond" else null)
+        return CapabilityResult(result?.getBoolean("success") == true, id, message = result?.getString("error") ?: if (result == null) userText("capability.lsposed_no_response", "LSPosed bridge did not respond") else null)
     }
     private suspend fun request(operation: String): Bundle? {
         val result = withTimeoutOrNull(2000) {
@@ -45,8 +46,8 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
     }
     override suspend fun status(): CollectorStatus {
         val available = isAvailable(RuntimeEnvironment(android.os.Build.VERSION.SDK_INT))
-        return CollectorStatus(id, available, if (available) "LSPosed system bridge connected" else "Enable YAuto for Android/system_server and restart")
+        return CollectorStatus(id, available, if (available) userText("diagnostics.xposed.connected", "LSPosed system bridge connected") else userText("diagnostics.xposed.scope_required", "Enable YAuto for Android/system_server and restart"))
     }
     override suspend fun collect(context: DiagnosticContext) = listOf(DiagnosticRecord(DiagnosticSource.LSPOSED,
-        System.currentTimeMillis(), title = "LSPosed system bridge", message = status().message.orEmpty(), context = context))
+        System.currentTimeMillis(), title = userText("diagnostics.xposed.title", "LSPosed system bridge"), message = status().message.orEmpty(), context = context))
 }

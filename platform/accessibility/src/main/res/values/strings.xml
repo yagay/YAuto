@@ -1,3 +1,4 @@
 <resources>
-    <string name="yauto_accessibility_description">用于用户创建的 UI 自动化：点击、输入、系统全局操作和手势。</string>
+    <string name="yauto_accessibility_label">YAuto UI automation</string>
+    <string name="yauto_accessibility_description">Runs user-configured UI automation such as taps, text input, global actions and gestures.</string>
 </resources>

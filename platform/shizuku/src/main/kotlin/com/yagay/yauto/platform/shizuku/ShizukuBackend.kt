@@ -30,12 +30,12 @@ class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContrac
             val connected = IShizukuShell.Stub.asInterface(binder)
             service = connected; pending?.complete(connected)
         }
-        override fun onServiceDisconnected(name: ComponentName) { service = null; pending?.completeExceptionally(IllegalStateException("Shizuku service disconnected")) }
+        override fun onServiceDisconnected(name: ComponentName) { service = null; pending?.completeExceptionally(IllegalStateException(userText("capability.shizuku.disconnected", "Shizuku service disconnected"))) }
     }
 
     override fun isAvailable(): Boolean = Shizuku.pingBinder() && !Shizuku.isPreV11()
     override fun hasPermission(): Boolean = isAvailable() && runCatching { Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED }.getOrDefault(false)
-    fun requestPermission() { check(isAvailable()) { "Shizuku is not running" }; Shizuku.requestPermission(1001) }
+    fun requestPermission() { check(isAvailable()) { userText("capability.shizuku.not_running", "Shizuku is not running") }; Shizuku.requestPermission(1001) }
     override suspend fun isAvailable(environment: RuntimeEnvironment) = hasPermission()
     override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) =
         request.capability == CapabilityIds.PRIVILEGED_SHELL ||
@@ -43,7 +43,7 @@ class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContrac
 
     private suspend fun connect(): IShizukuShell = connectionLock.withLock {
         service?.takeIf { it.asBinder().pingBinder() } ?: withContext(Dispatchers.Main.immediate) {
-            check(hasPermission()) { "Shizuku permission is not granted" }
+            check(hasPermission()) { userText("capability.shizuku.permission_denied", "Shizuku permission is not granted") }
             val ready = CompletableDeferred<IShizukuShell>()
             pending = ready
             try {
@@ -55,7 +55,7 @@ class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContrac
 
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
         val command = if (request.capability == CapabilityIds.SYSTEM_UI) SystemOperations.shellCommand(request.operationId).orEmpty() else request.payload.string("command")
-        if (command.isBlank()) return CapabilityResult(false, message = "Shell command is empty")
+        if (command.isBlank()) return CapabilityResult(false, message = userText("capability.shell_empty", "Shell command is empty"))
         val binder = connect()
         val requestId = UUID.randomUUID().toString()
         val output = suspendCancellableCoroutine<android.os.Bundle> { continuation ->
@@ -73,10 +73,10 @@ class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContrac
         return CapabilityResult(output.getInt("exitCode", -1) == 0 && !output.getBoolean("timedOut"), id,
             ConfigValue.ObjectValue(mapOf("stdout" to ConfigValue.StringValue(output.getString("stdout").orEmpty()),
                 "stderr" to ConfigValue.StringValue(output.getString("stderr").orEmpty()), "exitCode" to ConfigValue.NumberValue(output.getInt("exitCode", -1).toDouble()))),
-            if (output.getBoolean("timedOut")) "Timed out" else output.getString("stderr")?.takeIf { it.isNotBlank() })
+            if (output.getBoolean("timedOut")) userText("capability.timed_out", "Timed out") else output.getString("stderr")?.takeIf { it.isNotBlank() })
     }
-    override suspend fun status() = CollectorStatus(id, hasPermission(), if (hasPermission()) "Shizuku connected and authorized" else "Shizuku unavailable or permission denied")
+    override suspend fun status() = CollectorStatus(id, hasPermission(), if (hasPermission()) userText("diagnostics.shizuku.connected", "Shizuku connected and authorized") else userText("diagnostics.shizuku.unavailable", "Shizuku unavailable or permission denied"))
     override suspend fun collect(context: DiagnosticContext) = listOf(DiagnosticRecord(DiagnosticSource.ANDROID,
-        System.currentTimeMillis(), title = "Shizuku backend", message = status().message.orEmpty(), context = context,
+        System.currentTimeMillis(), title = userText("diagnostics.shizuku.title", "Shizuku backend"), message = status().message.orEmpty(), context = context,
         attributes = mapOf("connected" to isAvailable().toString(), "permission" to hasPermission().toString())))
 }

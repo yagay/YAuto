@@ -20,9 +20,9 @@ class MacroDroidImporter(
     }
 
     override fun import(input: ImportInput): ImportResult = runCatching {
-        val root = json.parseToJsonElement(input.utf8OrNull() ?: error("Not UTF-8 JSON"))
+        val root = json.parseToJsonElement(input.utf8OrNull() ?: error(userText("import.not_utf8_json", "The file is not UTF-8 JSON")))
         val macros = findMacros(root)
-        require(macros.isNotEmpty()) { "No MacroDroid macro found in export" }
+        require(macros.isNotEmpty()) { userText("import.macrodroid.none", "No MacroDroid macro found in the export") }
 
         val issues = mutableListOf<CompatibilityIssue>()
         val trace = mutableListOf<ImportTrace>()
@@ -30,7 +30,7 @@ class MacroDroidImporter(
         val flows = findActionBlocks(root, macros).mapIndexed { index, block ->
             val sourceId = blockIdentifier(block, index)
             val flowId = blockAliases[sourceId] ?: FlowId("import-md-block-$sourceId")
-            val name = block.string("m_name", "name", "actionBlockName") ?: "Imported Action Block ${index + 1}"
+            val name = block.string("m_name", "name", "actionBlockName") ?: userText("import.macrodroid.block_name", "Imported Action Block %s", index + 1)
             val actions = mapActions(
                 block.array("m_actionList", "actionList", "actions"),
                 "actionBlock[$index]",
@@ -50,7 +50,7 @@ class MacroDroidImporter(
 
         val automations = macros.mapIndexed { index, obj ->
             val sourceId = obj.string("m_GUID", "guid", "id") ?: "macro-$index"
-            val name = obj.string("m_name", "name") ?: "Imported Macro ${index + 1}"
+            val name = obj.string("m_name", "name") ?: userText("import.macrodroid.macro_name", "Imported Macro %s", index + 1)
             val events = obj.array("m_triggerList", "triggerList", "triggers").mapIndexed { i, item ->
                 mapSourceFeature(item, SourceFeatureKind.EVENT, CompatFeatureIds.SOURCE_EVENT, "macro[$index].trigger[$i]", issues)
             }
@@ -77,7 +77,7 @@ class MacroDroidImporter(
         }
         ImportResult(id, true, ImportBundle(automations = automations, flows = flows), issues, trace)
     }.getOrElse { error ->
-        ImportResult(id, false, issues = listOf(CompatibilityIssue(ImportSeverity.ERROR, input.fileName ?: "input", message = error.message ?: "MacroDroid import failed")))
+        ImportResult(id, false, issues = listOf(CompatibilityIssue(ImportSeverity.ERROR, input.fileName ?: "input", message = error.message ?: userText("import.macrodroid.failed", "MacroDroid import failed"))))
     }
 
     private fun findMacros(root: JsonElement): List<JsonObject> = when (root) {
@@ -149,7 +149,7 @@ class MacroDroidImporter(
             if (target != null) {
                 ActionNode.CallFlow(NodeId(UUID.randomUUID().toString()), target)
             } else {
-                issues += CompatibilityIssue(ImportSeverity.WARNING, path, sourceType, "Action Block target could not be resolved; source payload preserved")
+                issues += CompatibilityIssue(ImportSeverity.WARNING, path, sourceType, userText("import.macrodroid.block_unresolved", "Action Block target could not be resolved; the source payload was preserved"))
                 ActionNode.Action(NodeId(UUID.randomUUID().toString()), sourceFeature(CompatFeatureIds.SOURCE_ACTION, id, sourceType, item.toString()))
             }
         } else {
@@ -183,14 +183,14 @@ class MacroDroidImporter(
                 ImportSeverity.WARNING,
                 path,
                 sourceType,
-                "No native YAuto mapping yet; source payload preserved",
+                userText("import.macrodroid.no_mapping", "No native YAuto mapping is available yet; the source payload was preserved"),
             )
         } else {
             issues += CompatibilityIssue(
                 ImportSeverity.WARNING,
                 path,
                 sourceType,
-                "Native feature type is known but required source fields or semantics could not be translated; source payload preserved",
+                userText("import.macrodroid.partial_mapping", "The native feature type is known, but required source fields or semantics could not be translated; the source payload was preserved"),
                 suggestedFeatureId = mapped,
             )
         }

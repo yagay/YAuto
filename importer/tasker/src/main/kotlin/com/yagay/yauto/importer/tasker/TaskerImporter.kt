@@ -41,7 +41,7 @@ class TaskerImporter : AutomationImporter {
         val taskDefs = (0 until taskNodes.length).mapNotNull { i ->
             val task = taskNodes.item(i) as? Element ?: return@mapNotNull null
             val taskId = task.childText("id") ?: task.getAttribute("sr").ifBlank { "task-$i" }.removePrefix("task")
-            val name = task.childText("nme") ?: "Imported Task ${i + 1}"
+            val name = task.childText("nme") ?: userText("import.tasker.task_name", "Imported Task %s", i + 1)
             TaskDef(task, taskId, name, FlowId("import-tasker-$taskId"))
         }
         val flowAliases = buildMap<String, FlowId> {
@@ -74,7 +74,7 @@ class TaskerImporter : AutomationImporter {
         for (i in 0 until profiles.length) {
             val profile = profiles.item(i) as? Element ?: continue
             val profileId = profile.childText("id") ?: profile.getAttribute("sr").ifBlank { "profile-$i" }.removePrefix("prof")
-            val name = profile.childText("nme") ?: "Imported Profile ${i + 1}"
+            val name = profile.childText("nme") ?: userText("import.tasker.profile_name", "Imported Profile %s", i + 1)
             val contexts = profile.elementChildren().filter { it.tagName in setOf("Event", "State", "App", "Time", "Location", "Day") }
             val events = mutableListOf<FeatureRef>()
             val states = mutableListOf<FeatureRef>()
@@ -85,7 +85,7 @@ class TaskerImporter : AutomationImporter {
                 val fallback = if (isEvent) CompatFeatureIds.SOURCE_EVENT else CompatFeatureIds.SOURCE_STATE
                 val feature = sourceFeature(fallback, id, "${context.tagName}:$code", context.toCompactXml())
                 if (isEvent) events += feature else states += feature
-                issues += CompatibilityIssue(ImportSeverity.WARNING, path, "${context.tagName}:$code", "Tasker context preserved; native mapping can be added independently")
+                issues += CompatibilityIssue(ImportSeverity.WARNING, path, "${context.tagName}:$code", userText("import.tasker.context_preserved", "Tasker context was preserved; a native mapping can be added independently"))
             }
 
             fun flowCall(childName: String): List<ActionNode> {
@@ -111,7 +111,7 @@ class TaskerImporter : AutomationImporter {
         }
         ImportResult(id, true, ImportBundle(automations, flowsByTaskId.values.toList()), issues, trace)
     }.getOrElse { error ->
-        ImportResult(id, false, issues = listOf(CompatibilityIssue(ImportSeverity.ERROR, input.fileName ?: "input", message = error.message ?: "Tasker import failed")))
+        ImportResult(id, false, issues = listOf(CompatibilityIssue(ImportSeverity.ERROR, input.fileName ?: "input", message = error.message ?: userText("import.tasker.failed", "Tasker import failed"))))
     }
 
     private fun mapTaskActions(
@@ -138,7 +138,7 @@ class TaskerImporter : AutomationImporter {
                     resultVariable = TaskerMappings.performTaskResultVariable(action),
                 )
             } else {
-                issues += CompatibilityIssue(ImportSeverity.WARNING, path, "code:$code", "Perform Task target could not be resolved; source action preserved")
+                issues += CompatibilityIssue(ImportSeverity.WARNING, path, "code:$code", userText("import.tasker.target_unresolved", "Perform Task target could not be resolved; the source action was preserved"))
                 compatibilityAction(code, raw)
             }
         } else {
@@ -147,7 +147,7 @@ class TaskerImporter : AutomationImporter {
             if (native != null) {
                 ActionNode.Action(NodeId(UUID.randomUUID().toString()), native)
             } else {
-                issues += CompatibilityIssue(ImportSeverity.WARNING, path, "code:$code", "Tasker action preserved; native mapping can be added independently")
+                issues += CompatibilityIssue(ImportSeverity.WARNING, path, "code:$code", userText("import.tasker.action_preserved", "Tasker action was preserved; a native mapping can be added independently"))
                 compatibilityAction(code, raw)
             }
         }

@@ -1,5 +1,6 @@
 package com.yagay.yauto.platform.xposed
 
+import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.diagnostics.*
 
 class LsposedLogCollector(
@@ -10,7 +11,7 @@ class LsposedLogCollector(
     override suspend fun status(): CollectorStatus {
         val out = runner.run("test -d /data/adb/lspd && echo yes || true", 4_000)
         val available = "yes" in out.stdout
-        return CollectorStatus(id, available, if (available) "LSPosed data directory readable" else "LSPosed log directory not readable through current backend")
+        return CollectorStatus(id, available, if (available) userText("diagnostics.lsposed.readable", "LSPosed data directory readable") else userText("diagnostics.lsposed.unreadable", "LSPosed log directory is not readable through the current backend"))
     }
 
     override suspend fun collect(context: DiagnosticContext): List<DiagnosticRecord> {
@@ -30,7 +31,7 @@ class LsposedLogCollector(
                 source = DiagnosticSource.LSPOSED,
                 timestampEpochMs = System.currentTimeMillis(),
                 severity = if (out.exitCode == 0) DiagnosticSeverity.INFO else DiagnosticSeverity.WARNING,
-                title = "LSPosed logs",
+                title = userText("diagnostics.lsposed.logs", "LSPosed logs"),
                 message = (out.stdout + "\n" + out.stderr).trim().take(500_000),
                 context = context,
             )

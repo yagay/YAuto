@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_generic_title_format">%1$s功能</string>
+    <string name="feature_generic_description_format">配置“%1$s”自动化功能。</string>
+    <string name="feature_generic_parameter">参数</string>
+    <string name="feature_generic_option">选项</string>
+</resources>
