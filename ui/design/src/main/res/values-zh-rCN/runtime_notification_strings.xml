@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_notification_channel_name">YAuto 自动化运行</string>
+    <string name="runtime_notification_channel_description">保持自动化事件监听和规则运行</string>
+    <string name="runtime_notification_title">YAuto 正在运行</string>
+    <string name="runtime_notification_text">自动化事件监听已启用</string>
+</resources>
