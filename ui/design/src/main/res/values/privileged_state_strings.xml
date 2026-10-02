@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_setting_matches_title">Android setting matches</string>
+    <string name="feature_android_state_setting_matches_description">Read a System, Global or Secure setting through Root/Shizuku and compare its value</string>
+    <string name="feature_android_state_setting_matches_field_namespace">Settings namespace</string>
+    <string name="feature_android_state_setting_matches_field_key">Setting key</string>
+    <string name="feature_android_state_setting_matches_field_operator">Comparison</string>
+    <string name="feature_android_state_setting_matches_field_operator_option_equals">Equals</string>
+    <string name="feature_android_state_setting_matches_field_operator_option_not_equals">Does not equal</string>
+    <string name="feature_android_state_setting_matches_field_operator_option_contains">Contains</string>
+    <string name="feature_android_state_setting_matches_field_operator_option_not_contains">Does not contain</string>
+    <string name="feature_android_state_setting_matches_field_operator_option_regex">Regular expression</string>
+    <string name="feature_android_state_setting_matches_field_expected">Expected value</string>
+    <string name="feature_android_state_setting_matches_field_namespace_option_system">System</string>
+    <string name="feature_android_state_setting_matches_field_namespace_option_global">Global</string>
+    <string name="feature_android_state_setting_matches_field_namespace_option_secure">Secure</string>
+
+    <string name="feature_android_condition_setting_matches_title">Android setting matches</string>
+    <string name="feature_android_condition_setting_matches_description">Read a System, Global or Secure setting through Root/Shizuku and compare its value</string>
+    <string name="feature_android_condition_setting_matches_field_namespace">Settings namespace</string>
+    <string name="feature_android_condition_setting_matches_field_key">Setting key</string>
+    <string name="feature_android_condition_setting_matches_field_operator">Comparison</string>
+    <string name="feature_android_condition_setting_matches_field_operator_option_equals">Equals</string>
+    <string name="feature_android_condition_setting_matches_field_operator_option_not_equals">Does not equal</string>
+    <string name="feature_android_condition_setting_matches_field_operator_option_contains">Contains</string>
+    <string name="feature_android_condition_setting_matches_field_operator_option_not_contains">Does not contain</string>
+    <string name="feature_android_condition_setting_matches_field_operator_option_regex">Regular expression</string>
+    <string name="feature_android_condition_setting_matches_field_expected">Expected value</string>
+    <string name="feature_android_condition_setting_matches_field_namespace_option_system">System</string>
+    <string name="feature_android_condition_setting_matches_field_namespace_option_global">Global</string>
+    <string name="feature_android_condition_setting_matches_field_namespace_option_secure">Secure</string>
+
+    <string name="feature_android_state_system_property_matches_title">System property matches</string>
+    <string name="feature_android_state_system_property_matches_description">Read an Android getprop value through Root/Shizuku and compare its text</string>
+    <string name="feature_android_state_system_property_matches_field_key">Property key</string>
+    <string name="feature_android_state_system_property_matches_field_operator">Comparison</string>
+    <string name="feature_android_state_system_property_matches_field_operator_option_equals">Equals</string>
+    <string name="feature_android_state_system_property_matches_field_operator_option_not_equals">Does not equal</string>
+    <string name="feature_android_state_system_property_matches_field_operator_option_contains">Contains</string>
+    <string name="feature_android_state_system_property_matches_field_operator_option_not_contains">Does not contain</string>
+    <string name="feature_android_state_system_property_matches_field_operator_option_regex">Regular expression</string>
+    <string name="feature_android_state_system_property_matches_field_expected">Expected value</string>
+
+    <string name="feature_android_condition_system_property_matches_title">System property matches</string>
+    <string name="feature_android_condition_system_property_matches_description">Read an Android getprop value through Root/Shizuku and compare its text</string>
+    <string name="feature_android_condition_system_property_matches_field_key">Property key</string>
+    <string name="feature_android_condition_system_property_matches_field_operator">Comparison</string>
+    <string name="feature_android_condition_system_property_matches_field_operator_option_equals">Equals</string>
+    <string name="feature_android_condition_system_property_matches_field_operator_option_not_equals">Does not equal</string>
+    <string name="feature_android_condition_system_property_matches_field_operator_option_contains">Contains</string>
+    <string name="feature_android_condition_system_property_matches_field_operator_option_not_contains">Does not contain</string>
+    <string name="feature_android_condition_system_property_matches_field_operator_option_regex">Regular expression</string>
+    <string name="feature_android_condition_system_property_matches_field_expected">Expected value</string>
+
+    <string name="feature_android_state_privileged_backend_available_title">Privileged backend available</string>
+    <string name="feature_android_state_privileged_backend_available_description">Check whether Root or Shizuku is currently usable for privileged shell operations</string>
+    <string name="feature_android_state_privileged_backend_available_field_backend">Backend</string>
+    <string name="feature_android_state_privileged_backend_available_field_backend_option_root">Root</string>
+    <string name="feature_android_state_privileged_backend_available_field_backend_option_shizuku">Shizuku</string>
+    <string name="feature_android_state_privileged_backend_available_field_value">Available</string>
+
+    <string name="feature_android_condition_privileged_backend_available_title">Privileged backend available</string>
+    <string name="feature_android_condition_privileged_backend_available_description">Check whether Root or Shizuku is currently usable for privileged shell operations</string>
+    <string name="feature_android_condition_privileged_backend_available_field_backend">Backend</string>
+    <string name="feature_android_condition_privileged_backend_available_field_backend_option_root">Root</string>
+    <string name="feature_android_condition_privileged_backend_available_field_backend_option_shizuku">Shizuku</string>
+    <string name="feature_android_condition_privileged_backend_available_field_value">Available</string>
+
+    <string name="feature_android_state_appop_mode_title">App operation mode</string>
+    <string name="feature_android_state_appop_mode_description">Check the current Android AppOps mode for an application operation</string>
+    <string name="feature_android_state_appop_mode_field_package">App / package</string>
+    <string name="feature_android_state_appop_mode_field_operation">App operation</string>
+    <string name="feature_android_state_appop_mode_field_mode">Expected mode</string>
+    <string name="feature_android_state_appop_mode_field_mode_option_allow">Allow</string>
+    <string name="feature_android_state_appop_mode_field_mode_option_ignore">Ignore</string>
+    <string name="feature_android_state_appop_mode_field_mode_option_deny">Deny</string>
+    <string name="feature_android_state_appop_mode_field_mode_option_default">Default</string>
+    <string name="feature_android_state_appop_mode_field_mode_option_foreground">Foreground</string>
+    <string name="feature_android_state_appop_mode_field_mode_option_errored">Errored</string>
+
+    <string name="feature_android_condition_appop_mode_title">App operation mode</string>
+    <string name="feature_android_condition_appop_mode_description">Check the current Android AppOps mode for an application operation</string>
+    <string name="feature_android_condition_appop_mode_field_package">App / package</string>
+    <string name="feature_android_condition_appop_mode_field_operation">App operation</string>
+    <string name="feature_android_condition_appop_mode_field_mode">Expected mode</string>
+    <string name="feature_android_condition_appop_mode_field_mode_option_allow">Allow</string>
+    <string name="feature_android_condition_appop_mode_field_mode_option_ignore">Ignore</string>
+    <string name="feature_android_condition_appop_mode_field_mode_option_deny">Deny</string>
+    <string name="feature_android_condition_appop_mode_field_mode_option_default">Default</string>
+    <string name="feature_android_condition_appop_mode_field_mode_option_foreground">Foreground</string>
+    <string name="feature_android_condition_appop_mode_field_mode_option_errored">Errored</string>
+</resources>
