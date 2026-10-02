@@ -29,6 +29,7 @@ suspend fun FeatureExecutionContext.executeCapability(
                     put("capability", request.capability.value)
                     put("operationId", request.operationId)
                     put("allowFallback", request.allowFallback.toString())
+                    put("backendPreference", request.preferredBackendId ?: "auto")
                     if (result.attempts.isNotEmpty()) {
                         put(
                             "attempts",
@@ -58,11 +59,12 @@ suspend fun FeatureExecutionContext.executeCapability(
                 featureId = featureId,
                 success = false,
                 durationMs = System.currentTimeMillis() - startedAt,
-                attributes = mapOf(
-                    "capability" to request.capability.value,
-                    "operationId" to request.operationId,
-                    "exception" to error::class.qualifiedName.orEmpty(),
-                ),
+                attributes = buildMap {
+                    put("capability", request.capability.value)
+                    put("operationId", request.operationId)
+                    put("backendPreference", request.preferredBackendId ?: "auto")
+                    put("exception", error::class.qualifiedName.orEmpty())
+                },
             )
         )
         throw error
