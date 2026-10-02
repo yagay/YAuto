@@ -25,6 +25,7 @@ class AndroidSurfaceFeaturePack(
                     FieldSchema.Choice("gravity", "Position", true, listOf("center", "top", "bottom", "top_left", "top_right", "bottom_left", "bottom_right")),
                     FieldSchema.Duration("autoHideMs", "Auto hide after"),
                 ),
+                accessRequirements = setOf(AccessRequirement.OVERLAY),
                 keywords = setOf("overlay", "surface", "floating", "panel", "button", "悬浮", "面板"),
                 ownerPackId = id,
             )
