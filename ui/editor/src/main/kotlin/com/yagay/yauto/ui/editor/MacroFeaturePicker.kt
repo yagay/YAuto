@@ -29,6 +29,7 @@ import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.localizedList
 import com.yagay.yauto.ui.design.R as TextR
+import java.util.Locale
 
 private data class CatalogCategory(
     val id: String,
@@ -249,7 +250,7 @@ private fun CategoryPage(
                 }
             }
             items(categories, key = { it.id }) { category ->
-                val count = descriptors.count { it.category.name.lowercase() == category.id }
+                val count = descriptors.count { it.category.name.lowercase(Locale.ROOT) == category.id }
                 CategoryRow(
                     stringResource(category.titleRes),
                     stringResource(
@@ -313,14 +314,16 @@ private fun FeatureListPage(
     onFavorite: (String) -> Unit,
 ) {
     val textResolver = rememberFeatureTextResolver()
-    val features = remember(descriptors, categoryPage, query, favorites, recent, textResolver) {
+    val locale = currentEditorLocale()
+    val titleComparator = remember(locale) { localizedStringComparator(locale) }
+    val features = remember(descriptors, categoryPage, query, favorites, recent, textResolver, titleComparator) {
         val base = when (categoryPage.special) {
             "recent" -> recent.mapNotNull { id -> descriptors.firstOrNull { it.id.value == id } }
             "favorites" -> descriptors.filter { it.id.value in favorites }
-            else -> descriptors.filter { it.category.name.lowercase() == categoryPage.category.id }
+            else -> descriptors.filter { it.category.name.lowercase(Locale.ROOT) == categoryPage.category.id }
         }
         base.filter { query.isBlank() || textResolver.matches(it, query) }
-            .sortedBy { textResolver.title(it).lowercase() }
+            .sortedWith { left, right -> titleComparator.compare(textResolver.title(left), textResolver.title(right)) }
     }
     val title = categoryTitle(categoryPage)
     val subtitle = categorySubtitle(categoryPage)
@@ -375,11 +378,14 @@ private fun FeatureConfigurePage(
     accent: Color,
     onSave: (FeatureRef) -> Unit,
 ) {
-    val initialTexts = remember(descriptor.id.value, initial) {
-        descriptor.fields.associate { it.key to initial?.config?.get(it.key).editorText() }
+    val locale = currentEditorLocale()
+    val initialTexts = remember(descriptor.id.value, initial, locale) {
+        descriptor.fields.associate { field ->
+            field.key to editorConfigValueText(initial?.config?.get(field.key), locale)
+        }
     }
-    var values by remember(descriptor.id.value, initial) { mutableStateOf(initialTexts) }
-    val valid = descriptor.fields.all { field -> fieldValid(field, values[field.key].orEmpty()) }
+    var values by remember(descriptor.id.value, initial, locale) { mutableStateOf(initialTexts) }
+    val valid = descriptor.fields.all { field -> fieldValid(field, values[field.key].orEmpty(), locale) }
 
     LazyColumn(
         modifier.fillMaxSize(),
@@ -457,7 +463,7 @@ private fun FeatureConfigurePage(
                                         field.key,
                                         ConfigValue.BooleanValue(raw.toBooleanStrictOrNull() ?: false),
                                     )
-                                    is FieldSchema.Number, is FieldSchema.Duration -> raw.toDoubleOrNull()?.let {
+                                    is FieldSchema.Number, is FieldSchema.Duration -> parseLocalizedDouble(raw, locale)?.let {
                                         put(field.key, ConfigValue.NumberValue(it))
                                     }
                                     else -> if (raw.isNotEmpty() || field.required) {
@@ -623,7 +629,7 @@ private fun FieldEditor(
                 },
                 minLines = if (field is FieldSchema.Text && field.multiline) 3 else 1,
                 keyboardOptions = if (numeric) {
-                    KeyboardOptions(keyboardType = KeyboardType.Number)
+                    KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 } else {
                     KeyboardOptions.Default
                 },
@@ -687,7 +693,8 @@ private fun InstalledAppDialog(
 ) {
     var query by remember { mutableStateOf("") }
     var includeSystem by remember { mutableStateOf(false) }
-    val apps = remember { installedApps(context) }
+    val locale = currentEditorLocale()
+    val apps = remember(context, locale) { installedApps(context, locale) }
     val filtered = remember(apps, query, includeSystem) {
         apps.filter {
             (includeSystem || !it.system) &&
@@ -752,43 +759,39 @@ private fun InstalledAppDialog(
 }
 
 @Suppress("DEPRECATION")
-private fun installedApps(context: Context): List<InstalledApp> = runCatching {
+private fun installedApps(context: Context, locale: Locale): List<InstalledApp> = runCatching {
     val pm = context.packageManager
+    val comparator = localizedStringComparator(locale)
     pm.getInstalledApplications(PackageManager.GET_META_DATA).map { info ->
         InstalledApp(
             label = runCatching { pm.getApplicationLabel(info).toString() }.getOrDefault(info.packageName),
             packageName = info.packageName,
             system = info.flags and ApplicationInfo.FLAG_SYSTEM != 0,
         )
-    }.sortedWith(compareBy<InstalledApp> { it.system }.thenBy { it.label.lowercase() })
+    }.sortedWith { left, right ->
+        when {
+            left.system != right.system -> left.system.compareTo(right.system)
+            else -> comparator.compare(left.label, right.label)
+        }
+    }
 }.getOrDefault(emptyList())
-
-private fun ConfigValue?.editorText(): String = when (this) {
-    null, ConfigValue.NullValue -> ""
-    is ConfigValue.StringValue -> value
-    is ConfigValue.NumberValue -> value.toString().removeSuffix(".0")
-    is ConfigValue.BooleanValue -> value.toString()
-    is ConfigValue.ListValue -> value.joinToString(",") { it.editorText() }
-    is ConfigValue.ObjectValue -> value.toString()
-}
 
 private fun loadIds(raw: String?): List<String> = raw.orEmpty().lineSequence()
     .map { it.trim() }.filter { it.isNotEmpty() }.distinct().toList()
-private fun favoriteKey(kind: FeatureKind) = "favorites_${kind.name.lowercase()}"
-private fun recentKey(kind: FeatureKind) = "recent_${kind.name.lowercase()}"
+private fun favoriteKey(kind: FeatureKind) = "favorites_${kind.name.lowercase(Locale.ROOT)}"
+private fun recentKey(kind: FeatureKind) = "recent_${kind.name.lowercase(Locale.ROOT)}"
 
-private fun fieldValid(field: FieldSchema, raw: String): Boolean = when (field) {
-    is FieldSchema.Number -> (raw.isBlank() && !field.required) || raw.toDoubleOrNull()?.let { number ->
+private fun fieldValid(field: FieldSchema, raw: String, locale: Locale): Boolean = when (field) {
+    is FieldSchema.Number -> (raw.isBlank() && !field.required) || parseLocalizedDouble(raw, locale)?.let { number ->
         number.isFinite() && (field.min?.let { number >= it } ?: true) && (field.max?.let { number <= it } ?: true)
     } == true
-    is FieldSchema.Duration -> (raw.isBlank() && !field.required) || raw.toDoubleOrNull()?.let {
+    is FieldSchema.Duration -> (raw.isBlank() && !field.required) || parseLocalizedDouble(raw, locale)?.let {
         it.isFinite() && it >= 0
     } == true
     is FieldSchema.Choice -> (raw.isBlank() && !field.required) || raw in field.options
     is FieldSchema.Toggle -> true
     else -> !field.required || raw.isNotBlank()
 }
-
 
 private fun kindAccent(kind: FeatureKind): Color = when (kind) {
     FeatureKind.EVENT -> MacroPalette.Trigger
@@ -848,7 +851,6 @@ private fun categorySubtitle(page: PickerPage.Features): String = when (page.spe
     "favorites" -> stringResource(TextR.string.feature_picker_favorites)
     else -> stringResource(page.category.subtitleRes)
 }
-
 
 @Composable
 private fun capabilityLabel(capabilityId: String): String = stringResource(
