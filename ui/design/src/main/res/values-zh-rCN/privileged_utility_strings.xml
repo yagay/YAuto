@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_screen_wake_title">唤醒屏幕</string>
+    <string name="feature_android_screen_wake_description">通过 Android 输入按键事件唤醒显示屏</string>
+
+    <string name="feature_android_input_keyevent_title">发送按键事件</string>
+    <string name="feature_android_input_keyevent_description">通过 Root 或 Shizuku 发送常用 Android 按键事件</string>
+    <string name="feature_android_input_keyevent_field_key">按键</string>
+    <string name="feature_android_input_keyevent_field_key_option_back">返回</string>
+    <string name="feature_android_input_keyevent_field_key_option_home">主屏幕</string>
+    <string name="feature_android_input_keyevent_field_key_option_recents">最近任务</string>
+    <string name="feature_android_input_keyevent_field_key_option_enter">回车</string>
+    <string name="feature_android_input_keyevent_field_key_option_tab">Tab</string>
+    <string name="feature_android_input_keyevent_field_key_option_escape">Esc</string>
+    <string name="feature_android_input_keyevent_field_key_option_volume_up">增大音量</string>
+    <string name="feature_android_input_keyevent_field_key_option_volume_down">减小音量</string>
+    <string name="feature_android_input_keyevent_field_key_option_volume_mute">静音</string>
+    <string name="feature_android_input_keyevent_field_key_option_media_play_pause">播放 / 暂停</string>
+    <string name="feature_android_input_keyevent_field_key_option_media_next">下一首</string>
+    <string name="feature_android_input_keyevent_field_key_option_media_previous">上一首</string>
+    <string name="feature_android_input_keyevent_field_key_option_camera">相机</string>
+    <string name="feature_android_input_keyevent_field_key_option_custom">自定义</string>
+    <string name="feature_android_input_keyevent_field_customkeycode">自定义 Android 按键码</string>
+    <string name="feature_android_input_keyevent_field_longpress">长按</string>
+
+    <string name="feature_android_screenshot_capture_title">截取屏幕</string>
+    <string name="feature_android_screenshot_capture_description">将当前显示内容保存为共享存储中的 PNG 图片</string>
+    <string name="feature_android_screenshot_capture_field_path">PNG 路径（留空 = Downloads/YAuto）</string>
+    <string name="feature_android_screenshot_capture_field_resultvariable">将保存路径写入变量</string>
+</resources>
