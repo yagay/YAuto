@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_feature_invalid_custom_key_code">Custom Android key code is invalid</string>
+    <string name="runtime_feature_unknown_key">Unknown Android key</string>
+    <string name="runtime_feature_screenshot_path_shared_storage_required">Screenshot path must be in shared storage</string>
+    <string name="runtime_feature_screenshot_path_png_required">Screenshot path must end with .png</string>
+    <string name="runtime_feature_screenshot_path_invalid">Screenshot path is invalid</string>
+</resources>
