@@ -22,9 +22,9 @@ class AndroidAppManagementFeaturePackTest {
     }
 
     @Test fun `reboot modes map only to supported commands`() {
-        assertEquals("reboot", rebootCommand("normal"))
-        assertEquals("reboot recovery", rebootCommand("recovery"))
-        assertEquals("reboot bootloader", rebootCommand("bootloader"))
+        assertEquals("svc power reboot", rebootCommand("normal"))
+        assertEquals("svc power reboot recovery", rebootCommand("recovery"))
+        assertEquals("svc power reboot bootloader", rebootCommand("bootloader"))
         assertNull(rebootCommand("fastbootd"))
         assertNull(rebootCommand(""))
     }
