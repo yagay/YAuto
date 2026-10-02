@@ -68,6 +68,41 @@ class AndroidEventFeaturePackTest {
         ), payload))
     }
 
+    @Test fun `battery event can filter level and temperature independently`() = runBlocking {
+        val id = "android.event.battery_changed"
+        val payload = mapOf(
+            "percent" to ConfigValue.NumberValue(55.0),
+            "temperatureC" to ConfigValue.NumberValue(31.5),
+        )
+        assertTrue(matches(id, payload = payload))
+        assertTrue(matches(id, mapOf(
+            "minPercent" to ConfigValue.NumberValue(50.0),
+            "maxPercent" to ConfigValue.NumberValue(60.0),
+            "minTemperatureC" to ConfigValue.NumberValue(30.0),
+            "maxTemperatureC" to ConfigValue.NumberValue(32.0),
+        ), payload))
+        assertFalse(matches(id, mapOf("minPercent" to ConfigValue.NumberValue(56.0)), payload))
+        assertFalse(matches(id, mapOf("maxTemperatureC" to ConfigValue.NumberValue(31.0)), payload))
+    }
+
+    @Test fun `headset event filters connection category and device name`() = runBlocking {
+        val id = "android.event.headset_changed"
+        val payload = mapOf(
+            "connected" to ConfigValue.BooleanValue(true),
+            "category" to ConfigValue.StringValue("bluetooth"),
+            "name" to ConfigValue.StringValue("Pixel Buds Pro"),
+        )
+        assertTrue(matches(id, payload = payload))
+        assertTrue(matches(id, mapOf(
+            "state" to ConfigValue.StringValue("connected"),
+            "category" to ConfigValue.StringValue("bluetooth"),
+            "nameContains" to ConfigValue.StringValue("buds"),
+        ), payload))
+        assertFalse(matches(id, mapOf("state" to ConfigValue.StringValue("disconnected")), payload))
+        assertFalse(matches(id, mapOf("category" to ConfigValue.StringValue("wired")), payload))
+        assertFalse(matches(id, mapOf("nameContains" to ConfigValue.StringValue("Sony")), payload))
+    }
+
     @Test fun `wrong event type never matches`() = runBlocking {
         val matcher = requireNotNull(registry.eventMatcher("android.event.nfc_state_changed"))
         val result = matcher.matches(
