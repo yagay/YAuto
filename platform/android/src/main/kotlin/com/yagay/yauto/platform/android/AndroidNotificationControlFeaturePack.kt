@@ -25,7 +25,10 @@ class AndroidNotificationControlFeaturePack : FeaturePack {
         val stateDescriptor = FeatureDescriptor(
             FeatureId("android.state.notification_active"), FeatureKind.STATE,
             "Active notification", "Check whether an active notification matches the selected filters",
-            FeatureCategory.NOTIFICATION, fields = fields, keywords = setOf("notification", "active", "exists", "通知存在"), ownerPackId = id,
+            FeatureCategory.NOTIFICATION,
+            fields = fields,
+            accessRequirements = setOf(AccessRequirement.NOTIFICATION_LISTENER),
+            keywords = setOf("notification", "active", "exists", "通知存在"), ownerPackId = id,
         )
         val conditionDescriptor = stateDescriptor.copy(
             id = FeatureId("android.condition.notification_active"),
@@ -52,6 +55,7 @@ class AndroidNotificationControlFeaturePack : FeaturePack {
             FeatureDescriptor(
                 FeatureId(id), FeatureKind.ACTION, title, description, FeatureCategory.NOTIFICATION,
                 fields = filterFields() + extra,
+                accessRequirements = setOf(AccessRequirement.NOTIFICATION_LISTENER),
                 keywords = setOf("notification", "dismiss", "open", "action", "通知", "点击通知"),
                 ownerPackId = this.id,
             )
