@@ -4,6 +4,7 @@ import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
+import com.yagay.yauto.core.model.long
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.core.model.userText
@@ -53,12 +54,59 @@ class PrivilegedAndroidFeaturePack : FeaturePack {
         toggleCommand(registry, "android.wifi.set", "Wi-Fi", "Turn Wi-Fi on or off using Android's svc/cmd Wi-Fi service", "svc wifi", setOf("wifi", "wi-fi", "network"))
         toggleCommand(registry, "android.mobile_data.set", "Mobile data", "Turn mobile data connectivity on or off using Android's phone service", "svc data", setOf("mobile data", "cellular", "data"))
         toggleCommand(registry, "android.bluetooth.set", "Bluetooth", "Turn Bluetooth on or off using Android's Bluetooth manager shell command", "svc bluetooth", setOf("bluetooth", "bt"))
+        toggleCommand(registry, "android.nfc.set", "NFC", "Turn NFC on or off using Android's NFC service", "svc nfc", setOf("nfc", "near field communication"))
 
         privilegedAction(registry, "android.airplane_mode.set", "Airplane mode", "Set the global airplane mode flag and broadcast the corresponding Android state change", FeatureCategory.NETWORK,
             listOf(FieldSchema.Toggle("enabled", "Enabled")), setOf("airplane", "flight mode")) { feature, _ ->
             val enabled = feature.config.boolean("enabled", true)
             val flag = if (enabled) "1" else "0"
             "settings put global airplane_mode_on $flag && am broadcast -a android.intent.action.AIRPLANE_MODE --ez state $enabled"
+        }
+
+        privilegedAction(registry, "android.location.enabled.set", "Location services", "Turn the Android master location switch on or off for the current user", FeatureCategory.DEVICE,
+            listOf(FieldSchema.Toggle("enabled", "Enabled")), setOf("location", "gps", "location services")) { feature, _ ->
+            "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
+        }
+
+        privilegedAction(registry, "android.display.auto_rotate.set", "Auto-rotate", "Enable or disable Android automatic screen rotation", FeatureCategory.DISPLAY,
+            listOf(FieldSchema.Toggle("enabled", "Enabled")), setOf("rotation", "auto rotate", "orientation")) { feature, _ ->
+            "settings put system accelerometer_rotation ${if (feature.config.boolean("enabled", true)) 1 else 0}"
+        }
+
+        privilegedAction(registry, "android.display.screen_timeout.set", "Screen timeout", "Set the Android screen-off timeout", FeatureCategory.DISPLAY,
+            listOf(FieldSchema.Duration("timeoutMs", "Screen timeout", true)), setOf("screen timeout", "sleep timeout", "display timeout")) { feature, _ ->
+            val timeoutMs = feature.config.long("timeoutMs", 30_000L)
+            require(timeoutMs in 1_000L..86_400_000L) { "Screen timeout must be between 1 second and 24 hours" }
+            "settings put system screen_off_timeout $timeoutMs"
+        }
+
+        privilegedAction(registry, "android.display.dark_mode.set", "Dark theme", "Set Android system night mode to light, dark or automatic", FeatureCategory.DISPLAY,
+            listOf(FieldSchema.Choice("mode", "Mode", true, listOf("light", "dark", "auto"))), setOf("dark mode", "night mode", "theme")) { feature, _ ->
+            val mode = when (feature.config.string("mode", "auto")) {
+                "light" -> "no"
+                "dark" -> "yes"
+                "auto" -> "auto"
+                else -> error("Invalid dark theme mode")
+            }
+            "cmd uimode night $mode"
+        }
+
+        privilegedAction(registry, "android.power.battery_saver.set", "Battery saver", "Turn Android low-power mode on or off", FeatureCategory.DEVICE,
+            listOf(FieldSchema.Toggle("enabled", "Enabled")), setOf("battery saver", "power saver", "low power")) { feature, _ ->
+            "cmd power set-mode ${if (feature.config.boolean("enabled", true)) 1 else 0}"
+        }
+
+        privilegedAction(registry, "android.power.stay_awake.set", "Stay awake while charging", "Control which charging sources keep the screen awake", FeatureCategory.DEVICE,
+            listOf(FieldSchema.Choice("mode", "Stay awake mode", true, listOf("off", "all", "usb", "ac", "wireless"))), setOf("stay awake", "keep screen on", "charging")) { feature, _ ->
+            val argument = when (feature.config.string("mode", "off")) {
+                "off" -> "false"
+                "all" -> "true"
+                "usb" -> "usb"
+                "ac" -> "ac"
+                "wireless" -> "wireless"
+                else -> error("Invalid stay-awake mode")
+            }
+            "svc power stayon $argument"
         }
 
         privilegedAction(registry, "android.settings.put", "Write system setting", "Write an Android system/secure/global setting through a privileged shell backend", FeatureCategory.SYSTEM,
