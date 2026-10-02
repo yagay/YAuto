@@ -50,7 +50,7 @@ fun MacroFeaturePickerDialog(
     val initialDescriptor = initial?.let { ref -> editable.firstOrNull { it.id.value == ref.typeId } }
     var page by remember(initial?.typeId) { mutableStateOf<PickerPage>(initialDescriptor?.let { PickerPage.Configure(it, null) } ?: PickerPage.Categories) }
     var query by remember { mutableStateOf("") }
-    var favorites by remember(kind) { mutableStateOf(loadIds(prefs.getString(favoriteKey(kind), ""))) }
+    var favorites by remember(kind) { mutableStateOf(loadIds(prefs.getString(favoriteKey(kind), "")).toSet()) }
     var recent by remember(kind) { mutableStateOf(loadIds(prefs.getString(recentKey(kind), ""))) }
     val accent = kindAccent(kind)
 
