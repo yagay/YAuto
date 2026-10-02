@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_data_json_parse_title">解析 JSON</string>
+    <string name="feature_data_json_parse_description">将 JSON 文本解析为 YAuto 结构化变量</string>
+    <string name="feature_data_json_parse_field_text">JSON 文本</string>
+    <string name="feature_data_json_parse_field_resultvariable">将解析结果保存到变量</string>
+
+    <string name="feature_data_json_stringify_title">将值转换为 JSON</string>
+    <string name="feature_data_json_stringify_description">将 YAuto 变量序列化为紧凑或格式化的 JSON 文本</string>
+    <string name="feature_data_json_stringify_field_name">源变量</string>
+    <string name="feature_data_json_stringify_field_pretty">格式化输出</string>
+    <string name="feature_data_json_stringify_field_resultvariable">将 JSON 文本保存到变量</string>
+
+    <string name="feature_data_json_path_get_title">读取 JSON 路径</string>
+    <string name="feature_data_json_path_get_description">使用 user.items[0].name 这样的路径读取对象/列表变量中的值</string>
+    <string name="feature_data_json_path_get_field_name">源变量</string>
+    <string name="feature_data_json_path_get_field_path">JSON 路径</string>
+    <string name="feature_data_json_path_get_field_resultvariable">将结果保存到变量</string>
+
+    <string name="feature_data_json_path_set_title">写入 JSON 路径</string>
+    <string name="feature_data_json_path_set_description">使用 JSON 路径设置或替换对象/列表变量中的值</string>
+    <string name="feature_data_json_path_set_field_name">目标变量</string>
+    <string name="feature_data_json_path_set_field_path">JSON 路径</string>
+    <string name="feature_data_json_path_set_field_value">值</string>
+    <string name="feature_data_json_path_set_field_valuetype">值类型</string>
+    <string name="feature_data_json_path_set_field_valuetype_option_string">文本</string>
+    <string name="feature_data_json_path_set_field_valuetype_option_number">数字</string>
+    <string name="feature_data_json_path_set_field_valuetype_option_boolean">布尔值</string>
+    <string name="feature_data_json_path_set_field_valuetype_option_null">空值</string>
+    <string name="feature_data_json_path_set_field_valuetype_option_json">JSON</string>
+
+    <string name="feature_data_json_path_remove_title">删除 JSON 路径</string>
+    <string name="feature_data_json_path_remove_description">从结构化变量中删除对象键或列表项</string>
+    <string name="feature_data_json_path_remove_field_name">目标变量</string>
+    <string name="feature_data_json_path_remove_field_path">JSON 路径</string>
+
+    <string name="feature_data_json_keys_title">获取对象键</string>
+    <string name="feature_data_json_keys_description">将对象变量或 JSON 路径对象的键保存为列表</string>
+    <string name="feature_data_json_keys_field_name">源变量</string>
+    <string name="feature_data_json_keys_field_path">可选 JSON 路径</string>
+    <string name="feature_data_json_keys_field_resultvariable">将键列表保存到变量</string>
+
+    <string name="feature_data_json_array_length_title">获取数组长度</string>
+    <string name="feature_data_json_array_length_description">读取列表变量或 JSON 路径列表的元素数量</string>
+    <string name="feature_data_json_array_length_field_name">源变量</string>
+    <string name="feature_data_json_array_length_field_path">可选 JSON 路径</string>
+    <string name="feature_data_json_array_length_field_resultvariable">将长度保存到变量</string>
+
+    <string name="runtime_feature_json_path_invalid">JSON 路径无效</string>
+    <string name="runtime_feature_json_path_not_found">找不到 JSON 路径</string>
+    <string name="runtime_feature_json_value_invalid">配置的 JSON 值无效</string>
+    <string name="runtime_feature_json_object_required">所选值不是对象</string>
+</resources>
