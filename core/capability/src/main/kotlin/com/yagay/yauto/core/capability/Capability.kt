@@ -49,6 +49,8 @@ data class CapabilityRequest(
     val operationId: String,
     val payload: ConfigMap = emptyMap(),
     val allowFallback: Boolean = true,
+    /** Null means automatic backend selection. A non-null value makes the request use only that backend. */
+    val preferredBackendId: String? = null,
 )
 
 @Serializable
@@ -70,6 +72,20 @@ data class CapabilityResult(
 fun interface CapabilityClient {
     suspend fun execute(request: CapabilityRequest): CapabilityResult
 }
+
+/** Applies a user-selected backend to requests without forcing every feature executor to know about UI preferences. */
+class PreferredBackendCapabilityClient(
+    private val delegate: CapabilityClient,
+    private val preferredBackendId: String?,
+) : CapabilityClient {
+    override suspend fun execute(request: CapabilityRequest): CapabilityResult {
+        val preferred = request.preferredBackendId ?: preferredBackendId?.takeIf { it.isNotBlank() && it != "auto" }
+        return delegate.execute(request.copy(preferredBackendId = preferred))
+    }
+}
+
+fun CapabilityClient.preferBackend(backendId: String?): CapabilityClient =
+    if (backendId.isNullOrBlank() || backendId == "auto") this else PreferredBackendCapabilityClient(this, backendId)
 
 interface CapabilityBackend {
     val id: String
@@ -97,9 +113,16 @@ class CapabilityBroker(
 
     override suspend fun execute(request: CapabilityRequest): CapabilityResult {
         val environment = environmentProvider()
-        val candidates = backends.filter { it.supports(request, environment) && it.isAvailable(environment) }
+        val supported = backends.filter { backend ->
+            (request.preferredBackendId == null || backend.id == request.preferredBackendId) &&
+                backend.supports(request, environment)
+        }
+        val candidates = supported.filter { it.isAvailable(environment) }
         if (candidates.isEmpty()) {
-            return CapabilityResult(false, message = "No backend available for ${request.capability.value}")
+            val message = request.preferredBackendId?.let {
+                "Selected backend '$it' is unavailable or does not support ${request.capability.value}"
+            } ?: "No backend available for ${request.capability.value}"
+            return CapabilityResult(false, message = message)
         }
 
         val attempts = mutableListOf<CapabilityAttempt>()
@@ -110,7 +133,7 @@ class CapabilityBroker(
                 CapabilityResult(false, message = error.message ?: error::class.simpleName)
             }
             attempts += CapabilityAttempt(backend.id, result.success, result.message)
-            if (result.success || !request.allowFallback) {
+            if (result.success || !request.allowFallback || request.preferredBackendId != null) {
                 return result.copy(backendId = backend.id, attempts = attempts.toList())
             }
         }
