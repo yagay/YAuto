@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="editor_select_kind_format">Select %1$s</string>
+    <string name="editor_add_kind_format">Add %1$s</string>
+    <string name="editor_required">Required</string>
+    <string name="editor_system_app">System</string>
+    <string name="editor_show_system_apps">Show system apps</string>
+    <string name="editor_category_count_format">%1$s · %2$d items</string>
+    <string name="editor_favorite_prefix">★ %1$s</string>
+    <string name="editor_feature_search_subtitle_format">%1$s · %2$s</string>
+
+    <string name="kind_event">Trigger</string>
+    <string name="kind_state">State</string>
+    <string name="kind_action">Action</string>
+    <string name="kind_condition">Constraint</string>
+    <string name="kind_event_help">A trigger is a momentary event. Any matching trigger can start an automation.</string>
+    <string name="kind_state_help">A state persists over time and can drive enter/exit automation transitions.</string>
+    <string name="kind_action_help">Actions run in sequence and can include branches, loops, parallel blocks and flows.</string>
+    <string name="kind_condition_help">Constraints limit when an automation or action is allowed to run.</string>
+
+    <string name="category_core">Core</string>
+    <string name="category_core_subtitle">Core automation and control-flow features</string>
+    <string name="category_app">Apps</string>
+    <string name="category_app_subtitle">Apps, packages, components and foreground state</string>
+    <string name="category_device">Device</string>
+    <string name="category_device_subtitle">Power, hardware, sensors and device state</string>
+    <string name="category_network">Network</string>
+    <string name="category_network_subtitle">Wi-Fi, mobile data, Bluetooth and connectivity</string>
+    <string name="category_display">Display</string>
+    <string name="category_display_subtitle">Screen, brightness and display state</string>
+    <string name="category_audio">Audio</string>
+    <string name="category_audio_subtitle">Volume, media and audio state</string>
+    <string name="category_notification">Notifications</string>
+    <string name="category_notification_subtitle">Notification events, state and actions</string>
+    <string name="category_file">Files</string>
+    <string name="category_file_subtitle">Files, storage and data operations</string>
+    <string name="category_variable">Variables</string>
+    <string name="category_variable_subtitle">Variables and data transformations</string>
+    <string name="category_flow">Flow</string>
+    <string name="category_flow_subtitle">Branches, loops, reusable flows and execution control</string>
+    <string name="category_ui_automation">UI automation</string>
+    <string name="category_ui_automation_subtitle">Accessibility, gestures, overlays and interface automation</string>
+    <string name="category_system">System</string>
+    <string name="category_system_subtitle">Android system services and protected operations</string>
+    <string name="category_script">Scripts</string>
+    <string name="category_script_subtitle">Shell, scripts, HTTP and programmable actions</string>
+    <string name="category_advanced">Advanced</string>
+    <string name="category_advanced_subtitle">Root, Shizuku, LSPosed and advanced integrations</string>
+
+    <string name="implementation_auto_title">Auto</string>
+    <string name="implementation_root_title">Root</string>
+    <string name="implementation_shizuku_title">Shizuku</string>
+    <string name="implementation_lsposed_title">LSPosed</string>
+    <string name="implementation_accessibility_title">Accessibility</string>
+</resources>
