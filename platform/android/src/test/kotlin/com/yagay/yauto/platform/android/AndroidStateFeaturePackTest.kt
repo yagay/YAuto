@@ -15,6 +15,7 @@ class AndroidStateFeaturePackTest {
         var on = true
         var types = setOf("wifi", "vpn", "connected")
         var percent: Double? = 50.0
+        var temperatureC: Double? = 30.0
         var mediaPercent: Double? = 40.0
         var brightness: Double? = 60.0
         var automaticBrightness = false
@@ -24,11 +25,13 @@ class AndroidStateFeaturePackTest {
         var dark = false
         var stayAwake = false
         var timeoutMs: Double? = 30_000.0
+        var headset = false
         var failure = false
         override fun screenOn(): Boolean { if (failure) error("unavailable"); return on }
         override fun networkTypes() = types
         override fun charging() = true
         override fun batteryPercent() = percent
+        override fun batteryTemperatureC() = temperatureC
         override fun powerSave() = false
         override fun appInstalled(packageName: String) = packageName == "installed.app"
         override fun mediaVolumePercent() = mediaPercent
@@ -40,6 +43,7 @@ class AndroidStateFeaturePackTest {
         override fun darkMode() = dark
         override fun stayAwakeWhileCharging() = stayAwake
         override fun screenTimeoutMs() = timeoutMs
+        override fun headsetConnected() = headset
     }
     private val reader = Reader()
     private val registry = FeatureRegistry().apply { install(AndroidStateFeaturePack(reader)) }
@@ -55,7 +59,7 @@ class AndroidStateFeaturePackTest {
         registry.stateEvaluator("android.state.$key")!!.evaluate(FeatureRef("android.state.$key", config = config), ctx)
 
     @Test fun `registry states query current values and remain removable as a pack`() = runBlocking {
-        assertEquals(28, registry.allDescriptors().size)
+        assertEquals(32, registry.allDescriptors().size)
         assertTrue(matches("screen"))
         reader.on = false
         assertFalse(matches("screen"))
@@ -95,12 +99,36 @@ class AndroidStateFeaturePackTest {
         reader.stayAwake = true
         assertTrue(matches("stay_awake_while_charging"))
 
+        assertFalse(matches("headset_connected"))
+        reader.headset = true
+        assertTrue(matches("headset_connected"))
+
         assertTrue(matches("screen_timeout", mapOf(
             "minMs" to ConfigValue.NumberValue(20_000.0),
             "maxMs" to ConfigValue.NumberValue(40_000.0),
         )))
         reader.timeoutMs = 60_000.0
         assertFalse(matches("screen_timeout", mapOf("maxMs" to ConfigValue.NumberValue(40_000.0))))
+    }
+
+    @Test fun `battery temperature comparison is live and bounded`() = runBlocking {
+        assertTrue(matches("battery_temperature", mapOf(
+            "operator" to ConfigValue.StringValue(">="),
+            "value" to ConfigValue.NumberValue(30.0),
+        )))
+        reader.temperatureC = 29.9
+        assertFalse(matches("battery_temperature", mapOf(
+            "operator" to ConfigValue.StringValue(">="),
+            "value" to ConfigValue.NumberValue(30.0),
+        )))
+        reader.temperatureC = 30.04
+        assertTrue(matches("battery_temperature", mapOf(
+            "operator" to ConfigValue.StringValue("=="),
+            "value" to ConfigValue.NumberValue(30.0),
+        )))
+        reader.temperatureC = null
+        assertFalse(matches("battery_temperature", mapOf("value" to ConfigValue.NumberValue(30.0))))
+        assertFalse(matches("battery_temperature", mapOf("value" to ConfigValue.NumberValue(200.0))))
     }
 
     @Test fun `media volume and brightness comparisons use current live values`() = runBlocking {
