@@ -42,10 +42,11 @@ class PrivilegedAndroidFeaturePackTest {
         assertTrue(descriptor.description.contains("Root"))
         val backend = descriptor.fields.filterIsInstance<FieldSchema.Choice>()
             .first { it.key == FEATURE_BACKEND_CONFIG_KEY }
-        assertEquals(listOf("auto", "shizuku", "root"), backend.options)
+        assertEquals(listOf("auto", "root", "shizuku"), backend.options)
         assertTrue(backend.label.contains("优点："))
         assertTrue(backend.label.contains("缺点："))
         assertTrue(backend.label.contains("不需要把 Root 直接授权给 YAuto"))
+        assertTrue(backend.label.contains("可 fallback"))
     }
 
     @Test fun `selected backend is forwarded by privileged feature`() = runBlocking {
