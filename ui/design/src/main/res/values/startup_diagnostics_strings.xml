@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_diagnostics_startup_failures_available">Previous startup failures are available.</string>
+    <string name="runtime_diagnostics_startup_failures_empty">No startup failures have been recorded.</string>
+    <string name="runtime_diagnostics_startup_failures_title">Startup failure log</string>
+</resources>
