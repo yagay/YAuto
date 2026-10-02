@@ -26,6 +26,7 @@
     <string name="feature_android_wallpaper_clear_field_target_option_lock">锁屏</string>
     <string name="feature_android_wallpaper_clear_field_target_option_both">两者</string>
 
+    <string name="runtime_feature_file_not_found">文件不存在或无法读取</string>
     <string name="runtime_feature_wallpaper_target_invalid">未知的壁纸目标</string>
     <string name="runtime_feature_wallpaper_set_failed">无法从所选图片设置壁纸</string>
     <string name="runtime_feature_wallpaper_clear_failed">无法清除壁纸</string>
