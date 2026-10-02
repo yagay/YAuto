@@ -166,7 +166,7 @@ private fun DiagnosticOverview(
         }
         items(statuses, key = { it.collectorId }) { status ->
             ListItem(
-                headlineContent = { Text(status.collectorId) },
+                headlineContent = { Text(collectorLabel(status.collectorId)) },
                 supportingContent = { status.message?.let { Text(it) } },
                 trailingContent = {
                     Text(
@@ -278,6 +278,19 @@ private fun DiagnosticRecordPage(modifier: Modifier, record: DiagnosticRecord) {
             }
         }
     }
+}
+
+@Composable
+private fun collectorLabel(collectorId: String): String = when (collectorId) {
+    "yauto.execution.files" -> stringResource(TextR.string.diagnostics_collector_execution_logs)
+    "yauto.import.reports" -> stringResource(TextR.string.diagnostics_collector_import_reports)
+    "android.notification_listener_access" -> stringResource(TextR.string.diagnostics_collector_notification_access)
+    "accessibility" -> stringResource(TextR.string.diagnostics_collector_accessibility)
+    "root.environment" -> stringResource(TextR.string.diagnostics_collector_root)
+    "lsposed.logs" -> stringResource(TextR.string.diagnostics_collector_lsposed_logs)
+    "shizuku" -> stringResource(TextR.string.diagnostics_collector_shizuku)
+    "lsposed" -> stringResource(TextR.string.diagnostics_collector_lsposed_backend)
+    else -> stringResource(TextR.string.diagnostics_collector_unknown_format, collectorId)
 }
 
 @Composable
