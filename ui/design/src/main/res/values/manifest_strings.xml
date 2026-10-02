@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="fgs_special_use_subtype">user-configured automation event monitoring and execution</string>
+    <string name="fgs_special_use_subtype" translatable="false">user-configured automation event monitoring and execution</string>
 </resources>
