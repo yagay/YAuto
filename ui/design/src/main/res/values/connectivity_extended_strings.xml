@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_wifi_network_title">Wi-Fi network</string>
+    <string name="feature_android_state_wifi_network_description">Match the current Wi-Fi connection, SSID/BSSID and signal range</string>
+    <string name="feature_android_state_wifi_network_field_connected">Connection</string>
+    <string name="feature_android_state_wifi_network_field_connected_option_any">Any</string>
+    <string name="feature_android_state_wifi_network_field_connected_option_connected">Connected</string>
+    <string name="feature_android_state_wifi_network_field_connected_option_disconnected">Disconnected</string>
+    <string name="feature_android_state_wifi_network_field_ssid">SSID contains</string>
+    <string name="feature_android_state_wifi_network_field_bssid">BSSID exact</string>
+    <string name="feature_android_state_wifi_network_field_minrssi">Minimum signal (dBm)</string>
+    <string name="feature_android_state_wifi_network_field_maxrssi">Maximum signal (dBm)</string>
+
+    <string name="feature_android_condition_wifi_network_title">Wi-Fi network</string>
+    <string name="feature_android_condition_wifi_network_description">Match the current Wi-Fi connection, SSID/BSSID and signal range</string>
+    <string name="feature_android_condition_wifi_network_field_connected">Connection</string>
+    <string name="feature_android_condition_wifi_network_field_connected_option_any">Any</string>
+    <string name="feature_android_condition_wifi_network_field_connected_option_connected">Connected</string>
+    <string name="feature_android_condition_wifi_network_field_connected_option_disconnected">Disconnected</string>
+    <string name="feature_android_condition_wifi_network_field_ssid">SSID contains</string>
+    <string name="feature_android_condition_wifi_network_field_bssid">BSSID exact</string>
+    <string name="feature_android_condition_wifi_network_field_minrssi">Minimum signal (dBm)</string>
+    <string name="feature_android_condition_wifi_network_field_maxrssi">Maximum signal (dBm)</string>
+
+    <string name="feature_android_event_wifi_changed_field_minrssi">Minimum signal (dBm)</string>
+    <string name="feature_android_event_wifi_changed_field_maxrssi">Maximum signal (dBm)</string>
+
+    <string name="feature_android_state_network_profile_title">Active network</string>
+    <string name="feature_android_state_network_profile_description">Match the active network transport, internet validation and metered state</string>
+    <string name="feature_android_condition_network_profile_title">Active network</string>
+    <string name="feature_android_condition_network_profile_description">Match the active network transport, internet validation and metered state</string>
+
+    <string name="feature_android_state_bluetooth_audio_device_title">Bluetooth audio device</string>
+    <string name="feature_android_state_bluetooth_audio_device_description">Match a currently connected Bluetooth audio route by name or address</string>
+    <string name="feature_android_condition_bluetooth_audio_device_title">Bluetooth audio device</string>
+    <string name="feature_android_condition_bluetooth_audio_device_description">Match a currently connected Bluetooth audio route by name or address</string>
+
+    <string name="feature_phrase_connected">Connected</string>
+    <string name="feature_phrase_transport">Transport</string>
+    <string name="feature_phrase_internet_validation">Internet validation</string>
+    <string name="feature_phrase_metered_network">Metered network</string>
+    <string name="feature_phrase_device_address_exact">Device address exact</string>
+    <string name="feature_phrase_minimum_signal_dbm">Minimum signal (dBm)</string>
+    <string name="feature_phrase_maximum_signal_dbm">Maximum signal (dBm)</string>
+    <string name="feature_phrase_cellular">Cellular</string>
+    <string name="feature_phrase_ethernet">Ethernet</string>
+    <string name="feature_phrase_yes">Yes</string>
+    <string name="feature_phrase_no">No</string>
+</resources>
