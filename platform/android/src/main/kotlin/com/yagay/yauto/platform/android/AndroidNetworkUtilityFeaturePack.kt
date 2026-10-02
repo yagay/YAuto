@@ -11,6 +11,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import java.net.DatagramPacket
+import java.net.DatagramSocket
 import java.net.Inet4Address
 import java.net.Inet6Address
 import java.net.InetAddress
@@ -24,6 +26,9 @@ class AndroidNetworkUtilityFeaturePack : FeaturePack {
     override fun install(registry: FeatureRegistry) {
         registerDnsResolve(registry)
         registerLocalAddresses(registry)
+        registerUdpSend(registry)
+        registerLocalAddressMatch(registry, FeatureKind.STATE, "android.state.local_address_match")
+        registerLocalAddressMatch(registry, FeatureKind.CONDITION, "android.condition.local_address_match")
         registerTcpReachable(registry, FeatureKind.STATE, "android.state.tcp_reachable")
         registerTcpReachable(registry, FeatureKind.CONDITION, "android.condition.tcp_reachable")
         registerWaitForTcp(registry)
@@ -93,6 +98,78 @@ class AndroidNetworkUtilityFeaturePack : FeaturePack {
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
         }
+    }
+
+    private fun registerUdpSend(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.network.udp.send"), FeatureKind.ACTION,
+                "Send UDP datagram", "Send UTF-8 text to a UDP host and port, including broadcast destinations when enabled",
+                FeatureCategory.NETWORK,
+                fields = listOf(
+                    FieldSchema.Text("host", "Host", true),
+                    FieldSchema.Number("port", "Port", true, min = 1.0, max = 65535.0),
+                    FieldSchema.Text("text", "Text", true, multiline = true),
+                    FieldSchema.Toggle("broadcast", "Allow broadcast"),
+                ),
+                keywords = setOf("udp", "datagram", "socket", "broadcast", "network"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val host = feature.config.string("host").resolveVariables(ctx.variables).trim()
+            val port = feature.config["port"].numberOrNull()?.toInt()
+            val text = feature.config.string("text").resolveVariables(ctx.variables)
+            if (!isReasonableHost(host) || port == null || !isValidPort(port)) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.network_host_port_invalid"))
+            }
+            val bytes = text.toByteArray(Charsets.UTF_8)
+            if (bytes.size > 65_507) return@registerAction ActionExecutionResult(false, message = userText("feature.network_udp_payload_too_large"))
+            val sent = withContext(Dispatchers.IO) {
+                runCatching {
+                    val address = InetAddress.getByName(host)
+                    DatagramSocket().use { socket ->
+                        socket.broadcast = feature.config.boolean("broadcast")
+                        socket.send(DatagramPacket(bytes, bytes.size, address, port))
+                    }
+                    true
+                }.getOrDefault(false)
+            }
+            ActionExecutionResult(sent, ConfigValue.NumberValue(bytes.size.toDouble()), if (sent) null else userText("feature.network_udp_send_failed", host, port))
+        }
+    }
+
+    private fun registerLocalAddressMatch(registry: FeatureRegistry, kind: FeatureKind, typeId: String) {
+        val descriptor = FeatureDescriptor(
+            FeatureId(typeId), kind,
+            "Local IP address matches", "Check active local network interfaces for an address and interface-name match",
+            FeatureCategory.NETWORK,
+            fields = listOf(
+                FieldSchema.Text("addressContains", "Address contains"),
+                FieldSchema.Text("interfaceContains", "Interface contains"),
+                FieldSchema.Choice("family", "Address family", true, listOf("any", "ipv4", "ipv6")),
+                FieldSchema.Toggle("value", "Match exists"),
+            ),
+            keywords = setOf("ip", "local address", "interface", "ipv4", "ipv6"),
+            ownerPackId = id,
+        )
+        val evaluator = ConditionEvaluator { feature, ctx ->
+            val addressContains = feature.config.string("addressContains").resolveVariables(ctx.variables).trim()
+            val interfaceContains = feature.config.string("interfaceContains").resolveVariables(ctx.variables).trim()
+            val family = feature.config.string("family", "any")
+            if (family !in setOf("any", "ipv4", "ipv6")) return@ConditionEvaluator false
+            val snapshots = withContext(Dispatchers.IO) { collectLocalAddresses(includeLoopback = true, includeIpv6 = true) }
+            val found = snapshots.any { snapshot ->
+                (addressContains.isBlank() || snapshot.address.contains(addressContains, ignoreCase = true)) &&
+                    (interfaceContains.isBlank() || snapshot.interfaceName.contains(interfaceContains, ignoreCase = true)) &&
+                    when (family) {
+                        "ipv4" -> !snapshot.ipv6
+                        "ipv6" -> snapshot.ipv6
+                        else -> true
+                    }
+            }
+            found == feature.config.boolean("value", true)
+        }
+        if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator) else registry.registerCondition(descriptor, evaluator)
     }
 
     private fun registerTcpReachable(registry: FeatureRegistry, kind: FeatureKind, typeId: String) {
