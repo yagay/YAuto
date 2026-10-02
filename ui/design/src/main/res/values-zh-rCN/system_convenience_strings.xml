@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_sync_master_set_title">设置主同步</string>
+    <string name="feature_android_sync_master_set_description">启用或停用 Android 全局账户同步开关</string>
+    <string name="feature_android_sync_master_set_field_enabled">已启用</string>
+
+    <string name="feature_android_state_master_sync_title">主同步已启用</string>
+    <string name="feature_android_state_master_sync_description">检查 Android 全局账户同步开关</string>
+    <string name="feature_android_state_master_sync_field_value">启用 / 为真</string>
+    <string name="feature_android_condition_master_sync_title">主同步已启用</string>
+    <string name="feature_android_condition_master_sync_description">检查 Android 全局账户同步开关</string>
+    <string name="feature_android_condition_master_sync_field_value">启用 / 为真</string>
+
+    <string name="feature_android_state_device_locked_title">设备已锁定</string>
+    <string name="feature_android_state_device_locked_description">检查 Android 当前是否认为设备处于锁定状态</string>
+    <string name="feature_android_state_device_locked_field_value">启用 / 为真</string>
+    <string name="feature_android_condition_device_locked_title">设备已锁定</string>
+    <string name="feature_android_condition_device_locked_description">检查 Android 当前是否认为设备处于锁定状态</string>
+    <string name="feature_android_condition_device_locked_field_value">启用 / 为真</string>
+
+    <string name="feature_android_state_music_active_title">音乐正在播放</string>
+    <string name="feature_android_state_music_active_description">检查 Android AudioManager 当前是否报告有音乐正在播放</string>
+    <string name="feature_android_state_music_active_field_value">启用 / 为真</string>
+    <string name="feature_android_condition_music_active_title">音乐正在播放</string>
+    <string name="feature_android_condition_music_active_description">检查 Android AudioManager 当前是否报告有音乐正在播放</string>
+    <string name="feature_android_condition_music_active_field_value">启用 / 为真</string>
+
+    <string name="feature_android_state_network_metered_title">当前网络按流量计费</string>
+    <string name="feature_android_state_network_metered_description">检查 Android 是否将当前活动网络标记为按流量计费</string>
+    <string name="feature_android_state_network_metered_field_value">启用 / 为真</string>
+    <string name="feature_android_condition_network_metered_title">当前网络按流量计费</string>
+    <string name="feature_android_condition_network_metered_description">检查 Android 是否将当前活动网络标记为按流量计费</string>
+    <string name="feature_android_condition_network_metered_field_value">启用 / 为真</string>
+
+    <string name="feature_android_state_data_saver_status_title">流量节省状态</string>
+    <string name="feature_android_state_data_saver_status_description">匹配当前系统对 YAuto 的后台数据限制状态</string>
+    <string name="feature_android_state_data_saver_status_field_status">流量节省状态</string>
+    <string name="feature_android_state_data_saver_status_field_status_option_disabled">已关闭</string>
+    <string name="feature_android_state_data_saver_status_field_status_option_enabled">已启用</string>
+    <string name="feature_android_state_data_saver_status_field_status_option_whitelisted">已启用，YAuto 已豁免</string>
+    <string name="feature_android_condition_data_saver_status_title">流量节省状态</string>
+    <string name="feature_android_condition_data_saver_status_description">匹配当前系统对 YAuto 的后台数据限制状态</string>
+    <string name="feature_android_condition_data_saver_status_field_status">流量节省状态</string>
+    <string name="feature_android_condition_data_saver_status_field_status_option_disabled">已关闭</string>
+    <string name="feature_android_condition_data_saver_status_field_status_option_enabled">已启用</string>
+    <string name="feature_android_condition_data_saver_status_field_status_option_whitelisted">已启用，YAuto 已豁免</string>
+
+    <string name="feature_android_state_dnd_filter_title">勿扰模式过滤</string>
+    <string name="feature_android_state_dnd_filter_description">匹配 NotificationManager 报告的 Android 当前打扰过滤模式</string>
+    <string name="feature_android_state_dnd_filter_field_filter">打扰过滤模式</string>
+    <string name="feature_android_state_dnd_filter_field_filter_option_all">全部通知</string>
+    <string name="feature_android_state_dnd_filter_field_filter_option_priority">仅优先通知</string>
+    <string name="feature_android_state_dnd_filter_field_filter_option_alarms">仅闹钟</string>
+    <string name="feature_android_state_dnd_filter_field_filter_option_none">全部静音</string>
+    <string name="feature_android_state_dnd_filter_field_filter_option_unknown">未知</string>
+    <string name="feature_android_condition_dnd_filter_title">勿扰模式过滤</string>
+    <string name="feature_android_condition_dnd_filter_description">匹配 NotificationManager 报告的 Android 当前打扰过滤模式</string>
+    <string name="feature_android_condition_dnd_filter_field_filter">打扰过滤模式</string>
+    <string name="feature_android_condition_dnd_filter_field_filter_option_all">全部通知</string>
+    <string name="feature_android_condition_dnd_filter_field_filter_option_priority">仅优先通知</string>
+    <string name="feature_android_condition_dnd_filter_field_filter_option_alarms">仅闹钟</string>
+    <string name="feature_android_condition_dnd_filter_field_filter_option_none">全部静音</string>
+    <string name="feature_android_condition_dnd_filter_field_filter_option_unknown">未知</string>
+
+    <string name="feature_android_home_launch_title">返回主屏幕</string>
+    <string name="feature_android_home_launch_description">无需无障碍权限直接打开默认 Android 主屏幕</string>
+
+    <string name="feature_android_settings_page_open_title">打开 Android 设置页面</string>
+    <string name="feature_android_settings_page_open_description">打开常用 Android 系统设置页面，支持时可直接定位到 YAuto</string>
+    <string name="feature_android_settings_page_open_field_page">设置页面</string>
+    <string name="feature_android_settings_page_open_field_page_option_general">常规设置</string>
+    <string name="feature_android_settings_page_open_field_page_option_wifi">Wi-Fi</string>
+    <string name="feature_android_settings_page_open_field_page_option_bluetooth">蓝牙</string>
+    <string name="feature_android_settings_page_open_field_page_option_location">定位</string>
+    <string name="feature_android_settings_page_open_field_page_option_nfc">NFC</string>
+    <string name="feature_android_settings_page_open_field_page_option_accessibility">无障碍</string>
+    <string name="feature_android_settings_page_open_field_page_option_notification_listener">通知使用权</string>
+    <string name="feature_android_settings_page_open_field_page_option_battery_saver">省电模式</string>
+    <string name="feature_android_settings_page_open_field_page_option_usage_access">使用情况访问权限</string>
+    <string name="feature_android_settings_page_open_field_page_option_overlay">显示在其他应用上层</string>
+    <string name="feature_android_settings_page_open_field_page_option_write_settings">修改系统设置</string>
+    <string name="feature_android_settings_page_open_field_page_option_dnd">勿扰模式访问权限</string>
+
+    <string name="runtime_feature_settings_page_invalid">未知的 Android 设置页面</string>
+</resources>
