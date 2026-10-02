@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="count_automation"><item quantity="other">%1$d 个自动化</item></plurals>
+    <plurals name="count_flow"><item quantity="other">%1$d 个流程</item></plurals>
+    <plurals name="count_feature"><item quantity="other">%1$d 个功能</item></plurals>
+    <plurals name="count_rule"><item quantity="other">%1$d 条规则</item></plurals>
+    <plurals name="count_reusable_flow"><item quantity="other">%1$d 个可复用流程</item></plurals>
+    <plurals name="count_trigger"><item quantity="other">%1$d 个触发器</item></plurals>
+    <plurals name="count_state"><item quantity="other">%1$d 个状态</item></plurals>
+    <plurals name="count_action"><item quantity="other">%1$d 个动作</item></plurals>
+    <plurals name="count_input"><item quantity="other">%1$d 个输入</item></plurals>
+    <plurals name="count_output"><item quantity="other">%1$d 个输出</item></plurals>
+    <plurals name="count_result"><item quantity="other">%1$d 个结果</item></plurals>
+    <plurals name="count_item"><item quantity="other">%1$d 项</item></plurals>
+    <plurals name="count_record"><item quantity="other">%1$d 条记录</item></plurals>
+    <plurals name="count_error"><item quantity="other">%1$d 个错误</item></plurals>
+</resources>
