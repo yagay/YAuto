@@ -24,12 +24,13 @@ class PrivilegedUtilityFeaturePackTest {
         ExecutionId("test"), NodeId("node"), vars, client, NoOpExecutionTracer,
     )
 
-    @Test fun `pack exposes three removable utility actions`() {
+    @Test fun `pack exposes four removable utility actions`() {
         val registry = FeatureRegistry().apply { install(PrivilegedUtilityFeaturePack()) }
-        assertEquals(3, registry.allDescriptors().count { it.ownerPackId == "standard.android.utilities" })
+        assertEquals(4, registry.allDescriptors().count { it.ownerPackId == "standard.android.utilities" })
         assertNotNull(registry.actionExecutor("android.screen.wake"))
         assertNotNull(registry.actionExecutor("android.input.keyevent"))
         assertNotNull(registry.actionExecutor("android.screenshot.capture"))
+        assertNotNull(registry.actionExecutor("android.screen.record"))
         registry.uninstallPack("standard.android.utilities")
         assertTrue(registry.allDescriptors().none { it.ownerPackId == "standard.android.utilities" })
     }
@@ -113,6 +114,45 @@ class PrivilegedUtilityFeaturePackTest {
         val result = registry.actionExecutor("android.screenshot.capture")!!.execute(
             FeatureRef("android.screenshot.capture", config = mapOf(
                 "path" to ConfigValue.StringValue("/data/local/tmp/shot.png"),
+            )),
+            context(CapabilityClient {
+                invoked = true
+                CapabilityResult(true)
+            }),
+        )
+        assertFalse(result.success)
+        assertFalse(invoked)
+    }
+
+    @Test fun `screen recording uses bounded screenrecord command and stores path`() = runBlocking {
+        val registry = FeatureRegistry().apply { install(PrivilegedUtilityFeaturePack()) }
+        val vars = Vars()
+        var command = ""
+        val path = "/sdcard/Download/YAuto/demo record.mp4"
+        val result = registry.actionExecutor("android.screen.record")!!.execute(
+            FeatureRef("android.screen.record", config = mapOf(
+                "path" to ConfigValue.StringValue(path),
+                "durationSeconds" to ConfigValue.NumberValue(45.0),
+                "bitrateMbps" to ConfigValue.NumberValue(8.0),
+                "resultVariable" to ConfigValue.StringValue("recording"),
+            )),
+            context(CapabilityClient { request ->
+                command = (request.payload["command"] as ConfigValue.StringValue).value
+                CapabilityResult(true, backendId = "root")
+            }, vars),
+        )
+        assertTrue(result.success)
+        assertEquals("mkdir -p '/sdcard/Download/YAuto' && screenrecord --time-limit 45 --bit-rate 8000000 '/sdcard/Download/YAuto/demo record.mp4'", command)
+        assertEquals(ConfigValue.StringValue(path), vars.get("recording"))
+    }
+
+    @Test fun `screen recording rejects unsafe duration before backend`() = runBlocking {
+        val registry = FeatureRegistry().apply { install(PrivilegedUtilityFeaturePack()) }
+        var invoked = false
+        val result = registry.actionExecutor("android.screen.record")!!.execute(
+            FeatureRef("android.screen.record", config = mapOf(
+                "path" to ConfigValue.StringValue("/sdcard/Download/YAuto/demo.mp4"),
+                "durationSeconds" to ConfigValue.NumberValue(181.0),
             )),
             context(CapabilityClient {
                 invoked = true
