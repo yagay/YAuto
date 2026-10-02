@@ -4,13 +4,6 @@
     <string name="feature_android_nfc_info_description">Store whether NFC hardware is available and currently enabled</string>
     <string name="feature_android_nfc_info_field_resultvariable">Store NFC object in variable</string>
 
-    <string name="feature_android_state_nfc_enabled_title">NFC enabled</string>
-    <string name="feature_android_state_nfc_enabled_description">Check whether this device has NFC hardware and the NFC adapter is enabled</string>
-    <string name="feature_android_state_nfc_enabled_field_value">Enabled</string>
-    <string name="feature_android_condition_nfc_enabled_title">NFC enabled</string>
-    <string name="feature_android_condition_nfc_enabled_description">Check whether this device has NFC hardware and the NFC adapter is enabled</string>
-    <string name="feature_android_condition_nfc_enabled_field_value">Enabled</string>
-
     <string name="feature_android_event_nfc_tag_title">NFC tag discovered</string>
     <string name="feature_android_event_nfc_tag_description">Run when Android routes an NFC tag to YAuto and optionally match UID, technology, text or URI records</string>
     <string name="feature_android_event_nfc_tag_field_kind">Discovery type</string>
