@@ -48,4 +48,21 @@
     <string name="feature_android_state_screen_timeout_field_maxms">最长超时</string>
     <string name="feature_android_condition_screen_timeout_field_minms">最短超时</string>
     <string name="feature_android_condition_screen_timeout_field_maxms">最长超时</string>
+
+    <string name="feature_android_event_power_save_changed_title">省电模式已更改</string>
+    <string name="feature_android_event_power_save_changed_description">Android 省电模式变化时触发</string>
+    <string name="feature_android_event_airplane_mode_changed_title">飞行模式已更改</string>
+    <string name="feature_android_event_airplane_mode_changed_description">飞行模式变化时触发</string>
+    <string name="feature_android_event_nfc_state_changed_title">NFC 状态已更改</string>
+    <string name="feature_android_event_nfc_state_changed_description">NFC 开启或关闭时触发</string>
+    <string name="feature_android_event_location_mode_changed_title">定位服务已更改</string>
+    <string name="feature_android_event_location_mode_changed_description">Android 定位总开关变化时触发</string>
+    <string name="feature_android_event_dark_mode_changed_title">深色主题已更改</string>
+    <string name="feature_android_event_dark_mode_changed_description">Android 实际深色主题状态变化时触发</string>
+    <string name="feature_android_event_auto_rotate_changed_title">自动旋转已更改</string>
+    <string name="feature_android_event_auto_rotate_changed_description">屏幕自动旋转启用或停用时触发</string>
+    <string name="feature_android_event_screen_timeout_changed_title">屏幕超时已更改</string>
+    <string name="feature_android_event_screen_timeout_changed_description">Android 自动熄屏等待时间变化时触发</string>
+    <string name="feature_android_event_screen_timeout_changed_field_minms">最短超时</string>
+    <string name="feature_android_event_screen_timeout_changed_field_maxms">最长超时</string>
 </resources>
