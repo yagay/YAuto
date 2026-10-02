@@ -49,9 +49,9 @@ class PrivilegedUtilityFeaturePack : FeaturePack {
             val keyCode = KEY_CODES[key] ?: if (key == "custom") {
                 feature.config["customKeyCode"].numberOrNull()?.toInt()
                     ?.takeIf { it in 0..1000 }
-                    ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Invalid custom key code"))
+                    ?: return@registerAction ActionExecutionResult(false, message = userText("feature.invalid_custom_key_code"))
             } else {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Unknown key"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.unknown_key"))
             }
             val longPress = if (feature.config.boolean("longPress")) " --longpress" else ""
             executeShell(feature, ctx, "input keyevent$longPress $keyCode")
@@ -73,7 +73,7 @@ class PrivilegedUtilityFeaturePack : FeaturePack {
         ) { feature, ctx ->
             val rawPath = feature.config.string("path").resolveVariables(ctx.variables).trim()
             val path = runCatching { screenshotPath(rawPath) }.getOrElse {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName))
+                return@registerAction ActionExecutionResult(false, message = it.message ?: userText("feature.screenshot_path_invalid"))
             }
             val parent = path.substringBeforeLast('/', "/sdcard/Download/YAuto")
             val command = "mkdir -p ${shellQuote(parent)} && screencap -p ${shellQuote(path)}"
@@ -113,10 +113,10 @@ class PrivilegedUtilityFeaturePack : FeaturePack {
     private fun screenshotPath(raw: String): String {
         val path = raw.ifBlank { "/sdcard/Download/YAuto/screenshot-${System.currentTimeMillis()}.png" }
         require(path.startsWith("/sdcard/") || path.startsWith("/storage/emulated/0/")) {
-            "Screenshot path must be in shared storage"
+            userText("feature.screenshot_path_shared_storage_required")
         }
-        require(path.endsWith(".png", ignoreCase = true)) { "Screenshot path must end with .png" }
-        require(path.none { it == '\n' || it == '\r' || it == '\u0000' }) { "Invalid screenshot path" }
+        require(path.endsWith(".png", ignoreCase = true)) { userText("feature.screenshot_path_png_required") }
+        require(path.none { it == '\n' || it == '\r' || it == '\u0000' }) { userText("feature.screenshot_path_invalid") }
         return path
     }
 
