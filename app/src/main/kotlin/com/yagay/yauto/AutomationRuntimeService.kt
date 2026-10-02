@@ -19,8 +19,10 @@ import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
 import com.yagay.yauto.platform.android.AndroidEventSource
 import com.yagay.yauto.platform.android.ClipboardEventSource
 import com.yagay.yauto.platform.android.ConfiguredBroadcastEventSource
+import com.yagay.yauto.platform.android.ConfiguredSensorEventSource
 import com.yagay.yauto.platform.android.NetworkEventSource
 import com.yagay.yauto.platform.android.RuntimeEventEmitter
+import com.yagay.yauto.platform.android.SurfaceRuntimeBridge
 import com.yagay.yauto.platform.android.SystemBroadcastEventSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,7 +44,9 @@ class AutomationRuntimeService : Service() {
         sources += NetworkEventSource(this)
         sources += ClipboardEventSource(this)
         sources += ConfiguredBroadcastEventSource(this, graph.workspace)
+        sources += ConfiguredSensorEventSource(this, graph.workspace)
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
+        SurfaceRuntimeBridge.attach(emitter)
 
         AccessibilityRuntimeBridge.setListener { previous, current ->
             val currentPayload = mapOf(
@@ -102,6 +106,7 @@ class AutomationRuntimeService : Service() {
 
     override fun onDestroy() {
         AccessibilityRuntimeBridge.setListener(null)
+        SurfaceRuntimeBridge.attach(null)
         sources.asReversed().forEach { source -> runCatching { source.stop() } }
         sources.clear()
         scope.cancel()
