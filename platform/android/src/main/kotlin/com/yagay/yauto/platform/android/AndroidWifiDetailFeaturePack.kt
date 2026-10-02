@@ -167,7 +167,7 @@ class AndroidWifiDetailFeaturePack(context: Context) : FeaturePack {
         return ConfigValue.ObjectValue(
             mapOf(
                 "connected" to ConfigValue.BooleanValue(connected),
-                "ssid" to ConfigValue.StringValue(selected?.ssid.cleanSsid()),
+                "ssid" to ConfigValue.StringValue(normalizeWifiSsid(selected?.ssid)),
                 "bssid" to ConfigValue.StringValue(selected?.bssid.orEmpty()),
                 "rssi" to ConfigValue.NumberValue((selected?.rssi ?: Int.MIN_VALUE).toDouble()),
                 "frequencyMhz" to ConfigValue.NumberValue((selected?.frequency ?: 0).toDouble()),
@@ -231,5 +231,8 @@ internal fun scanResultObject(result: ScanResult): ConfigValue.ObjectValue = Con
         "timestampUs" to ConfigValue.NumberValue(result.timestamp.toDouble()),
     )
 )
+
+internal fun normalizeWifiSsid(value: String?): String =
+    value.orEmpty().removePrefix("\"").removeSuffix("\"").takeUnless { it == WifiManager.UNKNOWN_SSID }.orEmpty()
 
 private fun ConfigValue?.stringValue(): String = (this as? ConfigValue.StringValue)?.value.orEmpty()
