@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_audio_play_title">Play audio</string>
+    <string name="feature_android_audio_play_description">Play an audio or media URI owned by this YAuto playback session</string>
+    <string name="feature_android_audio_play_field_source">File path or URI</string>
+    <string name="feature_android_audio_play_field_volume">Volume percent</string>
+    <string name="feature_android_audio_play_field_loop">Loop playback</string>
+    <string name="feature_android_audio_play_field_waitforcompletion">Wait for playback to finish</string>
+    <string name="feature_android_audio_stop_title">Stop YAuto audio</string>
+    <string name="feature_android_audio_stop_description">Stop audio started by YAuto without affecting other apps</string>
+
+    <string name="runtime_feature_playback_source_empty">Playback source is empty</string>
+    <string name="runtime_feature_playback_loop_wait_conflict">Loop playback cannot also wait for playback to finish</string>
+    <string name="runtime_feature_playback_failed">Playback failed: %1$s</string>
+    <string name="runtime_feature_playback_timeout">Playback timed out</string>
+</resources>
