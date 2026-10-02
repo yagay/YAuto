@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_sms_received_title">收到短信</string>
+    <string name="feature_android_event_sms_received_description">Android 收到短信时触发，并可按发送方或短信内容筛选</string>
+    <string name="feature_android_event_sms_received_field_addresscontains">发送方包含</string>
+    <string name="feature_android_event_sms_received_field_bodycontains">短信内容包含</string>
+
+    <string name="feature_android_event_phone_state_changed_title">通话状态变化</string>
+    <string name="feature_android_event_phone_state_changed_description">Android 报告响铃、通话中或空闲状态变化时触发</string>
+    <string name="feature_android_event_phone_state_changed_field_state">通话状态</string>
+    <string name="feature_android_event_phone_state_changed_field_state_option_any">任意</string>
+    <string name="feature_android_event_phone_state_changed_field_state_option_ringing">响铃</string>
+    <string name="feature_android_event_phone_state_changed_field_state_option_offhook">通话中</string>
+    <string name="feature_android_event_phone_state_changed_field_state_option_idle">空闲</string>
+    <string name="feature_android_event_phone_state_changed_field_numbercontains">电话号码包含</string>
+
+    <string name="feature_android_state_phone_call_state_title">当前通话状态</string>
+    <string name="feature_android_state_phone_call_state_description">获得电话状态权限后匹配 Android 当前通话状态</string>
+    <string name="feature_android_condition_phone_call_state_title">当前通话状态</string>
+    <string name="feature_android_condition_phone_call_state_description">获得电话状态权限后匹配 Android 当前通话状态</string>
+    <string name="feature_android_state_phone_call_state_field_state">通话状态</string>
+    <string name="feature_android_condition_phone_call_state_field_state">通话状态</string>
+    <string name="feature_android_state_phone_call_state_field_state_option_idle">空闲</string>
+    <string name="feature_android_state_phone_call_state_field_state_option_ringing">响铃</string>
+    <string name="feature_android_state_phone_call_state_field_state_option_offhook">通话中</string>
+    <string name="feature_android_condition_phone_call_state_field_state_option_idle">空闲</string>
+    <string name="feature_android_condition_phone_call_state_field_state_option_ringing">响铃</string>
+    <string name="feature_android_condition_phone_call_state_field_state_option_offhook">通话中</string>
+</resources>
