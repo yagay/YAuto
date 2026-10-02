@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.diagnostics.*
 import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
+import com.yagay.yauto.ui.design.localizedDateTime
 import com.yagay.yauto.ui.design.R as TextR
 
 private sealed interface DiagnosticPage {
@@ -232,7 +233,7 @@ private fun DiagnosticRecordPage(modifier: Modifier, record: DiagnosticRecord) {
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        stringResource(TextR.string.diagnostics_time_format, record.timestampEpochMs.toString()),
+                        stringResource(TextR.string.diagnostics_time_format, localizedDateTime(record.timestampEpochMs)),
                         style = MaterialTheme.typography.labelSmall,
                     )
                     record.context.executionId?.let {
