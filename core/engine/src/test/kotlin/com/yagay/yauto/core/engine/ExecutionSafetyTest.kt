@@ -22,7 +22,9 @@ class ExecutionSafetyTest {
         }
         val result = engine().execute(rule(listOf(ActionNode.Action(NodeId("wait"), FeatureRef("wait"))), 50), AutomationPhase.EVENT)
         assertFalse(result.success)
-        assertTrue(result.error!!.contains("timed out"))
+        // Headless core tests deliberately resolve user-facing text to stable keys. Android installs
+        // the resource-backed resolver at Application.onCreate().
+        assertEquals("engine.execution_timeout", result.error)
         assertEquals(TraceKind.EXECUTION_END, tracer.snapshot().last().kind)
     }
 
@@ -35,7 +37,7 @@ class ExecutionSafetyTest {
         entered.await()
         job.cancelAndJoin()
         assertTrue(job.isCancelled)
-        assertEquals("Execution cancelled", tracer.snapshot().last().message)
+        assertEquals("engine.execution_cancelled", tracer.snapshot().last().message)
     }
 
     @Test fun `try catches thrown feature exceptions and executes finally`() = runBlocking {
