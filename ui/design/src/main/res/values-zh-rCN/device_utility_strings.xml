@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_clipboard_get_title">读取剪贴板文本</string>
+    <string name="feature_android_clipboard_get_description">在 Android 允许访问剪贴板时读取第一项文本并保存到变量</string>
+    <string name="feature_android_clipboard_get_field_resultvariable">保存文本到变量</string>
+
+    <string name="feature_android_clipboard_clear_title">清空剪贴板</string>
+    <string name="feature_android_clipboard_clear_description">清空当前 Android 主剪贴板内容</string>
+
+    <string name="feature_android_state_clipboard_content_title">剪贴板有内容</string>
+    <string name="feature_android_state_clipboard_content_description">检查 Android 当前是否提供非空的主剪贴板内容</string>
+    <string name="feature_android_state_clipboard_content_field_value">有内容</string>
+    <string name="feature_android_condition_clipboard_content_title">剪贴板有内容</string>
+    <string name="feature_android_condition_clipboard_content_description">检查 Android 当前是否提供非空的主剪贴板内容</string>
+    <string name="feature_android_condition_clipboard_content_field_value">有内容</string>
+
+    <string name="feature_android_battery_info_title">获取电池信息</string>
+    <string name="feature_android_battery_info_description">读取电量、健康状态、温度、电压、充电来源和硬件计数器</string>
+    <string name="feature_android_battery_info_field_resultvariable">保存电池对象</string>
+
+    <string name="feature_android_state_charging_source_title">充电来源</string>
+    <string name="feature_android_state_charging_source_description">匹配当前 Android 电池充电来源</string>
+    <string name="feature_android_state_charging_source_field_source">充电来源</string>
+    <string name="feature_android_condition_charging_source_title">充电来源</string>
+    <string name="feature_android_condition_charging_source_description">匹配当前 Android 电池充电来源</string>
+    <string name="feature_android_condition_charging_source_field_source">充电来源</string>
+    <string name="feature_android_state_charging_source_field_source_option_none">未充电</string>
+    <string name="feature_android_state_charging_source_field_source_option_ac">有线充电器</string>
+    <string name="feature_android_state_charging_source_field_source_option_usb">USB</string>
+    <string name="feature_android_state_charging_source_field_source_option_wireless">无线充电</string>
+    <string name="feature_android_state_charging_source_field_source_option_dock">底座</string>
+    <string name="feature_android_state_charging_source_field_source_option_any_charging">任意充电来源</string>
+    <string name="feature_android_condition_charging_source_field_source_option_none">未充电</string>
+    <string name="feature_android_condition_charging_source_field_source_option_ac">有线充电器</string>
+    <string name="feature_android_condition_charging_source_field_source_option_usb">USB</string>
+    <string name="feature_android_condition_charging_source_field_source_option_wireless">无线充电</string>
+    <string name="feature_android_condition_charging_source_field_source_option_dock">底座</string>
+    <string name="feature_android_condition_charging_source_field_source_option_any_charging">任意充电来源</string>
+
+    <string name="feature_android_memory_info_title">获取内存信息</string>
+    <string name="feature_android_memory_info_description">读取 Android 系统内存总量、可用量和低内存状态到对象变量</string>
+    <string name="feature_android_memory_info_field_resultvariable">保存内存对象</string>
+
+    <string name="feature_android_display_metrics_title">获取显示指标</string>
+    <string name="feature_android_display_metrics_description">读取当前应用显示区域的像素和密度指标到对象变量</string>
+    <string name="feature_android_display_metrics_field_resultvariable">保存显示对象</string>
+
+    <string name="feature_android_device_uptime_title">获取设备运行时长</string>
+    <string name="feature_android_device_uptime_description">读取经过时间、唤醒运行时长和估算启动时间</string>
+    <string name="feature_android_device_uptime_field_resultvariable">保存运行时长对象</string>
+
+    <string name="feature_android_device_thermal_status_title">获取温控状态</string>
+    <string name="feature_android_device_thermal_status_description">读取 Android PowerManager 温控状态到对象变量</string>
+    <string name="feature_android_device_thermal_status_field_resultvariable">保存温控对象</string>
+
+    <string name="feature_android_locale_info_title">获取语言和时区信息</string>
+    <string name="feature_android_locale_info_description">读取 Android 配置的语言列表、时区和 12/24 小时制偏好</string>
+    <string name="feature_android_locale_info_field_resultvariable">保存语言环境对象</string>
+
+    <string name="runtime_feature_battery_unavailable">电池信息不可用</string>
+</resources>
