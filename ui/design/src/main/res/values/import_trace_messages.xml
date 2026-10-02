@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_import_trace_actions">Actions: %1$d</string>
+    <string name="runtime_import_trace_macrodroid_macro">Triggers: %1$d; actions: %2$d; constraints: %3$d</string>
+    <string name="runtime_import_trace_shortx_rule">Facts: %1$d; conditions: %2$d; actions: %3$d</string>
+    <string name="runtime_import_trace_tasker_profile">Contexts: %1$d</string>
+</resources>
