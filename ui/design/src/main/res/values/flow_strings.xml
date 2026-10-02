@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="flow_add_title">Add flow / action block</string>
+    <string name="flow_edit_title">Edit flow / action block</string>
+    <string name="flow_name">Flow name</string>
+    <string name="flow_description">Description</string>
+    <string name="flow_inputs">Input parameters</string>
+    <string name="flow_inputs_subtitle">Passed when calling the flow; replaces positional parameters such as %%par1 / %%par2.</string>
+    <string name="flow_no_inputs">No input parameters</string>
+    <string name="flow_parameter_required_suffix"> · required</string>
+    <string name="flow_default_suffix_format"> · default %1$s</string>
+    <string name="flow_actions">Actions</string>
+    <string name="flow_actions_subtitle">Uses the same feature catalog as automations</string>
+    <string name="flow_structure">Structure</string>
+    <string name="flow_add_action_hint">Tap ＋ to add an action</string>
+    <string name="flow_outputs">Output parameters</string>
+    <string name="flow_outputs_subtitle">Callers can read returned data by name</string>
+    <string name="flow_no_outputs">No output parameters</string>
+    <string name="flow_action_tree_title">Flow action structure</string>
+    <string name="flow_input_parameter">Input parameter</string>
+    <string name="flow_output_parameter">Output parameter</string>
+    <string name="flow_action_menu_title">Action operations</string>
+    <string name="flow_move_up">Move up</string>
+    <string name="flow_move_down">Move down</string>
+    <string name="flow_parameter_name">Name</string>
+    <string name="flow_parameter_type_format">Type: %1$s</string>
+    <string name="flow_parameter_required">Required</string>
+    <string name="flow_parameter_default">Default value</string>
+    <string name="common_confirm">Confirm</string>
+    <string name="node_if">Conditional branch</string>
+    <string name="node_switch">Switch</string>
+    <string name="node_repeat_format">Repeat %1$d times</string>
+    <string name="node_while">Conditional loop</string>
+    <string name="node_foreach">For each</string>
+    <string name="node_parallel">Parallel branches</string>
+    <string name="node_try">Try / catch</string>
+    <string name="node_call_flow_format">Call flow: %1$s</string>
+    <string name="node_return">Return</string>
+    <string name="node_break">Break loop</string>
+    <string name="node_continue">Continue loop</string>
+</resources>
