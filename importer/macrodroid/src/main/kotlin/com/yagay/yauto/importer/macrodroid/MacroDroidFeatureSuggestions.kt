@@ -25,6 +25,19 @@ object MacroDroidFeatureSuggestions {
                 "ControlMediaAction" -> "android.media.transport"
                 "SetAlarmClockAction" -> "android.alarm.set"
                 "AddCalendarEntryAction" -> "android.calendar.event.add"
+
+                // Verified against MacroDroid 5.67.8 class names. These remain hints only until
+                // every behaviorally relevant source field has a lossless decoder.
+                "ClearAppDataAction" -> "android.app.data.clear"
+                "KillBackgroundAppAction" -> "android.app.background.kill"
+                "DisableAppAction" -> "android.app.enabled.set"
+                "DisplayDensityAction" -> "android.display.density.set"
+                "FontScaleAction" -> "android.display.font_scale.set"
+                "ForceScreenRotationAction" -> "android.display.rotation.set"
+                "RebootAction" -> "android.device.reboot"
+                "SecureSettingsAction", "SystemSettingAction" -> "android.settings.value.put"
+                "GetInstalledAppsAction" -> "android.app.installed.list"
+                "UpdateClipboardAction" -> "android.clipboard.set"
                 else -> null
             }
             SourceFeatureKind.EVENT -> when (sourceType) {
@@ -45,6 +58,10 @@ object MacroDroidFeatureSuggestions {
                 "BatteryLevelConstraint" -> "android.condition.battery_level"
                 "BatteryTemperatureConstraint" -> "android.condition.battery_temperature"
                 "HeadphonesConnectionConstraint" -> "android.condition.headset_connected"
+                "AppEnabledConstraint" -> "android.condition.app_enabled"
+                "ApplicationInstalledConstraint" -> "android.condition.app_installed"
+                "TimeSinceBootConstraint" -> "android.condition.uptime_range"
+                "TimeOfDayConstraint" -> "time.condition.time_window"
                 else -> null
             }
             SourceFeatureKind.STATE -> null
