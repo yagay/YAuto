@@ -66,6 +66,7 @@ fun MacroAutomationEditorScreen(
     val runtimeLimit = policy.maxRuntimeMs
     val loopLimit = policy.maxLoopIterations
     val unnamedAutomation = stringResource(TextR.string.automation_unnamed)
+    val locale = currentEditorLocale()
 
     fun save() {
         val simple = conditions.map { PredicateNode.Condition(it) }
@@ -293,9 +294,13 @@ fun MacroAutomationEditorScreen(
                             Text(stringResource(TextR.string.automation_local_variables), fontWeight = FontWeight.Medium)
                             variables.forEach { (key, value) ->
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    Column(Modifier.weight(1f).clickable { variableEdit = key to value.asText() }) {
+                                    Column(
+                                        Modifier.weight(1f).clickable {
+                                            variableEdit = key to editorConfigValueText(value, locale)
+                                        }
+                                    ) {
                                         Text(key)
-                                        Text(value.asText(), style = MaterialTheme.typography.bodySmall)
+                                        Text(localizedConfigValue(value), style = MaterialTheme.typography.bodySmall)
                                     }
                                     TextButton(onClick = { variables = variables - key }) {
                                         Text(stringResource(TextR.string.common_delete))
@@ -537,12 +542,20 @@ private fun featureSummary(feature: FeatureRef, descriptors: List<FeatureDescrip
         .filterNot { it.key.startsWith("source.") }
         .take(3)
         .map { entry ->
-            val label = descriptor?.let { owner ->
-                owner.fields.firstOrNull { it.key == entry.key }?.let { field ->
-                    localizedFieldLabelShared(owner.id.value, field)
-                }
-            } ?: entry.key
-            stringResource(TextR.string.flow_config_entry_format, label, entry.value.asText())
+            val field = descriptor?.fields?.firstOrNull { it.key == entry.key }
+            val label = if (descriptor != null && field != null) {
+                localizedFieldLabelShared(descriptor.id.value, field)
+            } else {
+                entry.key
+            }
+            val value = if (
+                descriptor != null && field is FieldSchema.Choice && entry.value is ConfigValue.StringValue
+            ) {
+                localizedChoiceOptionShared(descriptor.id.value, field.key, entry.value.value)
+            } else {
+                localizedConfigValue(entry.value)
+            }
+            stringResource(TextR.string.flow_config_entry_format, label, value)
         }
     return localizedList(items)
 }
@@ -564,15 +577,6 @@ private fun actionNodeTitle(node: ActionNode, flows: List<Flow>): String = when 
     is ActionNode.Return -> stringResource(TextR.string.node_return)
     is ActionNode.Break -> stringResource(TextR.string.node_break)
     is ActionNode.Continue -> stringResource(TextR.string.node_continue)
-}
-
-private fun ConfigValue.asText(): String = when (this) {
-    ConfigValue.NullValue -> ""
-    is ConfigValue.StringValue -> value
-    is ConfigValue.NumberValue -> if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
-    is ConfigValue.BooleanValue -> value.toString()
-    is ConfigValue.ListValue -> value.joinToString(",") { it.asText() }
-    is ConfigValue.ObjectValue -> value.entries.joinToString(",") { "${it.key}=${it.value.asText()}" }
 }
 
 private fun <T> List<T>.moveItem(from: Int, to: Int): List<T> {
