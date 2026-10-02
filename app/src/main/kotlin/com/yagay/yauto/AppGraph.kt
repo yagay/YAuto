@@ -11,7 +11,7 @@ import com.yagay.yauto.core.runtime.AutomationRuntime
 import com.yagay.yauto.feature.standard.StandardFeaturePacks
 import com.yagay.yauto.importer.macrodroid.MacroDroidFeatureSuggestions
 import com.yagay.yauto.importer.macrodroid.MacroDroidImporter
-import com.yagay.yauto.importer.shortx.ShortXImporter
+import com.yagay.yauto.importer.shortx.EnhancedShortXImporter
 import com.yagay.yauto.importer.tasker.TaskerImporter
 import com.yagay.yauto.platform.accessibility.AccessibilityBackend
 import com.yagay.yauto.platform.accessibility.AccessibilityDiagnosticCollector
@@ -73,7 +73,7 @@ class AppGraph(context: Context) {
         capabilities.register(accessibility)
 
         importers.register(MacroDroidImporter(mapper = MacroDroidFeatureSuggestions.mapper))
-        importers.register(ShortXImporter())
+        importers.register(EnhancedShortXImporter())
         importers.register(TaskerImporter())
 
         diagnosticRegistry.register(ExecutionFileDiagnosticCollector(appContext))
