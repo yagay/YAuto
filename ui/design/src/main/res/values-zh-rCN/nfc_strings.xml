@@ -4,13 +4,6 @@
     <string name="feature_android_nfc_info_description">保存设备是否支持 NFC 以及当前是否已启用</string>
     <string name="feature_android_nfc_info_field_resultvariable">保存 NFC 对象到变量</string>
 
-    <string name="feature_android_state_nfc_enabled_title">NFC 已启用</string>
-    <string name="feature_android_state_nfc_enabled_description">检查设备是否具有 NFC 硬件并且 NFC 适配器已启用</string>
-    <string name="feature_android_state_nfc_enabled_field_value">已启用</string>
-    <string name="feature_android_condition_nfc_enabled_title">NFC 已启用</string>
-    <string name="feature_android_condition_nfc_enabled_description">检查设备是否具有 NFC 硬件并且 NFC 适配器已启用</string>
-    <string name="feature_android_condition_nfc_enabled_field_value">已启用</string>
-
     <string name="feature_android_event_nfc_tag_title">发现 NFC 标签</string>
     <string name="feature_android_event_nfc_tag_description">Android 将 NFC 标签交给 YAuto 时触发，并可按 UID、技术类型、文本或 URI 记录筛选</string>
     <string name="feature_android_event_nfc_tag_field_kind">发现类型</string>
