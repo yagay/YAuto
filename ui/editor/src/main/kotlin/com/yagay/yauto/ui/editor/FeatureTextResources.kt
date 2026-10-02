@@ -55,10 +55,8 @@ internal class FeatureTextResolver(private val context: Context) {
         }.any { it.contains(query, ignoreCase = true) }
     }
 
-    private fun phrase(text: String): String? {
-        if (!chinese) return null
-        return resource("feature_phrase_${resourceKey(text)}")
-    }
+    private fun phrase(text: String): String? =
+        resource("feature_phrase_${resourceKey(text)}")
 
     private fun genericTitle(descriptor: FeatureDescriptor): String {
         val category = when (descriptor.category) {

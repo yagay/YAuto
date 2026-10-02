@@ -17,9 +17,7 @@ TOAST_LITERAL = re.compile(r'\bToast\.makeText\([^\n]{0,300}?,\s*"[^"\n]+"')
 BANNED_ICON_LITERALS = {"‹", "›", "＋", "⋮", "↑", "↓", "←", "→", "▶", "◀", "✓", "✕", "×"}
 
 # Dedicated localization catalogs are the only Kotlin files allowed to contain translated CJK.
-CJK_KOTLIN_ALLOW = {
-    Path("core/model/src/main/kotlin/com/yagay/yauto/core/model/UserText.kt"),
-}
+CJK_KOTLIN_ALLOW: set[Path] = set()
 
 
 def main_kotlin_files():
@@ -129,6 +127,19 @@ def main() -> int:
             failures.append(f"{module}: missing zh-CN string resource: {missing}")
         for missing in sorted(zh - en):
             failures.append(f"{module}: missing default English string resource: {missing}")
+
+    # Every userText() key must have default-English and zh-CN Android resources. This keeps
+    # runtime/diagnostic/import messages on the same standard Android localization path as UI copy.
+    runtime_en = resource_keys(Path("ui/design/src/main/res/values"), failures)
+    runtime_zh = resource_keys(Path("ui/design/src/main/res/values-zh-rCN"), failures)
+    for path in kotlin:
+        text = path.read_text(encoding="utf-8")
+        for match in re.finditer(r'userText\(\s*"([^"]+)"', text):
+            name = "runtime_" + re.sub(r'[^a-z0-9]+', '_', match.group(1).lower()).strip('_')
+            if name not in runtime_en:
+                failures.append(f"{path}:{line_number(text, match.start())}: missing default runtime string resource: {name}")
+            if name not in runtime_zh:
+                failures.append(f"{path}:{line_number(text, match.start())}: missing zh-CN runtime string resource: {name}")
 
     # Runtime/import/diagnostic wrapper prose must be localized. Raw stack traces, logcat, shell
     # stderr and exception details may remain original technical data, but not as a bare UI message.
