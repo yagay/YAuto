@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_audio_play_title">播放音频</string>
+    <string name="feature_android_audio_play_description">播放由 YAuto 管理的音频文件或媒体 URI</string>
+    <string name="feature_android_audio_play_field_source">文件路径或 URI</string>
+    <string name="feature_android_audio_play_field_volume">音量百分比</string>
+    <string name="feature_android_audio_play_field_loop">循环播放</string>
+    <string name="feature_android_audio_play_field_waitforcompletion">等待播放完成</string>
+    <string name="feature_android_audio_stop_title">停止 YAuto 音频</string>
+    <string name="feature_android_audio_stop_description">停止由 YAuto 启动的音频，不影响其他应用</string>
+
+    <string name="runtime_feature_playback_source_empty">播放源为空</string>
+    <string name="runtime_feature_playback_loop_wait_conflict">循环播放不能同时等待播放完成</string>
+    <string name="runtime_feature_playback_failed">播放失败：%1$s</string>
+    <string name="runtime_feature_playback_timeout">播放超时</string>
+</resources>
