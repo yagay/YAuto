@@ -161,7 +161,7 @@ class SystemBroadcastEventSource(
             addAction(Intent.ACTION_BATTERY_CHANGED)
             addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED)
             addAction(Intent.ACTION_DEVICE_STORAGE_LOW)
-            addAction(Intent.ACTION_DEVICE_STORAGE_OKAY)
+            addAction(Intent.ACTION_DEVICE_STORAGE_OK)
             addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)
             addAction(NfcAdapter.ACTION_ADAPTER_STATE_CHANGED)
             addAction(LocationManager.MODE_CHANGED_ACTION)
