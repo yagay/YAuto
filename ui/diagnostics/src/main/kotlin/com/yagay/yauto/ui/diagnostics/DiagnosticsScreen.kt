@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -14,6 +15,7 @@ import com.yagay.yauto.core.diagnostics.*
 import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.localizedDateTime
+import com.yagay.yauto.ui.design.localizedList
 import com.yagay.yauto.ui.design.R as TextR
 
 private sealed interface DiagnosticPage {
@@ -135,13 +137,20 @@ private fun DiagnosticOverview(
         items(DiagnosticSource.entries, key = { it.name }) { source ->
             val sourceRecords = records.filter { it.source == source }
             val errors = sourceRecords.count { it.severity == DiagnosticSeverity.ERROR }
+            val recordCount = pluralStringResource(TextR.plurals.count_record, sourceRecords.size, sourceRecords.size)
+            val subtitle = if (errors > 0) {
+                localizedList(
+                    listOf(
+                        recordCount,
+                        pluralStringResource(TextR.plurals.count_error, errors, errors),
+                    )
+                )
+            } else {
+                recordCount
+            }
             MacroItemRow(
                 title = sourceLabel(source),
-                subtitle = if (errors > 0) {
-                    stringResource(TextR.string.diagnostics_source_summary_errors_format, sourceRecords.size, errors)
-                } else {
-                    stringResource(TextR.string.diagnostics_source_summary_format, sourceRecords.size)
-                },
+                subtitle = subtitle,
                 accent = sourceAccent(source),
                 onClick = { onSource(source) },
             )
@@ -187,7 +196,7 @@ private fun DiagnosticSourcePage(
     ) {
         item {
             Text(
-                stringResource(TextR.string.diagnostics_record_count_format, records.size),
+                pluralStringResource(TextR.plurals.count_record, records.size, records.size),
                 style = MaterialTheme.typography.labelLarge,
             )
         }
