@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_sms_received_title">SMS received</string>
+    <string name="feature_android_event_sms_received_description">Run when Android delivers an incoming SMS and optionally match sender or message text</string>
+    <string name="feature_android_event_sms_received_field_addresscontains">Sender contains</string>
+    <string name="feature_android_event_sms_received_field_bodycontains">Message contains</string>
+
+    <string name="feature_android_event_phone_state_changed_title">Phone call state changed</string>
+    <string name="feature_android_event_phone_state_changed_description">Run when Android reports ringing, off-hook or idle phone-call state</string>
+    <string name="feature_android_event_phone_state_changed_field_state">Call state</string>
+    <string name="feature_android_event_phone_state_changed_field_state_option_any">Any</string>
+    <string name="feature_android_event_phone_state_changed_field_state_option_ringing">Ringing</string>
+    <string name="feature_android_event_phone_state_changed_field_state_option_offhook">Off-hook</string>
+    <string name="feature_android_event_phone_state_changed_field_state_option_idle">Idle</string>
+    <string name="feature_android_event_phone_state_changed_field_numbercontains">Phone number contains</string>
+
+    <string name="feature_android_state_phone_call_state_title">Phone call state</string>
+    <string name="feature_android_state_phone_call_state_description">Match the current Android telephony call state when phone-state permission is available</string>
+    <string name="feature_android_condition_phone_call_state_title">Phone call state</string>
+    <string name="feature_android_condition_phone_call_state_description">Match the current Android telephony call state when phone-state permission is available</string>
+    <string name="feature_android_state_phone_call_state_field_state">Call state</string>
+    <string name="feature_android_condition_phone_call_state_field_state">Call state</string>
+    <string name="feature_android_state_phone_call_state_field_state_option_idle">Idle</string>
+    <string name="feature_android_state_phone_call_state_field_state_option_ringing">Ringing</string>
+    <string name="feature_android_state_phone_call_state_field_state_option_offhook">Off-hook</string>
+    <string name="feature_android_condition_phone_call_state_field_state_option_idle">Idle</string>
+    <string name="feature_android_condition_phone_call_state_field_state_option_ringing">Ringing</string>
+    <string name="feature_android_condition_phone_call_state_field_state_option_offhook">Off-hook</string>
+</resources>
