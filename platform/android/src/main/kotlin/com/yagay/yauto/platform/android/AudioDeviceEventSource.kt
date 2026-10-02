@@ -67,6 +67,7 @@ class AudioDeviceEventSource(context: Context) : AndroidEventSource {
                     "connected" to ConfigValue.BooleanValue(connected),
                     "category" to ConfigValue.StringValue(category),
                     "name" to ConfigValue.StringValue(device.productName?.toString().orEmpty()),
+                    "address" to ConfigValue.StringValue(device.address.orEmpty()),
                     "deviceType" to ConfigValue.NumberValue(device.type.toDouble()),
                 ),
                 source = id,
