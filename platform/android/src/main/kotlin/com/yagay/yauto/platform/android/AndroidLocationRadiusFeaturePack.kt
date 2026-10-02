@@ -26,7 +26,7 @@ class AndroidLocationRadiusFeaturePack(context: Context) : FeaturePack {
         val descriptor = FeatureDescriptor(
             FeatureId(typeId), kind,
             "Location radius", "Check whether the latest known device location is inside or outside a radius",
-            FeatureCategory.LOCATION,
+            FeatureCategory.DEVICE,
             fields = listOf(
                 FieldSchema.Number("latitude", "Latitude", true, min = -90.0, max = 90.0),
                 FieldSchema.Number("longitude", "Longitude", true, min = -180.0, max = 180.0),
