@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_app_enabled_set_title">Enable or disable app</string>
+    <string name="feature_android_app_enabled_set_description">Enable or disable an installed package through Root or Shizuku</string>
+    <string name="feature_android_app_enabled_set_field_package">App / package</string>
+    <string name="feature_android_app_enabled_set_field_enabled">Enabled</string>
+
+    <string name="feature_android_app_data_clear_title">Clear app data</string>
+    <string name="feature_android_app_data_clear_description">Clear all user data for an installed package through Root or Shizuku</string>
+    <string name="feature_android_app_data_clear_field_package">App / package</string>
+
+    <string name="feature_android_app_background_kill_title">Kill app background processes</string>
+    <string name="feature_android_app_background_kill_description">Ask Android to kill background processes for a package without force-stopping it</string>
+    <string name="feature_android_app_background_kill_field_package">App / package</string>
+
+    <string name="feature_android_state_app_enabled_title">App enabled</string>
+    <string name="feature_android_state_app_enabled_description">Check whether an installed package is enabled for the current user</string>
+    <string name="feature_android_state_app_enabled_field_package">App / package</string>
+    <string name="feature_android_state_app_enabled_field_value">Enabled</string>
+
+    <string name="feature_android_condition_app_enabled_title">App enabled</string>
+    <string name="feature_android_condition_app_enabled_description">Check whether an installed package is enabled for the current user</string>
+    <string name="feature_android_condition_app_enabled_field_package">App / package</string>
+    <string name="feature_android_condition_app_enabled_field_value">Enabled</string>
+
+    <string name="feature_android_device_reboot_title">Reboot device</string>
+    <string name="feature_android_device_reboot_description">Reboot Android normally, to recovery, or to the bootloader through a privileged shell</string>
+    <string name="feature_android_device_reboot_field_mode">Reboot mode</string>
+    <string name="feature_android_device_reboot_field_mode_option_normal">Normal</string>
+    <string name="feature_android_device_reboot_field_mode_option_recovery">Recovery</string>
+    <string name="feature_android_device_reboot_field_mode_option_bootloader">Bootloader</string>
+
+    <string name="runtime_feature_app_self_management_blocked">YAuto will not disable, clear data for, or kill its own package</string>
+    <string name="runtime_feature_reboot_mode_invalid">Unknown reboot mode</string>
+</resources>
