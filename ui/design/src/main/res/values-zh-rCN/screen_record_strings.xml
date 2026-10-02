@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_screen_record_title">录制屏幕</string>
+    <string name="feature_android_screen_record_description">使用 Android screenrecord 在限定时长内将屏幕录制为 MP4 文件</string>
+    <string name="feature_android_screen_record_field_path">MP4 路径（留空 = Downloads/YAuto）</string>
+    <string name="feature_android_screen_record_field_durationseconds">录制时长（秒）</string>
+    <string name="feature_android_screen_record_field_bitratembps">码率（Mbps）</string>
+    <string name="feature_android_screen_record_field_resultvariable">将保存路径写入变量</string>
+
+    <string name="runtime_feature_screen_record_path_shared_storage_required">录屏路径必须位于共享存储</string>
+    <string name="runtime_feature_screen_record_path_mp4_required">录屏路径必须以 .mp4 结尾</string>
+    <string name="runtime_feature_screen_record_path_invalid">录屏路径无效</string>
+    <string name="runtime_feature_screen_record_duration_invalid">录屏时长必须在 1 到 180 秒之间</string>
+    <string name="runtime_feature_screen_record_bitrate_invalid">录屏码率必须在 1 到 100 Mbps 之间</string>
+</resources>
