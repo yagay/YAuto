@@ -12,7 +12,7 @@ class AndroidEventFeaturePack : FeaturePack {
     override fun install(registry: FeatureRegistry) {
         simpleEvent(registry, "android.event.boot", "Device boot", FeatureCategory.SYSTEM)
         simpleEvent(registry, "android.event.battery_changed", "Battery changed", FeatureCategory.DEVICE)
-        simpleEvent(registry, "android.event.power_save_changed", "Power saving mode changed", FeatureCategory.DEVICE)
+        booleanEvent(registry, "android.event.power_save_changed", "Power saving mode changed", FeatureCategory.DEVICE, "enabled")
         simpleEvent(registry, "android.event.screen_on", "Screen on", FeatureCategory.DISPLAY)
         simpleEvent(registry, "android.event.screen_off", "Screen off", FeatureCategory.DISPLAY)
         simpleEvent(registry, "android.event.user_present", "Device unlocked", FeatureCategory.DEVICE)
@@ -22,7 +22,12 @@ class AndroidEventFeaturePack : FeaturePack {
         simpleEvent(registry, "android.event.battery_okay", "Battery okay", FeatureCategory.DEVICE)
         simpleEvent(registry, "android.event.storage_low", "Storage low", FeatureCategory.DEVICE)
         simpleEvent(registry, "android.event.storage_okay", "Storage okay", FeatureCategory.DEVICE)
-        simpleEvent(registry, "android.event.airplane_mode_changed", "Airplane mode changed", FeatureCategory.NETWORK)
+        booleanEvent(registry, "android.event.airplane_mode_changed", "Airplane mode changed", FeatureCategory.NETWORK, "state")
+        booleanEvent(registry, "android.event.nfc_state_changed", "NFC state changed", FeatureCategory.DEVICE, "enabled")
+        booleanEvent(registry, "android.event.location_mode_changed", "Location services changed", FeatureCategory.DEVICE, "enabled")
+        booleanEvent(registry, "android.event.dark_mode_changed", "Dark theme changed", FeatureCategory.DISPLAY, "enabled")
+        booleanEvent(registry, "android.event.auto_rotate_changed", "Auto-rotate changed", FeatureCategory.DISPLAY, "enabled")
+        screenTimeoutEvent(registry)
         simpleEvent(registry, "android.event.locale_changed", "Locale changed", FeatureCategory.SYSTEM)
         simpleEvent(registry, "android.event.timezone_changed", "Time zone changed", FeatureCategory.SYSTEM)
         simpleEvent(registry, "android.event.time_changed", "System time changed", FeatureCategory.SYSTEM)
@@ -135,6 +140,51 @@ class AndroidEventFeaturePack : FeaturePack {
                 ownerPackId = id,
             )
         ) { _, ctx -> ctx.event.typeId == typeId }
+    }
+
+    private fun booleanEvent(
+        registry: FeatureRegistry,
+        typeId: String,
+        title: String,
+        category: FeatureCategory,
+        payloadKey: String,
+    ) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId(typeId), FeatureKind.EVENT, title, "Run when the Android state changes",
+                category,
+                fields = listOf(FieldSchema.Choice("state", "State", options = listOf("any", "on", "off"))),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != typeId) return@registerEvent false
+            when (feature.config.string("state", "any")) {
+                "on" -> ctx.event.payload.boolean(payloadKey)
+                "off" -> !ctx.event.payload.boolean(payloadKey)
+                else -> true
+            }
+        }
+    }
+
+    private fun screenTimeoutEvent(registry: FeatureRegistry) {
+        val typeId = "android.event.screen_timeout_changed"
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId(typeId), FeatureKind.EVENT, "Screen timeout changed",
+                "Run when the Android screen-off timeout setting changes", FeatureCategory.DISPLAY,
+                fields = listOf(
+                    FieldSchema.Duration("minMs", "Minimum timeout"),
+                    FieldSchema.Duration("maxMs", "Maximum timeout"),
+                ),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != typeId) return@registerEvent false
+            val current = ctx.event.payload["timeoutMs"].numberOrNull() ?: return@registerEvent false
+            val min = feature.config["minMs"].numberOrNull() ?: 0.0
+            val max = feature.config["maxMs"].numberOrNull() ?: Double.MAX_VALUE
+            min.isFinite() && max.isFinite() && min >= 0.0 && max >= min && current in min..max
+        }
     }
 
     private fun packageEvent(registry: FeatureRegistry, typeId: String, title: String) {
