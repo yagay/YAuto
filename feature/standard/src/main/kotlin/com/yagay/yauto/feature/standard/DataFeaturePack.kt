@@ -71,8 +71,11 @@ class DataFeaturePack : FeaturePack {
             val text = feature.config.string("text").resolveVariables(ctx.variables)
             val pattern = feature.config.string("pattern").resolveVariables(ctx.variables)
             val group = (feature.config["group"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
-            val matches = runCatching { Regex(pattern).findAll(text).mapNotNull { it.groups.getOrNull(group)?.value }.toList() }
-                .getOrElse { return@registerAction ActionExecutionResult(false, message = it.message) }
+            val matches = runCatching {
+                Regex(pattern).findAll(text)
+                    .mapNotNull { match: MatchResult -> match.groups[group]?.value }
+                    .toList()
+            }.getOrElse { return@registerAction ActionExecutionResult(false, message = it.message) }
             val output = ConfigValue.ListValue(matches.map(ConfigValue::StringValue))
             ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
