@@ -27,4 +27,60 @@
     <string name="feature_android_screenshot_capture_description">将当前显示内容保存为共享存储中的 PNG 图片</string>
     <string name="feature_android_screenshot_capture_field_path">PNG 路径（留空 = Downloads/YAuto）</string>
     <string name="feature_android_screenshot_capture_field_resultvariable">将保存路径写入变量</string>
+
+    <string name="feature_android_settings_value_get_title">读取 Android 设置</string>
+    <string name="feature_android_settings_value_get_description">通过特权 Shell 读取 System、Global 或 Secure 设置值</string>
+    <string name="feature_android_settings_value_get_field_namespace">设置命名空间</string>
+    <string name="feature_android_settings_value_get_field_namespace_option_system">System</string>
+    <string name="feature_android_settings_value_get_field_namespace_option_global">Global</string>
+    <string name="feature_android_settings_value_get_field_namespace_option_secure">Secure</string>
+    <string name="feature_android_settings_value_get_field_key">设置键</string>
+    <string name="feature_android_settings_value_get_field_resultvariable">保存值到变量</string>
+
+    <string name="feature_android_settings_value_put_title">写入 Android 设置</string>
+    <string name="feature_android_settings_value_put_description">通过特权 Shell 写入 System、Global 或 Secure 设置值</string>
+    <string name="feature_android_settings_value_put_field_namespace">设置命名空间</string>
+    <string name="feature_android_settings_value_put_field_namespace_option_system">System</string>
+    <string name="feature_android_settings_value_put_field_namespace_option_global">Global</string>
+    <string name="feature_android_settings_value_put_field_namespace_option_secure">Secure</string>
+    <string name="feature_android_settings_value_put_field_key">设置键</string>
+    <string name="feature_android_settings_value_put_field_value">设置值</string>
+
+    <string name="feature_android_settings_value_delete_title">删除 Android 设置</string>
+    <string name="feature_android_settings_value_delete_description">通过特权 Shell 删除 System、Global 或 Secure 设置键</string>
+    <string name="feature_android_settings_value_delete_field_namespace">设置命名空间</string>
+    <string name="feature_android_settings_value_delete_field_namespace_option_system">System</string>
+    <string name="feature_android_settings_value_delete_field_namespace_option_global">Global</string>
+    <string name="feature_android_settings_value_delete_field_namespace_option_secure">Secure</string>
+    <string name="feature_android_settings_value_delete_field_key">设置键</string>
+
+    <string name="feature_android_system_property_get_title">读取 Android 系统属性</string>
+    <string name="feature_android_system_property_get_description">通过 getprop 读取一个 Android 系统属性并保存到变量</string>
+    <string name="feature_android_system_property_get_field_key">属性键</string>
+    <string name="feature_android_system_property_get_field_resultvariable">保存值到变量</string>
+
+    <string name="feature_android_app_appop_get_title">读取应用操作模式</string>
+    <string name="feature_android_app_appop_get_description">读取指定应用和操作名称的 Android AppOps 状态</string>
+    <string name="feature_android_app_appop_get_field_package">应用 / 包名</string>
+    <string name="feature_android_app_appop_get_field_operation">应用操作</string>
+    <string name="feature_android_app_appop_get_field_resultvariable">保存命令输出</string>
+
+    <string name="feature_android_app_appop_set_title">设置应用操作模式</string>
+    <string name="feature_android_app_appop_set_description">把 Android AppOps 操作设置为允许、忽略、拒绝、默认或仅前台</string>
+    <string name="feature_android_app_appop_set_field_package">应用 / 包名</string>
+    <string name="feature_android_app_appop_set_field_operation">应用操作</string>
+    <string name="feature_android_app_appop_set_field_mode">AppOps 模式</string>
+    <string name="feature_android_app_appop_set_field_mode_option_allow">允许</string>
+    <string name="feature_android_app_appop_set_field_mode_option_ignore">忽略</string>
+    <string name="feature_android_app_appop_set_field_mode_option_deny">拒绝</string>
+    <string name="feature_android_app_appop_set_field_mode_option_default">默认</string>
+    <string name="feature_android_app_appop_set_field_mode_option_foreground">仅前台</string>
+
+    <string name="feature_android_app_component_enabled_set_title">启用或停用应用组件</string>
+    <string name="feature_android_app_component_enabled_set_description">按包名和类名启用或停用一个 Android 组件</string>
+    <string name="feature_android_app_component_enabled_set_field_package">应用 / 包名</string>
+    <string name="feature_android_app_component_enabled_set_field_class">组件类</string>
+    <string name="feature_android_app_component_enabled_set_field_enabled">已启用</string>
+
+    <string name="runtime_feature_privileged_input_invalid">特权系统操作的输入值无效</string>
 </resources>
