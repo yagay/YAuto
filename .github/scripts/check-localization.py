@@ -43,11 +43,16 @@ def resource_keys(folder: Path) -> set[str]:
     return out
 
 
+def line_number(text: str, offset: int) -> int:
+    return text.count("\n", 0, offset) + 1
+
+
 def main() -> int:
     failures: list[str] = []
 
     # UI call sites: visible prose must use resources/resolvers.
-    for path in sorted(main_kotlin_files()):
+    kotlin = sorted(main_kotlin_files())
+    for path in kotlin:
         text = path.read_text(encoding="utf-8")
         for line_no, line in enumerate(text.splitlines(), 1):
             if path not in CJK_KOTLIN_ALLOW and CJK.search(line):
@@ -79,19 +84,31 @@ def main() -> int:
         for missing in sorted(zh - en):
             failures.append(f"{module}: missing default English string resource: {missing}")
 
-    # Source paths that feed diagnostics/import results must use userText() for wrapper prose.
-    sensitive_patterns = [
-        re.compile(r'DiagnosticRecord\([^\n]*title\s*=\s*"[A-Za-z]'),
-        re.compile(r'CollectorStatus\([^\n]*"[A-Za-z][^"\n]+"'),
-        re.compile(r'CompatibilityIssue\([^\n]*"[A-Za-z][^"\n]+"'),
-        re.compile(r'Signal\.Failure\(\s*"[A-Za-z]'),
-    ]
-    for path in sorted(main_kotlin_files()):
+    # Source paths that feed diagnostics/import/results must use userText() for wrapper prose.
+    # Scan full constructor/call windows rather than just one line so multiline Kotlin is covered.
+    runtime_literal_patterns = (
+        ("ActionExecutionResult message", re.compile(r'ActionExecutionResult\([\s\S]{0,700}?\bmessage\s*=\s*"[A-Za-z][^"\n]*"')),
+        ("CapabilityResult message", re.compile(r'CapabilityResult\([\s\S]{0,700}?\bmessage\s*=\s*"[A-Za-z][^"\n]*"')),
+        ("DiagnosticRecord title/message", re.compile(r'DiagnosticRecord\([\s\S]{0,900}?\b(?:title|message)\s*=\s*"[A-Za-z][^"\n]*"')),
+        ("CollectorStatus message", re.compile(r'CollectorStatus\([\s\S]{0,500}?\bmessage\s*=\s*"[A-Za-z][^"\n]*"')),
+        ("CompatibilityIssue message", re.compile(r'CompatibilityIssue\([\s\S]{0,700}?\bmessage\s*=\s*"[A-Za-z][^"\n]*"')),
+        ("Signal failure", re.compile(r'Signal\.Failure\(\s*"[A-Za-z][^"\n]*"')),
+        # AutomationEngine.trace(..., "Human prose") is shown by the execution-log diagnostics UI.
+        ("trace message", re.compile(r'\btrace\([^\n]{0,600}?,\s*"[A-Za-z][^"\n]*"')),
+    )
+    for path in kotlin:
         if path.parts[0] not in {"core", "platform", "importer", "feature", "app"}:
             continue
-        for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-            if any(p.search(line) for p in sensitive_patterns) and "userText(" not in line:
-                failures.append(f"{path}:{line_no}: user-facing runtime/import/diagnostic prose must use userText(): {line.strip()}")
+        text = path.read_text(encoding="utf-8")
+        for label, pattern in runtime_literal_patterns:
+            for match in pattern.finditer(text):
+                snippet = match.group(0)
+                if "userText(" in snippet:
+                    continue
+                failures.append(
+                    f"{path}:{line_number(text, match.start())}: {label} contains hardcoded user-facing prose; use userText(): "
+                    f"{snippet.splitlines()[0].strip()}"
+                )
 
     if failures:
         print("Localization guard failed:\n" + "\n".join(failures))
