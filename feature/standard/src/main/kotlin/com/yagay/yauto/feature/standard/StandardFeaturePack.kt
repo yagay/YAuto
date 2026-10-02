@@ -7,6 +7,7 @@ object StandardFeaturePacks {
         CoreFeaturePack(),
         VariableFeaturePack(),
         DataFeaturePack(),
+        JsonFeaturePack(),
         TimeFeaturePack(),
         PrivilegedAndroidFeaturePack(),
         PrivilegedUtilityFeaturePack(),
