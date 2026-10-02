@@ -6,7 +6,7 @@
     <string name="editor_system_app">系统</string>
     <string name="editor_show_system_apps">显示系统应用</string>
     <string name="editor_category_count_format">%1$s · %2$d 项</string>
-    <string name="editor_favorite_prefix">★ %1$s</string>
+    <string name="editor_favorite_prefix">已收藏：%1$s</string>
     <string name="editor_feature_search_subtitle_format">%1$s · %2$s</string>
 
     <string name="kind_event">触发器</string>
@@ -52,4 +52,5 @@
     <string name="implementation_shizuku_title">Shizuku</string>
     <string name="implementation_lsposed_title">LSPosed</string>
     <string name="implementation_accessibility_title">Accessibility</string>
+    <string name="editor_required_field_format">%1$s（必填）</string>
 </resources>

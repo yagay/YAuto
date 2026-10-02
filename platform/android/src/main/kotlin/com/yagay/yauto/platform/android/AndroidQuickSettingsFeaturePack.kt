@@ -25,7 +25,7 @@ class QuickSettingsTileController(context: Context) {
         }
     }
 
-    fun label(slot: Int): String = prefs.getString("label_$slot", null).orEmpty().ifBlank { "YAuto $slot" }
+    fun label(slot: Int): String = prefs.getString("label_$slot", null).orEmpty().ifBlank { userText("qs.tile.default_label", slot) }
     fun state(slot: Int): Int = when (prefs.getString("state_$slot", "inactive")) {
         "active" -> Tile.STATE_ACTIVE
         "unavailable" -> Tile.STATE_UNAVAILABLE

@@ -79,7 +79,12 @@ fun MacroHomeScreen(
                     NavigationBarItem(
                         selected = tab == item,
                         onClick = { tab = item },
-                        icon = { Text(tabGlyph(item)) },
+                        icon = {
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(tabIcon(item)),
+                                contentDescription = null,
+                            )
+                        },
                         label = { Text(tabLabel(item)) },
                     )
                 }
@@ -166,7 +171,7 @@ private fun HomeDashboard(
         HomeTile(stringResource(R.string.home_tile_add_automation), stringResource(R.string.home_tile_add_automation_subtitle), MacroPalette.Trigger, onNewAutomation),
         HomeTile(stringResource(R.string.home_tile_automations), stringResource(R.string.home_tile_automations_subtitle, automations.size), MacroPalette.Action, onShowAutomations),
         HomeTile(stringResource(R.string.home_tile_flows), stringResource(R.string.home_tile_flows_subtitle, flows.size), MacroPalette.Flow, onShowFlows),
-        HomeTile(stringResource(R.string.home_tile_import_export), importerNames.joinToString(" / "), MacroPalette.Utility, onImport),
+        HomeTile(stringResource(R.string.home_tile_import_export), localizedList(importerNames), MacroPalette.Utility, onImport),
         HomeTile(stringResource(R.string.home_tile_variables), stringResource(R.string.home_tile_variables_subtitle), MacroPalette.Variable, onVariables),
         HomeTile(stringResource(R.string.home_tile_logs), stringResource(R.string.home_tile_logs_subtitle), MacroPalette.Diagnostics, onDiagnostics),
         HomeTile(stringResource(R.string.home_tile_permissions_backends), stringResource(R.string.home_tile_permissions_backends_subtitle), MacroPalette.State, onSettings),
@@ -279,7 +284,7 @@ private fun SettingsPage(
         item { SettingsRow(stringResource(R.string.settings_runtime_permissions_backends), stringResource(R.string.settings_runtime_permissions_backends_subtitle), onSettings) }
         item { SettingsRow(stringResource(R.string.settings_global_variables), stringResource(R.string.settings_global_variables_subtitle), onVariables) }
         item { SettingsRow(stringResource(R.string.settings_diagnostics), stringResource(R.string.settings_diagnostics_subtitle), onDiagnostics) }
-        item { SettingsRow(stringResource(R.string.settings_import_automation), importerNames.joinToString(" / "), onImport) }
+        item { SettingsRow(stringResource(R.string.settings_import_automation), localizedList(importerNames), onImport) }
         item { SettingsRow(stringResource(R.string.settings_backup_workspace), stringResource(R.string.settings_backup_workspace_subtitle), onBackup) }
         item { SettingsRow(stringResource(R.string.settings_restore_workspace), stringResource(R.string.settings_restore_workspace_subtitle), onRestore) }
         item { SettingsRow(stringResource(R.string.settings_manual_test_event), stringResource(R.string.settings_manual_test_event_subtitle), onManual) }
@@ -310,9 +315,10 @@ private fun tabLabel(tab: HomeTab): String = when (tab) {
     HomeTab.SETTINGS -> stringResource(R.string.home_tab_settings)
 }
 
-private fun tabGlyph(tab: HomeTab): String = when (tab) {
-    HomeTab.HOME -> "⌂"
-    HomeTab.AUTOMATIONS -> "≡"
-    HomeTab.FLOWS -> "↳"
-    HomeTab.SETTINGS -> "⚙"
+@androidx.annotation.DrawableRes
+private fun tabIcon(tab: HomeTab): Int = when (tab) {
+    HomeTab.HOME -> R.drawable.ic_home
+    HomeTab.AUTOMATIONS -> R.drawable.ic_automations
+    HomeTab.FLOWS -> R.drawable.ic_flows
+    HomeTab.SETTINGS -> R.drawable.ic_settings
 }

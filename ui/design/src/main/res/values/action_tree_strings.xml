@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="tree_add">＋ Add</string>
+    <string name="tree_add">Add</string>
     <string name="tree_add_action_or_structure">Add action or structure</string>
     <string name="tree_normal_action">Standard action</string>
     <string name="tree_if">Conditional branch</string>
@@ -25,7 +25,7 @@
     <string name="tree_match_value_format">Match value %1$d</string>
     <string name="tree_branch_format">Branch %1$d</string>
     <string name="tree_delete_branch">Delete this branch</string>
-    <string name="tree_add_branch">＋ Branch</string>
+    <string name="tree_add_branch">Add branch</string>
     <string name="tree_default_branch">Default branch</string>
     <string name="tree_repeat_count">Count</string>
     <string name="tree_loop_actions">Loop actions</string>
@@ -33,7 +33,7 @@
     <string name="tree_foreach_variable">Current-item variable</string>
     <string name="tree_parallel_branch_format">Parallel branch %1$d</string>
     <string name="tree_delete_parallel_branch">Delete branch</string>
-    <string name="tree_add_parallel_branch">＋ Parallel branch</string>
+    <string name="tree_add_parallel_branch">Add parallel branch</string>
     <string name="tree_try_actions">Try</string>
     <string name="tree_on_error">On error</string>
     <string name="tree_finally">Finally</string>
@@ -52,10 +52,10 @@
     <string name="value_value">Value</string>
     <string name="value_numeric">Numeric value</string>
     <string name="value_delete_item_format">Delete item %1$d</string>
-    <string name="value_add_item">＋ Item</string>
+    <string name="value_add_item">Add item</string>
     <string name="value_delete_key_format">Delete %1$s</string>
     <string name="value_parameter_name">Parameter name</string>
-    <string name="value_add_parameter">＋ Parameter</string>
+    <string name="value_add_parameter">Add parameter</string>
     <string name="predicate_edit">Edit condition</string>
     <string name="predicate_expression">Expression</string>
     <string name="predicate_feature">Feature condition</string>
@@ -68,5 +68,5 @@
     <string name="predicate_any_satisfied">Any condition is satisfied</string>
     <string name="predicate_none_satisfied">No conditions are satisfied</string>
     <string name="predicate_condition_format">Condition %1$d</string>
-    <string name="predicate_add_condition">＋ Condition</string>
+    <string name="predicate_add_condition">Add condition</string>
 </resources>

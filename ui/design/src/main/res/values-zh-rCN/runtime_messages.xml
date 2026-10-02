@@ -123,4 +123,5 @@
     <string name="runtime_runtime_no_state_evaluator">缺少状态求值器：%1$s</string>
     <string name="runtime_value_false">否</string>
     <string name="runtime_value_true">是</string>
+    <string name="runtime_qs_tile_default_label">YAuto %1$d</string>
 </resources>

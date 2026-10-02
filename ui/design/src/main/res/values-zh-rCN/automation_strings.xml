@@ -9,14 +9,14 @@
     <string name="automation_triggers_subtitle">事件触发，或持续状态进入/退出</string>
     <string name="automation_event_count_format">事件 %1$d</string>
     <string name="automation_state_count_format">状态 %1$d</string>
-    <string name="automation_add_event_hint">点击 ＋ 添加触发器</string>
-    <string name="automation_add_state_hint">点击 ＋ 添加持续状态</string>
+    <string name="automation_add_event_hint">使用添加按钮加入触发器</string>
+    <string name="automation_add_state_hint">使用添加按钮加入持续状态</string>
     <string name="automation_actions">动作</string>
     <string name="automation_actions_subtitle">按顺序执行；支持分支、循环、并行与调用流程</string>
     <string name="automation_event_phase_count_format">事件 %1$d</string>
     <string name="automation_enter_phase_count_format">进入 %1$d</string>
     <string name="automation_exit_phase_count_format">退出 %1$d</string>
-    <string name="automation_add_action_hint">点击 ＋ 添加动作</string>
+    <string name="automation_add_action_hint">使用添加按钮加入动作</string>
     <string name="automation_constraints">约束</string>
     <string name="automation_constraints_subtitle">只有约束满足时自动化才会继续</string>
     <string name="automation_complex_condition_title">复杂条件组合</string>
@@ -25,7 +25,7 @@
     <string name="automation_advanced_settings">高级设置</string>
     <string name="automation_description">说明</string>
     <string name="automation_local_variables">局部变量</string>
-    <string name="automation_add_local_variable">＋ 添加局部变量</string>
+    <string name="automation_add_local_variable">添加局部变量</string>
     <string name="automation_conflict_policy">冲突策略</string>
     <string name="automation_conflict_queue">排队运行</string>
     <string name="automation_conflict_ignore_new">忽略新触发</string>

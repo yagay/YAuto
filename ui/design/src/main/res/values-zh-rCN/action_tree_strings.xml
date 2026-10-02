@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="tree_add">＋ 添加</string>
+    <string name="tree_add">添加</string>
     <string name="tree_add_action_or_structure">添加动作或结构</string>
     <string name="tree_normal_action">普通动作</string>
     <string name="tree_if">条件分支</string>
@@ -25,7 +25,7 @@
     <string name="tree_match_value_format">匹配值 %1$d</string>
     <string name="tree_branch_format">分支 %1$d</string>
     <string name="tree_delete_branch">删除此分支</string>
-    <string name="tree_add_branch">＋ 分支</string>
+    <string name="tree_add_branch">添加分支</string>
     <string name="tree_default_branch">默认分支</string>
     <string name="tree_repeat_count">次数</string>
     <string name="tree_loop_actions">循环动作</string>
@@ -33,7 +33,7 @@
     <string name="tree_foreach_variable">当前项变量名</string>
     <string name="tree_parallel_branch_format">并行分支 %1$d</string>
     <string name="tree_delete_parallel_branch">删除分支</string>
-    <string name="tree_add_parallel_branch">＋ 并行分支</string>
+    <string name="tree_add_parallel_branch">添加并行分支</string>
     <string name="tree_try_actions">尝试</string>
     <string name="tree_on_error">发生错误</string>
     <string name="tree_finally">收尾</string>
@@ -52,10 +52,10 @@
     <string name="value_value">值</string>
     <string name="value_numeric">数值</string>
     <string name="value_delete_item_format">删除第 %1$d 项</string>
-    <string name="value_add_item">＋ 项</string>
+    <string name="value_add_item">添加项目</string>
     <string name="value_delete_key_format">删除 %1$s</string>
     <string name="value_parameter_name">参数名</string>
-    <string name="value_add_parameter">＋ 参数</string>
+    <string name="value_add_parameter">添加参数</string>
     <string name="predicate_edit">编辑条件</string>
     <string name="predicate_expression">表达式</string>
     <string name="predicate_feature">功能条件</string>
@@ -68,5 +68,5 @@
     <string name="predicate_any_satisfied">任一条件满足</string>
     <string name="predicate_none_satisfied">所有条件都不满足</string>
     <string name="predicate_condition_format">条件 %1$d</string>
-    <string name="predicate_add_condition">＋ 条件</string>
+    <string name="predicate_add_condition">添加条件</string>
 </resources>

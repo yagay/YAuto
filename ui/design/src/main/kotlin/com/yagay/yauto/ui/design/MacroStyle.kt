@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -45,10 +46,7 @@ fun MacroSection(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    buildString {
-                        append(title)
-                        count?.let { append("  ($it)") }
-                    },
+                    count?.let { stringResource(R.string.macro_section_title_count_format, title, it) } ?: title,
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,

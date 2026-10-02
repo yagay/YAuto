@@ -172,7 +172,7 @@ fun MacroAutomationEditorScreen(
                     activationItems.forEachIndexed { index, feature ->
                         MacroItemRow(
                             title = featureTitle(feature, descriptors),
-                            subtitle = featureSummary(feature),
+                            subtitle = featureSummary(feature, descriptors),
                             accent = if (kind == FeatureKind.EVENT) MacroPalette.Trigger else MacroPalette.State,
                             onClick = { request = MacroEditRequest(kind, index, feature) },
                             onMenu = { menu = (if (kind == FeatureKind.EVENT) "event" else "state") to index },
@@ -218,7 +218,7 @@ fun MacroAutomationEditorScreen(
                         val feature = (node as? ActionNode.Action)?.feature
                         MacroItemRow(
                             title = feature?.let { featureTitle(it, descriptors) } ?: actionNodeTitle(node, flows),
-                            subtitle = feature?.let(::featureSummary),
+                            subtitle = feature?.let { featureSummary(it, descriptors) },
                             accent = MacroPalette.Action,
                             onClick = {
                                 if (feature != null) {
@@ -255,7 +255,7 @@ fun MacroAutomationEditorScreen(
                     conditions.forEachIndexed { index, feature ->
                         MacroItemRow(
                             title = featureTitle(feature, descriptors),
-                            subtitle = featureSummary(feature),
+                            subtitle = featureSummary(feature, descriptors),
                             accent = MacroPalette.Constraint,
                             onClick = { request = MacroEditRequest(FeatureKind.CONDITION, index, feature) },
                             onMenu = { menu = "condition" to index },
@@ -273,7 +273,14 @@ fun MacroAutomationEditorScreen(
                                 Modifier.weight(1f),
                                 fontWeight = FontWeight.SemiBold,
                             )
-                            Text(if (advanced) "⌃" else "⌄")
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(
+                                    if (advanced) TextR.drawable.ic_arrow_up else TextR.drawable.ic_arrow_down
+                                ),
+                                contentDescription = stringResource(
+                                    if (advanced) TextR.string.icon_collapse else TextR.string.icon_expand
+                                ),
+                            )
                         }
                         if (advanced) {
                             OutlinedTextField(
@@ -523,10 +530,22 @@ private fun EmptyHint(text: String) {
 private fun featureTitle(feature: FeatureRef, descriptors: List<FeatureDescriptor>): String =
     descriptors.firstOrNull { it.id.value == feature.typeId }?.let { localizedFeatureTitle(it) } ?: feature.typeId
 
-private fun featureSummary(feature: FeatureRef): String = feature.config.entries
-    .filterNot { it.key.startsWith("source.") }
-    .take(3)
-    .joinToString(" · ") { "${it.key}=${it.value.asText()}" }
+@Composable
+private fun featureSummary(feature: FeatureRef, descriptors: List<FeatureDescriptor>): String {
+    val descriptor = descriptors.firstOrNull { it.id.value == feature.typeId }
+    val items = feature.config.entries
+        .filterNot { it.key.startsWith("source.") }
+        .take(3)
+        .map { entry ->
+            val label = descriptor?.let { owner ->
+                owner.fields.firstOrNull { it.key == entry.key }?.let { field ->
+                    localizedFieldLabelShared(owner.id.value, field)
+                }
+            } ?: entry.key
+            stringResource(TextR.string.flow_config_entry_format, label, entry.value.asText())
+        }
+    return localizedList(items)
+}
 
 @Composable
 private fun actionNodeTitle(node: ActionNode, flows: List<Flow>): String = when (node) {

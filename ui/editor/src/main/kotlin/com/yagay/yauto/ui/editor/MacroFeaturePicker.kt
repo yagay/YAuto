@@ -27,6 +27,7 @@ import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.ui.design.CapabilityBadge
 import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
+import com.yagay.yauto.ui.design.localizedList
 import com.yagay.yauto.ui.design.R as TextR
 
 private data class CatalogCategory(
@@ -340,7 +341,11 @@ private fun FeatureListPage(
         }
         item {
             Text(
-                subtitle + " · " + stringResource(TextR.string.feature_picker_favorite_hint),
+                stringResource(
+                    TextR.string.feature_picker_category_hint_format,
+                    subtitle,
+                    stringResource(TextR.string.feature_picker_favorite_hint),
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -399,7 +404,7 @@ private fun FeatureConfigurePage(
                     if (descriptor.capabilities.isNotEmpty()) {
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             descriptor.capabilities.take(4).forEach {
-                                CapabilityBadge(it.value.substringAfterLast('.'))
+                                CapabilityBadge(capabilityLabel(it.value))
                             }
                         }
                     }
@@ -520,7 +525,7 @@ private fun ImplementationExplanation(
             Text(
                 stringResource(
                     TextR.string.implementation_requirements_format,
-                    requirements.joinToString(" + ") { accessRequirementLabelNonComposable(it) },
+                    localizedList(requirements.map { accessRequirementLabelNonComposable(it) }),
                 ),
                 style = MaterialTheme.typography.labelSmall,
             )
@@ -528,13 +533,13 @@ private fun ImplementationExplanation(
         if (summary.isNotBlank()) Text(summary, style = MaterialTheme.typography.bodySmall)
         if (pros.isNotEmpty()) {
             Text(
-                stringResource(TextR.string.implementation_pros_format, pros.joinToString(" · ")),
+                stringResource(TextR.string.implementation_pros_format, localizedList(pros)),
                 style = MaterialTheme.typography.bodySmall,
             )
         }
         if (cons.isNotEmpty()) {
             Text(
-                stringResource(TextR.string.implementation_cons_format, cons.joinToString(" · ")),
+                stringResource(TextR.string.implementation_cons_format, localizedList(cons)),
                 style = MaterialTheme.typography.bodySmall,
             )
         }
@@ -610,7 +615,12 @@ private fun FieldEditor(
                 value = value,
                 onValueChange = onValue,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text(label + if (field.required) " *" else "") },
+                label = {
+                    Text(
+                        if (field.required) stringResource(TextR.string.editor_required_field_format, label)
+                        else label
+                    )
+                },
                 minLines = if (field is FieldSchema.Text && field.multiline) 3 else 1,
                 keyboardOptions = if (numeric) {
                     KeyboardOptions(keyboardType = KeyboardType.Number)
@@ -642,7 +652,12 @@ private fun InstalledAppField(
             value = value,
             onValueChange = onValue,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(label + if (field.required) " *" else "") },
+            label = {
+                    Text(
+                        if (field.required) stringResource(TextR.string.editor_required_field_format, label)
+                        else label
+                    )
+                },
             singleLine = true,
             supportingText = { Text(stringResource(TextR.string.feature_picker_app_input_hint)) },
         )
@@ -834,6 +849,20 @@ private fun categorySubtitle(page: PickerPage.Features): String = when (page.spe
     else -> stringResource(page.category.subtitleRes)
 }
 
+
+@Composable
+private fun capabilityLabel(capabilityId: String): String = stringResource(
+    when (capabilityId) {
+        "privileged.shell" -> TextR.string.capability_privileged_shell
+        "android.app.launch" -> TextR.string.capability_app_launch
+        "android.toast" -> TextR.string.capability_toast
+        "android.accessibility" -> TextR.string.capability_accessibility
+        "android.notification_listener" -> TextR.string.capability_notification_listener
+        "android.systemui" -> TextR.string.capability_system_ui
+        "android.lsposed" -> TextR.string.capability_lsposed
+        else -> TextR.string.capability_other
+    }
+)
 
 @Composable
 private fun accessRequirementLabel(requirement: AccessRequirement): String = stringResource(accessRequirementResource(requirement))

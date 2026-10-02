@@ -12,7 +12,7 @@
     <string name="flow_actions">Actions</string>
     <string name="flow_actions_subtitle">Uses the same feature catalog as automations</string>
     <string name="flow_structure">Structure</string>
-    <string name="flow_add_action_hint">Tap ＋ to add an action</string>
+    <string name="flow_add_action_hint">Use the add button to add an action</string>
     <string name="flow_outputs">Output parameters</string>
     <string name="flow_outputs_subtitle">Callers can read returned data by name</string>
     <string name="flow_no_outputs">No output parameters</string>
@@ -38,4 +38,21 @@
     <string name="node_return">Return</string>
     <string name="node_break">Break loop</string>
     <string name="node_continue">Continue loop</string>
+    <string name="flow_default_value_format">Default: %1$s</string>
+    <string name="flow_config_entry_format">%1$s: %2$s</string>
+    <string name="flow_value_type_string">Text</string>
+    <string name="flow_value_type_number">Number</string>
+    <string name="flow_value_type_boolean">Boolean</string>
+    <string name="flow_value_type_list">List</string>
+    <string name="flow_value_type_object">Object</string>
+    <string name="flow_value_type_app">App</string>
+    <string name="flow_value_type_package">Package</string>
+    <string name="flow_value_type_component">Component</string>
+    <string name="flow_value_type_uri">URI</string>
+    <string name="flow_value_type_file">File</string>
+    <string name="flow_value_type_date_time">Date and time</string>
+    <string name="flow_value_type_duration">Duration</string>
+    <string name="flow_value_type_color">Color</string>
+    <string name="flow_value_type_location">Location</string>
+    <string name="flow_value_type_any">Any value</string>
 </resources>

@@ -97,11 +97,7 @@ fun MacroFlowEditorScreen(
                     inputs.forEachIndexed { index, parameter ->
                         MacroItemRow(
                             title = parameter.name,
-                            subtitle = buildString {
-                                append(parameter.type.name)
-                                if (parameter.required) append(stringResource(TextR.string.flow_parameter_required_suffix))
-                                append(defaultLabel(parameter))
-                            },
+                            subtitle = flowParameterSummary(parameter),
                             accent = MacroPalette.Flow,
                             onClick = { paramEdit = Triple(FlowParamSide.INPUT, index, parameter) },
                             onMenu = { inputs = inputs.filterIndexed { i, _ -> i != index } },
@@ -125,17 +121,26 @@ fun MacroFlowEditorScreen(
                     if (actions.isEmpty()) FlowEmpty(stringResource(TextR.string.flow_add_action_hint))
                     actions.forEachIndexed { index, node ->
                         val feature = (node as? ActionNode.Action)?.feature
+                        val descriptor = feature?.let { ref ->
+                            descriptors.firstOrNull { it.id.value == ref.typeId }
+                        }
+                        val summary = feature?.config?.entries
+                            ?.filterNot { it.key.startsWith("source.") }
+                            ?.take(3)
+                            ?.map { entry ->
+                                val label = descriptor?.let { owner ->
+                                    owner.fields.firstOrNull { it.key == entry.key }?.let { field ->
+                                        localizedFieldLabelShared(owner.id.value, field)
+                                    }
+                                } ?: entry.key
+                                stringResource(TextR.string.flow_config_entry_format, label, flowValueText(entry.value))
+                            }
+                            ?.let(::localizedList)
                         MacroItemRow(
-                            title = if (feature != null) {
-                                descriptors.firstOrNull { it.id.value == feature.typeId }?.let { localizedFeatureTitle(it) }
-                                    ?: feature.typeId
-                            } else {
-                                flowNodeTitle(node, flows)
-                            },
-                            subtitle = feature?.config?.entries
-                                ?.filterNot { it.key.startsWith("source.") }
-                                ?.take(3)
-                                ?.joinToString(" · ") { "${it.key}=${flowValueText(it.value)}" },
+                            title = descriptor?.let { localizedFeatureTitle(it) }
+                                ?: feature?.typeId
+                                ?: flowNodeTitle(node, flows),
+                            subtitle = summary,
                             accent = MacroPalette.Action,
                             onClick = { if (feature != null) picker = index to feature else tree = true },
                             onMenu = { actionMenu = index },
@@ -155,7 +160,7 @@ fun MacroFlowEditorScreen(
                     outputs.forEachIndexed { index, parameter ->
                         MacroItemRow(
                             title = parameter.name,
-                            subtitle = parameter.type.name,
+                            subtitle = valueTypeLabel(parameter.type),
                             accent = MacroPalette.Constraint,
                             onClick = { paramEdit = Triple(FlowParamSide.OUTPUT, index, parameter) },
                             onMenu = { outputs = outputs.filterIndexed { i, _ -> i != index } },
@@ -281,12 +286,12 @@ private fun FlowParameterDialog(
                 )
                 Box {
                     OutlinedButton(onClick = { typeMenu = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(TextR.string.flow_parameter_type_format, type.name))
+                        Text(stringResource(TextR.string.flow_parameter_type_format, valueTypeLabel(type)))
                     }
                     DropdownMenu(typeMenu, { typeMenu = false }) {
                         ValueType.entries.forEach { item ->
                             DropdownMenuItem(
-                                text = { Text(item.name) },
+                                text = { Text(valueTypeLabel(item)) },
                                 onClick = {
                                     type = item
                                     typeMenu = false
@@ -350,10 +355,37 @@ private fun <T> List<T>.moveFlowItem(from: Int, to: Int): List<T> {
 }
 
 @Composable
-private fun defaultLabel(parameter: FlowParameter): String = when (parameter.defaultValue) {
-    ConfigValue.NullValue -> ""
-    else -> stringResource(TextR.string.flow_default_suffix_format, flowValueText(parameter.defaultValue))
+private fun flowParameterSummary(parameter: FlowParameter): String {
+    val parts = buildList {
+        add(valueTypeLabel(parameter.type))
+        if (parameter.required) add(stringResource(TextR.string.flow_parameter_required))
+        if (parameter.defaultValue != ConfigValue.NullValue) {
+            add(stringResource(TextR.string.flow_default_value_format, flowValueText(parameter.defaultValue)))
+        }
+    }
+    return localizedList(parts)
 }
+
+@Composable
+private fun valueTypeLabel(type: ValueType): String = stringResource(
+    when (type) {
+        ValueType.STRING -> TextR.string.flow_value_type_string
+        ValueType.NUMBER -> TextR.string.flow_value_type_number
+        ValueType.BOOLEAN -> TextR.string.flow_value_type_boolean
+        ValueType.LIST -> TextR.string.flow_value_type_list
+        ValueType.OBJECT -> TextR.string.flow_value_type_object
+        ValueType.APP -> TextR.string.flow_value_type_app
+        ValueType.PACKAGE -> TextR.string.flow_value_type_package
+        ValueType.COMPONENT -> TextR.string.flow_value_type_component
+        ValueType.URI -> TextR.string.flow_value_type_uri
+        ValueType.FILE -> TextR.string.flow_value_type_file
+        ValueType.DATE_TIME -> TextR.string.flow_value_type_date_time
+        ValueType.DURATION -> TextR.string.flow_value_type_duration
+        ValueType.COLOR -> TextR.string.flow_value_type_color
+        ValueType.LOCATION -> TextR.string.flow_value_type_location
+        ValueType.ANY -> TextR.string.flow_value_type_any
+    }
+)
 
 @Composable
 private fun flowNodeTitle(node: ActionNode, flows: List<Flow>): String = when (node) {

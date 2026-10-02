@@ -449,16 +449,20 @@ internal fun TypedValueEditor(value: ConfigValue, onChange: (ConfigValue) -> Uni
     )
     Row {
         scalarKinds.forEach { (kind, label) ->
-            TextButton(onClick = {
-                onChange(
-                    when (kind) {
-                        ValueEditorKind.NUMBER -> ConfigValue.NumberValue(0.0)
-                        ValueEditorKind.BOOLEAN -> ConfigValue.BooleanValue(false)
-                        ValueEditorKind.NULL -> ConfigValue.NullValue
-                        ValueEditorKind.TEXT -> ConfigValue.StringValue("")
-                    }
-                )
-            }) { Text(if (kind == currentKind && value !is ConfigValue.ListValue && value !is ConfigValue.ObjectValue) "[$label]" else label) }
+            FilterChip(
+                selected = kind == currentKind && value !is ConfigValue.ListValue && value !is ConfigValue.ObjectValue,
+                onClick = {
+                    onChange(
+                        when (kind) {
+                            ValueEditorKind.NUMBER -> ConfigValue.NumberValue(0.0)
+                            ValueEditorKind.BOOLEAN -> ConfigValue.BooleanValue(false)
+                            ValueEditorKind.NULL -> ConfigValue.NullValue
+                            ValueEditorKind.TEXT -> ConfigValue.StringValue("")
+                        }
+                    )
+                },
+                label = { Text(label) },
+            )
         }
     }
     Row {

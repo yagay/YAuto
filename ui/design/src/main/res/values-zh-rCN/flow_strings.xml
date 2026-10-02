@@ -12,7 +12,7 @@
     <string name="flow_actions">动作</string>
     <string name="flow_actions_subtitle">与自动化共用同一功能目录</string>
     <string name="flow_structure">结构</string>
-    <string name="flow_add_action_hint">点击 ＋ 添加动作</string>
+    <string name="flow_add_action_hint">使用添加按钮加入动作</string>
     <string name="flow_outputs">输出参数</string>
     <string name="flow_outputs_subtitle">调用者可按名称读取返回数据</string>
     <string name="flow_no_outputs">没有输出参数</string>
@@ -38,4 +38,21 @@
     <string name="node_return">返回</string>
     <string name="node_break">退出循环</string>
     <string name="node_continue">继续循环</string>
+    <string name="flow_default_value_format">默认值：%1$s</string>
+    <string name="flow_config_entry_format">%1$s：%2$s</string>
+    <string name="flow_value_type_string">文本</string>
+    <string name="flow_value_type_number">数字</string>
+    <string name="flow_value_type_boolean">布尔值</string>
+    <string name="flow_value_type_list">列表</string>
+    <string name="flow_value_type_object">对象</string>
+    <string name="flow_value_type_app">应用</string>
+    <string name="flow_value_type_package">软件包</string>
+    <string name="flow_value_type_component">组件</string>
+    <string name="flow_value_type_uri">URI</string>
+    <string name="flow_value_type_file">文件</string>
+    <string name="flow_value_type_date_time">日期和时间</string>
+    <string name="flow_value_type_duration">时长</string>
+    <string name="flow_value_type_color">颜色</string>
+    <string name="flow_value_type_location">位置</string>
+    <string name="flow_value_type_any">任意值</string>
 </resources>
