@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_midi_devices_query_title">Get MIDI devices</string>
+    <string name="feature_android_midi_devices_query_description">Store currently available Android MIDI devices and their input/output ports</string>
+    <string name="feature_android_midi_devices_query_field_namecontains">Device name contains</string>
+    <string name="feature_android_midi_devices_query_field_manufacturercontains">Manufacturer contains</string>
+    <string name="feature_android_midi_devices_query_field_productcontains">Product contains</string>
+    <string name="feature_android_midi_devices_query_field_resultvariable">Store MIDI device list in variable</string>
+
+    <string name="feature_android_midi_send_title">Send MIDI bytes</string>
+    <string name="feature_android_midi_send_description">Send hexadecimal MIDI bytes to an input port on a selected Android MIDI device</string>
+    <string name="feature_android_midi_send_field_deviceid">MIDI device ID</string>
+    <string name="feature_android_midi_send_field_inputport">Input port number</string>
+    <string name="feature_android_midi_send_field_hex">MIDI bytes in hex</string>
+
+    <string name="feature_android_state_midi_device_present_title">MIDI device present</string>
+    <string name="feature_android_state_midi_device_present_description">Check whether an available Android MIDI device matches the configured identity filters</string>
+    <string name="feature_android_condition_midi_device_present_title">MIDI device present</string>
+    <string name="feature_android_condition_midi_device_present_description">Check whether an available Android MIDI device matches the configured identity filters</string>
+    <string name="feature_android_state_midi_device_present_field_namecontains">Device name contains</string>
+    <string name="feature_android_state_midi_device_present_field_manufacturercontains">Manufacturer contains</string>
+    <string name="feature_android_state_midi_device_present_field_productcontains">Product contains</string>
+    <string name="feature_android_state_midi_device_present_field_value">Match exists</string>
+    <string name="feature_android_condition_midi_device_present_field_namecontains">Device name contains</string>
+    <string name="feature_android_condition_midi_device_present_field_manufacturercontains">Manufacturer contains</string>
+    <string name="feature_android_condition_midi_device_present_field_productcontains">Product contains</string>
+    <string name="feature_android_condition_midi_device_present_field_value">Match exists</string>
+
+    <string name="feature_android_event_midi_device_added_title">MIDI device added</string>
+    <string name="feature_android_event_midi_device_added_description">Run when Android reports this MIDI device lifecycle event and the device matches the configured filters</string>
+    <string name="feature_android_event_midi_device_removed_title">MIDI device removed</string>
+    <string name="feature_android_event_midi_device_removed_description">Run when Android reports this MIDI device lifecycle event and the device matches the configured filters</string>
+    <string name="feature_android_event_midi_device_status_title">MIDI device status changed</string>
+    <string name="feature_android_event_midi_device_status_description">Run when Android reports this MIDI device lifecycle event and the device matches the configured filters</string>
+    <string name="feature_android_event_midi_device_added_field_namecontains">Device name contains</string>
+    <string name="feature_android_event_midi_device_added_field_manufacturercontains">Manufacturer contains</string>
+    <string name="feature_android_event_midi_device_added_field_productcontains">Product contains</string>
+    <string name="feature_android_event_midi_device_removed_field_namecontains">Device name contains</string>
+    <string name="feature_android_event_midi_device_removed_field_manufacturercontains">Manufacturer contains</string>
+    <string name="feature_android_event_midi_device_removed_field_productcontains">Product contains</string>
+    <string name="feature_android_event_midi_device_status_field_namecontains">Device name contains</string>
+    <string name="feature_android_event_midi_device_status_field_manufacturercontains">Manufacturer contains</string>
+    <string name="feature_android_event_midi_device_status_field_productcontains">Product contains</string>
+
+    <string name="runtime_feature_midi_device_id_invalid">MIDI device ID is invalid</string>
+    <string name="runtime_feature_midi_port_invalid">MIDI input port number is invalid</string>
+    <string name="runtime_feature_midi_hex_invalid">MIDI data must contain an even number of hexadecimal digits</string>
+    <string name="runtime_feature_midi_hex_size_invalid">MIDI data must contain between 1 and %1$d bytes</string>
+    <string name="runtime_feature_midi_device_not_found">MIDI device %1$d is not available</string>
+    <string name="runtime_feature_midi_open_failed">Could not open MIDI device %1$d</string>
+    <string name="runtime_feature_midi_port_open_failed">Could not open MIDI input port %1$d</string>
+</resources>
