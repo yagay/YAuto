@@ -49,6 +49,32 @@ class PrivilegedAndroidFeaturePackTest {
         assertTrue(backend.label.contains("可 fallback"))
     }
 
+    @Test fun `system ui exposes LSPosed Root and Shizuku implementations`() {
+        val registry = FeatureRegistry().apply { install(SystemFeaturePack()) }
+        val descriptor = requireNotNull(registry.descriptor(SystemOperations.SLEEP))
+        val backend = descriptor.fields.filterIsInstance<FieldSchema.Choice>()
+            .first { it.key == FEATURE_BACKEND_CONFIG_KEY }
+        assertEquals(listOf("auto", "lsposed", "root", "shizuku"), backend.options)
+        assertTrue(descriptor.description.contains("LSPosed"))
+        assertTrue(backend.label.contains("需要重启目标进程或设备"))
+    }
+
+    @Test fun `Shamiko and Zygisk remain environment labels not fake backends`() {
+        val registry = FeatureRegistry()
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("test.environment.only"), FeatureKind.ACTION,
+                "Environment only", "Test environment metadata", FeatureCategory.ADVANCED,
+                accessRequirements = setOf(AccessRequirement.ROOT, AccessRequirement.ZYGISK, AccessRequirement.SHAMIKO),
+            )
+        ) { _, _ -> ActionExecutionResult(true) }
+        val descriptor = requireNotNull(registry.descriptor("test.environment.only"))
+        assertTrue(descriptor.description.contains("Root"))
+        assertTrue(descriptor.description.contains("Zygisk"))
+        assertTrue(descriptor.description.contains("Shamiko"))
+        assertTrue(descriptor.fields.none { it.key == FEATURE_BACKEND_CONFIG_KEY })
+    }
+
     @Test fun `selected backend is forwarded by privileged feature`() = runBlocking {
         val registry = FeatureRegistry().apply { install(PrivilegedAndroidFeaturePack()) }
         var captured: CapabilityRequest? = null
