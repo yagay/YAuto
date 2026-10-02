@@ -22,6 +22,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.4.1'
+      - name: Localization guard
+        run: python3 .github/scripts/check-localization.py
       - name: Unit tests
         run: gradle :core:engine:test :core:runtime:test :core:storage:test :core:diagnostics:test :feature:standard:test :plugin:api:test :importer:macrodroid:test :importer:tasker:test :importer:shortx:test :platform:android:testDebugUnitTest :platform:accessibility:testDebugUnitTest --stacktrace
       - name: Build debug APK
