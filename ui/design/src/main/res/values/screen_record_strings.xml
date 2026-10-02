@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_screen_record_title">Record screen</string>
+    <string name="feature_android_screen_record_description">Record the display to an MP4 file for a bounded duration using Android screenrecord</string>
+    <string name="feature_android_screen_record_field_path">MP4 path (blank = Downloads/YAuto)</string>
+    <string name="feature_android_screen_record_field_durationseconds">Duration seconds</string>
+    <string name="feature_android_screen_record_field_bitratembps">Bitrate Mbps</string>
+    <string name="feature_android_screen_record_field_resultvariable">Store saved path in variable</string>
+
+    <string name="runtime_feature_screen_record_path_shared_storage_required">Screen recording path must be in shared storage</string>
+    <string name="runtime_feature_screen_record_path_mp4_required">Screen recording path must end with .mp4</string>
+    <string name="runtime_feature_screen_record_path_invalid">Screen recording path is invalid</string>
+    <string name="runtime_feature_screen_record_duration_invalid">Screen recording duration must be between 1 and 180 seconds</string>
+    <string name="runtime_feature_screen_record_bitrate_invalid">Screen recording bitrate must be between 1 and 100 Mbps</string>
+</resources>
