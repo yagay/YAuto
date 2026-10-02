@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="language_title">应用语言</string>
+    <string name="language_subtitle">选择 YAuto 使用的界面语言</string>
+    <string name="language_system">跟随系统</string>
+    <string name="language_english">English</string>
+    <string name="language_simplified_chinese">简体中文</string>
+    <string name="language_current_format">当前：%1$s</string>
+    <string name="language_android_12_hint">Android 12 上由 YAuto 本地保存此选择；Android 13 及以上也会显示在系统的应用语言设置中。</string>
+</resources>
