@@ -284,6 +284,6 @@ private fun notificationObject(item: ActiveNotificationSnapshot): ConfigValue.Ob
         "channelId" to ConfigValue.StringValue(item.channelId),
         "category" to ConfigValue.StringValue(item.category),
         "groupKey" to ConfigValue.StringValue(item.groupKey),
-        "actionTitles" to ConfigValue.ListValue(item.actionTitles.map(ConfigValue::StringValue)),
+        "actionTitles" to ConfigValue.ListValue(item.actionTitles.map { ConfigValue.StringValue(it) }),
     )
 )
