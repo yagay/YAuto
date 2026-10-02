@@ -24,6 +24,7 @@ import com.yagay.yauto.platform.android.NetworkEventSource
 import com.yagay.yauto.platform.android.RuntimeEventEmitter
 import com.yagay.yauto.platform.android.SurfaceRuntimeBridge
 import com.yagay.yauto.platform.android.SystemBroadcastEventSource
+import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -53,7 +54,13 @@ class AutomationRuntimeService : Service() {
                 "package" to ConfigValue.StringValue(current.packageName),
                 "class" to ConfigValue.StringValue(current.className.orEmpty()),
             )
-            dispatcher.dispatch(RuntimeEvent("android.event.window_changed", currentPayload, source = "accessibility.window"))
+            dispatcher.dispatch(
+                RuntimeEvent(
+                    "android.event.window_changed",
+                    currentPayload,
+                    source = "accessibility.window",
+                )
+            )
             if (previous?.packageName != current.packageName) {
                 previous?.let {
                     dispatcher.dispatch(
@@ -68,7 +75,13 @@ class AutomationRuntimeService : Service() {
                         )
                     )
                 }
-                dispatcher.dispatch(RuntimeEvent("android.event.app_foreground", currentPayload, source = "accessibility.window"))
+                dispatcher.dispatch(
+                    RuntimeEvent(
+                        "android.event.app_foreground",
+                        currentPayload,
+                        source = "accessibility.window",
+                    )
+                )
             }
         }
 
@@ -93,13 +106,17 @@ class AutomationRuntimeService : Service() {
                     }
                 }
         }
-        dispatcher.dispatch(RuntimeEvent("android.event.runtime_started", source = "android.runtime"), statesOnly = true)
+        dispatcher.dispatch(
+            RuntimeEvent("android.event.runtime_started", source = "android.runtime"),
+            statesOnly = true,
+        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.getBooleanExtra("boot", false) == true) {
             RuntimeEventDispatcher((application as YAutoApplication).graph, scope).dispatch(
-                RuntimeEvent("android.event.boot", source = "android.boot"))
+                RuntimeEvent("android.event.boot", source = "android.boot")
+            )
         }
         return START_STICKY
     }
@@ -118,15 +135,19 @@ class AutomationRuntimeService : Service() {
     private fun createNotification(): Notification {
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, "YAuto 自动化运行", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "保持自动化事件监听和规则运行"
+            NotificationChannel(
+                CHANNEL_ID,
+                getString(TextR.string.runtime_notification_channel_name),
+                NotificationManager.IMPORTANCE_LOW,
+            ).apply {
+                description = getString(TextR.string.runtime_notification_channel_description)
                 setShowBadge(false)
             }
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_popup_sync)
-            .setContentTitle("YAuto 正在运行")
-            .setContentText("自动化事件监听已启用")
+            .setContentTitle(getString(TextR.string.runtime_notification_title))
+            .setContentText(getString(TextR.string.runtime_notification_text))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .build()
@@ -137,7 +158,10 @@ class AutomationRuntimeService : Service() {
         private const val NOTIFICATION_ID = 1001
 
         fun start(context: Context, boot: Boolean = false) {
-            ContextCompat.startForegroundService(context, Intent(context, AutomationRuntimeService::class.java).putExtra("boot", boot))
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, AutomationRuntimeService::class.java).putExtra("boot", boot),
+            )
         }
     }
 }
