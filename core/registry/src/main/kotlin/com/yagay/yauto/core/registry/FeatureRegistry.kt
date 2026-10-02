@@ -145,8 +145,9 @@ class FeatureRegistry {
     }
 
     fun registerDescriptor(descriptor: FeatureDescriptor) {
-        val existing = descriptors.putIfAbsent(descriptor.id.value, descriptor)
-        require(existing == null || existing == descriptor) { "Feature ID collision: ${descriptor.id.value}" }
+        val decorated = descriptor.withAccessEditorMetadata()
+        val existing = descriptors.putIfAbsent(decorated.id.value, decorated)
+        require(existing == null || existing == decorated) { "Feature ID collision: ${decorated.id.value}" }
     }
 
     fun install(pack: FeaturePack) = pack.install(this)
