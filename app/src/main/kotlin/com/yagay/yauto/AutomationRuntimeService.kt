@@ -21,6 +21,7 @@ import com.yagay.yauto.platform.android.AndroidEventSource
 import com.yagay.yauto.platform.android.ClipboardEventSource
 import com.yagay.yauto.platform.android.ConfiguredBroadcastEventSource
 import com.yagay.yauto.platform.android.ConfiguredSensorEventSource
+import com.yagay.yauto.platform.android.DeviceSettingEventSource
 import com.yagay.yauto.platform.android.NetworkEventSource
 import com.yagay.yauto.platform.android.RuntimeEventEmitter
 import com.yagay.yauto.platform.android.SurfaceRuntimeBridge
@@ -45,6 +46,7 @@ class AutomationRuntimeService : Service() {
         sources += SystemBroadcastEventSource(this)
         sources += NetworkEventSource(this)
         sources += ClipboardEventSource(this)
+        sources += DeviceSettingEventSource(this)
         sources += ConfiguredBroadcastEventSource(this, graph.workspace)
         sources += ConfiguredSensorEventSource(this, graph.workspace)
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
