@@ -55,7 +55,7 @@
     <string name="feature_android_sensor_read_description">Capture one value from a common Android hardware sensor</string>
     <string name="feature_android_location_last_known_description">Read the newest last-known GPS/network location without starting continuous background tracking</string>
 
-    <string name="feature_android_event_time_tick_description">Run on Android's minute tick and optionally match hour, minute or ISO weekday</string>
+    <string name="feature_android_event_time_tick_description">Run on Android\'s minute tick and optionally match hour, minute or ISO weekday</string>
     <string name="feature_android_event_clipboard_changed_description">Run when the primary clipboard changes; clipboard text may be unavailable in the background on newer Android versions</string>
     <string name="feature_android_event_broadcast_title">Android broadcast</string>
     <string name="feature_android_event_broadcast_description">Receive a configured Android broadcast action and optionally match simple extras</string>
@@ -69,7 +69,7 @@
     <string name="feature_android_app_launch_description">Launch an installed application</string>
     <string name="feature_android_uri_open_description">Open a web link or Android URI</string>
     <string name="feature_android_clipboard_set_description">Put text on the Android clipboard</string>
-    <string name="feature_android_share_text_description">Open Android's share sheet with text</string>
+    <string name="feature_android_share_text_description">Open Android\'s share sheet with text</string>
 
     <string name="feature_file_read_text_description">Read a UTF-8 text file into a runtime variable. Android storage access rules still apply.</string>
     <string name="feature_file_write_text_description">Write or append UTF-8 text; parent directories can be created automatically</string>
