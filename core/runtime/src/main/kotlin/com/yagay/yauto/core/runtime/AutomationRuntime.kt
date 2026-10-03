@@ -17,6 +17,8 @@ import com.yagay.yauto.core.registry.AutomationEnableMode
 import com.yagay.yauto.core.registry.EventMatchContext
 import com.yagay.yauto.core.registry.FeatureExecutionContext
 import com.yagay.yauto.core.registry.FeatureRegistry
+import com.yagay.yauto.core.registry.PersistentVariableChange
+import com.yagay.yauto.core.registry.PersistentVariableControl
 import com.yagay.yauto.core.registry.VariableAccess
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.WorkspaceRepository
@@ -28,7 +30,6 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.AbstractCoroutineContextElement
@@ -52,7 +53,7 @@ class AutomationRuntime(
     private val registry: FeatureRegistry,
     private val capabilities: CapabilityClient,
     private val tracer: ExecutionTracer,
-) : AutomationControl {
+) : AutomationControl, PersistentVariableControl {
     private val activeStates = ConcurrentHashMap<String, Boolean>()
     private val locks = ConcurrentHashMap<String, Mutex>()
     private val evaluationLocks = ConcurrentHashMap<String, Mutex>()
@@ -76,12 +77,14 @@ class AutomationRuntime(
         val workspace = workspaceRepository.load()
         val flows = workspace.flows.associateBy { it.id }
         val runs = mutableListOf<RuntimeAutomationRun>()
+        val callStack = currentCoroutineContext()[AutomationCallStack]?.ids.orEmpty()
 
-        for (automation in workspace.automations.filter { it.enabled }) {
+        for (automation in workspace.automations.filter { it.enabled && it.id.value !in callStack }) {
             if (statesOnly && automation.activation.states.isEmpty()) continue
             try {
                 val variables = MapVariableAccess(buildMap {
                     workspace.globalVariables.forEach { (key, value) -> put(key, ConfigValue.StringValue(value)) }
+                    putAll(workspace.persistentVariables)
                     putAll(automation.variables)
                     event.payload.forEach { (key, value) -> put("event.$key", value) }
                     put("event.type", ConfigValue.StringValue(event.typeId))
@@ -182,6 +185,7 @@ class AutomationRuntime(
 
         val initial = buildMap {
             workspace.globalVariables.forEach { (key, value) -> put(key, ConfigValue.StringValue(value)) }
+            putAll(workspace.persistentVariables)
             putAll(variables)
         }
         val results = executeCoordinated(
@@ -243,9 +247,76 @@ class AutomationRuntime(
         return resolveAutomation(workspaceRepository.load(), trimmed)?.enabled
     }
 
+    override suspend fun get(name: String): ConfigValue? {
+        val key = name.trim()
+        if (key.isEmpty()) return null
+        val workspace = workspaceRepository.load()
+        return workspace.persistentVariables[key]
+            ?: workspace.globalVariables[key]?.let(ConfigValue::StringValue)
+    }
+
+    override suspend fun set(name: String, value: ConfigValue): PersistentVariableChange {
+        val key = name.trim()
+        if (key.isEmpty()) return PersistentVariableChange(false, key)
+        val change = workspaceMutationLock.withLock {
+            val workspace = workspaceRepository.load()
+            val previous = workspace.persistentVariables[key]
+                ?: workspace.globalVariables[key]?.let(ConfigValue::StringValue)
+            if (previous != value) {
+                workspaceRepository.save(
+                    workspace.copy(
+                        globalVariables = workspace.globalVariables - key,
+                        persistentVariables = workspace.persistentVariables + (key to value),
+                    )
+                )
+            }
+            PersistentVariableChange(true, key, previous, value)
+        }
+        if (change.previous != change.current) dispatch(variableChangedEvent(change))
+        return change
+    }
+
+    override suspend fun clear(name: String): PersistentVariableChange {
+        val key = name.trim()
+        if (key.isEmpty()) return PersistentVariableChange(false, key)
+        val change = workspaceMutationLock.withLock {
+            val workspace = workspaceRepository.load()
+            val previous = workspace.persistentVariables[key]
+                ?: workspace.globalVariables[key]?.let(ConfigValue::StringValue)
+            if (previous != null) {
+                workspaceRepository.save(
+                    workspace.copy(
+                        globalVariables = workspace.globalVariables - key,
+                        persistentVariables = workspace.persistentVariables - key,
+                    )
+                )
+            }
+            PersistentVariableChange(true, key, previous, null)
+        }
+        if (change.previous != null) dispatch(variableChangedEvent(change))
+        return change
+    }
+
     fun resetState(automationId: AutomationId? = null) {
         if (automationId == null) activeStates.clear() else activeStates.remove(automationId.value)
     }
+
+    private fun variableChangedEvent(change: PersistentVariableChange): RuntimeEvent = RuntimeEvent(
+        typeId = "core.event.variable_changed",
+        payload = mapOf(
+            "name" to ConfigValue.StringValue(change.name),
+            "previous" to (change.previous ?: ConfigValue.NullValue),
+            "current" to (change.current ?: ConfigValue.NullValue),
+            "change" to ConfigValue.StringValue(
+                when {
+                    change.previous == null && change.current != null -> "created"
+                    change.current == null -> "removed"
+                    else -> "changed"
+                }
+            ),
+        ),
+        source = "runtime.variable",
+    )
 
     private suspend fun matchEvent(
         feature: FeatureRef,
