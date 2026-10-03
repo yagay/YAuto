@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_telephony_info_title">获取蜂窝网络状态</string>
+    <string name="feature_android_telephony_info_description">保存移动数据、漫游、服务状态和活动 SIM 卡槽信息</string>
+    <string name="feature_android_telephony_info_field_resultvariable">将蜂窝网络状态对象保存到变量</string>
+
+    <string name="feature_android_state_mobile_data_enabled_title">移动数据已开启</string>
+    <string name="feature_android_state_mobile_data_enabled_description">检查默认蜂窝订阅的移动数据是否已开启</string>
+    <string name="feature_android_state_mobile_data_enabled_field_value">开启 / true</string>
+    <string name="feature_android_condition_mobile_data_enabled_title">移动数据已开启</string>
+    <string name="feature_android_condition_mobile_data_enabled_description">检查默认蜂窝订阅的移动数据是否已开启</string>
+    <string name="feature_android_condition_mobile_data_enabled_field_value">开启 / true</string>
+
+    <string name="feature_android_state_network_roaming_title">网络漫游</string>
+    <string name="feature_android_state_network_roaming_description">检查默认移动订阅当前是否处于漫游状态</string>
+    <string name="feature_android_state_network_roaming_field_value">开启 / true</string>
+    <string name="feature_android_condition_network_roaming_title">网络漫游</string>
+    <string name="feature_android_condition_network_roaming_description">检查默认移动订阅当前是否处于漫游状态</string>
+    <string name="feature_android_condition_network_roaming_field_value">开启 / true</string>
+
+    <string name="feature_android_state_cellular_service_available_title">蜂窝服务可用</string>
+    <string name="feature_android_state_cellular_service_available_description">检查任意或指定活动 SIM 是否处于蜂窝服务可用状态</string>
+    <string name="feature_android_state_cellular_service_available_field_subscriptionid">订阅 ID（-1 = 任意活动 SIM）</string>
+    <string name="feature_android_state_cellular_service_available_field_value">服务可用</string>
+    <string name="feature_android_condition_cellular_service_available_title">蜂窝服务可用</string>
+    <string name="feature_android_condition_cellular_service_available_description">检查任意或指定活动 SIM 是否处于蜂窝服务可用状态</string>
+    <string name="feature_android_condition_cellular_service_available_field_subscriptionid">订阅 ID（-1 = 任意活动 SIM）</string>
+    <string name="feature_android_condition_cellular_service_available_field_value">服务可用</string>
+</resources>
