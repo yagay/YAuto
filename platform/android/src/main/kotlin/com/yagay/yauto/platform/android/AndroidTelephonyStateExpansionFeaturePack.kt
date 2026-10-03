@@ -35,14 +35,6 @@ class AndroidTelephonyStateExpansionFeaturePack(context: Context) : FeaturePack 
             FeatureCategory.NETWORK,
             ::mobileDataEnabled,
         )
-        booleanPair(
-            registry,
-            "network_roaming",
-            "Network roaming",
-            "Check whether the default mobile subscription is currently roaming",
-            FeatureCategory.NETWORK,
-            ::networkRoaming,
-        )
         registerServiceAvailable(registry)
     }
 
