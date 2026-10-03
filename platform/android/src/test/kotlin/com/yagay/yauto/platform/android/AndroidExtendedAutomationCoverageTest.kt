@@ -1,0 +1,259 @@
+package com.yagay.yauto.platform.android
+
+import com.yagay.yauto.core.capability.CapabilityClient
+import com.yagay.yauto.core.capability.CapabilityResult
+import com.yagay.yauto.core.logging.NoOpExecutionTracer
+import com.yagay.yauto.core.model.ConfigMap
+import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.ExecutionId
+import com.yagay.yauto.core.model.FeatureRef
+import com.yagay.yauto.core.model.RuntimeEvent
+import com.yagay.yauto.core.registry.EventMatchContext
+import com.yagay.yauto.core.registry.FeatureExecutionContext
+import com.yagay.yauto.core.registry.FeatureKind
+import com.yagay.yauto.core.registry.FeatureRegistry
+import com.yagay.yauto.core.registry.VariableAccess
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class AndroidExtendedAutomationCoverageTest {
+    private class Reader : AndroidExtendedStateReader {
+        var idle = true
+        var locked = true
+        var secure = true
+        var music = false
+        var microphoneMute = false
+        var speakerphone = false
+        var clock24 = true
+        var alarmSet = true
+        var validated = true
+        var metered = false
+        var roaming = false
+        var internet = true
+        var restricted = false
+        var suspended = false
+        var currentOrientation = "portrait"
+        var currentRingerMode = "normal"
+        var present = true
+        var plugged = "usb"
+        var status = "charging"
+        var health = "good"
+        var voltage: Double? = 4_250.0
+
+        override fun deviceIdle() = idle
+        override fun keyguardLocked() = locked
+        override fun deviceSecure() = secure
+        override fun musicActive() = music
+        override fun microphoneMuted() = microphoneMute
+        override fun speakerphoneOn() = speakerphone
+        override fun uses24HourClock() = clock24
+        override fun nextAlarmSet() = alarmSet
+        override fun networkValidated() = validated
+        override fun networkMetered() = metered
+        override fun networkRoaming() = roaming
+        override fun networkInternet() = internet
+        override fun networkRestricted() = restricted
+        override fun networkSuspended() = suspended
+        override fun orientation() = currentOrientation
+        override fun ringerMode() = currentRingerMode
+        override fun batteryPresent() = present
+        override fun batteryPlugged() = plugged
+        override fun batteryStatus() = status
+        override fun batteryHealth() = health
+        override fun batteryVoltageMv() = voltage
+    }
+
+    private val variables = object : VariableAccess {
+        override fun get(name: String): ConfigValue? = null
+        override fun set(name: String, value: ConfigValue) = Unit
+        override fun snapshot(): Map<String, ConfigValue> = emptyMap()
+    }
+    private val capabilities = CapabilityClient { CapabilityResult(false, message = "unused") }
+
+    @Test
+    fun `extended state pack installs twenty one state condition pairs`() {
+        val registry = FeatureRegistry()
+        AndroidExtendedStateFeaturePack(Reader()).install(registry)
+
+        val descriptors = registry.allDescriptors()
+        assertEquals(42, descriptors.size)
+        assertEquals(21, descriptors.count { it.kind == FeatureKind.STATE })
+        assertEquals(21, descriptors.count { it.kind == FeatureKind.CONDITION })
+
+        val keys = listOf(
+            "device_idle",
+            "keyguard_locked",
+            "device_secure",
+            "music_active",
+            "microphone_muted",
+            "speakerphone_on",
+            "clock_24_hour",
+            "next_alarm_set",
+            "network_validated",
+            "network_metered",
+            "network_roaming",
+            "network_internet",
+            "network_restricted",
+            "network_suspended",
+            "orientation",
+            "ringer_mode",
+            "battery_present",
+            "battery_plugged",
+            "battery_status",
+            "battery_health",
+            "battery_voltage",
+        )
+        keys.forEach { key ->
+            assertNotNull(registry.stateEvaluator("android.state.$key"))
+            assertNotNull(registry.conditionEvaluator("android.condition.$key"))
+        }
+    }
+
+    @Test
+    fun `extended state values are live and configurable`() = runBlocking {
+        val reader = Reader()
+        val registry = FeatureRegistry().apply { AndroidExtendedStateFeaturePack(reader).install(this) }
+        val context = FeatureExecutionContext(
+            executionId = ExecutionId("test"),
+            nodeId = null,
+            variables = variables,
+            capabilities = capabilities,
+            tracer = NoOpExecutionTracer,
+        )
+
+        suspend fun matches(key: String, config: ConfigMap = emptyMap()): Boolean =
+            registry.stateEvaluator("android.state.$key")!!.evaluate(
+                FeatureRef("android.state.$key", config = config),
+                context,
+            )
+
+        assertTrue(matches("device_idle"))
+        reader.idle = false
+        assertTrue(matches("device_idle", mapOf("value" to ConfigValue.BooleanValue(false))))
+
+        assertTrue(matches("network_validated"))
+        reader.validated = false
+        assertFalse(matches("network_validated"))
+
+        assertTrue(matches("orientation", mapOf("value" to ConfigValue.StringValue("portrait"))))
+        reader.currentOrientation = "landscape"
+        assertTrue(matches("orientation", mapOf("value" to ConfigValue.StringValue("landscape"))))
+
+        assertTrue(matches("battery_plugged", mapOf("value" to ConfigValue.StringValue("usb"))))
+        assertTrue(matches("battery_health", mapOf("value" to ConfigValue.StringValue("good"))))
+        assertTrue(matches("battery_voltage", mapOf(
+            "operator" to ConfigValue.StringValue(">="),
+            "value" to ConfigValue.NumberValue(4_000.0),
+        )))
+        reader.voltage = null
+        assertFalse(matches("battery_voltage", mapOf("value" to ConfigValue.NumberValue(4_000.0))))
+    }
+
+    @Test
+    fun `derived event pack installs fifteen real matchers`() {
+        val registry = FeatureRegistry()
+        AndroidDerivedEventFeaturePack().install(registry)
+
+        val descriptors = registry.allDescriptors()
+        assertEquals(15, descriptors.size)
+        assertTrue(descriptors.all { it.kind == FeatureKind.EVENT })
+        descriptors.forEach { descriptor ->
+            assertNotNull("Missing matcher for ${descriptor.id.value}", registry.eventMatcher(descriptor.id.value))
+        }
+    }
+
+    @Test
+    fun `derived network events filter existing network payloads`() = runBlocking {
+        val registry = FeatureRegistry().apply { AndroidDerivedEventFeaturePack().install(this) }
+        val payload = mapOf(
+            "internet" to ConfigValue.BooleanValue(true),
+            "validated" to ConfigValue.BooleanValue(true),
+            "wifi" to ConfigValue.BooleanValue(true),
+            "cellular" to ConfigValue.BooleanValue(false),
+            "ethernet" to ConfigValue.BooleanValue(false),
+            "vpn" to ConfigValue.BooleanValue(false),
+        )
+
+        suspend fun matches(featureId: String, config: ConfigMap = emptyMap()): Boolean {
+            val matcher = registry.eventMatcher(featureId)!!
+            return matcher.matches(
+                FeatureRef(featureId, config = config),
+                EventMatchContext(
+                    executionId = ExecutionId("test"),
+                    event = RuntimeEvent("android.event.network_changed", payload),
+                    variables = variables,
+                    capabilities = capabilities,
+                    tracer = NoOpExecutionTracer,
+                ),
+            )
+        }
+
+        assertTrue(matches("android.event.network_validated"))
+        assertFalse(matches("android.event.network_unvalidated"))
+        assertTrue(matches("android.event.network_wifi"))
+        assertFalse(matches("android.event.network_cellular"))
+        assertTrue(matches(
+            "android.event.network_capabilities_filtered",
+            mapOf(
+                "transport" to ConfigValue.StringValue("wifi"),
+                "internet" to ConfigValue.StringValue("yes"),
+                "validated" to ConfigValue.StringValue("yes"),
+            ),
+        ))
+        assertFalse(matches(
+            "android.event.network_capabilities_filtered",
+            mapOf("transport" to ConfigValue.StringValue("vpn")),
+        ))
+    }
+
+    @Test
+    fun `derived wifi signal and supplicant triggers use reference payloads`() = runBlocking {
+        val registry = FeatureRegistry().apply { AndroidDerivedEventFeaturePack().install(this) }
+
+        suspend fun matches(
+            featureId: String,
+            runtimeType: String,
+            config: ConfigMap = emptyMap(),
+            payload: ConfigMap = emptyMap(),
+        ): Boolean = registry.eventMatcher(featureId)!!.matches(
+            FeatureRef(featureId, config = config),
+            EventMatchContext(
+                executionId = ExecutionId("test"),
+                event = RuntimeEvent(runtimeType, payload),
+                variables = variables,
+                capabilities = capabilities,
+                tracer = NoOpExecutionTracer,
+            ),
+        )
+
+        assertTrue(matches(
+            "android.event.wifi_rssi_filtered",
+            "android.event.wifi_rssi_changed",
+            mapOf(
+                "minRssi" to ConfigValue.NumberValue(-70.0),
+                "maxRssi" to ConfigValue.NumberValue(-40.0),
+            ),
+            mapOf("rssi" to ConfigValue.NumberValue(-55.0)),
+        ))
+        assertFalse(matches(
+            "android.event.wifi_rssi_filtered",
+            "android.event.wifi_rssi_changed",
+            mapOf("minRssi" to ConfigValue.NumberValue(-50.0)),
+            mapOf("rssi" to ConfigValue.NumberValue(-55.0)),
+        ))
+        assertTrue(matches(
+            "android.event.wifi_supplicant_connected",
+            "android.event.wifi_supplicant_connection_changed",
+            payload = mapOf("connected" to ConfigValue.BooleanValue(true)),
+        ))
+        assertTrue(matches(
+            "android.event.wifi_supplicant_disconnected",
+            "android.event.wifi_supplicant_connection_changed",
+            payload = mapOf("connected" to ConfigValue.BooleanValue(false)),
+        ))
+    }
+}
