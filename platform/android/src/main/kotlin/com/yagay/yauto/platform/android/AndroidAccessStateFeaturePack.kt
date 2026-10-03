@@ -1,5 +1,6 @@
 package com.yagay.yauto.platform.android
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.AlarmManager
 import android.app.NotificationManager
 import android.content.Context
@@ -92,7 +93,11 @@ class AndroidAccessStateFeaturePack(context: Context) : FeaturePack {
     private fun writeSettingsAccess(): Boolean = Settings.System.canWrite(context)
 
     private fun notificationListenerAccess(): Boolean =
-        NotificationManager.getEnabledListenerPackages(context).contains(context.packageName)
+        Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+            .orEmpty()
+            .split(':')
+            .mapNotNull(android.content.ComponentName::unflattenFromString)
+            .any { it.packageName == context.packageName }
 
     private fun dndPolicyAccess(): Boolean = notifications.isNotificationPolicyAccessGranted
 
@@ -101,6 +106,6 @@ class AndroidAccessStateFeaturePack(context: Context) : FeaturePack {
     private fun usageStatsAccess(): Boolean = isUsageStatsAccessGranted(context)
 
     private fun accessibilityServiceAccess(): Boolean =
-        accessibility.getEnabledAccessibilityServiceList(AccessibilityManager.FEEDBACK_ALL_MASK)
+        accessibility.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
             .any { info -> info.resolveInfo.serviceInfo.packageName == context.packageName }
 }
