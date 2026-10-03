@@ -127,10 +127,13 @@ class AndroidSystemConvenienceFeaturePack(context: Context) : FeaturePack {
                 "Open Android settings page", "Open a common Android system settings page, optionally scoped to YAuto when supported",
                 FeatureCategory.SYSTEM,
                 fields = listOf(FieldSchema.Choice("page", "Settings page", true, listOf(
-                    "general", "wifi", "bluetooth", "location", "nfc", "accessibility", "notification_listener",
-                    "battery_saver", "usage_access", "overlay", "write_settings", "dnd",
+                    "general", "wireless", "wifi", "bluetooth", "vpn", "data_roaming", "location", "nfc", "nfc_payment",
+                    "display", "sound", "storage", "security", "privacy", "developer", "date_time", "input_method",
+                    "accessibility", "captioning", "notification_listener", "notifications", "app_notification",
+                    "manage_apps", "default_apps", "battery_saver", "battery_optimization", "usage_access",
+                    "overlay", "write_settings", "unknown_sources", "all_files_access", "dnd", "print",
                 ))),
-                keywords = setOf("settings", "wifi settings", "accessibility", "overlay", "usage access", "dnd"), ownerPackId = id,
+                keywords = setOf("settings", "wifi settings", "accessibility", "overlay", "usage access", "dnd", "developer", "storage", "notifications"), ownerPackId = id,
             )
         ) { feature, _ ->
             val page = feature.config.string("page", "general")
@@ -171,17 +174,38 @@ internal fun settingsPageIntent(page: String, packageName: String): Intent? {
     val packageUri = Uri.parse("package:$packageName")
     return when (page) {
         "general" -> Intent(Settings.ACTION_SETTINGS)
+        "wireless" -> Intent("android.settings.WIRELESS_SETTINGS")
         "wifi" -> Intent(Settings.ACTION_WIFI_SETTINGS)
         "bluetooth" -> Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+        "vpn" -> Intent("android.settings.VPN_SETTINGS")
+        "data_roaming" -> Intent("android.settings.DATA_ROAMING_SETTINGS")
         "location" -> Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
         "nfc" -> Intent(Settings.ACTION_NFC_SETTINGS)
+        "nfc_payment" -> Intent("android.settings.NFC_PAYMENT_SETTINGS")
+        "display" -> Intent("android.settings.DISPLAY_SETTINGS")
+        "sound" -> Intent("android.settings.SOUND_SETTINGS")
+        "storage" -> Intent("android.settings.INTERNAL_STORAGE_SETTINGS")
+        "security" -> Intent("android.settings.SECURITY_SETTINGS")
+        "privacy" -> Intent("android.settings.PRIVACY_SETTINGS")
+        "developer" -> Intent("android.settings.APPLICATION_DEVELOPMENT_SETTINGS")
+        "date_time" -> Intent("android.settings.DATE_SETTINGS")
+        "input_method" -> Intent("android.settings.INPUT_METHOD_SETTINGS")
         "accessibility" -> Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+        "captioning" -> Intent("android.settings.CAPTIONING_SETTINGS")
         "notification_listener" -> Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        "notifications" -> Intent("android.settings.ALL_APPS_NOTIFICATION_SETTINGS")
+        "app_notification" -> Intent("android.settings.APP_NOTIFICATION_SETTINGS").putExtra("android.provider.extra.APP_PACKAGE", packageName)
+        "manage_apps" -> Intent("android.settings.MANAGE_APPLICATIONS_SETTINGS")
+        "default_apps" -> Intent("android.settings.MANAGE_DEFAULT_APPS_SETTINGS")
         "battery_saver" -> Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS)
+        "battery_optimization" -> Intent("android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS")
         "usage_access" -> Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS, packageUri)
         "overlay" -> Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri)
         "write_settings" -> Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, packageUri)
+        "unknown_sources" -> Intent("android.settings.MANAGE_UNKNOWN_APP_SOURCES", packageUri)
+        "all_files_access" -> Intent("android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION", packageUri)
         "dnd" -> Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+        "print" -> Intent("android.settings.ACTION_PRINT_SETTINGS")
         else -> null
     }
 }
