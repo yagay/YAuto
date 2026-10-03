@@ -400,11 +400,13 @@ internal fun statusBarCommand(mode: String): String? = when (mode) {
 
 internal fun normalizeConnectivityUrl(value: String): String? {
     val trimmed = value.trim()
-    if (trimmed.isEmpty()) return null
+    if (trimmed.isEmpty() || trimmed.any(Char::isWhitespace)) return null
     val candidate = if ("://" in trimmed) trimmed else "https://$trimmed"
     return runCatching {
         val url = URL(candidate)
-        if (url.protocol !in setOf("http", "https") || url.host.isBlank()) null else url.toString()
+        val host = url.host.trim()
+        if (url.protocol !in setOf("http", "https") || host.isBlank() || host.any(Char::isWhitespace)) null
+        else url.toString()
     }.getOrNull()
 }
 
