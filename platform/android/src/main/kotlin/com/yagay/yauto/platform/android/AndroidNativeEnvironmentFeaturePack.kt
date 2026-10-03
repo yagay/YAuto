@@ -3,140 +3,110 @@ package com.yagay.yauto.platform.android
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.res.Configuration
 import android.os.BatteryManager
-import android.provider.Settings
+import android.os.Build
 import android.text.format.DateFormat
+import android.view.View
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
-import com.yagay.yauto.core.registry.ActionExecutionResult
-import com.yagay.yauto.core.registry.ConditionEvaluator
-import com.yagay.yauto.core.registry.FeatureCategory
-import com.yagay.yauto.core.registry.FeatureDescriptor
-import com.yagay.yauto.core.registry.FeatureId
-import com.yagay.yauto.core.registry.FeatureKind
-import com.yagay.yauto.core.registry.FeaturePack
-import com.yagay.yauto.core.registry.FeatureRegistry
-import com.yagay.yauto.core.registry.FieldSchema
-import com.yagay.yauto.core.registry.resolveVariables
+import com.yagay.yauto.core.registry.*
 import java.util.TimeZone
 
-/** Native environment/data helpers that complement the existing device, state and resource packs. */
+/**
+ * Native Android environment features selected from gaps found while comparing
+ * MacroDroid, ShortX and Tasker with YAuto. Keep this pack limited to public
+ * Android APIs and read-only environment state so it stays portable.
+ *
+ * This pack intentionally contributes exactly 50 user-facing features:
+ * 2 actions + 24 state/condition pairs.
+ */
 class AndroidNativeEnvironmentFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.native_environment"
     private val context = context.applicationContext
     private val clipboard = this.context.getSystemService(ClipboardManager::class.java)
     private val battery = this.context.getSystemService(BatteryManager::class.java)
-    private val resolver = this.context.contentResolver
 
     override fun install(registry: FeatureRegistry) {
         registerClipboardRead(registry)
         registerClipboardWrite(registry)
 
-        numericPair(
-            registry,
-            key = "battery_current",
-            title = "Battery current",
-            description = "Match the instantaneous battery current reported by Android in microamps",
-            minAllowed = -20_000_000.0,
-            maxAllowed = 20_000_000.0,
-            keywords = setOf("battery", "current", "microamp", "charging"),
-        ) { batteryIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) }
-
-        numericPair(
-            registry,
-            key = "battery_charge_counter",
-            title = "Battery charge counter",
-            description = "Match the remaining battery charge counter reported by Android in microamp-hours",
-            minAllowed = 0.0,
-            maxAllowed = 100_000_000.0,
-            keywords = setOf("battery", "charge counter", "capacity", "uah"),
-        ) { batteryIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER) }
-
-        numericPair(
-            registry,
-            key = "battery_energy_counter",
-            title = "Battery energy counter",
-            description = "Match the remaining battery energy counter reported by Android in nanowatt-hours",
-            minAllowed = 0.0,
-            maxAllowed = 1_000_000_000_000.0,
-            keywords = setOf("battery", "energy counter", "nwh", "capacity"),
-        ) { batteryLongPropertyOrNull(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER) }
-
-        booleanPair(
-            registry,
-            key = "clock_24h",
-            title = "24-hour clock",
-            description = "Check whether Android is currently configured to use 24-hour time",
-            category = FeatureCategory.SYSTEM,
-            keywords = setOf("clock", "24 hour", "time format"),
-        ) { DateFormat.is24HourFormat(context) }
-
-        textContainsPair(
-            registry,
-            key = "timezone",
-            title = "Time zone",
-            description = "Match the current Android time-zone ID",
-            fieldKey = "zoneContains",
-            fieldLabel = "Time-zone ID contains",
-            keywords = setOf("timezone", "time zone", "region", "clock"),
-        ) { TimeZone.getDefault().id }
-
-        textContainsPair(
-            registry,
-            key = "locale",
-            title = "System locale",
-            description = "Match any configured Android locale language tag",
-            fieldKey = "languageTagContains",
-            fieldLabel = "Language tag contains",
-            keywords = setOf("locale", "language", "region", "language tag"),
-        ) {
-            val locales = context.resources.configuration.locales
-            (0 until locales.size()).joinToString(",") { locales[it].toLanguageTag() }
+        numberPair(registry, "battery_current", "Battery current", "Compare Android battery current-now in microamps", FeatureCategory.DEVICE, -20_000_000.0, 20_000_000.0) {
+            battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW).takeUnless { it == Int.MIN_VALUE }?.toDouble()
         }
-
-        booleanPair(
-            registry,
-            key = "developer_options",
-            title = "Developer options enabled",
-            description = "Check whether Android developer options are enabled",
-            category = FeatureCategory.SYSTEM,
-            keywords = setOf("developer options", "development settings", "debug"),
-        ) { Settings.Global.getInt(resolver, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1 }
-
-        booleanPair(
-            registry,
-            key = "adb_enabled",
-            title = "ADB enabled",
-            description = "Check whether Android Debug Bridge is enabled in system settings",
-            category = FeatureCategory.SYSTEM,
-            keywords = setOf("adb", "usb debugging", "wireless debugging", "developer"),
-        ) { Settings.Global.getInt(resolver, "adb_enabled", 0) == 1 }
+        numberPair(registry, "battery_charge_counter", "Battery charge counter", "Compare Android remaining battery charge in microamp-hours", FeatureCategory.DEVICE, 0.0, 100_000_000.0) {
+            battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER).takeUnless { it == Int.MIN_VALUE }?.toDouble()
+        }
+        numberPair(registry, "battery_energy_counter", "Battery energy counter", "Compare Android remaining battery energy in nanowatt-hours", FeatureCategory.DEVICE, 0.0, 1.0e12) {
+            battery.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER).takeUnless { it == Long.MIN_VALUE }?.toDouble()
+        }
+        booleanPair(registry, "clock_24h", "24-hour clock", "Check whether Android currently uses 24-hour time", FeatureCategory.SYSTEM) {
+            DateFormat.is24HourFormat(context)
+        }
+        textPair(registry, "timezone", "Time zone", "Match the current Android time-zone ID", FeatureCategory.SYSTEM, "zoneContains", "Time-zone ID contains") {
+            TimeZone.getDefault().id
+        }
+        textPair(registry, "locale", "System locale", "Match any configured Android language tag", FeatureCategory.SYSTEM, "languageTagContains", "Language tag contains") {
+            val locales = context.resources.configuration.locales
+            buildString {
+                for (index in 0 until locales.size()) {
+                    if (isNotEmpty()) append(',')
+                    append(locales[index].toLanguageTag())
+                }
+            }
+        }
+        textPair(registry, "battery_technology", "Battery technology", "Match the battery technology reported by Android", FeatureCategory.DEVICE, "technologyContains", "Technology contains") {
+            batteryIntent()?.getStringExtra(BatteryManager.EXTRA_TECHNOLOGY).orEmpty()
+        }
+        numberPair(registry, "build_sdk", "Android SDK level", "Compare the current Android SDK/API level", FeatureCategory.DEVICE, 1.0, 100.0) { Build.VERSION.SDK_INT.toDouble() }
+        textPair(registry, "build_release", "Android release", "Match the Android release version string", FeatureCategory.DEVICE, "valueContains", "Release contains") { Build.VERSION.RELEASE.orEmpty() }
+        textPair(registry, "build_security_patch", "Security patch level", "Match the Android security patch level", FeatureCategory.DEVICE, "valueContains", "Patch level contains") { Build.VERSION.SECURITY_PATCH.orEmpty() }
+        textPair(registry, "build_manufacturer", "Device manufacturer", "Match the device manufacturer", FeatureCategory.DEVICE, "valueContains", "Manufacturer contains") { Build.MANUFACTURER.orEmpty() }
+        textPair(registry, "build_brand", "Device brand", "Match the Android device brand", FeatureCategory.DEVICE, "valueContains", "Brand contains") { Build.BRAND.orEmpty() }
+        textPair(registry, "build_model", "Device model", "Match the Android device model", FeatureCategory.DEVICE, "valueContains", "Model contains") { Build.MODEL.orEmpty() }
+        textPair(registry, "build_device", "Build device", "Match the Android build device identifier", FeatureCategory.DEVICE, "valueContains", "Device ID contains") { Build.DEVICE.orEmpty() }
+        textPair(registry, "build_product", "Build product", "Match the Android build product identifier", FeatureCategory.DEVICE, "valueContains", "Product contains") { Build.PRODUCT.orEmpty() }
+        textPair(registry, "build_type", "Build type", "Match the Android build type such as user or userdebug", FeatureCategory.DEVICE, "valueContains", "Build type contains") { Build.TYPE.orEmpty() }
+        textPair(registry, "build_tags", "Build tags", "Match Android build tags", FeatureCategory.DEVICE, "valueContains", "Build tags contain") { Build.TAGS.orEmpty() }
+        textPair(registry, "primary_abi", "Primary ABI", "Match the primary supported CPU ABI", FeatureCategory.DEVICE, "valueContains", "ABI contains") { Build.SUPPORTED_ABIS.firstOrNull().orEmpty() }
+        numberPair(registry, "screen_density_dpi", "Screen density DPI", "Compare the current display density DPI", FeatureCategory.DISPLAY, 1.0, 4000.0) { context.resources.displayMetrics.densityDpi.toDouble() }
+        numberPair(registry, "screen_width_dp", "Screen width DP", "Compare the current configuration screen width in dp", FeatureCategory.DISPLAY, 0.0, 20_000.0) { context.resources.configuration.screenWidthDp.toDouble() }
+        numberPair(registry, "screen_height_dp", "Screen height DP", "Compare the current configuration screen height in dp", FeatureCategory.DISPLAY, 0.0, 20_000.0) { context.resources.configuration.screenHeightDp.toDouble() }
+        numberPair(registry, "smallest_width_dp", "Smallest screen width DP", "Compare Android smallestScreenWidthDp", FeatureCategory.DISPLAY, 0.0, 20_000.0) { context.resources.configuration.smallestScreenWidthDp.toDouble() }
+        choicePair(registry, "ui_night_mode", "Night mode configuration", "Match the current Android UI night-mode configuration", FeatureCategory.DISPLAY, "mode", "Night mode", listOf("yes", "no", "undefined")) {
+            when (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
+                Configuration.UI_MODE_NIGHT_YES -> "yes"
+                Configuration.UI_MODE_NIGHT_NO -> "no"
+                else -> "undefined"
+            }
+        }
+        booleanPair(registry, "layout_direction_rtl", "Right-to-left layout", "Check whether the current configuration uses RTL layout direction", FeatureCategory.DISPLAY) {
+            context.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        }
     }
 
     private fun registerClipboardRead(registry: FeatureRegistry) {
         registry.registerAction(
             FeatureDescriptor(
                 FeatureId("android.clipboard.read"), FeatureKind.ACTION,
-                "Read clipboard text", "Read Android's current primary clipboard text into a YAuto variable when platform privacy rules allow access",
-                FeatureCategory.DEVICE,
-                fields = listOf(FieldSchema.Variable("resultVariable", "Store clipboard text", true)),
-                keywords = setOf("clipboard", "paste", "read", "text"), ownerPackId = id,
+                "Read clipboard text", "Read current clipboard text into a YAuto variable when Android privacy rules allow it",
+                FeatureCategory.DATA,
+                fields = listOf(FieldSchema.Variable("resultVariable", "Store clipboard text in variable", true)),
+                keywords = setOf("clipboard", "copy", "paste", "text"), ownerPackId = id,
             )
         ) { feature, ctx ->
             runCatching {
                 val clip = clipboard.primaryClip
-                val text = if (clip != null && clip.itemCount > 0) {
-                    clip.getItemAt(0).coerceToText(context)?.toString().orEmpty()
-                } else ""
+                val text = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString().orEmpty()
                 val output = ConfigValue.StringValue(text)
                 ctx.variables.set(feature.config.string("resultVariable"), output)
                 ActionExecutionResult(true, output)
-            }.getOrElse {
-                ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName))
-            }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
@@ -144,133 +114,53 @@ class AndroidNativeEnvironmentFeaturePack(context: Context) : FeaturePack {
         registry.registerAction(
             FeatureDescriptor(
                 FeatureId("android.clipboard.write"), FeatureKind.ACTION,
-                "Write clipboard text", "Replace Android's primary clipboard with text after resolving YAuto variables",
-                FeatureCategory.DEVICE,
-                fields = listOf(
-                    FieldSchema.Text("text", "Clipboard text", true, multiline = true),
-                    FieldSchema.Text("label", "Clipboard label"),
-                ),
-                keywords = setOf("clipboard", "copy", "write", "text"), ownerPackId = id,
+                "Write clipboard text", "Replace the Android primary clipboard text after resolving YAuto variables",
+                FeatureCategory.DATA,
+                fields = listOf(FieldSchema.Text("text", "Clipboard text", true), FieldSchema.Text("label", "Clipboard label")),
+                keywords = setOf("clipboard", "copy", "paste", "text"), ownerPackId = id,
             )
         ) { feature, ctx ->
-            val text = feature.config.string("text").resolveVariables(ctx.variables)
-            val label = feature.config.string("label").resolveVariables(ctx.variables).ifBlank { "YAuto" }
             runCatching {
+                val text = feature.config.string("text").resolveVariables(ctx.variables)
+                val label = feature.config.string("label", "YAuto").resolveVariables(ctx.variables).ifBlank { "YAuto" }
                 clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
                 ActionExecutionResult(true, ConfigValue.StringValue(text))
-            }.getOrElse {
-                ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName))
-            }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
-    private fun numericPair(
-        registry: FeatureRegistry,
-        key: String,
-        title: String,
-        description: String,
-        minAllowed: Double,
-        maxAllowed: Double,
-        keywords: Set<String>,
-        query: () -> Double?,
-    ) {
-        pair(
-            registry = registry,
-            key = key,
-            title = title,
-            description = description,
-            category = FeatureCategory.DEVICE,
-            fields = listOf(
-                FieldSchema.Number("min", "Minimum value", min = minAllowed, max = maxAllowed),
-                FieldSchema.Number("max", "Maximum value", min = minAllowed, max = maxAllowed),
-            ),
-            keywords = keywords,
-        ) { feature ->
-            val actual = query() ?: return@pair false
-            val min = feature.config["min"].numberOrNull()
-            val max = feature.config["max"].numberOrNull()
-            matchesBoundedNumber(actual, min, max, minAllowed, maxAllowed)
-        }
-    }
+    private fun batteryIntent(): Intent? = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
 
-    private fun booleanPair(
-        registry: FeatureRegistry,
-        key: String,
-        title: String,
-        description: String,
-        category: FeatureCategory,
-        keywords: Set<String>,
-        query: () -> Boolean,
-    ) {
-        pair(
-            registry, key, title, description, category,
-            listOf(FieldSchema.Toggle("value", "Enabled / true")), keywords,
-        ) { feature -> query() == feature.config.boolean("value", true) }
-    }
+    private fun booleanPair(registry: FeatureRegistry, key: String, title: String, description: String, category: FeatureCategory, query: () -> Boolean) =
+        pair(registry, key, title, description, category, listOf(FieldSchema.Toggle("value", "Enabled / true"))) { feature, _ -> query() == feature.config.boolean("value", true) }
 
-    private fun textContainsPair(
-        registry: FeatureRegistry,
-        key: String,
-        title: String,
-        description: String,
-        fieldKey: String,
-        fieldLabel: String,
-        keywords: Set<String>,
-        query: () -> String,
-    ) {
-        pair(
-            registry, key, title, description, FeatureCategory.SYSTEM,
-            listOf(FieldSchema.Text(fieldKey, fieldLabel, true)), keywords,
-        ) { feature ->
-            val expected = feature.config.string(fieldKey).trim()
+    private fun textPair(registry: FeatureRegistry, key: String, title: String, description: String, category: FeatureCategory, fieldKey: String, fieldLabel: String, query: () -> String) =
+        pair(registry, key, title, description, category, listOf(FieldSchema.Text(fieldKey, fieldLabel, true))) { feature, ctx ->
+            val expected = feature.config.string(fieldKey).resolveVariables(ctx.variables).trim()
             expected.isNotEmpty() && query().contains(expected, ignoreCase = true)
         }
-    }
 
-    private fun pair(
-        registry: FeatureRegistry,
-        key: String,
-        title: String,
-        description: String,
-        category: FeatureCategory,
-        fields: List<FieldSchema>,
-        keywords: Set<String>,
-        evaluate: (com.yagay.yauto.core.model.FeatureRef) -> Boolean,
-    ) {
-        val evaluator = ConditionEvaluator { feature, _ -> runCatching { evaluate(feature) }.getOrDefault(false) }
-        val state = FeatureDescriptor(
-            FeatureId("android.state.$key"), FeatureKind.STATE,
-            title, description, category,
-            fields = fields, keywords = keywords, ownerPackId = id,
-        )
+    private fun choicePair(registry: FeatureRegistry, key: String, title: String, description: String, category: FeatureCategory, fieldKey: String, fieldLabel: String, options: List<String>, query: () -> String) =
+        pair(registry, key, title, description, category, listOf(FieldSchema.Choice(fieldKey, fieldLabel, true, options))) { feature, _ -> query() == feature.config.string(fieldKey, options.first()) }
+
+    private fun numberPair(registry: FeatureRegistry, key: String, title: String, description: String, category: FeatureCategory, allowedMin: Double, allowedMax: Double, query: () -> Double?) =
+        pair(registry, key, title, description, category, listOf(FieldSchema.Number("min", "Minimum", min = allowedMin, max = allowedMax), FieldSchema.Number("max", "Maximum", min = allowedMin, max = allowedMax))) { feature, _ ->
+            val value = query() ?: return@pair false
+            matchesBoundedNumber(value, feature.config["min"].numberOrNull(), feature.config["max"].numberOrNull(), allowedMin, allowedMax)
+        }
+
+    private fun pair(registry: FeatureRegistry, key: String, title: String, description: String, category: FeatureCategory, fields: List<FieldSchema>, evaluate: suspend (com.yagay.yauto.core.model.FeatureRef, FeatureExecutionContext) -> Boolean) {
+        val evaluator = ConditionEvaluator { feature, ctx -> runCatching { evaluate(feature, ctx) }.getOrDefault(false) }
+        val state = FeatureDescriptor(FeatureId("android.state.$key"), FeatureKind.STATE, title, description, category, fields = fields, ownerPackId = id)
         registry.registerState(state, evaluator)
-        registry.registerCondition(
-            state.copy(id = FeatureId("android.condition.$key"), kind = FeatureKind.CONDITION),
-            evaluator,
-        )
-    }
-
-    private fun batteryIntProperty(propertyId: Int): Double? {
-        val value = battery.getIntProperty(propertyId)
-        return value.takeUnless { it == Int.MIN_VALUE }?.toDouble()
-    }
-
-    private fun batteryLongPropertyOrNull(propertyId: Int): Double? {
-        val value = battery.getLongProperty(propertyId)
-        return value.takeUnless { it == Long.MIN_VALUE }?.toDouble()
+        registry.registerCondition(state.copy(id = FeatureId("android.condition.$key"), kind = FeatureKind.CONDITION), evaluator)
     }
 }
 
-internal fun matchesBoundedNumber(
-    actual: Double,
-    min: Double?,
-    max: Double?,
-    allowedMin: Double,
-    allowedMax: Double,
-): Boolean {
-    if (!actual.isFinite() || actual !in allowedMin..allowedMax) return false
-    val safeMin = min?.takeIf { it.isFinite() } ?: allowedMin
-    val safeMax = max?.takeIf { it.isFinite() } ?: allowedMax
-    if (safeMin !in allowedMin..allowedMax || safeMax !in safeMin..allowedMax) return false
-    return actual in safeMin..safeMax
+internal fun matchesBoundedNumber(value: Double, min: Double?, max: Double?, allowedMin: Double, allowedMax: Double): Boolean {
+    if (!value.isFinite() || value !in allowedMin..allowedMax) return false
+    val safeMin = min ?: allowedMin
+    val safeMax = max ?: allowedMax
+    if (!safeMin.isFinite() || !safeMax.isFinite() || safeMin !in allowedMin..allowedMax || safeMax !in allowedMin..allowedMax || safeMax < safeMin) return false
+    return value in safeMin..safeMax
 }
