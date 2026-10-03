@@ -69,6 +69,8 @@ data class FeatureDescriptor(
     val minSdk: Int = 31,
     val capabilities: Set<CapabilityId> = emptySet(),
     val fields: List<FieldSchema> = emptyList(),
+    /** Presentation and default-value metadata keyed by [FieldSchema.key]. */
+    val fieldBehaviors: Map<String, FieldBehavior> = emptyMap(),
     val stability: Stability = Stability.STABLE,
     val keywords: Set<String> = emptySet(),
     val ownerPackId: String = "core",
