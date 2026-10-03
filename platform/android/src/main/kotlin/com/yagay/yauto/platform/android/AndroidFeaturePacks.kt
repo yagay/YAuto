@@ -24,6 +24,8 @@ object AndroidFeaturePacks {
         AndroidPowerUserFeaturePack(context),
         AndroidNativeEnvironmentFeaturePack(context),
         AndroidReferenceGapFeaturePack(context),
+        AndroidReferenceCompletionFeaturePack(context),
+        AndroidReferenceCompletionEventFeaturePack(),
         AndroidUsbFeaturePack(context),
         AndroidMediaDeviceFeaturePack(context),
         AndroidAudioFeaturePack(context),

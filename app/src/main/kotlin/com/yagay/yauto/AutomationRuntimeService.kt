@@ -42,6 +42,7 @@ class AutomationRuntimeService : Service() {
         graph = appGraph
         val dispatcher = RuntimeEventDispatcher(appGraph, scope)
         registerSource("system-broadcast") { SystemBroadcastEventSource(this) }
+        registerSource("reference-completion-broadcast") { ReferenceCompletionBroadcastEventSource(this) }
         registerSource("network") { NetworkEventSource(this) }
         registerSource("network-profile") { NetworkProfileEventSource(this) }
         registerSource("wifi-scan") { WifiScanEventSource(this) }
