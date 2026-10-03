@@ -93,7 +93,11 @@ internal fun GenericFeatureConfigEditor(
         if (descriptor.fields.any { descriptor.fieldBehavior(it.key).advanced }) {
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(TextR.string.category_advanced), Modifier.weight(1f), fontWeight = FontWeight.Medium)
+                    Text(
+                        stringResource(TextR.string.category_advanced),
+                        Modifier.weight(1f),
+                        fontWeight = FontWeight.Medium,
+                    )
                     Switch(checked = showAdvanced, onCheckedChange = { showAdvanced = it })
                 }
             }
@@ -299,7 +303,7 @@ private fun FieldEditor(
             }
             Switch(
                 checked = value.toBooleanStrictOrNull() ?: false,
-                onCheckedChange = onValue,
+                onCheckedChange = { onValue(it.toString()) },
                 enabled = enabled,
             )
         }
@@ -416,7 +420,7 @@ private fun InstalledAppDialog(
                         TextButton(onClick = onDismiss) { Text(stringResource(TextR.string.common_close)) }
                     },
                 )
-            }
+            },
         ) { padding ->
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
@@ -449,7 +453,10 @@ private fun InstalledAppDialog(
                         supportingContent = { Text(app.packageName) },
                         trailingContent = {
                             if (app.system) {
-                                Text(stringResource(TextR.string.editor_system_app), style = MaterialTheme.typography.labelSmall)
+                                Text(
+                                    stringResource(TextR.string.editor_system_app),
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
                             }
                         },
                         modifier = Modifier.clickable { onPick(app.packageName) },
@@ -522,7 +529,8 @@ private fun capabilityLabel(capabilityId: String): String = stringResource(
 )
 
 @Composable
-private fun accessRequirementLabel(requirement: AccessRequirement): String = stringResource(accessRequirementResource(requirement))
+private fun accessRequirementLabel(requirement: AccessRequirement): String =
+    stringResource(accessRequirementResource(requirement))
 
 @Composable
 private fun accessRequirementLabelNonComposable(requirement: AccessRequirement): String =
