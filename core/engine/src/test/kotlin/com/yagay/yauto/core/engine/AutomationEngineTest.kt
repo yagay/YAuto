@@ -71,4 +71,127 @@ class AutomationEngineTest {
         assertFalse(result.success)
         assertNotNull(result.error)
     }
+
+    @Test fun defaultActionFailureStillStopsFollowingActions() = runBlocking {
+        val registry = FeatureRegistry()
+        registry.registerAction(actionDescriptor("test.fail")) { _, _ ->
+            ActionExecutionResult(false, message = "expected failure")
+        }
+        registry.registerAction(actionDescriptor("test.after")) { _, ctx ->
+            ctx.variables.set("after", ConfigValue.BooleanValue(true))
+            ActionExecutionResult(true)
+        }
+        val engine = testEngine(registry)
+        val automation = Automation(
+            AutomationId("default-stop"),
+            "default stop",
+            onEvent = listOf(
+                ActionNode.Action(NodeId("fail"), FeatureRef("test.fail")),
+                ActionNode.Action(NodeId("after"), FeatureRef("test.after")),
+            ),
+        )
+
+        val result = engine.execute(automation, AutomationPhase.EVENT)
+
+        assertFalse(result.success)
+        assertNull(result.variables["after"])
+    }
+
+    @Test fun continuePolicyRunsFollowingActionAfterFailure() = runBlocking {
+        val registry = FeatureRegistry()
+        registry.registerAction(actionDescriptor("test.fail")) { _, _ ->
+            ActionExecutionResult(false, message = "expected failure")
+        }
+        registry.registerAction(actionDescriptor("test.after")) { _, ctx ->
+            ctx.variables.set("after", ConfigValue.BooleanValue(true))
+            ActionExecutionResult(true)
+        }
+        val engine = testEngine(registry)
+        val automation = Automation(
+            AutomationId("continue"),
+            "continue",
+            onEvent = listOf(
+                ActionNode.Action(
+                    NodeId("fail"),
+                    FeatureRef("test.fail"),
+                    failurePolicy = ActionFailurePolicy.CONTINUE,
+                ),
+                ActionNode.Action(NodeId("after"), FeatureRef("test.after")),
+            ),
+        )
+
+        val result = engine.execute(automation, AutomationPhase.EVENT)
+
+        assertTrue(result.success)
+        assertEquals(ConfigValue.BooleanValue(true), result.variables["after"])
+    }
+
+    @Test fun retryPolicySucceedsWithinConfiguredAttemptLimit() = runBlocking {
+        val attempts = AtomicInteger(0)
+        val registry = FeatureRegistry()
+        registry.registerAction(actionDescriptor("test.flaky")) { _, _ ->
+            val current = attempts.incrementAndGet()
+            ActionExecutionResult(current >= 3, message = "attempt $current")
+        }
+        val engine = testEngine(registry)
+        val automation = Automation(
+            AutomationId("retry-success"),
+            "retry success",
+            onEvent = listOf(
+                ActionNode.Action(
+                    NodeId("flaky"),
+                    FeatureRef("test.flaky"),
+                    failurePolicy = ActionFailurePolicy.RETRY,
+                    retryPolicy = ActionRetryPolicy(maxAttempts = 3, delayMs = 0L),
+                )
+            ),
+        )
+
+        val result = engine.execute(automation, AutomationPhase.EVENT)
+
+        assertTrue(result.success)
+        assertEquals(3, attempts.get())
+    }
+
+    @Test fun retryPolicyStopsAfterConfiguredAttemptsAreExhausted() = runBlocking {
+        val attempts = AtomicInteger(0)
+        val registry = FeatureRegistry()
+        registry.registerAction(actionDescriptor("test.always.fail")) { _, _ ->
+            attempts.incrementAndGet()
+            ActionExecutionResult(false, message = "still failing")
+        }
+        val engine = testEngine(registry)
+        val automation = Automation(
+            AutomationId("retry-failure"),
+            "retry failure",
+            onEvent = listOf(
+                ActionNode.Action(
+                    NodeId("always-fail"),
+                    FeatureRef("test.always.fail"),
+                    failurePolicy = ActionFailurePolicy.RETRY,
+                    retryPolicy = ActionRetryPolicy(maxAttempts = 3, delayMs = 0L),
+                )
+            ),
+        )
+
+        val result = engine.execute(automation, AutomationPhase.EVENT)
+
+        assertFalse(result.success)
+        assertEquals(3, attempts.get())
+        assertNotNull(result.error)
+    }
+
+    private fun actionDescriptor(id: String) = FeatureDescriptor(
+        FeatureId(id),
+        FeatureKind.ACTION,
+        id,
+        "test action",
+        FeatureCategory.CORE,
+    )
+
+    private fun testEngine(registry: FeatureRegistry) = AutomationEngine(
+        registry,
+        CapabilityClient { CapabilityResult(false) },
+        InMemoryExecutionTracer(),
+    )
 }

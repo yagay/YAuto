@@ -115,16 +115,7 @@ class AutomationEngine(
         maxLoopIterations: Int,
     ): Signal {
         return when (node) {
-            is ActionNode.Action -> {
-                if (!node.enabled) Signal.Next else {
-                    val executor = registry.actionExecutor(node.feature.typeId)
-                        ?: return Signal.Failure(userText("engine.unknown_action", node.feature.typeId))
-                    trace(executionId, TraceKind.ACTION, userText("engine.action_start", node.feature.typeId), automation, flow, node.id, node.feature.typeId)
-                    val result = executor.execute(node.feature, FeatureExecutionContext(executionId, node.id, variables, capabilities, tracer))
-                    trace(executionId, TraceKind.ACTION, result.message ?: node.feature.typeId, automation, flow, node.id, node.feature.typeId, result.success)
-                    if (result.success) Signal.Next else Signal.Failure(result.message ?: userText("engine.action_failed", node.feature.typeId))
-                }
-            }
+            is ActionNode.Action -> executeActionNode(node, executionId, variables, automation, flow)
             is ActionNode.If -> executeNodes(if (evaluatePredicate(node.condition, executionId, node.id, variables)) node.thenActions else node.elseActions, executionId, variables, automation, flow, maxLoopIterations)
             is ActionNode.Switch -> {
                 val actual = expressions.evaluateText(node.expression, variables)
@@ -241,6 +232,115 @@ class AutomationEngine(
         }
     }
 
+    /**
+     * Executes one leaf action with node-local failure semantics. Keeping this policy here instead
+     * of inside individual feature executors makes every current and future Action automatically
+     * support the same stop/continue/retry behavior without duplicating implementation code.
+     */
+    private suspend fun executeActionNode(
+        node: ActionNode.Action,
+        executionId: ExecutionId,
+        variables: RuntimeVariables,
+        automation: Automation?,
+        flow: Flow?,
+    ): Signal {
+        if (!node.enabled) return Signal.Next
+
+        val executor = registry.actionExecutor(node.feature.typeId)
+        if (executor == null) {
+            val message = userText("engine.unknown_action", node.feature.typeId)
+            trace(
+                executionId,
+                TraceKind.ACTION,
+                message,
+                automation,
+                flow,
+                node.id,
+                node.feature.typeId,
+                success = false,
+                level = TraceLevel.WARN,
+            )
+            return terminalActionFailure(node, message)
+        }
+
+        val maxAttempts = if (node.failurePolicy == ActionFailurePolicy.RETRY) {
+            node.retryPolicy.maxAttempts.coerceIn(1, MAX_ACTION_RETRY_ATTEMPTS)
+        } else {
+            1
+        }
+        val retryDelayMs = node.retryPolicy.delayMs.coerceIn(0L, MAX_ACTION_RETRY_DELAY_MS)
+        var lastFailure = userText("engine.action_failed", node.feature.typeId)
+
+        for (attempt in 1..maxAttempts) {
+            currentCoroutineContext().ensureActive()
+            trace(executionId, TraceKind.ACTION, userText("engine.action_start", node.feature.typeId), automation, flow, node.id, node.feature.typeId)
+
+            val failure = try {
+                val result = executor.execute(
+                    node.feature,
+                    FeatureExecutionContext(executionId, node.id, variables, capabilities, tracer),
+                )
+                trace(
+                    executionId,
+                    TraceKind.ACTION,
+                    result.message ?: node.feature.typeId,
+                    automation,
+                    flow,
+                    node.id,
+                    node.feature.typeId,
+                    result.success,
+                )
+                if (result.success) return Signal.Next
+                result.message ?: userText("engine.action_failed", node.feature.typeId)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                trace(
+                    executionId,
+                    TraceKind.ERROR,
+                    error.stackTraceToString().take(16_000),
+                    automation,
+                    flow,
+                    node.id,
+                    node.feature.typeId,
+                    success = false,
+                    level = TraceLevel.ERROR,
+                )
+                val message = userText(
+                    "feature.operation_failed",
+                    error.message ?: error.javaClass.simpleName,
+                )
+                trace(
+                    executionId,
+                    TraceKind.ACTION,
+                    message,
+                    automation,
+                    flow,
+                    node.id,
+                    node.feature.typeId,
+                    success = false,
+                )
+                message
+            }
+
+            lastFailure = failure
+            if (node.failurePolicy == ActionFailurePolicy.RETRY && attempt < maxAttempts) {
+                if (retryDelayMs > 0L) delay(retryDelayMs)
+            } else {
+                break
+            }
+        }
+
+        return terminalActionFailure(node, lastFailure)
+    }
+
+    private fun terminalActionFailure(node: ActionNode.Action, message: String): Signal =
+        when (node.failurePolicy) {
+            ActionFailurePolicy.CONTINUE -> Signal.Next
+            ActionFailurePolicy.STOP,
+            ActionFailurePolicy.RETRY -> Signal.Failure(message)
+        }
+
     private suspend fun evaluatePredicate(predicate: PredicateNode, executionId: ExecutionId, nodeId: NodeId, variables: RuntimeVariables): Boolean = when (predicate) {
         is PredicateNode.All -> predicate.children.all { evaluatePredicate(it, executionId, nodeId, variables) }
         is PredicateNode.Any -> predicate.children.any { evaluatePredicate(it, executionId, nodeId, variables) }
@@ -285,5 +385,10 @@ class AutomationEngine(
 
     private class FlowDepth(val value: Int) : AbstractCoroutineContextElement(Key) {
         companion object Key : CoroutineContext.Key<FlowDepth>
+    }
+
+    private companion object {
+        const val MAX_ACTION_RETRY_ATTEMPTS = 100
+        const val MAX_ACTION_RETRY_DELAY_MS = 60_000L
     }
 }
