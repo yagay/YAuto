@@ -27,6 +27,7 @@ object AndroidFeaturePacks {
         AndroidReferenceSystemExpansionFeaturePack(context),
         AndroidReferenceUtilityExpansionFeaturePack(context),
         AndroidTelephonyStateExpansionFeaturePack(context),
+        AndroidAccessStateFeaturePack(context),
         AndroidReferenceCompletionFeaturePack(context),
         AndroidReferenceCompletionEventFeaturePack(),
         AndroidUsbFeaturePack(context),
