@@ -20,7 +20,6 @@ import com.yagay.yauto.core.registry.FieldSchema
 import com.yagay.yauto.core.registry.actionFeature
 import com.yagay.yauto.core.registry.resolveVariables
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.random.Random
 
 /**
@@ -73,7 +72,8 @@ private object ListExpansionFeatures {
                 values.filterNot { it == target }
             } else {
                 val mutable = values.toMutableList()
-                mutable.indexOf(target).takeIf { it >= 0 }?.let(mutable::removeAt)
+                val index = mutable.indexOf(target)
+                if (index >= 0) mutable.removeAt(index)
                 mutable
             }
             context.store(feature.destination(), ConfigValue.ListValue(output))
@@ -304,7 +304,7 @@ private object ListExpansionFeatures {
         fields = listOf(listVariable(), resultVariable()),
     ) { feature, context ->
         val values = context.list(feature.name()) ?: return@action notList()
-        val numbers = values.mapNotNull(ConfigValue::numberValueOrNull)
+        val numbers = values.mapNotNull { it.numberValueOrNull() }
         if (numbers.size != values.size) return@action ActionExecutionResult(false, message = "List contains non-numeric values")
         context.store(feature.destination(), ConfigValue.NumberValue(operation(numbers)))
     }
@@ -453,9 +453,8 @@ private fun action(
         fields = fields,
         fieldBehaviors = behaviors,
         keywords = setOf("collection", "list", "object", "array", "map", "data"),
-    ),
-    block,
-)
+    )
+) { feature, context -> block(feature, context) }
 
 private fun listVariable() = FieldSchema.Variable("name", "List variable", true)
 private fun objectVariable() = FieldSchema.Variable("name", "Object variable", true)
