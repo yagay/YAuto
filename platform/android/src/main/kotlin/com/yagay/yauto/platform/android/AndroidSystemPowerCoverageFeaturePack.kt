@@ -2,13 +2,10 @@ package com.yagay.yauto.platform.android
 
 import android.app.ActivityManager
 import android.app.KeyguardManager
-import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.BatteryManager
@@ -21,7 +18,6 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
-import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 
 /** Native power/device capabilities that were missing from the existing YAuto Android catalog. */
@@ -32,8 +28,6 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
 
     override fun install(registry: FeatureRegistry) {
         registerAirplaneModeAction(registry)
-        registerTorchAction(registry)
-        registerDndAction(registry)
 
         booleanPair(registry, "airplane_mode", "Airplane mode", "Check whether airplane mode is enabled", FeatureCategory.NETWORK) {
             Settings.Global.getInt(resolver, Settings.Global.AIRPLANE_MODE_ON, 0) == 1
@@ -114,56 +108,6 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
                 "settings put global airplane_mode_on $value; am broadcast -a android.intent.action.AIRPLANE_MODE --ez state $enabled",
                 ctx,
             )
-        }
-    }
-
-    private fun registerTorchAction(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.flashlight.set"), FeatureKind.ACTION,
-                "Set flashlight", "Turn the first available camera flash unit on or off",
-                FeatureCategory.DEVICE,
-                fields = listOf(FieldSchema.Toggle("enabled", "Enabled")),
-                accessRequirements = setOf(AccessRequirement.CAMERA),
-                keywords = setOf("flashlight", "torch", "camera flash"), ownerPackId = id,
-            )
-        ) { feature, _ ->
-            runCatching {
-                val manager = context.getSystemService(CameraManager::class.java)
-                val cameraId = manager.cameraIdList.firstOrNull { cameraId ->
-                    manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
-                } ?: error("No flashlight is available")
-                manager.setTorchMode(cameraId, feature.config.boolean("enabled", true))
-                ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
-        }
-    }
-
-    private fun registerDndAction(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.dnd.set"), FeatureKind.ACTION,
-                "Set Do Not Disturb", "Request an Android Do Not Disturb interruption filter",
-                FeatureCategory.NOTIFICATION,
-                fields = listOf(FieldSchema.Choice("filter", "Interruption filter", true, listOf("all", "priority", "alarms", "none"))),
-                accessRequirements = setOf(AccessRequirement.DND_POLICY),
-                keywords = setOf("dnd", "do not disturb", "zen", "interruption"), ownerPackId = id,
-            )
-        ) { feature, _ ->
-            val manager = context.getSystemService(NotificationManager::class.java)
-            if (!manager.isNotificationPolicyAccessGranted) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Do Not Disturb access is not granted"))
-            }
-            val filter = when (feature.config.string("filter", "all")) {
-                "priority" -> NotificationManager.INTERRUPTION_FILTER_PRIORITY
-                "alarms" -> NotificationManager.INTERRUPTION_FILTER_ALARMS
-                "none" -> NotificationManager.INTERRUPTION_FILTER_NONE
-                else -> NotificationManager.INTERRUPTION_FILTER_ALL
-            }
-            runCatching {
-                manager.setInterruptionFilter(filter)
-                ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
     }
 

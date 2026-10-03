@@ -3,16 +3,6 @@
     <string name="feature_android_airplane_mode_set_title">Set airplane mode</string>
     <string name="feature_android_airplane_mode_set_description">Enable or disable airplane mode through an authorized privileged shell backend</string>
     <string name="feature_android_airplane_mode_set_field_enabled">Enabled</string>
-    <string name="feature_android_flashlight_set_title">Set flashlight</string>
-    <string name="feature_android_flashlight_set_description">Turn the first available camera flash unit on or off</string>
-    <string name="feature_android_flashlight_set_field_enabled">Enabled</string>
-    <string name="feature_android_dnd_set_title">Set Do Not Disturb</string>
-    <string name="feature_android_dnd_set_description">Request an Android Do Not Disturb interruption filter</string>
-    <string name="feature_android_dnd_set_field_filter">Interruption filter</string>
-    <string name="feature_android_dnd_set_field_filter_option_all">all</string>
-    <string name="feature_android_dnd_set_field_filter_option_priority">priority</string>
-    <string name="feature_android_dnd_set_field_filter_option_alarms">alarms</string>
-    <string name="feature_android_dnd_set_field_filter_option_none">none</string>
 
     <string name="feature_android_state_airplane_mode_title">Airplane mode</string>
     <string name="feature_android_state_airplane_mode_description">Check whether airplane mode is enabled</string>

@@ -3,16 +3,6 @@
     <string name="feature_android_airplane_mode_set_title">设置飞行模式</string>
     <string name="feature_android_airplane_mode_set_description">通过已授权的特权 Shell 后端开启或关闭飞行模式</string>
     <string name="feature_android_airplane_mode_set_field_enabled">启用</string>
-    <string name="feature_android_flashlight_set_title">设置手电筒</string>
-    <string name="feature_android_flashlight_set_description">开启或关闭第一个可用的相机闪光灯</string>
-    <string name="feature_android_flashlight_set_field_enabled">启用</string>
-    <string name="feature_android_dnd_set_title">设置勿扰模式</string>
-    <string name="feature_android_dnd_set_description">请求 Android 勿扰模式中断过滤级别</string>
-    <string name="feature_android_dnd_set_field_filter">中断过滤</string>
-    <string name="feature_android_dnd_set_field_filter_option_all">全部</string>
-    <string name="feature_android_dnd_set_field_filter_option_priority">仅优先通知</string>
-    <string name="feature_android_dnd_set_field_filter_option_alarms">仅闹钟</string>
-    <string name="feature_android_dnd_set_field_filter_option_none">无</string>
 
     <string name="feature_android_state_airplane_mode_title">飞行模式</string>
     <string name="feature_android_state_airplane_mode_description">检查飞行模式是否已开启</string>
