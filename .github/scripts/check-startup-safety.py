@@ -95,6 +95,13 @@ def main() -> int:
         source = app_graph.read_text(encoding='utf-8')
         if 'private fun installPack(' not in source or 'features.uninstallPack' not in source:
             failures.append(f'{app_graph}: FeaturePack installation must be isolated and rolled back on failure')
+        for match in re.finditer(r'importers\.register\s*\(', source):
+            failures.append(
+                f'{app_graph}:{line_number(source, match.start())}: '
+                'Compatibility importers must use registerLazy() and stay off the cold-start path'
+            )
+        if 'importers.registerLazy(' not in source:
+            failures.append(f'{app_graph}: compatibility importers must be registered lazily')
 
     if failures:
         print('Startup safety guard failed:\n' + '\n'.join(failures))
@@ -102,7 +109,7 @@ def main() -> int:
 
     print(
         f'Startup safety guard passed: {descriptor_count} literal FeatureDescriptor IDs are unique; '
-        'FeaturePack and EventSource startup isolation is present.'
+        'FeaturePack/EventSource isolation and lazy compatibility importers are enforced.'
     )
     return 0
 
