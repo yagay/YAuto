@@ -58,6 +58,25 @@ class UsageStatsForegroundReaderTest {
     }
 
     @Test
+    fun cachedForegroundSurvivesAnEmptyIncrementalQuery() {
+        val seed = snapshot("a.app", "A", 100)
+        val result = resolveForegroundApp(emptyList(), seed)
+
+        assertEquals(seed, result)
+    }
+
+    @Test
+    fun laterPauseClearsCachedForeground() {
+        val seed = snapshot("a.app", "A", 100)
+        val result = resolveForegroundApp(
+            listOf(record("a.app", "A", 200, UsageActivityTransition.PAUSED)),
+            seed,
+        )
+
+        assertNull(result)
+    }
+
+    @Test
     fun transitionTrackerSeedsWithoutTriggeringAndOnlyEmitsPackageChanges() {
         val tracker = ForegroundAppTransitionTracker()
         val first = snapshot("a.app", "A", 100)
