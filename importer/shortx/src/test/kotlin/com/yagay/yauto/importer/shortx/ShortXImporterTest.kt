@@ -124,6 +124,44 @@ class ShortXImporterTest {
         assertTrue(text.issues.any { it.suggestedFeatureId == "accessibility.click_text" })
     }
 
+    @Test fun `maps verified ShortX status bar audio focus and ringtone actions`() {
+        val expand = ShortXImporter().import(
+            ImportInput("expand.rule", null, rule("expand", "Expand", any("ExpandNotification", message())))
+        )
+        assertEquals("android.status_bar.control", actionFeature(expand).typeId)
+        assertEquals(ConfigValue.StringValue("notifications"), actionFeature(expand).config["mode"])
+
+        val requestFocus = ShortXImporter().import(
+            ImportInput("focus.rule", null, rule("focus", "Focus", any("RequestAudioFocus", message(varintField(1, 1)))))
+        )
+        assertEquals("android.audio.focus.request", actionFeature(requestFocus).typeId)
+        assertEquals(ConfigValue.StringValue("gain"), actionFeature(requestFocus).config["gain"])
+
+        val abandonFocus = ShortXImporter().import(
+            ImportInput("focus-off.rule", null, rule("focus-off", "Focus off", any("RequestAudioFocus", message(varintField(1, 0)))))
+        )
+        assertEquals("android.audio.focus.abandon", actionFeature(abandonFocus).typeId)
+
+        val ringtonePayload = message(
+            field(
+                1,
+                message(
+                    field(1, "Default ringtone"),
+                    field(2, "content://media/internal/audio/media/1"),
+                    varintField(3, 1),
+                ),
+            )
+        )
+        val ringtone = ShortXImporter().import(
+            ImportInput("ringtone.rule", null, rule("ringtone", "Ringtone", any("PlayRingtone", ringtonePayload)))
+        )
+        assertEquals("android.audio.play", actionFeature(ringtone).typeId)
+        assertEquals(
+            ConfigValue.StringValue("content://media/internal/audio/media/1"),
+            actionFeature(ringtone).config["source"],
+        )
+    }
+
     @Test fun `preserves variable gesture expressions instead of guessing`() {
         val tap = ShortXImporter().import(ImportInput("tap-var.rule", null,
             rule("tap-var", "Tap var", any("InputTap", message(field(3, "${'$'}x"), field(4, "100"))))))
