@@ -168,9 +168,7 @@ class AndroidExtendedStateFeaturePack(private val reader: AndroidExtendedStateRe
     override val id: String = "android.state.extended"
 
     override fun install(registry: FeatureRegistry) {
-        booleanPair(registry, "device_idle", "Device idle / Doze", FeatureCategory.DEVICE, reader::deviceIdle)
         booleanPair(registry, "keyguard_locked", "Keyguard locked", FeatureCategory.DEVICE, reader::keyguardLocked)
-        booleanPair(registry, "device_secure", "Secure lock configured", FeatureCategory.DEVICE, reader::deviceSecure)
         booleanPair(registry, "music_active", "Music playback active", FeatureCategory.AUDIO, reader::musicActive)
         booleanPair(registry, "microphone_muted", "Microphone muted", FeatureCategory.AUDIO, reader::microphoneMuted)
         booleanPair(registry, "speakerphone_on", "Speakerphone enabled", FeatureCategory.AUDIO, reader::speakerphoneOn)
@@ -178,18 +176,9 @@ class AndroidExtendedStateFeaturePack(private val reader: AndroidExtendedStateRe
         booleanPair(registry, "next_alarm_set", "Next alarm is set", FeatureCategory.SYSTEM, reader::nextAlarmSet)
         booleanPair(registry, "network_validated", "Network validated", FeatureCategory.NETWORK, reader::networkValidated)
         booleanPair(registry, "network_metered", "Metered network", FeatureCategory.NETWORK, reader::networkMetered)
-        booleanPair(registry, "network_roaming", "Roaming network", FeatureCategory.NETWORK, reader::networkRoaming)
         booleanPair(registry, "network_internet", "Network has internet capability", FeatureCategory.NETWORK, reader::networkInternet)
         booleanPair(registry, "network_restricted", "Restricted network", FeatureCategory.NETWORK, reader::networkRestricted)
         booleanPair(registry, "network_suspended", "Suspended network", FeatureCategory.NETWORK, reader::networkSuspended)
-        choicePair(
-            registry,
-            "orientation",
-            "Device orientation",
-            FeatureCategory.DISPLAY,
-            listOf("portrait", "landscape", "undefined"),
-            reader::orientation,
-        )
         choicePair(
             registry,
             "ringer_mode",
@@ -209,29 +198,11 @@ class AndroidExtendedStateFeaturePack(private val reader: AndroidExtendedStateRe
         )
         choicePair(
             registry,
-            "battery_status",
-            "Battery charging status",
-            FeatureCategory.DEVICE,
-            listOf("charging", "discharging", "full", "not_charging", "unknown"),
-            reader::batteryStatus,
-        )
-        choicePair(
-            registry,
             "battery_health",
             "Battery health status",
             FeatureCategory.DEVICE,
             listOf("good", "overheat", "dead", "over_voltage", "failure", "cold", "unknown"),
             reader::batteryHealth,
-        )
-        numericPair(
-            registry,
-            "battery_voltage",
-            "Battery voltage",
-            FeatureCategory.DEVICE,
-            "Millivolts",
-            0.0,
-            20_000.0,
-            reader::batteryVoltageMv,
         )
     }
 
