@@ -9,6 +9,7 @@ import com.yagay.yauto.core.logging.*
 import com.yagay.yauto.core.registry.FeaturePack
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.runtime.AutomationRuntime
+import com.yagay.yauto.core.runtime.ReconcilingWorkspaceRepository
 import com.yagay.yauto.feature.standard.StandardFeaturePacks
 import com.yagay.yauto.importer.macrodroid.MacroDroidFeatureSuggestions
 import com.yagay.yauto.importer.macrodroid.MacroDroidImporter
@@ -38,7 +39,8 @@ class AppGraph(context: Context) {
     val shizuku by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { ShizukuBackend(appContext) }
     val xposed by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { XposedBackend(appContext) }
     val accessibility by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AccessibilityBackend() }
-    val workspace = JsonWorkspaceRepository(appContext)
+    private val workspaceStorage = JsonWorkspaceRepository(appContext)
+    val workspace = ReconcilingWorkspaceRepository(workspaceStorage, features)
     val importReports = JsonImportReportStore(appContext)
     val quickSettingsTiles by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { QuickSettingsTileController(appContext) }
     val overlaySurfaces by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { OverlaySurfaceController(appContext) }
