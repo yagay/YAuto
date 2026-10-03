@@ -23,9 +23,6 @@
     <string name="feature_android_ime_settings_open_title">Open input-method settings</string>
     <string name="feature_android_ime_settings_open_description">Open Android's keyboard and input-method settings page</string>
 
-    <string name="feature_android_device_reboot_title">Reboot device</string>
-    <string name="feature_android_device_reboot_description">Request a normal Android reboot through the power service</string>
-
     <string name="feature_android_screen_screenshot_title">Capture screenshot</string>
     <string name="feature_android_screen_screenshot_description">Capture the current display to a PNG file through an authorized privileged shell backend</string>
     <string name="feature_android_screen_screenshot_field_path">Output PNG path</string>

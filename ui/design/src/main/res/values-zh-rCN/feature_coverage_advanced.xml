@@ -23,9 +23,6 @@
     <string name="feature_android_ime_settings_open_title">打开输入法设置</string>
     <string name="feature_android_ime_settings_open_description">打开 Android 键盘和输入法设置页面</string>
 
-    <string name="feature_android_device_reboot_title">重启设备</string>
-    <string name="feature_android_device_reboot_description">通过电源服务请求正常重启 Android</string>
-
     <string name="feature_android_screen_screenshot_title">截取屏幕</string>
     <string name="feature_android_screen_screenshot_description">通过已授权的特权 Shell 后端将当前屏幕保存为 PNG 文件</string>
     <string name="feature_android_screen_screenshot_field_path">输出 PNG 路径</string>
