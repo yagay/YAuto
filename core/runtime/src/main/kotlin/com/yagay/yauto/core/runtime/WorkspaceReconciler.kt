@@ -6,14 +6,15 @@ import com.yagay.yauto.core.model.Automation
 import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.model.Flow
 import com.yagay.yauto.core.model.PredicateNode
+import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.WorkspaceRepository
 
 /**
- * Canonicalizes only Feature IDs that the current registry explicitly knows how to resolve.
- * Unknown/removed IDs are kept byte-for-byte at the model level so old or imported workspaces
- * remain editable and can recover if that feature is restored later.
+ * Canonicalizes only Feature IDs that the current registry explicitly knows how to resolve for the
+ * expected node kind. Unknown, removed, or wrong-kind IDs are kept unchanged so old/imported
+ * workspaces remain editable and can recover if the corresponding feature is restored later.
  */
 class WorkspaceReconciler(
     private val registry: FeatureRegistry,
@@ -31,8 +32,8 @@ class WorkspaceReconciler(
     )
 
     private fun activation(value: Activation): Activation = value.copy(
-        events = value.events.map(::feature),
-        states = value.states.map(::feature),
+        events = value.events.map { feature(it, FeatureKind.EVENT) },
+        states = value.states.map { feature(it, FeatureKind.STATE) },
         condition = value.condition?.let(::predicate),
     )
 
@@ -41,7 +42,7 @@ class WorkspaceReconciler(
     private fun actions(values: List<ActionNode>): List<ActionNode> = values.map(::action)
 
     private fun action(value: ActionNode): ActionNode = when (value) {
-        is ActionNode.Action -> value.copy(feature = feature(value.feature))
+        is ActionNode.Action -> value.copy(feature = feature(value.feature, FeatureKind.ACTION))
         is ActionNode.If -> value.copy(
             condition = predicate(value.condition),
             thenActions = actions(value.thenActions),
@@ -73,12 +74,13 @@ class WorkspaceReconciler(
         is PredicateNode.All -> value.copy(children = value.children.map(::predicate))
         is PredicateNode.Any -> value.copy(children = value.children.map(::predicate))
         is PredicateNode.None -> value.copy(children = value.children.map(::predicate))
-        is PredicateNode.Condition -> value.copy(feature = feature(value.feature))
+        is PredicateNode.Condition -> value.copy(feature = feature(value.feature, FeatureKind.CONDITION))
         is PredicateNode.Expression,
         is PredicateNode.Literal -> value
     }
 
-    private fun feature(value: FeatureRef): FeatureRef = registry.canonicalRef(value)
+    private fun feature(value: FeatureRef, expectedKind: FeatureKind): FeatureRef =
+        registry.canonicalRef(value, expectedKind)
 }
 
 /**
