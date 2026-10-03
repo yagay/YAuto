@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_core_automation_run_title">Run automation</string>
+    <string name="feature_core_automation_run_description">Run another YAuto automation by stable ID or exact name</string>
+    <string name="feature_core_automation_run_field_target">Target automation</string>
+    <string name="feature_core_automation_run_field_allowdisabled">Allow disabled automation</string>
+    <string name="feature_core_automation_run_field_resultvariable">Store return value</string>
+
+    <string name="feature_core_automation_set_enabled_title">Set automation state</string>
+    <string name="feature_core_automation_set_enabled_description">Enable, disable, or toggle another YAuto automation</string>
+    <string name="feature_core_automation_set_enabled_field_target">Target automation</string>
+    <string name="feature_core_automation_set_enabled_field_mode">Mode</string>
+    <string name="feature_core_automation_set_enabled_field_mode_option_enable">enable</string>
+    <string name="feature_core_automation_set_enabled_field_mode_option_disable">disable</string>
+    <string name="feature_core_automation_set_enabled_field_mode_option_toggle">toggle</string>
+    <string name="feature_core_automation_set_enabled_field_resultvariable">Store enabled state</string>
+
+    <string name="feature_core_automation_cancel_title">Cancel automation</string>
+    <string name="feature_core_automation_cancel_description">Cancel currently running executions of another YAuto automation</string>
+    <string name="feature_core_automation_cancel_field_target">Target automation</string>
+    <string name="feature_core_automation_cancel_field_resultvariable">Store whether anything was cancelled</string>
+
+    <string name="feature_core_automation_enabled_title">Automation enabled</string>
+    <string name="feature_core_automation_enabled_description">Check whether a YAuto automation is currently enabled</string>
+    <string name="feature_core_automation_enabled_field_target">Target automation</string>
+
+    <string name="runtime_runtime_automation_target_required">Target automation is required</string>
+    <string name="runtime_runtime_automation_not_found">Automation not found: %1$s</string>
+    <string name="runtime_runtime_automation_disabled">Automation is disabled: %1$s</string>
+    <string name="runtime_runtime_automation_recursive_call">Recursive automation call blocked: %1$s</string>
+    <string name="runtime_runtime_automation_call_depth">Automation call depth exceeds %1$d</string>
+    <string name="runtime_runtime_automation_busy">Automation is busy and ignored the new run: %1$s</string>
+    <string name="runtime_runtime_automation_run_failed">Automation did not return a run result: %1$s</string>
+    <string name="runtime_runtime_automation_cancel_self">An automation cannot cancel itself while it is executing: %1$s</string>
+    <string name="runtime_runtime_automation_cancelled">Automation execution was cancelled: %1$s</string>
+</resources>

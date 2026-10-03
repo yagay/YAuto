@@ -7,6 +7,7 @@
     <string name="tree_switch">Switch</string>
     <string name="tree_repeat">Repeat count</string>
     <string name="tree_while">Conditional loop</string>
+    <string name="tree_wait_until">Wait until condition</string>
     <string name="tree_foreach">For each</string>
     <string name="tree_parallel">Parallel branches</string>
     <string name="tree_try">Try / catch / finally</string>
@@ -30,6 +31,8 @@
     <string name="tree_repeat_count">Count</string>
     <string name="tree_loop_actions">Loop actions</string>
     <string name="tree_edit_loop_condition">Edit loop condition</string>
+    <string name="tree_wait_timeout_ms">Timeout (ms)</string>
+    <string name="tree_wait_poll_interval_ms">Polling interval (ms)</string>
     <string name="tree_foreach_variable">Current-item variable</string>
     <string name="tree_parallel_branch_format">Parallel branch %1$d</string>
     <string name="tree_delete_parallel_branch">Delete branch</string>

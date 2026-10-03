@@ -14,7 +14,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.AbstractCoroutineContextElement
@@ -188,6 +190,22 @@ class AutomationEngine(
                 val finalSignal = executeNodes(node.finallyActions, executionId, variables, automation, flow, maxLoopIterations)
                 if (finalSignal != Signal.Next) finalSignal else handled
             }
+            is ActionNode.WaitUntil -> {
+                if (node.timeoutMs <= 0L || node.pollIntervalMs <= 0L) {
+                    return Signal.Failure(userText("engine.wait_until_invalid"))
+                }
+                val pollInterval = node.pollIntervalMs.coerceIn(100L, 60_000L)
+                val completed = withTimeoutOrNull(node.timeoutMs) {
+                    while (currentCoroutineContext().isActive) {
+                        if (evaluatePredicate(node.condition, executionId, node.id, variables)) {
+                            return@withTimeoutOrNull true
+                        }
+                        delay(pollInterval)
+                    }
+                    false
+                } ?: false
+                if (completed) Signal.Next else Signal.Failure(userText("engine.wait_until_timeout", node.timeoutMs))
+            }
             is ActionNode.CallFlow -> {
                 val depth = currentCoroutineContext()[FlowDepth]?.value ?: 0
                 if (depth >= 64) return Signal.Failure(userText("engine.flow_depth"))
@@ -230,10 +248,23 @@ class AutomationEngine(
         is PredicateNode.Literal -> predicate.value
         is PredicateNode.Expression -> expressions.evaluateBoolean(predicate.expression, variables)
         is PredicateNode.Condition -> {
-            val evaluator = registry.conditionEvaluator(predicate.feature.typeId) ?: error(userText("engine.unknown_condition", predicate.feature.typeId))
-            val result = evaluator.evaluate(predicate.feature, FeatureExecutionContext(executionId, nodeId, variables, capabilities, tracer))
-            trace(executionId, TraceKind.CONDITION, userText("engine.condition_result", predicate.feature.typeId, if (result) userText("value.true") else userText("value.false")), nodeId = nodeId, featureId = predicate.feature.typeId, success = result)
-            result
+            val evaluator = registry.conditionEvaluator(predicate.feature.typeId)
+            if (evaluator == null) {
+                trace(
+                    executionId = executionId,
+                    kind = TraceKind.CONDITION,
+                    message = userText("engine.unknown_condition", predicate.feature.typeId),
+                    nodeId = nodeId,
+                    featureId = predicate.feature.typeId,
+                    success = false,
+                    level = TraceLevel.WARN,
+                )
+                false
+            } else {
+                val result = evaluator.evaluate(predicate.feature, FeatureExecutionContext(executionId, nodeId, variables, capabilities, tracer))
+                trace(executionId, TraceKind.CONDITION, userText("engine.condition_result", predicate.feature.typeId, if (result) userText("value.true") else userText("value.false")), nodeId = nodeId, featureId = predicate.feature.typeId, success = result)
+                result
+            }
         }
     }
 

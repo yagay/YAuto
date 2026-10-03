@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variable_global_set_title">设置持久变量</string>
+    <string name="feature_variable_global_set_description">把带类型的变量保存到 YAuto 工作区，供后续自动化运行使用</string>
+    <string name="feature_variable_global_set_field_name">变量名</string>
+    <string name="feature_variable_global_set_field_sourcevariable">来源运行时变量</string>
+    <string name="feature_variable_global_set_field_valuetype">值类型</string>
+    <string name="feature_variable_global_set_field_valuetype_option_text">文本</string>
+    <string name="feature_variable_global_set_field_valuetype_option_number">数字</string>
+    <string name="feature_variable_global_set_field_valuetype_option_boolean">布尔值</string>
+    <string name="feature_variable_global_set_field_valuetype_option_null">空值</string>
+    <string name="feature_variable_global_set_field_value">值</string>
+
+    <string name="feature_variable_global_get_title">读取持久变量</string>
+    <string name="feature_variable_global_get_description">把工作区中的持久变量读入当前自动化运行</string>
+    <string name="feature_variable_global_get_field_name">变量名</string>
+    <string name="feature_variable_global_get_field_resultvariable">目标变量</string>
+
+    <string name="feature_variable_global_clear_title">清除持久变量</string>
+    <string name="feature_variable_global_clear_description">从 YAuto 工作区移除持久变量</string>
+    <string name="feature_variable_global_clear_field_name">变量名</string>
+
+    <string name="feature_variable_global_exists_title">持久变量存在</string>
+    <string name="feature_variable_global_exists_description">检查工作区中是否存在指定持久变量</string>
+    <string name="feature_variable_global_exists_field_name">变量名</string>
+
+    <string name="feature_variable_global_equals_title">持久变量等于</string>
+    <string name="feature_variable_global_equals_description">把工作区持久变量与指定类型的值进行比较</string>
+    <string name="feature_variable_global_equals_field_name">变量名</string>
+    <string name="feature_variable_global_equals_field_sourcevariable">来源运行时变量</string>
+    <string name="feature_variable_global_equals_field_valuetype">值类型</string>
+    <string name="feature_variable_global_equals_field_valuetype_option_text">文本</string>
+    <string name="feature_variable_global_equals_field_valuetype_option_number">数字</string>
+    <string name="feature_variable_global_equals_field_valuetype_option_boolean">布尔值</string>
+    <string name="feature_variable_global_equals_field_valuetype_option_null">空值</string>
+    <string name="feature_variable_global_equals_field_value">值</string>
+
+    <string name="feature_variable_global_state_equals_title">持久变量状态等于</string>
+    <string name="feature_variable_global_state_equals_description">持续比较工作区持久变量与指定类型的值</string>
+    <string name="feature_variable_global_state_equals_field_name">变量名</string>
+    <string name="feature_variable_global_state_equals_field_sourcevariable">来源运行时变量</string>
+    <string name="feature_variable_global_state_equals_field_valuetype">值类型</string>
+    <string name="feature_variable_global_state_equals_field_valuetype_option_text">文本</string>
+    <string name="feature_variable_global_state_equals_field_valuetype_option_number">数字</string>
+    <string name="feature_variable_global_state_equals_field_valuetype_option_boolean">布尔值</string>
+    <string name="feature_variable_global_state_equals_field_valuetype_option_null">空值</string>
+    <string name="feature_variable_global_state_equals_field_value">值</string>
+
+    <string name="feature_core_event_variable_changed_title">持久变量变化</string>
+    <string name="feature_core_event_variable_changed_description">当带类型的工作区持久变量被创建、更改或删除时运行</string>
+    <string name="feature_core_event_variable_changed_field_name">变量名</string>
+    <string name="feature_core_event_variable_changed_field_change">变化类型</string>
+    <string name="feature_core_event_variable_changed_field_change_option_any">任意</string>
+    <string name="feature_core_event_variable_changed_field_change_option_created">创建</string>
+    <string name="feature_core_event_variable_changed_field_change_option_changed">更改</string>
+    <string name="feature_core_event_variable_changed_field_change_option_removed">删除</string>
+
+    <string name="runtime_feature_invalid_persistent_value">持久变量的值与所选类型不匹配</string>
+    <string name="runtime_feature_persistent_variable_update_failed">无法更新持久变量</string>
+    <string name="runtime_feature_persistent_variable_clear_failed">无法清除持久变量</string>
+</resources>

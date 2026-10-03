@@ -9,11 +9,12 @@ import com.yagay.yauto.core.logging.*
 import com.yagay.yauto.core.registry.FeaturePack
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.runtime.AutomationRuntime
+import com.yagay.yauto.core.runtime.ReconcilingWorkspaceRepository
 import com.yagay.yauto.feature.standard.StandardFeaturePacks
 import com.yagay.yauto.importer.macrodroid.MacroDroidFeatureSuggestions
 import com.yagay.yauto.importer.macrodroid.MacroDroidImporter
 import com.yagay.yauto.importer.shortx.EnhancedShortXImporter
-import com.yagay.yauto.importer.tasker.TaskerImporter
+import com.yagay.yauto.importer.tasker.EnhancedTaskerImporter
 import com.yagay.yauto.platform.accessibility.AccessibilityBackend
 import com.yagay.yauto.platform.accessibility.AccessibilityDiagnosticCollector
 import com.yagay.yauto.platform.accessibility.AccessibilityFeaturePack
@@ -38,7 +39,8 @@ class AppGraph(context: Context) {
     val shizuku by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { ShizukuBackend(appContext) }
     val xposed by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { XposedBackend(appContext) }
     val accessibility by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AccessibilityBackend() }
-    val workspace = JsonWorkspaceRepository(appContext)
+    private val workspaceStorage = JsonWorkspaceRepository(appContext)
+    val workspace = ReconcilingWorkspaceRepository(workspaceStorage, features)
     val importReports = JsonImportReportStore(appContext)
     val quickSettingsTiles by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { QuickSettingsTileController(appContext) }
     val overlaySurfaces by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { OverlaySurfaceController(appContext) }
@@ -55,51 +57,10 @@ class AppGraph(context: Context) {
     val runtime = AutomationRuntime(workspace, features, capabilities, tracer)
 
     init {
-        safely("features.standard.catalog") { StandardFeaturePacks.all() }
-            .orEmpty()
-            .forEach { pack -> installPack("feature:${pack.id}") { pack } }
-
-        installPack("feature:android.base") { AndroidFeaturePack(appContext) }
-        installPack("feature:android.communication") { AndroidCommunicationFeaturePack(appContext) }
-        installPack("feature:android.communication.events") { AndroidCommunicationEventFeaturePack(appContext) }
-        installPack("feature:android.control") { AndroidControlFeaturePack(appContext) }
-        installPack("feature:android.package.query") { AndroidPackageQueryFeaturePack(appContext) }
-        installPack("feature:android.app.management") { AndroidAppManagementFeaturePack(appContext) }
-        installPack("feature:android.advanced.system") { AndroidAdvancedSystemFeaturePack(appContext) }
-        installPack("feature:android.system.convenience") { AndroidSystemConvenienceFeaturePack(appContext) }
-        installPack("feature:android.privileged.utility") { AndroidPrivilegedUtilityFeaturePack(appContext) }
-        installPack("feature:android.privileged.state") { AndroidPrivilegedStateFeaturePack() }
-        installPack("feature:android.media.device") { AndroidMediaDeviceFeaturePack(appContext) }
-        installPack("feature:android.audio") { AndroidAudioFeaturePack(appContext) }
-        installPack("feature:android.media.transport") { AndroidMediaTransportFeaturePack(appContext) }
-        installPack("feature:android.speech") { AndroidSpeechFeaturePack(appContext) }
-        installPack("feature:android.playback") { AndroidPlaybackFeaturePack(appContext) }
-        installPack("feature:android.organizer") { AndroidOrganizerFeaturePack(appContext) }
-        installPack("feature:android.device.data") { AndroidDeviceDataFeaturePack(appContext) }
-        installPack("feature:android.device.utility") { AndroidDeviceUtilityFeaturePack(appContext) }
-        installPack("feature:android.resource.state") { AndroidResourceStateFeaturePack(appContext) }
-        installPack("feature:android.connectivity") { AndroidConnectivityFeaturePack(appContext) }
-        installPack("feature:android.bluetooth.device") { AndroidBluetoothDeviceFeaturePack(appContext) }
-        installPack("feature:android.wifi.detail") { AndroidWifiDetailFeaturePack(appContext) }
-        installPack("feature:android.network.utility") { AndroidNetworkUtilityFeaturePack() }
-        installPack("feature:android.network.profile.events") { AndroidNetworkProfileEventFeaturePack() }
-        installPack("feature:android.bluetooth.audio.events") { AndroidBluetoothAudioEventFeaturePack() }
-        installPack("feature:android.location.radius") { AndroidLocationRadiusFeaturePack(appContext) }
-        installPack("feature:android.location.events") { AndroidLocationEventFeaturePack() }
-        installPack("feature:android.nfc") { AndroidNfcFeaturePack(appContext) }
-        installPack("feature:android.midi") { AndroidMidiFeaturePack(appContext) }
-        installPack("feature:android.http") { AndroidHttpFeaturePack() }
-        installPack("feature:android.file") { AndroidFileFeaturePack() }
-        installPack("feature:android.archive") { AndroidArchiveFeaturePack() }
-        installPack("feature:android.content.utility") { AndroidContentUtilityFeaturePack(appContext) }
-        installPack("feature:android.event") { AndroidEventFeaturePack() }
-        installPack("feature:android.state") { AndroidStateFeaturePack(appContext) }
-        installPack("feature:android.notification.control") { AndroidNotificationControlFeaturePack() }
-        installPack("feature:android.sensor") { AndroidSensorFeaturePack() }
-        installPack("feature:android.shortcut") { AndroidShortcutFeaturePack(appContext) }
-        installPack("feature:android.quick.settings") { AndroidQuickSettingsFeaturePack(quickSettingsTiles) }
-        installPack("feature:android.surface") { AndroidSurfaceFeaturePack(overlaySurfaces) }
-        installPack("feature:android.external.command") { AndroidExternalCommandFeaturePack(appContext) }
+        installCatalog("features.standard.catalog") { StandardFeaturePacks.all(runtime, runtime) }
+        installCatalog("features.android.catalog") {
+            AndroidFeaturePacks.all(appContext, quickSettingsTiles, overlaySurfaces)
+        }
         installPack("feature:accessibility") { AccessibilityFeaturePack() }
         installPack("feature:accessibility.key") { AccessibilityKeyFeaturePack() }
 
@@ -108,11 +69,19 @@ class AppGraph(context: Context) {
         safelyUnit("backend:lsposed") { capabilities.register(xposed) }
         safelyUnit("backend:accessibility") { capabilities.register(accessibility) }
 
+        // Compatibility importers are metadata-only during normal startup. Their implementations are
+        // materialized only when the user explicitly imports a file.
         safelyUnit("importer:macrodroid") {
-            importers.register(MacroDroidImporter(mapper = MacroDroidFeatureSuggestions.mapper))
+            importers.registerLazy("macrodroid", "MacroDroid") {
+                MacroDroidImporter(mapper = MacroDroidFeatureSuggestions.mapper)
+            }
         }
-        safelyUnit("importer:shortx") { importers.register(EnhancedShortXImporter()) }
-        safelyUnit("importer:tasker") { importers.register(TaskerImporter()) }
+        safelyUnit("importer:shortx") {
+            importers.registerLazy("shortx", "ShortX") { EnhancedShortXImporter() }
+        }
+        safelyUnit("importer:tasker") {
+            importers.registerLazy("tasker", "Tasker") { EnhancedTaskerImporter() }
+        }
 
         safelyUnit("diagnostic:execution-files") {
             diagnosticRegistry.register(ExecutionFileDiagnosticCollector(appContext))
@@ -130,6 +99,12 @@ class AppGraph(context: Context) {
         safelyUnit("diagnostic:lsposed-log") { diagnosticRegistry.register(LsposedLogCollector(rootShell)) }
         safelyUnit("diagnostic:shizuku") { diagnosticRegistry.register(shizuku) }
         safelyUnit("diagnostic:xposed") { diagnosticRegistry.register(xposed) }
+    }
+
+    private fun installCatalog(component: String, factory: () -> List<FeaturePack>) {
+        safely(component, factory).orEmpty().forEach { pack ->
+            installPack("feature:${pack.id}") { pack }
+        }
     }
 
     private fun installPack(component: String, factory: () -> FeaturePack) {

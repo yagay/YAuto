@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_interval_title">Interval timer</string>
+    <string name="feature_android_event_interval_description">Run repeatedly at a configured interval while the YAuto runtime is active</string>
+</resources>

@@ -25,6 +25,7 @@ import com.yagay.yauto.platform.android.BluetoothDeviceEventSource
 import com.yagay.yauto.platform.android.ClipboardEventSource
 import com.yagay.yauto.platform.android.CommunicationEventSource
 import com.yagay.yauto.platform.android.ConfiguredBroadcastEventSource
+import com.yagay.yauto.platform.android.ConfiguredIntervalEventSource
 import com.yagay.yauto.platform.android.ConfiguredLocationEventSource
 import com.yagay.yauto.platform.android.ConfiguredSensorEventSource
 import com.yagay.yauto.platform.android.DeviceSettingEventSource
@@ -75,6 +76,7 @@ class AutomationRuntimeService : Service() {
         addSource("configured-broadcast") { ConfiguredBroadcastEventSource(this, graph.workspace) }
         addSource("configured-sensor") { ConfiguredSensorEventSource(this, graph.workspace) }
         addSource("configured-location") { ConfiguredLocationEventSource(this, graph.workspace) }
+        addSource("configured-interval") { ConfiguredIntervalEventSource(graph.workspace) }
 
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
         SurfaceRuntimeBridge.attach(emitter)

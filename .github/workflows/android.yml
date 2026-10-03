@@ -28,8 +28,10 @@ jobs:
         run: python3 .github/scripts/check-localization-quality.py
       - name: Startup safety guard
         run: python3 .github/scripts/check-startup-safety.py
+      - name: Runtime event contract guard
+        run: python3 .github/scripts/check-event-contracts.py
       - name: Unit tests
-        run: gradle :core:engine:test :core:runtime:test :core:storage:test :core:diagnostics:test :feature:standard:test :plugin:api:test :importer:macrodroid:test :importer:tasker:test :importer:shortx:test :platform:android:testDebugUnitTest :platform:accessibility:testDebugUnitTest --stacktrace
+        run: gradle :core:engine:test :core:runtime:test :core:storage:test :core:diagnostics:test :core:registry:test :core:importer:test :feature:standard:test :plugin:api:test :importer:macrodroid:test :importer:tasker:test :importer:shortx:test :platform:android:testDebugUnitTest :platform:accessibility:testDebugUnitTest --stacktrace
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace
       - name: Normalize APK name

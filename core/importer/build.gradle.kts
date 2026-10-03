@@ -9,4 +9,5 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:logging"))
     implementation(libs.kotlinx.serialization.json)
+    testImplementation(libs.junit)
 }

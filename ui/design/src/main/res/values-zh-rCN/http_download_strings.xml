@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_http_download_title">HTTP 下载</string>
+    <string name="feature_android_http_download_description">将 HTTP 或 HTTPS 响应内容下载到本地文件，并提供大小、超时和覆盖保护</string>
+</resources>

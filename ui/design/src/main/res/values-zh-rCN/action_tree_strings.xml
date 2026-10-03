@@ -7,6 +7,7 @@
     <string name="tree_switch">多路分支</string>
     <string name="tree_repeat">重复次数</string>
     <string name="tree_while">条件循环</string>
+    <string name="tree_wait_until">等待条件满足</string>
     <string name="tree_foreach">遍历列表</string>
     <string name="tree_parallel">并行分支</string>
     <string name="tree_try">尝试 / 捕获 / 收尾</string>
@@ -30,6 +31,8 @@
     <string name="tree_repeat_count">次数</string>
     <string name="tree_loop_actions">循环动作</string>
     <string name="tree_edit_loop_condition">编辑循环条件</string>
+    <string name="tree_wait_timeout_ms">超时时间（毫秒）</string>
+    <string name="tree_wait_poll_interval_ms">轮询间隔（毫秒）</string>
     <string name="tree_foreach_variable">当前项变量名</string>
     <string name="tree_parallel_branch_format">并行分支 %1$d</string>
     <string name="tree_delete_parallel_branch">删除分支</string>
