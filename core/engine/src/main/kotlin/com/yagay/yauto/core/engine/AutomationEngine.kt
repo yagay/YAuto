@@ -230,10 +230,23 @@ class AutomationEngine(
         is PredicateNode.Literal -> predicate.value
         is PredicateNode.Expression -> expressions.evaluateBoolean(predicate.expression, variables)
         is PredicateNode.Condition -> {
-            val evaluator = registry.conditionEvaluator(predicate.feature.typeId) ?: error(userText("engine.unknown_condition", predicate.feature.typeId))
-            val result = evaluator.evaluate(predicate.feature, FeatureExecutionContext(executionId, nodeId, variables, capabilities, tracer))
-            trace(executionId, TraceKind.CONDITION, userText("engine.condition_result", predicate.feature.typeId, if (result) userText("value.true") else userText("value.false")), nodeId = nodeId, featureId = predicate.feature.typeId, success = result)
-            result
+            val evaluator = registry.conditionEvaluator(predicate.feature.typeId)
+            if (evaluator == null) {
+                trace(
+                    executionId = executionId,
+                    kind = TraceKind.CONDITION,
+                    message = userText("engine.unknown_condition", predicate.feature.typeId),
+                    nodeId = nodeId,
+                    featureId = predicate.feature.typeId,
+                    success = false,
+                    level = TraceLevel.WARN,
+                )
+                false
+            } else {
+                val result = evaluator.evaluate(predicate.feature, FeatureExecutionContext(executionId, nodeId, variables, capabilities, tracer))
+                trace(executionId, TraceKind.CONDITION, userText("engine.condition_result", predicate.feature.typeId, if (result) userText("value.true") else userText("value.false")), nodeId = nodeId, featureId = predicate.feature.typeId, success = result)
+                result
+            }
         }
     }
 
