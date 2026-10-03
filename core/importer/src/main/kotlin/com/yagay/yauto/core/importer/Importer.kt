@@ -109,8 +109,11 @@ class ImporterRegistry {
 
     fun displayNames(): List<String> = descriptors().map { it.displayName }
 
-    /** Compatibility API. Calling this intentionally materializes available importer instances. */
-    fun all(): List<AutomationImporter> = registrationsSnapshot().mapNotNull(::resolve)
+    /**
+     * Compatibility API used by existing UI. Returned handles expose metadata immediately but do
+     * not construct the real importer until confidence/import is explicitly requested.
+     */
+    fun all(): List<AutomationImporter> = registrationsSnapshot().map(::handle)
 
     fun bestFor(input: ImportInput): AutomationImporter? = registrationsSnapshot()
         .mapNotNull { registration ->
@@ -123,7 +126,46 @@ class ImporterRegistry {
 
     fun import(input: ImportInput): ImportResult {
         val importer = bestFor(input) ?: return noCompatibleImporter(input)
-        return runCatching { importer.import(input) }.getOrElse { error ->
+        return importSafely(importer, input)
+    }
+
+    @Synchronized
+    private fun registrationsSnapshot(): List<Registration> = registrations.values.toList()
+
+    private fun handle(registration: Registration): AutomationImporter = object : AutomationImporter {
+        override val id: String = registration.descriptor.id
+        override val displayName: String = registration.descriptor.displayName
+
+        override fun confidence(input: ImportInput): Int = resolve(registration)
+            ?.let { importer -> runCatching { importer.confidence(input) }.getOrDefault(0) }
+            ?: 0
+
+        override fun import(input: ImportInput): ImportResult {
+            val importer = resolve(registration) ?: return ImportResult(
+                importerId = id,
+                success = false,
+                issues = listOf(
+                    CompatibilityIssue(
+                        severity = ImportSeverity.ERROR,
+                        sourcePath = input.fileName ?: "input",
+                        message = userText("import.no_compatible_importer"),
+                    )
+                ),
+            )
+            return importSafely(importer, input)
+        }
+    }
+
+    private fun resolve(registration: Registration): AutomationImporter? = runCatching {
+        registration.instance.value.also { importer ->
+            require(importer.id == registration.descriptor.id) {
+                "Importer factory ID mismatch: expected ${registration.descriptor.id}, got ${importer.id}"
+            }
+        }
+    }.getOrNull()
+
+    private fun importSafely(importer: AutomationImporter, input: ImportInput): ImportResult =
+        runCatching { importer.import(input) }.getOrElse { error ->
             ImportResult(
                 importerId = importer.id,
                 success = false,
@@ -136,18 +178,6 @@ class ImporterRegistry {
                 ),
             )
         }
-    }
-
-    @Synchronized
-    private fun registrationsSnapshot(): List<Registration> = registrations.values.toList()
-
-    private fun resolve(registration: Registration): AutomationImporter? = runCatching {
-        registration.instance.value.also { importer ->
-            require(importer.id == registration.descriptor.id) {
-                "Importer factory ID mismatch: expected ${registration.descriptor.id}, got ${importer.id}"
-            }
-        }
-    }.getOrNull()
 
     private fun noCompatibleImporter(input: ImportInput): ImportResult = ImportResult(
         importerId = "unknown",
