@@ -316,6 +316,15 @@ class AutomationRuntime(
                 trackJob(key, job)
                 try {
                     job.await()
+                } catch (cancelled: CancellationException) {
+                    if (!currentCoroutineContext().isActive) throw cancelled
+                    listOf(
+                        EngineResult(
+                            success = false,
+                            executionId = ExecutionId("cancelled-${UUID.randomUUID()}"),
+                            error = userText("runtime.automation_cancelled", automation.name),
+                        )
+                    )
                 } finally {
                     untrackJob(key, job)
                 }
