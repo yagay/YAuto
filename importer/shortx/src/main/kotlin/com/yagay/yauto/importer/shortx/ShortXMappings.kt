@@ -171,25 +171,28 @@ internal object ShortXMappings {
         }
     }
 
-    fun factEnabled(any: AnyStub): Boolean = if (any.isJson) {
-        val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return true
-        (obj["isDisabled"] as? JsonPrimitive)?.booleanOrNull != true
-    } else {
-        runCatching { ProtoFields(any.value).varint(101) != 1L }.getOrDefault(true)
+    fun factEnabled(any: AnyStub): Boolean {
+        if (any.isJson) {
+            val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return true
+            return (obj["isDisabled"] as? JsonPrimitive)?.booleanOrNull != true
+        }
+        return runCatching { ProtoFields(any.value).varint(101) != 1L }.getOrDefault(true)
     }
 
-    fun conditionEnabled(any: AnyStub): Boolean = if (any.isJson) {
-        val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return true
-        (obj["isDisabled"] as? JsonPrimitive)?.booleanOrNull != true
-    } else {
-        runCatching { ProtoFields(any.value).varint(96) != 1L }.getOrDefault(true)
+    fun conditionEnabled(any: AnyStub): Boolean {
+        if (any.isJson) {
+            val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return true
+            return (obj["isDisabled"] as? JsonPrimitive)?.booleanOrNull != true
+        }
+        return runCatching { ProtoFields(any.value).varint(96) != 1L }.getOrDefault(true)
     }
 
-    private fun conditionInverted(any: AnyStub): Boolean = if (any.isJson) {
-        val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return false
-        (obj["isInvert"] as? JsonPrimitive)?.booleanOrNull == true
-    } else {
-        runCatching { ProtoFields(any.value).varint(98) == 1L }.getOrDefault(false)
+    private fun conditionInverted(any: AnyStub): Boolean {
+        if (any.isJson) {
+            val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return false
+            return (obj["isInvert"] as? JsonPrimitive)?.booleanOrNull == true
+        }
+        return runCatching { ProtoFields(any.value).varint(98) == 1L }.getOrDefault(false)
     }
 
     fun enabled(any: AnyStub): Boolean = if (any.isJson) {
