@@ -23,11 +23,12 @@ import org.junit.Test
 
 class WorkspaceReconcilerTest {
     @Test
-    fun `known aliases are canonicalized recursively while unknown ids are preserved`() {
+    fun `known aliases are canonicalized recursively while unknown and wrong-kind ids are preserved`() {
         val registry = FeatureRegistry().apply {
             registerDescriptor(descriptor("event.new", "event.old", FeatureKind.EVENT))
             registerDescriptor(descriptor("condition.new", "condition.old", FeatureKind.CONDITION))
             registerDescriptor(descriptor("action.new", "action.old", FeatureKind.ACTION))
+            registerDescriptor(descriptor("condition.cross", "legacy.cross", FeatureKind.CONDITION))
         }
         val workspace = WorkspaceData(
             automations = listOf(
@@ -49,7 +50,10 @@ class WorkspaceReconcilerTest {
                                 ActionNode.Try(
                                     id = NodeId("try"),
                                     actions = listOf(ActionNode.Action(NodeId("action"), FeatureRef("action.old"))),
-                                    onError = listOf(ActionNode.Action(NodeId("unknown"), FeatureRef("action.removed"))),
+                                    onError = listOf(
+                                        ActionNode.Action(NodeId("unknown"), FeatureRef("action.removed")),
+                                        ActionNode.Action(NodeId("wrong-kind"), FeatureRef("legacy.cross")),
+                                    ),
                                     finallyActions = listOf(
                                         ActionNode.Parallel(
                                             id = NodeId("parallel"),
@@ -87,7 +91,8 @@ class WorkspaceReconcilerTest {
         assertEquals("condition.new", (ifNode.condition as PredicateNode.Condition).feature.typeId)
         val tryNode = ifNode.thenActions.single() as ActionNode.Try
         assertEquals("action.new", (tryNode.actions.single() as ActionNode.Action).feature.typeId)
-        assertEquals("action.removed", (tryNode.onError.single() as ActionNode.Action).feature.typeId)
+        assertEquals("action.removed", (tryNode.onError[0] as ActionNode.Action).feature.typeId)
+        assertEquals("legacy.cross", (tryNode.onError[1] as ActionNode.Action).feature.typeId)
         val parallel = tryNode.finallyActions.single() as ActionNode.Parallel
         assertEquals(
             "action.new",
