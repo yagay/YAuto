@@ -154,12 +154,12 @@ class AndroidExtendedAutomationCoverageTest {
     }
 
     @Test
-    fun `derived event pack installs fifteen real matchers`() {
+    fun `derived event pack installs twenty one real matchers`() {
         val registry = FeatureRegistry()
         AndroidDerivedEventFeaturePack().install(registry)
 
         val descriptors = registry.allDescriptors()
-        assertEquals(15, descriptors.size)
+        assertEquals(21, descriptors.size)
         assertTrue(descriptors.all { it.kind == FeatureKind.EVENT })
         descriptors.forEach { descriptor ->
             assertNotNull("Missing matcher for ${descriptor.id.value}", registry.eventMatcher(descriptor.id.value))
@@ -167,15 +167,20 @@ class AndroidExtendedAutomationCoverageTest {
     }
 
     @Test
-    fun `derived network events filter existing network payloads`() = runBlocking {
+    fun `derived network events filter enriched network payloads`() = runBlocking {
         val registry = FeatureRegistry().apply { AndroidDerivedEventFeaturePack().install(this) }
         val payload = mapOf(
             "internet" to ConfigValue.BooleanValue(true),
             "validated" to ConfigValue.BooleanValue(true),
+            "metered" to ConfigValue.BooleanValue(false),
+            "roaming" to ConfigValue.BooleanValue(false),
+            "restricted" to ConfigValue.BooleanValue(false),
+            "suspended" to ConfigValue.BooleanValue(false),
             "wifi" to ConfigValue.BooleanValue(true),
             "cellular" to ConfigValue.BooleanValue(false),
             "ethernet" to ConfigValue.BooleanValue(false),
             "vpn" to ConfigValue.BooleanValue(false),
+            "bluetooth" to ConfigValue.BooleanValue(false),
         )
 
         suspend fun matches(featureId: String, config: ConfigMap = emptyMap()): Boolean {
@@ -194,14 +199,23 @@ class AndroidExtendedAutomationCoverageTest {
 
         assertTrue(matches("android.event.network_validated"))
         assertFalse(matches("android.event.network_unvalidated"))
+        assertTrue(matches("android.event.network_unmetered"))
+        assertFalse(matches("android.event.network_metered"))
         assertTrue(matches("android.event.network_wifi"))
         assertFalse(matches("android.event.network_cellular"))
+        assertFalse(matches("android.event.network_roaming"))
+        assertFalse(matches("android.event.network_restricted"))
+        assertFalse(matches("android.event.network_suspended"))
         assertTrue(matches(
             "android.event.network_capabilities_filtered",
             mapOf(
                 "transport" to ConfigValue.StringValue("wifi"),
                 "internet" to ConfigValue.StringValue("yes"),
                 "validated" to ConfigValue.StringValue("yes"),
+                "metered" to ConfigValue.StringValue("no"),
+                "roaming" to ConfigValue.StringValue("no"),
+                "restricted" to ConfigValue.StringValue("no"),
+                "suspended" to ConfigValue.StringValue("no"),
             ),
         ))
         assertFalse(matches(
