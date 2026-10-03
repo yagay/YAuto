@@ -414,6 +414,7 @@ private fun flowNodeTitle(node: ActionNode, flows: List<Flow>): String = when (n
     is ActionNode.Switch -> stringResource(TextR.string.node_switch)
     is ActionNode.Repeat -> stringResource(TextR.string.node_repeat_format, node.times)
     is ActionNode.While -> stringResource(TextR.string.node_while)
+    is ActionNode.WaitUntil -> stringResource(TextR.string.tree_wait_until)
     is ActionNode.ForEach -> stringResource(TextR.string.node_foreach)
     is ActionNode.Parallel -> stringResource(TextR.string.node_parallel)
     is ActionNode.Try -> stringResource(TextR.string.node_try)
