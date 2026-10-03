@@ -25,8 +25,8 @@ class AndroidIntervalFeaturePackTest {
     }
 
     private fun feature(interval: Double, immediate: Boolean) = FeatureRef(
-        "android.event.interval",
-        mapOf(
+        typeId = "android.event.interval",
+        config = mapOf(
             "intervalMs" to ConfigValue.NumberValue(interval),
             "fireImmediately" to ConfigValue.BooleanValue(immediate),
         ),
