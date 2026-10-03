@@ -3,13 +3,6 @@ package com.yagay.yauto.platform.android
 import android.content.Context
 import com.yagay.yauto.core.registry.FeaturePack
 
-/**
- * Authoritative catalog of YAuto-native Android FeaturePacks.
- *
- * AppGraph installs this catalog as a group and no longer needs to know every concrete Android
- * feature implementation. Adding/removing a native Android capability therefore happens here,
- * while engine, UI, storage and compatibility importers stay unchanged.
- */
 object AndroidFeaturePacks {
     fun all(
         context: Context,
@@ -28,6 +21,8 @@ object AndroidFeaturePacks {
         AndroidInteractionCoverageFeaturePack(context),
         AndroidPrivilegedUtilityFeaturePack(context),
         AndroidPrivilegedStateFeaturePack(),
+        AndroidPowerUserFeaturePack(context),
+        AndroidUsbFeaturePack(context),
         AndroidMediaDeviceFeaturePack(context),
         AndroidAudioFeaturePack(context),
         AndroidMediaTransportFeaturePack(context),
