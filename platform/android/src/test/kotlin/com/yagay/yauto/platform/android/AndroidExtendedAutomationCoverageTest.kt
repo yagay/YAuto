@@ -17,6 +17,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -75,19 +76,17 @@ class AndroidExtendedAutomationCoverageTest {
     private val capabilities = CapabilityClient { CapabilityResult(false, message = "unused") }
 
     @Test
-    fun `extended state pack installs twenty one state condition pairs`() {
+    fun `extended state pack installs fifteen unique state condition pairs`() {
         val registry = FeatureRegistry()
         AndroidExtendedStateFeaturePack(Reader()).install(registry)
 
         val descriptors = registry.allDescriptors()
-        assertEquals(42, descriptors.size)
-        assertEquals(21, descriptors.count { it.kind == FeatureKind.STATE })
-        assertEquals(21, descriptors.count { it.kind == FeatureKind.CONDITION })
+        assertEquals(30, descriptors.size)
+        assertEquals(15, descriptors.count { it.kind == FeatureKind.STATE })
+        assertEquals(15, descriptors.count { it.kind == FeatureKind.CONDITION })
 
         val keys = listOf(
-            "device_idle",
             "keyguard_locked",
-            "device_secure",
             "music_active",
             "microphone_muted",
             "speakerphone_on",
@@ -95,21 +94,30 @@ class AndroidExtendedAutomationCoverageTest {
             "next_alarm_set",
             "network_validated",
             "network_metered",
-            "network_roaming",
             "network_internet",
             "network_restricted",
             "network_suspended",
-            "orientation",
             "ringer_mode",
             "battery_present",
             "battery_plugged",
-            "battery_status",
             "battery_health",
-            "battery_voltage",
         )
         keys.forEach { key ->
             assertNotNull(registry.stateEvaluator("android.state.$key"))
             assertNotNull(registry.conditionEvaluator("android.condition.$key"))
+        }
+
+        val ownedByEstablishedPacks = listOf(
+            "device_idle",
+            "device_secure",
+            "network_roaming",
+            "orientation",
+            "battery_status",
+            "battery_voltage",
+        )
+        ownedByEstablishedPacks.forEach { key ->
+            assertNull("Extended pack must not reclaim android.state.$key", registry.stateEvaluator("android.state.$key"))
+            assertNull("Extended pack must not reclaim android.condition.$key", registry.conditionEvaluator("android.condition.$key"))
         }
     }
 
@@ -131,26 +139,22 @@ class AndroidExtendedAutomationCoverageTest {
                 context,
             )
 
-        assertTrue(matches("device_idle"))
-        reader.idle = false
-        assertTrue(matches("device_idle", mapOf("value" to ConfigValue.BooleanValue(false))))
+        assertTrue(matches("keyguard_locked"))
+        reader.locked = false
+        assertTrue(matches("keyguard_locked", mapOf("value" to ConfigValue.BooleanValue(false))))
 
         assertTrue(matches("network_validated"))
         reader.validated = false
         assertFalse(matches("network_validated"))
 
-        assertTrue(matches("orientation", mapOf("value" to ConfigValue.StringValue("portrait"))))
-        reader.currentOrientation = "landscape"
-        assertTrue(matches("orientation", mapOf("value" to ConfigValue.StringValue("landscape"))))
+        assertTrue(matches("ringer_mode", mapOf("value" to ConfigValue.StringValue("normal"))))
+        reader.currentRingerMode = "vibrate"
+        assertTrue(matches("ringer_mode", mapOf("value" to ConfigValue.StringValue("vibrate"))))
 
         assertTrue(matches("battery_plugged", mapOf("value" to ConfigValue.StringValue("usb"))))
         assertTrue(matches("battery_health", mapOf("value" to ConfigValue.StringValue("good"))))
-        assertTrue(matches("battery_voltage", mapOf(
-            "operator" to ConfigValue.StringValue(">="),
-            "value" to ConfigValue.NumberValue(4_000.0),
-        )))
-        reader.voltage = null
-        assertFalse(matches("battery_voltage", mapOf("value" to ConfigValue.NumberValue(4_000.0))))
+        reader.health = "cold"
+        assertTrue(matches("battery_health", mapOf("value" to ConfigValue.StringValue("cold"))))
     }
 
     @Test
