@@ -64,6 +64,7 @@ class WorkspaceReconciler(
             onError = actions(value.onError),
             finallyActions = actions(value.finallyActions),
         )
+        is ActionNode.WaitUntil -> value.copy(condition = predicate(value.condition))
         is ActionNode.CallFlow,
         is ActionNode.Return,
         is ActionNode.Break,
