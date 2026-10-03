@@ -79,14 +79,28 @@ def main() -> int:
         failures.append(f'Missing runtime service: {service}')
     else:
         source = service.read_text(encoding='utf-8')
-        direct = re.finditer(r'sources\s*\+=\s*[A-Z]\w*EventSource\s*\(', source)
+        direct = re.finditer(r'(?:sources|eventSources)\s*\+=\s*[A-Z]\w*EventSource\s*\(', source)
         for match in direct:
             failures.append(
                 f'{service}:{line_number(source, match.start())}: '
-                'EventSource construction must go through addSource() startup isolation'
+                'EventSource construction must go through AndroidEventSourceManager'
             )
-        if 'private fun addSource(' not in source:
-            failures.append(f'{service}: missing addSource() startup isolation helper')
+        if 'AndroidEventSourceManager()' not in source:
+            failures.append(f'{service}: missing central AndroidEventSourceManager')
+        if 'private fun registerSource(' not in source:
+            failures.append(f'{service}: missing registerSource() isolation helper')
+        if 'eventSources.startAll(' not in source or 'eventSources.stopAll()' not in source:
+            failures.append(f'{service}: EventSource lifecycle must be delegated to AndroidEventSourceManager')
+
+    manager = ROOT / 'platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidEventSourceManager.kt'
+    if not manager.exists():
+        failures.append(f'Missing central event-source manager: {manager}')
+    else:
+        source = manager.read_text(encoding='utf-8')
+        if 'Duplicate AndroidEventSource id' not in source:
+            failures.append(f'{manager}: manager must reject duplicate source IDs')
+        if 'asReversed()' not in source:
+            failures.append(f'{manager}: event sources must stop in reverse registration order')
 
     app_graph = ROOT / 'app/src/main/kotlin/com/yagay/yauto/AppGraph.kt'
     if not app_graph.exists():
