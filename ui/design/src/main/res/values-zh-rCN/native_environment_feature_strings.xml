@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_clipboard_read_title">读取剪贴板文本</string>
+    <string name="feature_android_clipboard_read_description">在 Android 隐私规则允许时读取当前剪贴板文本并保存到 YAuto 变量</string>
+    <string name="feature_android_clipboard_read_field_resultvariable">保存剪贴板文本到变量</string>
+    <string name="feature_android_clipboard_write_title">写入剪贴板文本</string>
+    <string name="feature_android_clipboard_write_description">解析 YAuto 变量后替换 Android 主剪贴板文本</string>
+    <string name="feature_android_clipboard_write_field_text">剪贴板文本</string>
+    <string name="feature_android_clipboard_write_field_label">剪贴板标签</string>
+
+    <string name="feature_android_state_battery_current_title">电池实时电流</string>
+    <string name="feature_android_state_battery_current_description">按微安范围匹配 Android 报告的电池实时电流</string>
+    <string name="feature_android_state_battery_current_field_min">最小值</string>
+    <string name="feature_android_state_battery_current_field_max">最大值</string>
+    <string name="feature_android_condition_battery_current_title">电池实时电流</string>
+    <string name="feature_android_condition_battery_current_description">按微安范围匹配 Android 报告的电池实时电流</string>
+    <string name="feature_android_condition_battery_current_field_min">最小值</string>
+    <string name="feature_android_condition_battery_current_field_max">最大值</string>
+
+    <string name="feature_android_state_battery_charge_counter_title">电池充电计数</string>
+    <string name="feature_android_state_battery_charge_counter_description">按微安时范围匹配 Android 报告的剩余电荷计数</string>
+    <string name="feature_android_state_battery_charge_counter_field_min">最小值</string>
+    <string name="feature_android_state_battery_charge_counter_field_max">最大值</string>
+    <string name="feature_android_condition_battery_charge_counter_title">电池充电计数</string>
+    <string name="feature_android_condition_battery_charge_counter_description">按微安时范围匹配 Android 报告的剩余电荷计数</string>
+    <string name="feature_android_condition_battery_charge_counter_field_min">最小值</string>
+    <string name="feature_android_condition_battery_charge_counter_field_max">最大值</string>
+
+    <string name="feature_android_state_battery_energy_counter_title">电池能量计数</string>
+    <string name="feature_android_state_battery_energy_counter_description">按纳瓦时范围匹配 Android 报告的剩余能量计数</string>
+    <string name="feature_android_state_battery_energy_counter_field_min">最小值</string>
+    <string name="feature_android_state_battery_energy_counter_field_max">最大值</string>
+    <string name="feature_android_condition_battery_energy_counter_title">电池能量计数</string>
+    <string name="feature_android_condition_battery_energy_counter_description">按纳瓦时范围匹配 Android 报告的剩余能量计数</string>
+    <string name="feature_android_condition_battery_energy_counter_field_min">最小值</string>
+    <string name="feature_android_condition_battery_energy_counter_field_max">最大值</string>
+
+    <string name="feature_android_state_clock_24h_title">24 小时制</string>
+    <string name="feature_android_state_clock_24h_description">检查 Android 当前是否使用 24 小时制</string>
+    <string name="feature_android_state_clock_24h_field_value">使用 24 小时制</string>
+    <string name="feature_android_condition_clock_24h_title">24 小时制</string>
+    <string name="feature_android_condition_clock_24h_description">检查 Android 当前是否使用 24 小时制</string>
+    <string name="feature_android_condition_clock_24h_field_value">使用 24 小时制</string>
+
+    <string name="feature_android_state_timezone_title">时区</string>
+    <string name="feature_android_state_timezone_description">匹配当前 Android 时区 ID</string>
+    <string name="feature_android_state_timezone_field_zonecontains">时区 ID 包含</string>
+    <string name="feature_android_condition_timezone_title">时区</string>
+    <string name="feature_android_condition_timezone_description">匹配当前 Android 时区 ID</string>
+    <string name="feature_android_condition_timezone_field_zonecontains">时区 ID 包含</string>
+
+    <string name="feature_android_state_locale_title">系统语言区域</string>
+    <string name="feature_android_state_locale_description">匹配任一已配置的 Android 语言标签</string>
+    <string name="feature_android_state_locale_field_languagetagcontains">语言标签包含</string>
+    <string name="feature_android_condition_locale_title">系统语言区域</string>
+    <string name="feature_android_condition_locale_description">匹配任一已配置的 Android 语言标签</string>
+    <string name="feature_android_condition_locale_field_languagetagcontains">语言标签包含</string>
+
+    <string name="feature_android_state_developer_options_title">开发者选项已启用</string>
+    <string name="feature_android_state_developer_options_description">检查 Android 开发者选项是否已启用</string>
+    <string name="feature_android_state_developer_options_field_value">已启用</string>
+    <string name="feature_android_condition_developer_options_title">开发者选项已启用</string>
+    <string name="feature_android_condition_developer_options_description">检查 Android 开发者选项是否已启用</string>
+    <string name="feature_android_condition_developer_options_field_value">已启用</string>
+
+    <string name="feature_android_state_adb_enabled_title">ADB 已启用</string>
+    <string name="feature_android_state_adb_enabled_description">检查系统设置中的 Android Debug Bridge 是否已启用</string>
+    <string name="feature_android_state_adb_enabled_field_value">已启用</string>
+    <string name="feature_android_condition_adb_enabled_title">ADB 已启用</string>
+    <string name="feature_android_condition_adb_enabled_description">检查系统设置中的 Android Debug Bridge 是否已启用</string>
+    <string name="feature_android_condition_adb_enabled_field_value">已启用</string>
+</resources>
