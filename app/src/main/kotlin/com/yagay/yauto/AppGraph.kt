@@ -11,10 +11,6 @@ import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.runtime.AutomationRuntime
 import com.yagay.yauto.core.runtime.ReconcilingWorkspaceRepository
 import com.yagay.yauto.feature.standard.StandardFeaturePacks
-import com.yagay.yauto.importer.macrodroid.MacroDroidFeatureSuggestions
-import com.yagay.yauto.importer.macrodroid.MacroDroidImporter
-import com.yagay.yauto.importer.shortx.EnhancedShortXImporter
-import com.yagay.yauto.importer.tasker.EnhancedTaskerImporter
 import com.yagay.yauto.platform.accessibility.AccessibilityBackend
 import com.yagay.yauto.platform.accessibility.AccessibilityDiagnosticCollector
 import com.yagay.yauto.platform.accessibility.AccessibilityFeaturePack
@@ -29,6 +25,10 @@ class AppGraph(context: Context) {
     private val appContext = context.applicationContext
 
     val features = FeatureRegistry()
+    /**
+     * Reserved for YAuto-native import/export formats. Third-party compatibility importers are
+     * intentionally not registered in the main product graph.
+     */
     val importers = ImporterRegistry()
     val diagnosticRegistry = DiagnosticRegistry()
     val traceStore = InMemoryExecutionTracer()
@@ -68,20 +68,6 @@ class AppGraph(context: Context) {
         safelyUnit("backend:shizuku") { capabilities.register(shizuku) }
         safelyUnit("backend:lsposed") { capabilities.register(xposed) }
         safelyUnit("backend:accessibility") { capabilities.register(accessibility) }
-
-        // Compatibility importers are metadata-only during normal startup. Their implementations are
-        // materialized only when the user explicitly imports a file.
-        safelyUnit("importer:macrodroid") {
-            importers.registerLazy("macrodroid", "MacroDroid") {
-                MacroDroidImporter(mapper = MacroDroidFeatureSuggestions.mapper)
-            }
-        }
-        safelyUnit("importer:shortx") {
-            importers.registerLazy("shortx", "ShortX") { EnhancedShortXImporter() }
-        }
-        safelyUnit("importer:tasker") {
-            importers.registerLazy("tasker", "Tasker") { EnhancedTaskerImporter() }
-        }
 
         safelyUnit("diagnostic:execution-files") {
             diagnosticRegistry.register(ExecutionFileDiagnosticCollector(appContext))

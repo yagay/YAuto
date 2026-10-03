@@ -76,6 +76,8 @@ data class FeatureDescriptor(
     val implementationOptions: List<FeatureImplementationOption> = emptyList(),
     /** Historical IDs accepted when restoring older workspaces. New code must use [id]. */
     val aliases: Set<String> = emptySet(),
+    /** Presentation and default-value metadata keyed by [FieldSchema.key]. */
+    val fieldBehaviors: Map<String, FieldBehavior> = emptyMap(),
 )
 
 sealed interface FeatureResolution {
@@ -153,7 +155,8 @@ class FeatureRegistry {
         require(descriptor.kind == FeatureKind.ACTION)
         registerDescriptor(descriptor)
         actions[descriptor.id.value] = ActionExecutor { feature, context ->
-            executor.execute(canonicalRef(feature, FeatureKind.ACTION), context.withFeatureBackend(feature))
+            val prepared = prepareFeature(feature, FeatureKind.ACTION)
+            executor.execute(prepared, context.withFeatureBackend(prepared))
         }
     }
 
@@ -161,7 +164,8 @@ class FeatureRegistry {
         require(descriptor.kind == FeatureKind.CONDITION)
         registerDescriptor(descriptor)
         conditions[descriptor.id.value] = ConditionEvaluator { feature, context ->
-            evaluator.evaluate(canonicalRef(feature, FeatureKind.CONDITION), context.withFeatureBackend(feature))
+            val prepared = prepareFeature(feature, FeatureKind.CONDITION)
+            evaluator.evaluate(prepared, context.withFeatureBackend(prepared))
         }
     }
 
@@ -169,7 +173,8 @@ class FeatureRegistry {
         require(descriptor.kind == FeatureKind.EVENT)
         registerDescriptor(descriptor)
         events[descriptor.id.value] = EventMatcher { feature, context ->
-            matcher.matches(canonicalRef(feature, FeatureKind.EVENT), context.withFeatureBackend(feature))
+            val prepared = prepareFeature(feature, FeatureKind.EVENT)
+            matcher.matches(prepared, context.withFeatureBackend(prepared))
         }
     }
 
@@ -177,7 +182,8 @@ class FeatureRegistry {
         require(descriptor.kind == FeatureKind.STATE)
         registerDescriptor(descriptor)
         states[descriptor.id.value] = ConditionEvaluator { feature, context ->
-            evaluator.evaluate(canonicalRef(feature, FeatureKind.STATE), context.withFeatureBackend(feature))
+            val prepared = prepareFeature(feature, FeatureKind.STATE)
+            evaluator.evaluate(prepared, context.withFeatureBackend(prepared))
         }
     }
 
@@ -271,6 +277,11 @@ class FeatureRegistry {
     fun allDescriptors(): List<FeatureDescriptor> = descriptors.values.sortedWith(
         compareBy<FeatureDescriptor> { it.category.name }.thenBy { it.title }
     )
+
+    private fun prepareFeature(feature: FeatureRef, kind: FeatureKind): FeatureRef {
+        val canonical = canonicalRef(feature, kind)
+        return descriptor(canonical.typeId)?.applyDefaults(canonical) ?: canonical
+    }
 }
 
 private fun FeatureExecutionContext.withFeatureBackend(feature: FeatureRef): FeatureExecutionContext =

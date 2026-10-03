@@ -79,14 +79,28 @@ def main() -> int:
         failures.append(f'Missing runtime service: {service}')
     else:
         source = service.read_text(encoding='utf-8')
-        direct = re.finditer(r'sources\s*\+=\s*[A-Z]\w*EventSource\s*\(', source)
+        direct = re.finditer(r'(?:sources|eventSources)\s*\+=\s*[A-Z]\w*EventSource\s*\(', source)
         for match in direct:
             failures.append(
                 f'{service}:{line_number(source, match.start())}: '
-                'EventSource construction must go through addSource() startup isolation'
+                'EventSource construction must go through AndroidEventSourceManager'
             )
-        if 'private fun addSource(' not in source:
-            failures.append(f'{service}: missing addSource() startup isolation helper')
+        if 'AndroidEventSourceManager()' not in source:
+            failures.append(f'{service}: missing central AndroidEventSourceManager')
+        if 'private fun registerSource(' not in source:
+            failures.append(f'{service}: missing registerSource() isolation helper')
+        if 'eventSources.startAll(' not in source or 'eventSources.stopAll()' not in source:
+            failures.append(f'{service}: EventSource lifecycle must be delegated to AndroidEventSourceManager')
+
+    manager = ROOT / 'platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidEventSourceManager.kt'
+    if not manager.exists():
+        failures.append(f'Missing central event-source manager: {manager}')
+    else:
+        source = manager.read_text(encoding='utf-8')
+        if 'Duplicate AndroidEventSource id' not in source:
+            failures.append(f'{manager}: manager must reject duplicate source IDs')
+        if 'asReversed()' not in source:
+            failures.append(f'{manager}: event sources must stop in reverse registration order')
 
     app_graph = ROOT / 'app/src/main/kotlin/com/yagay/yauto/AppGraph.kt'
     if not app_graph.exists():
@@ -98,10 +112,18 @@ def main() -> int:
         for match in re.finditer(r'importers\.register\s*\(', source):
             failures.append(
                 f'{app_graph}:{line_number(source, match.start())}: '
-                'Compatibility importers must use registerLazy() and stay off the cold-start path'
+                'Importers must use registerLazy() and stay off the cold-start path'
             )
-        if 'importers.registerLazy(' not in source:
-            failures.append(f'{app_graph}: compatibility importers must be registered lazily')
+        # YAuto V2 deliberately keeps MacroDroid / ShortX / Tasker compatibility code outside the
+        # active application graph. If compatibility is ever reintroduced it must be an optional,
+        # lazy module rather than a startup dependency.
+        forbidden = (
+            'importer.macrodroid', 'importer.shortx', 'importer.tasker',
+            'MacroDroidImporter', 'EnhancedShortXImporter', 'EnhancedTaskerImporter',
+        )
+        for token in forbidden:
+            if token in source:
+                failures.append(f'{app_graph}: compatibility importer reference must stay out of the V2 app graph: {token}')
 
     if failures:
         print('Startup safety guard failed:\n' + '\n'.join(failures))
@@ -109,7 +131,7 @@ def main() -> int:
 
     print(
         f'Startup safety guard passed: {descriptor_count} literal FeatureDescriptor IDs are unique; '
-        'FeaturePack/EventSource isolation and lazy compatibility importers are enforced.'
+        'FeaturePack/EventSource isolation is enforced and compatibility importers are off the V2 startup path.'
     )
     return 0
 

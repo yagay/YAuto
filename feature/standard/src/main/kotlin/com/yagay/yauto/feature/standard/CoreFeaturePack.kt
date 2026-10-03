@@ -2,17 +2,24 @@ package com.yagay.yauto.feature.standard
 
 import com.yagay.yauto.core.logging.TraceEvent
 import com.yagay.yauto.core.logging.TraceKind
+import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.long
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 import kotlinx.coroutines.delay
 
+/**
+ * Small reference pack for the V2 feature-definition style.
+ *
+ * Each feature keeps its descriptor and executor together. New domains should follow this pattern
+ * instead of adding more feature-specific branches to a central registry or editor.
+ */
 class CoreFeaturePack : FeaturePack {
     override val id: String = "standard.core"
 
-    override fun install(registry: FeatureRegistry) {
-        registry.registerEvent(
+    private val definitions: List<FeatureDefinition> = listOf(
+        eventFeature(
             FeatureDescriptor(
                 id = FeatureId("core.event.manual"),
                 kind = FeatureKind.EVENT,
@@ -21,7 +28,6 @@ class CoreFeaturePack : FeaturePack {
                 category = FeatureCategory.CORE,
                 fields = listOf(FieldSchema.Text("name", "Name")),
                 keywords = setOf("manual", "test", "run"),
-                ownerPackId = id,
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "core.event.manual") false
@@ -29,26 +35,34 @@ class CoreFeaturePack : FeaturePack {
                 val expected = feature.config.string("name")
                 expected.isBlank() || ctx.event.payload.string("name") == expected
             }
-        }
-
-        registry.registerAction(
+        },
+        actionFeature(
             FeatureDescriptor(
-                FeatureId("core.delay"), FeatureKind.ACTION, "Delay", "Wait before continuing",
-                FeatureCategory.CORE,
+                id = FeatureId("core.delay"),
+                kind = FeatureKind.ACTION,
+                title = "Delay",
+                description = "Wait before continuing",
+                category = FeatureCategory.CORE,
                 fields = listOf(FieldSchema.Duration("durationMs", "Duration")),
-                ownerPackId = id,
+                fieldBehaviors = mapOf(
+                    "durationMs" to FieldBehavior(defaultValue = ConfigValue.NumberValue(0.0)),
+                ),
             )
         ) { feature, _ ->
             delay(feature.config.long("durationMs", 0).coerceAtLeast(0))
             ActionExecutionResult(true)
-        }
-
-        registry.registerAction(
+        },
+        actionFeature(
             FeatureDescriptor(
-                FeatureId("core.log"), FeatureKind.ACTION, "Write log", "Write a message to the execution trace",
-                FeatureCategory.CORE,
+                id = FeatureId("core.log"),
+                kind = FeatureKind.ACTION,
+                title = "Write log",
+                description = "Write a message to the execution trace",
+                category = FeatureCategory.CORE,
                 fields = listOf(FieldSchema.Text("message", "Message", true, true)),
-                ownerPackId = id,
+                fieldBehaviors = mapOf(
+                    "message" to FieldBehavior(supportsVariables = true),
+                ),
             )
         ) { feature, ctx ->
             val message = feature.config.string("message").resolveVariables(ctx.variables)
@@ -63,15 +77,23 @@ class CoreFeaturePack : FeaturePack {
                 )
             )
             ActionExecutionResult(true, message = message)
-        }
-
-        registry.registerCondition(
+        },
+        conditionFeature(
             FeatureDescriptor(
-                FeatureId("core.boolean"), FeatureKind.CONDITION, "Boolean", "Static boolean condition",
-                FeatureCategory.CORE,
+                id = FeatureId("core.boolean"),
+                kind = FeatureKind.CONDITION,
+                title = "Boolean",
+                description = "Static boolean condition",
+                category = FeatureCategory.CORE,
                 fields = listOf(FieldSchema.Toggle("value", "Value")),
-                ownerPackId = id,
+                fieldBehaviors = mapOf(
+                    "value" to FieldBehavior(defaultValue = ConfigValue.BooleanValue(false)),
+                ),
             )
-        ) { feature, _ -> feature.config.boolean("value") }
+        ) { feature, _ -> feature.config.boolean("value") },
+    )
+
+    override fun install(registry: FeatureRegistry) {
+        DefinitionFeaturePack(id, definitions).install(registry)
     }
 }
