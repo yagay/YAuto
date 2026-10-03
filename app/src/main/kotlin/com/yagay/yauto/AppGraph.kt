@@ -13,7 +13,7 @@ import com.yagay.yauto.feature.standard.StandardFeaturePacks
 import com.yagay.yauto.importer.macrodroid.MacroDroidFeatureSuggestions
 import com.yagay.yauto.importer.macrodroid.MacroDroidImporter
 import com.yagay.yauto.importer.shortx.EnhancedShortXImporter
-import com.yagay.yauto.importer.tasker.TaskerImporter
+import com.yagay.yauto.importer.tasker.EnhancedTaskerImporter
 import com.yagay.yauto.platform.accessibility.AccessibilityBackend
 import com.yagay.yauto.platform.accessibility.AccessibilityDiagnosticCollector
 import com.yagay.yauto.platform.accessibility.AccessibilityFeaturePack
@@ -112,7 +112,7 @@ class AppGraph(context: Context) {
             importers.register(MacroDroidImporter(mapper = MacroDroidFeatureSuggestions.mapper))
         }
         safelyUnit("importer:shortx") { importers.register(EnhancedShortXImporter()) }
-        safelyUnit("importer:tasker") { importers.register(TaskerImporter()) }
+        safelyUnit("importer:tasker") { importers.register(EnhancedTaskerImporter()) }
 
         safelyUnit("diagnostic:execution-files") {
             diagnosticRegistry.register(ExecutionFileDiagnosticCollector(appContext))
