@@ -27,7 +27,7 @@ class AndroidReferenceGapFeaturePackTest {
 
     @Test
     fun frameworkValuesMapToStableNames() {
-        assertEquals("in_communication", audioModeName(AudioManager.MODE_IN_COMMUNICATION))
+        assertEquals("in_communication", referenceAudioModeName(AudioManager.MODE_IN_COMMUNICATION))
         assertEquals("portrait", orientationName(Configuration.ORIENTATION_PORTRAIT))
         assertEquals("270", displayRotationName(Surface.ROTATION_270))
         assertEquals("monday", dayOfWeekName(Calendar.MONDAY))
