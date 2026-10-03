@@ -10,6 +10,7 @@ import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.core.registry.FieldBehavior
 import com.yagay.yauto.core.registry.FieldSchema
 import com.yagay.yauto.core.registry.VariableAccess
+import com.yagay.yauto.core.registry.resolveVariables
 
 internal fun persistentDescriptor(
     id: String,
