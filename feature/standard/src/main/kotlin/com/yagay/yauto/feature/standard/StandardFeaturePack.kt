@@ -25,7 +25,6 @@ object StandardFeaturePacks {
         PrivilegedAndroidFeaturePack(),
         PrivilegedUtilityFeaturePack(),
         SystemFeaturePack(),
-        CompatibilityFeaturePack(),
     )
 
     private object UnsupportedAutomationControl : AutomationControl {
