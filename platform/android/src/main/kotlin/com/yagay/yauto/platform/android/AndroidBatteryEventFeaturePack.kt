@@ -201,3 +201,6 @@ class AndroidBatteryEventFeaturePack : FeaturePack {
         else -> true
     }
 }
+
+/** Compatibility name for the event payload; the mapping itself is owned by AndroidDeviceUtilityFeaturePack. */
+internal fun batteryPluggedName(value: Int): String = chargingSourceName(value)
