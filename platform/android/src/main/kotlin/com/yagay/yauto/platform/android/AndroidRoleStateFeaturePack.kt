@@ -1,7 +1,6 @@
 package com.yagay.yauto.platform.android
 
 import android.app.role.RoleManager
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -203,6 +202,11 @@ internal fun roleName(value: String): String? = when (value) {
     else -> null
 }
 
-internal fun packageFromComponent(component: String): String =
-    ComponentName.unflattenFromString(component)?.packageName
-        ?: component.substringBefore('/').takeIf { '.' in it }.orEmpty()
+internal fun packageFromComponent(component: String): String {
+    val raw = component.trim()
+    if (raw.isEmpty()) return ""
+    val packageName = raw.substringBefore('/')
+    return packageName.takeIf { ANDROID_PACKAGE_NAME.matches(it) }.orEmpty()
+}
+
+private val ANDROID_PACKAGE_NAME = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
