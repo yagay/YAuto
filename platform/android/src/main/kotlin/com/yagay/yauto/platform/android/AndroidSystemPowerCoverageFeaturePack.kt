@@ -1,6 +1,5 @@
 package com.yagay.yauto.platform.android
 
-import android.app.ActivityManager
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
@@ -36,21 +35,10 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
             registry, "battery_status", "Battery status", "Match the current Android battery status",
             FeatureCategory.DEVICE, "status", "Status", listOf("charging", "discharging", "not_charging", "full", "unknown")
         ) { batteryStatus() }
-        choicePair(
-            registry, "battery_health", "Battery health", "Match the current battery health",
-            FeatureCategory.DEVICE, "health", "Health", listOf("good", "overheat", "dead", "over_voltage", "failure", "cold", "unknown")
-        ) { batteryHealth() }
         rangePair(
             registry, "battery_voltage", "Battery voltage", "Compare the current battery voltage",
             FeatureCategory.DEVICE, "minMv", "Minimum mV", "maxMv", "Maximum mV", 0.0, 20_000.0
         ) { batteryIntent()?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1)?.takeIf { it >= 0 }?.toDouble() }
-        rangePair(
-            registry, "memory_available", "Available memory", "Compare currently available system memory",
-            FeatureCategory.DEVICE, "minMb", "Minimum MB", "maxMb", "Maximum MB", 0.0, 1_000_000.0
-        ) { memoryInfo().availMem / (1024.0 * 1024.0) }
-        booleanPair(registry, "memory_low", "Low-memory state", "Check Android's low-memory signal", FeatureCategory.DEVICE) {
-            memoryInfo().lowMemory
-        }
         booleanPair(registry, "device_idle", "Device idle mode", "Check whether Android is in device idle mode", FeatureCategory.DEVICE) {
             context.getSystemService(PowerManager::class.java).isDeviceIdleMode
         }
@@ -199,20 +187,6 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         BatteryManager.BATTERY_STATUS_NOT_CHARGING -> "not_charging"
         BatteryManager.BATTERY_STATUS_FULL -> "full"
         else -> "unknown"
-    }
-
-    private fun batteryHealth(): String = when (batteryIntent()?.getIntExtra(BatteryManager.EXTRA_HEALTH, BatteryManager.BATTERY_HEALTH_UNKNOWN)) {
-        BatteryManager.BATTERY_HEALTH_GOOD -> "good"
-        BatteryManager.BATTERY_HEALTH_OVERHEAT -> "overheat"
-        BatteryManager.BATTERY_HEALTH_DEAD -> "dead"
-        BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "over_voltage"
-        BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "failure"
-        BatteryManager.BATTERY_HEALTH_COLD -> "cold"
-        else -> "unknown"
-    }
-
-    private fun memoryInfo(): ActivityManager.MemoryInfo = ActivityManager.MemoryInfo().also {
-        context.getSystemService(ActivityManager::class.java).getMemoryInfo(it)
     }
 
     private fun activeCapabilities(): NetworkCapabilities? {

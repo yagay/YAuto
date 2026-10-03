@@ -28,27 +28,6 @@
     <string name="feature_android_condition_battery_status_field_status_option_full">已充满</string>
     <string name="feature_android_condition_battery_status_field_status_option_unknown">未知</string>
 
-    <string name="feature_android_state_battery_health_title">电池健康状态</string>
-    <string name="feature_android_state_battery_health_description">匹配当前电池健康状态</string>
-    <string name="feature_android_state_battery_health_field_health">健康状态</string>
-    <string name="feature_android_condition_battery_health_title">电池健康状态</string>
-    <string name="feature_android_condition_battery_health_description">匹配当前电池健康状态</string>
-    <string name="feature_android_condition_battery_health_field_health">健康状态</string>
-    <string name="feature_android_state_battery_health_field_health_option_good">良好</string>
-    <string name="feature_android_state_battery_health_field_health_option_overheat">过热</string>
-    <string name="feature_android_state_battery_health_field_health_option_dead">失效</string>
-    <string name="feature_android_state_battery_health_field_health_option_over_voltage">过压</string>
-    <string name="feature_android_state_battery_health_field_health_option_failure">故障</string>
-    <string name="feature_android_state_battery_health_field_health_option_cold">过冷</string>
-    <string name="feature_android_state_battery_health_field_health_option_unknown">未知</string>
-    <string name="feature_android_condition_battery_health_field_health_option_good">良好</string>
-    <string name="feature_android_condition_battery_health_field_health_option_overheat">过热</string>
-    <string name="feature_android_condition_battery_health_field_health_option_dead">失效</string>
-    <string name="feature_android_condition_battery_health_field_health_option_over_voltage">过压</string>
-    <string name="feature_android_condition_battery_health_field_health_option_failure">故障</string>
-    <string name="feature_android_condition_battery_health_field_health_option_cold">过冷</string>
-    <string name="feature_android_condition_battery_health_field_health_option_unknown">未知</string>
-
     <string name="feature_android_state_battery_voltage_title">电池电压</string>
     <string name="feature_android_state_battery_voltage_description">比较当前电池电压</string>
     <string name="feature_android_state_battery_voltage_field_minmv">最小 mV</string>
@@ -58,27 +37,13 @@
     <string name="feature_android_condition_battery_voltage_field_minmv">最小 mV</string>
     <string name="feature_android_condition_battery_voltage_field_maxmv">最大 mV</string>
 
-    <string name="feature_android_state_memory_available_title">可用内存</string>
-    <string name="feature_android_state_memory_available_description">比较当前系统可用内存</string>
-    <string name="feature_android_state_memory_available_field_minmb">最小 MB</string>
-    <string name="feature_android_state_memory_available_field_maxmb">最大 MB</string>
-    <string name="feature_android_condition_memory_available_title">可用内存</string>
-    <string name="feature_android_condition_memory_available_description">比较当前系统可用内存</string>
-    <string name="feature_android_condition_memory_available_field_minmb">最小 MB</string>
-    <string name="feature_android_condition_memory_available_field_maxmb">最大 MB</string>
-
-    <string name="feature_android_state_memory_low_title">低内存状态</string>
-    <string name="feature_android_state_memory_low_description">检查 Android 的低内存状态标记</string>
-    <string name="feature_android_state_memory_low_field_value">启用 / 是</string>
-    <string name="feature_android_condition_memory_low_title">低内存状态</string>
-    <string name="feature_android_condition_memory_low_description">检查 Android 的低内存状态标记</string>
-    <string name="feature_android_condition_memory_low_field_value">启用 / 是</string>
     <string name="feature_android_state_device_idle_title">设备空闲模式</string>
     <string name="feature_android_state_device_idle_description">检查 Android 是否处于设备空闲模式</string>
     <string name="feature_android_state_device_idle_field_value">启用 / 是</string>
     <string name="feature_android_condition_device_idle_title">设备空闲模式</string>
     <string name="feature_android_condition_device_idle_description">检查 Android 是否处于设备空闲模式</string>
     <string name="feature_android_condition_device_idle_field_value">启用 / 是</string>
+
     <string name="feature_android_state_low_power_standby_title">低功耗待机</string>
     <string name="feature_android_state_low_power_standby_description">检查 Android 低功耗待机是否已启用</string>
     <string name="feature_android_state_low_power_standby_field_value">启用 / 是</string>
@@ -116,18 +81,21 @@
     <string name="feature_android_condition_internet_validated_title">已验证互联网</string>
     <string name="feature_android_condition_internet_validated_description">检查当前活动网络是否已通过互联网访问验证</string>
     <string name="feature_android_condition_internet_validated_field_value">启用 / 是</string>
+
     <string name="feature_android_state_network_roaming_title">网络漫游</string>
     <string name="feature_android_state_network_roaming_description">检查当前活动网络是否处于漫游</string>
     <string name="feature_android_state_network_roaming_field_value">启用 / 是</string>
     <string name="feature_android_condition_network_roaming_title">网络漫游</string>
     <string name="feature_android_condition_network_roaming_description">检查当前活动网络是否处于漫游</string>
     <string name="feature_android_condition_network_roaming_field_value">启用 / 是</string>
+
     <string name="feature_android_state_vpn_active_title">VPN 已连接</string>
     <string name="feature_android_state_vpn_active_description">检查当前活动网络是否使用 VPN 传输</string>
     <string name="feature_android_state_vpn_active_field_value">启用 / 是</string>
     <string name="feature_android_condition_vpn_active_title">VPN 已连接</string>
     <string name="feature_android_condition_vpn_active_description">检查当前活动网络是否使用 VPN 传输</string>
     <string name="feature_android_condition_vpn_active_field_value">启用 / 是</string>
+
     <string name="feature_android_state_device_secure_title">设备安全锁</string>
     <string name="feature_android_state_device_secure_description">检查设备是否配置了安全锁屏凭据</string>
     <string name="feature_android_state_device_secure_field_value">启用 / 是</string>

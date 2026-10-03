@@ -17,37 +17,16 @@
     <string name="feature_android_condition_battery_status_title">Battery status</string>
     <string name="feature_android_condition_battery_status_description">Match the current Android battery status</string>
     <string name="feature_android_condition_battery_status_field_status">Status</string>
-    <string name="feature_android_state_battery_status_field_status_option_charging">charging</string>
-    <string name="feature_android_state_battery_status_field_status_option_discharging">discharging</string>
-    <string name="feature_android_state_battery_status_field_status_option_not_charging">not charging</string>
-    <string name="feature_android_state_battery_status_field_status_option_full">full</string>
-    <string name="feature_android_state_battery_status_field_status_option_unknown">unknown</string>
-    <string name="feature_android_condition_battery_status_field_status_option_charging">charging</string>
-    <string name="feature_android_condition_battery_status_field_status_option_discharging">discharging</string>
-    <string name="feature_android_condition_battery_status_field_status_option_not_charging">not charging</string>
-    <string name="feature_android_condition_battery_status_field_status_option_full">full</string>
-    <string name="feature_android_condition_battery_status_field_status_option_unknown">unknown</string>
-
-    <string name="feature_android_state_battery_health_title">Battery health</string>
-    <string name="feature_android_state_battery_health_description">Match the current battery health</string>
-    <string name="feature_android_state_battery_health_field_health">Health</string>
-    <string name="feature_android_condition_battery_health_title">Battery health</string>
-    <string name="feature_android_condition_battery_health_description">Match the current battery health</string>
-    <string name="feature_android_condition_battery_health_field_health">Health</string>
-    <string name="feature_android_state_battery_health_field_health_option_good">good</string>
-    <string name="feature_android_state_battery_health_field_health_option_overheat">overheat</string>
-    <string name="feature_android_state_battery_health_field_health_option_dead">dead</string>
-    <string name="feature_android_state_battery_health_field_health_option_over_voltage">over voltage</string>
-    <string name="feature_android_state_battery_health_field_health_option_failure">failure</string>
-    <string name="feature_android_state_battery_health_field_health_option_cold">cold</string>
-    <string name="feature_android_state_battery_health_field_health_option_unknown">unknown</string>
-    <string name="feature_android_condition_battery_health_field_health_option_good">good</string>
-    <string name="feature_android_condition_battery_health_field_health_option_overheat">overheat</string>
-    <string name="feature_android_condition_battery_health_field_health_option_dead">dead</string>
-    <string name="feature_android_condition_battery_health_field_health_option_over_voltage">over voltage</string>
-    <string name="feature_android_condition_battery_health_field_health_option_failure">failure</string>
-    <string name="feature_android_condition_battery_health_field_health_option_cold">cold</string>
-    <string name="feature_android_condition_battery_health_field_health_option_unknown">unknown</string>
+    <string name="feature_android_state_battery_status_field_status_option_charging">Charging</string>
+    <string name="feature_android_state_battery_status_field_status_option_discharging">Discharging</string>
+    <string name="feature_android_state_battery_status_field_status_option_not_charging">Not charging</string>
+    <string name="feature_android_state_battery_status_field_status_option_full">Full</string>
+    <string name="feature_android_state_battery_status_field_status_option_unknown">Unknown</string>
+    <string name="feature_android_condition_battery_status_field_status_option_charging">Charging</string>
+    <string name="feature_android_condition_battery_status_field_status_option_discharging">Discharging</string>
+    <string name="feature_android_condition_battery_status_field_status_option_not_charging">Not charging</string>
+    <string name="feature_android_condition_battery_status_field_status_option_full">Full</string>
+    <string name="feature_android_condition_battery_status_field_status_option_unknown">Unknown</string>
 
     <string name="feature_android_state_battery_voltage_title">Battery voltage</string>
     <string name="feature_android_state_battery_voltage_description">Compare the current battery voltage</string>
@@ -58,27 +37,13 @@
     <string name="feature_android_condition_battery_voltage_field_minmv">Minimum mV</string>
     <string name="feature_android_condition_battery_voltage_field_maxmv">Maximum mV</string>
 
-    <string name="feature_android_state_memory_available_title">Available memory</string>
-    <string name="feature_android_state_memory_available_description">Compare currently available system memory</string>
-    <string name="feature_android_state_memory_available_field_minmb">Minimum MB</string>
-    <string name="feature_android_state_memory_available_field_maxmb">Maximum MB</string>
-    <string name="feature_android_condition_memory_available_title">Available memory</string>
-    <string name="feature_android_condition_memory_available_description">Compare currently available system memory</string>
-    <string name="feature_android_condition_memory_available_field_minmb">Minimum MB</string>
-    <string name="feature_android_condition_memory_available_field_maxmb">Maximum MB</string>
-
-    <string name="feature_android_state_memory_low_title">Low-memory state</string>
-    <string name="feature_android_state_memory_low_description">Check Android's low-memory signal</string>
-    <string name="feature_android_state_memory_low_field_value">Enabled / true</string>
-    <string name="feature_android_condition_memory_low_title">Low-memory state</string>
-    <string name="feature_android_condition_memory_low_description">Check Android's low-memory signal</string>
-    <string name="feature_android_condition_memory_low_field_value">Enabled / true</string>
     <string name="feature_android_state_device_idle_title">Device idle mode</string>
     <string name="feature_android_state_device_idle_description">Check whether Android is in device idle mode</string>
     <string name="feature_android_state_device_idle_field_value">Enabled / true</string>
     <string name="feature_android_condition_device_idle_title">Device idle mode</string>
     <string name="feature_android_condition_device_idle_description">Check whether Android is in device idle mode</string>
     <string name="feature_android_condition_device_idle_field_value">Enabled / true</string>
+
     <string name="feature_android_state_low_power_standby_title">Low-power standby</string>
     <string name="feature_android_state_low_power_standby_description">Check whether Android low-power standby is enabled</string>
     <string name="feature_android_state_low_power_standby_field_value">Enabled / true</string>
@@ -92,14 +57,14 @@
     <string name="feature_android_condition_orientation_title">Screen orientation</string>
     <string name="feature_android_condition_orientation_description">Match the current screen orientation</string>
     <string name="feature_android_condition_orientation_field_orientation">Orientation</string>
-    <string name="feature_android_state_orientation_field_orientation_option_portrait">portrait</string>
-    <string name="feature_android_state_orientation_field_orientation_option_landscape">landscape</string>
-    <string name="feature_android_state_orientation_field_orientation_option_square">square</string>
-    <string name="feature_android_state_orientation_field_orientation_option_undefined">undefined</string>
-    <string name="feature_android_condition_orientation_field_orientation_option_portrait">portrait</string>
-    <string name="feature_android_condition_orientation_field_orientation_option_landscape">landscape</string>
-    <string name="feature_android_condition_orientation_field_orientation_option_square">square</string>
-    <string name="feature_android_condition_orientation_field_orientation_option_undefined">undefined</string>
+    <string name="feature_android_state_orientation_field_orientation_option_portrait">Portrait</string>
+    <string name="feature_android_state_orientation_field_orientation_option_landscape">Landscape</string>
+    <string name="feature_android_state_orientation_field_orientation_option_square">Square</string>
+    <string name="feature_android_state_orientation_field_orientation_option_undefined">Undefined</string>
+    <string name="feature_android_condition_orientation_field_orientation_option_portrait">Portrait</string>
+    <string name="feature_android_condition_orientation_field_orientation_option_landscape">Landscape</string>
+    <string name="feature_android_condition_orientation_field_orientation_option_square">Square</string>
+    <string name="feature_android_condition_orientation_field_orientation_option_undefined">Undefined</string>
 
     <string name="feature_android_state_font_scale_title">System font scale</string>
     <string name="feature_android_state_font_scale_description">Compare the Android system font scale</string>
@@ -116,18 +81,21 @@
     <string name="feature_android_condition_internet_validated_title">Validated internet</string>
     <string name="feature_android_condition_internet_validated_description">Check whether the active network is validated for internet access</string>
     <string name="feature_android_condition_internet_validated_field_value">Enabled / true</string>
+
     <string name="feature_android_state_network_roaming_title">Network roaming</string>
     <string name="feature_android_state_network_roaming_description">Check whether the active network is roaming</string>
     <string name="feature_android_state_network_roaming_field_value">Enabled / true</string>
     <string name="feature_android_condition_network_roaming_title">Network roaming</string>
     <string name="feature_android_condition_network_roaming_description">Check whether the active network is roaming</string>
     <string name="feature_android_condition_network_roaming_field_value">Enabled / true</string>
+
     <string name="feature_android_state_vpn_active_title">VPN active</string>
     <string name="feature_android_state_vpn_active_description">Check whether the active network uses a VPN transport</string>
     <string name="feature_android_state_vpn_active_field_value">Enabled / true</string>
     <string name="feature_android_condition_vpn_active_title">VPN active</string>
     <string name="feature_android_condition_vpn_active_description">Check whether the active network uses a VPN transport</string>
     <string name="feature_android_condition_vpn_active_field_value">Enabled / true</string>
+
     <string name="feature_android_state_device_secure_title">Device secure</string>
     <string name="feature_android_state_device_secure_description">Check whether the device has secure lock-screen credentials</string>
     <string name="feature_android_state_device_secure_field_value">Enabled / true</string>
