@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_file_changed_title">File changed</string>
+    <string name="feature_android_event_file_changed_description">Run when an accessible file or directory reports a selected filesystem change</string>
+    <string name="feature_android_event_file_changed_field_path">File or directory path</string>
+    <string name="feature_android_event_file_changed_field_event">Change type</string>
+    <string name="feature_android_event_file_changed_field_event_option_any">any</string>
+    <string name="feature_android_event_file_changed_field_event_option_create">create</string>
+    <string name="feature_android_event_file_changed_field_event_option_delete">delete</string>
+    <string name="feature_android_event_file_changed_field_event_option_modify">modify</string>
+    <string name="feature_android_event_file_changed_field_event_option_move">move</string>
+    <string name="feature_android_event_file_changed_field_event_option_close_write">close_write</string>
+    <string name="feature_android_event_file_changed_field_recursive">Watch subdirectories</string>
+    <string name="feature_android_event_file_changed_field_namecontains">Name contains</string>
+
+    <string name="feature_android_ime_picker_show_title">Show input-method picker</string>
+    <string name="feature_android_ime_picker_show_description">Open the Android input-method picker</string>
+
+    <string name="feature_android_ime_default_set_title">Set default input method</string>
+    <string name="feature_android_ime_default_set_description">Select an enabled Android input method through the privileged ime command</string>
+    <string name="feature_android_ime_default_set_field_imeid">Input-method ID</string>
+
+    <string name="feature_android_ime_settings_open_title">Open input-method settings</string>
+    <string name="feature_android_ime_settings_open_description">Open the Android keyboard and input-method settings page</string>
+
+    <string name="feature_android_screen_screenshot_title">Capture screenshot</string>
+    <string name="feature_android_screen_screenshot_description">Capture the current display to a PNG file through an authorized privileged shell backend</string>
+    <string name="feature_android_screen_screenshot_field_path">Output PNG path</string>
+    <string name="feature_android_screen_screenshot_field_resultvariable">Store output path in variable</string>
+
+    <string name="feature_android_input_keyevent_field_keycode">Android key code</string>
+
+    <string name="feature_android_state_default_ime_title">Default input method</string>
+    <string name="feature_android_state_default_ime_description">Match the currently selected Android input method</string>
+    <string name="feature_android_state_default_ime_field_idcontains">IME ID contains</string>
+    <string name="feature_android_state_default_ime_field_exact">Exact match</string>
+    <string name="feature_android_condition_default_ime_title">Default input method</string>
+    <string name="feature_android_condition_default_ime_description">Match the currently selected Android input method</string>
+    <string name="feature_android_condition_default_ime_field_idcontains">IME ID contains</string>
+    <string name="feature_android_condition_default_ime_field_exact">Exact match</string>
+
+    <string name="feature_android_state_enabled_ime_title">Enabled input method</string>
+    <string name="feature_android_state_enabled_ime_description">Check the enabled Android input-method list</string>
+    <string name="feature_android_state_enabled_ime_field_idcontains">IME ID contains</string>
+    <string name="feature_android_state_enabled_ime_field_exact">Exact match</string>
+    <string name="feature_android_condition_enabled_ime_title">Enabled input method</string>
+    <string name="feature_android_condition_enabled_ime_description">Check the enabled Android input-method list</string>
+    <string name="feature_android_condition_enabled_ime_field_idcontains">IME ID contains</string>
+    <string name="feature_android_condition_enabled_ime_field_exact">Exact match</string>
+
+    <string name="feature_android_state_hardware_keyboard_title">Hardware keyboard</string>
+    <string name="feature_android_state_hardware_keyboard_description">Check whether Android reports a hardware keyboard</string>
+    <string name="feature_android_state_hardware_keyboard_field_value">Enabled / true</string>
+    <string name="feature_android_condition_hardware_keyboard_title">Hardware keyboard</string>
+    <string name="feature_android_condition_hardware_keyboard_description">Check whether Android reports a hardware keyboard</string>
+    <string name="feature_android_condition_hardware_keyboard_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_user_unlocked_title">User unlocked</string>
+    <string name="feature_android_state_user_unlocked_description">Check whether Android credential-encrypted user storage is unlocked</string>
+    <string name="feature_android_state_user_unlocked_field_value">Enabled / true</string>
+    <string name="feature_android_condition_user_unlocked_title">User unlocked</string>
+    <string name="feature_android_condition_user_unlocked_description">Check whether Android credential-encrypted user storage is unlocked</string>
+    <string name="feature_android_condition_user_unlocked_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_developer_options_title">Developer options</string>
+    <string name="feature_android_state_developer_options_description">Check whether Android developer options are enabled</string>
+    <string name="feature_android_state_developer_options_field_value">Enabled / true</string>
+    <string name="feature_android_condition_developer_options_title">Developer options</string>
+    <string name="feature_android_condition_developer_options_description">Check whether Android developer options are enabled</string>
+    <string name="feature_android_condition_developer_options_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_adb_enabled_title">ADB enabled</string>
+    <string name="feature_android_state_adb_enabled_description">Check whether Android ADB debugging is enabled</string>
+    <string name="feature_android_state_adb_enabled_field_value">Enabled / true</string>
+    <string name="feature_android_condition_adb_enabled_title">ADB enabled</string>
+    <string name="feature_android_condition_adb_enabled_description">Check whether Android ADB debugging is enabled</string>
+    <string name="feature_android_condition_adb_enabled_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_overlay_access_title">Overlay access</string>
+    <string name="feature_android_state_overlay_access_description">Check whether YAuto may draw over other apps</string>
+    <string name="feature_android_state_overlay_access_field_value">Enabled / true</string>
+    <string name="feature_android_condition_overlay_access_title">Overlay access</string>
+    <string name="feature_android_condition_overlay_access_description">Check whether YAuto may draw over other apps</string>
+    <string name="feature_android_condition_overlay_access_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_write_settings_access_title">Modify system settings access</string>
+    <string name="feature_android_state_write_settings_access_description">Check whether YAuto may modify Android system settings</string>
+    <string name="feature_android_state_write_settings_access_field_value">Enabled / true</string>
+    <string name="feature_android_condition_write_settings_access_title">Modify system settings access</string>
+    <string name="feature_android_condition_write_settings_access_description">Check whether YAuto may modify Android system settings</string>
+    <string name="feature_android_condition_write_settings_access_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_dnd_access_title">Do Not Disturb access</string>
+    <string name="feature_android_state_dnd_access_description">Check whether YAuto has notification-policy access</string>
+    <string name="feature_android_state_dnd_access_field_value">Enabled / true</string>
+    <string name="feature_android_condition_dnd_access_title">Do Not Disturb access</string>
+    <string name="feature_android_condition_dnd_access_description">Check whether YAuto has notification-policy access</string>
+    <string name="feature_android_condition_dnd_access_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_exact_alarm_access_title">Exact alarm access</string>
+    <string name="feature_android_state_exact_alarm_access_description">Check whether YAuto may schedule exact alarms</string>
+    <string name="feature_android_state_exact_alarm_access_field_value">Enabled / true</string>
+    <string name="feature_android_condition_exact_alarm_access_title">Exact alarm access</string>
+    <string name="feature_android_condition_exact_alarm_access_description">Check whether YAuto may schedule exact alarms</string>
+    <string name="feature_android_condition_exact_alarm_access_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_default_launcher_title">Default launcher</string>
+    <string name="feature_android_state_default_launcher_description">Match the current Android default home application</string>
+    <string name="feature_android_state_default_launcher_field_package">App / package</string>
+    <string name="feature_android_condition_default_launcher_title">Default launcher</string>
+    <string name="feature_android_condition_default_launcher_description">Match the current Android default home application</string>
+    <string name="feature_android_condition_default_launcher_field_package">App / package</string>
+
+    <string name="feature_android_state_process_running_title">App process running</string>
+    <string name="feature_android_state_process_running_description">Check whether pidof reports a running process for an application</string>
+    <string name="feature_android_state_process_running_field_package">App / package</string>
+    <string name="feature_android_state_process_running_field_value">Running</string>
+    <string name="feature_android_condition_process_running_title">App process running</string>
+    <string name="feature_android_condition_process_running_description">Check whether pidof reports a running process for an application</string>
+    <string name="feature_android_condition_process_running_field_package">App / package</string>
+    <string name="feature_android_condition_process_running_field_value">Running</string>
+</resources>
