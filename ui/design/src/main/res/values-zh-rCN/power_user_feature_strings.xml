@@ -2,8 +2,6 @@
 <resources>
     <string name="feature_android_shell_execute_title">执行特权 Shell 命令</string>
     <string name="feature_android_shell_execute_description">通过所选特权后端执行 Shell 命令并提供结构化结果</string>
-    <string name="feature_android_clipboard_clear_title">清空剪贴板</string>
-    <string name="feature_android_clipboard_clear_description">清空 Android 主剪贴板</string>
     <string name="feature_android_vibration_vibrate_title">振动</string>
     <string name="feature_android_vibration_vibrate_description">按限定时长和振幅执行一次振动</string>
     <string name="feature_android_vibration_pattern_title">振动模式</string>
