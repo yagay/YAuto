@@ -1,6 +1,7 @@
 package com.yagay.yauto.core.storage
 
 import com.yagay.yauto.core.model.Automation
+import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.Flow
 import kotlinx.serialization.Serializable
 
@@ -9,7 +10,10 @@ data class WorkspaceData(
     val schemaVersion: Int = 1,
     val automations: List<Automation> = emptyList(),
     val flows: List<Flow> = emptyList(),
+    /** Legacy string-only globals kept for backward-compatible workspace restores. */
     val globalVariables: Map<String, String> = emptyMap(),
+    /** Canonical typed persistent variables used by native YAuto automation features. */
+    val persistentVariables: Map<String, ConfigValue> = emptyMap(),
 )
 
 interface WorkspaceRepository {
