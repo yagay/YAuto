@@ -4,6 +4,7 @@ import com.yagay.yauto.core.importer.ImportInput
 import com.yagay.yauto.core.model.ActionFailurePolicy
 import com.yagay.yauto.core.model.ActionNode
 import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.PredicateNode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -162,6 +163,66 @@ class ShortXImporterTest {
         )
     }
 
+    @Test fun `maps verified ShortX facts and conditions natively`() {
+        val raw = message(
+            field(1, factAny("ScreenOn", message())),
+            field(2, conditionAny("RequireRingerMode", message(varintField(1, 1)))),
+            field(2, conditionAny("RequireAPMMode", message(varintField(1, 0)))),
+            field(3, any("ShowToast", message(field(1, "ready")))),
+            field(4, "native-context"),
+            field(9, "Native context"),
+            varintField(11, 1),
+        )
+        val result = ShortXImporter().import(ImportInput("native-context.rule", null, raw))
+        assertTrue(result.success)
+        val automation = result.bundle.automations.single()
+        assertEquals(listOf("android.event.screen_on"), automation.activation.events.map { it.typeId })
+        val predicates = (automation.activation.condition as PredicateNode.All)
+            .children.map { (it as PredicateNode.Condition).feature }
+        assertEquals(
+            listOf("android.condition.ringer_mode", "android.condition.airplane_mode"),
+            predicates.map { it.typeId },
+        )
+        assertEquals(ConfigValue.StringValue("vibrate"), predicates[0].config["mode"])
+        assertEquals(ConfigValue.BooleanValue(false), predicates[1].config["value"])
+        assertTrue(result.trace.any { it.status == "MAPPED" && it.targetId == "android.event.screen_on" })
+        assertTrue(result.trace.any { it.status == "MAPPED" && it.targetId == "android.condition.ringer_mode" })
+    }
+
+    @Test fun `disabled ShortX facts and conditions are skipped`() {
+        val raw = message(
+            field(1, factAny("ScreenOn", message(varintField(101, 1)))),
+            field(2, conditionAny("ScreenIsOn", message(varintField(96, 1)))),
+            field(3, any("ShowToast", message(field(1, "still runs")))),
+            field(4, "disabled-context"),
+            field(9, "Disabled context"),
+            varintField(11, 1),
+        )
+        val result = ShortXImporter().import(ImportInput("disabled-context.rule", null, raw))
+        assertTrue(result.success)
+        val automation = result.bundle.automations.single()
+        assertTrue(automation.activation.events.isEmpty())
+        assertEquals(null, automation.activation.condition)
+        assertEquals("android.toast.show", (automation.onEvent.single() as ActionNode.Action).feature.typeId)
+    }
+
+    @Test fun `unsupported ShortX condition keeps payload and suggests canonical feature`() {
+        val battery = conditionAny("BatteryPercent", message(varintField(1, 80), varintField(2, 1)))
+        val raw = message(
+            field(2, battery),
+            field(3, any("ShowToast", message(field(1, "battery")))),
+            field(4, "battery-condition"),
+            field(9, "Battery condition"),
+            varintField(11, 1),
+        )
+        val result = ShortXImporter().import(ImportInput("battery-condition.rule", null, raw))
+        assertTrue(result.success)
+        val condition = ((result.bundle.automations.single().activation.condition as PredicateNode.All)
+            .children.single() as PredicateNode.Condition).feature
+        assertEquals("compat.source.condition", condition.typeId)
+        assertTrue(result.issues.any { it.suggestedFeatureId == "android.condition.battery_level" })
+    }
+
     @Test fun `preserves variable gesture expressions instead of guessing`() {
         val tap = ShortXImporter().import(ImportInput("tap-var.rule", null,
             rule("tap-var", "Tap var", any("InputTap", message(field(3, "${'$'}x"), field(4, "100"))))))
@@ -179,6 +240,16 @@ class ShortXImporterTest {
 
     private fun actionFeature(result: com.yagay.yauto.core.importer.ImportResult) =
         (result.bundle.automations.single().onEvent.single() as ActionNode.Action).feature
+
+    private fun factAny(shortName: String, payload: ByteArray): ByteArray = message(
+        field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.fact.$shortName"),
+        field(2, payload),
+    )
+
+    private fun conditionAny(shortName: String, payload: ByteArray): ByteArray = message(
+        field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.condition.$shortName"),
+        field(2, payload),
+    )
 
     private fun any(shortName: String, payload: ByteArray): ByteArray = message(
         field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.action.$shortName"),
