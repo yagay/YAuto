@@ -86,7 +86,19 @@ class AutomationRuntimeService : Service() {
     private fun registerSource(component: String, factory: () -> AndroidEventSource) { eventSources.add(component, factory)?.let(::reportSourceFailure) }
     private fun reportSourceFailure(failure: EventSourceFailure) {
         val sourceId = failure.sourceId ?: failure.component; val phase = failure.phase.name.lowercase(); StartupFailureRecorder.record(this, "event-source:${failure.component}:$phase", failure.error); val appGraph = graph ?: return
-        scope.launch { appGraph.tracer.record(TraceEvent(ExecutionId("source-${UUID.randomUUID()}"), TraceKind.ERROR, TraceLevel.ERROR, System.currentTimeMillis(), userText("runtime.event_source_failed", sourceId, failure.error.message ?: failure.error::class.simpleName.orEmpty()), false, attributes = mapOf("eventSource" to sourceId, "eventSource.component" to failure.component, "eventSource.phase" to phase, "exception" to failure.error::class.qualifiedName.orEmpty()))) }
+        scope.launch {
+            appGraph.tracer.record(
+                TraceEvent(
+                    executionId = ExecutionId("source-${UUID.randomUUID()}"),
+                    kind = TraceKind.ERROR,
+                    level = TraceLevel.ERROR,
+                    timestampEpochMs = System.currentTimeMillis(),
+                    message = userText("runtime.event_source_failed", sourceId, failure.error.message ?: failure.error::class.simpleName.orEmpty()),
+                    success = false,
+                    attributes = mapOf("eventSource" to sourceId, "eventSource.component" to failure.component, "eventSource.phase" to phase, "exception" to failure.error::class.qualifiedName.orEmpty()),
+                )
+            )
+        }
     }
     private fun promoteToForeground(): Boolean = runCatching { startForeground(NOTIFICATION_ID, createNotification()); true }.getOrElse { Log.e(TAG, "Unable to promote automation runtime to foreground", it); StartupFailureRecorder.record(this, "runtime:foreground", it); false }
     private fun createNotification(): Notification {
