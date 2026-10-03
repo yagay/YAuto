@@ -21,7 +21,6 @@ class AndroidRoleStateFeaturePack(context: Context) : FeaturePack {
         registerDefaultIme(registry)
         registerRoleHolderPair(registry)
         registerRoleAvailablePair(registry)
-        registerDefaultImePair(registry)
     }
 
     private fun registerRoleHolders(registry: FeatureRegistry) {
@@ -122,27 +121,6 @@ class AndroidRoleStateFeaturePack(context: Context) : FeaturePack {
             "Default app role available",
             "Check whether Android exposes a selected default-app role on this device",
             FeatureCategory.APP,
-            fields,
-            evaluator,
-        )
-    }
-
-    private fun registerDefaultImePair(registry: FeatureRegistry) {
-        val fields = listOf(
-            FieldSchema.AppPicker("package", "App / package", true),
-            FieldSchema.Toggle("value", "Is default input method"),
-        )
-        val evaluator = ConditionEvaluator { feature, ctx ->
-            val packageName = feature.config.string("package").resolveVariables(ctx.variables).trim()
-            if (packageName.isBlank()) return@ConditionEvaluator false
-            (packageFromComponent(defaultImeComponent()) == packageName) == feature.config.boolean("value", true)
-        }
-        registerPair(
-            registry,
-            "default_ime",
-            "Default input method",
-            "Check whether an application is the current default keyboard / input method",
-            FeatureCategory.SYSTEM,
             fields,
             evaluator,
         )
