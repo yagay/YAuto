@@ -24,11 +24,7 @@ import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 
-/**
- * High-value native capabilities distilled from mature automation apps without inheriting their
- * compatibility layers. This pack fills state/control gaps around power, display, network and
- * device status while reusing YAuto's generic schema, capability and logging layers.
- */
+/** Native power/device capabilities that were missing from the existing YAuto Android catalog. */
 class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.system_power_coverage"
     private val context = context.applicationContext
@@ -38,10 +34,6 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         registerAirplaneModeAction(registry)
         registerTorchAction(registry)
         registerDndAction(registry)
-        registerAutoRotateAction(registry)
-        registerScreenTimeoutAction(registry)
-        registerStayAwakeAction(registry)
-        registerBatterySaverAction(registry)
 
         booleanPair(registry, "airplane_mode", "Airplane mode", "Check whether airplane mode is enabled", FeatureCategory.NETWORK) {
             Settings.Global.getInt(resolver, Settings.Global.AIRPLANE_MODE_ON, 0) == 1
@@ -57,9 +49,7 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         rangePair(
             registry, "battery_voltage", "Battery voltage", "Compare the current battery voltage",
             FeatureCategory.DEVICE, "minMv", "Minimum mV", "maxMv", "Maximum mV", 0.0, 20_000.0
-        ) {
-            batteryIntent()?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1)?.takeIf { it >= 0 }?.toDouble()
-        }
+        ) { batteryIntent()?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1)?.takeIf { it >= 0 }?.toDouble() }
         rangePair(
             registry, "memory_available", "Available memory", "Compare currently available system memory",
             FeatureCategory.DEVICE, "minMb", "Minimum MB", "maxMb", "Maximum MB", 0.0, 1_000_000.0
@@ -73,9 +63,7 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         booleanPair(
             registry, "low_power_standby", "Low-power standby", "Check whether Android low-power standby is enabled",
             FeatureCategory.DEVICE, minSdk = 33
-        ) {
-            Build.VERSION.SDK_INT >= 33 && context.getSystemService(PowerManager::class.java).isLowPowerStandbyEnabled
-        }
+        ) { Build.VERSION.SDK_INT >= 33 && context.getSystemService(PowerManager::class.java).isLowPowerStandbyEnabled }
         choicePair(
             registry, "orientation", "Screen orientation", "Match the current screen orientation",
             FeatureCategory.DISPLAY, "orientation", "Orientation", listOf("portrait", "landscape", "square", "undefined")
@@ -92,8 +80,8 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
             FeatureCategory.DISPLAY, "minScale", "Minimum scale", "maxScale", "Maximum scale", 0.1, 5.0
         ) { context.resources.configuration.fontScale.toDouble() }
         booleanPair(
-            registry, "internet_validated", "Validated internet",
-            "Check whether the active network is validated for internet access", FeatureCategory.NETWORK
+            registry, "internet_validated", "Validated internet", "Check whether the active network is validated for internet access",
+            FeatureCategory.NETWORK
         ) { activeCapabilities()?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true }
         booleanPair(registry, "network_roaming", "Network roaming", "Check whether the active network is roaming", FeatureCategory.NETWORK) {
             val caps = activeCapabilities() ?: return@booleanPair false
@@ -102,10 +90,9 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         booleanPair(registry, "vpn_active", "VPN active", "Check whether the active network uses a VPN transport", FeatureCategory.NETWORK) {
             activeCapabilities()?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
         }
-        booleanPair(
-            registry, "device_secure", "Device secure", "Check whether the device has secure lock-screen credentials",
-            FeatureCategory.DEVICE
-        ) { context.getSystemService(KeyguardManager::class.java).isDeviceSecure }
+        booleanPair(registry, "device_secure", "Device secure", "Check whether the device has secure lock-screen credentials", FeatureCategory.DEVICE) {
+            context.getSystemService(KeyguardManager::class.java).isDeviceSecure
+        }
         batteryOptimizationPair(registry)
     }
 
@@ -122,8 +109,11 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         ) { feature, ctx ->
             val enabled = feature.config.boolean("enabled", true)
             val value = if (enabled) 1 else 0
-            val command = "settings put global airplane_mode_on $value; am broadcast -a android.intent.action.AIRPLANE_MODE --ez state $enabled"
-            executeShell("android.airplane_mode.set", command, ctx)
+            executeShell(
+                "android.airplane_mode.set",
+                "settings put global airplane_mode_on $value; am broadcast -a android.intent.action.AIRPLANE_MODE --ez state $enabled",
+                ctx,
+            )
         }
     }
 
@@ -177,103 +167,15 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         }
     }
 
-    private fun registerAutoRotateAction(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.display.auto_rotate.set"), FeatureKind.ACTION,
-                "Set auto-rotate", "Enable or disable automatic screen rotation",
-                FeatureCategory.DISPLAY,
-                fields = listOf(FieldSchema.Toggle("enabled", "Automatic rotation")),
-                accessRequirements = setOf(AccessRequirement.WRITE_SETTINGS),
-                keywords = setOf("rotation", "orientation", "auto rotate"), ownerPackId = id,
-            )
-        ) { feature, _ ->
-            if (!Settings.System.canWrite(context)) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.modify_settings_denied"))
-            }
-            runCatching {
-                Settings.System.putInt(resolver, Settings.System.ACCELEROMETER_ROTATION, if (feature.config.boolean("enabled", true)) 1 else 0)
-                ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
-        }
-    }
-
-    private fun registerScreenTimeoutAction(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.display.screen_timeout.set"), FeatureKind.ACTION,
-                "Set screen timeout", "Set the Android screen-off timeout",
-                FeatureCategory.DISPLAY,
-                fields = listOf(FieldSchema.Duration("timeoutMs", "Timeout", true)),
-                accessRequirements = setOf(AccessRequirement.WRITE_SETTINGS),
-                keywords = setOf("screen timeout", "display timeout", "sleep"), ownerPackId = id,
-            )
-        ) { feature, _ ->
-            if (!Settings.System.canWrite(context)) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.modify_settings_denied"))
-            }
-            val timeout = feature.config["timeoutMs"].numberOrNull()?.toLong()
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Invalid timeout"))
-            if (timeout !in 1_000L..86_400_000L) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Timeout is out of range"))
-            }
-            runCatching {
-                Settings.System.putLong(resolver, Settings.System.SCREEN_OFF_TIMEOUT, timeout)
-                ActionExecutionResult(true, ConfigValue.NumberValue(timeout.toDouble()))
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
-        }
-    }
-
-    private fun registerStayAwakeAction(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.power.stay_awake_charging.set"), FeatureKind.ACTION,
-                "Set stay-awake charging mode", "Choose which charger types keep the screen awake",
-                FeatureCategory.DEVICE,
-                fields = listOf(FieldSchema.Choice("mode", "Keep awake on", true, listOf("never", "ac", "usb", "wireless", "dock", "all"))),
-                capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
-                keywords = setOf("stay awake", "charging", "screen", "developer option"), ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            val mask = when (feature.config.string("mode", "never")) {
-                "ac" -> 1
-                "usb" -> 2
-                "wireless" -> 4
-                "dock" -> 8
-                "all" -> 15
-                else -> 0
-            }
-            executeShell("android.power.stay_awake_charging.set", "settings put global stay_on_while_plugged_in $mask", ctx)
-        }
-    }
-
-    private fun registerBatterySaverAction(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.power.battery_saver.set"), FeatureKind.ACTION,
-                "Set battery saver", "Enable or disable Android battery saver through the power service",
-                FeatureCategory.DEVICE,
-                fields = listOf(FieldSchema.Toggle("enabled", "Enabled")),
-                capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
-                keywords = setOf("battery saver", "power save", "low power"), ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            executeShell("android.power.battery_saver.set", "cmd power set-mode ${if (feature.config.boolean("enabled", true)) 1 else 0}", ctx)
-        }
-    }
-
     private fun batteryOptimizationPair(registry: FeatureRegistry) {
-        val fields = listOf(
-            FieldSchema.AppPicker("package", "Package"),
-            FieldSchema.Toggle("ignored", "Ignored / exempt"),
-        )
         pair(
             registry, "battery_optimization_ignored", "Battery optimization ignored",
-            "Check whether a package is exempt from battery optimization", FeatureCategory.APP, fields
+            "Check whether a package is exempt from battery optimization", FeatureCategory.APP,
+            listOf(FieldSchema.AppPicker("package", "Package"), FieldSchema.Toggle("ignored", "Ignored / exempt")),
         ) { feature, ctx ->
             val packageName = feature.config.string("package").resolveVariables(ctx.variables).ifBlank { context.packageName }
-            val actual = context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
-            actual == feature.config.boolean("ignored", true)
+            context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName) ==
+                feature.config.boolean("ignored", true)
         }
     }
 
@@ -285,10 +187,9 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         category: FeatureCategory,
         minSdk: Int = 31,
         query: () -> Boolean,
-    ) = pair(
-        registry, key, title, description, category,
-        listOf(FieldSchema.Toggle("value", "Enabled / true")), minSdk
-    ) { feature, _ -> query() == feature.config.boolean("value", true) }
+    ) = pair(registry, key, title, description, category, listOf(FieldSchema.Toggle("value", "Enabled / true")), minSdk) { feature, _ ->
+        query() == feature.config.boolean("value", true)
+    }
 
     private fun choicePair(
         registry: FeatureRegistry,
@@ -300,10 +201,9 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         fieldLabel: String,
         options: List<String>,
         query: () -> String,
-    ) = pair(
-        registry, key, title, description, category,
-        listOf(FieldSchema.Choice(fieldKey, fieldLabel, true, options))
-    ) { feature, _ -> query() == feature.config.string(fieldKey, options.first()) }
+    ) = pair(registry, key, title, description, category, listOf(FieldSchema.Choice(fieldKey, fieldLabel, true, options))) { feature, _ ->
+        query() == feature.config.string(fieldKey, options.first())
+    }
 
     private fun rangePair(
         registry: FeatureRegistry,
@@ -320,10 +220,7 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         query: () -> Double?,
     ) = pair(
         registry, key, title, description, category,
-        listOf(
-            FieldSchema.Number(minKey, minLabel, min = allowedMin, max = allowedMax),
-            FieldSchema.Number(maxKey, maxLabel, min = allowedMin, max = allowedMax),
-        )
+        listOf(FieldSchema.Number(minKey, minLabel, min = allowedMin, max = allowedMax), FieldSchema.Number(maxKey, maxLabel, min = allowedMin, max = allowedMax)),
     ) { feature, _ ->
         val min = feature.config[minKey].numberOrNull() ?: allowedMin
         val max = feature.config[maxKey].numberOrNull() ?: allowedMax
@@ -346,9 +243,8 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
             FeatureId("android.state.$key"), FeatureKind.STATE, title, description, category,
             minSdk = minSdk, fields = fields, ownerPackId = id,
         )
-        val condition = state.copy(id = FeatureId("android.condition.$key"), kind = FeatureKind.CONDITION)
         registry.registerState(state, evaluator)
-        registry.registerCondition(condition, evaluator)
+        registry.registerCondition(state.copy(id = FeatureId("android.condition.$key"), kind = FeatureKind.CONDITION), evaluator)
     }
 
     private fun batteryIntent(): Intent? = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))

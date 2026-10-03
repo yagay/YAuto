@@ -3,11 +3,9 @@
     <string name="feature_android_airplane_mode_set_title">设置飞行模式</string>
     <string name="feature_android_airplane_mode_set_description">通过已授权的特权 Shell 后端开启或关闭飞行模式</string>
     <string name="feature_android_airplane_mode_set_field_enabled">启用</string>
-
     <string name="feature_android_flashlight_set_title">设置手电筒</string>
     <string name="feature_android_flashlight_set_description">开启或关闭第一个可用的相机闪光灯</string>
     <string name="feature_android_flashlight_set_field_enabled">启用</string>
-
     <string name="feature_android_dnd_set_title">设置勿扰模式</string>
     <string name="feature_android_dnd_set_description">请求 Android 勿扰模式中断过滤级别</string>
     <string name="feature_android_dnd_set_field_filter">中断过滤</string>
@@ -15,28 +13,6 @@
     <string name="feature_android_dnd_set_field_filter_option_priority">仅优先通知</string>
     <string name="feature_android_dnd_set_field_filter_option_alarms">仅闹钟</string>
     <string name="feature_android_dnd_set_field_filter_option_none">无</string>
-
-    <string name="feature_android_display_auto_rotate_set_title">设置自动旋转</string>
-    <string name="feature_android_display_auto_rotate_set_description">开启或关闭屏幕自动旋转</string>
-    <string name="feature_android_display_auto_rotate_set_field_enabled">自动旋转</string>
-
-    <string name="feature_android_display_screen_timeout_set_title">设置屏幕超时</string>
-    <string name="feature_android_display_screen_timeout_set_description">设置 Android 自动息屏时间</string>
-    <string name="feature_android_display_screen_timeout_set_field_timeoutms">超时时间</string>
-
-    <string name="feature_android_power_stay_awake_charging_set_title">设置充电时保持唤醒</string>
-    <string name="feature_android_power_stay_awake_charging_set_description">选择哪些充电类型下保持屏幕唤醒</string>
-    <string name="feature_android_power_stay_awake_charging_set_field_mode">保持唤醒的充电类型</string>
-    <string name="feature_android_power_stay_awake_charging_set_field_mode_option_never">从不</string>
-    <string name="feature_android_power_stay_awake_charging_set_field_mode_option_ac">交流电</string>
-    <string name="feature_android_power_stay_awake_charging_set_field_mode_option_usb">USB</string>
-    <string name="feature_android_power_stay_awake_charging_set_field_mode_option_wireless">无线</string>
-    <string name="feature_android_power_stay_awake_charging_set_field_mode_option_dock">底座</string>
-    <string name="feature_android_power_stay_awake_charging_set_field_mode_option_all">全部</string>
-
-    <string name="feature_android_power_battery_saver_set_title">设置省电模式</string>
-    <string name="feature_android_power_battery_saver_set_description">通过电源服务开启或关闭 Android 省电模式</string>
-    <string name="feature_android_power_battery_saver_set_field_enabled">启用</string>
 
     <string name="feature_android_state_airplane_mode_title">飞行模式</string>
     <string name="feature_android_state_airplane_mode_description">检查飞行模式是否已开启</string>
@@ -51,13 +27,16 @@
     <string name="feature_android_condition_battery_status_title">电池状态</string>
     <string name="feature_android_condition_battery_status_description">匹配当前 Android 电池状态</string>
     <string name="feature_android_condition_battery_status_field_status">状态</string>
-
-    <string name="feature_android_state_charging_source_title">充电来源</string>
-    <string name="feature_android_state_charging_source_description">匹配当前电池充电来源</string>
-    <string name="feature_android_state_charging_source_field_source">充电来源</string>
-    <string name="feature_android_condition_charging_source_title">充电来源</string>
-    <string name="feature_android_condition_charging_source_description">匹配当前电池充电来源</string>
-    <string name="feature_android_condition_charging_source_field_source">充电来源</string>
+    <string name="feature_android_state_battery_status_field_status_option_charging">充电中</string>
+    <string name="feature_android_state_battery_status_field_status_option_discharging">放电中</string>
+    <string name="feature_android_state_battery_status_field_status_option_not_charging">未充电</string>
+    <string name="feature_android_state_battery_status_field_status_option_full">已充满</string>
+    <string name="feature_android_state_battery_status_field_status_option_unknown">未知</string>
+    <string name="feature_android_condition_battery_status_field_status_option_charging">充电中</string>
+    <string name="feature_android_condition_battery_status_field_status_option_discharging">放电中</string>
+    <string name="feature_android_condition_battery_status_field_status_option_not_charging">未充电</string>
+    <string name="feature_android_condition_battery_status_field_status_option_full">已充满</string>
+    <string name="feature_android_condition_battery_status_field_status_option_unknown">未知</string>
 
     <string name="feature_android_state_battery_health_title">电池健康状态</string>
     <string name="feature_android_state_battery_health_description">匹配当前电池健康状态</string>
@@ -65,6 +44,20 @@
     <string name="feature_android_condition_battery_health_title">电池健康状态</string>
     <string name="feature_android_condition_battery_health_description">匹配当前电池健康状态</string>
     <string name="feature_android_condition_battery_health_field_health">健康状态</string>
+    <string name="feature_android_state_battery_health_field_health_option_good">良好</string>
+    <string name="feature_android_state_battery_health_field_health_option_overheat">过热</string>
+    <string name="feature_android_state_battery_health_field_health_option_dead">失效</string>
+    <string name="feature_android_state_battery_health_field_health_option_over_voltage">过压</string>
+    <string name="feature_android_state_battery_health_field_health_option_failure">故障</string>
+    <string name="feature_android_state_battery_health_field_health_option_cold">过冷</string>
+    <string name="feature_android_state_battery_health_field_health_option_unknown">未知</string>
+    <string name="feature_android_condition_battery_health_field_health_option_good">良好</string>
+    <string name="feature_android_condition_battery_health_field_health_option_overheat">过热</string>
+    <string name="feature_android_condition_battery_health_field_health_option_dead">失效</string>
+    <string name="feature_android_condition_battery_health_field_health_option_over_voltage">过压</string>
+    <string name="feature_android_condition_battery_health_field_health_option_failure">故障</string>
+    <string name="feature_android_condition_battery_health_field_health_option_cold">过冷</string>
+    <string name="feature_android_condition_battery_health_field_health_option_unknown">未知</string>
 
     <string name="feature_android_state_battery_voltage_title">电池电压</string>
     <string name="feature_android_state_battery_voltage_description">比较当前电池电压</string>
@@ -90,14 +83,12 @@
     <string name="feature_android_condition_memory_low_title">低内存状态</string>
     <string name="feature_android_condition_memory_low_description">检查 Android 的低内存状态标记</string>
     <string name="feature_android_condition_memory_low_field_value">启用 / 是</string>
-
     <string name="feature_android_state_device_idle_title">设备空闲模式</string>
     <string name="feature_android_state_device_idle_description">检查 Android 是否处于设备空闲模式</string>
     <string name="feature_android_state_device_idle_field_value">启用 / 是</string>
     <string name="feature_android_condition_device_idle_title">设备空闲模式</string>
     <string name="feature_android_condition_device_idle_description">检查 Android 是否处于设备空闲模式</string>
     <string name="feature_android_condition_device_idle_field_value">启用 / 是</string>
-
     <string name="feature_android_state_low_power_standby_title">低功耗待机</string>
     <string name="feature_android_state_low_power_standby_description">检查 Android 低功耗待机是否已启用</string>
     <string name="feature_android_state_low_power_standby_field_value">启用 / 是</string>
@@ -111,6 +102,14 @@
     <string name="feature_android_condition_orientation_title">屏幕方向</string>
     <string name="feature_android_condition_orientation_description">匹配当前屏幕方向</string>
     <string name="feature_android_condition_orientation_field_orientation">方向</string>
+    <string name="feature_android_state_orientation_field_orientation_option_portrait">竖屏</string>
+    <string name="feature_android_state_orientation_field_orientation_option_landscape">横屏</string>
+    <string name="feature_android_state_orientation_field_orientation_option_square">方形</string>
+    <string name="feature_android_state_orientation_field_orientation_option_undefined">未定义</string>
+    <string name="feature_android_condition_orientation_field_orientation_option_portrait">竖屏</string>
+    <string name="feature_android_condition_orientation_field_orientation_option_landscape">横屏</string>
+    <string name="feature_android_condition_orientation_field_orientation_option_square">方形</string>
+    <string name="feature_android_condition_orientation_field_orientation_option_undefined">未定义</string>
 
     <string name="feature_android_state_font_scale_title">系统字体缩放</string>
     <string name="feature_android_state_font_scale_description">比较 Android 系统字体缩放比例</string>
@@ -127,21 +126,18 @@
     <string name="feature_android_condition_internet_validated_title">已验证互联网</string>
     <string name="feature_android_condition_internet_validated_description">检查当前活动网络是否已通过互联网访问验证</string>
     <string name="feature_android_condition_internet_validated_field_value">启用 / 是</string>
-
     <string name="feature_android_state_network_roaming_title">网络漫游</string>
     <string name="feature_android_state_network_roaming_description">检查当前活动网络是否处于漫游</string>
     <string name="feature_android_state_network_roaming_field_value">启用 / 是</string>
     <string name="feature_android_condition_network_roaming_title">网络漫游</string>
     <string name="feature_android_condition_network_roaming_description">检查当前活动网络是否处于漫游</string>
     <string name="feature_android_condition_network_roaming_field_value">启用 / 是</string>
-
     <string name="feature_android_state_vpn_active_title">VPN 已连接</string>
     <string name="feature_android_state_vpn_active_description">检查当前活动网络是否使用 VPN 传输</string>
     <string name="feature_android_state_vpn_active_field_value">启用 / 是</string>
     <string name="feature_android_condition_vpn_active_title">VPN 已连接</string>
     <string name="feature_android_condition_vpn_active_description">检查当前活动网络是否使用 VPN 传输</string>
     <string name="feature_android_condition_vpn_active_field_value">启用 / 是</string>
-
     <string name="feature_android_state_device_secure_title">设备安全锁</string>
     <string name="feature_android_state_device_secure_description">检查设备是否配置了安全锁屏凭据</string>
     <string name="feature_android_state_device_secure_field_value">启用 / 是</string>
