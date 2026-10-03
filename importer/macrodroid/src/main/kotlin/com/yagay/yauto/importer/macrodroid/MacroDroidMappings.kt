@@ -37,6 +37,10 @@ object MacroDroidMappings {
                 "InvertColoursAction" -> "android.display.color_inversion.set"
                 "HeadsUpNotificationsAction" -> "android.notification.heads_up.set"
                 "AmbientDisplayAction" -> "android.display.ambient_display.set"
+                "ExpandCollapseStatusBarAction" -> "android.status_bar.control"
+                "ConnectivityCheckAction" -> "android.network.connectivity.check"
+                "OpenCallLogAction" -> "android.call_log.open"
+                "SetRingtoneAction", "SetNotificationSoundAction" -> "android.audio.default_sound.set"
                 else -> null
             }
             SourceFeatureKind.EVENT -> when (sourceType) {
@@ -77,6 +81,11 @@ object MacroDroidMappings {
         "InvertColoursAction" -> modeAction(obj, "m_option", "android.display.color_inversion.set", importerId, sourceType, raw)
         "HeadsUpNotificationsAction" -> modeAction(obj, "option", "android.notification.heads_up.set", importerId, sourceType, raw)
         "AmbientDisplayAction" -> ambientDisplay(obj, importerId, sourceType, raw)
+        "ExpandCollapseStatusBarAction" -> statusBar(obj, importerId, sourceType, raw)
+        "ConnectivityCheckAction" -> connectivityCheck(obj, importerId, sourceType, raw)
+        "OpenCallLogAction" -> sourceFeature("android.call_log.open", importerId, sourceType, raw)
+        "SetRingtoneAction" -> defaultSound(obj, "ringtone", importerId, sourceType, raw)
+        "SetNotificationSoundAction" -> defaultSound(obj, "notification", importerId, sourceType, raw)
         else -> null
     }
 
@@ -151,6 +160,73 @@ object MacroDroidMappings {
             extra = mapOf(
                 "setting" to ConfigValue.StringValue(setting),
                 "mode" to ConfigValue.StringValue(mode),
+            ),
+        )
+    }
+
+    private fun statusBar(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = when (obj.number("m_option")?.toInt()) {
+            0 -> "notifications"
+            1 -> "collapse"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.status_bar.control",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("mode" to ConfigValue.StringValue(mode)),
+        )
+    }
+
+    private fun connectivityCheck(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val site = obj.string("site")?.takeIf { it.isNotBlank() } ?: return null
+        val timeout = (obj.number("timeout") ?: 3_000.0).takeIf { it in 250.0..60_000.0 } ?: return null
+        val variableName = obj.objectValue("variable", "m_variable")
+            ?.string("m_name", "name")
+            ?: obj.string("variableName", "m_variableName")
+            ?: return null
+        if (variableName.isBlank()) return null
+        return sourceFeature(
+            "android.network.connectivity.check",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "site" to ConfigValue.StringValue(site),
+                "timeoutMs" to ConfigValue.NumberValue(timeout),
+                "resultVariable" to ConfigValue.StringValue(variableName),
+            ),
+        )
+    }
+
+    private fun defaultSound(
+        obj: JsonObject,
+        type: String,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val uri = obj.string("m_ringtoneUri")?.takeIf { it.isNotBlank() } ?: return null
+        return sourceFeature(
+            "android.audio.default_sound.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "type" to ConfigValue.StringValue(type),
+                "uri" to ConfigValue.StringValue(uri),
+                "silent" to ConfigValue.BooleanValue(false),
             ),
         )
     }
