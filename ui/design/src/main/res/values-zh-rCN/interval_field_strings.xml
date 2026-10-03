@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_phrase_interval">周期</string>
+    <string name="feature_phrase_fire_immediately_when_enabled">启用后立即触发</string>
+</resources>
