@@ -1,7 +1,6 @@
 package com.yagay.yauto.platform.android
 
 import android.app.KeyguardManager
-import android.content.ClipboardManager
 import android.content.Context
 import android.media.AudioManager
 import android.net.ConnectivityManager
@@ -30,7 +29,6 @@ import com.yagay.yauto.core.registry.FieldSchema
 class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.power_user"
     private val context = context.applicationContext
-    private val clipboard = this.context.getSystemService(ClipboardManager::class.java)
     private val audio = this.context.getSystemService(AudioManager::class.java)
     private val connectivity = this.context.getSystemService(ConnectivityManager::class.java)
     private val keyguard = this.context.getSystemService(KeyguardManager::class.java)
@@ -39,7 +37,6 @@ class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
 
     override fun install(registry: FeatureRegistry) {
         registerShell(registry)
-        registerClipboard(registry)
         registerVibration(registry)
         registerAudioStates(registry)
         registerDeviceStates(registry)
@@ -73,40 +70,6 @@ class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
                 ctx.variables.set(name, result.value)
             }
             ActionExecutionResult(result.success, result.value, result.message)
-        }
-    }
-
-    private fun registerClipboard(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.clipboard.get"), FeatureKind.ACTION,
-                "Get clipboard text", "Read the current primary clipboard as text and store it in a variable when Android allows clipboard access",
-                FeatureCategory.DEVICE,
-                fields = listOf(FieldSchema.Variable("resultVariable", "Store clipboard text", true)),
-                keywords = setOf("clipboard", "copy", "paste", "read"), ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            val value = runCatching {
-                val clip = clipboard.primaryClip
-                clip?.getItemAt(0)?.coerceToText(context)?.toString().orEmpty()
-            }.getOrDefault("")
-            val output = ConfigValue.StringValue(value)
-            ctx.variables.set(feature.config.string("resultVariable"), output)
-            ActionExecutionResult(true, output)
-        }
-
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.clipboard.clear"), FeatureKind.ACTION,
-                "Clear clipboard", "Clear the Android primary clipboard",
-                FeatureCategory.DEVICE,
-                keywords = setOf("clipboard", "clear", "privacy"), ownerPackId = id,
-            )
-        ) { _, _ ->
-            runCatching {
-                clipboard.clearPrimaryClip()
-                ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
     }
 
