@@ -1,8 +1,8 @@
 package com.yagay.yauto.platform.android
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Test
 
 class AndroidReferenceCompletionFeaturePackTest {
     @Test
@@ -21,6 +21,6 @@ class AndroidReferenceCompletionFeaturePackTest {
         val actions = REFERENCE_SYSTEM_ACTIONS + REFERENCE_PACKAGE_ACTIONS + REFERENCE_MEDIA_ACTIONS
         assertEquals(50, actions.size)
         assertEquals(50, actions.distinct().size)
-        actions.forEach { action -> assertNotNull(eventTypeForReferenceBroadcast(action), action) }
+        actions.forEach { action -> assertNotNull(action, eventTypeForReferenceBroadcast(action)) }
     }
 }
