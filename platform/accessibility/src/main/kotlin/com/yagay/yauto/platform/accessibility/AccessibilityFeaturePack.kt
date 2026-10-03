@@ -92,9 +92,11 @@ class AccessibilityFeaturePack(
 
     private fun foregroundSourceMatches(feature: com.yagay.yauto.core.model.FeatureRef, source: String): Boolean =
         when (feature.preferredBackendId()) {
-            "accessibility" -> source == ACCESSIBILITY_WINDOW_SOURCE
+            // Historical/runtime test events did not carry a source. Treat blank as the original
+            // Accessibility source for backwards compatibility, but never as explicit Usage Stats.
+            "accessibility" -> source.isBlank() || source == ACCESSIBILITY_WINDOW_SOURCE
             "usage_stats" -> source == USAGE_STATS_SOURCE
-            else -> source == ACCESSIBILITY_WINDOW_SOURCE || source == USAGE_STATS_SOURCE
+            else -> source.isBlank() || source == ACCESSIBILITY_WINDOW_SOURCE || source == USAGE_STATS_SOURCE
         }
 
     private fun matchForeground(feature: com.yagay.yauto.core.model.FeatureRef, pkg: String, className: String): Boolean {
