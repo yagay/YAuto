@@ -9,9 +9,10 @@ import com.yagay.yauto.core.registry.FeatureDefinition
 import com.yagay.yauto.core.registry.FieldBehavior
 import com.yagay.yauto.core.registry.FieldSchema
 import com.yagay.yauto.core.registry.actionFeature
+import com.yagay.yauto.core.registry.resolveVariables
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.encodeToString
 
 internal object JsonConversionFeatures {
     val definitions: List<FeatureDefinition> = listOf(
