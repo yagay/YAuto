@@ -1,0 +1,116 @@
+package com.yagay.yauto.importer.tasker
+
+/**
+ * Stable Tasker XML code -> canonical YAuto feature hints.
+ *
+ * The source XML remains preserved when a code is not decoded losslessly. These hints are used by
+ * the importer/editor to offer an explicit upgrade instead of pretending that similarly named
+ * actions are equivalent.
+ */
+object TaskerFeatureSuggestions {
+    fun action(code: String): String? = when (code) {
+        "20" -> "android.app.launch"
+        "25" -> "android.home.launch"
+        "30" -> "core.delay"
+        "59" -> "android.device.reboot"
+        "61" -> "android.vibrate"
+        "102" -> "android.file.open"
+        "104" -> "android.uri.open"
+        "105" -> "android.clipboard.set"
+        "116", "117", "118", "339" -> "android.http.request"
+        "119" -> "android.maps.open"
+        "123" -> "system.shell.execute"
+        "125" -> "android.email.compose"
+        "176", "249", "374" -> "android.screenshot.capture"
+        "245" -> "android.input.keyevent"
+        "247" -> "android.input.keyevent"
+        "248" -> "system.screen.sleep"
+        "250" -> "android.sms.compose"
+        "251" -> "android.battery.info"
+        "254" -> "android.audio.speakerphone.set"
+        "294" -> "android.bluetooth.set"
+        "301" -> "android.audio.microphone_mute.set"
+        "303", "304", "305", "306", "307", "308", "309", "311" -> "android.audio.volume.set"
+        "312" -> "android.dnd.set"
+        "313" -> "android.audio.ringer_mode.set"
+        "316" -> "android.display.size.set"
+        "317" -> "android.nfc.set"
+        "318" -> "android.display.rotation.set"
+        "331" -> "android.sync.master.set"
+        "332", "905" -> "android.location.enabled.set"
+        "333" -> "android.airplane_mode.set"
+        "335", "344", "815" -> "android.app.installed.list"
+        "361", "989" -> "android.display.dark_mode.set"
+        "376" -> "android.file.share"
+        "400" -> "file.move"
+        "404", "405" -> "file.copy"
+        "406", "408" -> "file.delete"
+        "409" -> "file.mkdir"
+        "410" -> "file.write_text"
+        "412" -> "file.list"
+        "417" -> "file.read_text"
+        "420" -> "file.archive.zip"
+        "422" -> "file.archive.unzip"
+        "425" -> "android.wifi.set"
+        "433" -> "android.mobile_data.set"
+        "443", "451", "453" -> "android.media.transport"
+        "445" -> "android.audio.play"
+        "449" -> "android.audio.stop"
+        "511" -> "android.torch.set"
+        "523" -> "android.notification.show"
+        "547" -> "variable.set"
+        "548" -> "android.toast.show"
+        "559" -> "android.tts.speak"
+        "566" -> "android.alarm.set"
+        "567" -> "android.calendar.event.add"
+        "779" -> "android.notification.cancel"
+        "806" -> "android.screen.wake"
+        "808", "810" -> "android.display.brightness.set"
+        "812" -> "android.display.screen_timeout.set"
+        "820" -> "android.power.stay_awake.set"
+        "822" -> "android.display.auto_rotate.set"
+        "877" -> "android.intent.send"
+        else -> null
+    }
+
+    fun event(code: String): String? = when (code) {
+        "2", "4", "6", "2003" -> "android.event.phone_state_changed"
+        "7" -> "android.event.sms_received"
+        "203" -> "android.event.battery_changed"
+        "208" -> "android.event.screen_on"
+        "210" -> "android.event.screen_off"
+        "300" -> "android.event.date_changed"
+        "302" -> "android.event.time_changed"
+        "304" -> "android.event.timezone_changed"
+        "411" -> "android.event.boot"
+        "422" -> "android.event.storage_low"
+        "429" -> "android.event.locale_changed"
+        "450" -> "android.event.package_added"
+        "451" -> "android.event.package_removed"
+        "453" -> "android.event.package_replaced"
+        "461" -> "android.event.notification_posted"
+        "464" -> "android.event.notification_removed"
+        "599" -> "android.event.broadcast"
+        "1000" -> "android.event.user_present"
+        "2076" -> "android.event.nfc_tag"
+        else -> null
+    }
+
+    fun state(code: String): String? = when (code) {
+        "2" -> "android.condition.bluetooth_enabled"
+        "10" -> "android.condition.charging_source"
+        "14" -> "android.condition.power_save"
+        "30" -> "android.condition.headset_connected"
+        "40" -> "android.condition.phone_call_state"
+        "100" -> "android.condition.airplane_mode"
+        "123" -> "android.condition.screen"
+        "135" -> "android.condition.master_sync"
+        "136" -> "android.condition.network_profile"
+        "140" -> "android.condition.battery_level"
+        "141" -> "android.condition.battery_temperature"
+        "160" -> "android.condition.wifi_network"
+        "188" -> "android.condition.dark_mode"
+        "195" -> "android.condition.nfc_enabled"
+        else -> null
+    }
+}
