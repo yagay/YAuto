@@ -17,7 +17,7 @@ class MassDataExpansionFeaturePackTest {
             VariableAdvancedFeaturePack(),
         )
 
-        packs.forEach(registry::install)
+        packs.forEach { it.install(registry) }
 
         val descriptors = registry.allDescriptors()
         assertEquals(75, descriptors.size)
