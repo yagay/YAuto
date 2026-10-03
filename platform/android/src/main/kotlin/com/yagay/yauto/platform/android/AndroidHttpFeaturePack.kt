@@ -91,7 +91,7 @@ class AndroidHttpFeaturePack : FeaturePack {
             }
             val path = feature.config.string("path").resolveVariables(ctx.variables).trim()
             if (path.isBlank()) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Destination path is empty"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.destination_path_empty"))
             }
             val headers = parseHeaders(feature.config.string("headers").resolveVariables(ctx.variables))
             val connectTimeoutMs = feature.config.long("connectTimeoutMs", 10_000).coerceIn(1_000, 120_000).toInt()
@@ -156,7 +156,7 @@ class AndroidHttpFeaturePack : FeaturePack {
                     "url" to ConfigValue.StringValue(connection!!.url.toString()),
                 )
             )
-            ActionExecutionResult(status in 200..399, value, if (status in 200..399) null else "HTTP $status")
+            ActionExecutionResult(status in 200..399, value, if (status in 200..399) null else userText("feature.http_status_failed", status))
         }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
             .also { connection?.disconnect() }
     }
@@ -195,7 +195,7 @@ class AndroidHttpFeaturePack : FeaturePack {
             }
             val status = connection!!.responseCode
             if (status !in 200..299) {
-                return@runCatching ActionExecutionResult(false, message = "HTTP $status")
+                return@runCatching ActionExecutionResult(false, message = userText("feature.http_status_failed", status))
             }
             val declaredLength = connection!!.contentLengthLong
             require(declaredLength < 0 || declaredLength <= maxBytes) { "Response exceeds maximum bytes" }
@@ -274,7 +274,6 @@ class AndroidHttpFeaturePack : FeaturePack {
 
     private companion object {
         const val MAX_RESPONSE_BYTES = 1_048_576
-        const val DEFAULT_DOWNLOAD_BYTES = 104_857_600L
         const val MAX_DOWNLOAD_BYTES = 1_073_741_824L
         val HEADER_NAME = Regex("[!#$%&'*+.^_`|~0-9A-Za-z-]+")
     }
