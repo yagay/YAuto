@@ -32,4 +32,5 @@
     <string name="runtime_runtime_automation_busy">自动化正忙，已忽略本次新运行：%1$s</string>
     <string name="runtime_runtime_automation_run_failed">自动化未返回运行结果：%1$s</string>
     <string name="runtime_runtime_automation_cancel_self">自动化执行期间不能取消自身：%1$s</string>
+    <string name="runtime_runtime_automation_cancelled">自动化执行已取消：%1$s</string>
 </resources>
