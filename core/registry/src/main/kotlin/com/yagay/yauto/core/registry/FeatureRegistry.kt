@@ -95,6 +95,13 @@ sealed interface FeatureResolution {
     data class Missing(
         override val requestedId: String,
     ) : FeatureResolution
+
+    data class Incompatible(
+        override val requestedId: String,
+        val expectedKind: FeatureKind,
+        val actualKind: FeatureKind,
+        val descriptor: FeatureDescriptor,
+    ) : FeatureResolution
 }
 
 interface VariableAccess {
@@ -146,7 +153,7 @@ class FeatureRegistry {
         require(descriptor.kind == FeatureKind.ACTION)
         registerDescriptor(descriptor)
         actions[descriptor.id.value] = ActionExecutor { feature, context ->
-            executor.execute(canonicalRef(feature), context.withFeatureBackend(feature))
+            executor.execute(canonicalRef(feature, FeatureKind.ACTION), context.withFeatureBackend(feature))
         }
     }
 
@@ -154,7 +161,7 @@ class FeatureRegistry {
         require(descriptor.kind == FeatureKind.CONDITION)
         registerDescriptor(descriptor)
         conditions[descriptor.id.value] = ConditionEvaluator { feature, context ->
-            evaluator.evaluate(canonicalRef(feature), context.withFeatureBackend(feature))
+            evaluator.evaluate(canonicalRef(feature, FeatureKind.CONDITION), context.withFeatureBackend(feature))
         }
     }
 
@@ -162,7 +169,7 @@ class FeatureRegistry {
         require(descriptor.kind == FeatureKind.EVENT)
         registerDescriptor(descriptor)
         events[descriptor.id.value] = EventMatcher { feature, context ->
-            matcher.matches(canonicalRef(feature), context.withFeatureBackend(feature))
+            matcher.matches(canonicalRef(feature, FeatureKind.EVENT), context.withFeatureBackend(feature))
         }
     }
 
@@ -170,7 +177,7 @@ class FeatureRegistry {
         require(descriptor.kind == FeatureKind.STATE)
         registerDescriptor(descriptor)
         states[descriptor.id.value] = ConditionEvaluator { feature, context ->
-            evaluator.evaluate(canonicalRef(feature), context.withFeatureBackend(feature))
+            evaluator.evaluate(canonicalRef(feature, FeatureKind.STATE), context.withFeatureBackend(feature))
         }
     }
 
@@ -222,34 +229,45 @@ class FeatureRegistry {
         }
     }
 
-    fun resolve(id: String): FeatureResolution {
-        descriptors[id]?.let { return FeatureResolution.Available(id, it) }
-        val canonicalId = aliases[id] ?: return FeatureResolution.Missing(id)
+    fun resolve(id: String, expectedKind: FeatureKind? = null): FeatureResolution {
+        val canonicalId = if (descriptors.containsKey(id)) id else aliases[id]
+            ?: return FeatureResolution.Missing(id)
         val descriptor = descriptors[canonicalId] ?: return FeatureResolution.Missing(id)
-        return FeatureResolution.Aliased(id, canonicalId, descriptor)
+        if (expectedKind != null && descriptor.kind != expectedKind) {
+            return FeatureResolution.Incompatible(id, expectedKind, descriptor.kind, descriptor)
+        }
+        return if (canonicalId == id) {
+            FeatureResolution.Available(id, descriptor)
+        } else {
+            FeatureResolution.Aliased(id, canonicalId, descriptor)
+        }
     }
 
-    fun canonicalId(id: String): String? = when (val resolution = resolve(id)) {
+    fun canonicalId(id: String, expectedKind: FeatureKind? = null): String? = when (
+        val resolution = resolve(id, expectedKind)
+    ) {
         is FeatureResolution.Available -> resolution.descriptor.id.value
         is FeatureResolution.Aliased -> resolution.canonicalId
-        is FeatureResolution.Missing -> null
+        is FeatureResolution.Missing,
+        is FeatureResolution.Incompatible -> null
     }
 
-    fun canonicalRef(feature: FeatureRef): FeatureRef {
-        val canonicalId = canonicalId(feature.typeId) ?: return feature
+    fun canonicalRef(feature: FeatureRef, expectedKind: FeatureKind? = null): FeatureRef {
+        val canonicalId = canonicalId(feature.typeId, expectedKind) ?: return feature
         return if (canonicalId == feature.typeId) feature else feature.copy(typeId = canonicalId)
     }
 
     fun descriptor(id: String): FeatureDescriptor? = when (val resolution = resolve(id)) {
         is FeatureResolution.Available -> resolution.descriptor
         is FeatureResolution.Aliased -> resolution.descriptor
-        is FeatureResolution.Missing -> null
+        is FeatureResolution.Missing,
+        is FeatureResolution.Incompatible -> null
     }
 
-    fun actionExecutor(id: String): ActionExecutor? = canonicalId(id)?.let(actions::get)
-    fun conditionEvaluator(id: String): ConditionEvaluator? = canonicalId(id)?.let(conditions::get)
-    fun eventMatcher(id: String): EventMatcher? = canonicalId(id)?.let(events::get)
-    fun stateEvaluator(id: String): ConditionEvaluator? = canonicalId(id)?.let(states::get)
+    fun actionExecutor(id: String): ActionExecutor? = canonicalId(id, FeatureKind.ACTION)?.let(actions::get)
+    fun conditionEvaluator(id: String): ConditionEvaluator? = canonicalId(id, FeatureKind.CONDITION)?.let(conditions::get)
+    fun eventMatcher(id: String): EventMatcher? = canonicalId(id, FeatureKind.EVENT)?.let(events::get)
+    fun stateEvaluator(id: String): ConditionEvaluator? = canonicalId(id, FeatureKind.STATE)?.let(states::get)
     fun allDescriptors(): List<FeatureDescriptor> = descriptors.values.sortedWith(
         compareBy<FeatureDescriptor> { it.category.name }.thenBy { it.title }
     )
