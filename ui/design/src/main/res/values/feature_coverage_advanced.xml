@@ -23,9 +23,6 @@
     <string name="feature_android_ime_settings_open_title">Open input-method settings</string>
     <string name="feature_android_ime_settings_open_description">Open Android's keyboard and input-method settings page</string>
 
-    <string name="feature_android_screen_wake_title">Wake device</string>
-    <string name="feature_android_screen_wake_description">Wake the display with Android's WAKEUP key event</string>
-
     <string name="feature_android_device_reboot_title">Reboot device</string>
     <string name="feature_android_device_reboot_description">Request a normal Android reboot through the power service</string>
 
@@ -34,8 +31,6 @@
     <string name="feature_android_screen_screenshot_field_path">Output PNG path</string>
     <string name="feature_android_screen_screenshot_field_resultvariable">Store output path in variable</string>
 
-    <string name="feature_android_input_keyevent_title">Send key event</string>
-    <string name="feature_android_input_keyevent_description">Send one Android key code through the privileged input command</string>
     <string name="feature_android_input_keyevent_field_keycode">Android key code</string>
 
     <string name="feature_android_state_default_ime_title">Default input method</string>
