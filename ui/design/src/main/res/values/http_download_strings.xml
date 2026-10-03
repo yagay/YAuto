@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_http_download_title">HTTP download</string>
+    <string name="feature_android_http_download_description">Download an HTTP or HTTPS response body to a local file with size, timeout and overwrite safeguards</string>
+</resources>
