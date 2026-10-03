@@ -92,6 +92,39 @@ class MacroDroidImporterTest {
     }
 
     @Test
+    fun `maps reference system actions using documented MacroDroid parameters`() {
+        val json = """
+            {"macro":{"m_GUID":"reference-system","m_name":"Reference system","m_triggerList":[],"m_actionList":[
+              {"m_classType":"CarModeAction","m_option":2},
+              {"m_classType":"DayDreamAction"},
+              {"m_classType":"InvertColoursAction","m_option":0},
+              {"m_classType":"HeadsUpNotificationsAction","option":1},
+              {"m_classType":"AmbientDisplayAction","m_settingOption":0,"m_option":2}
+            ]}}
+        """.trimIndent()
+
+        val result = MacroDroidImporter().import(ImportInput("reference-system.macro", null, json.toByteArray()))
+        assertTrue(result.success)
+        val features = result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature }
+
+        assertEquals(
+            listOf(
+                "android.car_mode.set",
+                "android.display.dream.start",
+                "android.display.color_inversion.set",
+                "android.notification.heads_up.set",
+                "android.display.ambient_display.set",
+            ),
+            features.map { it.typeId },
+        )
+        assertEquals(ConfigValue.StringValue("toggle"), features[0].config["mode"])
+        assertEquals(ConfigValue.StringValue("enable"), features[2].config["mode"])
+        assertEquals(ConfigValue.StringValue("disable"), features[3].config["mode"])
+        assertEquals(ConfigValue.StringValue("wake_for_notifications"), features[4].config["setting"])
+        assertEquals(ConfigValue.StringValue("toggle"), features[4].config["mode"])
+    }
+
+    @Test
     fun `maps notification trigger and display constraints conservatively`() {
         val json = """
             {"macro":{"m_GUID":"contexts-2","m_name":"Contexts","m_triggerList":[
