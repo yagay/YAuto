@@ -2,10 +2,13 @@
 <resources>
     <string name="feature_android_shell_execute_title">执行特权 Shell 命令</string>
     <string name="feature_android_shell_execute_description">通过所选特权后端执行 Shell 命令并提供结构化结果</string>
+    <string name="feature_android_shell_execute_field_resultvariable">保存结果对象到变量</string>
     <string name="feature_android_vibration_vibrate_title">振动</string>
     <string name="feature_android_vibration_vibrate_description">按限定时长和振幅执行一次振动</string>
+    <string name="feature_android_vibration_vibrate_field_durationms">持续时间（毫秒）</string>
     <string name="feature_android_vibration_pattern_title">振动模式</string>
     <string name="feature_android_vibration_pattern_description">按时序执行有限振动波形</string>
+    <string name="feature_android_vibration_pattern_field_timings">时序（毫秒）</string>
     <string name="feature_android_vibration_cancel_title">停止振动</string>
     <string name="feature_android_vibration_cancel_description">停止设备默认振动器</string>
     <string name="feature_android_state_audio_music_active_title">媒体音频活动</string>
@@ -34,4 +37,6 @@
     <string name="feature_android_condition_usb_device_connected_description">检查 USB 设备是否符合过滤条件</string>
     <string name="feature_android_event_usb_device_changed_title">USB 设备变化</string>
     <string name="feature_android_event_usb_device_changed_description">USB 设备插入或拔出时触发并可过滤设备</string>
+    <string name="feature_android_event_usb_device_changed_field_state_option_attached">已连接</string>
+    <string name="feature_android_event_usb_device_changed_field_state_option_detached">已断开</string>
 </resources>
