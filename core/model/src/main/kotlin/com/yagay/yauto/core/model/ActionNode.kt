@@ -4,6 +4,31 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+enum class ActionFailurePolicy {
+    /** Preserve the historical YAuto behavior: stop the current action chain on failure. */
+    STOP,
+
+    /** Record the failed action, then continue with the next node in the same action chain. */
+    CONTINUE,
+
+    /** Retry the action according to [ActionRetryPolicy], then stop if all attempts fail. */
+    RETRY,
+}
+
+/**
+ * Retry settings for one action node.
+ *
+ * [maxAttempts] is the total number of executions including the first attempt. Runtime code clamps
+ * untrusted/imported values to safe limits so malformed external backups cannot create an
+ * unbounded retry loop or excessively long per-attempt delay.
+ */
+@Serializable
+data class ActionRetryPolicy(
+    val maxAttempts: Int = 3,
+    val delayMs: Long = 500L,
+)
+
+@Serializable
 sealed interface ActionNode {
     val id: NodeId
 
@@ -13,6 +38,9 @@ sealed interface ActionNode {
         val feature: FeatureRef,
         val enabled: Boolean = true,
         val comment: String? = null,
+        /** Missing in older workspaces, so STOP must remain the default for backwards compatibility. */
+        val failurePolicy: ActionFailurePolicy = ActionFailurePolicy.STOP,
+        val retryPolicy: ActionRetryPolicy = ActionRetryPolicy(),
     ) : ActionNode
 
     @Serializable @SerialName("if")
