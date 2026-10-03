@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variable_global_set_title">Set persistent variable</string>
+    <string name="feature_variable_global_set_description">Store a typed variable in the YAuto workspace for future automation runs</string>
+    <string name="feature_variable_global_set_field_name">Variable name</string>
+    <string name="feature_variable_global_set_field_sourcevariable">Source runtime variable</string>
+    <string name="feature_variable_global_set_field_valuetype">Value type</string>
+    <string name="feature_variable_global_set_field_valuetype_option_text">text</string>
+    <string name="feature_variable_global_set_field_valuetype_option_number">number</string>
+    <string name="feature_variable_global_set_field_valuetype_option_boolean">boolean</string>
+    <string name="feature_variable_global_set_field_valuetype_option_null">null</string>
+    <string name="feature_variable_global_set_field_value">Value</string>
+
+    <string name="feature_variable_global_get_title">Get persistent variable</string>
+    <string name="feature_variable_global_get_description">Load a persistent workspace variable into the current automation run</string>
+    <string name="feature_variable_global_get_field_name">Variable name</string>
+    <string name="feature_variable_global_get_field_resultvariable">Destination variable</string>
+
+    <string name="feature_variable_global_clear_title">Clear persistent variable</string>
+    <string name="feature_variable_global_clear_description">Remove a persistent variable from the YAuto workspace</string>
+    <string name="feature_variable_global_clear_field_name">Variable name</string>
+
+    <string name="feature_variable_global_exists_title">Persistent variable exists</string>
+    <string name="feature_variable_global_exists_description">Check whether a persistent workspace variable exists</string>
+    <string name="feature_variable_global_exists_field_name">Variable name</string>
+
+    <string name="feature_variable_global_equals_title">Persistent variable equals</string>
+    <string name="feature_variable_global_equals_description">Compare a persistent workspace variable with a typed value</string>
+    <string name="feature_variable_global_equals_field_name">Variable name</string>
+    <string name="feature_variable_global_equals_field_sourcevariable">Source runtime variable</string>
+    <string name="feature_variable_global_equals_field_valuetype">Value type</string>
+    <string name="feature_variable_global_equals_field_valuetype_option_text">text</string>
+    <string name="feature_variable_global_equals_field_valuetype_option_number">number</string>
+    <string name="feature_variable_global_equals_field_valuetype_option_boolean">boolean</string>
+    <string name="feature_variable_global_equals_field_valuetype_option_null">null</string>
+    <string name="feature_variable_global_equals_field_value">Value</string>
+
+    <string name="feature_variable_global_state_equals_title">Persistent variable state equals</string>
+    <string name="feature_variable_global_state_equals_description">Compare a persistent workspace variable with a typed value</string>
+    <string name="feature_variable_global_state_equals_field_name">Variable name</string>
+    <string name="feature_variable_global_state_equals_field_sourcevariable">Source runtime variable</string>
+    <string name="feature_variable_global_state_equals_field_valuetype">Value type</string>
+    <string name="feature_variable_global_state_equals_field_valuetype_option_text">text</string>
+    <string name="feature_variable_global_state_equals_field_valuetype_option_number">number</string>
+    <string name="feature_variable_global_state_equals_field_valuetype_option_boolean">boolean</string>
+    <string name="feature_variable_global_state_equals_field_valuetype_option_null">null</string>
+    <string name="feature_variable_global_state_equals_field_value">Value</string>
+
+    <string name="feature_core_event_variable_changed_title">Persistent variable changed</string>
+    <string name="feature_core_event_variable_changed_description">Run when a typed persistent workspace variable is created, changed, or removed</string>
+    <string name="feature_core_event_variable_changed_field_name">Variable name</string>
+    <string name="feature_core_event_variable_changed_field_change">Change type</string>
+    <string name="feature_core_event_variable_changed_field_change_option_any">any</string>
+    <string name="feature_core_event_variable_changed_field_change_option_created">created</string>
+    <string name="feature_core_event_variable_changed_field_change_option_changed">changed</string>
+    <string name="feature_core_event_variable_changed_field_change_option_removed">removed</string>
+
+    <string name="runtime_feature_invalid_persistent_value">The persistent variable value is invalid for the selected type</string>
+    <string name="runtime_feature_persistent_variable_update_failed">The persistent variable could not be updated</string>
+    <string name="runtime_feature_persistent_variable_clear_failed">The persistent variable could not be cleared</string>
+</resources>
