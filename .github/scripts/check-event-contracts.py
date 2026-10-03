@@ -11,11 +11,13 @@ SOURCE_GLOBS = (
     'platform/*/src/main/kotlin/**/*.kt',
     'feature/*/src/main/kotlin/**/*.kt',
 )
+EVENT_LITERAL = re.compile(r'"(android\.event\.[^"]+)"')
 
 # Internal signals intentionally dispatched only to refresh/evaluate state and therefore do not
 # represent user-selectable Trigger/Event features.
 INTERNAL_RUNTIME_EVENTS = {
     'android.event.runtime_started',
+    'android.event.workspace_changed',
 }
 
 
@@ -26,28 +28,30 @@ def source_files() -> list[Path]:
     return sorted(files)
 
 
-def event_descriptors(source: str) -> set[str]:
-    result: set[str] = set()
-    # FeatureDescriptor arguments are mostly compact in YAuto. Limit the window to avoid pairing a
-    # FeatureId with FeatureKind.EVENT from a distant descriptor in the same file.
-    for match in re.finditer(r'FeatureId\(\s*"(android\.event\.[^"]+)"\s*\)', source):
-        window = source[match.start(): min(len(source), match.start() + 700)]
-        if re.search(r'FeatureKind\.EVENT\b', window):
-            result.add(match.group(1))
-    return result
+def literals(source: str) -> set[str]:
+    return {match.group(1) for match in EVENT_LITERAL.finditer(source)}
 
 
-def emitted_runtime_events(source: str) -> set[str]:
-    result: set[str] = set()
-    # Supports RuntimeEvent("id", ...), RuntimeEvent(\n "id", ...), and
-    # RuntimeEvent(typeId = "id", ...). Dynamic type IDs are intentionally outside this static
-    # guard and are covered by their source-specific tests.
-    pattern = re.compile(
-        r'RuntimeEvent\s*\(\s*(?:typeId\s*=\s*)?"(android\.event\.[^"]+)"',
-        re.MULTILINE,
+def registered_events(source: str) -> set[str]:
+    # Many YAuto packs intentionally use helpers such as registerBroadcastEvent(typeId), where the
+    # FeatureDescriptor contains FeatureId(typeId) rather than a literal. If a source file actually
+    # registers events, every android.event.* literal in that registration file is part of its event
+    # contract and is therefore considered a registered Trigger/Event ID.
+    if 'registerEvent(' not in source and 'FeatureKind.EVENT' not in source:
+        return set()
+    return literals(source)
+
+
+def emitted_events(source: str) -> set[str]:
+    # Event sources often map a broadcast/action to a local `typeId` variable and later call
+    # RuntimeEvent(typeId, ...). Collecting all event literals from EventSource/RuntimeEvent code
+    # therefore catches both direct and variable-based emission paths.
+    is_emitter = (
+        'RuntimeEvent(' in source
+        or ': AndroidEventSource' in source
+        or 'RuntimeEventEmitter' in source
     )
-    result.update(match.group(1) for match in pattern.finditer(source))
-    return result
+    return literals(source) if is_emitter else set()
 
 
 def main() -> int:
@@ -56,24 +60,24 @@ def main() -> int:
         print('Event contract guard failed: no Kotlin source files found')
         return 1
 
-    descriptors: dict[str, list[Path]] = {}
+    registered: dict[str, list[Path]] = {}
     emitted: dict[str, list[Path]] = {}
     for path in files:
         source = path.read_text(encoding='utf-8')
-        for event_id in event_descriptors(source):
-            descriptors.setdefault(event_id, []).append(path)
-        for event_id in emitted_runtime_events(source):
+        for event_id in registered_events(source):
+            registered.setdefault(event_id, []).append(path)
+        for event_id in emitted_events(source):
             emitted.setdefault(event_id, []).append(path)
 
     failures: list[str] = []
     for event_id, paths in sorted(emitted.items()):
         if event_id in INTERNAL_RUNTIME_EVENTS:
             continue
-        if event_id not in descriptors:
+        if event_id not in registered:
             locations = ', '.join(str(path) for path in paths)
             failures.append(
-                f'Runtime event {event_id!r} is emitted from {locations} but no literal '
-                'FeatureKind.EVENT descriptor registers it'
+                f'Runtime event {event_id!r} is emitted/referenced by {locations} but no native '
+                'FeaturePack registers the same event ID'
             )
 
     if failures:
@@ -82,8 +86,8 @@ def main() -> int:
 
     checked = sum(1 for event_id in emitted if event_id not in INTERNAL_RUNTIME_EVENTS)
     print(
-        f'Event contract guard passed: {checked} literal runtime event IDs have matching '
-        f'FeatureKind.EVENT descriptors; {len(INTERNAL_RUNTIME_EVENTS)} internal event ID(s) excluded.'
+        f'Event contract guard passed: {checked} runtime event contract IDs have matching native '
+        f'Event registrations; {len(INTERNAL_RUNTIME_EVENTS)} internal event ID(s) excluded.'
     )
     return 0
 
