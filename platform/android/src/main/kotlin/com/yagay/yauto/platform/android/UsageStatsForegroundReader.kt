@@ -29,16 +29,30 @@ interface ForegroundAppReader {
 class SystemUsageStatsForegroundReader(context: Context) : ForegroundAppReader {
     private val context = context.applicationContext
     private val manager = this.context.getSystemService(UsageStatsManager::class.java)
+    private var cachedForeground: ForegroundAppSnapshot? = null
+    private var lastSuccessfulQueryEndEpochMs: Long? = null
 
     override fun hasAccess(): Boolean = isUsageStatsAccessGranted(context)
 
+    @Synchronized
     override fun currentForegroundApp(nowEpochMs: Long): ForegroundAppSnapshot? {
-        if (!hasAccess()) return null
-        val begin = (nowEpochMs - LOOKBACK_MS).coerceAtLeast(0L)
-        return runCatching {
+        if (!hasAccess()) {
+            cachedForeground = null
+            lastSuccessfulQueryEndEpochMs = null
+            return null
+        }
+
+        val begin = (
+            lastSuccessfulQueryEndEpochMs
+                ?.minus(QUERY_OVERLAP_MS)
+                ?: nowEpochMs.minus(INITIAL_LOOKBACK_MS)
+            ).coerceAtLeast(0L)
+            .coerceAtMost(nowEpochMs)
+
+        val records = runCatching {
             val events = manager.queryEvents(begin, nowEpochMs)
             val event = UsageEvents.Event()
-            val records = buildList {
+            buildList {
                 while (events.hasNextEvent()) {
                     events.getNextEvent(event)
                     val transition = when (event.eventType) {
@@ -59,12 +73,16 @@ class SystemUsageStatsForegroundReader(context: Context) : ForegroundAppReader {
                     )
                 }
             }
-            resolveForegroundApp(records)
-        }.getOrNull()
+        }.getOrNull() ?: return cachedForeground
+
+        cachedForeground = resolveForegroundApp(records, cachedForeground)
+        lastSuccessfulQueryEndEpochMs = nowEpochMs
+        return cachedForeground
     }
 
     companion object {
-        private const val LOOKBACK_MS = 60_000L
+        private const val INITIAL_LOOKBACK_MS = 24 * 60 * 60 * 1_000L
+        private const val QUERY_OVERLAP_MS = 2_000L
     }
 }
 
@@ -77,10 +95,15 @@ fun isUsageStatsAccessGranted(context: Context): Boolean = runCatching {
     ) == AppOpsManager.MODE_ALLOWED
 }.getOrDefault(false)
 
-internal fun resolveForegroundApp(records: List<UsageActivityRecord>): ForegroundAppSnapshot? {
+internal fun resolveForegroundApp(
+    records: List<UsageActivityRecord>,
+    seed: ForegroundAppSnapshot? = null,
+): ForegroundAppSnapshot? {
     data class ActivityKey(val packageName: String, val className: String?)
 
     val active = linkedMapOf<ActivityKey, ForegroundAppSnapshot>()
+    seed?.let { active[ActivityKey(it.packageName, it.className)] = it }
+
     records.sortedBy { it.timestampEpochMs }.forEach { record ->
         val key = ActivityKey(record.packageName, record.className)
         when (record.transition) {
