@@ -7,6 +7,7 @@ import com.yagay.yauto.feature.standard.data.DataListFeatures
 import com.yagay.yauto.feature.standard.data.DataMathFeatures
 import com.yagay.yauto.feature.standard.data.DataRandomFeatures
 import com.yagay.yauto.feature.standard.data.DataTextUtilityFeatures
+import com.yagay.yauto.feature.standard.data.DataTextExpansionFeatures
 
 class DataUtilityFeaturePack : FeaturePack {
     override val id: String = "standard.data.utility"
@@ -16,6 +17,7 @@ class DataUtilityFeaturePack : FeaturePack {
         DataMathFeatures.definitions +
             DataRandomFeatures.utilityDefinitions +
             DataTextUtilityFeatures.definitions +
+            DataTextExpansionFeatures.definitions +
             DataListFeatures.definitions,
     )
 
