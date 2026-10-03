@@ -22,7 +22,13 @@ import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.security.SecureRandom
 import java.util.Base64
+import javax.crypto.Cipher
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 
 class DataCodecFeaturePack : FeaturePack {
     override val id: String = "standard.data.codec"
@@ -62,6 +68,46 @@ private object DataCodecFeatures {
         },
         textTransform("data.text.sha256", "SHA-256 hash", "Hash UTF-8 text with SHA-256") { digestHex("SHA-256", it) },
         textTransform("data.text.sha512", "SHA-512 hash", "Hash UTF-8 text with SHA-512") { digestHex("SHA-512", it) },
+        action(
+            "data.text.aes_gcm_encrypt", "AES-GCM encrypt", "Encrypt UTF-8 text with a password using AES-256-GCM and PBKDF2",
+            listOf(
+                FieldSchema.Text("text", "Text", true, multiline = true),
+                FieldSchema.Text("password", "Password", true),
+                resultField(),
+            ),
+            mapOf(
+                "text" to FieldBehavior(supportsVariables = true),
+                "password" to FieldBehavior(supportsVariables = true),
+            ),
+        ) { feature, context ->
+            val text = feature.config.string("text").resolveVariables(context.variables)
+            val password = feature.config.string("password").resolveVariables(context.variables)
+            if (password.isEmpty()) return@action operationFailedCodec(feature)
+            runCatching { aesGcmEncrypt(text, password) }.fold(
+                onSuccess = { context.storeCodec(feature.resultVariable(), ConfigValue.StringValue(it)) },
+                onFailure = { operationFailedCodec(feature) },
+            )
+        },
+        action(
+            "data.text.aes_gcm_decrypt", "AES-GCM decrypt", "Decrypt text produced by YAuto AES-256-GCM encryption",
+            listOf(
+                FieldSchema.Text("text", "Encrypted text", true, multiline = true),
+                FieldSchema.Text("password", "Password", true),
+                resultField(),
+            ),
+            mapOf(
+                "text" to FieldBehavior(supportsVariables = true),
+                "password" to FieldBehavior(supportsVariables = true),
+            ),
+        ) { feature, context ->
+            val text = feature.config.string("text").resolveVariables(context.variables)
+            val password = feature.config.string("password").resolveVariables(context.variables)
+            if (password.isEmpty()) return@action operationFailedCodec(feature)
+            runCatching { aesGcmDecrypt(text, password) }.fold(
+                onSuccess = { context.storeCodec(feature.resultVariable(), ConfigValue.StringValue(it)) },
+                onFailure = { operationFailedCodec(feature) },
+            )
+        },
         valueTransform("data.value.type", "Value type", "Return the YAuto type name of a value variable") {
             ConfigValue.StringValue(it.typeName())
         },
@@ -270,6 +316,50 @@ private fun digestHex(algorithm: String, value: String): String =
     MessageDigest.getInstance(algorithm)
         .digest(value.toByteArray(StandardCharsets.UTF_8))
         .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+
+private const val AES_GCM_PREFIX = "yauto:aesgcm:v1:"
+private const val AES_GCM_ITERATIONS = 120_000
+private const val AES_GCM_TAG_BITS = 128
+private const val AES_GCM_KEY_BITS = 256
+
+internal fun aesGcmEncrypt(
+    plaintext: String,
+    password: String,
+    random: SecureRandom = SecureRandom(),
+): String {
+    require(password.isNotEmpty())
+    val salt = ByteArray(16).also(random::nextBytes)
+    val nonce = ByteArray(12).also(random::nextBytes)
+    val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+    cipher.init(Cipher.ENCRYPT_MODE, deriveAesKey(password, salt), GCMParameterSpec(AES_GCM_TAG_BITS, nonce))
+    val encrypted = cipher.doFinal(plaintext.toByteArray(StandardCharsets.UTF_8))
+    val encoder = Base64.getUrlEncoder().withoutPadding()
+    return AES_GCM_PREFIX + listOf(salt, nonce, encrypted).joinToString(":") { encoder.encodeToString(it) }
+}
+
+internal fun aesGcmDecrypt(encoded: String, password: String): String {
+    require(password.isNotEmpty() && encoded.startsWith(AES_GCM_PREFIX))
+    val parts = encoded.removePrefix(AES_GCM_PREFIX).split(':')
+    require(parts.size == 3)
+    val decoder = Base64.getUrlDecoder()
+    val salt = decoder.decode(padBase64(parts[0]))
+    val nonce = decoder.decode(padBase64(parts[1]))
+    val ciphertext = decoder.decode(padBase64(parts[2]))
+    require(salt.size == 16 && nonce.size == 12 && ciphertext.size >= 16)
+    val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+    cipher.init(Cipher.DECRYPT_MODE, deriveAesKey(password, salt), GCMParameterSpec(AES_GCM_TAG_BITS, nonce))
+    return String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8)
+}
+
+private fun deriveAesKey(password: String, salt: ByteArray): SecretKeySpec {
+    val spec = PBEKeySpec(password.toCharArray(), salt, AES_GCM_ITERATIONS, AES_GCM_KEY_BITS)
+    return try {
+        val encoded = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+        SecretKeySpec(encoded, "AES")
+    } finally {
+        spec.clearPassword()
+    }
+}
 
 private fun padBase64(value: String): String {
     val missing = (4 - value.length % 4) % 4
