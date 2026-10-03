@@ -48,6 +48,9 @@ internal object ShortXMappings {
             "ShellCommand" -> shellCommand(any, importerId, fields)
             "InjectKeyCode" -> injectKeyCode(any, importerId, fields)
             "SetAutoBrightness" -> setAutoBrightness(any, importerId, fields)
+            "ExpandNotification" -> expandNotification(any, importerId, fields)
+            "RequestAudioFocus" -> requestAudioFocus(any, importerId, fields)
+            "PlayRingtone" -> playRingtone(any, importerId, fields)
             else -> null
         }
     }
@@ -208,6 +211,33 @@ internal object ShortXMappings {
                 sourceFeature("android.display.brightness.set", importerId, any.typeUrl, raw,
                     extra = mapOf("mode" to ConfigValue.StringValue("auto")))
             }
+            "ExpandNotification" -> sourceFeature(
+                "android.status_bar.control", importerId, any.typeUrl, raw,
+                extra = mapOf("mode" to ConfigValue.StringValue("notifications")),
+            )
+            "RequestAudioFocus" -> {
+                val request = (obj["isRequest"] as? JsonPrimitive)?.booleanOrNull ?: return null
+                sourceFeature(
+                    if (request) "android.audio.focus.request" else "android.audio.focus.abandon",
+                    importerId,
+                    any.typeUrl,
+                    raw,
+                    extra = if (request) mapOf("gain" to ConfigValue.StringValue("gain")) else emptyMap(),
+                )
+            }
+            "PlayRingtone" -> {
+                val ringtone = obj["ringtone"] as? JsonObject ?: return null
+                val uri = (ringtone["uri"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() } ?: return null
+                sourceFeature(
+                    "android.audio.play", importerId, any.typeUrl, raw,
+                    extra = mapOf(
+                        "source" to ConfigValue.StringValue(uri),
+                        "volume" to ConfigValue.NumberValue(100.0),
+                        "loop" to ConfigValue.BooleanValue(false),
+                        "waitForCompletion" to ConfigValue.BooleanValue(false),
+                    ),
+                )
+            }
             else -> null
         }
     }
@@ -261,9 +291,51 @@ internal object ShortXMappings {
         "ShareContent" -> "android.file.share"
         "SendSMS" -> "android.sms.compose"
         "LockDeviceNow" -> "system.screen.sleep"
-        "ExpandNotification" -> "system.notifications.expand"
+        "ExpandNotification" -> "android.status_bar.control"
         "PlayRingtone" -> "android.audio.play"
+        "RequestAudioFocus" -> "android.audio.focus.request"
+        "GetScreenOnTime" -> "android.screen_on_time.get"
+        "MatchRegex" -> "data.regex.matches"
+        "ReplaceRegex" -> "data.regex.replace"
         else -> null
+    }
+
+    private fun expandNotification(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields()) return null
+        return binaryFeature(
+            any,
+            importerId,
+            "android.status_bar.control",
+            mapOf("mode" to ConfigValue.StringValue("notifications")),
+        )
+    }
+
+    private fun requestAudioFocus(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields(1)) return null
+        val request = fields.varint(1)?.let { it != 0L } ?: return null
+        return binaryFeature(
+            any,
+            importerId,
+            if (request) "android.audio.focus.request" else "android.audio.focus.abandon",
+            if (request) mapOf("gain" to ConfigValue.StringValue("gain")) else emptyMap(),
+        )
+    }
+
+    private fun playRingtone(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields(1)) return null
+        val ringtone = fields.bytes(1)?.let(::ProtoFields) ?: return null
+        val uri = ringtone.string(2)?.takeIf { it.isNotBlank() } ?: return null
+        return binaryFeature(
+            any,
+            importerId,
+            "android.audio.play",
+            mapOf(
+                "source" to ConfigValue.StringValue(uri),
+                "volume" to ConfigValue.NumberValue(100.0),
+                "loop" to ConfigValue.BooleanValue(false),
+                "waitForCompletion" to ConfigValue.BooleanValue(false),
+            ),
+        )
     }
 
     private fun showToast(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
