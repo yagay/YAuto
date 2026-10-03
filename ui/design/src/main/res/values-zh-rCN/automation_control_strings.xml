@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_core_automation_run_title">运行自动化</string>
+    <string name="feature_core_automation_run_description">通过稳定 ID 或准确名称运行另一个 YAuto 自动化</string>
+    <string name="feature_core_automation_run_field_target">目标自动化</string>
+    <string name="feature_core_automation_run_field_allowdisabled">允许运行已禁用自动化</string>
+    <string name="feature_core_automation_run_field_resultvariable">保存返回值</string>
+
+    <string name="feature_core_automation_set_enabled_title">设置自动化状态</string>
+    <string name="feature_core_automation_set_enabled_description">启用、禁用或切换另一个 YAuto 自动化的状态</string>
+    <string name="feature_core_automation_set_enabled_field_target">目标自动化</string>
+    <string name="feature_core_automation_set_enabled_field_mode">模式</string>
+    <string name="feature_core_automation_set_enabled_field_mode_option_enable">启用</string>
+    <string name="feature_core_automation_set_enabled_field_mode_option_disable">禁用</string>
+    <string name="feature_core_automation_set_enabled_field_mode_option_toggle">切换</string>
+    <string name="feature_core_automation_set_enabled_field_resultvariable">保存启用状态</string>
+
+    <string name="feature_core_automation_cancel_title">取消自动化</string>
+    <string name="feature_core_automation_cancel_description">取消另一个 YAuto 自动化当前正在运行的执行</string>
+    <string name="feature_core_automation_cancel_field_target">目标自动化</string>
+    <string name="feature_core_automation_cancel_field_resultvariable">保存是否取消了运行</string>
+
+    <string name="feature_core_automation_enabled_title">自动化已启用</string>
+    <string name="feature_core_automation_enabled_description">检查某个 YAuto 自动化当前是否已启用</string>
+    <string name="feature_core_automation_enabled_field_target">目标自动化</string>
+
+    <string name="runtime_runtime_automation_target_required">必须指定目标自动化</string>
+    <string name="runtime_runtime_automation_not_found">找不到自动化：%1$s</string>
+    <string name="runtime_runtime_automation_disabled">自动化已禁用：%1$s</string>
+    <string name="runtime_runtime_automation_recursive_call">已阻止递归调用自动化：%1$s</string>
+    <string name="runtime_runtime_automation_call_depth">自动化调用深度超过 %1$d</string>
+    <string name="runtime_runtime_automation_busy">自动化正忙，已忽略本次新运行：%1$s</string>
+    <string name="runtime_runtime_automation_run_failed">自动化未返回运行结果：%1$s</string>
+    <string name="runtime_runtime_automation_cancel_self">自动化执行期间不能取消自身：%1$s</string>
+</resources>
