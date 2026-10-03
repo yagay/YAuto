@@ -282,9 +282,14 @@ class NetworkEventSource(
         capabilities ?: return@buildMap
         put("internet", ConfigValue.BooleanValue(capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)))
         put("validated", ConfigValue.BooleanValue(capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)))
+        put("metered", ConfigValue.BooleanValue(!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)))
+        put("roaming", ConfigValue.BooleanValue(!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING)))
+        put("restricted", ConfigValue.BooleanValue(!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)))
+        put("suspended", ConfigValue.BooleanValue(!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_SUSPENDED)))
         put("wifi", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)))
         put("cellular", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)))
         put("ethernet", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)))
         put("vpn", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)))
+        put("bluetooth", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH)))
     }
 }
