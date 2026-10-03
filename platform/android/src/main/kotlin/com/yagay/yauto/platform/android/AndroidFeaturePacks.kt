@@ -24,6 +24,7 @@ object AndroidFeaturePacks {
         AndroidAppManagementFeaturePack(context),
         AndroidAdvancedSystemFeaturePack(context),
         AndroidSystemConvenienceFeaturePack(context),
+        AndroidSystemPowerCoverageFeaturePack(context),
         AndroidPrivilegedUtilityFeaturePack(context),
         AndroidPrivilegedStateFeaturePack(),
         AndroidMediaDeviceFeaturePack(context),
