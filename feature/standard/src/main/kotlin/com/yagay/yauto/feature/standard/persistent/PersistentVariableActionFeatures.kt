@@ -10,6 +10,7 @@ import com.yagay.yauto.core.registry.FieldBehavior
 import com.yagay.yauto.core.registry.FieldSchema
 import com.yagay.yauto.core.registry.PersistentVariableControl
 import com.yagay.yauto.core.registry.actionFeature
+import com.yagay.yauto.core.registry.resolveVariables
 
 internal fun persistentVariableActions(control: PersistentVariableControl): List<FeatureDefinition> = listOf(
     actionFeature(
