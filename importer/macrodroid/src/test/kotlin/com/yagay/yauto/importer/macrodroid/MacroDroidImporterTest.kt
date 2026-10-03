@@ -125,6 +125,43 @@ class MacroDroidImporterTest {
     }
 
     @Test
+    fun `maps reference utility actions using verified MacroDroid fields`() {
+        val json = """
+            {"macro":{"m_GUID":"reference-utility","m_name":"Reference utility","m_triggerList":[],"m_actionList":[
+              {"m_classType":"ExpandCollapseStatusBarAction","m_option":0},
+              {"m_classType":"ExpandCollapseStatusBarAction","m_option":1},
+              {"m_classType":"ConnectivityCheckAction","site":"example.com","timeout":4500,"variable":{"m_name":"connected"}},
+              {"m_classType":"OpenCallLogAction"},
+              {"m_classType":"SetRingtoneAction","m_ringtoneUri":"content://media/internal/audio/media/1"},
+              {"m_classType":"SetNotificationSoundAction","m_ringtoneUri":"content://media/internal/audio/media/2"}
+            ]}}
+        """.trimIndent()
+
+        val result = MacroDroidImporter().import(ImportInput("reference-utility.macro", null, json.toByteArray()))
+        assertTrue(result.success)
+        val features = result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature }
+
+        assertEquals(
+            listOf(
+                "android.status_bar.control",
+                "android.status_bar.control",
+                "android.network.connectivity.check",
+                "android.call_log.open",
+                "android.audio.default_sound.set",
+                "android.audio.default_sound.set",
+            ),
+            features.map { it.typeId },
+        )
+        assertEquals(ConfigValue.StringValue("notifications"), features[0].config["mode"])
+        assertEquals(ConfigValue.StringValue("collapse"), features[1].config["mode"])
+        assertEquals(ConfigValue.StringValue("example.com"), features[2].config["site"])
+        assertEquals(ConfigValue.NumberValue(4500.0), features[2].config["timeoutMs"])
+        assertEquals(ConfigValue.StringValue("connected"), features[2].config["resultVariable"])
+        assertEquals(ConfigValue.StringValue("ringtone"), features[4].config["type"])
+        assertEquals(ConfigValue.StringValue("notification"), features[5].config["type"])
+    }
+
+    @Test
     fun `maps notification trigger and display constraints conservatively`() {
         val json = """
             {"macro":{"m_GUID":"contexts-2","m_name":"Contexts","m_triggerList":[
