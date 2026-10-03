@@ -46,6 +46,32 @@ class FeatureRegistryResolutionTest {
     }
 
     @Test
+    fun `known feature of wrong kind resolves as incompatible and is not canonicalized`() {
+        val registry = FeatureRegistry()
+        registry.registerDescriptor(
+            descriptor(
+                id = "android.test.condition",
+                aliases = setOf("android.legacy.condition"),
+                kind = FeatureKind.CONDITION,
+            )
+        )
+        val original = FeatureRef("android.legacy.condition")
+
+        val resolution = registry.resolve("android.legacy.condition", FeatureKind.ACTION)
+
+        assertTrue(resolution is FeatureResolution.Incompatible)
+        resolution as FeatureResolution.Incompatible
+        assertEquals(FeatureKind.ACTION, resolution.expectedKind)
+        assertEquals(FeatureKind.CONDITION, resolution.actualKind)
+        assertNull(registry.canonicalId("android.legacy.condition", FeatureKind.ACTION))
+        assertEquals(
+            "android.legacy.condition",
+            registry.canonicalRef(original, FeatureKind.ACTION).typeId,
+        )
+        assertNull(registry.actionExecutor("android.legacy.condition"))
+    }
+
+    @Test
     fun `unknown feature is a safe missing resolution`() {
         val registry = FeatureRegistry()
 
@@ -120,9 +146,10 @@ class FeatureRegistryResolutionTest {
         id: String,
         aliases: Set<String> = emptySet(),
         ownerPackId: String = "test",
+        kind: FeatureKind = FeatureKind.ACTION,
     ) = FeatureDescriptor(
         id = FeatureId(id),
-        kind = FeatureKind.ACTION,
+        kind = kind,
         title = id,
         description = "test",
         category = FeatureCategory.CORE,
