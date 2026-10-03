@@ -3,6 +3,7 @@ package com.yagay.yauto.platform.accessibility
 import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.registry.AccessRequirement
 import com.yagay.yauto.core.registry.FeatureRegistry
+import com.yagay.yauto.core.registry.resolvedImplementationOptions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
