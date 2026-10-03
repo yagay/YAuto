@@ -11,6 +11,7 @@ import com.yagay.yauto.core.registry.FeatureDefinition
 import com.yagay.yauto.core.registry.FieldBehavior
 import com.yagay.yauto.core.registry.FieldSchema
 import com.yagay.yauto.core.registry.actionFeature
+import com.yagay.yauto.core.registry.resolveVariables
 
 internal object PrivilegedInputCaptureFeatures {
     private const val SCREEN_RECORD_FINISH_GRACE_MS = 15_000L
@@ -49,7 +50,10 @@ internal object PrivilegedInputCaptureFeatures {
                 behaviors = mapOf(
                     "key" to FieldBehavior(defaultValue = ConfigValue.StringValue("back")),
                     "customKeyCode" to FieldBehavior(
-                        visibleWhen = com.yagay.yauto.core.registry.FieldRule.Equals("key", ConfigValue.StringValue("custom")),
+                        visibleWhen = com.yagay.yauto.core.registry.FieldRule.Equals(
+                            "key",
+                            ConfigValue.StringValue("custom"),
+                        ),
                     ),
                     "longPress" to FieldBehavior(defaultValue = ConfigValue.BooleanValue(false)),
                 ),
