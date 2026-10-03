@@ -98,10 +98,18 @@ def main() -> int:
         for match in re.finditer(r'importers\.register\s*\(', source):
             failures.append(
                 f'{app_graph}:{line_number(source, match.start())}: '
-                'Compatibility importers must use registerLazy() and stay off the cold-start path'
+                'Importers must use registerLazy() and stay off the cold-start path'
             )
-        if 'importers.registerLazy(' not in source:
-            failures.append(f'{app_graph}: compatibility importers must be registered lazily')
+        # YAuto V2 deliberately keeps MacroDroid / ShortX / Tasker compatibility code outside the
+        # active application graph. If compatibility is ever reintroduced it must be an optional,
+        # lazy module rather than a startup dependency.
+        forbidden = (
+            'importer.macrodroid', 'importer.shortx', 'importer.tasker',
+            'MacroDroidImporter', 'EnhancedShortXImporter', 'EnhancedTaskerImporter',
+        )
+        for token in forbidden:
+            if token in source:
+                failures.append(f'{app_graph}: compatibility importer reference must stay out of the V2 app graph: {token}')
 
     if failures:
         print('Startup safety guard failed:\n' + '\n'.join(failures))
@@ -109,7 +117,7 @@ def main() -> int:
 
     print(
         f'Startup safety guard passed: {descriptor_count} literal FeatureDescriptor IDs are unique; '
-        'FeaturePack/EventSource isolation and lazy compatibility importers are enforced.'
+        'FeaturePack/EventSource isolation is enforced and compatibility importers are off the V2 startup path.'
     )
     return 0
 
