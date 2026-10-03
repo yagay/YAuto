@@ -92,7 +92,17 @@ class ShortXImporter : AutomationImporter {
                 val feature = ShortXMappings.nativeAction(v, id)
                 if (feature != null) {
                     trace += ImportTrace("rule[$index].action[$i]", feature.typeId, "MAPPED", v.typeUrl)
-                    ActionNode.Action(NodeId(UUID.randomUUID().toString()), feature, enabled = ShortXMappings.enabled(v), comment = ShortXMappings.note(v))
+                    ActionNode.Action(
+                        NodeId(UUID.randomUUID().toString()),
+                        feature,
+                        enabled = ShortXMappings.enabled(v),
+                        comment = ShortXMappings.note(v),
+                        // Verified against ShortX's ActionOnError protobuf enum: Continue=0,
+                        // Break=1. nativeAction() currently accepts only missing/default (Continue)
+                        // metadata and deliberately preserves non-default policies as compatibility
+                        // nodes, so every action reaching this branch must continue after failure.
+                        failurePolicy = ActionFailurePolicy.CONTINUE,
+                    )
                 } else {
                     val suggested = ShortXMappings.suggestedActionFeature(v.typeUrl)
                     ActionNode.Action(

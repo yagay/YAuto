@@ -1,6 +1,7 @@
 package com.yagay.yauto.importer.shortx
 
 import com.yagay.yauto.core.importer.ImportInput
+import com.yagay.yauto.core.model.ActionFailurePolicy
 import com.yagay.yauto.core.model.ActionNode
 import com.yagay.yauto.core.model.ConfigValue
 import org.junit.Assert.assertEquals
@@ -9,7 +10,7 @@ import org.junit.Test
 import java.io.ByteArrayOutputStream
 
 class ShortXImporterTest {
-    @Test fun `JSON toast preserves disabled state and note`() {
+    @Test fun `JSON toast preserves disabled state note and default continue policy`() {
         val json = """{"id":"json-toast","title":"Toast","facts":[],"conditions":[],"actions":[{"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.ShowToast","message":"hello","isDisabled":true,"note":"keep note"}]}"""
         val result = ShortXImporter().import(ImportInput("toast.json", "application/json", json.toByteArray()))
         assertTrue(result.success)
@@ -17,11 +18,14 @@ class ShortXImporterTest {
         assertEquals("android.toast.show", action.feature.typeId)
         assertEquals(false, action.enabled)
         assertEquals("keep note", action.comment)
+        assertEquals(ActionFailurePolicy.CONTINUE, action.failurePolicy)
     }
 
-    @Test fun `protobuf disabled state and unsupported error handling are retained`() {
+    @Test fun `protobuf disabled state is retained and ShortX break policy stays lossless`() {
         val toast = message(field(1, "disabled"), varintField(98, 1), field(99, "comment"))
-        val guarded = message(field(1, "guarded"), varintField(97, 2))
+        // ShortX ActionOnError enum is Continue=0, Break=1. Break is intentionally preserved as a
+        // compatibility node until every related execution semantic is mapped losslessly.
+        val guarded = message(field(1, "guarded"), varintField(97, 1))
         val raw = message(field(4, "flags"), field(9, "Flags"),
             field(3, message(field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.action.ShowToast"), field(2, toast))),
             field(3, message(field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.action.ShowToast"), field(2, guarded))))
@@ -30,6 +34,7 @@ class ShortXImporterTest {
         val actions = result.bundle.automations.single().onEvent.map { it as ActionNode.Action }
         assertEquals(false, actions[0].enabled)
         assertEquals("comment", actions[0].comment)
+        assertEquals(ActionFailurePolicy.CONTINUE, actions[0].failurePolicy)
         assertEquals("compat.source.action", actions[1].feature.typeId)
     }
 
