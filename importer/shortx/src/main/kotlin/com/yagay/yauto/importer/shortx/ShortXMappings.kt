@@ -55,6 +55,143 @@ internal object ShortXMappings {
         }
     }
 
+    fun nativeFact(any: AnyStub, importerId: String): FeatureRef? {
+        if (!factEnabled(any)) return null
+        if (any.isJson) {
+            val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return null
+            if (obj["customContextDataKey"] != null && obj["customContextDataKey"] !is JsonNull) return null
+            val raw = any.value.toString(Charsets.UTF_8)
+            return when (shortName(any.typeUrl)) {
+                "ScreenOn" -> sourceFeature("android.event.screen_on", importerId, any.typeUrl, raw)
+                "ScreenOff" -> sourceFeature("android.event.screen_off", importerId, any.typeUrl, raw)
+                "UserPresent" -> sourceFeature("android.event.user_present", importerId, any.typeUrl, raw)
+                "ChargerPlug" -> sourceFeature("android.event.power_connected", importerId, any.typeUrl, raw)
+                "ChargerUnplug" -> sourceFeature("android.event.power_disconnected", importerId, any.typeUrl, raw)
+                "AppAdded" -> sourceFeature("android.event.package_added", importerId, any.typeUrl, raw)
+                "AppRemoved" -> if (jsonArrayEmpty(obj, "apps") && jsonArrayEmpty(obj, "pkgSets")) {
+                    sourceFeature("android.event.package_removed", importerId, any.typeUrl, raw)
+                } else null
+                "AppUpdated" -> if (jsonArrayEmpty(obj, "apps") && jsonArrayEmpty(obj, "pkgSets")) {
+                    sourceFeature("android.event.package_replaced", importerId, any.typeUrl, raw)
+                } else null
+                else -> null
+            }
+        }
+
+        val fields = runCatching { ProtoFields(any.value) }.getOrNull() ?: return null
+        if (fields.has(98)) return null
+        return when (shortName(any.typeUrl)) {
+            "ScreenOn" -> noBusinessFact(any, importerId, fields, "android.event.screen_on")
+            "ScreenOff" -> noBusinessFact(any, importerId, fields, "android.event.screen_off")
+            "UserPresent" -> noBusinessFact(any, importerId, fields, "android.event.user_present")
+            "ChargerPlug" -> noBusinessFact(any, importerId, fields, "android.event.power_connected")
+            "ChargerUnplug" -> noBusinessFact(any, importerId, fields, "android.event.power_disconnected")
+            "AppAdded" -> noBusinessFact(any, importerId, fields, "android.event.package_added")
+            "AppRemoved" -> noBusinessFact(any, importerId, fields, "android.event.package_removed")
+            "AppUpdated" -> noBusinessFact(any, importerId, fields, "android.event.package_replaced")
+            else -> null
+        }
+    }
+
+    fun nativeCondition(any: AnyStub, importerId: String): FeatureRef? {
+        if (!conditionEnabled(any) || conditionInverted(any)) return null
+        if (any.isJson) return nativeJsonCondition(any, importerId)
+
+        val fields = runCatching { ProtoFields(any.value) }.getOrNull() ?: return null
+        if (fields.has(97)) return null
+        return when (shortName(any.typeUrl)) {
+            "ScreenIsOn" -> noBusinessCondition(any, importerId, fields, "android.condition.screen", mapOf("value" to ConfigValue.BooleanValue(true)))
+            "VPNIsConnected" -> noBusinessCondition(
+                any, importerId, fields, "android.condition.network_profile",
+                mapOf(
+                    "connected" to ConfigValue.BooleanValue(true),
+                    "transport" to ConfigValue.StringValue("vpn"),
+                    "validated" to ConfigValue.StringValue("any"),
+                    "metered" to ConfigValue.StringValue("any"),
+                ),
+            )
+            "ChargeState" -> {
+                if (!fields.onlyBusinessFields(1)) null
+                else fields.varint(1)?.let { value ->
+                    binaryFeature(any, importerId, "android.condition.charging", mapOf("value" to ConfigValue.BooleanValue(value != 0L)))
+                }
+            }
+            "RequireWifiConnected" -> {
+                if (!fields.onlyBusinessFields(1)) null
+                else binaryFeature(
+                    any, importerId, "android.condition.wifi_network",
+                    mapOf(
+                        "connected" to ConfigValue.StringValue("connected"),
+                        "ssid" to ConfigValue.StringValue(fields.string(1).orEmpty()),
+                    ),
+                )
+            }
+            "RequireWifiDisconnected" -> noBusinessCondition(
+                any, importerId, fields, "android.condition.wifi_network",
+                mapOf("connected" to ConfigValue.StringValue("disconnected")),
+            )
+            "KeyguardIsLocked" -> noBusinessCondition(
+                any, importerId, fields, "android.condition.keyguard_locked",
+                mapOf("value" to ConfigValue.BooleanValue(true)),
+            )
+            "ScreenOrientationIsPort" -> noBusinessCondition(
+                any, importerId, fields, "android.condition.orientation",
+                mapOf("orientation" to ConfigValue.StringValue("portrait")),
+            )
+            "IsInCall" -> noBusinessCondition(
+                any, importerId, fields, "android.condition.phone_call_state",
+                mapOf("state" to ConfigValue.StringValue("offhook")),
+            )
+            "IsRinging" -> noBusinessCondition(
+                any, importerId, fields, "android.condition.phone_call_state",
+                mapOf("state" to ConfigValue.StringValue("ringing")),
+            )
+            "IsHeadsetPlug" -> {
+                if (!fields.onlyBusinessFields(1)) null
+                else fields.varint(1)?.let { value ->
+                    binaryFeature(any, importerId, "android.condition.headset_connected", mapOf("value" to ConfigValue.BooleanValue(value != 0L)))
+                }
+            }
+            "RequireAPMMode" -> {
+                if (!fields.onlyBusinessFields(1)) null
+                else fields.varint(1)?.let { value ->
+                    binaryFeature(any, importerId, "android.condition.airplane_mode", mapOf("value" to ConfigValue.BooleanValue(value != 0L)))
+                }
+            }
+            "RequireRingerMode" -> {
+                if (!fields.onlyBusinessFields(1)) null
+                else when (fields.varint(1)?.toInt()) {
+                    0 -> binaryFeature(any, importerId, "android.condition.ringer_mode", mapOf("mode" to ConfigValue.StringValue("silent")))
+                    1 -> binaryFeature(any, importerId, "android.condition.ringer_mode", mapOf("mode" to ConfigValue.StringValue("vibrate")))
+                    2 -> binaryFeature(any, importerId, "android.condition.ringer_mode", mapOf("mode" to ConfigValue.StringValue("normal")))
+                    else -> null
+                }
+            }
+            else -> null
+        }
+    }
+
+    fun factEnabled(any: AnyStub): Boolean = if (any.isJson) {
+        val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return true
+        (obj["isDisabled"] as? JsonPrimitive)?.booleanOrNull != true
+    } else {
+        runCatching { ProtoFields(any.value).varint(101) != 1L }.getOrDefault(true)
+    }
+
+    fun conditionEnabled(any: AnyStub): Boolean = if (any.isJson) {
+        val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return true
+        (obj["isDisabled"] as? JsonPrimitive)?.booleanOrNull != true
+    } else {
+        runCatching { ProtoFields(any.value).varint(96) != 1L }.getOrDefault(true)
+    }
+
+    private fun conditionInverted(any: AnyStub): Boolean = if (any.isJson) {
+        val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return false
+        (obj["isInvert"] as? JsonPrimitive)?.booleanOrNull == true
+    } else {
+        runCatching { ProtoFields(any.value).varint(98) == 1L }.getOrDefault(false)
+    }
+
     fun enabled(any: AnyStub): Boolean = if (any.isJson) {
         val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)).jsonObject
         (obj["isDisabled"] as? JsonPrimitive)?.booleanOrNull != true
@@ -242,6 +379,109 @@ internal object ShortXMappings {
         }
     }
 
+    private fun nativeJsonCondition(any: AnyStub, importerId: String): FeatureRef? {
+        val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return null
+        if (obj["customContextDataKey"] != null && obj["customContextDataKey"] !is JsonNull) return null
+        val raw = any.value.toString(Charsets.UTF_8)
+        return when (shortName(any.typeUrl)) {
+            "ScreenIsOn" -> sourceFeature("android.condition.screen", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(true)))
+            "VPNIsConnected" -> sourceFeature(
+                "android.condition.network_profile", importerId, any.typeUrl, raw,
+                extra = mapOf(
+                    "connected" to ConfigValue.BooleanValue(true),
+                    "transport" to ConfigValue.StringValue("vpn"),
+                    "validated" to ConfigValue.StringValue("any"),
+                    "metered" to ConfigValue.StringValue("any"),
+                ),
+            )
+            "ChargeState" -> (obj["requireIsCharge"] as? JsonPrimitive)?.booleanOrNull?.let {
+                sourceFeature("android.condition.charging", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(it)))
+            }
+            "RequireWifiConnected" -> sourceFeature(
+                "android.condition.wifi_network", importerId, any.typeUrl, raw,
+                extra = mapOf(
+                    "connected" to ConfigValue.StringValue("connected"),
+                    "ssid" to ConfigValue.StringValue((obj["requiredSSID"] as? JsonPrimitive)?.contentOrNull.orEmpty()),
+                ),
+            )
+            "RequireWifiDisconnected" -> sourceFeature(
+                "android.condition.wifi_network", importerId, any.typeUrl, raw,
+                extra = mapOf("connected" to ConfigValue.StringValue("disconnected")),
+            )
+            "KeyguardIsLocked" -> sourceFeature("android.condition.keyguard_locked", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(true)))
+            "ScreenOrientationIsPort" -> sourceFeature("android.condition.orientation", importerId, any.typeUrl, raw, extra = mapOf("orientation" to ConfigValue.StringValue("portrait")))
+            "IsInCall" -> sourceFeature("android.condition.phone_call_state", importerId, any.typeUrl, raw, extra = mapOf("state" to ConfigValue.StringValue("offhook")))
+            "IsRinging" -> sourceFeature("android.condition.phone_call_state", importerId, any.typeUrl, raw, extra = mapOf("state" to ConfigValue.StringValue("ringing")))
+            "IsHeadsetPlug" -> (obj["isPlug"] as? JsonPrimitive)?.booleanOrNull?.let {
+                sourceFeature("android.condition.headset_connected", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(it)))
+            }
+            "RequireAPMMode" -> (obj["isAPMEnable"] as? JsonPrimitive)?.booleanOrNull?.let {
+                sourceFeature("android.condition.airplane_mode", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(it)))
+            }
+            "RequireRingerMode" -> {
+                val mode = jsonRingerMode(obj["mode"] as? JsonPrimitive)
+                val name = when (mode) { 0 -> "silent"; 1 -> "vibrate"; 2 -> "normal"; else -> null }
+                name?.let { sourceFeature("android.condition.ringer_mode", importerId, any.typeUrl, raw, extra = mapOf("mode" to ConfigValue.StringValue(it))) }
+            }
+            else -> null
+        }
+    }
+
+    fun suggestedConditionFeature(typeUrl: String): String? = when (shortName(typeUrl)) {
+        "CurrentPkgList", "CurrentPkgListByPkg", "CurrentActivity" -> "android.condition.app_foreground"
+        "BatteryPercent" -> "android.condition.battery_level"
+        "AvailableMemory" -> "android.condition.memory_available"
+        "ConnectedWifiSignal", "RequireWifiConnected", "RequireWifiDisconnected" -> "android.condition.wifi_network"
+        "AppIsRunning", "AppIsNotRunning", "ProcessIsRunning" -> "android.condition.app_process_running"
+        "EvaluateScreenOnTime" -> "android.condition.screen_on_time"
+        "ScreenIsOn" -> "android.condition.screen"
+        "VPNIsConnected" -> "android.condition.network_profile"
+        "ChargeState" -> "android.condition.charging"
+        "PlugState" -> "android.condition.charging_source"
+        "RequireMobileDataEnabled" -> "android.condition.mobile_data_enabled"
+        "AppHasNotification" -> "android.condition.notification_active"
+        "KeyguardIsLocked" -> "android.condition.keyguard_locked"
+        "ScreenOrientationIsPort", "RequireScreenRotate", "RequireWindowRotation" -> "android.condition.orientation"
+        "IsInCall", "IsRinging" -> "android.condition.phone_call_state"
+        "IsHeadsetPlug" -> "android.condition.headset_connected"
+        "RequireAPMMode" -> "android.condition.airplane_mode"
+        "RequireRingerMode" -> "android.condition.ringer_mode"
+        "RequireIMEVisibility" -> null
+        "RequireNotificationPanelExpanded" -> null
+        else -> null
+    }
+
+    fun suggestedEventFeature(typeUrl: String): String? = when (shortName(typeUrl)) {
+        "ScreenOn" -> "android.event.screen_on"
+        "ScreenOff" -> "android.event.screen_off"
+        "UserPresent", "UserPresentAtTheFirstTime" -> "android.event.user_present"
+        "BatteryLevelChanged", "BatteryTemperatureChanged" -> "android.event.battery_changed"
+        "ChargerPlug" -> "android.event.power_connected"
+        "ChargerUnplug" -> "android.event.power_disconnected"
+        "AppBecomeFg" -> "android.event.app_foreground"
+        "AppBecomeBg" -> "android.event.app_background"
+        "BTStatusChanged" -> "android.event.bluetooth_state"
+        "WifiStatusChanged", "WifiConnectedTo", "WifiDisconnectedFrom", "ConnectedWifiSignalLevelChanged" -> "android.event.wifi_changed"
+        "NFCStatusChanged" -> "android.event.nfc_state_changed"
+        "LocationStatusChanged" -> "android.event.location_mode_changed"
+        "DarkModeStatusChanged" -> "android.event.dark_mode_changed"
+        "APMStatusChanged" -> "android.event.airplane_mode_changed"
+        "NotificationPosted" -> "android.event.notification_posted"
+        "NotificationRemoved" -> "android.event.notification_removed"
+        "AppAdded" -> "android.event.package_added"
+        "AppRemoved" -> "android.event.package_removed"
+        "AppUpdated" -> "android.event.package_replaced"
+        "Broadcast" -> "android.event.broadcast"
+        "CallStateChanged" -> "android.event.phone_state_changed"
+        "ClipboardContentChanged" -> "android.event.clipboard_changed"
+        "HeadsetPlug" -> "android.event.headset_changed"
+        "NFCTagDiscover" -> "android.event.nfc_tag"
+        "UsbDeviceAttached", "UsbDeviceDetached" -> "android.event.usb_device_changed"
+        "ShakeDevice" -> "android.event.shake"
+        "LightSensor", "ProximitySensor", "AccelerometerSensor" -> "android.event.sensor_value"
+        else -> null
+    }
+
     fun suggestedActionFeature(typeUrl: String): String? = when (shortName(typeUrl)) {
         "ShowToast" -> "android.toast.show"
         "Delay" -> "core.delay"
@@ -337,6 +577,30 @@ internal object ShortXMappings {
             ),
         )
     }
+
+    private fun noBusinessFact(
+        any: AnyStub,
+        importerId: String,
+        fields: ProtoFields,
+        target: String,
+    ): FeatureRef? {
+        if (!fields.onlyBusinessFields()) return null
+        return binaryFeature(any, importerId, target, emptyMap())
+    }
+
+    private fun noBusinessCondition(
+        any: AnyStub,
+        importerId: String,
+        fields: ProtoFields,
+        target: String,
+        extra: Map<String, ConfigValue>,
+    ): FeatureRef? {
+        if (!fields.onlyBusinessFields()) return null
+        return binaryFeature(any, importerId, target, extra)
+    }
+
+    private fun jsonArrayEmpty(obj: JsonObject, key: String): Boolean =
+        (obj[key] as? JsonArray)?.isEmpty() != false
 
     private fun showToast(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         val message = fields.string(1) ?: return null
