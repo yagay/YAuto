@@ -50,6 +50,7 @@ object AndroidFeaturePacks {
         AndroidArchiveFeaturePack(),
         AndroidContentUtilityFeaturePack(context),
         AndroidEventFeaturePack(),
+        AndroidIntervalFeaturePack(),
         AndroidStateFeaturePack(context),
         AndroidNotificationControlFeaturePack(),
         AndroidSensorFeaturePack(),
