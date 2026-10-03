@@ -2,9 +2,8 @@ package com.yagay.yauto.feature.standard
 
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.FeatureRef
-import com.yagay.yauto.core.model.booleanOrNull
-import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 
 class PersistentVariableFeaturePack(
@@ -29,20 +28,20 @@ class PersistentVariableFeaturePack(
             )
         ) { feature, ctx ->
             val name = feature.config.string("name").resolveVariables(ctx.variables).trim()
-            if (name.isBlank()) return@registerAction ActionExecutionResult(false, message = com.yagay.yauto.core.model.userText("feature.variable_name_empty"))
+            if (name.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.variable_name_empty"))
             val sourceName = feature.config.string("sourceVariable").trim()
             val value = if (sourceName.isNotBlank()) {
                 ctx.variables.get(sourceName) ?: ConfigValue.NullValue
             } else {
                 persistentConfiguredValue(feature, ctx.variables)
-                    ?: return@registerAction ActionExecutionResult(false, message = com.yagay.yauto.core.model.userText("feature.operation_failed", "Invalid value"))
+                    ?: return@registerAction ActionExecutionResult(false, message = userText("feature.invalid_persistent_value"))
             }
             val change = control.set(name, value)
             if (change.success) {
                 ctx.variables.set(name, value)
                 ActionExecutionResult(true, value)
             } else {
-                ActionExecutionResult(false, message = com.yagay.yauto.core.model.userText("feature.operation_failed", "Persistent variable update failed"))
+                ActionExecutionResult(false, message = userText("feature.persistent_variable_update_failed"))
             }
         }
 
@@ -61,8 +60,8 @@ class PersistentVariableFeaturePack(
         ) { feature, ctx ->
             val name = feature.config.string("name").resolveVariables(ctx.variables).trim()
             val destination = feature.config.string("resultVariable").trim()
-            if (name.isBlank()) return@registerAction ActionExecutionResult(false, message = com.yagay.yauto.core.model.userText("feature.variable_name_empty"))
-            if (destination.isBlank()) return@registerAction ActionExecutionResult(false, message = com.yagay.yauto.core.model.userText("feature.destination_variable_empty"))
+            if (name.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.variable_name_empty"))
+            if (destination.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.destination_variable_empty"))
             val value = control.get(name) ?: ConfigValue.NullValue
             ctx.variables.set(destination, value)
             ActionExecutionResult(true, value)
@@ -79,13 +78,13 @@ class PersistentVariableFeaturePack(
             )
         ) { feature, ctx ->
             val name = feature.config.string("name").resolveVariables(ctx.variables).trim()
-            if (name.isBlank()) return@registerAction ActionExecutionResult(false, message = com.yagay.yauto.core.model.userText("feature.variable_name_empty"))
+            if (name.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.variable_name_empty"))
             val change = control.clear(name)
             if (change.success) {
                 ctx.variables.set(name, ConfigValue.NullValue)
                 ActionExecutionResult(true, change.previous ?: ConfigValue.NullValue)
             } else {
-                ActionExecutionResult(false, message = com.yagay.yauto.core.model.userText("feature.operation_failed", "Persistent variable clear failed"))
+                ActionExecutionResult(false, message = userText("feature.persistent_variable_clear_failed"))
             }
         }
 
