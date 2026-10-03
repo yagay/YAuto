@@ -67,6 +67,19 @@ sealed interface ActionNode {
         val finallyActions: List<ActionNode> = emptyList(),
     ) : ActionNode
 
+    /**
+     * Polls a normal YAuto predicate until it becomes true or the timeout is reached. Keeping the
+     * predicate as a first-class node means every future Condition automatically becomes usable by
+     * wait-until without adding another compatibility or executor layer.
+     */
+    @Serializable @SerialName("wait_until")
+    data class WaitUntil(
+        override val id: NodeId,
+        val condition: PredicateNode,
+        val timeoutMs: Long = 60_000L,
+        val pollIntervalMs: Long = 500L,
+    ) : ActionNode
+
     @Serializable @SerialName("call_flow")
     data class CallFlow(
         override val id: NodeId,
