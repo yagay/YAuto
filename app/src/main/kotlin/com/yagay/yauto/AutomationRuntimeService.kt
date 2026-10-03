@@ -19,23 +19,7 @@ import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
-import com.yagay.yauto.platform.android.AndroidEventSource
-import com.yagay.yauto.platform.android.AudioDeviceEventSource
-import com.yagay.yauto.platform.android.BluetoothDeviceEventSource
-import com.yagay.yauto.platform.android.ClipboardEventSource
-import com.yagay.yauto.platform.android.CommunicationEventSource
-import com.yagay.yauto.platform.android.ConfiguredBroadcastEventSource
-import com.yagay.yauto.platform.android.ConfiguredIntervalEventSource
-import com.yagay.yauto.platform.android.ConfiguredLocationEventSource
-import com.yagay.yauto.platform.android.ConfiguredSensorEventSource
-import com.yagay.yauto.platform.android.DeviceSettingEventSource
-import com.yagay.yauto.platform.android.MidiDeviceEventSource
-import com.yagay.yauto.platform.android.NetworkEventSource
-import com.yagay.yauto.platform.android.NetworkProfileEventSource
-import com.yagay.yauto.platform.android.RuntimeEventEmitter
-import com.yagay.yauto.platform.android.SurfaceRuntimeBridge
-import com.yagay.yauto.platform.android.SystemBroadcastEventSource
-import com.yagay.yauto.platform.android.WifiScanEventSource
+import com.yagay.yauto.platform.android.*
 import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +30,8 @@ import java.util.UUID
 
 class AutomationRuntimeService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val sources = mutableListOf<AndroidEventSource>()
+    private val eventSources = AndroidEventSourceManager()
+    private var graph: AppGraph? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -54,29 +39,31 @@ class AutomationRuntimeService : Service() {
             stopSelf()
             return
         }
-        val graph = runCatching { (application as YAutoApplication).graph }
+
+        val appGraph = runCatching { (application as YAutoApplication).graph }
             .onFailure { StartupFailureRecorder.record(this, "runtime:graph", it) }
             .getOrNull()
-        if (graph == null) {
+        if (appGraph == null) {
             stopSelf()
             return
         }
-        val dispatcher = RuntimeEventDispatcher(graph, scope)
+        graph = appGraph
+        val dispatcher = RuntimeEventDispatcher(appGraph, scope)
 
-        addSource("system-broadcast") { SystemBroadcastEventSource(this) }
-        addSource("network") { NetworkEventSource(this) }
-        addSource("network-profile") { NetworkProfileEventSource(this) }
-        addSource("wifi-scan") { WifiScanEventSource(this) }
-        addSource("clipboard") { ClipboardEventSource(this) }
-        addSource("device-setting") { DeviceSettingEventSource(this) }
-        addSource("audio-device") { AudioDeviceEventSource(this) }
-        addSource("bluetooth-device") { BluetoothDeviceEventSource(this) }
-        addSource("communication") { CommunicationEventSource(this) }
-        addSource("midi-device") { MidiDeviceEventSource(this) }
-        addSource("configured-broadcast") { ConfiguredBroadcastEventSource(this, graph.workspace) }
-        addSource("configured-sensor") { ConfiguredSensorEventSource(this, graph.workspace) }
-        addSource("configured-location") { ConfiguredLocationEventSource(this, graph.workspace) }
-        addSource("configured-interval") { ConfiguredIntervalEventSource(graph.workspace) }
+        registerSource("system-broadcast") { SystemBroadcastEventSource(this) }
+        registerSource("network") { NetworkEventSource(this) }
+        registerSource("network-profile") { NetworkProfileEventSource(this) }
+        registerSource("wifi-scan") { WifiScanEventSource(this) }
+        registerSource("clipboard") { ClipboardEventSource(this) }
+        registerSource("device-setting") { DeviceSettingEventSource(this) }
+        registerSource("audio-device") { AudioDeviceEventSource(this) }
+        registerSource("bluetooth-device") { BluetoothDeviceEventSource(this) }
+        registerSource("communication") { CommunicationEventSource(this) }
+        registerSource("midi-device") { MidiDeviceEventSource(this) }
+        registerSource("configured-broadcast") { ConfiguredBroadcastEventSource(this, appGraph.workspace) }
+        registerSource("configured-sensor") { ConfiguredSensorEventSource(this, appGraph.workspace) }
+        registerSource("configured-location") { ConfiguredLocationEventSource(this, appGraph.workspace) }
+        registerSource("configured-interval") { ConfiguredIntervalEventSource(appGraph.workspace) }
 
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
         SurfaceRuntimeBridge.attach(emitter)
@@ -137,28 +124,7 @@ class AutomationRuntimeService : Service() {
             )
         }
 
-        sources.forEach { source ->
-            runCatching { source.start(emitter) }
-                .onFailure { error ->
-                    StartupFailureRecorder.record(this, "event-source:${source.id}:start", error)
-                    scope.launch {
-                        graph.tracer.record(
-                            TraceEvent(
-                                executionId = ExecutionId("source-${UUID.randomUUID()}"),
-                                kind = TraceKind.ERROR,
-                                level = TraceLevel.ERROR,
-                                timestampEpochMs = System.currentTimeMillis(),
-                                message = userText("runtime.event_source_failed", source.id, error.message ?: error::class.simpleName.orEmpty()),
-                                success = false,
-                                attributes = mapOf(
-                                    "eventSource" to source.id,
-                                    "exception" to error::class.qualifiedName.orEmpty(),
-                                ),
-                            )
-                        )
-                    }
-                }
-        }
+        eventSources.startAll(emitter).forEach(::reportSourceFailure)
         dispatcher.dispatch(
             RuntimeEvent("android.event.runtime_started", source = "android.runtime"),
             statesOnly = true,
@@ -177,8 +143,8 @@ class AutomationRuntimeService : Service() {
             runCatching { (application as YAutoApplication).graph }
                 .onFailure { StartupFailureRecorder.record(this, "runtime:boot-graph", it) }
                 .getOrNull()
-                ?.let { graph ->
-                    RuntimeEventDispatcher(graph, scope).dispatch(
+                ?.let { appGraph ->
+                    RuntimeEventDispatcher(appGraph, scope).dispatch(
                         RuntimeEvent("android.event.boot", source = "android.boot")
                     )
                 }
@@ -190,20 +156,45 @@ class AutomationRuntimeService : Service() {
         AccessibilityRuntimeBridge.setListener(null)
         AccessibilityRuntimeBridge.setKeyListener(null)
         SurfaceRuntimeBridge.attach(null)
-        sources.asReversed().forEach { source -> runCatching { source.stop() } }
-        sources.clear()
+        eventSources.stopAll().forEach(::reportSourceFailure)
+        eventSources.clear()
+        graph = null
         scope.cancel()
         super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun addSource(component: String, factory: () -> AndroidEventSource) {
-        try {
-            sources += factory()
-        } catch (error: Throwable) {
-            if (error is VirtualMachineError || error is ThreadDeath) throw error
-            StartupFailureRecorder.record(this, "event-source:$component:construct", error)
+    private fun registerSource(component: String, factory: () -> AndroidEventSource) {
+        eventSources.add(component, factory)?.let(::reportSourceFailure)
+    }
+
+    private fun reportSourceFailure(failure: EventSourceFailure) {
+        val sourceId = failure.sourceId ?: failure.component
+        val phase = failure.phase.name.lowercase()
+        StartupFailureRecorder.record(this, "event-source:${failure.component}:$phase", failure.error)
+        val appGraph = graph ?: return
+        scope.launch {
+            appGraph.tracer.record(
+                TraceEvent(
+                    executionId = ExecutionId("source-${UUID.randomUUID()}"),
+                    kind = TraceKind.ERROR,
+                    level = TraceLevel.ERROR,
+                    timestampEpochMs = System.currentTimeMillis(),
+                    message = userText(
+                        "runtime.event_source_failed",
+                        sourceId,
+                        failure.error.message ?: failure.error::class.simpleName.orEmpty(),
+                    ),
+                    success = false,
+                    attributes = mapOf(
+                        "eventSource" to sourceId,
+                        "eventSource.component" to failure.component,
+                        "eventSource.phase" to phase,
+                        "exception" to failure.error::class.qualifiedName.orEmpty(),
+                    ),
+                )
+            )
         }
     }
 
