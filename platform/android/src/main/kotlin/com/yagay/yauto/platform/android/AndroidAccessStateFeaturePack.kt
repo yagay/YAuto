@@ -21,11 +21,7 @@ class AndroidAccessStateFeaturePack(context: Context) : FeaturePack {
 
     override fun install(registry: FeatureRegistry) {
         registerSummary(registry)
-        booleanPair(registry, "overlay_access", "Display over other apps", "Check whether YAuto may draw overlays", ::overlayAccess)
-        booleanPair(registry, "write_settings_access", "Modify system settings", "Check whether YAuto may modify system settings", ::writeSettingsAccess)
         booleanPair(registry, "notification_listener_access", "Notification access", "Check whether YAuto notification-listener access is enabled", ::notificationListenerAccess)
-        booleanPair(registry, "dnd_policy_access", "Do Not Disturb access", "Check whether YAuto may change notification policy", ::dndPolicyAccess)
-        booleanPair(registry, "exact_alarm_access", "Exact alarm access", "Check whether YAuto may schedule exact alarms", ::exactAlarmAccess)
         booleanPair(registry, "usage_stats_access", "Usage access", "Check whether YAuto has app usage access", ::usageStatsAccess)
         booleanPair(registry, "accessibility_service_access", "Accessibility service access", "Check whether the YAuto accessibility service is enabled", ::accessibilityServiceAccess)
     }
