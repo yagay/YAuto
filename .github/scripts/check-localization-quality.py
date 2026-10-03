@@ -283,11 +283,17 @@ def main() -> int:
             if pos >= 0:
                 failures.append(f"{path}:{line_number(source, pos)}: raw ConfigValue display helper must use localizedConfigValue")
 
-    feature_picker = ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/MacroFeaturePicker.kt"
-    if feature_picker.exists():
-        source = feature_picker.read_text(encoding="utf-8")
+    config_editor = ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/GenericFeatureConfigEditor.kt"
+    if not config_editor.exists():
+        failures.append(f"{config_editor}: missing schema-driven feature configuration editor")
+    else:
+        source = config_editor.read_text(encoding="utf-8")
         if "parseLocalizedDouble(" not in source:
-            failures.append(f"{feature_picker}: numeric editor input must use locale-aware parsing")
+            failures.append(f"{config_editor}: numeric editor input must use locale-aware parsing")
+
+    picker_shell = ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/MacroFeaturePicker.kt"
+    if picker_shell.exists() and "FieldSchema." in picker_shell.read_text(encoding="utf-8"):
+        failures.append(f"{picker_shell}: picker shell must not own field-specific editor logic")
 
     for relative in (
         "ui/design/src/main/res/drawable/ic_back.xml",
