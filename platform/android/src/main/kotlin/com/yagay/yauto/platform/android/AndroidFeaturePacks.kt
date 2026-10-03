@@ -25,6 +25,7 @@ object AndroidFeaturePacks {
         AndroidNativeEnvironmentFeaturePack(context),
         AndroidReferenceGapFeaturePack(context),
         AndroidReferenceSystemExpansionFeaturePack(context),
+        AndroidReferenceUtilityExpansionFeaturePack(context),
         AndroidReferenceCompletionFeaturePack(context),
         AndroidReferenceCompletionEventFeaturePack(),
         AndroidUsbFeaturePack(context),
