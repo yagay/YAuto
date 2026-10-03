@@ -13,7 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-object MacroPalette {
+object YAutoPalette {
     val Trigger = Color(0xFFE53935)
     val Action = Color(0xFF168BC2)
     val Constraint = Color(0xFF43A047)
@@ -25,7 +25,7 @@ object MacroPalette {
 }
 
 @Composable
-fun MacroSection(
+fun YAutoSection(
     title: String,
     color: Color,
     modifier: Modifier = Modifier,
@@ -58,7 +58,11 @@ fun MacroSection(
             trailing()
             if (onAdd != null) {
                 TextButton(onClick = onAdd, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
-                    androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_add), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_add), tint = Color.White)
+                    Icon(
+                        painter = androidx.compose.ui.res.painterResource(R.drawable.ic_add),
+                        contentDescription = stringResource(R.string.icon_add),
+                        tint = Color.White,
+                    )
                 }
             }
         }
@@ -71,7 +75,7 @@ fun MacroSection(
 }
 
 @Composable
-fun MacroItemRow(
+fun YAutoItemRow(
     title: String,
     subtitle: String? = null,
     accent: Color,
@@ -97,14 +101,19 @@ fun MacroItemRow(
                 }
             }
             if (onMenu != null) {
-                IconButton(onClick = onMenu, modifier = Modifier.align(Alignment.CenterVertically)) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_more), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_more_options)) }
+                IconButton(onClick = onMenu, modifier = Modifier.align(Alignment.CenterVertically)) {
+                    Icon(
+                        painter = androidx.compose.ui.res.painterResource(R.drawable.ic_more),
+                        contentDescription = stringResource(R.string.icon_more_options),
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun MacroHomeTile(
+fun YAutoHomeTile(
     title: String,
     subtitle: String? = null,
     color: Color,
@@ -120,7 +129,11 @@ fun MacroHomeTile(
             Modifier.fillMaxSize().padding(12.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_add), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_add), tint = Color.White.copy(alpha = .9f))
+            Icon(
+                painter = androidx.compose.ui.res.painterResource(R.drawable.ic_add),
+                contentDescription = stringResource(R.string.icon_add),
+                tint = Color.White.copy(alpha = .9f),
+            )
             Column {
                 Text(title, color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleSmall)
                 subtitle?.takeIf { it.isNotBlank() }?.let {
@@ -139,3 +152,50 @@ fun CapabilityBadge(text: String) {
         enabled = false,
     )
 }
+
+/** Temporary source-compatible aliases while legacy screen implementations are split. */
+@Deprecated("Use YAutoPalette")
+object MacroPalette {
+    val Trigger get() = YAutoPalette.Trigger
+    val Action get() = YAutoPalette.Action
+    val Constraint get() = YAutoPalette.Constraint
+    val State get() = YAutoPalette.State
+    val Utility get() = YAutoPalette.Utility
+    val Flow get() = YAutoPalette.Flow
+    val Variable get() = YAutoPalette.Variable
+    val Diagnostics get() = YAutoPalette.Diagnostics
+}
+
+@Deprecated("Use YAutoSection")
+@Composable
+fun MacroSection(
+    title: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    count: Int? = null,
+    onAdd: (() -> Unit)? = null,
+    trailing: @Composable RowScope.() -> Unit = {},
+    content: @Composable ColumnScope.() -> Unit,
+) = YAutoSection(title, color, modifier, subtitle, count, onAdd, trailing, content)
+
+@Deprecated("Use YAutoItemRow")
+@Composable
+fun MacroItemRow(
+    title: String,
+    subtitle: String? = null,
+    accent: Color,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+    onMenu: (() -> Unit)? = null,
+) = YAutoItemRow(title, subtitle, accent, enabled, onClick, onMenu)
+
+@Deprecated("Use YAutoHomeTile")
+@Composable
+fun MacroHomeTile(
+    title: String,
+    subtitle: String? = null,
+    color: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) = YAutoHomeTile(title, subtitle, color, modifier, onClick)
