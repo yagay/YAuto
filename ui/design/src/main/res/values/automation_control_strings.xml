@@ -32,4 +32,5 @@
     <string name="runtime_runtime_automation_busy">Automation is busy and ignored the new run: %1$s</string>
     <string name="runtime_runtime_automation_run_failed">Automation did not return a run result: %1$s</string>
     <string name="runtime_runtime_automation_cancel_self">An automation cannot cancel itself while it is executing: %1$s</string>
+    <string name="runtime_runtime_automation_cancelled">Automation execution was cancelled: %1$s</string>
 </resources>
