@@ -173,7 +173,7 @@ class ImporterRegistry {
                     CompatibilityIssue(
                         severity = ImportSeverity.ERROR,
                         sourcePath = input.fileName ?: "input",
-                        message = error.message ?: error.javaClass.simpleName,
+                        message = userText("feature.operation_failed", error.message ?: error.javaClass.simpleName),
                     )
                 ),
             )
