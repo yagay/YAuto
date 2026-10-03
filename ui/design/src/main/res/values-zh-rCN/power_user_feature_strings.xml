@@ -1,4 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-<string name="feature_android_shell_execute_title">执行特权 Shell 命令</string><string name="feature_android_shell_execute_description">通过所选特权后端执行 Shell 命令并提供结构化结果</string><string name="feature_android_clipboard_get_title">读取剪贴板文本</string><string name="feature_android_clipboard_clear_title">清空剪贴板</string><string name="feature_android_clipboard_clear_description">清空 Android 主剪贴板</string><string name="feature_android_vibration_vibrate_title">振动</string><string name="feature_android_vibration_vibrate_description">按限定时长和振幅执行一次振动</string><string name="feature_android_vibration_pattern_title">振动模式</string><string name="feature_android_vibration_pattern_description">按时序执行有限振动波形</string><string name="feature_android_vibration_cancel_title">停止振动</string><string name="feature_android_vibration_cancel_description">停止设备默认振动器</string><string name="feature_android_state_audio_music_active_title">媒体音频活动</string><string name="feature_android_state_audio_music_active_description">检查音乐或媒体是否正在播放</string><string name="feature_android_condition_audio_music_active_title">媒体音频活动</string><string name="feature_android_condition_audio_music_active_description">检查音乐或媒体是否正在播放</string><string name="feature_android_state_audio_mode_title">音频模式</string><string name="feature_android_state_audio_mode_description">匹配当前通信音频模式</string><string name="feature_android_condition_audio_mode_title">音频模式</string><string name="feature_android_condition_audio_mode_description">匹配当前通信音频模式</string><string name="feature_android_state_keyguard_locked_title">锁屏活动</string><string name="feature_android_state_keyguard_locked_description">检查锁屏是否处于锁定状态</string><string name="feature_android_condition_keyguard_locked_title">锁屏活动</string><string name="feature_android_condition_keyguard_locked_description">检查锁屏是否处于锁定状态</string><string name="feature_android_state_data_saver_title">流量节省状态</string><string name="feature_android_state_data_saver_description">匹配后台数据限制状态</string><string name="feature_android_condition_data_saver_title">流量节省状态</string><string name="feature_android_condition_data_saver_description">匹配后台数据限制状态</string><string name="feature_android_state_private_dns_title">私人 DNS 状态</string><string name="feature_android_state_private_dns_description">匹配私人 DNS 模式和主机名</string><string name="feature_android_condition_private_dns_title">私人 DNS 状态</string><string name="feature_android_condition_private_dns_description">匹配私人 DNS 模式和主机名</string><string name="feature_android_state_usb_device_connected_title">USB 设备已连接</string><string name="feature_android_state_usb_device_connected_description">检查 USB 设备是否符合过滤条件</string><string name="feature_android_condition_usb_device_connected_title">USB 设备已连接</string><string name="feature_android_condition_usb_device_connected_description">检查 USB 设备是否符合过滤条件</string><string name="feature_android_event_usb_device_changed_title">USB 设备变化</string><string name="feature_android_event_usb_device_changed_description">USB 设备插入或拔出时触发并可过滤设备</string>
+    <string name="feature_android_shell_execute_title">执行特权 Shell 命令</string>
+    <string name="feature_android_shell_execute_description">通过所选特权后端执行 Shell 命令并提供结构化结果</string>
+    <string name="feature_android_clipboard_clear_title">清空剪贴板</string>
+    <string name="feature_android_clipboard_clear_description">清空 Android 主剪贴板</string>
+    <string name="feature_android_vibration_vibrate_title">振动</string>
+    <string name="feature_android_vibration_vibrate_description">按限定时长和振幅执行一次振动</string>
+    <string name="feature_android_vibration_pattern_title">振动模式</string>
+    <string name="feature_android_vibration_pattern_description">按时序执行有限振动波形</string>
+    <string name="feature_android_vibration_cancel_title">停止振动</string>
+    <string name="feature_android_vibration_cancel_description">停止设备默认振动器</string>
+    <string name="feature_android_state_audio_music_active_title">媒体音频活动</string>
+    <string name="feature_android_state_audio_music_active_description">检查音乐或媒体是否正在播放</string>
+    <string name="feature_android_condition_audio_music_active_title">媒体音频活动</string>
+    <string name="feature_android_condition_audio_music_active_description">检查音乐或媒体是否正在播放</string>
+    <string name="feature_android_state_audio_mode_title">音频模式</string>
+    <string name="feature_android_state_audio_mode_description">匹配当前通信音频模式</string>
+    <string name="feature_android_condition_audio_mode_title">音频模式</string>
+    <string name="feature_android_condition_audio_mode_description">匹配当前通信音频模式</string>
+    <string name="feature_android_state_keyguard_locked_title">锁屏活动</string>
+    <string name="feature_android_state_keyguard_locked_description">检查锁屏是否处于锁定状态</string>
+    <string name="feature_android_condition_keyguard_locked_title">锁屏活动</string>
+    <string name="feature_android_condition_keyguard_locked_description">检查锁屏是否处于锁定状态</string>
+    <string name="feature_android_state_data_saver_title">流量节省状态</string>
+    <string name="feature_android_state_data_saver_description">匹配后台数据限制状态</string>
+    <string name="feature_android_condition_data_saver_title">流量节省状态</string>
+    <string name="feature_android_condition_data_saver_description">匹配后台数据限制状态</string>
+    <string name="feature_android_state_private_dns_title">私人 DNS 状态</string>
+    <string name="feature_android_state_private_dns_description">匹配私人 DNS 模式和主机名</string>
+    <string name="feature_android_condition_private_dns_title">私人 DNS 状态</string>
+    <string name="feature_android_condition_private_dns_description">匹配私人 DNS 模式和主机名</string>
+    <string name="feature_android_state_usb_device_connected_title">USB 设备已连接</string>
+    <string name="feature_android_state_usb_device_connected_description">检查 USB 设备是否符合过滤条件</string>
+    <string name="feature_android_condition_usb_device_connected_title">USB 设备已连接</string>
+    <string name="feature_android_condition_usb_device_connected_description">检查 USB 设备是否符合过滤条件</string>
+    <string name="feature_android_event_usb_device_changed_title">USB 设备变化</string>
+    <string name="feature_android_event_usb_device_changed_description">USB 设备插入或拔出时触发并可过滤设备</string>
 </resources>

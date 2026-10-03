@@ -2,7 +2,6 @@
 <resources>
     <string name="feature_android_shell_execute_title">Run privileged shell command</string>
     <string name="feature_android_shell_execute_description">Run a shell command through the selected privileged backend and expose its structured result</string>
-    <string name="feature_android_clipboard_get_title">Get clipboard text</string>
     <string name="feature_android_clipboard_clear_title">Clear clipboard</string>
     <string name="feature_android_clipboard_clear_description">Clear the Android primary clipboard</string>
     <string name="feature_android_vibration_vibrate_title">Vibrate</string>
