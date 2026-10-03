@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permission_usage_stats_title">Usage access</string>
+    <string name="permission_usage_stats_detail">Foreground app state and fallback app-transition triggers can read Android usage events when Accessibility is unavailable.</string>
+    <string name="permission_usage_stats_action">Open usage access</string>
+    <string name="access_usage_stats">Usage access</string>
+    <string name="implementation_usage_stats_title">Usage access</string>
+    <string name="implementation_usage_stats_summary">Read foreground application identity from Android usage events without UI automation.</string>
+</resources>
