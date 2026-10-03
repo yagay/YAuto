@@ -146,6 +146,28 @@ def localizable(
     return phrase_name in resources_en and phrase_name in resources_zh
 
 
+def check_title_description(
+    failures: list[str],
+    path: Path,
+    offset: int,
+    source: str,
+    feature_id: str,
+    title: str,
+    description: str,
+    resources_en: dict[str, str],
+    resources_zh: dict[str, str],
+) -> None:
+    base = f"feature_{resource_key(feature_id)}"
+    if not localizable(f"{base}_title", title, resources_en, resources_zh):
+        failures.append(
+            f"{path}:{line_number(source, offset)}: feature {feature_id} title is not localized: {title!r}"
+        )
+    if not localizable(f"{base}_description", description, resources_en, resources_zh):
+        failures.append(
+            f"{path}:{line_number(source, offset)}: feature {feature_id} description is not localized: {description!r}"
+        )
+
+
 def main() -> int:
     failures: list[str] = []
 
@@ -189,6 +211,10 @@ def main() -> int:
             feature_id = id_match.group(1)
             if feature_id.startswith("compat."):
                 continue
+            # Helper-generated descriptors use an interpolated ID and are audited below
+            # from their literal helper call sites, where title/description are visible.
+            if "$" in feature_id:
+                continue
             header = re.search(
                 r'FeatureId\("[^"]+"\)\s*,\s*FeatureKind\.\w+\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"',
                 snippet,
@@ -204,15 +230,10 @@ def main() -> int:
                 )
                 continue
             descriptor_count += 1
+            check_title_description(
+                failures, path, offset, source, feature_id, title, description, resources_en, resources_zh
+            )
             base = f"feature_{resource_key(feature_id)}"
-            if not localizable(f"{base}_title", title, resources_en, resources_zh):
-                failures.append(
-                    f"{path}:{line_number(source, offset)}: feature {feature_id} title is not localized: {title!r}"
-                )
-            if not localizable(f"{base}_description", description, resources_en, resources_zh):
-                failures.append(
-                    f"{path}:{line_number(source, offset)}: feature {feature_id} description is not localized: {description!r}"
-                )
 
             field_pattern = re.compile(
                 r'FieldSchema\.\w+\(\s*"([^"]+)"\s*,\s*"([^"]+)"',
@@ -239,6 +260,46 @@ def main() -> int:
                         failures.append(
                             f"{path}:{line_number(source, offset)}: feature {feature_id} choice {field_key}={option!r} is not localized"
                         )
+
+    helper_feature_files = {
+        ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidInteractionCoverageFeaturePack.kt": (
+            "pair", "booleanPair", "textPair",
+        ),
+        ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidSystemPowerCoverageFeaturePack.kt": (
+            "pair", "booleanPair", "choicePair", "rangePair",
+        ),
+    }
+    for path, helper_names in helper_feature_files.items():
+        if not path.exists():
+            continue
+        source = path.read_text(encoding="utf-8")
+        seen: set[str] = set()
+        for helper_name in helper_names:
+            for offset, snippet in call_windows(source, helper_name):
+                match = re.search(
+                    rf'{re.escape(helper_name)}\(\s*registry\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"',
+                    snippet,
+                    re.S,
+                )
+                if not match:
+                    continue
+                key, title, description = match.groups()
+                for feature_id in (f"android.state.{key}", f"android.condition.{key}"):
+                    if feature_id in seen:
+                        continue
+                    seen.add(feature_id)
+                    descriptor_count += 1
+                    check_title_description(
+                        failures,
+                        path,
+                        offset,
+                        source,
+                        feature_id,
+                        title,
+                        description,
+                        resources_en,
+                        resources_zh,
+                    )
 
     if descriptor_count == 0:
         failures.append("No literal built-in FeatureDescriptor definitions were checked; localization coverage parser is stale")
