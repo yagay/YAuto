@@ -24,6 +24,7 @@ import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.core.registry.FeaturePack
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.registry.FieldSchema
+import com.yagay.yauto.core.registry.resolveVariables
 
 /** High-value native utilities inspired by mature automation apps without adding compatibility layers. */
 class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
