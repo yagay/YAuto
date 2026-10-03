@@ -11,6 +11,7 @@ import com.yagay.yauto.core.registry.FieldSchema
 import com.yagay.yauto.core.registry.PersistentVariableControl
 import com.yagay.yauto.core.registry.conditionFeature
 import com.yagay.yauto.core.registry.eventFeature
+import com.yagay.yauto.core.registry.resolveVariables
 import com.yagay.yauto.core.registry.stateFeature
 
 internal fun persistentVariablePredicates(control: PersistentVariableControl): List<FeatureDefinition> = listOf(
