@@ -68,6 +68,43 @@ internal object ShortXMappings {
                 "ChargerPlug" -> sourceFeature("android.event.power_connected", importerId, any.typeUrl, raw)
                 "ChargerUnplug" -> sourceFeature("android.event.power_disconnected", importerId, any.typeUrl, raw)
                 "AppAdded" -> sourceFeature("android.event.package_added", importerId, any.typeUrl, raw)
+                "BTStatusChanged" -> jsonOnOffAny(obj["ooa"] as? JsonPrimitive)?.let {
+                    sourceFeature("android.event.bluetooth_state", importerId, any.typeUrl, raw, extra = mapOf("state" to ConfigValue.StringValue(it)))
+                }
+                "WifiStatusChanged" -> jsonOnOffAny(obj["ooa"] as? JsonPrimitive)?.let {
+                    val state = when (it) { "on" -> "enabled"; "off" -> "disabled"; else -> "any" }
+                    sourceFeature("android.event.wifi_adapter_state_filtered", importerId, any.typeUrl, raw, extra = mapOf("state" to ConfigValue.StringValue(state)))
+                }
+                "NFCStatusChanged" -> jsonOnOffAny(obj["ooa"] as? JsonPrimitive)?.let {
+                    sourceFeature("android.event.nfc_state_changed", importerId, any.typeUrl, raw, extra = mapOf("state" to ConfigValue.StringValue(it)))
+                }
+                "LocationStatusChanged" -> jsonOnOffAny(obj["ooa"] as? JsonPrimitive)?.let {
+                    sourceFeature("android.event.location_mode_changed", importerId, any.typeUrl, raw, extra = mapOf("state" to ConfigValue.StringValue(it)))
+                }
+                "DarkModeStatusChanged" -> jsonOnOffAny(obj["ooa"] as? JsonPrimitive)?.let {
+                    sourceFeature("android.event.dark_mode_changed", importerId, any.typeUrl, raw, extra = mapOf("state" to ConfigValue.StringValue(it)))
+                }
+                "APMStatusChanged" -> jsonOnOffAny(obj["ooa"] as? JsonPrimitive)?.let {
+                    sourceFeature("android.event.airplane_mode_changed", importerId, any.typeUrl, raw, extra = mapOf("state" to ConfigValue.StringValue(it)))
+                }
+                "HeadsetPlug" -> (obj["isPlug"] as? JsonPrimitive)?.booleanOrNull?.let {
+                    sourceFeature(
+                        "android.event.headset_changed", importerId, any.typeUrl, raw,
+                        extra = mapOf(
+                            "state" to ConfigValue.StringValue(if (it) "connected" else "disconnected"),
+                            "category" to ConfigValue.StringValue("any"),
+                        ),
+                    )
+                }
+                "VPNConnected" -> sourceFeature(
+                    "android.event.network_profile_changed", importerId, any.typeUrl, raw,
+                    extra = mapOf(
+                        "connected" to ConfigValue.StringValue("connected"),
+                        "transport" to ConfigValue.StringValue("vpn"),
+                        "validated" to ConfigValue.StringValue("any"),
+                        "metered" to ConfigValue.StringValue("any"),
+                    ),
+                )
                 "AppRemoved" -> if (jsonArrayEmpty(obj, "apps") && jsonArrayEmpty(obj, "pkgSets")) {
                     sourceFeature("android.event.package_removed", importerId, any.typeUrl, raw)
                 } else null
@@ -87,6 +124,33 @@ internal object ShortXMappings {
             "ChargerPlug" -> noBusinessFact(any, importerId, fields, "android.event.power_connected")
             "ChargerUnplug" -> noBusinessFact(any, importerId, fields, "android.event.power_disconnected")
             "AppAdded" -> noBusinessFact(any, importerId, fields, "android.event.package_added")
+            "BTStatusChanged" -> onOffAnyFact(any, importerId, fields, "android.event.bluetooth_state")
+            "WifiStatusChanged" -> onOffAnyFact(any, importerId, fields, "android.event.wifi_adapter_state_filtered", wifiAdapter = true)
+            "NFCStatusChanged" -> onOffAnyFact(any, importerId, fields, "android.event.nfc_state_changed")
+            "LocationStatusChanged" -> onOffAnyFact(any, importerId, fields, "android.event.location_mode_changed")
+            "DarkModeStatusChanged" -> onOffAnyFact(any, importerId, fields, "android.event.dark_mode_changed")
+            "APMStatusChanged" -> onOffAnyFact(any, importerId, fields, "android.event.airplane_mode_changed")
+            "HeadsetPlug" -> {
+                if (!fields.onlyBusinessFields(1)) null
+                else fields.varint(1)?.let {
+                    binaryFeature(
+                        any, importerId, "android.event.headset_changed",
+                        mapOf(
+                            "state" to ConfigValue.StringValue(if (it != 0L) "connected" else "disconnected"),
+                            "category" to ConfigValue.StringValue("any"),
+                        ),
+                    )
+                }
+            }
+            "VPNConnected" -> noBusinessFact(
+                any, importerId, fields, "android.event.network_profile_changed",
+                mapOf(
+                    "connected" to ConfigValue.StringValue("connected"),
+                    "transport" to ConfigValue.StringValue("vpn"),
+                    "validated" to ConfigValue.StringValue("any"),
+                    "metered" to ConfigValue.StringValue("any"),
+                ),
+            )
             "AppRemoved" -> noBusinessFact(any, importerId, fields, "android.event.package_removed")
             "AppUpdated" -> noBusinessFact(any, importerId, fields, "android.event.package_replaced")
             else -> null
@@ -464,7 +528,8 @@ internal object ShortXMappings {
         "AppBecomeFg" -> "android.event.app_foreground"
         "AppBecomeBg" -> "android.event.app_background"
         "BTStatusChanged" -> "android.event.bluetooth_state"
-        "WifiStatusChanged", "WifiConnectedTo", "WifiDisconnectedFrom", "ConnectedWifiSignalLevelChanged" -> "android.event.wifi_changed"
+        "WifiStatusChanged" -> "android.event.wifi_adapter_state_filtered"
+        "WifiConnectedTo", "WifiDisconnectedFrom", "ConnectedWifiSignalLevelChanged" -> "android.event.wifi_changed"
         "NFCStatusChanged" -> "android.event.nfc_state_changed"
         "LocationStatusChanged" -> "android.event.location_mode_changed"
         "DarkModeStatusChanged" -> "android.event.dark_mode_changed"
@@ -475,6 +540,7 @@ internal object ShortXMappings {
         "AppRemoved" -> "android.event.package_removed"
         "AppUpdated" -> "android.event.package_replaced"
         "Broadcast" -> "android.event.broadcast"
+        "VPNConnected", "VPNDisconnected" -> "android.event.network_profile_changed"
         "CallStateChanged" -> "android.event.phone_state_changed"
         "ClipboardContentChanged" -> "android.event.clipboard_changed"
         "HeadsetPlug" -> "android.event.headset_changed"
@@ -586,9 +652,27 @@ internal object ShortXMappings {
         importerId: String,
         fields: ProtoFields,
         target: String,
+        extra: Map<String, ConfigValue> = emptyMap(),
     ): FeatureRef? {
         if (!fields.onlyBusinessFields()) return null
-        return binaryFeature(any, importerId, target, emptyMap())
+        return binaryFeature(any, importerId, target, extra)
+    }
+
+    private fun onOffAnyFact(
+        any: AnyStub,
+        importerId: String,
+        fields: ProtoFields,
+        target: String,
+        wifiAdapter: Boolean = false,
+    ): FeatureRef? {
+        if (!fields.onlyBusinessFields(1)) return null
+        val mode = when (fields.varint(1)?.toInt() ?: 2) {
+            0 -> if (wifiAdapter) "enabled" else "on"
+            1 -> if (wifiAdapter) "disabled" else "off"
+            2 -> "any"
+            else -> return null
+        }
+        return binaryFeature(any, importerId, target, mapOf("state" to ConfigValue.StringValue(mode)))
     }
 
     private fun noBusinessCondition(
@@ -776,6 +860,19 @@ internal object ShortXMappings {
         val enabled = (obj[key] as? JsonPrimitive)?.booleanOrNull ?: return null
         return sourceFeature(target, importerId, any.typeUrl, any.value.toString(Charsets.UTF_8),
             extra = mapOf("enabled" to ConfigValue.BooleanValue(enabled)))
+    }
+
+    private fun jsonOnOffAny(value: JsonPrimitive?): String? {
+        value ?: return "any"
+        value.intOrNull?.let {
+            return when (it) { 0 -> "on"; 1 -> "off"; 2 -> "any"; else -> null }
+        }
+        return when (value.contentOrNull?.substringAfterLast('_')?.lowercase()) {
+            "on" -> "on"
+            "off" -> "off"
+            "any" -> "any"
+            else -> null
+        }
     }
 
     private fun jsonOnOffToggle(value: JsonPrimitive?): Int? {
