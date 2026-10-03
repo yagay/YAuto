@@ -1,6 +1,5 @@
 package com.yagay.yauto.platform.android
 
-import android.os.BatteryManager
 import com.yagay.yauto.core.model.ConfigMap
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.numberOrNull
@@ -201,30 +200,4 @@ class AndroidBatteryEventFeaturePack : FeaturePack {
         "no" -> !actual
         else -> true
     }
-}
-
-internal fun batteryPluggedName(value: Int): String = when (value) {
-    BatteryManager.BATTERY_PLUGGED_AC -> "ac"
-    BatteryManager.BATTERY_PLUGGED_USB -> "usb"
-    BatteryManager.BATTERY_PLUGGED_WIRELESS -> "wireless"
-    BatteryManager.BATTERY_PLUGGED_DOCK -> "dock"
-    else -> "none"
-}
-
-internal fun batteryStatusName(value: Int): String = when (value) {
-    BatteryManager.BATTERY_STATUS_CHARGING -> "charging"
-    BatteryManager.BATTERY_STATUS_DISCHARGING -> "discharging"
-    BatteryManager.BATTERY_STATUS_FULL -> "full"
-    BatteryManager.BATTERY_STATUS_NOT_CHARGING -> "not_charging"
-    else -> "unknown"
-}
-
-internal fun batteryHealthName(value: Int): String = when (value) {
-    BatteryManager.BATTERY_HEALTH_GOOD -> "good"
-    BatteryManager.BATTERY_HEALTH_OVERHEAT -> "overheat"
-    BatteryManager.BATTERY_HEALTH_DEAD -> "dead"
-    BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "over_voltage"
-    BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "failure"
-    BatteryManager.BATTERY_HEALTH_COLD -> "cold"
-    else -> "unknown"
 }
