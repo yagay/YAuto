@@ -14,7 +14,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.AbstractCoroutineContextElement
@@ -187,6 +189,22 @@ class AutomationEngine(
                 } else primary
                 val finalSignal = executeNodes(node.finallyActions, executionId, variables, automation, flow, maxLoopIterations)
                 if (finalSignal != Signal.Next) finalSignal else handled
+            }
+            is ActionNode.WaitUntil -> {
+                if (node.timeoutMs <= 0L || node.pollIntervalMs <= 0L) {
+                    return Signal.Failure(userText("engine.wait_until_invalid"))
+                }
+                val pollInterval = node.pollIntervalMs.coerceIn(100L, 60_000L)
+                val completed = withTimeoutOrNull(node.timeoutMs) {
+                    while (currentCoroutineContext().isActive) {
+                        if (evaluatePredicate(node.condition, executionId, node.id, variables)) {
+                            return@withTimeoutOrNull true
+                        }
+                        delay(pollInterval)
+                    }
+                    false
+                } ?: false
+                if (completed) Signal.Next else Signal.Failure(userText("engine.wait_until_timeout", node.timeoutMs))
             }
             is ActionNode.CallFlow -> {
                 val depth = currentCoroutineContext()[FlowDepth]?.value ?: 0
