@@ -96,7 +96,9 @@ class AccessibilityFeaturePack(
             // Accessibility source for backwards compatibility, but never as explicit Usage Stats.
             "accessibility" -> source.isBlank() || source == ACCESSIBILITY_WINDOW_SOURCE
             "usage_stats" -> source == USAGE_STATS_SOURCE
-            else -> source.isBlank() || source == ACCESSIBILITY_WINDOW_SOURCE || source == USAGE_STATS_SOURCE
+            // Auto/default mode also covers historical RuntimeEvent sources such as "runtime".
+            // Only an explicitly selected backend should reject events from another source.
+            else -> true
         }
 
     private fun matchForeground(feature: com.yagay.yauto.core.model.FeatureRef, pkg: String, className: String): Boolean {
