@@ -108,11 +108,19 @@ class AppGraph(context: Context) {
         safelyUnit("backend:lsposed") { capabilities.register(xposed) }
         safelyUnit("backend:accessibility") { capabilities.register(accessibility) }
 
+        // Compatibility importers are metadata-only during normal startup. Their implementations are
+        // materialized only when the user explicitly imports a file.
         safelyUnit("importer:macrodroid") {
-            importers.register(MacroDroidImporter(mapper = MacroDroidFeatureSuggestions.mapper))
+            importers.registerLazy("macrodroid", "MacroDroid") {
+                MacroDroidImporter(mapper = MacroDroidFeatureSuggestions.mapper)
+            }
         }
-        safelyUnit("importer:shortx") { importers.register(EnhancedShortXImporter()) }
-        safelyUnit("importer:tasker") { importers.register(EnhancedTaskerImporter()) }
+        safelyUnit("importer:shortx") {
+            importers.registerLazy("shortx", "ShortX") { EnhancedShortXImporter() }
+        }
+        safelyUnit("importer:tasker") {
+            importers.registerLazy("tasker", "Tasker") { EnhancedTaskerImporter() }
+        }
 
         safelyUnit("diagnostic:execution-files") {
             diagnosticRegistry.register(ExecutionFileDiagnosticCollector(appContext))
