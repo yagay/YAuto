@@ -6,6 +6,7 @@ import com.yagay.yauto.core.registry.FeatureCategory
 import com.yagay.yauto.core.registry.FeatureDefinition
 import com.yagay.yauto.core.registry.FieldBehavior
 import com.yagay.yauto.core.registry.FieldSchema
+import com.yagay.yauto.core.registry.resolveVariables
 
 internal object PrivilegedSettingsFeatures {
     val definitions: List<FeatureDefinition> = listOf(
