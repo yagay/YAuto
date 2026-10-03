@@ -50,7 +50,7 @@ class ImporterRegistryTest {
     }
 
     @Test
-    fun `import exceptions become failed results instead of escaping`() {
+    fun `import exceptions become localized failed results instead of escaping`() {
         val registry = ImporterRegistry()
         registry.registerLazy("throws", "Throws") {
             object : AutomationImporter {
@@ -65,17 +65,17 @@ class ImporterRegistryTest {
 
         assertFalse(result.success)
         assertEquals("throws", result.importerId)
-        assertEquals("bad source", result.issues.single().message)
+        assertEquals("feature.operation_failed", result.issues.single().message)
     }
 
     private fun fakeImporter(
-        id: String,
-        name: String,
+        importerId: String,
+        importerName: String,
         confidence: Int,
     ): AutomationImporter = object : AutomationImporter {
-        override val id = id
-        override val displayName = name
+        override val id = importerId
+        override val displayName = importerName
         override fun confidence(input: ImportInput) = confidence
-        override fun import(input: ImportInput) = ImportResult(importerId = id, success = true)
+        override fun import(input: ImportInput) = ImportResult(importerId = importerId, success = true)
     }
 }
