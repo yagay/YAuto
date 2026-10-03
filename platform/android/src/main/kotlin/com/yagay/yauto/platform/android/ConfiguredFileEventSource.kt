@@ -134,7 +134,8 @@ class ConfiguredFileEventSource(
                     if (rule.nameContains.isNotBlank() && !childName.contains(rule.nameContains, ignoreCase = true)) return
 
                     val fullPath = if (childName.isBlank()) absolute else File(absolute, childName)
-                    val isDirectory = event and FileObserver.ISDIR != 0
+                    val knownDirectory = observers.containsKey(fullPath.absolutePath)
+                    val isDirectory = knownDirectory || fullPath.isDirectory
                     emit(
                         RuntimeEvent(
                             typeId = "android.event.file_changed",
@@ -153,7 +154,7 @@ class ConfiguredFileEventSource(
                     if (rule.recursive && isDirectory && normalized in setOf(FileObserver.CREATE, FileObserver.MOVED_TO)) {
                         addDirectory(fullPath)
                     }
-                    if (isDirectory && normalized in setOf(FileObserver.DELETE, FileObserver.MOVED_FROM, FileObserver.DELETE_SELF)) {
+                    if (knownDirectory && normalized in setOf(FileObserver.DELETE, FileObserver.MOVED_FROM, FileObserver.DELETE_SELF, FileObserver.MOVE_SELF)) {
                         removeDirectory(fullPath)
                     }
                 }
