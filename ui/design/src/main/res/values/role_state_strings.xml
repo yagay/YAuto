@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_role_holders_get_title">Get default app role holders</string>
+    <string name="feature_android_role_holders_get_description">Store packages holding a selected Android default-app role</string>
+    <string name="feature_android_role_holders_get_field_role">Default app role</string>
+    <string name="feature_android_role_holders_get_field_role_option_browser">Browser</string>
+    <string name="feature_android_role_holders_get_field_role_option_dialer">Dialer</string>
+    <string name="feature_android_role_holders_get_field_role_option_sms">SMS</string>
+    <string name="feature_android_role_holders_get_field_role_option_home">Home app</string>
+    <string name="feature_android_role_holders_get_field_role_option_assistant">Assistant</string>
+    <string name="feature_android_role_holders_get_field_resultvariable">Store package list in variable</string>
+
+    <string name="feature_android_ime_default_get_title">Get default input method</string>
+    <string name="feature_android_ime_default_get_description">Store the current default input-method package and component</string>
+    <string name="feature_android_ime_default_get_field_resultvariable">Store input-method object in variable</string>
+
+    <string name="feature_android_state_role_holder_title">Default app role holder</string>
+    <string name="feature_android_state_role_holder_description">Check whether an application holds a selected Android default-app role</string>
+    <string name="feature_android_state_role_holder_field_role">Default app role</string>
+    <string name="feature_android_state_role_holder_field_role_option_browser">Browser</string>
+    <string name="feature_android_state_role_holder_field_role_option_dialer">Dialer</string>
+    <string name="feature_android_state_role_holder_field_role_option_sms">SMS</string>
+    <string name="feature_android_state_role_holder_field_role_option_home">Home app</string>
+    <string name="feature_android_state_role_holder_field_role_option_assistant">Assistant</string>
+    <string name="feature_android_state_role_holder_field_package">App / package</string>
+    <string name="feature_android_state_role_holder_field_value">Is role holder</string>
+    <string name="feature_android_condition_role_holder_title">Default app role holder</string>
+    <string name="feature_android_condition_role_holder_description">Check whether an application holds a selected Android default-app role</string>
+    <string name="feature_android_condition_role_holder_field_role">Default app role</string>
+    <string name="feature_android_condition_role_holder_field_role_option_browser">Browser</string>
+    <string name="feature_android_condition_role_holder_field_role_option_dialer">Dialer</string>
+    <string name="feature_android_condition_role_holder_field_role_option_sms">SMS</string>
+    <string name="feature_android_condition_role_holder_field_role_option_home">Home app</string>
+    <string name="feature_android_condition_role_holder_field_role_option_assistant">Assistant</string>
+    <string name="feature_android_condition_role_holder_field_package">App / package</string>
+    <string name="feature_android_condition_role_holder_field_value">Is role holder</string>
+
+    <string name="feature_android_state_role_available_title">Default app role available</string>
+    <string name="feature_android_state_role_available_description">Check whether Android exposes a selected default-app role on this device</string>
+    <string name="feature_android_state_role_available_field_role">Default app role</string>
+    <string name="feature_android_state_role_available_field_role_option_browser">Browser</string>
+    <string name="feature_android_state_role_available_field_role_option_dialer">Dialer</string>
+    <string name="feature_android_state_role_available_field_role_option_sms">SMS</string>
+    <string name="feature_android_state_role_available_field_role_option_home">Home app</string>
+    <string name="feature_android_state_role_available_field_role_option_assistant">Assistant</string>
+    <string name="feature_android_state_role_available_field_value">Role available</string>
+    <string name="feature_android_condition_role_available_title">Default app role available</string>
+    <string name="feature_android_condition_role_available_description">Check whether Android exposes a selected default-app role on this device</string>
+    <string name="feature_android_condition_role_available_field_role">Default app role</string>
+    <string name="feature_android_condition_role_available_field_role_option_browser">Browser</string>
+    <string name="feature_android_condition_role_available_field_role_option_dialer">Dialer</string>
+    <string name="feature_android_condition_role_available_field_role_option_sms">SMS</string>
+    <string name="feature_android_condition_role_available_field_role_option_home">Home app</string>
+    <string name="feature_android_condition_role_available_field_role_option_assistant">Assistant</string>
+    <string name="feature_android_condition_role_available_field_value">Role available</string>
+
+    <string name="feature_android_state_default_ime_title">Default input method</string>
+    <string name="feature_android_state_default_ime_description">Check whether an application is the current default keyboard / input method</string>
+    <string name="feature_android_state_default_ime_field_package">App / package</string>
+    <string name="feature_android_state_default_ime_field_value">Is default input method</string>
+    <string name="feature_android_condition_default_ime_title">Default input method</string>
+    <string name="feature_android_condition_default_ime_description">Check whether an application is the current default keyboard / input method</string>
+    <string name="feature_android_condition_default_ime_field_package">App / package</string>
+    <string name="feature_android_condition_default_ime_field_value">Is default input method</string>
+</resources>
