@@ -2,6 +2,9 @@ package com.yagay.yauto
 
 import android.app.Notification
 import android.app.PendingIntent
+import android.app.RemoteInput
+import android.content.Intent
+import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.yagay.yauto.platform.android.ActiveNotificationSnapshot
@@ -51,6 +54,7 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
             actionCount = actions.size,
             ongoing = sbn.isOngoing,
             actionTitles = actions.map { it.title?.toString().orEmpty() },
+            replyActionIndexes = actions.mapIndexedNotNull { index, action -> index.takeIf { action.remoteInputs.orEmpty().isNotEmpty() } },
             postTimeEpochMs = sbn.postTime,
             notificationId = sbn.id,
             tag = sbn.tag.orEmpty(),
@@ -75,6 +79,26 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
         val action = sbn.notification.actions?.getOrNull(index) ?: return false
         return send(action.actionIntent)
     }
+
+    override fun reply(key: String, actionIndex: Int?, text: String): Boolean = runCatching {
+        val sbn = activeNotifications.orEmpty().firstOrNull { it.key == key } ?: return false
+        val actions = sbn.notification.actions.orEmpty()
+        val action = if (actionIndex != null) {
+            actions.getOrNull(actionIndex)
+        } else {
+            actions.firstOrNull { it.remoteInputs.orEmpty().isNotEmpty() }
+        } ?: return false
+        val remoteInputs = action.remoteInputs.orEmpty()
+        if (remoteInputs.isEmpty()) return false
+
+        val results = Bundle().apply {
+            remoteInputs.forEach { input -> putCharSequence(input.resultKey, text) }
+        }
+        val fillIn = Intent()
+        RemoteInput.addResultsToIntent(remoteInputs, fillIn, results)
+        action.actionIntent.send(this, 0, fillIn)
+        true
+    }.getOrDefault(false)
 
     private fun send(intent: PendingIntent?): Boolean = runCatching {
         intent ?: return false
