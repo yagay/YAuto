@@ -3,7 +3,12 @@ package com.yagay.yauto.platform.android
 import android.app.role.RoleManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.provider.Settings
+import android.provider.Telephony
+import android.telecom.TelecomManager
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.string
@@ -39,13 +44,14 @@ class AndroidRoleStateFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            val role = roleName(feature.config.string("role", "browser"))
+            val roleKey = feature.config.string("role", "browser")
+            val role = roleName(roleKey)
                 ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
             val variable = feature.config.string("resultVariable").trim()
             if (variable.isBlank()) {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.destination_variable_empty"))
             }
-            val holders = if (roles.isRoleAvailable(role)) roles.getRoleHolders(role) else emptyList()
+            val holders = if (roles.isRoleAvailable(role)) defaultRoleHolders(roleKey) else emptyList()
             val output = ConfigValue.ListValue(holders.map(ConfigValue::StringValue))
             ctx.variables.set(variable, output)
             ActionExecutionResult(true, output)
@@ -89,10 +95,11 @@ class AndroidRoleStateFeaturePack(context: Context) : FeaturePack {
             FieldSchema.Toggle("value", "Is role holder"),
         )
         val evaluator = ConditionEvaluator { feature, ctx ->
-            val role = roleName(feature.config.string("role", "browser")) ?: return@ConditionEvaluator false
+            val roleKey = feature.config.string("role", "browser")
+            val role = roleName(roleKey) ?: return@ConditionEvaluator false
             val packageName = feature.config.string("package").resolveVariables(ctx.variables).trim()
             if (packageName.isBlank() || !roles.isRoleAvailable(role)) return@ConditionEvaluator false
-            val holds = roles.getRoleHolders(role).contains(packageName)
+            val holds = defaultRoleHolders(roleKey).contains(packageName)
             holds == feature.config.boolean("value", true)
         }
         registerPair(
@@ -154,6 +161,33 @@ class AndroidRoleStateFeaturePack(context: Context) : FeaturePack {
 
     private fun defaultImeComponent(): String =
         Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD).orEmpty()
+
+    private fun defaultRoleHolders(roleKey: String): List<String> =
+        when (roleKey) {
+            "browser" -> listOfNotNull(
+                context.packageManager.resolveActivity(
+                    Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com")).addCategory(Intent.CATEGORY_BROWSABLE),
+                    PackageManager.MATCH_DEFAULT_ONLY,
+                )?.activityInfo?.packageName?.takeUnless { it == "android" }
+            )
+            "dialer" -> listOfNotNull(
+                context.getSystemService(TelecomManager::class.java).defaultDialerPackage?.takeIf { it.isNotBlank() }
+            )
+            "sms" -> listOfNotNull(Telephony.Sms.getDefaultSmsPackage(context)?.takeIf { it.isNotBlank() })
+            "home" -> listOfNotNull(
+                context.packageManager.resolveActivity(
+                    Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
+                    PackageManager.MATCH_DEFAULT_ONLY,
+                )?.activityInfo?.packageName
+            )
+            "assistant" -> {
+                val component = Settings.Secure.getString(context.contentResolver, "assistant")
+                    .orEmpty()
+                    .ifBlank { Settings.Secure.getString(context.contentResolver, "voice_interaction_service").orEmpty() }
+                listOfNotNull(packageFromComponent(component).takeIf { it.isNotBlank() })
+            }
+            else -> emptyList()
+        }.distinct()
 
     private companion object {
         val ROLE_OPTIONS = listOf("browser", "dialer", "sms", "home", "assistant")
