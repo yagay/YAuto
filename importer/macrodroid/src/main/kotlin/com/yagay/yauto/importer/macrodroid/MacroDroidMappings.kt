@@ -32,6 +32,11 @@ object MacroDroidMappings {
                 "SetBrightnessAction" -> "android.display.brightness.set"
                 "SendIntentAction" -> "android.intent.send"
                 "NotificationAction" -> "android.notification.show"
+                "CarModeAction" -> "android.car_mode.set"
+                "DayDreamAction" -> "android.display.dream.start"
+                "InvertColoursAction" -> "android.display.color_inversion.set"
+                "HeadsUpNotificationsAction" -> "android.notification.heads_up.set"
+                "AmbientDisplayAction" -> "android.display.ambient_display.set"
                 else -> null
             }
             SourceFeatureKind.EVENT -> when (sourceType) {
@@ -67,6 +72,11 @@ object MacroDroidMappings {
         "SetBrightnessAction" -> setBrightness(obj, importerId, sourceType, raw)
         "SendIntentAction" -> sendIntent(obj, importerId, sourceType, raw)
         "NotificationAction" -> notification(obj, importerId, sourceType, raw)
+        "CarModeAction" -> modeAction(obj, "m_option", "android.car_mode.set", importerId, sourceType, raw)
+        "DayDreamAction" -> sourceFeature("android.display.dream.start", importerId, sourceType, raw)
+        "InvertColoursAction" -> modeAction(obj, "m_option", "android.display.color_inversion.set", importerId, sourceType, raw)
+        "HeadsUpNotificationsAction" -> modeAction(obj, "option", "android.notification.heads_up.set", importerId, sourceType, raw)
+        "AmbientDisplayAction" -> ambientDisplay(obj, importerId, sourceType, raw)
         else -> null
     }
 
@@ -92,6 +102,58 @@ object MacroDroidMappings {
             }
             else -> null
         }
+
+    private fun modeAction(
+        obj: JsonObject,
+        optionKey: String,
+        target: String,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = when (obj.number(optionKey)?.toInt()) {
+            0 -> "enable"
+            1 -> "disable"
+            2 -> "toggle"
+            else -> return null
+        }
+        return sourceFeature(
+            target,
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("mode" to ConfigValue.StringValue(mode)),
+        )
+    }
+
+    private fun ambientDisplay(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val setting = when (obj.number("m_settingOption")?.toInt()) {
+            0 -> "wake_for_notifications"
+            1 -> "always_on"
+            else -> return null
+        }
+        val mode = when (obj.number("m_option")?.toInt()) {
+            0 -> "enable"
+            1 -> "disable"
+            2 -> "toggle"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.display.ambient_display.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "setting" to ConfigValue.StringValue(setting),
+                "mode" to ConfigValue.StringValue(mode),
+            ),
+        )
+    }
 
     private fun notificationTrigger(obj: JsonObject, importerId: String, sourceType: String, raw: String): FeatureRef? {
         if (obj.bool("m_excludeApps") == true || obj.bool("m_excludes") == true) return null
