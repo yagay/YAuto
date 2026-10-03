@@ -9,7 +9,7 @@ import org.junit.Test
 
 class MassDataExpansionFeaturePackTest {
     @Test
-    fun `expansion packs install seventy five executable actions`() {
+    fun `expansion packs install seventy seven executable actions`() {
         val registry = FeatureRegistry()
         val packs = listOf(
             CollectionExpansionFeaturePack(),
@@ -20,7 +20,7 @@ class MassDataExpansionFeaturePackTest {
         packs.forEach { it.install(registry) }
 
         val descriptors = registry.allDescriptors()
-        assertEquals(75, descriptors.size)
+        assertEquals(77, descriptors.size)
         assertTrue(descriptors.all { it.kind == FeatureKind.ACTION })
         descriptors.forEach { descriptor ->
             assertNotNull("Missing executor for ${descriptor.id.value}", registry.actionExecutor(descriptor.id.value))
@@ -41,6 +41,8 @@ class MassDataExpansionFeaturePackTest {
             "data.object.merge",
             "data.text.base64_encode",
             "data.text.sha256",
+            "data.text.aes_gcm_encrypt",
+            "data.text.aes_gcm_decrypt",
             "data.value.to_number",
             "data.list.frequency",
             "variable.swap",
@@ -50,5 +52,13 @@ class MassDataExpansionFeaturePackTest {
             assertNotNull("Expected feature $id", registry.descriptor(id))
             assertNotNull("Expected executor $id", registry.actionExecutor(id))
         }
+    }
+
+    @Test
+    fun `AES GCM codec round trips unicode and rejects wrong password`() {
+        val encrypted = aesGcmEncrypt("YAuto 加密测试 🔐", "strong-password")
+        assertTrue(encrypted.startsWith("yauto:aesgcm:v1:"))
+        assertEquals("YAuto 加密测试 🔐", aesGcmDecrypt(encrypted, "strong-password"))
+        assertTrue(runCatching { aesGcmDecrypt(encrypted, "wrong-password") }.isFailure)
     }
 }
