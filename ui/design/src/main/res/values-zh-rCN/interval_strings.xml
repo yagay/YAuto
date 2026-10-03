@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_interval_title">周期定时器</string>
+    <string name="feature_android_event_interval_description">YAuto 运行期间按设定周期重复触发</string>
+</resources>
