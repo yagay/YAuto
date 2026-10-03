@@ -31,4 +31,9 @@
     <string name="feature_android_condition_notification_count_field_value">Notification count</string>
 
     <string name="runtime_feature_notification_operation_failed">No matching notification was found or the notification operation failed</string>
+    <string name="feature_android_notification_reply_title">Reply to notification</string>
+    <string name="feature_android_notification_reply_description">Send text through the first matching notification reply action</string>
+    <string name="feature_android_notification_reply_field_replytext">Reply text</string>
+    <string name="feature_android_notification_reply_field_actionindex">Reply action index (optional)</string>
+
 </resources>
