@@ -186,16 +186,25 @@ class FeatureRegistry {
             "Feature ID collides with alias: $id -> $existingAliasOwner"
         }
 
-        val existing = descriptors.putIfAbsent(id, decorated)
-        require(existing == null || existing == decorated) { "Feature ID collision: $id" }
+        val existingDescriptor = descriptors[id]
+        require(existingDescriptor == null || existingDescriptor == decorated) {
+            "Feature ID collision: $id"
+        }
 
         decorated.aliases.forEach { alias ->
-            require(descriptors[alias] == null) { "Feature alias collides with canonical ID: $alias" }
-            val existingTarget = aliases.putIfAbsent(alias, id)
+            require(descriptors[alias] == null) {
+                "Feature alias collides with canonical ID: $alias"
+            }
+            val existingTarget = aliases[alias]
             require(existingTarget == null || existingTarget == id) {
                 "Feature alias collision: $alias -> $existingTarget / $id"
             }
         }
+
+        // All validation is complete. Commit descriptor + aliases together while holding the same
+        // registry monitor so a rejected descriptor cannot leave partial canonical/alias state.
+        if (existingDescriptor == null) descriptors[id] = decorated
+        decorated.aliases.forEach { alias -> aliases[alias] = id }
     }
 
     fun install(pack: FeaturePack) = pack.install(this)
