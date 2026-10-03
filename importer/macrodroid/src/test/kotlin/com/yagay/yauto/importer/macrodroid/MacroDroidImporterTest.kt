@@ -192,6 +192,38 @@ class MacroDroidImporterTest {
     }
 
     @Test
+    fun `maps cellular reference constraints natively`() {
+        val json = """
+            {"macro":{"m_GUID":"cellular-constraints","m_name":"Cellular","m_triggerList":[],"m_constraintList":[
+              {"m_classType":"DataOnOffConstraint","m_dataOn":true},
+              {"m_classType":"IsRoamingConstraint","m_isRoaming":false},
+              {"m_classType":"RoamingOnOffConstraint","m_roamingOn":true},
+              {"m_classType":"SignalOnOffConstraint","m_option":0,"subscriptionId":7}
+            ],"m_actionList":[]}}
+        """.trimIndent()
+
+        val result = MacroDroidImporter().import(ImportInput("cellular-constraints.macro", null, json.toByteArray()))
+        assertTrue(result.success)
+        val conditions = (result.bundle.automations.single().activation.condition as PredicateNode.All)
+            .children.map { (it as PredicateNode.Condition).feature }
+
+        assertEquals(
+            listOf(
+                "android.condition.mobile_data_enabled",
+                "android.condition.network_roaming",
+                "android.condition.data_roaming_setting",
+                "android.condition.cellular_service_available",
+            ),
+            conditions.map { it.typeId },
+        )
+        assertEquals(ConfigValue.BooleanValue(true), conditions[0].config["value"])
+        assertEquals(ConfigValue.BooleanValue(false), conditions[1].config["value"])
+        assertEquals(ConfigValue.BooleanValue(true), conditions[2].config["value"])
+        assertEquals(ConfigValue.NumberValue(7.0), conditions[3].config["subscriptionId"])
+        assertEquals(ConfigValue.BooleanValue(true), conditions[3].config["value"])
+    }
+
+    @Test
     fun `keeps unsupported notification trigger variants as compatibility event`() {
         val json = """{"macro":{"m_GUID":"notify-unsafe","m_triggerList":[{"m_classType":"NotificationTrigger","m_packageNameList":["a","b"],"m_excludeApps":true,"enableRegex":true}],"m_actionList":[]}}"""
         val result = MacroDroidImporter().import(ImportInput("notify-unsafe.macro", null, json.toByteArray()))
