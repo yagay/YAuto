@@ -8,7 +8,6 @@ import com.yagay.yauto.core.logging.TraceLevel
 import com.yagay.yauto.core.model.ActionNode
 import com.yagay.yauto.core.model.Automation
 import com.yagay.yauto.core.model.AutomationId
-import com.yagay.yauto.core.model.AutomationPhase
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.model.NodeId
