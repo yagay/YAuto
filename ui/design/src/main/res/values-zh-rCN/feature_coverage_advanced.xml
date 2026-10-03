@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_file_changed_title">文件变化</string>
+    <string name="feature_android_event_file_changed_description">当可访问的文件或目录发生指定文件系统变化时运行</string>
+    <string name="feature_android_event_file_changed_field_path">文件或目录路径</string>
+    <string name="feature_android_event_file_changed_field_event">变化类型</string>
+    <string name="feature_android_event_file_changed_field_event_option_any">任意</string>
+    <string name="feature_android_event_file_changed_field_event_option_create">创建</string>
+    <string name="feature_android_event_file_changed_field_event_option_delete">删除</string>
+    <string name="feature_android_event_file_changed_field_event_option_modify">修改</string>
+    <string name="feature_android_event_file_changed_field_event_option_move">移动</string>
+    <string name="feature_android_event_file_changed_field_event_option_close_write">写入完成</string>
+    <string name="feature_android_event_file_changed_field_recursive">监视子目录</string>
+    <string name="feature_android_event_file_changed_field_namecontains">名称包含</string>
+
+    <string name="feature_android_ime_picker_show_title">显示输入法选择器</string>
+    <string name="feature_android_ime_picker_show_description">打开 Android 输入法选择器</string>
+
+    <string name="feature_android_ime_default_set_title">设置默认输入法</string>
+    <string name="feature_android_ime_default_set_description">通过特权 ime 命令选择已启用的 Android 输入法</string>
+    <string name="feature_android_ime_default_set_field_imeid">输入法 ID</string>
+
+    <string name="feature_android_ime_settings_open_title">打开输入法设置</string>
+    <string name="feature_android_ime_settings_open_description">打开 Android 键盘和输入法设置页面</string>
+
+    <string name="feature_android_screen_wake_title">唤醒设备</string>
+    <string name="feature_android_screen_wake_description">通过 Android WAKEUP 按键事件唤醒屏幕</string>
+
+    <string name="feature_android_device_reboot_title">重启设备</string>
+    <string name="feature_android_device_reboot_description">通过电源服务请求正常重启 Android</string>
+
+    <string name="feature_android_screen_screenshot_title">截取屏幕</string>
+    <string name="feature_android_screen_screenshot_description">通过已授权的特权 Shell 后端将当前屏幕保存为 PNG 文件</string>
+    <string name="feature_android_screen_screenshot_field_path">输出 PNG 路径</string>
+    <string name="feature_android_screen_screenshot_field_resultvariable">保存输出路径到变量</string>
+
+    <string name="feature_android_input_keyevent_title">发送按键事件</string>
+    <string name="feature_android_input_keyevent_description">通过特权 input 命令发送一个 Android 按键代码</string>
+    <string name="feature_android_input_keyevent_field_keycode">Android 按键代码</string>
+
+    <string name="feature_android_state_default_ime_title">默认输入法</string>
+    <string name="feature_android_state_default_ime_description">匹配当前选择的 Android 输入法</string>
+    <string name="feature_android_state_default_ime_field_idcontains">输入法 ID 包含</string>
+    <string name="feature_android_state_default_ime_field_exact">精确匹配</string>
+    <string name="feature_android_condition_default_ime_title">默认输入法</string>
+    <string name="feature_android_condition_default_ime_description">匹配当前选择的 Android 输入法</string>
+    <string name="feature_android_condition_default_ime_field_idcontains">输入法 ID 包含</string>
+    <string name="feature_android_condition_default_ime_field_exact">精确匹配</string>
+
+    <string name="feature_android_state_enabled_ime_title">已启用输入法</string>
+    <string name="feature_android_state_enabled_ime_description">检查 Android 已启用输入法列表</string>
+    <string name="feature_android_state_enabled_ime_field_idcontains">输入法 ID 包含</string>
+    <string name="feature_android_state_enabled_ime_field_exact">精确匹配</string>
+    <string name="feature_android_condition_enabled_ime_title">已启用输入法</string>
+    <string name="feature_android_condition_enabled_ime_description">检查 Android 已启用输入法列表</string>
+    <string name="feature_android_condition_enabled_ime_field_idcontains">输入法 ID 包含</string>
+    <string name="feature_android_condition_enabled_ime_field_exact">精确匹配</string>
+
+    <string name="feature_android_state_hardware_keyboard_title">硬件键盘</string>
+    <string name="feature_android_state_hardware_keyboard_description">检查 Android 是否检测到硬件键盘</string>
+    <string name="feature_android_state_hardware_keyboard_field_value">启用 / 是</string>
+    <string name="feature_android_condition_hardware_keyboard_title">硬件键盘</string>
+    <string name="feature_android_condition_hardware_keyboard_description">检查 Android 是否检测到硬件键盘</string>
+    <string name="feature_android_condition_hardware_keyboard_field_value">启用 / 是</string>
+
+    <string name="feature_android_state_user_unlocked_title">用户已解锁</string>
+    <string name="feature_android_state_user_unlocked_description">检查 Android 凭据加密用户存储是否已解锁</string>
+    <string name="feature_android_state_user_unlocked_field_value">启用 / 是</string>
+    <string name="feature_android_condition_user_unlocked_title">用户已解锁</string>
+    <string name="feature_android_condition_user_unlocked_description">检查 Android 凭据加密用户存储是否已解锁</string>
+    <string name="feature_android_condition_user_unlocked_field_value">启用 / 是</string>
+
+    <string name="feature_android_state_developer_options_title">开发者选项</string>
+    <string name="feature_android_state_developer_options_description">检查 Android 开发者选项是否已启用</string>
+    <string name="feature_android_state_developer_options_field_value">启用 / 是</string>
+    <string name="feature_android_condition_developer_options_title">开发者选项</string>
+    <string name="feature_android_condition_developer_options_description">检查 Android 开发者选项是否已启用</string>
+    <string name="feature_android_condition_developer_options_field_value">启用 / 是</string>
+
+    <string name="feature_android_state_adb_enabled_title">ADB 已启用</string>
+    <string name="feature_android_state_adb_enabled_description">检查 Android ADB 调试是否已启用</string>
+    <string name="feature_android_state_adb_enabled_field_value">启用 / 是</string>
+    <string name="feature_android_condition_adb_enabled_title">ADB 已启用</string>
+    <string name="feature_android_condition_adb_enabled_description">检查 Android ADB 调试是否已启用</string>
+    <string name="feature_android_condition_adb_enabled_field_value">启用 / 是</string>
+
+    <string name="feature_android_state_overlay_access_title">悬浮窗权限</string>
+    <string name="feature_android_state_overlay_access_description">检查 YAuto 是否可在其他应用上层显示</string>
+    <string name="feature_android_state_overlay_access_field_value">启用 / 是</string>
+    <string name="feature_android_condition_overlay_access_title">悬浮窗权限</string>
+    <string name="feature_android_condition_overlay_access_description">检查 YAuto 是否可在其他应用上层显示</string>
+    <string name="feature_android_condition_overlay_access_field_value">启用 / 是</string>
+
+    <string name="feature_android_state_write_settings_access_title">修改系统设置权限</string>
+    <string name="feature_android_state_write_settings_access_description">检查 YAuto 是否可修改 Android 系统设置</string>
+    <string name="feature_android_state_write_settings_access_field_value">启用 / 是</string>
+    <string name="feature_android_condition_write_settings_access_title">修改系统设置权限</string>
+    <string name="feature_android_condition_write_settings_access_description">检查 YAuto 是否可修改 Android 系统设置</string>
+    <string name="feature_android_condition_write_settings_access_field_value">启用 / 是</string>
+
+    <string name="feature_android_state_dnd_access_title">勿扰模式权限</string>
+    <string name="feature_android_state_dnd_access_description">检查 YAuto 是否具有通知策略访问权限</string>
+    <string name="feature_android_state_dnd_access_field_value">启用 / 是</string>
+    <string name="feature_android_condition_dnd_access_title">勿扰模式权限</string>
+    <string name="feature_android_condition_dnd_access_description">检查 YAuto 是否具有通知策略访问权限</string>
+    <string name="feature_android_condition_dnd_access_field_value">启用 / 是</string>
+
+    <string name="feature_android_state_exact_alarm_access_title">精确闹钟权限</string>
+    <string name="feature_android_state_exact_alarm_access_description">检查 YAuto 是否可安排精确闹钟</string>
+    <string name="feature_android_state_exact_alarm_access_field_value">启用 / 是</string>
+    <string name="feature_android_condition_exact_alarm_access_title">精确闹钟权限</string>
+    <string name="feature_android_condition_exact_alarm_access_description">检查 YAuto 是否可安排精确闹钟</string>
+    <string name="feature_android_condition_exact_alarm_access_field_value">启用 / 是</string>
+
+    <string name="feature_android_state_default_launcher_title">默认桌面</string>
+    <string name="feature_android_state_default_launcher_description">匹配 Android 当前默认桌面应用</string>
+    <string name="feature_android_state_default_launcher_field_package">应用 / 包名</string>
+    <string name="feature_android_condition_default_launcher_title">默认桌面</string>
+    <string name="feature_android_condition_default_launcher_description">匹配 Android 当前默认桌面应用</string>
+    <string name="feature_android_condition_default_launcher_field_package">应用 / 包名</string>
+
+    <string name="feature_android_state_process_running_title">应用进程运行中</string>
+    <string name="feature_android_state_process_running_description">检查 pidof 是否报告指定应用存在运行中的进程</string>
+    <string name="feature_android_state_process_running_field_package">应用 / 包名</string>
+    <string name="feature_android_state_process_running_field_value">运行中</string>
+    <string name="feature_android_condition_process_running_title">应用进程运行中</string>
+    <string name="feature_android_condition_process_running_description">检查 pidof 是否报告指定应用存在运行中的进程</string>
+    <string name="feature_android_condition_process_running_field_package">应用 / 包名</string>
+    <string name="feature_android_condition_process_running_field_value">运行中</string>
+</resources>

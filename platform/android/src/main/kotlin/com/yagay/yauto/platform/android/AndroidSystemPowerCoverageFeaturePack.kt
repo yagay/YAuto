@@ -26,8 +26,8 @@ import com.yagay.yauto.core.registry.*
 
 /**
  * High-value native capabilities distilled from mature automation apps without inheriting their
- * compatibility layers. This pack deliberately fills state/control gaps around power, display,
- * network and device status while reusing YAuto's generic schema, capability and logging layers.
+ * compatibility layers. This pack fills state/control gaps around power, display, network and
+ * device status while reusing YAuto's generic schema, capability and logging layers.
  */
 class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.system_power_coverage"
@@ -46,38 +46,40 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         booleanPair(registry, "airplane_mode", "Airplane mode", "Check whether airplane mode is enabled", FeatureCategory.NETWORK) {
             Settings.Global.getInt(resolver, Settings.Global.AIRPLANE_MODE_ON, 0) == 1
         }
-        choicePair(registry, "battery_status", "Battery status", "Match the current Android battery status", FeatureCategory.DEVICE,
-            "status", "Status", listOf("charging", "discharging", "not_charging", "full", "unknown")) {
-            batteryStatus()
-        }
-        choicePair(registry, "charging_source", "Charging source", "Match the current battery charging source", FeatureCategory.DEVICE,
-            "source", "Charging source", listOf("none", "ac", "usb", "wireless", "dock", "unknown")) {
-            chargingSource()
-        }
-        choicePair(registry, "battery_health", "Battery health", "Match the current battery health", FeatureCategory.DEVICE,
-            "health", "Health", listOf("good", "overheat", "dead", "over_voltage", "failure", "cold", "unknown")) {
-            batteryHealth()
-        }
-        rangePair(registry, "battery_voltage", "Battery voltage", "Compare the current battery voltage", FeatureCategory.DEVICE,
-            "minMv", "Minimum mV", "maxMv", "Maximum mV", 0.0, 20_000.0) {
+        choicePair(
+            registry, "battery_status", "Battery status", "Match the current Android battery status",
+            FeatureCategory.DEVICE, "status", "Status", listOf("charging", "discharging", "not_charging", "full", "unknown")
+        ) { batteryStatus() }
+        choicePair(
+            registry, "battery_health", "Battery health", "Match the current battery health",
+            FeatureCategory.DEVICE, "health", "Health", listOf("good", "overheat", "dead", "over_voltage", "failure", "cold", "unknown")
+        ) { batteryHealth() }
+        rangePair(
+            registry, "battery_voltage", "Battery voltage", "Compare the current battery voltage",
+            FeatureCategory.DEVICE, "minMv", "Minimum mV", "maxMv", "Maximum mV", 0.0, 20_000.0
+        ) {
             batteryIntent()?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1)?.takeIf { it >= 0 }?.toDouble()
         }
-        rangePair(registry, "memory_available", "Available memory", "Compare currently available system memory", FeatureCategory.DEVICE,
-            "minMb", "Minimum MB", "maxMb", "Maximum MB", 0.0, 1_000_000.0) {
-            memoryInfo().availMem / (1024.0 * 1024.0)
-        }
+        rangePair(
+            registry, "memory_available", "Available memory", "Compare currently available system memory",
+            FeatureCategory.DEVICE, "minMb", "Minimum MB", "maxMb", "Maximum MB", 0.0, 1_000_000.0
+        ) { memoryInfo().availMem / (1024.0 * 1024.0) }
         booleanPair(registry, "memory_low", "Low-memory state", "Check Android's low-memory signal", FeatureCategory.DEVICE) {
             memoryInfo().lowMemory
         }
         booleanPair(registry, "device_idle", "Device idle mode", "Check whether Android is in device idle mode", FeatureCategory.DEVICE) {
             context.getSystemService(PowerManager::class.java).isDeviceIdleMode
         }
-        booleanPair(registry, "low_power_standby", "Low-power standby", "Check whether Android low-power standby is enabled", FeatureCategory.DEVICE,
-            minSdk = 33) {
+        booleanPair(
+            registry, "low_power_standby", "Low-power standby", "Check whether Android low-power standby is enabled",
+            FeatureCategory.DEVICE, minSdk = 33
+        ) {
             Build.VERSION.SDK_INT >= 33 && context.getSystemService(PowerManager::class.java).isLowPowerStandbyEnabled
         }
-        choicePair(registry, "orientation", "Screen orientation", "Match the current screen orientation", FeatureCategory.DISPLAY,
-            "orientation", "Orientation", listOf("portrait", "landscape", "square", "undefined")) {
+        choicePair(
+            registry, "orientation", "Screen orientation", "Match the current screen orientation",
+            FeatureCategory.DISPLAY, "orientation", "Orientation", listOf("portrait", "landscape", "square", "undefined")
+        ) {
             when (context.resources.configuration.orientation) {
                 Configuration.ORIENTATION_PORTRAIT -> "portrait"
                 Configuration.ORIENTATION_LANDSCAPE -> "landscape"
@@ -85,13 +87,14 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
                 else -> "undefined"
             }
         }
-        rangePair(registry, "font_scale", "System font scale", "Compare the Android system font scale", FeatureCategory.DISPLAY,
-            "minScale", "Minimum scale", "maxScale", "Maximum scale", 0.1, 5.0) {
-            context.resources.configuration.fontScale.toDouble()
-        }
-        booleanPair(registry, "internet_validated", "Validated internet", "Check whether the active network is validated for internet access", FeatureCategory.NETWORK) {
-            activeCapabilities()?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
-        }
+        rangePair(
+            registry, "font_scale", "System font scale", "Compare the Android system font scale",
+            FeatureCategory.DISPLAY, "minScale", "Minimum scale", "maxScale", "Maximum scale", 0.1, 5.0
+        ) { context.resources.configuration.fontScale.toDouble() }
+        booleanPair(
+            registry, "internet_validated", "Validated internet",
+            "Check whether the active network is validated for internet access", FeatureCategory.NETWORK
+        ) { activeCapabilities()?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true }
         booleanPair(registry, "network_roaming", "Network roaming", "Check whether the active network is roaming", FeatureCategory.NETWORK) {
             val caps = activeCapabilities() ?: return@booleanPair false
             !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING)
@@ -99,9 +102,10 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         booleanPair(registry, "vpn_active", "VPN active", "Check whether the active network uses a VPN transport", FeatureCategory.NETWORK) {
             activeCapabilities()?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
         }
-        booleanPair(registry, "device_secure", "Device secure", "Check whether the device has secure lock-screen credentials", FeatureCategory.DEVICE) {
-            context.getSystemService(KeyguardManager::class.java).isDeviceSecure
-        }
+        booleanPair(
+            registry, "device_secure", "Device secure", "Check whether the device has secure lock-screen credentials",
+            FeatureCategory.DEVICE
+        ) { context.getSystemService(KeyguardManager::class.java).isDeviceSecure }
         batteryOptimizationPair(registry)
     }
 
@@ -263,8 +267,10 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
             FieldSchema.AppPicker("package", "Package"),
             FieldSchema.Toggle("ignored", "Ignored / exempt"),
         )
-        pair(registry, "battery_optimization_ignored", "Battery optimization ignored",
-            "Check whether a package is exempt from battery optimization", FeatureCategory.APP, fields) { feature, ctx ->
+        pair(
+            registry, "battery_optimization_ignored", "Battery optimization ignored",
+            "Check whether a package is exempt from battery optimization", FeatureCategory.APP, fields
+        ) { feature, ctx ->
             val packageName = feature.config.string("package").resolveVariables(ctx.variables).ifBlank { context.packageName }
             val actual = context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
             actual == feature.config.boolean("ignored", true)
@@ -279,10 +285,10 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         category: FeatureCategory,
         minSdk: Int = 31,
         query: () -> Boolean,
-    ) = pair(registry, key, title, description, category,
-        listOf(FieldSchema.Toggle("value", "Enabled / true")), minSdk) { feature, _ ->
-        query() == feature.config.boolean("value", true)
-    }
+    ) = pair(
+        registry, key, title, description, category,
+        listOf(FieldSchema.Toggle("value", "Enabled / true")), minSdk
+    ) { feature, _ -> query() == feature.config.boolean("value", true) }
 
     private fun choicePair(
         registry: FeatureRegistry,
@@ -294,10 +300,10 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         fieldLabel: String,
         options: List<String>,
         query: () -> String,
-    ) = pair(registry, key, title, description, category,
-        listOf(FieldSchema.Choice(fieldKey, fieldLabel, true, options))) { feature, _ ->
-        query() == feature.config.string(fieldKey, options.first())
-    }
+    ) = pair(
+        registry, key, title, description, category,
+        listOf(FieldSchema.Choice(fieldKey, fieldLabel, true, options))
+    ) { feature, _ -> query() == feature.config.string(fieldKey, options.first()) }
 
     private fun rangePair(
         registry: FeatureRegistry,
@@ -312,11 +318,13 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         allowedMin: Double,
         allowedMax: Double,
         query: () -> Double?,
-    ) = pair(registry, key, title, description, category,
+    ) = pair(
+        registry, key, title, description, category,
         listOf(
             FieldSchema.Number(minKey, minLabel, min = allowedMin, max = allowedMax),
             FieldSchema.Number(maxKey, maxLabel, min = allowedMin, max = allowedMax),
-        )) { feature, _ ->
+        )
+    ) { feature, _ ->
         val min = feature.config[minKey].numberOrNull() ?: allowedMin
         val max = feature.config[maxKey].numberOrNull() ?: allowedMax
         if (!min.isFinite() || !max.isFinite() || min !in allowedMin..allowedMax || max !in min..allowedMax) return@pair false
@@ -350,15 +358,6 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
         BatteryManager.BATTERY_STATUS_DISCHARGING -> "discharging"
         BatteryManager.BATTERY_STATUS_NOT_CHARGING -> "not_charging"
         BatteryManager.BATTERY_STATUS_FULL -> "full"
-        else -> "unknown"
-    }
-
-    private fun chargingSource(): String = when (batteryIntent()?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0)) {
-        0 -> "none"
-        BatteryManager.BATTERY_PLUGGED_AC -> "ac"
-        BatteryManager.BATTERY_PLUGGED_USB -> "usb"
-        BatteryManager.BATTERY_PLUGGED_WIRELESS -> "wireless"
-        BatteryManager.BATTERY_PLUGGED_DOCK -> "dock"
         else -> "unknown"
     }
 
