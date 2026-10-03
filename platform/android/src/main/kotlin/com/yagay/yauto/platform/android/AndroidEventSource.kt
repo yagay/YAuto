@@ -113,6 +113,42 @@ class SystemBroadcastEventSource(
                     if (temperatureTenths != Int.MIN_VALUE) {
                         put("temperatureC", ConfigValue.NumberValue(temperatureTenths / 10.0))
                     }
+                    put(
+                        "present",
+                        ConfigValue.BooleanValue(intent.getBooleanExtra(android.os.BatteryManager.EXTRA_PRESENT, false)),
+                    )
+                    put(
+                        "plugged",
+                        ConfigValue.StringValue(
+                            batteryPluggedName(intent.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0))
+                        ),
+                    )
+                    put(
+                        "status",
+                        ConfigValue.StringValue(
+                            batteryStatusName(
+                                intent.getIntExtra(
+                                    android.os.BatteryManager.EXTRA_STATUS,
+                                    android.os.BatteryManager.BATTERY_STATUS_UNKNOWN,
+                                )
+                            )
+                        ),
+                    )
+                    put(
+                        "health",
+                        ConfigValue.StringValue(
+                            batteryHealthName(
+                                intent.getIntExtra(
+                                    android.os.BatteryManager.EXTRA_HEALTH,
+                                    android.os.BatteryManager.BATTERY_HEALTH_UNKNOWN,
+                                )
+                            )
+                        ),
+                    )
+                    val voltageMv = intent.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, Int.MIN_VALUE)
+                    if (voltageMv != Int.MIN_VALUE) {
+                        put("voltageMv", ConfigValue.NumberValue(voltageMv.toDouble()))
+                    }
                 }
                 if (action in setOf(Intent.ACTION_TIME_TICK, Intent.ACTION_TIME_CHANGED, Intent.ACTION_DATE_CHANGED, Intent.ACTION_TIMEZONE_CHANGED)) {
                     putAll(currentTimePayload())
