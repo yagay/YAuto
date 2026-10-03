@@ -14,20 +14,23 @@ import com.yagay.yauto.core.registry.FeaturePack
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.registry.FieldSchema
 
-/**
- * High-value filtered triggers derived from event payloads that YAuto already receives.
- * No additional receivers or polling loops are required.
- */
+/** High-value filtered triggers derived from event payloads YAuto already receives. */
 class AndroidDerivedEventFeaturePack : FeaturePack {
     override val id: String = "android.events.derived"
 
     override fun install(registry: FeatureRegistry) {
         networkFlag(registry, "network_validated", "Validated network update", "validated", true)
         networkFlag(registry, "network_unvalidated", "Unvalidated network update", "validated", false)
+        networkFlag(registry, "network_metered", "Metered network update", "metered", true)
+        networkFlag(registry, "network_unmetered", "Unmetered network update", "metered", false)
+        networkFlag(registry, "network_roaming", "Roaming network update", "roaming", true)
+        networkFlag(registry, "network_restricted", "Restricted network update", "restricted", true)
+        networkFlag(registry, "network_suspended", "Suspended network update", "suspended", true)
         networkFlag(registry, "network_wifi", "Wi-Fi default network update", "wifi", true)
         networkFlag(registry, "network_cellular", "Cellular default network update", "cellular", true)
         networkFlag(registry, "network_ethernet", "Ethernet default network update", "ethernet", true)
         networkFlag(registry, "network_vpn", "VPN default network update", "vpn", true)
+        networkFlag(registry, "network_bluetooth", "Bluetooth default network update", "bluetooth", true)
         networkFlag(registry, "network_internet_capable", "Internet-capable network update", "internet", true)
         dockState(registry)
         bluetoothAdapterState(registry)
@@ -70,14 +73,18 @@ class AndroidDerivedEventFeaturePack : FeaturePack {
                 id = FeatureId(featureId),
                 kind = FeatureKind.EVENT,
                 title = "Filtered network capability update",
-                description = "Trigger on a default-network update after filtering transport, internet and validation state",
+                description = "Trigger on a default-network update after filtering transport and network capabilities",
                 category = FeatureCategory.NETWORK,
                 fields = listOf(
-                    FieldSchema.Choice("transport", "Transport", options = listOf("any", "wifi", "cellular", "ethernet", "vpn")),
+                    FieldSchema.Choice("transport", "Transport", options = listOf("any", "wifi", "cellular", "ethernet", "vpn", "bluetooth")),
                     FieldSchema.Choice("internet", "Internet capability", options = listOf("any", "yes", "no")),
                     FieldSchema.Choice("validated", "Validated internet", options = listOf("any", "yes", "no")),
+                    FieldSchema.Choice("metered", "Metered network", options = listOf("any", "yes", "no")),
+                    FieldSchema.Choice("roaming", "Roaming network", options = listOf("any", "yes", "no")),
+                    FieldSchema.Choice("restricted", "Restricted network", options = listOf("any", "yes", "no")),
+                    FieldSchema.Choice("suspended", "Suspended network", options = listOf("any", "yes", "no")),
                 ),
-                keywords = setOf("network", "transport", "validated", "internet", "vpn"),
+                keywords = setOf("network", "transport", "validated", "metered", "roaming", "internet", "vpn"),
                 ownerPackId = id,
             )
         ) { feature, context ->
@@ -87,7 +94,11 @@ class AndroidDerivedEventFeaturePack : FeaturePack {
             val transportMatches = transport == "any" || payload.boolean(transport)
             transportMatches &&
                 triStateMatches(feature.config.string("internet", "any"), payload.boolean("internet")) &&
-                triStateMatches(feature.config.string("validated", "any"), payload.boolean("validated"))
+                triStateMatches(feature.config.string("validated", "any"), payload.boolean("validated")) &&
+                triStateMatches(feature.config.string("metered", "any"), payload.boolean("metered")) &&
+                triStateMatches(feature.config.string("roaming", "any"), payload.boolean("roaming")) &&
+                triStateMatches(feature.config.string("restricted", "any"), payload.boolean("restricted")) &&
+                triStateMatches(feature.config.string("suspended", "any"), payload.boolean("suspended"))
         }
     }
 
