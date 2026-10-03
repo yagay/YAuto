@@ -117,7 +117,7 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
             setOf("audio focus", "media", "duck", "exclusive"),
         ) { feature, _ ->
             val granted = audioFocus.request(feature.config.string("gain", "gain"))
-            ActionExecutionResult(granted, ConfigValue.BooleanValue(granted), if (granted) null else userText("feature.operation_failed", "audio_focus"))
+            ActionExecutionResult(granted, ConfigValue.BooleanValue(granted), if (granted) null else userText("feature.operation_failed", feature.typeId))
         }
     }
 
@@ -130,9 +130,9 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
             FeatureCategory.AUDIO,
             emptyList(),
             setOf("audio focus", "release", "media"),
-        ) { _, _ ->
+        ) { feature, _ ->
             val released = audioFocus.abandon()
-            ActionExecutionResult(released, ConfigValue.BooleanValue(released), if (released) null else userText("feature.operation_failed", "audio_focus"))
+            ActionExecutionResult(released, ConfigValue.BooleanValue(released), if (released) null else userText("feature.operation_failed", feature.typeId))
         }
     }
 
