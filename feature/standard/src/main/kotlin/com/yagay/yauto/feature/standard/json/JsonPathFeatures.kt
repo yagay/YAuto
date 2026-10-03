@@ -8,6 +8,7 @@ import com.yagay.yauto.core.registry.FeatureDefinition
 import com.yagay.yauto.core.registry.FieldBehavior
 import com.yagay.yauto.core.registry.FieldSchema
 import com.yagay.yauto.core.registry.actionFeature
+import com.yagay.yauto.core.registry.resolveVariables
 
 internal object JsonPathFeatures {
     val definitions: List<FeatureDefinition> = listOf(
