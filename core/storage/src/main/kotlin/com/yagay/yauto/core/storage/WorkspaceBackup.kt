@@ -59,6 +59,7 @@ fun WorkspaceData.featureIds(): Set<String> = buildSet {
             is ActionNode.Action -> add(node.feature.typeId)
             is ActionNode.If -> predicate(node.condition)
             is ActionNode.While -> predicate(node.condition)
+            is ActionNode.WaitUntil -> predicate(node.condition)
             else -> Unit
         }
     }
