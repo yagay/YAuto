@@ -57,7 +57,7 @@ class AppGraph(context: Context) {
     val runtime = AutomationRuntime(workspace, features, capabilities, tracer)
 
     init {
-        installCatalog("features.standard.catalog") { StandardFeaturePacks.all() }
+        installCatalog("features.standard.catalog") { StandardFeaturePacks.all(runtime) }
         installCatalog("features.android.catalog") {
             AndroidFeaturePacks.all(appContext, quickSettingsTiles, overlaySurfaces)
         }
