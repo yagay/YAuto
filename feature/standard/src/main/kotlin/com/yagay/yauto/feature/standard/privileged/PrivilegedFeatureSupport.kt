@@ -15,6 +15,7 @@ import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.core.registry.FieldBehavior
 import com.yagay.yauto.core.registry.FieldSchema
 import com.yagay.yauto.core.registry.actionFeature
+import com.yagay.yauto.core.registry.executeCapability
 import com.yagay.yauto.core.registry.preferredBackendId
 
 internal fun privilegedDescriptor(
@@ -63,8 +64,8 @@ internal suspend fun executePrivilegedShell(
     val result = context.executeCapability(
         featureId = feature.typeId,
         request = CapabilityRequest(
-            capabilityId = CapabilityIds.PRIVILEGED_SHELL,
-            operation = feature.typeId,
+            capability = CapabilityIds.PRIVILEGED_SHELL,
+            operationId = feature.typeId,
             payload = payload,
             preferredBackendId = feature.preferredBackendId(),
         ),
