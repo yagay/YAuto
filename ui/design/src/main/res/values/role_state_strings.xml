@@ -54,12 +54,4 @@
     <string name="feature_android_condition_role_available_field_role_option_assistant">Assistant</string>
     <string name="feature_android_condition_role_available_field_value">Role available</string>
 
-    <string name="feature_android_state_default_ime_title">Default input method</string>
-    <string name="feature_android_state_default_ime_description">Check whether an application is the current default keyboard / input method</string>
-    <string name="feature_android_state_default_ime_field_package">App / package</string>
-    <string name="feature_android_state_default_ime_field_value">Is default input method</string>
-    <string name="feature_android_condition_default_ime_title">Default input method</string>
-    <string name="feature_android_condition_default_ime_description">Check whether an application is the current default keyboard / input method</string>
-    <string name="feature_android_condition_default_ime_field_package">App / package</string>
-    <string name="feature_android_condition_default_ime_field_value">Is default input method</string>
 </resources>
