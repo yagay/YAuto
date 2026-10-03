@@ -51,11 +51,44 @@ class AndroidNotificationControlFeaturePack : FeaturePack {
             }
             false
         }
+        registerReply(registry)
         registerDismissAll(registry)
         registerQuery(registry)
         registerCount(registry)
         registerActiveState(registry)
         registerCountState(registry)
+    }
+
+    private fun registerReply(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.notification.reply"), FeatureKind.ACTION,
+                "Reply to notification", "Send text through the first matching notification RemoteInput reply action",
+                FeatureCategory.NOTIFICATION,
+                fields = filterFields() + listOf(
+                    FieldSchema.Text("replyText", "Reply text", true, multiline = true),
+                    FieldSchema.Number("actionIndex", "Reply action index (optional)", min = 0.0),
+                ),
+                accessRequirements = setOf(AccessRequirement.NOTIFICATION_LISTENER),
+                fieldBehaviors = mapOf("replyText" to FieldBehavior(supportsVariables = true)),
+                keywords = setOf("notification", "reply", "remote input", "message"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val controller = NotificationControlBridge.current()
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.notification_listener_disconnected"))
+            val item = matching(controller, NotificationMatch.from(feature))
+                .firstOrNull { it.replyActionIndexes.isNotEmpty() }
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.notification_operation_failed"))
+            val configured = feature.config["actionIndex"].numberOrNull()?.toInt()
+            val actionIndex = configured?.takeIf { it in item.replyActionIndexes }
+            if (configured != null && actionIndex == null) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.notification_operation_failed"))
+            }
+            val text = feature.config.string("replyText").resolveVariables(ctx.variables)
+            val ok = controller.reply(item.key, actionIndex, text)
+            ActionExecutionResult(ok, message = if (ok) null else userText("feature.notification_operation_failed"))
+        }
     }
 
     private fun registerDismissAll(registry: FeatureRegistry) {
@@ -285,5 +318,6 @@ private fun notificationObject(item: ActiveNotificationSnapshot): ConfigValue.Ob
         "category" to ConfigValue.StringValue(item.category),
         "groupKey" to ConfigValue.StringValue(item.groupKey),
         "actionTitles" to ConfigValue.ListValue(item.actionTitles.map { ConfigValue.StringValue(it) }),
+        "replyActionIndexes" to ConfigValue.ListValue(item.replyActionIndexes.map { ConfigValue.NumberValue(it.toDouble()) }),
     )
 )
