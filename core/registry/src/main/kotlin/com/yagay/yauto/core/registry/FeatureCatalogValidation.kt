@@ -1,5 +1,6 @@
 package com.yagay.yauto.core.registry
 
+import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.Stability
 
 enum class FeatureCatalogIssueSeverity { ERROR, WARNING }
@@ -49,6 +50,7 @@ fun validateFeatureDescriptors(descriptors: Iterable<FeatureDescriptor>): List<F
             issues += descriptor.error("invalid_min_sdk", "minSdk must be greater than zero")
         }
 
+        val fieldKeys = descriptor.fields.map { it.key }.toSet()
         descriptor.fields
             .groupBy { it.key }
             .filterValues { it.size > 1 }
@@ -58,6 +60,13 @@ fun validateFeatureDescriptors(descriptors: Iterable<FeatureDescriptor>): List<F
                     "Field key '$key' is declared ${matches.size} times",
                 )
             }
+
+        descriptor.fieldBehaviors.keys.filterNot(fieldKeys::contains).forEach { key ->
+            issues += descriptor.error(
+                "orphan_field_behavior",
+                "Field behavior '$key' does not match a declared field",
+            )
+        }
 
         descriptor.fields.forEach { field ->
             if (field.key.isBlank() || field.key != field.key.trim()) {
@@ -88,6 +97,22 @@ fun validateFeatureDescriptors(descriptors: Iterable<FeatureDescriptor>): List<F
                 }
                 else -> Unit
             }
+
+            val behavior = descriptor.fieldBehaviors[field.key] ?: return@forEach
+            validateDefault(descriptor, field, behavior.defaultValue)?.let(issues::add)
+            listOfNotNull(behavior.visibleWhen, behavior.enabledWhen).forEach { rule ->
+                if (rule.fieldKey !in fieldKeys) {
+                    issues += descriptor.error(
+                        "unknown_field_rule_dependency",
+                        "Field '${field.key}' depends on unknown field '${rule.fieldKey}'",
+                    )
+                } else if (rule.fieldKey == field.key) {
+                    issues += descriptor.error(
+                        "self_field_rule_dependency",
+                        "Field '${field.key}' cannot depend on itself",
+                    )
+                }
+            }
         }
     }
 
@@ -95,6 +120,27 @@ fun validateFeatureDescriptors(descriptors: Iterable<FeatureDescriptor>): List<F
         compareBy<FeatureCatalogIssue> { it.severity.ordinal }
             .thenBy { it.featureId }
             .thenBy { it.code }
+    )
+}
+
+private fun validateDefault(
+    descriptor: FeatureDescriptor,
+    field: FieldSchema,
+    value: ConfigValue?,
+): FeatureCatalogIssue? {
+    if (value == null) return null
+    val valid = when (field) {
+        is FieldSchema.Text, is FieldSchema.AppPicker, is FieldSchema.Variable -> value is ConfigValue.StringValue
+        is FieldSchema.Number -> value is ConfigValue.NumberValue && value.value.isFinite() &&
+            (field.min?.let { value.value >= it } ?: true) &&
+            (field.max?.let { value.value <= it } ?: true)
+        is FieldSchema.Duration -> value is ConfigValue.NumberValue && value.value.isFinite() && value.value >= 0
+        is FieldSchema.Toggle -> value is ConfigValue.BooleanValue
+        is FieldSchema.Choice -> value is ConfigValue.StringValue && value.value in field.options
+    }
+    return if (valid) null else descriptor.error(
+        "invalid_field_default",
+        "Default value for '${field.key}' does not match its field schema",
     )
 }
 
