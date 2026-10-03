@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -72,7 +73,7 @@ class ConfiguredIntervalEventSource(
     private suspend fun runRule(rule: IntervalRule) {
         if (!rule.fireImmediately) delay(rule.intervalMs)
         var tick = 0L
-        while (isActive && started.get()) {
+        while (currentCoroutineContext().isActive && started.get()) {
             tick += 1
             val now = System.currentTimeMillis()
             emitter?.emit(
