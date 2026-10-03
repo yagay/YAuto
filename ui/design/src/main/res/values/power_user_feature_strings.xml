@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_shell_execute_title">Run privileged shell command</string>
+    <string name="feature_android_shell_execute_description">Run a shell command through the selected privileged backend and expose its structured result</string>
+    <string name="feature_android_shell_execute_field_resultvariable">Store result object in variable</string>
+    <string name="feature_android_vibration_vibrate_title">Vibrate</string>
+    <string name="feature_android_vibration_vibrate_description">Run a one-shot vibration with bounded duration and amplitude</string>
+    <string name="feature_android_vibration_vibrate_field_durationms">Duration milliseconds</string>
+    <string name="feature_android_vibration_pattern_title">Vibrate pattern</string>
+    <string name="feature_android_vibration_pattern_description">Run a finite vibration waveform from on/off timing values</string>
+    <string name="feature_android_vibration_pattern_field_timings">Timings milliseconds</string>
+    <string name="feature_android_vibration_cancel_title">Cancel vibration</string>
+    <string name="feature_android_vibration_cancel_description">Cancel the default device vibrator</string>
+    <string name="feature_android_state_audio_music_active_title">Media audio active</string>
+    <string name="feature_android_state_audio_music_active_description">Check whether Android reports active music or media playback</string>
+    <string name="feature_android_condition_audio_music_active_title">Media audio active</string>
+    <string name="feature_android_condition_audio_music_active_description">Check whether Android reports active music or media playback</string>
+    <string name="feature_android_state_audio_mode_title">Audio mode</string>
+    <string name="feature_android_state_audio_mode_description">Match the current Android communication audio mode</string>
+    <string name="feature_android_condition_audio_mode_title">Audio mode</string>
+    <string name="feature_android_condition_audio_mode_description">Match the current Android communication audio mode</string>
+    <string name="feature_android_state_keyguard_locked_title">Lock screen active</string>
+    <string name="feature_android_state_keyguard_locked_description">Check whether Android reports the keyguard as locked</string>
+    <string name="feature_android_condition_keyguard_locked_title">Lock screen active</string>
+    <string name="feature_android_condition_keyguard_locked_description">Check whether Android reports the keyguard as locked</string>
+    <string name="feature_android_state_data_saver_title">Data saver status</string>
+    <string name="feature_android_state_data_saver_description">Match Android background-data restriction status</string>
+    <string name="feature_android_condition_data_saver_title">Data saver status</string>
+    <string name="feature_android_condition_data_saver_description">Match Android background-data restriction status</string>
+    <string name="feature_android_state_private_dns_title">Private DNS status</string>
+    <string name="feature_android_state_private_dns_description">Match Android private DNS mode and optional provider hostname</string>
+    <string name="feature_android_condition_private_dns_title">Private DNS status</string>
+    <string name="feature_android_condition_private_dns_description">Match Android private DNS mode and optional provider hostname</string>
+    <string name="feature_android_state_usb_device_connected_title">USB device connected</string>
+    <string name="feature_android_state_usb_device_connected_description">Check whether a connected USB device matches optional identity filters</string>
+    <string name="feature_android_condition_usb_device_connected_title">USB device connected</string>
+    <string name="feature_android_condition_usb_device_connected_description">Check whether a connected USB device matches optional identity filters</string>
+    <string name="feature_android_event_usb_device_changed_title">USB device changed</string>
+    <string name="feature_android_event_usb_device_changed_description">Run when a USB device is attached or detached and optionally match device identity</string>
+    <string name="feature_android_event_usb_device_changed_field_state_option_attached">Attached</string>
+    <string name="feature_android_event_usb_device_changed_field_state_option_detached">Detached</string>
+</resources>
