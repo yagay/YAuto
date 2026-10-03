@@ -11,12 +11,6 @@
     <string name="feature_android_condition_mobile_data_enabled_description">Check whether mobile data is enabled for the default telephony subscription</string>
     <string name="feature_android_condition_mobile_data_enabled_field_value">Enabled / true</string>
 
-    <string name="feature_android_state_network_roaming_title">Network roaming</string>
-    <string name="feature_android_state_network_roaming_description">Check whether the default mobile subscription is currently roaming</string>
-    <string name="feature_android_state_network_roaming_field_value">Enabled / true</string>
-    <string name="feature_android_condition_network_roaming_title">Network roaming</string>
-    <string name="feature_android_condition_network_roaming_description">Check whether the default mobile subscription is currently roaming</string>
-    <string name="feature_android_condition_network_roaming_field_value">Enabled / true</string>
 
     <string name="feature_android_state_cellular_service_available_title">Cellular service available</string>
     <string name="feature_android_state_cellular_service_available_description">Check whether cellular service is in service for any or a selected active SIM</string>
