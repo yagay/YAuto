@@ -1,6 +1,7 @@
 package com.yagay.yauto.core.registry
 
 import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.FeatureRef
 
 /**
  * Optional behaviour attached to a descriptor field.
@@ -36,6 +37,16 @@ sealed interface FieldRule {
 }
 
 fun FeatureDescriptor.fieldBehavior(key: String): FieldBehavior = fieldBehaviors[key] ?: FieldBehavior()
+
+/** Applies descriptor defaults without overwriting values explicitly stored by the user. */
+fun FeatureDescriptor.applyDefaults(feature: FeatureRef): FeatureRef {
+    if (fieldBehaviors.none { (_, behavior) -> behavior.defaultValue != null }) return feature
+    val config = buildMap {
+        fields.forEach { field -> fieldBehaviors[field.key]?.defaultValue?.let { put(field.key, it) } }
+        putAll(feature.config)
+    }
+    return if (config == feature.config) feature else feature.copy(config = config)
+}
 
 fun FieldRule.matches(values: Map<String, ConfigValue>): Boolean {
     val current = values[fieldKey]
