@@ -22,6 +22,7 @@ object AndroidFeaturePacks {
         AndroidPrivilegedUtilityFeaturePack(context),
         AndroidPrivilegedStateFeaturePack(),
         AndroidPowerUserFeaturePack(context),
+        AndroidNativeEnvironmentFeaturePack(context),
         AndroidUsbFeaturePack(context),
         AndroidMediaDeviceFeaturePack(context),
         AndroidAudioFeaturePack(context),
