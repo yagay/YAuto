@@ -54,6 +54,10 @@ object MacroDroidMappings {
                 "ScreenOnConstraint" -> "android.condition.screen"
                 "VolumeLevelConstraint" -> "android.condition.media_volume"
                 "BrightnessConstraint" -> "android.condition.brightness"
+                "DataOnOffConstraint" -> "android.condition.mobile_data_enabled"
+                "IsRoamingConstraint" -> "android.condition.network_roaming"
+                "RoamingOnOffConstraint" -> "android.condition.data_roaming_setting"
+                "SignalOnOffConstraint" -> "android.condition.cellular_service_available"
                 else -> null
             }
             else -> null
@@ -107,6 +111,10 @@ object MacroDroidMappings {
                 }
                 "VolumeLevelConstraint" -> volumeConstraint(obj, importerId, sourceType, raw)
                 "BrightnessConstraint" -> brightnessConstraint(obj, importerId, sourceType, raw)
+                "DataOnOffConstraint" -> booleanConstraint(obj, "m_dataOn", "android.condition.mobile_data_enabled", importerId, sourceType, raw)
+                "IsRoamingConstraint" -> booleanConstraint(obj, "m_isRoaming", "android.condition.network_roaming", importerId, sourceType, raw)
+                "RoamingOnOffConstraint" -> booleanConstraint(obj, "m_roamingOn", "android.condition.data_roaming_setting", importerId, sourceType, raw)
+                "SignalOnOffConstraint" -> signalConstraint(obj, importerId, sourceType, raw)
                 else -> null
             }
             else -> null
@@ -270,6 +278,49 @@ object MacroDroidMappings {
                 if (textContains.isNotBlank()) put("textContains", ConfigValue.StringValue(textContains))
                 if (obj.bool("m_ignoreOngoing") == true) put("ongoing", ConfigValue.StringValue("exclude"))
             },
+        )
+    }
+
+    private fun booleanConstraint(
+        obj: JsonObject,
+        key: String,
+        target: String,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val value = obj.bool(key) ?: return null
+        return sourceFeature(
+            target,
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("value" to ConfigValue.BooleanValue(value)),
+        )
+    }
+
+    private fun signalConstraint(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val available = when (obj.number("m_option")?.toInt()) {
+            0 -> true
+            1 -> false
+            else -> return null
+        }
+        val subscriptionId = obj.number("subscriptionId")?.toInt() ?: -1
+        if (subscriptionId < -1) return null
+        return sourceFeature(
+            "android.condition.cellular_service_available",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "subscriptionId" to ConfigValue.NumberValue(subscriptionId.toDouble()),
+                "value" to ConfigValue.BooleanValue(available),
+            ),
         )
     }
 
