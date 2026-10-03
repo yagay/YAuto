@@ -22,6 +22,7 @@ object TaskerFeatureSuggestions {
         "123" -> "system.shell.execute"
         "125" -> "android.email.compose"
         "176", "249", "374" -> "android.screenshot.capture"
+        "192" -> "android.audio.play"
         "245" -> "android.input.keyevent"
         "247" -> "android.input.keyevent"
         "248" -> "system.screen.sleep"
@@ -40,6 +41,8 @@ object TaskerFeatureSuggestions {
         "332", "905" -> "android.location.enabled.set"
         "333" -> "android.airplane_mode.set"
         "335", "344", "815" -> "android.app.installed.list"
+        "337" -> "android.app.notification_settings.open"
+        "341" -> "android.network.connectivity.check"
         "361", "989" -> "android.display.dark_mode.set"
         "376" -> "android.file.share"
         "400" -> "file.move"
@@ -56,7 +59,9 @@ object TaskerFeatureSuggestions {
         "443", "451", "453" -> "android.media.transport"
         "445" -> "android.audio.play"
         "449" -> "android.audio.stop"
+        "457" -> "android.audio.default_sound.set"
         "511" -> "android.torch.set"
+        "512" -> "android.status_bar.control"
         "523" -> "android.notification.show"
         "547" -> "variable.set"
         "548" -> "android.toast.show"
@@ -70,6 +75,8 @@ object TaskerFeatureSuggestions {
         "820" -> "android.power.stay_awake.set"
         "822" -> "android.display.auto_rotate.set"
         "877" -> "android.intent.send"
+        "910" -> "android.call_log.open"
+        "988" -> "android.car_mode.set"
         else -> null
     }
 

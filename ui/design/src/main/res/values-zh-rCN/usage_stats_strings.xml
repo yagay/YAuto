@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permission_usage_stats_title">使用情况访问</string>
+    <string name="permission_usage_stats_detail">当前台应用状态或前台切换触发器无法使用无障碍数据源时，可通过 Android 使用情况事件读取前台应用。</string>
+    <string name="permission_usage_stats_action">打开使用情况访问</string>
+    <string name="access_usage_stats">使用情况访问</string>
+    <string name="implementation_usage_stats_title">使用情况访问</string>
+    <string name="implementation_usage_stats_summary">无需 UI 自动化，通过 Android 使用情况事件读取前台应用身份。</string>
+</resources>

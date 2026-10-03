@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_role_holders_get_title">获取默认应用角色</string>
+    <string name="feature_android_role_holders_get_description">保存持有指定 Android 默认应用角色的软件包列表</string>
+    <string name="feature_android_role_holders_get_field_role">默认应用角色</string>
+    <string name="feature_android_role_holders_get_field_role_option_browser">浏览器</string>
+    <string name="feature_android_role_holders_get_field_role_option_dialer">拨号应用</string>
+    <string name="feature_android_role_holders_get_field_role_option_sms">短信应用</string>
+    <string name="feature_android_role_holders_get_field_role_option_home">桌面应用</string>
+    <string name="feature_android_role_holders_get_field_role_option_assistant">数字助理</string>
+    <string name="feature_android_role_holders_get_field_resultvariable">将软件包列表保存到变量</string>
+
+    <string name="feature_android_ime_default_get_title">获取默认输入法</string>
+    <string name="feature_android_ime_default_get_description">保存当前默认输入法的软件包和组件</string>
+    <string name="feature_android_ime_default_get_field_resultvariable">将输入法对象保存到变量</string>
+
+    <string name="feature_android_state_role_holder_title">默认应用角色持有者</string>
+    <string name="feature_android_state_role_holder_description">检查应用是否持有指定的 Android 默认应用角色</string>
+    <string name="feature_android_state_role_holder_field_role">默认应用角色</string>
+    <string name="feature_android_state_role_holder_field_role_option_browser">浏览器</string>
+    <string name="feature_android_state_role_holder_field_role_option_dialer">拨号应用</string>
+    <string name="feature_android_state_role_holder_field_role_option_sms">短信应用</string>
+    <string name="feature_android_state_role_holder_field_role_option_home">桌面应用</string>
+    <string name="feature_android_state_role_holder_field_role_option_assistant">数字助理</string>
+    <string name="feature_android_state_role_holder_field_package">应用 / 软件包</string>
+    <string name="feature_android_state_role_holder_field_value">是角色持有者</string>
+    <string name="feature_android_condition_role_holder_title">默认应用角色持有者</string>
+    <string name="feature_android_condition_role_holder_description">检查应用是否持有指定的 Android 默认应用角色</string>
+    <string name="feature_android_condition_role_holder_field_role">默认应用角色</string>
+    <string name="feature_android_condition_role_holder_field_role_option_browser">浏览器</string>
+    <string name="feature_android_condition_role_holder_field_role_option_dialer">拨号应用</string>
+    <string name="feature_android_condition_role_holder_field_role_option_sms">短信应用</string>
+    <string name="feature_android_condition_role_holder_field_role_option_home">桌面应用</string>
+    <string name="feature_android_condition_role_holder_field_role_option_assistant">数字助理</string>
+    <string name="feature_android_condition_role_holder_field_package">应用 / 软件包</string>
+    <string name="feature_android_condition_role_holder_field_value">是角色持有者</string>
+
+    <string name="feature_android_state_role_available_title">默认应用角色可用</string>
+    <string name="feature_android_state_role_available_description">检查当前设备是否提供指定的 Android 默认应用角色</string>
+    <string name="feature_android_state_role_available_field_role">默认应用角色</string>
+    <string name="feature_android_state_role_available_field_role_option_browser">浏览器</string>
+    <string name="feature_android_state_role_available_field_role_option_dialer">拨号应用</string>
+    <string name="feature_android_state_role_available_field_role_option_sms">短信应用</string>
+    <string name="feature_android_state_role_available_field_role_option_home">桌面应用</string>
+    <string name="feature_android_state_role_available_field_role_option_assistant">数字助理</string>
+    <string name="feature_android_state_role_available_field_value">角色可用</string>
+    <string name="feature_android_condition_role_available_title">默认应用角色可用</string>
+    <string name="feature_android_condition_role_available_description">检查当前设备是否提供指定的 Android 默认应用角色</string>
+    <string name="feature_android_condition_role_available_field_role">默认应用角色</string>
+    <string name="feature_android_condition_role_available_field_role_option_browser">浏览器</string>
+    <string name="feature_android_condition_role_available_field_role_option_dialer">拨号应用</string>
+    <string name="feature_android_condition_role_available_field_role_option_sms">短信应用</string>
+    <string name="feature_android_condition_role_available_field_role_option_home">桌面应用</string>
+    <string name="feature_android_condition_role_available_field_role_option_assistant">数字助理</string>
+    <string name="feature_android_condition_role_available_field_value">角色可用</string>
+
+</resources>

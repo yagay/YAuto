@@ -8,6 +8,7 @@ data class ActiveNotificationSnapshot(
     val actionCount: Int,
     val ongoing: Boolean,
     val actionTitles: List<String> = emptyList(),
+    val replyActionIndexes: List<Int> = emptyList(),
     val postTimeEpochMs: Long = 0L,
     val notificationId: Int = 0,
     val tag: String = "",
@@ -21,6 +22,7 @@ interface NotificationController {
     fun dismiss(key: String): Boolean
     fun open(key: String): Boolean
     fun invokeAction(key: String, index: Int): Boolean
+    fun reply(key: String, actionIndex: Int?, text: String): Boolean
 }
 
 object NotificationControlBridge {

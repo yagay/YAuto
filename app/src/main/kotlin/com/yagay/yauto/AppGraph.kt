@@ -15,6 +15,7 @@ import com.yagay.yauto.platform.accessibility.AccessibilityBackend
 import com.yagay.yauto.platform.accessibility.AccessibilityDiagnosticCollector
 import com.yagay.yauto.platform.accessibility.AccessibilityFeaturePack
 import com.yagay.yauto.platform.accessibility.AccessibilityKeyFeaturePack
+import com.yagay.yauto.platform.accessibility.AccessibilityWindowSnapshot
 import com.yagay.yauto.platform.android.*
 import com.yagay.yauto.platform.root.*
 import com.yagay.yauto.platform.shizuku.ShizukuBackend
@@ -39,6 +40,7 @@ class AppGraph(context: Context) {
     val shizuku by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { ShizukuBackend(appContext) }
     val xposed by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { XposedBackend(appContext) }
     val accessibility by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AccessibilityBackend() }
+    private val usageForeground by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { SystemUsageStatsForegroundReader(appContext) }
     private val workspaceStorage = JsonWorkspaceRepository(appContext)
     val workspace = ReconcilingWorkspaceRepository(workspaceStorage, features)
     val importReports = JsonImportReportStore(appContext)
@@ -61,7 +63,17 @@ class AppGraph(context: Context) {
         installCatalog("features.android.catalog") {
             AndroidFeaturePacks.all(appContext, quickSettingsTiles, overlaySurfaces)
         }
-        installPack("feature:accessibility") { AccessibilityFeaturePack() }
+        installPack("feature:accessibility") {
+            AccessibilityFeaturePack {
+                usageForeground.currentForegroundApp()?.let { current ->
+                    AccessibilityWindowSnapshot(
+                        packageName = current.packageName,
+                        className = current.className,
+                        timestampEpochMs = current.timestampEpochMs,
+                    )
+                }
+            }
+        }
         installPack("feature:accessibility.key") { AccessibilityKeyFeaturePack() }
 
         safelyUnit("backend:root") { capabilities.register(RootBackend(rootShell)) }

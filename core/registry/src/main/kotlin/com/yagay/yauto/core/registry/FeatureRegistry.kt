@@ -41,6 +41,7 @@ enum class AccessRequirement(val id: String) {
     LSPOSED("lsposed"),
     ZYGISK("zygisk"),
     ACCESSIBILITY("accessibility"),
+    USAGE_STATS("usage_stats"),
     NOTIFICATION_LISTENER("notification_listener"),
     POST_NOTIFICATIONS("post_notifications"),
     OVERLAY("overlay"),

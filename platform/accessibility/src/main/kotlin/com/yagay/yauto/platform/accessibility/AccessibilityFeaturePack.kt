@@ -6,7 +6,9 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 
-class AccessibilityFeaturePack : FeaturePack {
+class AccessibilityFeaturePack(
+    private val fallbackForeground: (() -> AccessibilityWindowSnapshot?)? = null,
+) : FeaturePack {
     override val id: String = "accessibility.actions"
 
     override fun install(registry: FeatureRegistry) {
@@ -46,29 +48,58 @@ class AccessibilityFeaturePack : FeaturePack {
     private fun foregroundEvent(registry: FeatureRegistry, typeId: String, title: String) {
         registry.registerEvent(
             FeatureDescriptor(
-                FeatureId(typeId), FeatureKind.EVENT, title, "Match application foreground transitions from Accessibility windows", FeatureCategory.APP,
-                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                FeatureId(typeId), FeatureKind.EVENT, title,
+                "Match application foreground transitions from Accessibility with Usage Access fallback",
+                FeatureCategory.APP,
                 fields = listOf(FieldSchema.AppPicker("package", "App / package", true), FieldSchema.Text("classContains", "Activity / class contains")),
-                keywords = setOf("foreground", "background", "app", "activity"), ownerPackId = id,
+                keywords = setOf("foreground", "background", "app", "activity", "usage stats"), ownerPackId = id,
+                implementationOptions = foregroundImplementationOptions(),
             )
         ) { feature, ctx ->
-            ctx.event.typeId == typeId && matchForeground(feature, ctx.event.payload.string("package"), ctx.event.payload.string("class"))
+            ctx.event.typeId == typeId &&
+                foregroundSourceMatches(feature, ctx.event.source) &&
+                matchForeground(feature, ctx.event.payload.string("package"), ctx.event.payload.string("class"))
         }
     }
 
     private fun foregroundState(registry: FeatureRegistry, kind: FeatureKind, typeId: String) {
         val descriptor = FeatureDescriptor(
-            FeatureId(typeId), kind, "App in foreground", "Check the current foreground application reported by Accessibility", FeatureCategory.APP,
-            capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+            FeatureId(typeId), kind, "App in foreground",
+            "Check the current foreground application using Accessibility with Usage Access fallback",
+            FeatureCategory.APP,
             fields = listOf(FieldSchema.AppPicker("package", "App / package", true), FieldSchema.Text("classContains", "Activity / class contains")),
-            keywords = setOf("foreground", "current app", "activity"), ownerPackId = id,
+            keywords = setOf("foreground", "current app", "activity", "usage stats"), ownerPackId = id,
+            implementationOptions = foregroundImplementationOptions(),
         )
         val evaluator = ConditionEvaluator { feature, _ ->
-            val current = AccessibilityRuntimeBridge.currentWindow() ?: return@ConditionEvaluator false
+            val current = currentForeground(feature) ?: return@ConditionEvaluator false
             matchForeground(feature, current.packageName, current.className.orEmpty())
         }
         if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator) else registry.registerCondition(descriptor, evaluator)
     }
+
+    private fun foregroundImplementationOptions(): List<FeatureImplementationOption> = listOf(
+        FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+        FeatureImplementationOption("usage_stats", setOf(AccessRequirement.USAGE_STATS)),
+    )
+
+    private fun currentForeground(feature: com.yagay.yauto.core.model.FeatureRef): AccessibilityWindowSnapshot? =
+        when (feature.preferredBackendId()) {
+            "accessibility" -> AccessibilityRuntimeBridge.currentWindow()
+            "usage_stats" -> fallbackForeground?.invoke()
+            else -> AccessibilityRuntimeBridge.currentWindow() ?: fallbackForeground?.invoke()
+        }
+
+    private fun foregroundSourceMatches(feature: com.yagay.yauto.core.model.FeatureRef, source: String): Boolean =
+        when (feature.preferredBackendId()) {
+            // Historical/runtime test events did not carry a source. Treat blank as the original
+            // Accessibility source for backwards compatibility, but never as explicit Usage Stats.
+            "accessibility" -> source.isBlank() || source == ACCESSIBILITY_WINDOW_SOURCE
+            "usage_stats" -> source == USAGE_STATS_SOURCE
+            // Auto/default mode also covers historical RuntimeEvent sources such as "runtime".
+            // Only an explicitly selected backend should reject events from another source.
+            else -> true
+        }
 
     private fun matchForeground(feature: com.yagay.yauto.core.model.FeatureRef, pkg: String, className: String): Boolean {
         val expectedPackage = feature.config.string("package").trim()
@@ -93,5 +124,10 @@ class AccessibilityFeaturePack : FeaturePack {
             val result = ctx.capabilities.execute(CapabilityRequest(CapabilityIds.ACCESSIBILITY, operationId, feature.config))
             result.success && (result.value as? ConfigValue.BooleanValue)?.value == true
         }
+    }
+
+    private companion object {
+        const val ACCESSIBILITY_WINDOW_SOURCE = "accessibility.window"
+        const val USAGE_STATS_SOURCE = "android.usage.foreground"
     }
 }

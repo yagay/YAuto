@@ -25,6 +25,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.yagay.yauto.platform.accessibility.YAutoAccessibilityService
+import com.yagay.yauto.platform.android.isUsageStatsAccessGranted
 import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.R as TextR
@@ -74,6 +75,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
         context.getSystemService(NotificationManager::class.java).isNotificationPolicyAccessGranted
     }
     val writeSettings = remember(refresh) { Settings.System.canWrite(context) }
+    val usageStats = remember(refresh) { isUsageStatsAccessGranted(context) }
     val accessibility = remember(refresh) {
         val component = ComponentName(context, YAutoAccessibilityService::class.java).flattenToString()
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
@@ -81,7 +83,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
             ?.any { it.equals(component, ignoreCase = true) } == true
     }
     val grantedCount = listOf(
-        accessibility, writeSettings, notificationAccess, notifications, camera,
+        accessibility, usageStats, writeSettings, notificationAccess, notifications, camera,
         location, bluetooth, overlay, dndPolicy,
     ).count { it }
     val currentLanguageTag = remember(refresh) { AppLanguageManager.currentTag(context) }
@@ -135,7 +137,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 item {
                     MacroItemRow(
                         stringResource(TextR.string.runtime_settings_android_permissions),
-                        stringResource(TextR.string.runtime_settings_permission_count_format, grantedCount, 9),
+                        stringResource(TextR.string.runtime_settings_permission_count_format, grantedCount, 10),
                         MacroPalette.Constraint,
                         onClick = { page = RuntimeSettingsPage.PERMISSIONS },
                     )
@@ -169,6 +171,13 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.permission_accessibility_detail),
                         stringResource(TextR.string.permission_accessibility_action),
                     ) { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+                }
+                item {
+                    PermissionCard(
+                        stringResource(TextR.string.permission_usage_stats_title), usageStats,
+                        stringResource(TextR.string.permission_usage_stats_detail),
+                        stringResource(TextR.string.permission_usage_stats_action),
+                    ) { context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
                 }
                 item {
                     PermissionCard(

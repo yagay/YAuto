@@ -32,6 +32,15 @@ object MacroDroidMappings {
                 "SetBrightnessAction" -> "android.display.brightness.set"
                 "SendIntentAction" -> "android.intent.send"
                 "NotificationAction" -> "android.notification.show"
+                "CarModeAction" -> "android.car_mode.set"
+                "DayDreamAction" -> "android.display.dream.start"
+                "InvertColoursAction" -> "android.display.color_inversion.set"
+                "HeadsUpNotificationsAction" -> "android.notification.heads_up.set"
+                "AmbientDisplayAction" -> "android.display.ambient_display.set"
+                "ExpandCollapseStatusBarAction" -> "android.status_bar.control"
+                "ConnectivityCheckAction" -> "android.network.connectivity.check"
+                "OpenCallLogAction" -> "android.call_log.open"
+                "SetRingtoneAction", "SetNotificationSoundAction" -> "android.audio.default_sound.set"
                 else -> null
             }
             SourceFeatureKind.EVENT -> when (sourceType) {
@@ -45,6 +54,10 @@ object MacroDroidMappings {
                 "ScreenOnConstraint" -> "android.condition.screen"
                 "VolumeLevelConstraint" -> "android.condition.media_volume"
                 "BrightnessConstraint" -> "android.condition.brightness"
+                "DataOnOffConstraint" -> "android.condition.mobile_data_enabled"
+                "IsRoamingConstraint" -> "android.condition.network_roaming"
+                "RoamingOnOffConstraint" -> "android.condition.data_roaming_setting"
+                "SignalOnOffConstraint" -> "android.condition.cellular_service_available"
                 else -> null
             }
             else -> null
@@ -67,6 +80,16 @@ object MacroDroidMappings {
         "SetBrightnessAction" -> setBrightness(obj, importerId, sourceType, raw)
         "SendIntentAction" -> sendIntent(obj, importerId, sourceType, raw)
         "NotificationAction" -> notification(obj, importerId, sourceType, raw)
+        "CarModeAction" -> modeAction(obj, "m_option", "android.car_mode.set", importerId, sourceType, raw)
+        "DayDreamAction" -> sourceFeature("android.display.dream.start", importerId, sourceType, raw)
+        "InvertColoursAction" -> modeAction(obj, "m_option", "android.display.color_inversion.set", importerId, sourceType, raw)
+        "HeadsUpNotificationsAction" -> modeAction(obj, "option", "android.notification.heads_up.set", importerId, sourceType, raw)
+        "AmbientDisplayAction" -> ambientDisplay(obj, importerId, sourceType, raw)
+        "ExpandCollapseStatusBarAction" -> statusBar(obj, importerId, sourceType, raw)
+        "ConnectivityCheckAction" -> connectivityCheck(obj, importerId, sourceType, raw)
+        "OpenCallLogAction" -> sourceFeature("android.call_log.open", importerId, sourceType, raw)
+        "SetRingtoneAction" -> defaultSound(obj, "ringtone", importerId, sourceType, raw)
+        "SetNotificationSoundAction" -> defaultSound(obj, "notification", importerId, sourceType, raw)
         else -> null
     }
 
@@ -88,10 +111,133 @@ object MacroDroidMappings {
                 }
                 "VolumeLevelConstraint" -> volumeConstraint(obj, importerId, sourceType, raw)
                 "BrightnessConstraint" -> brightnessConstraint(obj, importerId, sourceType, raw)
+                "DataOnOffConstraint" -> booleanConstraint(obj, "m_dataOn", "android.condition.mobile_data_enabled", importerId, sourceType, raw)
+                "IsRoamingConstraint" -> booleanConstraint(obj, "m_isRoaming", "android.condition.network_roaming", importerId, sourceType, raw)
+                "RoamingOnOffConstraint" -> booleanConstraint(obj, "m_roamingOn", "android.condition.data_roaming_setting", importerId, sourceType, raw)
+                "SignalOnOffConstraint" -> signalConstraint(obj, importerId, sourceType, raw)
                 else -> null
             }
             else -> null
         }
+
+    private fun modeAction(
+        obj: JsonObject,
+        optionKey: String,
+        target: String,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = when (obj.number(optionKey)?.toInt()) {
+            0 -> "enable"
+            1 -> "disable"
+            2 -> "toggle"
+            else -> return null
+        }
+        return sourceFeature(
+            target,
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("mode" to ConfigValue.StringValue(mode)),
+        )
+    }
+
+    private fun ambientDisplay(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val setting = when (obj.number("m_settingOption")?.toInt()) {
+            0 -> "wake_for_notifications"
+            1 -> "always_on"
+            else -> return null
+        }
+        val mode = when (obj.number("m_option")?.toInt()) {
+            0 -> "enable"
+            1 -> "disable"
+            2 -> "toggle"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.display.ambient_display.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "setting" to ConfigValue.StringValue(setting),
+                "mode" to ConfigValue.StringValue(mode),
+            ),
+        )
+    }
+
+    private fun statusBar(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = when (obj.number("m_option")?.toInt()) {
+            0 -> "notifications"
+            1 -> "collapse"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.status_bar.control",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("mode" to ConfigValue.StringValue(mode)),
+        )
+    }
+
+    private fun connectivityCheck(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val site = obj.string("site")?.takeIf { it.isNotBlank() } ?: return null
+        val timeout = (obj.number("timeout") ?: 3_000.0).takeIf { it in 250.0..60_000.0 } ?: return null
+        val variableName = obj.objectValue("variable", "m_variable")
+            ?.string("m_name", "name")
+            ?: obj.string("variableName", "m_variableName")
+            ?: return null
+        if (variableName.isBlank()) return null
+        return sourceFeature(
+            "android.network.connectivity.check",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "site" to ConfigValue.StringValue(site),
+                "timeoutMs" to ConfigValue.NumberValue(timeout),
+                "resultVariable" to ConfigValue.StringValue(variableName),
+            ),
+        )
+    }
+
+    private fun defaultSound(
+        obj: JsonObject,
+        type: String,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val uri = obj.string("m_ringtoneUri")?.takeIf { it.isNotBlank() } ?: return null
+        return sourceFeature(
+            "android.audio.default_sound.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "type" to ConfigValue.StringValue(type),
+                "uri" to ConfigValue.StringValue(uri),
+                "silent" to ConfigValue.BooleanValue(false),
+            ),
+        )
+    }
 
     private fun notificationTrigger(obj: JsonObject, importerId: String, sourceType: String, raw: String): FeatureRef? {
         if (obj.bool("m_excludeApps") == true || obj.bool("m_excludes") == true) return null
@@ -132,6 +278,49 @@ object MacroDroidMappings {
                 if (textContains.isNotBlank()) put("textContains", ConfigValue.StringValue(textContains))
                 if (obj.bool("m_ignoreOngoing") == true) put("ongoing", ConfigValue.StringValue("exclude"))
             },
+        )
+    }
+
+    private fun booleanConstraint(
+        obj: JsonObject,
+        key: String,
+        target: String,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val value = obj.bool(key) ?: return null
+        return sourceFeature(
+            target,
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("value" to ConfigValue.BooleanValue(value)),
+        )
+    }
+
+    private fun signalConstraint(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val available = when (obj.number("m_option")?.toInt()) {
+            0 -> true
+            1 -> false
+            else -> return null
+        }
+        val subscriptionId = obj.number("subscriptionId")?.toInt() ?: -1
+        if (subscriptionId < -1) return null
+        return sourceFeature(
+            "android.condition.cellular_service_available",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "subscriptionId" to ConfigValue.NumberValue(subscriptionId.toDouble()),
+                "value" to ConfigValue.BooleanValue(available),
+            ),
         )
     }
 

@@ -543,6 +543,7 @@ private fun accessRequirementResource(requirement: AccessRequirement): Int = whe
     AccessRequirement.LSPOSED -> TextR.string.access_lsposed
     AccessRequirement.ZYGISK -> TextR.string.access_zygisk
     AccessRequirement.ACCESSIBILITY -> TextR.string.access_accessibility
+    AccessRequirement.USAGE_STATS -> TextR.string.access_usage_stats
     AccessRequirement.NOTIFICATION_LISTENER -> TextR.string.access_notification_listener
     AccessRequirement.POST_NOTIFICATIONS -> TextR.string.access_post_notifications
     AccessRequirement.OVERLAY -> TextR.string.access_overlay
@@ -562,6 +563,7 @@ private fun implementationTitle(backendId: String): String = stringResource(
         "shizuku" -> TextR.string.implementation_shizuku_title
         "lsposed" -> TextR.string.implementation_lsposed_title
         "accessibility" -> TextR.string.implementation_accessibility_title
+        "usage_stats" -> TextR.string.implementation_usage_stats_title
         else -> TextR.string.implementation_method
     }
 )
@@ -573,6 +575,7 @@ private fun implementationSummary(backendId: String): String = when (backendId) 
     "shizuku" -> stringResource(TextR.string.implementation_shizuku_summary)
     "lsposed" -> stringResource(TextR.string.implementation_lsposed_summary)
     "accessibility" -> stringResource(TextR.string.implementation_accessibility_summary)
+    "usage_stats" -> stringResource(TextR.string.implementation_usage_stats_summary)
     else -> ""
 }
 

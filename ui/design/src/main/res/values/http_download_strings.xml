@@ -2,4 +2,8 @@
 <resources>
     <string name="feature_android_http_download_title">HTTP download</string>
     <string name="feature_android_http_download_description">Download an HTTP or HTTPS response body to a local file with size, timeout and overwrite safeguards</string>
+    <string name="feature_android_http_upload_title">HTTP file upload</string>
+    <string name="feature_android_http_upload_description">Upload a local file with HTTP PUT and expose the server response as structured output</string>
+    <string name="feature_android_http_upload_field_path">Local file path</string>
+    <string name="feature_android_http_upload_field_maxbytes">Maximum upload bytes</string>
 </resources>

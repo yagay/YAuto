@@ -21,6 +21,7 @@ class AndroidHttpFeaturePack : FeaturePack {
     override fun install(registry: FeatureRegistry) {
         registerRequest(registry)
         registerDownload(registry)
+        registerUpload(registry)
     }
 
     private fun registerRequest(registry: FeatureRegistry) {
@@ -107,6 +108,59 @@ class AndroidHttpFeaturePack : FeaturePack {
                     destination = File(path),
                     overwrite = overwrite,
                     createParents = createParents,
+                    maxBytes = maxBytes,
+                    connectTimeoutMs = connectTimeoutMs,
+                    readTimeoutMs = readTimeoutMs,
+                )
+            }
+            if (result.success) {
+                feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, result.value) }
+            }
+            result
+        }
+    }
+
+    private fun registerUpload(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.http.upload"), FeatureKind.ACTION,
+                "HTTP file upload", "Upload a local file with HTTP PUT and expose the server response as structured output",
+                FeatureCategory.FILE,
+                fields = listOf(
+                    FieldSchema.Text("url", "URL", true),
+                    FieldSchema.Text("headers", "Headers (one Name: value per line)", multiline = true),
+                    FieldSchema.Text("path", "Local file path", true),
+                    FieldSchema.Text("contentType", "Content-Type"),
+                    FieldSchema.Number("maxBytes", "Maximum upload bytes", min = 1.0, max = MAX_DOWNLOAD_BYTES.toDouble()),
+                    FieldSchema.Duration("connectTimeoutMs", "Connect timeout"),
+                    FieldSchema.Duration("readTimeoutMs", "Read timeout"),
+                    FieldSchema.Variable("resultVariable", "Store response object"),
+                ),
+                keywords = setOf("http", "https", "upload", "put", "file", "webdav"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val url = feature.config.string("url").resolveVariables(ctx.variables).trim()
+            if (!isHttpUrl(url)) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.http_url_required"))
+            }
+            val path = feature.config.string("path").resolveVariables(ctx.variables).trim()
+            if (path.isBlank()) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.destination_path_empty"))
+            }
+            val headers = parseHeaders(feature.config.string("headers").resolveVariables(ctx.variables))
+            val contentType = feature.config.string("contentType").resolveVariables(ctx.variables)
+                .ifBlank { "application/octet-stream" }
+            val maxBytes = httpDownloadLimit(feature.config["maxBytes"].numberOrNull())
+            val connectTimeoutMs = feature.config.long("connectTimeoutMs", 10_000).coerceIn(1_000, 120_000).toInt()
+            val readTimeoutMs = feature.config.long("readTimeoutMs", 60_000).coerceIn(1_000, 600_000).toInt()
+
+            val result = withContext(Dispatchers.IO) {
+                executeUpload(
+                    url = url,
+                    headers = headers,
+                    source = File(path),
+                    contentType = contentType,
                     maxBytes = maxBytes,
                     connectTimeoutMs = connectTimeoutMs,
                     readTimeoutMs = readTimeoutMs,
@@ -238,6 +292,72 @@ class AndroidHttpFeaturePack : FeaturePack {
             runCatching { temporary?.delete() }
             connection?.disconnect()
         }
+    }
+
+    private fun executeUpload(
+        url: String,
+        headers: Map<String, String>,
+        source: File,
+        contentType: String,
+        maxBytes: Long,
+        connectTimeoutMs: Int,
+        readTimeoutMs: Int,
+    ): ActionExecutionResult {
+        var connection: HttpURLConnection? = null
+        return runCatching {
+            val file = source.absoluteFile
+            require(file.isFile && file.canRead()) { "Upload source is not a readable file" }
+            val length = file.length()
+            require(length in 0..maxBytes) { "Upload source exceeds maximum bytes" }
+
+            connection = (URL(url).openConnection() as HttpURLConnection).apply {
+                requestMethod = "PUT"
+                instanceFollowRedirects = true
+                this.connectTimeout = connectTimeoutMs
+                this.readTimeout = readTimeoutMs
+                useCaches = false
+                doOutput = true
+                setFixedLengthStreamingMode(length)
+                setRequestProperty("Content-Type", contentType)
+                setRequestProperty("Accept-Encoding", "identity")
+                headers.forEach { (name, value) -> setRequestProperty(name, value) }
+            }
+
+            file.inputStream().buffered().use { input ->
+                connection!!.outputStream.buffered().use { output ->
+                    val buffer = ByteArray(32 * 1024)
+                    var sent = 0L
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        sent += count
+                        require(sent <= maxBytes) { "Upload source exceeds maximum bytes" }
+                        output.write(buffer, 0, count)
+                    }
+                }
+            }
+
+            val status = connection!!.responseCode
+            val stream = if (status >= 400) connection!!.errorStream else connection!!.inputStream
+            val responseBody = stream?.use { readBounded(it, MAX_RESPONSE_BYTES) }.orEmpty()
+            val value = ConfigValue.ObjectValue(
+                mapOf(
+                    "statusCode" to ConfigValue.NumberValue(status.toDouble()),
+                    "bytes" to ConfigValue.NumberValue(length.toDouble()),
+                    "path" to ConfigValue.StringValue(file.absolutePath),
+                    "body" to ConfigValue.StringValue(responseBody),
+                    "headers" to ConfigValue.ObjectValue(responseHeaders(connection!!)),
+                    "url" to ConfigValue.StringValue(connection!!.url.toString()),
+                )
+            )
+            ActionExecutionResult(
+                status in 200..399,
+                value,
+                if (status in 200..399) null else userText("feature.http_status_failed", status),
+            )
+        }.getOrElse { error ->
+            ActionExecutionResult(false, message = userText("feature.operation_failed", error.message ?: error.javaClass.simpleName))
+        }.also { connection?.disconnect() }
     }
 
     private fun parseHeaders(raw: String): Map<String, String> = buildMap {

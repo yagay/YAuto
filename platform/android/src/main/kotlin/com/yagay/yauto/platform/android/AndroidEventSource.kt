@@ -113,6 +113,42 @@ class SystemBroadcastEventSource(
                     if (temperatureTenths != Int.MIN_VALUE) {
                         put("temperatureC", ConfigValue.NumberValue(temperatureTenths / 10.0))
                     }
+                    put(
+                        "present",
+                        ConfigValue.BooleanValue(intent.getBooleanExtra(android.os.BatteryManager.EXTRA_PRESENT, false)),
+                    )
+                    put(
+                        "plugged",
+                        ConfigValue.StringValue(
+                            batteryPluggedName(intent.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0))
+                        ),
+                    )
+                    put(
+                        "status",
+                        ConfigValue.StringValue(
+                            batteryStatusName(
+                                intent.getIntExtra(
+                                    android.os.BatteryManager.EXTRA_STATUS,
+                                    android.os.BatteryManager.BATTERY_STATUS_UNKNOWN,
+                                )
+                            )
+                        ),
+                    )
+                    put(
+                        "health",
+                        ConfigValue.StringValue(
+                            batteryHealthName(
+                                intent.getIntExtra(
+                                    android.os.BatteryManager.EXTRA_HEALTH,
+                                    android.os.BatteryManager.BATTERY_HEALTH_UNKNOWN,
+                                )
+                            )
+                        ),
+                    )
+                    val voltageMv = intent.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, Int.MIN_VALUE)
+                    if (voltageMv != Int.MIN_VALUE) {
+                        put("voltageMv", ConfigValue.NumberValue(voltageMv.toDouble()))
+                    }
                 }
                 if (action in setOf(Intent.ACTION_TIME_TICK, Intent.ACTION_TIME_CHANGED, Intent.ACTION_DATE_CHANGED, Intent.ACTION_TIMEZONE_CHANGED)) {
                     putAll(currentTimePayload())
@@ -282,9 +318,14 @@ class NetworkEventSource(
         capabilities ?: return@buildMap
         put("internet", ConfigValue.BooleanValue(capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)))
         put("validated", ConfigValue.BooleanValue(capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)))
+        put("metered", ConfigValue.BooleanValue(!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)))
+        put("roaming", ConfigValue.BooleanValue(!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING)))
+        put("restricted", ConfigValue.BooleanValue(!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)))
+        put("suspended", ConfigValue.BooleanValue(!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_SUSPENDED)))
         put("wifi", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)))
         put("cellular", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)))
         put("ethernet", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)))
         put("vpn", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)))
+        put("bluetooth", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH)))
     }
 }

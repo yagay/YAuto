@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_access_status_title">Get Android access status</string>
+    <string name="feature_android_access_status_description">Store YAuto overlay, settings, notification, DND, exact-alarm, usage and accessibility access states</string>
+    <string name="feature_android_access_status_field_resultvariable">Store access status object</string>
+    <string name="feature_android_state_notification_listener_access_title">Notification access</string>
+    <string name="feature_android_state_notification_listener_access_description">Check whether YAuto notification-listener access is enabled</string>
+    <string name="feature_android_state_notification_listener_access_field_value">Granted / enabled</string>
+    <string name="feature_android_condition_notification_listener_access_title">Notification access</string>
+    <string name="feature_android_condition_notification_listener_access_description">Check whether YAuto notification-listener access is enabled</string>
+    <string name="feature_android_condition_notification_listener_access_field_value">Granted / enabled</string>
+    <string name="feature_android_state_usage_stats_access_title">Usage access</string>
+    <string name="feature_android_state_usage_stats_access_description">Check whether YAuto has app usage access</string>
+    <string name="feature_android_state_usage_stats_access_field_value">Granted / enabled</string>
+    <string name="feature_android_condition_usage_stats_access_title">Usage access</string>
+    <string name="feature_android_condition_usage_stats_access_description">Check whether YAuto has app usage access</string>
+    <string name="feature_android_condition_usage_stats_access_field_value">Granted / enabled</string>
+    <string name="feature_android_state_accessibility_service_access_title">Accessibility service access</string>
+    <string name="feature_android_state_accessibility_service_access_description">Check whether the YAuto accessibility service is enabled</string>
+    <string name="feature_android_state_accessibility_service_access_field_value">Granted / enabled</string>
+    <string name="feature_android_condition_accessibility_service_access_title">Accessibility service access</string>
+    <string name="feature_android_condition_accessibility_service_access_description">Check whether the YAuto accessibility service is enabled</string>
+    <string name="feature_android_condition_accessibility_service_access_field_value">Granted / enabled</string>
+</resources>

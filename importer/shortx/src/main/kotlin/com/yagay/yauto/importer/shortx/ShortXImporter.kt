@@ -82,11 +82,37 @@ class ShortXImporter : AutomationImporter {
                 )
             }
 
-            val events = rule.facts.mapIndexed { i, v ->
-                preserve(v, CompatFeatureIds.SOURCE_EVENT, "rule[$index].fact[$i]")
+            val events = rule.facts.mapIndexedNotNull { i, v ->
+                if (!ShortXMappings.factEnabled(v)) return@mapIndexedNotNull null
+                val feature = ShortXMappings.nativeFact(v, id)
+                if (feature != null) {
+                    trace += ImportTrace("rule[$index].fact[$i]", feature.typeId, "MAPPED", v.typeUrl)
+                    feature
+                } else {
+                    preserve(
+                        v,
+                        CompatFeatureIds.SOURCE_EVENT,
+                        "rule[$index].fact[$i]",
+                        ShortXMappings.suggestedEventFeature(v.typeUrl),
+                    )
+                }
             }
-            val predicates = rule.conditions.mapIndexed { i, v ->
-                PredicateNode.Condition(preserve(v, CompatFeatureIds.SOURCE_CONDITION, "rule[$index].condition[$i]"))
+            val predicates = rule.conditions.mapIndexedNotNull { i, v ->
+                if (!ShortXMappings.conditionEnabled(v)) return@mapIndexedNotNull null
+                val feature = ShortXMappings.nativeCondition(v, id)
+                if (feature != null) {
+                    trace += ImportTrace("rule[$index].condition[$i]", feature.typeId, "MAPPED", v.typeUrl)
+                    PredicateNode.Condition(feature)
+                } else {
+                    PredicateNode.Condition(
+                        preserve(
+                            v,
+                            CompatFeatureIds.SOURCE_CONDITION,
+                            "rule[$index].condition[$i]",
+                            ShortXMappings.suggestedConditionFeature(v.typeUrl),
+                        )
+                    )
+                }
             }
             val actions = rule.actions.mapIndexed { i, v ->
                 val feature = ShortXMappings.nativeAction(v, id)
