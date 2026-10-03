@@ -30,35 +30,35 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
     override fun install(registry: FeatureRegistry) {
         registerOpenCallLog(registry)
         registerOpenAppNotificationSettings(registry)
-        privilegedToggle(registry, "android.car_mode.set", "Set car mode", "Enable or disable Android car mode", FeatureCategory.SYSTEM, ::carModeCommand)
+        privilegedModeToggle(registry, "android.car_mode.set", "Set car mode", "Enable, disable, or toggle Android car mode", FeatureCategory.SYSTEM, ::carModeEnabled, ::carModeCommand)
         privilegedAction(registry, "android.display.dream.start", "Start screen saver", "Request Android's dream / screen-saver service to start", FeatureCategory.DISPLAY, emptyList(), setOf("dream", "daydream", "screen saver")) { _, ctx ->
             executeShell("android.display.dream.start", "cmd dreams start-dreaming", ctx)
         }
         privilegedAction(registry, "android.display.dream.stop", "Stop screen saver", "Stop the active Android dream / screen saver", FeatureCategory.DISPLAY, emptyList(), setOf("dream", "daydream", "screen saver")) { _, ctx ->
             executeShell("android.display.dream.stop", "cmd dreams stop-dreaming", ctx)
         }
-        privilegedToggle(registry, "android.display.color_inversion.set", "Set color inversion", "Enable or disable Android accessibility display color inversion", FeatureCategory.DISPLAY, ::colorInversionCommand)
-        privilegedToggle(registry, "android.display.ambient_display.set", "Set always-on ambient display", "Enable or disable the Android always-on ambient-display setting", FeatureCategory.DISPLAY, ::ambientDisplayCommand)
-        privilegedToggle(registry, "android.notification.heads_up.set", "Set heads-up notifications", "Enable or disable Android heads-up notification presentation", FeatureCategory.NOTIFICATION, ::headsUpCommand)
-        privilegedToggle(registry, "android.network.data_roaming.set", "Set data roaming", "Enable or disable the Android global data-roaming setting", FeatureCategory.NETWORK, ::dataRoamingCommand)
+        privilegedModeToggle(registry, "android.display.color_inversion.set", "Set color inversion", "Enable, disable, or toggle Android accessibility display color inversion", FeatureCategory.DISPLAY, ::colorInversionEnabled, ::colorInversionCommand)
+        registerAmbientDisplay(registry)
+        privilegedModeToggle(registry, "android.notification.heads_up.set", "Set heads-up notifications", "Enable, disable, or toggle Android heads-up notification presentation", FeatureCategory.NOTIFICATION, ::headsUpEnabled, ::headsUpCommand)
+        privilegedModeToggle(registry, "android.network.data_roaming.set", "Set data roaming", "Enable, disable, or toggle the Android global data-roaming setting", FeatureCategory.NETWORK, ::dataRoamingEnabled, ::dataRoamingCommand)
 
         registerAudioFocusRequest(registry)
         registerAudioFocusAbandon(registry)
 
         booleanPair(registry, "car_mode", "Car mode", "Check whether Android is currently in car UI mode", FeatureCategory.SYSTEM) {
-            context.resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK == Configuration.UI_MODE_TYPE_CAR
+            carModeEnabled()
         }
         booleanPair(registry, "ambient_display", "Always-on ambient display", "Check Android's always-on ambient-display setting", FeatureCategory.DISPLAY) {
-            Settings.Secure.getInt(context.contentResolver, "doze_always_on", 0) == 1
+            ambientDisplayEnabled("always_on")
         }
         booleanPair(registry, "color_inversion", "Color inversion", "Check Android accessibility display color inversion", FeatureCategory.DISPLAY) {
-            Settings.Secure.getInt(context.contentResolver, "accessibility_display_inversion_enabled", 0) == 1
+            colorInversionEnabled()
         }
         booleanPair(registry, "heads_up_notifications", "Heads-up notifications", "Check Android's heads-up notification setting", FeatureCategory.NOTIFICATION) {
-            Settings.Global.getInt(context.contentResolver, "heads_up_notifications_enabled", 1) == 1
+            headsUpEnabled()
         }
         booleanPair(registry, "data_roaming_setting", "Data roaming setting", "Check Android's global data-roaming setting", FeatureCategory.NETWORK) {
-            Settings.Global.getInt(context.contentResolver, Settings.Global.DATA_ROAMING, 0) == 1
+            dataRoamingEnabled()
         }
         booleanPair(registry, "developer_options", "Developer options", "Check whether Android developer options are enabled", FeatureCategory.SYSTEM) {
             Settings.Global.getInt(context.contentResolver, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1
@@ -136,12 +136,13 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
         }
     }
 
-    private fun privilegedToggle(
+    private fun privilegedModeToggle(
         registry: FeatureRegistry,
         typeId: String,
         title: String,
         description: String,
         category: FeatureCategory,
+        current: () -> Boolean,
         command: (Boolean) -> String,
     ) = privilegedAction(
         registry,
@@ -149,11 +150,62 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
         title,
         description,
         category,
-        listOf(FieldSchema.Toggle("enabled", "Enabled")),
-        setOf("reference", "MacroDroid", "ShortX", "Tasker"),
+        listOf(FieldSchema.Choice("mode", "Mode", true, listOf("enable", "disable", "toggle"))),
+        setOf("reference", "MacroDroid", "ShortX", "Tasker", "toggle"),
     ) { feature, ctx ->
-        executeShell(typeId, command(feature.config.boolean("enabled", true)), ctx)
+        val enabled = when (feature.config.string("mode", "enable")) {
+            "enable" -> true
+            "disable" -> false
+            "toggle" -> !runCatching(current).getOrDefault(false)
+            else -> return@privilegedAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
+        }
+        executeShell(typeId, command(enabled), ctx)
     }
+
+    private fun registerAmbientDisplay(registry: FeatureRegistry) = privilegedAction(
+        registry,
+        "android.display.ambient_display.set",
+        "Set ambient display",
+        "Enable, disable, or toggle wake-for-notifications or always-on ambient display",
+        FeatureCategory.DISPLAY,
+        listOf(
+            FieldSchema.Choice("setting", "Ambient display setting", true, listOf("wake_for_notifications", "always_on")),
+            FieldSchema.Choice("mode", "Mode", true, listOf("enable", "disable", "toggle")),
+        ),
+        setOf("ambient display", "always on", "doze", "wake notifications", "MacroDroid"),
+    ) { feature, ctx ->
+        val setting = feature.config.string("setting", "always_on")
+        val enabled = when (feature.config.string("mode", "enable")) {
+            "enable" -> true
+            "disable" -> false
+            "toggle" -> !ambientDisplayEnabled(setting)
+            else -> return@privilegedAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
+        }
+        val command = ambientDisplayCommand(setting, enabled)
+            ?: return@privilegedAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
+        executeShell(feature.typeId, command, ctx)
+    }
+
+    private fun carModeEnabled(): Boolean =
+        context.resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK == Configuration.UI_MODE_TYPE_CAR
+
+    private fun colorInversionEnabled(): Boolean =
+        Settings.Secure.getInt(context.contentResolver, "accessibility_display_inversion_enabled", 0) == 1
+
+    private fun ambientDisplayEnabled(setting: String): Boolean {
+        val key = when (setting) {
+            "wake_for_notifications" -> "doze_enabled"
+            "always_on" -> "doze_always_on"
+            else -> return false
+        }
+        return Settings.Secure.getInt(context.contentResolver, key, 0) == 1
+    }
+
+    private fun headsUpEnabled(): Boolean =
+        Settings.Global.getInt(context.contentResolver, "heads_up_notifications_enabled", 1) == 1
+
+    private fun dataRoamingEnabled(): Boolean =
+        Settings.Global.getInt(context.contentResolver, Settings.Global.DATA_ROAMING, 0) == 1
 
     private fun privilegedAction(
         registry: FeatureRegistry,
@@ -324,8 +376,14 @@ internal class AudioFocusController(private val audio: AudioManager) {
 internal fun carModeCommand(enabled: Boolean): String = "cmd uimode car ${if (enabled) "yes" else "no"}"
 internal fun colorInversionCommand(enabled: Boolean): String =
     "settings put secure accessibility_display_inversion_enabled ${if (enabled) 1 else 0}"
-internal fun ambientDisplayCommand(enabled: Boolean): String =
-    "settings put secure doze_always_on ${if (enabled) 1 else 0}"
+internal fun ambientDisplayCommand(setting: String, enabled: Boolean): String? {
+    val key = when (setting) {
+        "wake_for_notifications" -> "doze_enabled"
+        "always_on" -> "doze_always_on"
+        else -> return null
+    }
+    return "settings put secure $key ${if (enabled) 1 else 0}"
+}
 internal fun headsUpCommand(enabled: Boolean): String =
     "settings put global heads_up_notifications_enabled ${if (enabled) 1 else 0}"
 internal fun dataRoamingCommand(enabled: Boolean): String =
