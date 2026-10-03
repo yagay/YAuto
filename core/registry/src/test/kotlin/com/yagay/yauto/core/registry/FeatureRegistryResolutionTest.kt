@@ -62,7 +62,7 @@ class FeatureRegistryResolutionTest {
     }
 
     @Test
-    fun `alias collisions are rejected instead of silently redirecting`() {
+    fun `alias collisions are rejected without partial registration`() {
         val registry = FeatureRegistry()
         registry.registerDescriptor(
             descriptor(
@@ -75,13 +75,19 @@ class FeatureRegistryResolutionTest {
             registry.registerDescriptor(
                 descriptor(
                     id = "android.second.action",
-                    aliases = setOf("android.old.action"),
+                    aliases = linkedSetOf("android.new.alias", "android.old.action"),
                 )
             )
         }
+        assertTrue(registry.resolve("android.second.action") is FeatureResolution.Missing)
+        assertTrue(registry.resolve("android.new.alias") is FeatureResolution.Missing)
+        assertEquals("android.first.action", registry.canonicalId("android.old.action"))
+
         assertFails {
             registry.registerDescriptor(descriptor(id = "android.old.action"))
         }
+        assertEquals("android.first.action", registry.canonicalId("android.old.action"))
+        assertEquals(1, registry.allDescriptors().size)
     }
 
     @Test
