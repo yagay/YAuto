@@ -58,6 +58,12 @@ class AutomationRuntimeService : Service() {
         registerSource("configured-location") { ConfiguredLocationEventSource(this, appGraph.workspace) }
         registerSource("configured-interval") { ConfiguredIntervalEventSource(appGraph.workspace) }
         registerSource("configured-file") { ConfiguredFileEventSource(appGraph.workspace) }
+        registerSource("usage-foreground") {
+            UsageStatsForegroundEventSource(
+                context = this,
+                primarySourceAvailable = { AccessibilityRuntimeBridge.currentWindow() != null },
+            )
+        }
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
         SurfaceRuntimeBridge.attach(emitter)
         AccessibilityRuntimeBridge.setListener { previous, current ->
