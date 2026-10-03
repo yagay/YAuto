@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_clipboard_read_title">Read clipboard text</string>
+    <string name="feature_android_clipboard_read_description">Read the current Android clipboard text into a YAuto variable when platform privacy rules allow access</string>
+    <string name="feature_android_clipboard_read_field_resultvariable">Store clipboard text</string>
+    <string name="feature_android_clipboard_write_title">Write clipboard text</string>
+    <string name="feature_android_clipboard_write_description">Replace the Android clipboard with text after resolving YAuto variables</string>
+    <string name="feature_android_clipboard_write_field_text">Clipboard text</string>
+    <string name="feature_android_clipboard_write_field_label">Clipboard label</string>
+
+    <string name="feature_android_state_battery_current_title">Battery current</string>
+    <string name="feature_android_state_battery_current_description">Match the instantaneous battery current reported by Android in microamps</string>
+    <string name="feature_android_state_battery_current_field_min">Minimum value</string>
+    <string name="feature_android_state_battery_current_field_max">Maximum value</string>
+    <string name="feature_android_condition_battery_current_title">Battery current</string>
+    <string name="feature_android_condition_battery_current_description">Match the instantaneous battery current reported by Android in microamps</string>
+    <string name="feature_android_condition_battery_current_field_min">Minimum value</string>
+    <string name="feature_android_condition_battery_current_field_max">Maximum value</string>
+
+    <string name="feature_android_state_battery_charge_counter_title">Battery charge counter</string>
+    <string name="feature_android_state_battery_charge_counter_description">Match the remaining battery charge counter reported by Android in microamp-hours</string>
+    <string name="feature_android_state_battery_charge_counter_field_min">Minimum value</string>
+    <string name="feature_android_state_battery_charge_counter_field_max">Maximum value</string>
+    <string name="feature_android_condition_battery_charge_counter_title">Battery charge counter</string>
+    <string name="feature_android_condition_battery_charge_counter_description">Match the remaining battery charge counter reported by Android in microamp-hours</string>
+    <string name="feature_android_condition_battery_charge_counter_field_min">Minimum value</string>
+    <string name="feature_android_condition_battery_charge_counter_field_max">Maximum value</string>
+
+    <string name="feature_android_state_battery_energy_counter_title">Battery energy counter</string>
+    <string name="feature_android_state_battery_energy_counter_description">Match the remaining battery energy counter reported by Android in nanowatt-hours</string>
+    <string name="feature_android_state_battery_energy_counter_field_min">Minimum value</string>
+    <string name="feature_android_state_battery_energy_counter_field_max">Maximum value</string>
+    <string name="feature_android_condition_battery_energy_counter_title">Battery energy counter</string>
+    <string name="feature_android_condition_battery_energy_counter_description">Match the remaining battery energy counter reported by Android in nanowatt-hours</string>
+    <string name="feature_android_condition_battery_energy_counter_field_min">Minimum value</string>
+    <string name="feature_android_condition_battery_energy_counter_field_max">Maximum value</string>
+
+    <string name="feature_android_state_clock_24h_title">24-hour clock</string>
+    <string name="feature_android_state_clock_24h_description">Check whether Android is configured to use 24-hour time</string>
+    <string name="feature_android_state_clock_24h_field_value">Use 24-hour time</string>
+    <string name="feature_android_condition_clock_24h_title">24-hour clock</string>
+    <string name="feature_android_condition_clock_24h_description">Check whether Android is configured to use 24-hour time</string>
+    <string name="feature_android_condition_clock_24h_field_value">Use 24-hour time</string>
+
+    <string name="feature_android_state_timezone_title">Time zone</string>
+    <string name="feature_android_state_timezone_description">Match the current Android time-zone ID</string>
+    <string name="feature_android_state_timezone_field_zonecontains">Time-zone ID contains</string>
+    <string name="feature_android_condition_timezone_title">Time zone</string>
+    <string name="feature_android_condition_timezone_description">Match the current Android time-zone ID</string>
+    <string name="feature_android_condition_timezone_field_zonecontains">Time-zone ID contains</string>
+
+    <string name="feature_android_state_locale_title">System locale</string>
+    <string name="feature_android_state_locale_description">Match any configured Android locale language tag</string>
+    <string name="feature_android_state_locale_field_languagetagcontains">Language tag contains</string>
+    <string name="feature_android_condition_locale_title">System locale</string>
+    <string name="feature_android_condition_locale_description">Match any configured Android locale language tag</string>
+    <string name="feature_android_condition_locale_field_languagetagcontains">Language tag contains</string>
+
+    <string name="feature_android_state_developer_options_title">Developer options enabled</string>
+    <string name="feature_android_state_developer_options_description">Check whether Android developer options are enabled</string>
+    <string name="feature_android_state_developer_options_field_value">Enabled</string>
+    <string name="feature_android_condition_developer_options_title">Developer options enabled</string>
+    <string name="feature_android_condition_developer_options_description">Check whether Android developer options are enabled</string>
+    <string name="feature_android_condition_developer_options_field_value">Enabled</string>
+
+    <string name="feature_android_state_adb_enabled_title">ADB enabled</string>
+    <string name="feature_android_state_adb_enabled_description">Check whether Android Debug Bridge is enabled in system settings</string>
+    <string name="feature_android_state_adb_enabled_field_value">Enabled</string>
+    <string name="feature_android_condition_adb_enabled_title">ADB enabled</string>
+    <string name="feature_android_condition_adb_enabled_description">Check whether Android Debug Bridge is enabled in system settings</string>
+    <string name="feature_android_condition_adb_enabled_field_value">Enabled</string>
+</resources>
