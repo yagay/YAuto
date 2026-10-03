@@ -53,6 +53,7 @@ object AndroidFeaturePacks {
         AndroidContentUtilityFeaturePack(context),
         AndroidEventFeaturePack(),
         AndroidDerivedEventFeaturePack(),
+        AndroidBatteryEventFeaturePack(),
         AndroidIntervalFeaturePack(),
         AndroidStateFeaturePack(context),
         AndroidExtendedStateFeaturePack(context),
