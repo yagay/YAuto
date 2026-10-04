@@ -77,7 +77,7 @@ class AutomationRuntimeService : Service() {
         registerSource("runtime-parity") { ConfiguredRuntimeParityEventSource(this, appGraph.workspace) }
         registerSource("shortx-time") { ConfiguredShortXTimeEventSource(appGraph.workspace) }
         registerSource("sound-level") { ConfiguredSoundLevelEventSource(this, appGraph.workspace) }
-        registerSource("locale-plugin-events") { ConfiguredLocalePluginEventSource(this, appGraph.workspace) }
+        registerSource("locale-plugin-events") { ConfiguredLocalePluginEventSource(this, appGraph.workspace) }\n        registerSource("macrodroid-residual") { MacroDroidResidualEventSource(this) }
         registerSource("hinge-angle") { HingeAngleEventSource(this) }
         registerSource("activity-recognition") { ActivityRecognitionEventSource(this) }
         registerSource("usage-foreground") {
