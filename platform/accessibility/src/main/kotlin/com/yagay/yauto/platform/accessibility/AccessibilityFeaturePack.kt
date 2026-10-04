@@ -156,6 +156,57 @@ class AccessibilityFeaturePack(
             setOf("ui tree", "nodes", "view id", "screen contents", "accessibility"),
         )
 
+
+        registry.registerCondition(
+            FeatureDescriptor(
+                FeatureId("accessibility.condition.screen_color_found"), FeatureKind.CONDITION,
+                "Screen color found",
+                "Capture the current screen through Accessibility and check whether a target RGB color exists within tolerance",
+                FeatureCategory.UI_AUTOMATION,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                fields = listOf(
+                    FieldSchema.Text("color", "Target color (#RRGGBB)", true),
+                    FieldSchema.Number("tolerance", "Per-channel tolerance", min = 0.0, max = 255.0),
+                    FieldSchema.Number("step", "Search step pixels", min = 1.0, max = 32.0),
+                ),
+                keywords = setOf("screen color", "pixel", "find points", "shortx", "screenshot"),
+                ownerPackId = id,
+            )
+        ) { feature, _ ->
+            val service = YAutoAccessibilityService.current ?: return@registerCondition false
+            val target = runCatching {
+                android.graphics.Color.parseColor(feature.config.string("color").trim())
+            }.getOrNull() ?: return@registerCondition false
+            val tolerance = ((feature.config["tolerance"] as? ConfigValue.NumberValue)?.value ?: 16.0)
+                .toInt().coerceIn(0, 255)
+            val step = ((feature.config["step"] as? ConfigValue.NumberValue)?.value ?: 2.0)
+                .toInt().coerceIn(1, 32)
+            val bitmap = service.captureScreenshotBitmap() ?: return@registerCondition false
+            try {
+                var found = false
+                var y = 0
+                while (y < bitmap.height && !found) {
+                    var x = 0
+                    while (x < bitmap.width) {
+                        val color = bitmap.getPixel(x, y)
+                        if (
+                            kotlin.math.abs(android.graphics.Color.red(color) - android.graphics.Color.red(target)) <= tolerance &&
+                            kotlin.math.abs(android.graphics.Color.green(color) - android.graphics.Color.green(target)) <= tolerance &&
+                            kotlin.math.abs(android.graphics.Color.blue(color) - android.graphics.Color.blue(target)) <= tolerance
+                        ) {
+                            found = true
+                            break
+                        }
+                        x += step
+                    }
+                    y += step
+                }
+                found
+            } finally {
+                bitmap.recycle()
+            }
+        }
+
         condition(registry, "accessibility.condition.text_present", AccessibilityOperations.FIND_TEXT, "Text on screen", "Check whether text/content description is currently visible", listOf(FieldSchema.Text("text", "Text", true), FieldSchema.Toggle("exact", "Exact text match")), setOf("text present", "screen text", "ui", "accessibility"))
         condition(registry, "accessibility.condition.text_matches", AccessibilityOperations.FIND_TEXT_ADVANCED, "Screen text matches", "Check visible text using contains, exact or regular-expression matching", listOf(FieldSchema.Text("text", "Text / pattern", true), FieldSchema.Choice("mode", "Match mode", true, listOf("contains", "exact", "regex")), FieldSchema.Toggle("ignoreCase", "Ignore case")), setOf("text present", "regex", "screen content", "shortx"))
         condition(registry, "accessibility.condition.view_id_present", AccessibilityOperations.FIND_VIEW_ID, "View ID on screen", "Check whether a resource ID exists in the active window", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("view id", "resource id", "exists", "ui"))
