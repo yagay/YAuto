@@ -14,6 +14,8 @@ data class Automation(
     val id: AutomationId,
     val name: String,
     val enabled: Boolean = true,
+    /** Optional logical category/group. Disabled categories are skipped by the runtime. */
+    val category: String? = null,
     val workspaceId: WorkspaceId? = null,
     val activation: Activation = Activation(),
     val onEnter: List<ActionNode> = emptyList(),
