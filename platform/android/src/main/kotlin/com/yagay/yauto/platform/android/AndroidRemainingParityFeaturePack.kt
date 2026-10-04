@@ -386,13 +386,13 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
                 packages.getPackageInfo(pkg, PackageManager.GET_PERMISSIONS)
             }.getOrNull() ?: return@registerAction ActionExecutionResult(false)
             val requested = info.requestedPermissions.orEmpty()
-            val flags = info.requestedPermissionsFlags.orEmpty()
+            val flags = info.requestedPermissionsFlags ?: IntArray(0)
             val value = ConfigValue.ListValue(requested.mapIndexed { index, permission ->
                 ConfigValue.ObjectValue(
                     mapOf(
                         "permission" to ConfigValue.StringValue(permission),
                         "granted" to ConfigValue.BooleanValue(
-                            flags.getOrNull(index)?.and(PackageManager.REQUESTED_PERMISSION_GRANTED) != 0
+                            flags.getOrNull(index)?.and(android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED) != 0
                         ),
                     )
                 )
@@ -911,7 +911,7 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
         )
         val serviceEvaluator = ConditionEvaluator { feature, ctx ->
             val pkg = feature.config.string("package").trim()
-            if (!pkg.matches(PACKAGE_NAME)) return@ConditionEvaluator false
+            if (!pkg.matches(Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+"))) return@ConditionEvaluator false
             val service = feature.config.string("service").trim()
             val result = ctx.capabilities.execute(
                 CapabilityRequest(
@@ -956,7 +956,20 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
     ) {
         val evaluator = ConditionEvaluator { feature, _ ->
             val actual = runCatching {
-                manager.supportsSensorToggle(sensor) && manager.isSensorPrivacyEnabled(sensor)
+                if (!manager.supportsSensorToggle(sensor)) false
+                else {
+                    val oneArg = manager.javaClass.methods.firstOrNull {
+                        it.name == "isSensorPrivacyEnabled" && it.parameterCount == 1
+                    }
+                    if (oneArg != null) {
+                        oneArg.invoke(manager, sensor) as? Boolean ?: false
+                    } else {
+                        val twoArg = manager.javaClass.methods.firstOrNull {
+                            it.name == "isSensorPrivacyEnabled" && it.parameterCount == 2
+                        }
+                        twoArg?.invoke(manager, 1, sensor) as? Boolean ?: false
+                    }
+                }
             }.getOrDefault(false)
             actual == feature.config.boolean("value", true)
         }
