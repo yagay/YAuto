@@ -25,7 +25,7 @@ class AndroidMacroDroidEventParityFeaturePack : FeaturePack {
                     FieldSchema.Choice("transition", "Transition", options = listOf("any", "enter", "exit", "sample")),
                     FieldSchema.Number("minConfidence", "Minimum confidence %", min = 0.0, max = 100.0),
                 ),
-                accessRequirements = setOf(AccessRequirement.LOCATION),
+                accessRequirements = setOf(AccessRequirement.ACTIVITY_RECOGNITION),
                 keywords = setOf("activity recognition", "walking", "running", "vehicle", "macrodroid"),
                 ownerPackId = id,
             )
