@@ -52,6 +52,7 @@ class AutomationRuntimeService : Service() {
         registerSource("device-setting") { DeviceSettingEventSource(this) }
         registerSource("reference-runtime-signals") { ReferenceRuntimeSignalEventSource(this) }
         registerSource("audio-device") { AudioDeviceEventSource(this) }
+        registerSource("audio-focus") { AudioFocusEventSource() }
         registerSource("bluetooth-device") { BluetoothDeviceEventSource(this) }
         registerSource("communication") { CommunicationEventSource(this) }
         registerSource("sim-subscriptions") { SubscriptionChangeEventSource(this) }
