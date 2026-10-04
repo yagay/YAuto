@@ -139,7 +139,7 @@ class AndroidReferenceSignalFeaturePack(context: Context) : FeaturePack {
     }
 
     private fun currentPlaybackActiveCount(): Int = runCatching {
-        audio.activePlaybackConfigurations.count { it.playerState == AudioPlaybackConfiguration.PLAYER_STATE_STARTED }
+        audio.activePlaybackConfigurations.size
     }.getOrDefault(0)
 
     private fun currentRecordingCount(): Int = runCatching { audio.activeRecordingConfigurations.size }.getOrDefault(0)
