@@ -205,6 +205,18 @@ class AutomationRuntimeService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_REFRESH_LOCALIZED_SURFACES) { if (!promoteToForeground()) { stopSelf(); return START_NOT_STICKY }; return START_STICKY }
+        if (intent?.action == ACTION_SECURITY_EVENT) {
+            val type = intent.getStringExtra(EXTRA_SECURITY_EVENT_TYPE).orEmpty()
+            if (type.startsWith("android.event.")) {
+                val appGraph = graph ?: runCatching { (application as YAutoApplication).graph }.getOrNull()
+                if (appGraph != null) {
+                    RuntimeEventDispatcher(appGraph, scope).dispatch(
+                        RuntimeEvent(type, source = "android.device_admin")
+                    )
+                }
+            }
+            return START_STICKY
+        }
         if (intent?.action == ACTION_SHARE_DISPATCH) {
             val appGraph = graph ?: runCatching { (application as YAutoApplication).graph }.getOrNull()
             if (appGraph != null) {
@@ -274,10 +286,12 @@ class AutomationRuntimeService : Service() {
     companion object {
         const val ACTION_REFRESH_LOCALIZED_SURFACES = "com.yagay.yauto.action.REFRESH_LOCALIZED_SURFACES"
         const val ACTION_SHARE_DISPATCH = "com.yagay.yauto.action.SHARE_DISPATCH"
+        const val ACTION_SECURITY_EVENT = "com.yagay.yauto.action.SECURITY_EVENT"
         private const val EXTRA_SHARE_TEXT = "shareText"
         private const val EXTRA_SHARE_SUBJECT = "shareSubject"
         private const val EXTRA_SHARE_MIME = "shareMime"
         private const val EXTRA_SHARE_URIS = "shareUris"
+        private const val EXTRA_SECURITY_EVENT_TYPE = "securityEventType"
         private const val CHANNEL_ID = "yauto_runtime"
         private const val NOTIFICATION_ID = 1001
         private const val TAG = "YAutoRuntime"
@@ -288,6 +302,19 @@ class AutomationRuntimeService : Service() {
         }.getOrElse {
             Log.e(TAG, "Unable to start automation runtime service", it)
             StartupFailureRecorder.record(context, "runtime:start", it)
+            false
+        }
+
+        fun startSecurityEvent(context: Context, type: String): Boolean = runCatching {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, AutomationRuntimeService::class.java)
+                    .setAction(ACTION_SECURITY_EVENT)
+                    .putExtra(EXTRA_SECURITY_EVENT_TYPE, type),
+            )
+            true
+        }.getOrElse {
+            StartupFailureRecorder.record(context, "runtime:security-event", it)
             false
         }
 
