@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_android_solar_times_title">Get sunrise and sunset</string>
-    <string name="feature_android_solar_times_description">Calculate today&apos;s sunrise and sunset locally from latitude and longitude</string>
+    <string name="feature_android_solar_times_description">Calculate today\'s sunrise and sunset locally from latitude and longitude</string>
     <string name="feature_android_solar_times_field_uselastknown">Use last known location</string>
     <string name="feature_android_solar_times_field_latitude">Latitude</string>
     <string name="feature_android_solar_times_field_longitude">Longitude</string>
     <string name="feature_android_solar_times_field_resultvariable">Store solar times</string>
 
     <string name="feature_android_state_daylight_title">Sun above horizon</string>
-    <string name="feature_android_state_daylight_description">Check whether the current time is between today&apos;s calculated sunrise and sunset</string>
+    <string name="feature_android_state_daylight_description">Check whether the current time is between today\'s calculated sunrise and sunset</string>
     <string name="feature_android_state_daylight_field_uselastknown">Use last known location</string>
     <string name="feature_android_state_daylight_field_latitude">Latitude</string>
     <string name="feature_android_state_daylight_field_longitude">Longitude</string>
     <string name="feature_android_state_daylight_field_value">Daylight / sun up</string>
     <string name="feature_android_condition_daylight_title">Sun above horizon</string>
-    <string name="feature_android_condition_daylight_description">Check whether the current time is between today&apos;s calculated sunrise and sunset</string>
+    <string name="feature_android_condition_daylight_description">Check whether the current time is between today\'s calculated sunrise and sunset</string>
     <string name="feature_android_condition_daylight_field_uselastknown">Use last known location</string>
     <string name="feature_android_condition_daylight_field_latitude">Latitude</string>
     <string name="feature_android_condition_daylight_field_longitude">Longitude</string>
