@@ -2,6 +2,8 @@ package com.yagay.yauto.platform.accessibility
 
 import android.graphics.Bitmap
 import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.withTimeoutOrNull
 
 data class AccessibilityWindowSnapshot(
     val packageName: String,
@@ -26,6 +28,12 @@ data class AccessibilityUiEventSnapshot(
     val contentDescription: String = "",
     val viewId: String = "",
     val screenText: String = "",
+    val left: Int = -1,
+    val top: Int = -1,
+    val right: Int = -1,
+    val bottom: Int = -1,
+    val centerX: Int = -1,
+    val centerY: Int = -1,
     val timestampEpochMs: Long = System.currentTimeMillis(),
 )
 
@@ -56,8 +64,19 @@ object AccessibilityRuntimeBridge {
     @Volatile private var uiEventListener: ((AccessibilityUiEventSnapshot) -> Unit)? = null
     @Volatile private var fingerprintGestureListener: ((AccessibilityFingerprintGestureSnapshot) -> Unit)? = null
     @Volatile private var fingerprintGestureAvailable: Boolean = false
+    private val nextClick = AtomicReference<CompletableDeferred<AccessibilityUiEventSnapshot>?>(null)
 
     fun currentWindow(): AccessibilityWindowSnapshot? = current.get()
+
+    suspend fun awaitNextClick(timeoutMs: Long): AccessibilityUiEventSnapshot? {
+        val deferred = CompletableDeferred<AccessibilityUiEventSnapshot>()
+        nextClick.getAndSet(deferred)?.cancel()
+        return try {
+            withTimeoutOrNull(timeoutMs.coerceIn(1_000L, 300_000L)) { deferred.await() }
+        } finally {
+            nextClick.compareAndSet(deferred, null)
+        }
+    }
 
     fun setListener(value: ((previous: AccessibilityWindowSnapshot?, current: AccessibilityWindowSnapshot) -> Unit)?) {
         listener = value
@@ -101,11 +120,13 @@ object AccessibilityRuntimeBridge {
     }
 
     internal fun dispatchUiEvent(snapshot: AccessibilityUiEventSnapshot) {
+        if (snapshot.event == "click") nextClick.getAndSet(null)?.complete(snapshot)
         uiEventListener?.invoke(snapshot)
     }
 
     internal fun clearIfServiceStops() {
         current.set(null)
         fingerprintGestureAvailable = false
+        nextClick.getAndSet(null)?.cancel()
     }
 }
