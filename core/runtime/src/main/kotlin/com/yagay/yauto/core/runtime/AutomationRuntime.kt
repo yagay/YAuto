@@ -351,7 +351,7 @@ class AutomationRuntime(
         val type = triggerType.trim()
         val triggerTag = tag.trim()
         if (target.isEmpty() || (type.isEmpty() && triggerTag.isEmpty())) {
-            return ActionExecutionResult(false, message = userText("feature.operation_failed", "Trigger target required"))
+            return ActionExecutionResult(false, message = userText("runtime.trigger_target_required"))
         }
         return workspaceMutationLock.withLock {
             val workspace = workspaceRepository.load()
@@ -367,7 +367,7 @@ class AutomationRuntime(
             if (candidates.isEmpty()) {
                 return@withLock ActionExecutionResult(
                     false,
-                    message = userText("feature.operation_failed", "Trigger not found"),
+                    message = userText("runtime.trigger_not_found"),
                 )
             }
             val keys = candidates.map { triggerKey(resolved, it) }.toSet()
