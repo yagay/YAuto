@@ -43,6 +43,13 @@ object MacroDroidFeatureSuggestions {
         "SetHotspotAction", "USBTetheringAction", "BluetoothTetheringAction" -> "android.network.tether.set"
         "AuthenticateUserAction" -> "android.biometric.authenticate"
         "OverlayDialogAction", "AnimationOverlayAction" -> "surface.overlay.show"
+        "OptionDialogAction", "SelectionDialogAction" -> "surface.list.show"
+        "BlockTouchesAction" -> "surface.touch_blocker.show"
+        "EdgeLightingAction" -> "surface.edge_lighting.show"
+        "CaptureNextClickXYAction" -> "accessibility.capture_next_click"
+        "ReadSoundLevelAction" -> "android.audio.sound_level.measure"
+        "RestoreNotificationsAction" -> "android.notification.restore"
+        "SetKeyguardAction" -> "android.keyguard.set"
         "SetNFCAction" -> "android.nfc.set"
         "SetLocationModeAction", "SetGPSAction" -> "android.location.enabled.set"
         "SetAutoRotateAction" -> "android.display.auto_rotate.set"
@@ -132,6 +139,10 @@ object MacroDroidFeatureSuggestions {
         "ShakeDeviceTrigger" -> "android.event.shake"
         "WifiConnectionTrigger", "WifiSSIDTrigger" -> "android.event.wifi_changed"
         "SystemTimeTrigger" -> "android.event.time_changed"
+        "WeatherTrigger" -> "android.event.weather_changed"
+        "ToastTrigger" -> "android.event.toast_shown"
+        "SimChangeTrigger" -> "android.event.sim_subscription_changed"
+        "OrientationChangeTrigger" -> "android.event.orientation_changed"
         else -> null
     }
 
