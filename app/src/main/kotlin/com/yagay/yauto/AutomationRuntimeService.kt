@@ -76,6 +76,7 @@ class AutomationRuntimeService : Service() {
         registerSource("runtime-parity") { ConfiguredRuntimeParityEventSource(this, appGraph.workspace) }
         registerSource("shortx-time") { ConfiguredShortXTimeEventSource(appGraph.workspace) }
         registerSource("sound-level") { ConfiguredSoundLevelEventSource(this, appGraph.workspace) }
+        registerSource("locale-plugin-events") { ConfiguredLocalePluginEventSource(this, appGraph.workspace) }
         registerSource("hinge-angle") { HingeAngleEventSource(this) }
         registerSource("usage-foreground") {
             UsageStatsForegroundEventSource(
