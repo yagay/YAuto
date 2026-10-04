@@ -184,4 +184,6 @@
     <string name="runtime_feature_audio_measurement_failed">声音级别测量失败</string>
     <string name="runtime_feature_weather_query_failed">天气查询失败</string>
     <string name="runtime_feature_java_target_unresolved">无法解析 Java 目标：%1$s</string>
+    <string name="runtime_import_trace_shortx_function">已导入 ShortX 函数：%1$s</string>
+    <string name="runtime_import_trace_shortx_direct_action">已导入 ShortX 直接动作：%1$s</string>
 </resources>
