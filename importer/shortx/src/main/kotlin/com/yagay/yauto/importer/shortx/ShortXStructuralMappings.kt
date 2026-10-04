@@ -32,6 +32,8 @@ internal object ShortXStructuralMappings {
                 nodeId(),
                 ConfigValue.StringValue(fields.string(1).orEmpty()),
             )
+            "ExecuteFunction" -> convertFlowCall(fields, "function")
+            "FromDA" -> convertFlowCall(fields, "da")
             "IfThenElse" -> convertIf(fields, predicate, action, path)
             "ForEach" -> convertForEach(fields, action, path)
             "ForEachPkgSet" -> convertForEachPackageSet(fields, action, path)
@@ -40,6 +42,24 @@ internal object ShortXStructuralMappings {
             "WhileLoop" -> convertWhile(fields, predicate, action, path)
             else -> null
         }
+    }
+
+
+    private fun convertFlowCall(fields: ProtoFields, kind: String): ActionNode? {
+        val sourceId = fields.string(1)?.trim().orEmpty()
+        if (sourceId.isBlank()) return null
+        val input = linkedMapOf<String, ConfigValue>()
+        fields.allBytes(2).forEach { bytes ->
+            val parameter = ProtoFields(bytes)
+            val name = parameter.string(1)?.trim().orEmpty()
+            if (name.isBlank()) return@forEach
+            input[name] = ConfigValue.StringValue(parameter.string(2).orEmpty())
+        }
+        return ActionNode.CallFlow(
+            id = nodeId(),
+            flowId = shortXFlowId(kind, sourceId),
+            input = input,
+        )
     }
 
     private fun convertIf(
