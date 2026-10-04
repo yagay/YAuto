@@ -54,6 +54,7 @@ object AndroidFeaturePacks {
         AndroidRemainingParityFeaturePack(context),
         AndroidFinalParityFeaturePack(context),
         AndroidPpnFeaturePack(context),
+        AndroidShortXParityFeaturePack(context),
         AndroidUsbFeaturePack(context),
         AndroidMediaDeviceFeaturePack(context),
         AndroidAudioFeaturePack(context),
