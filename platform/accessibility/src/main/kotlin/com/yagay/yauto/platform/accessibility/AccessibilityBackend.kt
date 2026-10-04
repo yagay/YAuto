@@ -8,6 +8,7 @@ import com.yagay.yauto.core.capability.RuntimeEnvironment
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.long
+import com.yagay.yauto.core.model.listOrEmpty
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
@@ -68,6 +69,35 @@ class AccessibilityBackend : CapabilityBackend {
                         ?: return@withContext CapabilityResult(success = false, value = ConfigValue.NullValue)
                     return@withContext CapabilityResult(success = true, value = ConfigValue.StringValue(value))
                 }
+                AccessibilityOperations.GET_VIEW_BOUNDS -> {
+                    val bounds = service.viewBounds(request.payload.string("viewId"))
+                        ?: return@withContext CapabilityResult(success = false, value = ConfigValue.NullValue)
+                    val output = ConfigValue.ObjectValue(
+                        mapOf(
+                            "left" to ConfigValue.NumberValue(bounds.left.toDouble()),
+                            "top" to ConfigValue.NumberValue(bounds.top.toDouble()),
+                            "right" to ConfigValue.NumberValue(bounds.right.toDouble()),
+                            "bottom" to ConfigValue.NumberValue(bounds.bottom.toDouble()),
+                            "width" to ConfigValue.NumberValue(bounds.width().toDouble()),
+                            "height" to ConfigValue.NumberValue(bounds.height().toDouble()),
+                            "centerX" to ConfigValue.NumberValue(bounds.centerX().toDouble()),
+                            "centerY" to ConfigValue.NumberValue(bounds.centerY().toDouble()),
+                        )
+                    )
+                    return@withContext CapabilityResult(success = true, value = output)
+                }
+                AccessibilityOperations.GESTURE_PATH -> {
+                    val points = request.payload["points"].listOrEmpty().mapNotNull { item ->
+                        val obj = (item as? ConfigValue.ObjectValue)?.value ?: return@mapNotNull null
+                        val x = obj["x"].numberOrNull() ?: return@mapNotNull null
+                        val y = obj["y"].numberOrNull() ?: return@mapNotNull null
+                        if (!x.isFinite() || !y.isFinite() || x < 0 || y < 0) return@mapNotNull null
+                        x.toFloat() to y.toFloat()
+                    }
+                    if (points.isEmpty()) return@withContext CapabilityResult(success = false, value = ConfigValue.BooleanValue(false))
+                    val completed = service.gesturePath(points, request.payload.long("durationMs", 500))
+                    return@withContext CapabilityResult(success = completed, value = ConfigValue.BooleanValue(completed))
+                }
                 AccessibilityOperations.GET_UI_NODES -> {
                     val nodes = service.uiNodes(
                         limit = request.payload.long("limit", 500).toInt(),
@@ -112,6 +142,16 @@ class AccessibilityBackend : CapabilityBackend {
                     request.payload.boolean("exact"),
                 )
                 AccessibilityOperations.CLICK_VIEW_ID -> service.clickViewId(request.payload.string("viewId"))
+                AccessibilityOperations.LONG_CLICK_VIEW_ID -> service.longClickViewId(request.payload.string("viewId"))
+                AccessibilityOperations.FOCUS_VIEW_ID -> service.focusViewId(request.payload.string("viewId"))
+                AccessibilityOperations.CLEAR_TEXT_VIEW_ID -> service.clearTextByViewId(request.payload.string("viewId"))
+                AccessibilityOperations.SCROLL_VIEW_ID -> service.scrollViewId(
+                    request.payload.string("viewId"), request.payload.string("direction", "forward")
+                )
+                AccessibilityOperations.SELECT_ALL_VIEW_ID -> service.selectAllByViewId(request.payload.string("viewId"))
+                AccessibilityOperations.COPY_VIEW_ID -> service.copyByViewId(request.payload.string("viewId"))
+                AccessibilityOperations.CUT_VIEW_ID -> service.cutByViewId(request.payload.string("viewId"))
+                AccessibilityOperations.PASTE_VIEW_ID -> service.pasteByViewId(request.payload.string("viewId"))
                 AccessibilityOperations.CLICK_DESCRIPTION -> service.clickDescription(
                     request.payload.string("description"),
                     request.payload.boolean("exact"),
