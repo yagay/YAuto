@@ -47,7 +47,7 @@ object MacroDroidMappings {
                 "MuteMicrophoneAction" -> "android.audio.microphone_mute.set"
                 "SpeakerPhoneAction" -> "android.audio.speakerphone.set"
                 "ShowVolumePopupAction" -> "android.audio.volume_ui.show"
-                "LaunchHomeScreenAction" -> "android.home.open"
+                "LaunchHomeScreenAction" -> "android.home.launch"
                 "SetKeyboardAction" -> "android.ime.picker.show"
                 else -> null
             }
@@ -401,7 +401,7 @@ object MacroDroidMappings {
                 extra = mapOf("action" to ConfigValue.StringValue("home")),
             )
         } else {
-            sourceFeature("android.home.open", importerId, sourceType, raw)
+            sourceFeature("android.home.launch", importerId, sourceType, raw)
         }
     }
 
