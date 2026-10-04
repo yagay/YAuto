@@ -30,6 +30,7 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
     override fun install(registry: FeatureRegistry) {
         registerBeanShell(registry)
         registerJavaFunction(registry)
+        registerJavaObject(registry)
         registerMvel(registry)
         registerPluginAction(registry)
         registerPluginCondition(registry)
@@ -143,6 +144,38 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx -> javaFunctions.execute(feature, ctx) }
+    }
+
+    private fun registerJavaObject(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("script.java_object.manage"),
+                FeatureKind.ACTION,
+                "Tasker Java Object",
+                "Delete a Java object or clear global Java objects kept by YAuto",
+                FeatureCategory.SCRIPT,
+                fields = listOf(
+                    FieldSchema.Choice("operation", "Operation", true, listOf("delete", "clear_globals", "clear_locals")),
+                    FieldSchema.Text("name", "Java object name"),
+                ),
+                keywords = setOf("java object", "delete java object", "global java", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val ok = when (feature.config.string("operation", "delete")) {
+                "delete" -> TaskerJavaObjectStore.remove(ctx.executionId, feature.config.string("name"))
+                "clear_globals" -> {
+                    TaskerJavaObjectStore.clearGlobals()
+                    true
+                }
+                "clear_locals" -> {
+                    TaskerJavaObjectStore.clear(ctx.executionId)
+                    true
+                }
+                else -> false
+            }
+            ActionExecutionResult(ok)
+        }
     }
 
     private fun registerMvel(registry: FeatureRegistry) {
