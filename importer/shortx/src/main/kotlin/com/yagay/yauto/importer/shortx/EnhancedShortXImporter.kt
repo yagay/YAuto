@@ -110,7 +110,7 @@ internal object ShortXFeatureSuggestions {
         "ShowPieMenu", "PieMenu" -> "surface.pie.show"
         "ShowSidebar", "Sidebar" -> "surface.sidebar.show"
         "ShowFloatButton", "FloatingButton" -> "surface.bubble.show"
-        "ExecuteMVEL" -> "expression.text.evaluate"
+        "ExecuteMVEL" -> "script.mvel.execute"
         else -> ShortXMappings.suggestedActionFeature(name)
     }
 
@@ -168,7 +168,7 @@ internal object ShortXFeatureSuggestions {
         "RequireRingerMode" -> "android.condition.audio.ringer_mode"
         "ScreenStayAwake" -> "android.condition.stay_awake_while_charging"
         "FlashlightIsOn" -> "android.condition.torch_on"
-        "MatchMVEL" -> "expression.condition"
+        "MatchMVEL" -> "script.mvel.condition"
         "IsInCall", "IsRinging" -> "android.condition.phone_call_state"
         "FoldAngle", "FoldAngleCondition", "HingeAngle" -> "android.condition.hinge_angle"
         "True" -> "core.boolean"
