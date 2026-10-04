@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_audio_microphone_mute_set_field_mode">Microphone operation</string>
+    <string name="feature_android_audio_microphone_mute_set_field_mode_option_set">Use muted switch</string>
+    <string name="feature_android_audio_microphone_mute_set_field_mode_option_mute">Mute</string>
+    <string name="feature_android_audio_microphone_mute_set_field_mode_option_unmute">Unmute</string>
+    <string name="feature_android_audio_microphone_mute_set_field_mode_option_toggle">Toggle</string>
+
+    <string name="feature_android_audio_speakerphone_set_field_mode">Speakerphone operation</string>
+    <string name="feature_android_audio_speakerphone_set_field_mode_option_set">Use speakerphone switch</string>
+    <string name="feature_android_audio_speakerphone_set_field_mode_option_enable">Enable</string>
+    <string name="feature_android_audio_speakerphone_set_field_mode_option_disable">Disable</string>
+    <string name="feature_android_audio_speakerphone_set_field_mode_option_toggle">Toggle</string>
+</resources>
