@@ -72,6 +72,7 @@ class MacroDroidImporter(
                 id = AutomationId("import-md-$sourceId"),
                 name = name,
                 enabled = obj.bool("m_enabled") ?: obj.bool("enabled") ?: true,
+                category = macroCategoryName(obj),
                 activation = Activation(events = events, condition = if (conditions.isEmpty()) null else PredicateNode.All(conditions)),
                 onEvent = actions,
                 description = obj.string("m_description", "description"),
@@ -88,6 +89,19 @@ class MacroDroidImporter(
         ImportResult(id, true, ImportBundle(automations = automations, flows = flows), issues, trace)
     }.getOrElse { error ->
         ImportResult(id, false, issues = listOf(CompatibilityIssue(ImportSeverity.ERROR, input.fileName ?: "input", message = error.message ?: userText("import.macrodroid.failed"))))
+    }
+
+    private fun macroCategoryName(obj: JsonObject): String? {
+        val direct = obj.string(
+            "m_categoryName", "categoryName", "m_category", "category", "m_categoryId", "categoryId"
+        )?.trim()
+        if (!direct.isNullOrBlank()) return direct
+        val nested = sequenceOf("m_category", "category")
+            .mapNotNull { obj[it] as? JsonObject }
+            .mapNotNull { it.string("m_name", "name", "m_categoryName", "categoryName", "m_id", "id") }
+            .map(String::trim)
+            .firstOrNull(String::isNotBlank)
+        return nested
     }
 
     private fun findMacros(root: JsonElement): List<JsonObject> = when (root) {
