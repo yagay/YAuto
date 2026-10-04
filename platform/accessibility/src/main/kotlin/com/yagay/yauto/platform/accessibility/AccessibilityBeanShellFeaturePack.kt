@@ -169,7 +169,8 @@ object BeanShellGlobals {
 
     @JvmStatic fun get(name: String): Any? = values[name]
     @JvmStatic fun set(name: String, value: Any?): Any? {
-        if (name.isNotBlank()) values[name] = value
+        if (name.isBlank()) return value
+        if (value == null) values.remove(name) else values[name] = value
         return value
     }
     @JvmStatic fun remove(name: String): Any? = values.remove(name)
