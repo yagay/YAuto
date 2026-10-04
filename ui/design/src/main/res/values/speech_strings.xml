@@ -12,4 +12,16 @@
     <string name="runtime_feature_tts_unavailable">Android text-to-speech is unavailable or failed to initialize.</string>
     <string name="runtime_feature_tts_failed">Text-to-speech playback failed.</string>
     <string name="runtime_feature_tts_timeout">Text-to-speech playback did not finish before the safety timeout.</string>
+
+    <string name="feature_android_voice_search_open_title">Open voice search</string>
+    <string name="feature_android_voice_search_open_description">Open the system voice-search experience</string>
+    <string name="feature_android_voice_search_open_field_prompt">Voice-search prompt</string>
+    <string name="feature_android_voice_search_open_field_languagetag">Language tag</string>
+
+    <string name="feature_android_web_search_open_title">Open web search</string>
+    <string name="feature_android_web_search_open_description">Open the system web-search handler with a text query</string>
+    <string name="feature_android_web_search_open_field_query">Search query</string>
+
+    <string name="feature_android_assistant_open_title">Open digital assistant</string>
+    <string name="feature_android_assistant_open_description">Open the current Android assistant using the standard assist intent</string>
 </resources>
