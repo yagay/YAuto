@@ -275,13 +275,13 @@ class YAutoAccessibilityService : AccessibilityService() {
         val node = walk(root).firstOrNull {
             it.isScrollable && it.actionList.any { actionInfo -> actionInfo.id == action }
         } ?: return false
-        val repeat = when (location) {
+        val iterations = when (location) {
             "top_force", "bottom_force" -> 64
             "top", "bottom" -> 16
             else -> 1
         }
         var changed = false
-        repeat(repeat) {
+        repeat(iterations) {
             val ok = node.performAction(action)
             if (!ok) return@repeat
             changed = true
