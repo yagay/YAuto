@@ -33,7 +33,10 @@ object TaskerMappings {
         "425" -> booleanAction(action, importerId, code, raw, "android.wifi.set")
         "433" -> booleanAction(action, importerId, code, raw, "android.mobile_data.set")
         "511" -> torch(action, importerId, code, raw)
+        "375" -> adbWifi(action, importerId, code, raw)
         "547" -> variableSet(action, importerId, code, raw)
+        "664" -> javaFunction(action, importerId, code, raw)
+        "665" -> javaObject(action, importerId, code, raw)
         "548" -> flash(action, importerId, code, raw)
         "806" -> noConfigAction(action, importerId, code, raw, "android.screen.wake")
         "808" -> autoBrightness(action, importerId, code, raw)
@@ -175,6 +178,77 @@ object TaskerMappings {
                 pairs[key] = value
             }
         return JsonObject(pairs)
+    }
+
+    private fun javaFunction(
+        action: Element,
+        importerId: String,
+        code: String,
+        raw: String,
+    ): FeatureRef? {
+        val resultTarget = action.stringArg(0).orEmpty()
+        val target = action.stringArg(1)?.takeIf(String::isNotBlank) ?: return null
+        val signature = action.stringArg(2)?.takeIf(String::isNotBlank) ?: return null
+        return sourceFeature(
+            "script.java_function",
+            importerId,
+            "TaskerAction:" + code,
+            raw,
+            extra = buildMap {
+                put("resultTarget", ConfigValue.StringValue(resultTarget))
+                put("target", ConfigValue.StringValue(target))
+                put("signature", ConfigValue.StringValue(signature))
+                for (index in 0..6) {
+                    val value = action.stringArg(index + 3).orEmpty()
+                    put("arg" + index, ConfigValue.StringValue(value))
+                }
+            },
+        )
+    }
+
+    private fun javaObject(
+        action: Element,
+        importerId: String,
+        code: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = action.intArg(0) ?: return null
+        val name = action.stringArg(1).orEmpty()
+        return when (mode) {
+            0L -> if (name.isBlank()) null else sourceFeature(
+                "script.java_object.manage",
+                importerId,
+                "TaskerAction:" + code,
+                raw,
+                extra = mapOf(
+                    "operation" to ConfigValue.StringValue("delete"),
+                    "name" to ConfigValue.StringValue(name),
+                ),
+            )
+            else -> null
+        }
+    }
+
+    private fun adbWifi(
+        action: Element,
+        importerId: String,
+        code: String,
+        raw: String,
+    ): FeatureRef? {
+        val command = action.stringArg(0)?.takeIf(String::isNotBlank) ?: return null
+        return sourceFeature(
+            "android.adb_wifi.command",
+            importerId,
+            "TaskerAction:" + code,
+            raw,
+            extra = buildMap {
+                put("command", ConfigValue.StringValue(command))
+                put("transport", ConfigValue.StringValue("privileged"))
+                action.stringArg(1)?.takeIf(String::isNotBlank)?.let {
+                    put("resultVariable", ConfigValue.StringValue(it))
+                }
+            },
+        )
     }
 
     private fun wait(action: Element, importerId: String, code: String, raw: String): FeatureRef {
