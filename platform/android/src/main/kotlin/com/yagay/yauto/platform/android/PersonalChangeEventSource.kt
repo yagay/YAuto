@@ -98,7 +98,7 @@ class PersonalChangeEventSource(
     }
 
     private fun queryCalendarEvent(uri: Uri?): CalendarEvent? {
-        val target = uri?.takeIf { CalendarContract.Events.CONTENT_URI.isPrefixOf(it) }
+        val target = uri?.takeIf { it.toString().startsWith(CalendarContract.Events.CONTENT_URI.toString()) }
             ?: CalendarContract.Events.CONTENT_URI
         return runCatching {
             resolver.query(
