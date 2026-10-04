@@ -303,6 +303,10 @@ internal fun audioStream(value: String): Int? = when (value) {
     "ringer" -> AudioManager.STREAM_RING
     "system" -> AudioManager.STREAM_SYSTEM
     "voice_call" -> AudioManager.STREAM_VOICE_CALL
-    "bluetooth_voice" -> AudioManager.STREAM_BLUETOOTH_SCO
+    // STREAM_BLUETOOTH_SCO is a legacy hidden framework constant whose stable numeric ID is 6.
+    // Keep the compatibility value local instead of compiling against a hidden Android SDK symbol.
+    "bluetooth_voice" -> LEGACY_STREAM_BLUETOOTH_SCO
     else -> null
 }
+
+private const val LEGACY_STREAM_BLUETOOTH_SCO = 6
