@@ -58,7 +58,7 @@ object AndroidFeaturePacks {
         AndroidFileFeaturePack(),
         AndroidFileEventFeaturePack(),
         AndroidArchiveFeaturePack(),
-        AndroidContentUtilityFeaturePack(context),
+        AndroidContentUtilityFeaturePack(context),\n        AndroidShareFeaturePack(context),
         AndroidEventFeaturePack(),
         AndroidDerivedEventFeaturePack(),
         AndroidBatteryEventFeaturePack(),
