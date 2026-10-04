@@ -9,9 +9,9 @@ import org.junit.Test
 
 class AndroidReferenceSignalFeaturePackTest {
     @Test
-    fun `reference signal batch contains twenty unique state-condition pairs`() {
-        assertEquals(20, REFERENCE_SIGNAL_PAIR_KEYS.size)
-        assertEquals(20, REFERENCE_SIGNAL_PAIR_KEYS.toSet().size)
+    fun `reference signal batch contains twenty two unique state-condition pairs`() {
+        assertEquals(22, REFERENCE_SIGNAL_PAIR_KEYS.size)
+        assertEquals(22, REFERENCE_SIGNAL_PAIR_KEYS.toSet().size)
     }
 
     @Test
