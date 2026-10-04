@@ -262,4 +262,5 @@
     <string name="access_sms">短信</string>
     <string name="access_phone">电话</string>
     <string name="access_record_audio">麦克风录音</string>
+    <string name="access_activity_recognition">活动识别</string>
 </resources>
