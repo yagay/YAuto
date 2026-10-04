@@ -124,4 +124,7 @@
     <string name="runtime_value_false">否</string>
     <string name="runtime_value_true">是</string>
     <string name="runtime_qs_tile_default_label">YAuto %1$d</string>
+    <string name="runtime_feature_tile_slot_invalid">磁贴位置必须为 1 到 3</string>
+    <string name="runtime_feature_solar_times_unavailable">当前日期和位置没有可用的日出日落时间</string>
+    <string name="runtime_feature_share_text_empty">分享文本和主题均为空</string>
 </resources>
