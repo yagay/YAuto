@@ -36,6 +36,7 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
     private val mediaMetadataSignatures = HashMap<MediaSession.Token, String>()
     private val mediaPlaybackSignatures = HashMap<MediaSession.Token, String>()
     private val notificationHistory = LinkedHashMap<String, RemovedNotificationRecord>()
+    private val notificationSignatures = HashMap<String, String>()
     private val restoredNotificationIds = AtomicInteger(40_000)
 
     private val activeSessionsListener = MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
@@ -55,20 +56,28 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
     override fun onListenerDisconnected() {
         if (NotificationControlBridge.current() === this) NotificationControlBridge.attach(null)
         clearMediaSessions()
+        synchronized(notificationSignatures) { notificationSignatures.clear() }
         runCatching { mediaSessionManager.removeOnActiveSessionsChangedListener(activeSessionsListener) }
         super.onListenerDisconnected()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        val signature = notificationSignature(sbn)
+        val previous = synchronized(notificationSignatures) { notificationSignatures.put(sbn.key, signature) }
+        if (previous != null && previous != signature) {
+            dispatcher.dispatch(NotificationRuntimeEventMapper.updated(sbn))
+        }
         dispatcher.dispatch(NotificationRuntimeEventMapper.posted(sbn))
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
+        synchronized(notificationSignatures) { notificationSignatures.remove(sbn.key) }
         rememberRemoved(sbn, null)
         dispatcher.dispatch(NotificationRuntimeEventMapper.removed(sbn))
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
+        synchronized(notificationSignatures) { notificationSignatures.remove(sbn.key) }
         rememberRemoved(sbn, reason)
         if (reason == REASON_CLICK) dispatcher.dispatch(NotificationRuntimeEventMapper.clicked(sbn))
         dispatcher.dispatch(NotificationRuntimeEventMapper.removed(sbn, reason))
@@ -158,6 +167,22 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
             }
         }
         return restored
+    }
+
+    private fun notificationSignature(sbn: StatusBarNotification): String {
+        val n = sbn.notification
+        val e = n.extras
+        return listOf(
+            e.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty(),
+            e.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty(),
+            e.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString().orEmpty(),
+            e.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString().orEmpty(),
+            n.channelId.orEmpty(),
+            n.category.orEmpty(),
+            n.group.orEmpty(),
+            n.flags.toString(),
+            n.actions.orEmpty().joinToString("\u0001") { it.title?.toString().orEmpty() },
+        ).joinToString("\u0000")
     }
 
     private fun rememberRemoved(sbn: StatusBarNotification, reason: Int?) {
