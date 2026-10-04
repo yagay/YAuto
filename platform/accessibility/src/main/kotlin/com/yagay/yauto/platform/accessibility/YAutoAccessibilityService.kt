@@ -27,6 +27,40 @@ class YAutoAccessibilityService : AccessibilityService() {
         ) {
             AccessibilityRuntimeBridge.update(event.packageName?.toString(), event.className?.toString())
         }
+
+        val kind = when (event.eventType) {
+            AccessibilityEvent.TYPE_VIEW_CLICKED -> "click"
+            AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> "long_click"
+            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> "text_changed"
+            AccessibilityEvent.TYPE_VIEW_FOCUSED -> "focused"
+            AccessibilityEvent.TYPE_VIEW_SCROLLED -> "scrolled"
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> "content_changed"
+            else -> null
+        } ?: return
+
+        val source = event.source
+        val eventText = event.text.orEmpty().joinToString(" ") { it?.toString().orEmpty() }.trim()
+        val sourceText = source?.text?.toString().orEmpty()
+        val text = eventText.ifBlank { sourceText }.take(MAX_EVENT_TEXT)
+        val description = source?.contentDescription?.toString().orEmpty().take(MAX_EVENT_TEXT)
+        val viewId = source?.viewIdResourceName.orEmpty().take(MAX_VIEW_ID)
+        val screenText = if (kind == "content_changed") {
+            screenText(includeDescriptions = true, unique = true, limit = EVENT_SCREEN_TEXT_NODE_LIMIT)
+                .take(MAX_SCREEN_TEXT)
+        } else {
+            ""
+        }
+        AccessibilityRuntimeBridge.dispatchUiEvent(
+            AccessibilityUiEventSnapshot(
+                event = kind,
+                packageName = event.packageName?.toString().orEmpty(),
+                className = event.className?.toString(),
+                text = text,
+                contentDescription = description,
+                viewId = viewId,
+                screenText = screenText,
+            )
+        )
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
@@ -50,6 +84,9 @@ class YAutoAccessibilityService : AccessibilityService() {
 
     internal fun clickText(text: String, exact: Boolean): Boolean =
         findTextNode(text, exact)?.let(::clickNearest) == true
+
+    internal fun clickTextAdvanced(text: String, mode: String, ignoreCase: Boolean): Boolean =
+        findMatchingNode(text, mode, ignoreCase)?.let(::clickNearest) == true
 
     internal fun longClickText(text: String, exact: Boolean): Boolean =
         findTextNode(text, exact)?.let { performNearest(it, AccessibilityNodeInfo.ACTION_LONG_CLICK) } == true
@@ -77,6 +114,54 @@ class YAutoAccessibilityService : AccessibilityService() {
 
     internal fun hasText(text: String, exact: Boolean): Boolean = findTextNode(text, exact) != null
     internal fun hasViewId(viewId: String): Boolean = findViewIdNode(viewId) != null
+    internal fun matchesText(text: String, mode: String, ignoreCase: Boolean): Boolean =
+        findMatchingNode(text, mode, ignoreCase) != null
+
+    internal fun textByViewId(viewId: String): String? {
+        val node = findViewIdNode(viewId) ?: return null
+        return node.text?.toString()
+            ?.takeIf { it.isNotBlank() }
+            ?: node.contentDescription?.toString()?.takeIf { it.isNotBlank() }
+    }
+
+    internal fun screenText(includeDescriptions: Boolean, unique: Boolean, limit: Int): String {
+        val values = ArrayList<String>()
+        val seen = LinkedHashSet<String>()
+        walkActiveWindow().take(limit.coerceIn(1, MAX_NODE_LIMIT)).forEach { node ->
+            val candidates = buildList {
+                node.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }?.let(::add)
+                if (includeDescriptions) {
+                    node.contentDescription?.toString()?.trim()?.takeIf { it.isNotEmpty() }?.let(::add)
+                }
+            }
+            candidates.forEach { value ->
+                if (!unique || seen.add(value)) values += value
+            }
+        }
+        return values.joinToString("\n").take(MAX_SCREEN_TEXT)
+    }
+
+    internal fun uiNodes(limit: Int, onlyVisible: Boolean, clickableOnly: Boolean): List<AccessibilityNodeSnapshot> =
+        walkActiveWindow()
+            .filter { !onlyVisible || it.isVisibleToUser }
+            .filter { !clickableOnly || it.isClickable || it.isLongClickable }
+            .take(limit.coerceIn(1, MAX_NODE_LIMIT))
+            .map { node ->
+                AccessibilityNodeSnapshot(
+                    text = node.text?.toString().orEmpty().take(MAX_EVENT_TEXT),
+                    contentDescription = node.contentDescription?.toString().orEmpty().take(MAX_EVENT_TEXT),
+                    viewId = node.viewIdResourceName.orEmpty().take(MAX_VIEW_ID),
+                    className = node.className?.toString().orEmpty().take(MAX_VIEW_ID),
+                    packageName = node.packageName?.toString().orEmpty().take(MAX_VIEW_ID),
+                    clickable = node.isClickable,
+                    longClickable = node.isLongClickable,
+                    editable = node.isEditable,
+                    scrollable = node.isScrollable,
+                    enabled = node.isEnabled,
+                    visible = node.isVisibleToUser,
+                )
+            }
+            .toList()
 
     internal fun scroll(direction: String): Boolean {
         val action = when (direction) {
@@ -129,6 +214,23 @@ class YAutoAccessibilityService : AccessibilityService() {
         }
     }
 
+    private fun findMatchingNode(text: String, mode: String, ignoreCase: Boolean): AccessibilityNodeInfo? {
+        if (text.isBlank()) return null
+        val regex = if (mode == "regex") runCatching {
+            Regex(text, if (ignoreCase) setOf(RegexOption.IGNORE_CASE) else emptySet())
+        }.getOrNull() ?: if (mode == "regex") return null else null
+        return walkActiveWindow().firstOrNull { node ->
+            val candidates = listOf(node.text?.toString().orEmpty(), node.contentDescription?.toString().orEmpty())
+            candidates.any { candidate ->
+                when (mode) {
+                    "exact" -> candidate.equals(text, ignoreCase = ignoreCase)
+                    "regex" -> regex?.containsMatchIn(candidate) == true
+                    else -> candidate.contains(text, ignoreCase = ignoreCase)
+                }
+            }
+        }
+    }
+
     private fun findViewIdNode(viewId: String): AccessibilityNodeInfo? {
         if (viewId.isBlank()) return null
         val root = rootInActiveWindow ?: return null
@@ -162,7 +264,7 @@ class YAutoAccessibilityService : AccessibilityService() {
         val stack = ArrayDeque<AccessibilityNodeInfo>()
         stack.add(root)
         var visited = 0
-        while (stack.isNotEmpty() && visited++ < 10_000) {
+        while (stack.isNotEmpty() && visited++ < MAX_WALK_NODES) {
             val node = stack.removeLast()
             yield(node)
             for (index in node.childCount - 1 downTo 0) node.getChild(index)?.let(stack::add)
@@ -192,5 +294,12 @@ class YAutoAccessibilityService : AccessibilityService() {
     companion object {
         @Volatile
         internal var current: YAutoAccessibilityService? = null
+
+        private const val MAX_WALK_NODES = 10_000
+        private const val MAX_NODE_LIMIT = 2_000
+        private const val EVENT_SCREEN_TEXT_NODE_LIMIT = 500
+        private const val MAX_EVENT_TEXT = 2_000
+        private const val MAX_SCREEN_TEXT = 32_000
+        private const val MAX_VIEW_ID = 1_000
     }
 }
