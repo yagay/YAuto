@@ -191,6 +191,7 @@ class AndroidWebBridgeFeaturePack : FeaturePack {
         registerSocketEvent(registry, "android.event.websocket.message", "WebSocket message", true)
         registerSocketEvent(registry, "android.event.websocket.closed", "WebSocket closed", false)
         registerSocketEvent(registry, "android.event.websocket.failure", "WebSocket failure", true)
+        registerAnySocketEvent(registry)
     }
 
     private fun registerSocketEvent(registry: FeatureRegistry, typeId: String, title: String, textFilter: Boolean) {
@@ -216,6 +217,44 @@ class AndroidWebBridgeFeaturePack : FeaturePack {
         }
     }
 
+    private fun registerAnySocketEvent(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.websocket"),
+                FeatureKind.EVENT,
+                "WebSocket event",
+                "Run on WebSocket open, message, close or failure and optionally filter connection, URL or message text",
+                FeatureCategory.NETWORK,
+                fields = listOf(
+                    FieldSchema.Text("connectionId", "Connection ID"),
+                    FieldSchema.Text("url", "WebSocket URL contains"),
+                    FieldSchema.Choice("event", "Event", options = listOf("any", "open", "message", "closed", "failure")),
+                    FieldSchema.Text("textContains", "Message / error text contains"),
+                ),
+                keywords = setOf("websocket", "open", "message", "closed", "failure", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val eventName = when (ctx.event.typeId) {
+                "android.event.websocket_open" -> "open"
+                "android.event.websocket.message" -> "message"
+                "android.event.websocket.closed" -> "closed"
+                "android.event.websocket.failure" -> "failure"
+                else -> return@registerEvent false
+            }
+            val wantedId = feature.config.string("connectionId").resolveVariables(ctx.variables).trim()
+            if (wantedId.isNotBlank() && ctx.event.payload.string("connectionId") != wantedId) return@registerEvent false
+            val wantedUrl = feature.config.string("url").resolveVariables(ctx.variables).trim()
+            if (wantedUrl.isNotBlank() && !ctx.event.payload.string("url").contains(wantedUrl, ignoreCase = true)) {
+                return@registerEvent false
+            }
+            val wantedEvent = feature.config.string("event", "any")
+            if (wantedEvent != "any" && wantedEvent != eventName) return@registerEvent false
+            val wantedText = feature.config.string("textContains").resolveVariables(ctx.variables)
+            wantedText.isBlank() || ctx.event.payload.string("text").contains(wantedText, ignoreCase = true)
+        }
+    }
+
     private fun responseValue(response: Response): ConfigValue.ObjectValue = ConfigValue.ObjectValue(
         mapOf(
             "code" to ConfigValue.NumberValue(response.code.toDouble()),
@@ -231,6 +270,7 @@ private class WebSocketController(private val client: OkHttpClient) {
     private data class Connection(
         val socket: WebSocket,
         val messages: ConcurrentLinkedQueue<String>,
+        val url: String,
         @Volatile var connected: Boolean = false,
     )
 
@@ -244,31 +284,31 @@ private class WebSocketController(private val client: OkHttpClient) {
         val listener = object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 connections[id]?.connected = true
-                AdvancedParityRuntimeBridge.emit("android.event.websocket_open", id, "", response.code, "")
+                AdvancedParityRuntimeBridge.emit("android.event.websocket_open", id, url, "", response.code, "")
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
                 queue.add(text)
                 while (queue.size > 1000) queue.poll()
-                AdvancedParityRuntimeBridge.emit("android.event.websocket.message", id, text, 0, "")
+                AdvancedParityRuntimeBridge.emit("android.event.websocket.message", id, url, text, 0, "")
             }
 
             override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                AdvancedParityRuntimeBridge.emit("android.event.websocket_closed", id, "", code, reason)
+                AdvancedParityRuntimeBridge.emit("android.event.websocket.closed", id, url, "", code, reason)
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                 connections.remove(id)
-                AdvancedParityRuntimeBridge.emit("android.event.websocket_closed", id, "", code, reason)
+                AdvancedParityRuntimeBridge.emit("android.event.websocket.closed", id, url, "", code, reason)
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 connections.remove(id)
-                AdvancedParityRuntimeBridge.emit("android.event.websocketfailure", id, t.message.orEmpty(), response?.code ?: 0, t.javaClass.simpleName)
+                AdvancedParityRuntimeBridge.emit("android.event.websocket.failure", id, url, t.message.orEmpty(), response?.code ?: 0, t.javaClass.simpleName)
             }
         }
         socket = client.newWebSocket(request, listener)
-        connections[id] = Connection(socket, queue)
+        connections[id] = Connection(socket, queue, url)
         true
     }.getOrDefault(false)
 
@@ -292,12 +332,13 @@ private class WebSocketController(private val client: OkHttpClient) {
 object AdvancedParityRuntimeBridge {
     @Volatile private var emitter: RuntimeEventEmitter? = null
     fun attach(value: RuntimeEventEmitter?) { emitter = value }
-    fun emit(typeId: String, connectionId: String, text: String, code: Int, reason: String) {
+    fun emit(typeId: String, connectionId: String, url: String, text: String, code: Int, reason: String) {
         emitter?.emit(
             RuntimeEvent(
                 typeId = typeId,
                 payload = mapOf(
                     "connectionId" to ConfigValue.StringValue(connectionId),
+                    "url" to ConfigValue.StringValue(url),
                     "text" to ConfigValue.StringValue(text),
                     "code" to ConfigValue.NumberValue(code.toDouble()),
                     "reason" to ConfigValue.StringValue(reason),
