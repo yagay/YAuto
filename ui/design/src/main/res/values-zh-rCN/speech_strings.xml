@@ -12,4 +12,16 @@
     <string name="runtime_feature_tts_unavailable">Android 文字转语音不可用或初始化失败。</string>
     <string name="runtime_feature_tts_failed">文字转语音播放失败。</string>
     <string name="runtime_feature_tts_timeout">文字转语音在安全超时时间内未完成。</string>
+
+    <string name="feature_android_voice_search_open_title">打开语音搜索</string>
+    <string name="feature_android_voice_search_open_description">打开系统语音搜索界面</string>
+    <string name="feature_android_voice_search_open_field_prompt">语音搜索提示</string>
+    <string name="feature_android_voice_search_open_field_languagetag">语言标签</string>
+
+    <string name="feature_android_web_search_open_title">打开网页搜索</string>
+    <string name="feature_android_web_search_open_description">使用文本查询打开系统网页搜索处理程序</string>
+    <string name="feature_android_web_search_open_field_query">搜索内容</string>
+
+    <string name="feature_android_assistant_open_title">打开数字助理</string>
+    <string name="feature_android_assistant_open_description">通过标准 Assist Intent 打开当前 Android 助理</string>
 </resources>
