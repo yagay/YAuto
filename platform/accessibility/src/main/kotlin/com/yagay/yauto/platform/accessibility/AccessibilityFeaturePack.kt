@@ -52,6 +52,28 @@ class AccessibilityFeaturePack(
         }
 
         action(registry, AccessibilityOperations.GLOBAL_ACTION, "Global UI action", "Perform an Android accessibility global action", listOf(FieldSchema.Choice("action", "Action", true, listOf("back", "home", "recents", "notifications", "quick_settings", "power_dialog", "lock_screen"))), setOf("back", "home", "recents", "quick settings", "accessibility"))
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("accessibility.scroll_to"), FeatureKind.ACTION,
+                "Scroll view to location",
+                "Scroll the active Accessibility scrollable view toward top, bottom, forward or backward",
+                FeatureCategory.UI_AUTOMATION,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                fields = listOf(
+                    FieldSchema.Choice(
+                        "location", "Location", true,
+                        listOf("top", "bottom", "top_force", "bottom_force", "forward", "backward")
+                    )
+                ),
+                keywords = setOf("scroll to", "top", "bottom", "shortx", "accessibility"),
+                ownerPackId = id,
+            )
+        ) { feature, _ ->
+            val service = YAutoAccessibilityService.current ?: return@registerAction ActionExecutionResult(false)
+            ActionExecutionResult(service.scrollToLocation(feature.config.string("location", "forward")))
+        }
+
         action(registry, AccessibilityOperations.SCROLL, "Scroll UI", "Scroll the first suitable scrollable node in the active window", listOf(FieldSchema.Choice("direction", "Direction", true, listOf("forward", "backward", "up", "down", "left", "right"))), setOf("scroll", "page", "ui", "swipe"))
         action(registry, AccessibilityOperations.TAP, "Tap coordinates", "Dispatch a tap gesture at screen coordinates", listOf(FieldSchema.Number("x", "X", true, min = 0.0), FieldSchema.Number("y", "Y", true, min = 0.0), FieldSchema.Duration("durationMs", "Press duration")), setOf("tap", "gesture", "coordinate", "accessibility"))
         action(registry, AccessibilityOperations.SWIPE, "Swipe", "Dispatch a swipe gesture between screen coordinates", listOf(FieldSchema.Number("x1", "Start X", true, min = 0.0), FieldSchema.Number("y1", "Start Y", true, min = 0.0), FieldSchema.Number("x2", "End X", true, min = 0.0), FieldSchema.Number("y2", "End Y", true, min = 0.0), FieldSchema.Duration("durationMs", "Duration")), setOf("swipe", "gesture", "accessibility"))
