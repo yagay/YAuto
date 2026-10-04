@@ -181,6 +181,7 @@ internal object ShortXFeatureSuggestions {
         "ChargerPlug" -> "android.event.power_connected"
         "ChargerUnplug" -> "android.event.power_disconnected"
         "ClipboardContentChanged" -> "android.event.clipboard_changed"
+        "GlobalVarChanged" -> "core.event.variable_changed"
         "DarkModeStatusChanged" -> "android.event.dark_mode_changed"
         "LocationStatusChanged" -> "android.event.location_mode_changed"
         "NFCStatusChanged" -> "android.event.nfc_state_changed"
