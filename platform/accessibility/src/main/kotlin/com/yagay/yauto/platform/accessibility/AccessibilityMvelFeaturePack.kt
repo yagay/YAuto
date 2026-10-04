@@ -39,7 +39,7 @@ class AccessibilityMvelFeaturePack(
             val timeout = ((feature.config["timeoutMs"] as? ConfigValue.NumberValue)?.value ?: 10_000.0)
                 .toLong().coerceIn(100L, 30_000L)
             val raw = evaluate(expression, timeout, ctx.variables)
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "MVEL timeout or error"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.mvel_failed"))
             val output = javaToConfig(raw)
             feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
             ActionExecutionResult(true, output)
