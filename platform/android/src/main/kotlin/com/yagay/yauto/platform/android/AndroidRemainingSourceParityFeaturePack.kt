@@ -171,13 +171,7 @@ class AndroidRemainingSourceParityFeaturePack(context: Context) : FeaturePack {
             ) {
                 runCatching { manager.getActiveSubscriptionInfoForSimSlotIndex(slot) }.getOrNull()
             } else null
-            val available = if (
-                context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED
-            ) {
-                runCatching { manager.getAvailableSubscriptionInfoList().orEmpty().firstOrNull { it.getSimSlotIndex() == slot } }.getOrNull()
-            } else null
-
-            var subId: Int? = active?.getSubscriptionId() ?: available?.getSubscriptionId()
+            var subId: Int? = active?.subscriptionId
             var currentlyActive = active != null
             if (subId == null) {
                 val dump = shellResult(ctx, "dumpsys isub")
