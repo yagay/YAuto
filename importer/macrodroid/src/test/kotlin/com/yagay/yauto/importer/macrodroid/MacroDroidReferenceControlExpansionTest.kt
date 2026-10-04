@@ -43,7 +43,7 @@ class MacroDroidReferenceControlExpansionTest {
             features.map { it.typeId },
         )
         assertEquals(ConfigValue.NumberValue(85.0), features[0].config["scalePercent"])
-        assertEquals(ConfigValue.NumberValue(120.0), features[1].config["scalePercent"])
+        assertEquals(ConfigValue.NumberValue(1.2), features[1].config["scale"])
         assertEquals(ConfigValue.StringValue("full"), features[2].config["mode"])
         assertEquals(ConfigValue.StringValue("toggle"), features[3].config["mode"])
         assertEquals(ConfigValue.StringValue("enable"), features[4].config["mode"])
