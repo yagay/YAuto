@@ -99,7 +99,7 @@ object MacroDroidMappings {
         "SetRingtoneAction" -> defaultSound(obj, "ringtone", importerId, sourceType, raw)
         "SetNotificationSoundAction" -> defaultSound(obj, "notification", importerId, sourceType, raw)
         "DisplayDensityAction" -> percentageAction(obj, "android.display.density.set", "scalePercent", importerId, sourceType, raw, 50.0, 150.0)
-        "FontScaleAction" -> percentageAction(obj, "android.display.font_scale.set", "scalePercent", importerId, sourceType, raw, 50.0, 250.0)
+        "FontScaleAction" -> fontScale(obj, importerId, sourceType, raw)
         "ImmersiveModeAction" -> immersiveMode(obj, importerId, sourceType, raw)
         "MuteMicrophoneAction" -> microphoneMute(obj, importerId, sourceType, raw)
         "SpeakerPhoneAction" -> speakerphone(obj, importerId, sourceType, raw)
@@ -275,6 +275,25 @@ object MacroDroidMappings {
             sourceType,
             raw,
             extra = mapOf("scalePercent" to ConfigValue.NumberValue(value)),
+        )
+    }
+
+    private fun fontScale(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        if (obj["variable"] != null && obj["variable"] !is JsonNull) return null
+        val dictionaryKeys = obj.array("varDictionaryKeys")
+        if (!dictionaryKeys.isNullOrEmpty()) return null
+        val percent = obj.number("scalePercent")?.takeIf { it.isFinite() && it in 50.0..250.0 } ?: return null
+        return sourceFeature(
+            "android.display.font_scale.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("scale" to ConfigValue.NumberValue(percent / 100.0)),
         )
     }
 
