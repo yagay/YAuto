@@ -208,9 +208,7 @@ object MacroDroidFeatureSuggestions {
         "WeatherTrigger" -> "android.event.weather_changed"
         "SimChangeTrigger" -> "android.event.sim_subscription_changed"
         "WidgetPressedTrigger" -> "android.event.shortcut"
-        "WeatherTrigger" -> "android.event.weather_changed"
         "ToastTrigger" -> "android.event.toast_shown"
-        "SimChangeTrigger" -> "android.event.sim_subscription_changed"
         "OrientationChangeTrigger" -> "android.event.orientation_changed"
 
         "ApplicationLaunchedTrigger" -> "android.event.app_foreground"
