@@ -124,6 +124,89 @@ class AndroidMacroDroidEventParityFeaturePack : FeaturePack {
 
         registry.registerEvent(
             FeatureDescriptor(
+                FeatureId("android.event.accessibility_state_changed"),
+                FeatureKind.EVENT,
+                "Accessibility service state changed",
+                "Run when Android's global accessibility enabled state changes",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(FieldSchema.Choice("state", "State", options = listOf("any", "enabled", "disabled"))),
+                keywords = setOf("accessibility", "service state", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.accessibility_state_changed") return@registerEvent false
+            val enabled = (ctx.event.payload["enabled"] as? com.yagay.yauto.core.model.ConfigValue.BooleanValue)?.value
+            when (feature.config.string("state", "any")) {
+                "enabled" -> enabled == true
+                "disabled" -> enabled == false
+                else -> true
+            }
+        }
+
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.cellular_service_changed"),
+                FeatureKind.EVENT,
+                "Cellular signal/service changed",
+                "Run when Android telephony service availability changes",
+                FeatureCategory.NETWORK,
+                fields = listOf(FieldSchema.Choice("state", "State", options = listOf("any", "available", "unavailable"))),
+                keywords = setOf("signal", "service", "cellular", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.cellular_service_changed") return@registerEvent false
+            val available = (ctx.event.payload["available"] as? com.yagay.yauto.core.model.ConfigValue.BooleanValue)?.value
+            when (feature.config.string("state", "any")) {
+                "available" -> available == true
+                "unavailable" -> available == false
+                else -> true
+            }
+        }
+
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.shizuku_stopped"),
+                FeatureKind.EVENT,
+                "Shizuku stopped",
+                "Run when the Shizuku binder dies",
+                FeatureCategory.SYSTEM,
+                keywords = setOf("shizuku", "stopped", "binder", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { _, ctx -> ctx.event.typeId == "android.event.shizuku_stopped" }
+
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.email_received"),
+                FeatureKind.EVENT,
+                "Email notification received",
+                "Run when Android posts an email-category notification matching optional filters",
+                FeatureCategory.NOTIFICATION,
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "Mail app package"),
+                    FieldSchema.Text("subjectContains", "Subject/title contains"),
+                    FieldSchema.Text("bodyContains", "Body contains"),
+                ),
+                keywords = setOf("email", "mail", "notification", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.notification_posted") return@registerEvent false
+            val category = ctx.event.payload.string("category")
+            if (category != android.app.Notification.CATEGORY_EMAIL && !category.equals("email", true)) {
+                return@registerEvent false
+            }
+            val pkg = feature.config.string("package").trim()
+            val subject = feature.config.string("subjectContains").trim()
+            val body = feature.config.string("bodyContains").trim()
+            (pkg.isBlank() || ctx.event.payload.string("package") == pkg) &&
+                (subject.isBlank() || ctx.event.payload.string("title").contains(subject, true)) &&
+                (body.isBlank() || ctx.event.payload.string("text").contains(body, true))
+        }
+
+        registry.registerEvent(
+            FeatureDescriptor(
                 FeatureId("android.event.failed_unlock"),
                 FeatureKind.EVENT,
                 "Failed device unlock",
