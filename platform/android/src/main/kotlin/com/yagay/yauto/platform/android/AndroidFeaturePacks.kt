@@ -37,7 +37,7 @@ object AndroidFeaturePacks {
         AndroidUsbFeaturePack(context),
         AndroidMediaDeviceFeaturePack(context),
         AndroidAudioFeaturePack(context),
-        AndroidMediaTransportFeaturePack(context),
+        AndroidMediaTransportFeaturePack(context),\n        AndroidMediaSessionEventFeaturePack(),
         AndroidSpeechFeaturePack(context),
         AndroidPlaybackFeaturePack(context),
         AndroidOrganizerFeaturePack(context),
