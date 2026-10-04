@@ -75,6 +75,7 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
         registerConfigurationAndSimEvents(registry)
         registerWeather(registry)
         registerWeatherEvent(registry)
+        registerRuntimeStates(registry)
     }
 
     private fun registerLocation(registry: FeatureRegistry) {
@@ -860,6 +861,74 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
         }
     }
 
+
+    private fun registerRuntimeStates(registry: FeatureRegistry) {
+        val mobileEvaluator = ConditionEvaluator { feature, _ ->
+            if (!runtimePermissionGranted(context, "phone")) return@ConditionEvaluator false
+            val actual = runCatching {
+                @Suppress("MissingPermission")
+                telephony.isDataEnabled
+            }.getOrDefault(false)
+            actual == feature.config.boolean("value", true)
+        }
+        val mobileState = FeatureDescriptor(
+            FeatureId("android.state.mobile_data_enabled"), FeatureKind.STATE,
+            "Mobile data enabled", "Check whether mobile data is enabled for the default telephony subscription",
+            FeatureCategory.NETWORK,
+            fields = listOf(FieldSchema.Toggle("value", "Enabled")),
+            accessRequirements = setOf(AccessRequirement.PHONE),
+            keywords = setOf("mobile data", "cellular data", "enabled", "shortx"),
+            ownerPackId = id,
+        )
+        registry.registerState(mobileState, mobileEvaluator)
+        registry.registerCondition(
+            mobileState.copy(id = FeatureId("android.condition.mobile_data_enabled"), kind = FeatureKind.CONDITION),
+            mobileEvaluator,
+        )
+
+        val serviceFields = listOf(
+            FieldSchema.AppPicker("package", "App / package", true),
+            FieldSchema.Text("service", "Service class contains"),
+            FieldSchema.Toggle("value", "Running"),
+        )
+        val serviceEvaluator = ConditionEvaluator { feature, ctx ->
+            val pkg = feature.config.string("package").trim()
+            if (!pkg.matches(PACKAGE_NAME)) return@ConditionEvaluator false
+            val service = feature.config.string("service").trim()
+            val result = ctx.capabilities.execute(
+                CapabilityRequest(
+                    capability = CapabilityIds.PRIVILEGED_SHELL,
+                    operationId = "system.shell.execute",
+                    payload = mapOf(
+                        "command" to ConfigValue.StringValue("dumpsys activity services " + shellQuote(pkg)),
+                        "timeoutMs" to ConfigValue.NumberValue(5_000.0),
+                    ),
+                )
+            )
+            val stdout = ((result.value as? ConfigValue.ObjectValue)?.value?.get("stdout") as? ConfigValue.StringValue)?.value.orEmpty()
+            val running = result.success &&
+                stdout.contains(pkg, ignoreCase = false) &&
+                (service.isBlank() || stdout.contains(service, ignoreCase = true))
+            running == feature.config.boolean("value", true)
+        }
+        val serviceState = FeatureDescriptor(
+            FeatureId("android.state.service_running"), FeatureKind.STATE,
+            "Android service running",
+            "Check a package/service in ActivityManager using Root or Shizuku dumpsys",
+            FeatureCategory.APP,
+            fields = serviceFields,
+            capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
+            implementationOptions = privilegedOptions(),
+            keywords = setOf("service running", "background service", "dumpsys", "shortx", "root", "shizuku"),
+            ownerPackId = id,
+        )
+        registry.registerState(serviceState, serviceEvaluator)
+        registry.registerCondition(
+            serviceState.copy(id = FeatureId("android.condition.service_running"), kind = FeatureKind.CONDITION),
+            serviceEvaluator,
+        )
+    }
+
     private fun sensorPrivacyPair(
         registry: FeatureRegistry,
         manager: SensorPrivacyManager,
@@ -1042,6 +1111,8 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
         return ActionExecutionResult(true, value)
     }
 
+    private fun shellQuote(value: String): String = "'" + value.replace("'", "'\\''") + "'"
+
     private fun parseExtras(raw: String): Map<String, String> = buildMap {
         raw.lineSequence().forEach { line ->
             val index = line.indexOf('=')
@@ -1147,5 +1218,9 @@ class SubscriptionChangeEventSource(context: Context) : AndroidEventSource {
             smsId = SubscriptionManager.getDefaultSmsSubscriptionId(),
             voiceId = SubscriptionManager.getDefaultVoiceSubscriptionId(),
         )
+    }
+
+    private companion object {
+        val PACKAGE_NAME = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
     }
 }
