@@ -66,6 +66,7 @@ object AndroidFeaturePacks {
         AndroidLegacyParityFeaturePack(context),
         AndroidMacroDroidParityFeaturePack(context),
         AndroidMacroDroidSystemParityFeaturePack(context),
+        AndroidMacroDroidEventParityFeaturePack(),
         AndroidModeFeaturePack(context),
         AndroidMatterFeaturePack(context),
         AndroidWearFeaturePack(context),
