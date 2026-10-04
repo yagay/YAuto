@@ -149,13 +149,12 @@ internal object ShortXFeatureSuggestions {
         "WebSocketSend" -> "android.websocket.send"
         "PluginAction" -> "android.plugin.locale.fire"
         "StartActivity", "StartActivityIntent", "StartActivityIntentUri", "StartActivityUrlSchema" -> "android.external.intent.invoke"
-        "StartService", "StopService" -> "android.external.intent.invoke"
+        "StartService" -> "android.external.intent.invoke"
         "MapNav", "MapApp" -> "android.maps.open"
         "SetStatusBarIcon" -> "android.notification.ppn.show"
         "RemoveStatusBarIcon" -> "android.notification.ppn.remove"
         "SetRuleEnabled" -> "core.automation.set_enabled"
         "GetScreenOnTime" -> "android.screen_on_time.get"
-        "WaitForIdle" -> "core.delay"
         "MatchRegex" -> "data.regex.matches"
         "ReplaceRegex" -> "data.regex.replace"
         "RequestAudioFocus" -> "android.audio.focus.request"
@@ -223,7 +222,6 @@ internal object ShortXFeatureSuggestions {
         "Logcat" -> "android.event.system_log_entry"
         "UsbDeviceAttached", "UsbDeviceDetached" -> "android.event.usb_device_changed"
         "IncomingShare" -> "android.event.share_text_received"
-        "ScreenOnTime" -> "android.event.time_tick"
         else -> null
     }
 
@@ -256,7 +254,6 @@ internal object ShortXFeatureSuggestions {
         "MatchJS" -> "script.javascript.condition"
         "VPNIsConnected" -> "android.condition.network_profile"
         "IsRuleEnabled" -> "core.automation.enabled"
-        "CalendarDayMatch", "CalendarDayType" -> "time.condition.weekday"
         "MatchMVEL" -> "script.mvel.condition"
         "IsInCall", "IsRinging" -> "android.condition.phone_call_state"
         "FoldAngle", "FoldAngleCondition", "HingeAngle" -> "android.condition.hinge_angle"
