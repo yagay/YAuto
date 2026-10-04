@@ -26,6 +26,16 @@ import java.util.UUID
 fun interface FlowResolver { suspend fun resolve(id: FlowId): Flow? }
 object EmptyFlowResolver : FlowResolver { override suspend fun resolve(id: FlowId): Flow? = null }
 
+fun interface RuntimeEventWaiter {
+    suspend fun await(
+        events: List<FeatureRef>,
+        variables: Map<String, ConfigValue>,
+        timeoutMs: Long?,
+        executionId: ExecutionId,
+        nodeId: NodeId,
+    ): Boolean
+}
+
 enum class AutomationPhase { ENTER, EVENT, EXIT }
 
 data class EngineResult(
@@ -41,6 +51,7 @@ class AutomationEngine(
     private val capabilities: CapabilityClient,
     private val tracer: ExecutionTracer,
     private val flowResolver: FlowResolver = EmptyFlowResolver,
+    private val eventWaiter: RuntimeEventWaiter? = null,
     private val expressions: ExpressionEngine = SimpleExpressionEngine(),
 ) {
     suspend fun execute(
@@ -159,7 +170,7 @@ class AutomationEngine(
                         Signal.Break -> return Signal.Next
                         else -> return signal
                     }
-                } while (evaluatePredicate(node.condition, executionId, variables, automation, flow))
+                } while (evaluatePredicate(node.condition, executionId, node.id, variables))
                 Signal.Next
             }
 
@@ -225,6 +236,26 @@ class AutomationEngine(
                     false
                 } ?: false
                 if (completed) Signal.Next else Signal.Failure(userText("engine.wait_until_timeout", node.timeoutMs))
+            }
+            is ActionNode.WaitEvent -> {
+                if (node.events.isEmpty()) return Signal.Failure(userText("engine.unknown_event", "empty"))
+                if (!node.unlimited && node.timeoutMs <= 0L) {
+                    return Signal.Failure(userText("engine.wait_until_invalid"))
+                }
+                val waiter = eventWaiter
+                    ?: return Signal.Failure(userText("feature.operation_failed", "Runtime event waiter unavailable"))
+                val matched = waiter.await(
+                    events = node.events,
+                    variables = variables.snapshot(),
+                    timeoutMs = if (node.unlimited) null else node.timeoutMs,
+                    executionId = executionId,
+                    nodeId = node.id,
+                )
+                when {
+                    matched -> Signal.Next
+                    node.continueOnTimeout -> Signal.Next
+                    else -> Signal.Failure(userText("engine.wait_until_timeout", node.timeoutMs))
+                }
             }
             is ActionNode.CallFlow -> {
                 val depth = currentCoroutineContext()[FlowDepth]?.value ?: 0
