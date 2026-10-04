@@ -2,7 +2,7 @@ name: Android Debug
 
 on:
   push:
-    branches: [ main, test ]
+    branches: [ main, test, feature/mass-data-flow-expansion-20261003 ]
   pull_request:
     branches: [ main ]
 
