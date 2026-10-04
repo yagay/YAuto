@@ -105,6 +105,7 @@ class ReferenceRuntimeSignalEventSource(context: Context) : AndroidEventSource {
 
     private val torchCallback = object : CameraManager.TorchCallback() {
         override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
+            ReferenceRuntimeSignalState.updateTorch(cameraId, available = true, enabled = enabled)
             emitter?.emit(
                 RuntimeEvent(
                     typeId = "android.event.torch_state_changed",
@@ -119,6 +120,7 @@ class ReferenceRuntimeSignalEventSource(context: Context) : AndroidEventSource {
         }
 
         override fun onTorchModeUnavailable(cameraId: String) {
+            ReferenceRuntimeSignalState.updateTorch(cameraId, available = false, enabled = false)
             emitter?.emit(
                 RuntimeEvent(
                     typeId = "android.event.torch_state_changed",
@@ -228,12 +230,21 @@ internal fun referenceSettingNamespace(uri: Uri): String? = when {
 
 internal object ReferenceRuntimeSignalState {
     private val unavailableCameras = ConcurrentHashMap.newKeySet<String>()
+    private val availableTorches = ConcurrentHashMap.newKeySet<String>()
+    private val enabledTorches = ConcurrentHashMap.newKeySet<String>()
 
     fun updateUnavailableCameras(values: Collection<String>) {
         unavailableCameras.clear()
         unavailableCameras.addAll(values)
     }
 
+    fun updateTorch(cameraId: String, available: Boolean, enabled: Boolean) {
+        if (available) availableTorches.add(cameraId) else availableTorches.remove(cameraId)
+        if (available && enabled) enabledTorches.add(cameraId) else enabledTorches.remove(cameraId)
+    }
+
     fun cameraInUse(): Boolean = unavailableCameras.isNotEmpty()
     fun unavailableCameraCount(): Int = unavailableCameras.size
+    fun torchAvailable(): Boolean = availableTorches.isNotEmpty()
+    fun torchEnabled(): Boolean = enabledTorches.isNotEmpty()
 }
