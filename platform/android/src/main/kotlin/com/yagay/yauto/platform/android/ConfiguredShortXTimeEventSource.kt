@@ -123,11 +123,16 @@ class ConfiguredShortXTimeEventSource(
     private fun emitOnce(feature: FeatureRef, marker: String, payload: Map<String, ConfigValue>) {
         val key = eventKey(feature)
         if (emittedKeys.put(key, marker) == marker) return
-        emitter?.emit(RuntimeEvent(feature.typeId, payload, source = id))
+        emitter?.emit(
+            RuntimeEvent(
+                feature.typeId,
+                payload + ("ruleKey" to ConfigValue.StringValue(shortXTimeRuleKey(feature))),
+                source = id,
+            )
+        )
     }
 
-    private fun eventKey(feature: FeatureRef): String =
-        feature.typeId + "|" + feature.config.entries.sortedBy { it.key }.joinToString(";") { it.key + "=" + it.value }
+    private fun eventKey(feature: FeatureRef): String = shortXTimeRuleKey(feature)
 
     private fun parseTime(raw: String): LocalTime? = runCatching {
         when (raw.trim().count { it == ':' }) {
@@ -161,3 +166,11 @@ class ConfiguredShortXTimeEventSource(
     private fun addMillis(time: LocalTime, millis: Long): LocalTime =
         time.plusNanos((millis % 86_400_000L) * 1_000_000L)
 }
+
+
+internal fun shortXTimeRuleKey(feature: FeatureRef): String =
+    feature.typeId + "|" + feature.config.entries
+        .filterKeys { it != "source.raw" && it != "source.type" && it != "source.importer" && it != "tag" }
+        .toSortedMap()
+        .entries
+        .joinToString(";") { it.key + "=" + it.value }
