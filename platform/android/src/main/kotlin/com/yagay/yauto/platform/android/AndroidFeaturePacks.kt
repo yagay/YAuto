@@ -60,6 +60,7 @@ object AndroidFeaturePacks {
         AndroidSpeechFeaturePack(context),
         AndroidPlaybackFeaturePack(context),
         AndroidMediaCaptureFeaturePack(context),
+        AndroidCameraCaptureFeaturePack(context),
         AndroidVisionFeaturePack(context),
         AndroidOrganizerFeaturePack(context),
         AndroidDeviceDataFeaturePack(context),
