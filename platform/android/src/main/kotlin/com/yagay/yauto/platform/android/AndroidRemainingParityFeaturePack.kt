@@ -39,10 +39,14 @@ import com.yagay.yauto.core.registry.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
 import java.net.NetworkInterface
+import java.net.URL
 import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
+import org.json.JSONObject
 import kotlin.coroutines.resume
 import kotlin.math.log10
 import kotlin.math.sqrt
@@ -67,6 +71,8 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
         registerSoundLevel(registry)
         registerSensorPrivacy(registry)
         registerExternalIntegration(registry)
+        registerConfigurationAndSimEvents(registry)
+        registerWeather(registry)
     }
 
     private fun registerLocation(registry: FeatureRegistry) {
@@ -576,6 +582,134 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
         sensorPrivacyPair(registry, manager, SensorPrivacyManager.Sensors.CAMERA, "camera", "Camera privacy blocked")
     }
 
+    private fun registerConfigurationAndSimEvents(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.configuration_changed"), FeatureKind.EVENT,
+                "Android configuration changed", "Run when Android configuration changes",
+                FeatureCategory.SYSTEM,
+                fields = listOf(
+                    FieldSchema.Choice("orientation", "Orientation", options = listOf("any", "portrait", "landscape", "square", "undefined")),
+                ),
+                keywords = setOf("configuration", "orientation", "font scale", "ui mode"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.configuration_changed") return@registerEvent false
+            val wanted = feature.config.string("orientation", "any")
+            wanted == "any" || ctx.event.payload.string("orientation") == wanted
+        }
+
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.orientation_changed"), FeatureKind.EVENT,
+                "Device orientation changed", "Run when Android reports portrait/landscape configuration changes",
+                FeatureCategory.DISPLAY,
+                fields = listOf(
+                    FieldSchema.Choice("orientation", "Orientation", options = listOf("any", "portrait", "landscape", "square", "undefined")),
+                ),
+                keywords = setOf("orientation", "portrait", "landscape", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.orientation_changed") return@registerEvent false
+            val wanted = feature.config.string("orientation", "any")
+            wanted == "any" || ctx.event.payload.string("orientation") == wanted
+        }
+
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.sim_subscription_changed"), FeatureKind.EVENT,
+                "SIM subscription changed", "Run when active SIMs or Android default data/SMS/voice subscriptions change",
+                FeatureCategory.NETWORK,
+                fields = listOf(
+                    FieldSchema.Choice("change", "Change type", options = listOf("any", "active_set", "default_data", "default_sms", "default_voice")),
+                    FieldSchema.Number("subscriptionId", "Subscription ID (-1 = any)", min = -1.0),
+                ),
+                accessRequirements = setOf(AccessRequirement.PHONE),
+                keywords = setOf("sim", "subscription", "default data", "sim changed", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.sim_subscription_changed") return@registerEvent false
+            val wantedChange = feature.config.string("change", "any")
+            val changeMatches = when (wantedChange) {
+                "active_set" -> ctx.event.payload.boolean("activeSetChanged")
+                "default_data" -> ctx.event.payload.boolean("defaultDataChanged")
+                "default_sms" -> ctx.event.payload.boolean("defaultSmsChanged")
+                "default_voice" -> ctx.event.payload.boolean("defaultVoiceChanged")
+                else -> true
+            }
+            if (!changeMatches) return@registerEvent false
+            val wantedId = feature.config["subscriptionId"].numberOrNull()?.toInt() ?: -1
+            if (wantedId < 0) return@registerEvent true
+            val ids = (ctx.event.payload["activeIds"] as? ConfigValue.ListValue)?.value.orEmpty()
+                .mapNotNull { (it as? ConfigValue.NumberValue)?.value?.toInt() }
+            wantedId in ids ||
+                (ctx.event.payload["defaultDataId"] as? ConfigValue.NumberValue)?.value?.toInt() == wantedId ||
+                (ctx.event.payload["defaultSmsId"] as? ConfigValue.NumberValue)?.value?.toInt() == wantedId ||
+                (ctx.event.payload["defaultVoiceId"] as? ConfigValue.NumberValue)?.value?.toInt() == wantedId
+        }
+    }
+
+    private fun registerWeather(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.weather.current"), FeatureKind.ACTION,
+                "Get current weather", "Query current weather for coordinates using Open-Meteo without an API key",
+                FeatureCategory.NETWORK,
+                fields = listOf(
+                    FieldSchema.Number("latitude", "Latitude", true, min = -90.0, max = 90.0),
+                    FieldSchema.Number("longitude", "Longitude", true, min = -180.0, max = 180.0),
+                    FieldSchema.Variable("resultVariable", "Store weather object", true),
+                ),
+                keywords = setOf("weather", "temperature", "wind", "forecast", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val lat = feature.config["latitude"].numberOrNull() ?: return@registerAction ActionExecutionResult(false)
+            val lon = feature.config["longitude"].numberOrNull() ?: return@registerAction ActionExecutionResult(false)
+            val output = withContext(Dispatchers.IO) { fetchWeather(lat, lon) }
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "weather"))
+            store(feature, ctx, output)
+        }
+    }
+
+    private fun fetchWeather(latitude: Double, longitude: Double): ConfigValue.ObjectValue? = runCatching {
+        val url = URL(
+            "https://api.open-meteo.com/v1/forecast?latitude=" + latitude +
+                "&longitude=" + longitude +
+                "&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m&timezone=auto"
+        )
+        val connection = (url.openConnection() as HttpURLConnection).apply {
+            connectTimeout = 15_000
+            readTimeout = 15_000
+            requestMethod = "GET"
+            setRequestProperty("Accept", "application/json")
+        }
+        try {
+            if (connection.responseCode !in 200..299) return@runCatching null
+            val root = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+            val current = root.optJSONObject("current") ?: return@runCatching null
+            ConfigValue.ObjectValue(
+                mapOf(
+                    "latitude" to ConfigValue.NumberValue(root.optDouble("latitude", latitude)),
+                    "longitude" to ConfigValue.NumberValue(root.optDouble("longitude", longitude)),
+                    "timezone" to ConfigValue.StringValue(root.optString("timezone")),
+                    "time" to ConfigValue.StringValue(current.optString("time")),
+                    "temperatureC" to ConfigValue.NumberValue(current.optDouble("temperature_2m", Double.NaN)),
+                    "apparentTemperatureC" to ConfigValue.NumberValue(current.optDouble("apparent_temperature", Double.NaN)),
+                    "precipitationMm" to ConfigValue.NumberValue(current.optDouble("precipitation", 0.0)),
+                    "weatherCode" to ConfigValue.NumberValue(current.optDouble("weather_code", -1.0)),
+                    "windSpeedKmh" to ConfigValue.NumberValue(current.optDouble("wind_speed_10m", 0.0)),
+                    "windDirectionDeg" to ConfigValue.NumberValue(current.optDouble("wind_direction_10m", 0.0)),
+                )
+            )
+        } finally {
+            connection.disconnect()
+        }
+    }.getOrNull()
+
     private fun registerExternalIntegration(registry: FeatureRegistry) {
         registry.registerAction(
             FeatureDescriptor(
@@ -853,4 +987,78 @@ private class TorchStateMonitor(context: Context, camera: CameraManager) {
     fun enabled(cameraId: String): Boolean = states[cameraId] == true
     fun anyEnabled(): Boolean = states.values.any { it }
     fun value(): ConfigValue.ObjectValue = ConfigValue.ObjectValue(states.mapValues { ConfigValue.BooleanValue(it.value) })
+}
+
+
+class SubscriptionChangeEventSource(context: Context) : AndroidEventSource {
+    override val id: String = "android.sim.subscriptions"
+    private val context = context.applicationContext
+    private val subscriptions = this.context.getSystemService(SubscriptionManager::class.java)
+    private val started = AtomicBoolean(false)
+    private var emitter: RuntimeEventEmitter? = null
+    private var previous: Snapshot? = null
+
+    private data class Snapshot(
+        val activeIds: List<Int>,
+        val dataId: Int,
+        val smsId: Int,
+        val voiceId: Int,
+    )
+
+    private val listener = object : SubscriptionManager.OnSubscriptionsChangedListener() {
+        override fun onSubscriptionsChanged() {
+            val next = snapshot()
+            val old = previous
+            previous = next
+            if (old == null || old == next) return
+            emitter?.emit(
+                com.yagay.yauto.core.model.RuntimeEvent(
+                    typeId = "android.event.sim_subscription_changed",
+                    payload = mapOf(
+                        "activeIds" to ConfigValue.ListValue(next.activeIds.map { ConfigValue.NumberValue(it.toDouble()) }),
+                        "defaultDataId" to ConfigValue.NumberValue(next.dataId.toDouble()),
+                        "defaultSmsId" to ConfigValue.NumberValue(next.smsId.toDouble()),
+                        "defaultVoiceId" to ConfigValue.NumberValue(next.voiceId.toDouble()),
+                        "activeSetChanged" to ConfigValue.BooleanValue(old.activeIds != next.activeIds),
+                        "defaultDataChanged" to ConfigValue.BooleanValue(old.dataId != next.dataId),
+                        "defaultSmsChanged" to ConfigValue.BooleanValue(old.smsId != next.smsId),
+                        "defaultVoiceChanged" to ConfigValue.BooleanValue(old.voiceId != next.voiceId),
+                    ),
+                    source = id,
+                )
+            )
+        }
+    }
+
+    override fun start(emitter: RuntimeEventEmitter) {
+        if (!started.compareAndSet(false, true)) return
+        this.emitter = emitter
+        previous = snapshot()
+        runCatching { subscriptions.addOnSubscriptionsChangedListener(context.mainExecutor, listener) }
+            .onFailure {
+                started.set(false)
+                this.emitter = null
+                previous = null
+                throw it
+            }
+    }
+
+    override fun stop() {
+        if (!started.compareAndSet(true, false)) return
+        runCatching { subscriptions.removeOnSubscriptionsChangedListener(listener) }
+        emitter = null
+        previous = null
+    }
+
+    private fun snapshot(): Snapshot {
+        val active = runCatching {
+            subscriptions.activeSubscriptionInfoList.orEmpty().map { it.subscriptionId }.sorted()
+        }.getOrDefault(emptyList())
+        return Snapshot(
+            activeIds = active,
+            dataId = SubscriptionManager.getDefaultDataSubscriptionId(),
+            smsId = SubscriptionManager.getDefaultSmsSubscriptionId(),
+            voiceId = SubscriptionManager.getDefaultVoiceSubscriptionId(),
+        )
+    }
 }
