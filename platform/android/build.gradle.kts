@@ -31,6 +31,7 @@ dependencies {
     implementation(libs.beanshell)
     implementation(libs.mvel)
     implementation(libs.play.services.wearable)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     testImplementation(project(":core:runtime"))
 }
