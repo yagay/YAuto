@@ -49,6 +49,12 @@ class AccessibilityBackend : CapabilityBackend {
                     val found = service.hasViewId(request.payload.string("viewId"))
                     return@withContext CapabilityResult(success = true, value = ConfigValue.BooleanValue(found))
                 }
+                AccessibilityOperations.KEYBOARD_VISIBLE -> {
+                    return@withContext CapabilityResult(
+                        success = true,
+                        value = ConfigValue.BooleanValue(service.keyboardVisible()),
+                    )
+                }
                 AccessibilityOperations.GET_SCREEN_TEXT -> {
                     val value = service.screenText(
                         includeDescriptions = request.payload.boolean("includeDescriptions", true),
