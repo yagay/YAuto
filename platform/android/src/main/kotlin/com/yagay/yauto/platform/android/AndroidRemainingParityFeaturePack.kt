@@ -120,7 +120,7 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
             val lon = feature.config["longitude"].numberOrNull() ?: return@registerAction ActionExecutionResult(false)
             val address = withContext(Dispatchers.IO) {
                 runCatching { Geocoder(context, Locale.getDefault()).getFromLocation(lat, lon, 1)?.firstOrNull() }.getOrNull()
-            } ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "geocoder"))
+            } ?: return@registerAction ActionExecutionResult(false, message = userText("feature.geocode_failed"))
             store(feature, ctx, addressValue(address))
         }
 
@@ -142,7 +142,7 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
             if (query.isBlank()) return@registerAction ActionExecutionResult(false)
             val address = withContext(Dispatchers.IO) {
                 runCatching { Geocoder(context, Locale.getDefault()).getFromLocationName(query, 1)?.firstOrNull() }.getOrNull()
-            } ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "geocoder"))
+            } ?: return@registerAction ActionExecutionResult(false, message = userText("feature.geocode_failed"))
             store(feature, ctx, addressValue(address))
         }
     }
@@ -538,13 +538,13 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, ctx ->
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "record_audio_permission"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.microphone_permission_required"))
             }
             val durationMs = (feature.config["durationMs"].numberOrNull() ?: 1_000.0).toLong().coerceIn(100L, 10_000L)
             val sampleRate = feature.config.string("sampleRate", "16000").toIntOrNull()?.takeIf { it in setOf(8000, 16000, 44100) } ?: 16000
             val output = withContext(Dispatchers.IO) {
                 runCatching { measureSoundLevel(sampleRate, durationMs) }.getOrNull()
-            } ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "audio_record"))
+            } ?: return@registerAction ActionExecutionResult(false, message = userText("feature.audio_measurement_failed"))
             store(feature, ctx, output)
         }
     }
@@ -756,7 +756,7 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
             val lat = feature.config["latitude"].numberOrNull() ?: return@registerAction ActionExecutionResult(false)
             val lon = feature.config["longitude"].numberOrNull() ?: return@registerAction ActionExecutionResult(false)
             val output = withContext(Dispatchers.IO) { fetchWeather(lat, lon) }
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "weather"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.weather_query_failed"))
             store(feature, ctx, output)
         }
     }
