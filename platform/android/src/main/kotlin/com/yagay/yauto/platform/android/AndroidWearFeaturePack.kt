@@ -48,8 +48,8 @@ class YAutoWearableListenerService : WearableListenerService() {
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
-        dataEvents.use { buffer ->
-            buffer.forEach { event ->
+        try {
+            dataEvents.forEach { event ->
                 if (event.type != DataEvent.TYPE_CHANGED) return@forEach
                 val item = event.dataItem
                 val dataMap = runCatching { DataMapItem.fromDataItem(item).dataMap }.getOrNull()
@@ -69,6 +69,8 @@ class YAutoWearableListenerService : WearableListenerService() {
                     )
                 )
             }
+        } finally {
+            dataEvents.release()
         }
     }
 
