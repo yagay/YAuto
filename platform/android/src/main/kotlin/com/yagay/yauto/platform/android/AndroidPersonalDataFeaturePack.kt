@@ -30,6 +30,8 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
         registerChangedEvent(registry, "android.event.contacts_changed", "Contacts changed", AccessRequirement.CONTACTS)
         registerChangedEvent(registry, "android.event.call_log_changed", "Call log changed", AccessRequirement.CALL_LOG)
         registerChangedEvent(registry, "android.event.sms_database_changed", "SMS database changed", AccessRequirement.SMS)
+        registerCallLogEntryEvents(registry)
+        registerSmsEntryEvents(registry)
     }
 
     private fun registerCalendarQuery(registry: FeatureRegistry) {
@@ -384,6 +386,66 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
                 else manager.sendMultipartTextMessage(number, null, parts, null, null)
                 ActionExecutionResult(true)
             }.getOrElse { failure(it) }
+        }
+    }
+
+    private fun registerCallLogEntryEvents(registry: FeatureRegistry) {
+        fun descriptor(typeId: String, title: String, fixedType: String? = null) = FeatureDescriptor(
+            FeatureId(typeId), FeatureKind.EVENT, title,
+            "Run when a new Android call-log row matches call type and number filters",
+            FeatureCategory.APP,
+            fields = listOf(
+                FieldSchema.Choice("type", "Call type", options = listOf("any", "incoming", "outgoing", "missed", "rejected", "blocked", "voicemail")),
+                FieldSchema.Text("numberContains", "Number contains"),
+            ),
+            accessRequirements = setOf(AccessRequirement.CALL_LOG),
+            keywords = setOf("call log", "outgoing call", "missed call", "phone"),
+            ownerPackId = id,
+        ) to fixedType
+
+        listOf(
+            descriptor("android.event.call_log_entry", "Call log entry added"),
+            descriptor("android.event.outgoing_call", "Outgoing call", "outgoing"),
+            descriptor("android.event.missed_call", "Missed call", "missed"),
+        ).forEach { (definition, fixedType) ->
+            registry.registerEvent(definition) { feature, ctx ->
+                if (ctx.event.typeId != "android.event.call_log_entry") return@registerEvent false
+                val wantedType = fixedType ?: feature.config.string("type", "any")
+                val number = feature.config.string("numberContains")
+                (wantedType == "any" || ctx.event.payload.string("type") == wantedType) &&
+                    (number.isBlank() || ctx.event.payload.string("number").contains(number, ignoreCase = true))
+            }
+        }
+    }
+
+    private fun registerSmsEntryEvents(registry: FeatureRegistry) {
+        fun descriptor(typeId: String, title: String, fixedBox: String? = null) = FeatureDescriptor(
+            FeatureId(typeId), FeatureKind.EVENT, title,
+            "Run when a new SMS database row matches message-box, address and text filters",
+            FeatureCategory.APP,
+            fields = listOf(
+                FieldSchema.Choice("box", "Message box", options = listOf("any", "inbox", "sent", "draft", "outbox", "failed", "queued")),
+                FieldSchema.Text("addressContains", "Address contains"),
+                FieldSchema.Text("bodyContains", "Message contains"),
+            ),
+            accessRequirements = setOf(AccessRequirement.SMS),
+            keywords = setOf("sms sent", "message", "sent", "database"),
+            ownerPackId = id,
+        ) to fixedBox
+
+        listOf(
+            descriptor("android.event.sms_database_entry", "SMS database entry added"),
+            descriptor("android.event.sms_sent", "SMS sent", "sent"),
+        ).forEach { (definition, fixedBox) ->
+            registry.registerEvent(definition) { feature, ctx ->
+                if (ctx.event.typeId != "android.event.sms_database_entry") return@registerEvent false
+                val wantedBox = fixedBox ?: feature.config.string("box", "any")
+                val address = feature.config.string("addressContains")
+                val body = feature.config.string("bodyContains")
+                (wantedBox == "any" || ctx.event.payload.string("box") == wantedBox) &&
+                    (address.isBlank() || ctx.event.payload.string("address").contains(address, ignoreCase = true)) &&
+                    (body.isBlank() || ctx.event.payload.string("body").contains(body, ignoreCase = true))
+            }
         }
     }
 
