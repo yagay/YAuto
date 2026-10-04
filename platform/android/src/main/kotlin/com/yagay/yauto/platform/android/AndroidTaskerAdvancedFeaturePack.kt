@@ -60,6 +60,7 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
                 val interpreter = Interpreter()
                 interpreter.set("context", context)
                 interpreter.set("yautoContext", context)
+                interpreter.set("tasker", TaskerScriptHelper(ctx, context))
                 interpreter.set("variables", variables.mapValues { configToJava(it.value) }.toMutableMap())
                 variables.forEach { (name, value) ->
                     if (JAVA_IDENTIFIER.matches(name)) {
@@ -384,6 +385,53 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
 
     private fun shellArg(value: String): String = "'" + value.replace("'", "'\\''") + "'"
 
+    private class TaskerScriptHelper(
+        private val execution: FeatureExecutionContext,
+        private val context: Context,
+    ) {
+        private val javaVariables = linkedMapOf<String, Any?>()
+
+        fun getVariable(name: String): String? =
+            execution.variables.get(normalizeVariable(name))?.let(::configAsString)
+
+        fun setVariable(name: String, value: Any?) {
+            val normalized = normalizeVariable(name)
+            if (normalized.isBlank()) return
+            execution.variables.set(normalized, javaToConfigStatic(value))
+        }
+
+        fun setVariable(name: String, value: Any?, structureVariable: Boolean) {
+            setVariable(name, value)
+        }
+
+        fun getJavaVariable(name: String): Any? = javaVariables[name]
+
+        fun setJavaVariable(name: String, value: Any?) {
+            if (name.isNotBlank()) javaVariables[name] = value
+        }
+
+        fun clearGlobalJavaVariables() {
+            javaVariables.clear()
+        }
+
+        fun log(message: Any?) {
+            android.util.Log.i("YAuto-JavaCode", message?.toString().orEmpty())
+        }
+
+        fun getPackageName(): String = context.packageName
+
+        private fun normalizeVariable(name: String): String = name.trim().removePrefix("%")
+
+        private fun configAsString(value: ConfigValue): String = when (value) {
+            ConfigValue.NullValue -> ""
+            is ConfigValue.StringValue -> value.value
+            is ConfigValue.NumberValue -> value.value.toString().removeSuffix(".0")
+            is ConfigValue.BooleanValue -> value.value.toString()
+            is ConfigValue.ListValue -> value.value.joinToString(",") { configAsString(it) }
+            is ConfigValue.ObjectValue -> value.value.toString()
+        }
+    }
+
     private fun pluginFields(): List<FieldSchema> = listOf(
         FieldSchema.AppPicker("package", "Plugin package", true),
         FieldSchema.Text("receiverClass", "Plugin receiver class", true),
@@ -410,7 +458,9 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
         is ConfigValue.ObjectValue -> value.value.mapValues { configToJava(it.value) }.toMutableMap()
     }
 
-    private fun javaToConfig(value: Any?): ConfigValue = when (value) {
+    private fun javaToConfig(value: Any?): ConfigValue = javaToConfigStatic(value)
+
+    private fun javaToConfigStatic(value: Any?): ConfigValue = when (value) {
         null -> ConfigValue.NullValue
         is ConfigValue -> value
         is Boolean -> ConfigValue.BooleanValue(value)
