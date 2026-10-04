@@ -112,8 +112,14 @@ fun ActionTreeDialog(
                         stringResource(TextR.string.tree_while) to {
                             ActionNode.While(nodeId(), PredicateNode.Literal(false), emptyList())
                         },
+                        stringResource(TextR.string.tree_while) + " (do)" to {
+                            ActionNode.DoWhile(nodeId(), PredicateNode.Literal(false), emptyList())
+                        },
                         stringResource(TextR.string.tree_wait_until) to {
                             ActionNode.WaitUntil(nodeId(), PredicateNode.Literal(false))
+                        },
+                        stringResource(TextR.string.tree_wait_until) + " (event)" to {
+                            ActionNode.WaitEvent(nodeId(), emptyList())
                         },
                         stringResource(TextR.string.tree_foreach) to {
                             ActionNode.ForEach(nodeId(), emptyList(), "item", emptyList())
@@ -186,7 +192,9 @@ private fun nodeLabel(
     is ActionNode.Switch -> stringResource(TextR.string.tree_switch_count_format, node.cases.size)
     is ActionNode.Repeat -> stringResource(TextR.string.node_repeat_format, node.times)
     is ActionNode.While -> stringResource(TextR.string.tree_while)
+    is ActionNode.DoWhile -> stringResource(TextR.string.tree_while) + " (do)"
     is ActionNode.WaitUntil -> stringResource(TextR.string.tree_wait_until)
+    is ActionNode.WaitEvent -> stringResource(TextR.string.tree_wait_until) + " (event)"
     is ActionNode.ForEach -> stringResource(TextR.string.tree_foreach_variable_format, node.variableName)
     is ActionNode.Parallel -> stringResource(TextR.string.tree_parallel_count_format, node.branches.size)
     is ActionNode.Try -> stringResource(TextR.string.tree_try)
@@ -323,6 +331,15 @@ private fun NodeDialog(
                             children(loopLabel, node.actions) { draft = node.copy(actions = it) }
                         }
                     }
+                    is ActionNode.DoWhile -> {
+                        TextButton(onClick = {
+                            condition(node.condition) { draft = node.copy(condition = it) }
+                        }) { Text(stringResource(TextR.string.tree_edit_loop_condition)) }
+                        val loopLabel = stringResource(TextR.string.tree_loop_actions)
+                        BranchButton(loopLabel, node.actions) {
+                            children(loopLabel, node.actions) { draft = node.copy(actions = it) }
+                        }
+                    }
                     is ActionNode.WaitUntil -> {
                         TextButton(onClick = {
                             condition(node.condition) { draft = node.copy(condition = it) }
@@ -345,6 +362,34 @@ private fun NodeDialog(
                             },
                             label = { Text(stringResource(TextR.string.tree_wait_poll_interval_ms)) },
                         )
+                    }
+                    is ActionNode.WaitEvent -> {
+                        Text("Events: " + if (node.events.isEmpty()) "(none)" else node.events.joinToString { it.typeId })
+                        Row {
+                            Text("Unlimited")
+                            Switch(
+                                checked = node.unlimited,
+                                onCheckedChange = { draft = node.copy(unlimited = it) },
+                            )
+                        }
+                        if (!node.unlimited) {
+                            OutlinedTextField(
+                                node.timeoutMs.toString(),
+                                { text ->
+                                    text.toLongOrNull()?.takeIf { it > 0L }?.let {
+                                        draft = node.copy(timeoutMs = it)
+                                    }
+                                },
+                                label = { Text(stringResource(TextR.string.tree_wait_timeout_ms)) },
+                            )
+                        }
+                        Row {
+                            Text("Continue on timeout")
+                            Switch(
+                                checked = node.continueOnTimeout,
+                                onCheckedChange = { draft = node.copy(continueOnTimeout = it) },
+                            )
+                        }
                     }
                     is ActionNode.ForEach -> {
                         OutlinedTextField(
