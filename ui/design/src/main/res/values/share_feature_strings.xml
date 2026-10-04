@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_android_share_text_title">Share text</string>
-    <string name="feature_android_share_text_description">Open the Android share sheet with text, subject and MIME type</string>
-    <string name="feature_android_share_text_field_text">Text</string>
+<string name="feature_android_share_text_field_text">Text</string>
     <string name="feature_android_share_text_field_subject">Subject</string>
     <string name="feature_android_share_text_field_mimetype">MIME type</string>
     <string name="feature_android_share_text_field_chooser">Always show chooser</string>
