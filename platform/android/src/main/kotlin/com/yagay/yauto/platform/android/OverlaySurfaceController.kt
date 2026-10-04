@@ -1,8 +1,11 @@
 package com.yagay.yauto.platform.android
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.RectF
 import android.graphics.Typeface
@@ -16,10 +19,16 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.GridLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
+import android.widget.SeekBar
+import android.widget.Switch
 import android.widget.TextView
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.PI
 import kotlin.math.atan2
@@ -285,6 +294,177 @@ class OverlaySurfaceController(context: Context) {
         return true
     }
 
+    fun showSlider(
+        id: String,
+        title: String,
+        minValue: Int,
+        maxValue: Int,
+        value: Int,
+        gravity: String,
+        autoHideMs: Long,
+    ): Boolean {
+        if (!canDraw() || id.isBlank() || maxValue <= minValue) return false
+        main.post {
+            hideInternal(id)
+            val density = context.resources.displayMetrics.density
+            val label = TextView(context).apply {
+                setTextColor(android.graphics.Color.WHITE)
+                text = value.coerceIn(minValue, maxValue).toString()
+            }
+            val seek = SeekBar(context).apply {
+                max = maxValue - minValue
+                progress = value.coerceIn(minValue, maxValue) - minValue
+                layoutParams = LinearLayout.LayoutParams((280 * density).toInt(), LinearLayout.LayoutParams.WRAP_CONTENT)
+                setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                        label.text = (minValue + progress).toString()
+                    }
+                    override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                    override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                        val selected = minValue + (seekBar?.progress ?: 0)
+                        SurfaceRuntimeBridge.emit(id, "value_changed", selected.toString())
+                    }
+                })
+            }
+            val root = basePanel(title, density).apply {
+                addView(label)
+                addView(seek)
+            }
+            addSurface(id, root, gravity, autoHideMs, focusable = true)
+        }
+        return true
+    }
+
+    fun showToggle(
+        id: String,
+        text: String,
+        checked: Boolean,
+        action: String,
+        gravity: String,
+        autoHideMs: Long,
+    ): Boolean {
+        if (!canDraw() || id.isBlank()) return false
+        main.post {
+            hideInternal(id)
+            val density = context.resources.displayMetrics.density
+            val root = basePanel("", density).apply {
+                addView(Switch(context).apply {
+                    this.text = text
+                    isChecked = checked
+                    setTextColor(android.graphics.Color.WHITE)
+                    setOnCheckedChangeListener { _, value ->
+                        SurfaceRuntimeBridge.emit(id, action.ifBlank { "toggle" }, value.toString())
+                    }
+                })
+            }
+            addSurface(id, root, gravity, autoHideMs)
+        }
+        return true
+    }
+
+    fun showImage(
+        id: String,
+        source: String,
+        gravity: String,
+        autoHideMs: Long,
+    ): Boolean {
+        if (!canDraw() || id.isBlank() || source.isBlank()) return false
+        val bitmap = loadOverlayBitmap(source) ?: return false
+        main.post {
+            hideInternal(id)
+            val density = context.resources.displayMetrics.density
+            val view = ImageView(context).apply {
+                setImageBitmap(bitmap)
+                adjustViewBounds = true
+                maxWidth = (360 * density).toInt()
+                maxHeight = (480 * density).toInt()
+                setOnClickListener { SurfaceRuntimeBridge.emit(id, "click", source) }
+            }
+            addSurface(id, view, gravity, autoHideMs)
+        }
+        return true
+    }
+
+    fun showWeb(
+        id: String,
+        url: String,
+        gravity: String,
+        autoHideMs: Long,
+        javaScript: Boolean,
+    ): Boolean {
+        if (!canDraw() || id.isBlank() || (!url.startsWith("http://") && !url.startsWith("https://"))) return false
+        main.post {
+            hideInternal(id)
+            val density = context.resources.displayMetrics.density
+            val web = WebView(context).apply {
+                settings.javaScriptEnabled = javaScript
+                settings.domStorageEnabled = true
+                webViewClient = object : WebViewClient() {
+                    override fun onPageFinished(view: WebView?, finishedUrl: String?) {
+                        SurfaceRuntimeBridge.emit(id, "page_finished", finishedUrl.orEmpty())
+                    }
+                }
+                loadUrl(url)
+            }
+            addSurface(
+                id = id,
+                view = web,
+                gravity = gravity,
+                autoHideMs = autoHideMs,
+                focusable = true,
+                width = (360 * density).toInt(),
+                height = (520 * density).toInt(),
+            )
+        }
+        return true
+    }
+
+    fun showDrawBoard(
+        id: String,
+        title: String,
+        gravity: String,
+        autoHideMs: Long,
+    ): Boolean {
+        if (!canDraw() || id.isBlank()) return false
+        main.post {
+            hideInternal(id)
+            val density = context.resources.displayMetrics.density
+            val board = DrawingBoardView(context).apply {
+                layoutParams = LinearLayout.LayoutParams((320 * density).toInt(), (320 * density).toInt())
+            }
+            val root = basePanel(title, density).apply {
+                addView(board)
+                val actions = LinearLayout(context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    addView(Button(context).apply {
+                        text = "Clear"
+                        setOnClickListener { board.clear(); SurfaceRuntimeBridge.emit(id, "clear") }
+                    })
+                    addView(Button(context).apply {
+                        text = "Save"
+                        setOnClickListener {
+                            val dir = File(context.getExternalFilesDir(null) ?: context.filesDir, "Drawings").apply { mkdirs() }
+                            val file = File(dir, "drawing-${System.currentTimeMillis()}.png")
+                            val ok = board.save(file)
+                            SurfaceRuntimeBridge.emit(id, if (ok) "saved" else "save_failed", if (ok) file.absolutePath else "")
+                        }
+                    })
+                }
+                addView(actions)
+            }
+            addSurface(id, root, gravity, autoHideMs, focusable = true)
+        }
+        return true
+    }
+
+    private fun loadOverlayBitmap(source: String): Bitmap? = runCatching {
+        when {
+            source.startsWith("content://") -> context.contentResolver.openInputStream(android.net.Uri.parse(source))?.use(BitmapFactory::decodeStream)
+            source.startsWith("file://") -> BitmapFactory.decodeFile(android.net.Uri.parse(source).path)
+            else -> BitmapFactory.decodeFile(source)
+        }
+    }.getOrNull()
+
     fun showProgress(
         id: String,
         title: String,
@@ -458,4 +638,67 @@ private class PieMenuView(
         onSelect(label, action)
         return true
     }
+}
+
+
+private class DrawingBoardView(context: Context) : View(context) {
+    private val strokes = mutableListOf<Path>()
+    private var current: Path? = null
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        style = Paint.Style.STROKE
+        strokeWidth = 4f * resources.displayMetrics.density
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+
+    init {
+        setBackgroundColor(0xFF202124.toInt())
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                current = Path().also {
+                    it.moveTo(event.x, event.y)
+                    strokes += it
+                }
+                invalidate()
+                return true
+            }
+            MotionEvent.ACTION_MOVE -> {
+                current?.lineTo(event.x, event.y)
+                invalidate()
+                return true
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                current?.lineTo(event.x, event.y)
+                current = null
+                invalidate()
+                return true
+            }
+        }
+        return true
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        strokes.forEach { canvas.drawPath(it, paint) }
+    }
+
+    fun clear() {
+        strokes.clear()
+        current = null
+        invalidate()
+    }
+
+    fun save(file: File): Boolean = runCatching {
+        if (width <= 0 || height <= 0) return@runCatching false
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        draw(canvas)
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        bitmap.recycle()
+        true
+    }.getOrDefault(false)
 }
