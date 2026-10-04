@@ -41,6 +41,7 @@ class OverlaySurfaceController(context: Context) {
     private val windowManager = context.applicationContext.getSystemService(WindowManager::class.java)
     private val main = Handler(Looper.getMainLooper())
     private val surfaces = ConcurrentHashMap<String, android.view.View>()
+    private val recordedGestures = ConcurrentHashMap<String, String>()
 
     fun canDraw(): Boolean = Settings.canDrawOverlays(context)
 
@@ -608,6 +609,40 @@ class OverlaySurfaceController(context: Context) {
         return true
     }
 
+
+    fun showGestureRecorder(
+        id: String,
+        maxPoints: Int,
+        autoHideMs: Long,
+    ): Boolean {
+        if (!canDraw() || id.isBlank()) return false
+        main.post {
+            hideInternal(id)
+            val view = GestureRecorderView(
+                context = context,
+                maxPoints = maxPoints.coerceIn(16, 4096),
+            ) { path ->
+                recordedGestures[id] = path
+                SurfaceRuntimeBridge.emit(id, "gesture_recorded", path)
+            }
+            addSurface(
+                id = id,
+                view = view,
+                gravity = "center",
+                autoHideMs = autoHideMs,
+                focusable = true,
+                width = WindowManager.LayoutParams.MATCH_PARENT,
+                height = WindowManager.LayoutParams.MATCH_PARENT,
+            )
+            SurfaceRuntimeBridge.emit(id, "gesture_recording_started")
+        }
+        return true
+    }
+
+    fun recordedGesture(id: String): String? = recordedGestures[id]
+
+    fun clearRecordedGesture(id: String): Boolean = recordedGestures.remove(id) != null
+
     private fun loadOverlayBitmap(source: String): Bitmap? = runCatching {
         when {
             source.startsWith("content://") -> context.contentResolver.openInputStream(android.net.Uri.parse(source))?.use(BitmapFactory::decodeStream)
@@ -1017,5 +1052,74 @@ private class RegionSelectorView(
         val right = maxOf(startX, endX)
         val bottom = maxOf(startY, endY)
         canvas.drawRect(left, top, right, bottom, border)
+    }
+}
+
+
+private class GestureRecorderView(
+    context: Context,
+    private val maxPoints: Int,
+    private val recorded: (String) -> Unit,
+) : View(context) {
+    private val points = ArrayList<Pair<Float, Float>>()
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xCCFFFFFF.toInt()
+        style = Paint.Style.STROKE
+        strokeWidth = 3f * resources.displayMetrics.density
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+    private val path = Path()
+
+    init { setBackgroundColor(0x22000000) }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                points.clear()
+                path.reset()
+                addPoint(event.x, event.y, true)
+                invalidate()
+                return true
+            }
+            MotionEvent.ACTION_MOVE -> {
+                for (index in 0 until event.historySize) {
+                    addPoint(event.getHistoricalX(index), event.getHistoricalY(index), false)
+                }
+                addPoint(event.x, event.y, false)
+                invalidate()
+                return true
+            }
+            MotionEvent.ACTION_UP -> {
+                addPoint(event.x, event.y, false)
+                invalidate()
+                if (points.size >= 2) {
+                    recorded(points.joinToString("\n") { pair ->
+                        pair.first.toInt().toString() + "," + pair.second.toInt().toString()
+                    })
+                }
+                return true
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                points.clear()
+                path.reset()
+                invalidate()
+                return true
+            }
+        }
+        return true
+    }
+
+    private fun addPoint(x: Float, y: Float, first: Boolean) {
+        if (points.size >= maxPoints) return
+        val last = points.lastOrNull()
+        if (last != null && kotlin.math.abs(last.first - x) < 1f && kotlin.math.abs(last.second - y) < 1f) return
+        points += x to y
+        if (first || points.size == 1) path.moveTo(x, y) else path.lineTo(x, y)
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        canvas.drawPath(path, paint)
     }
 }
