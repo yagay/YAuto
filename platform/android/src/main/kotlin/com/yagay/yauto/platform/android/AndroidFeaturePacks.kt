@@ -67,6 +67,7 @@ object AndroidFeaturePacks {
         AndroidMacroDroidParityFeaturePack(context),
         AndroidModeFeaturePack(context),
         AndroidMatterFeaturePack(context),
+        AndroidWearFeaturePack(context),
         AndroidStandaloneExportFeaturePack(context, workspace),
         AndroidUsbFeaturePack(context),
         AndroidMediaDeviceFeaturePack(context),
