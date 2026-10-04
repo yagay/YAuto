@@ -32,6 +32,27 @@ class AndroidSpeechFeaturePack(context: Context) : FeaturePack {
         registerVoiceSearch(registry)
         registerWebSearch(registry)
         registerAssistant(registry)
+        val speakingEvaluator = ConditionEvaluator { feature, _ ->
+            controller.isSpeaking() == feature.config.boolean("value", true)
+        }
+        val speakingState = FeatureDescriptor(
+            FeatureId("android.state.tts_speaking"),
+            FeatureKind.STATE,
+            "TTS speaking",
+            "Check whether YAuto's Android text-to-speech engine is currently speaking",
+            FeatureCategory.AUDIO,
+            fields = listOf(FieldSchema.Toggle("value", "Speaking")),
+            keywords = setOf("tts", "speaking", "speech", "macrodroid"),
+            ownerPackId = id,
+        )
+        registry.registerState(speakingState, speakingEvaluator)
+        registry.registerCondition(
+            speakingState.copy(
+                id = FeatureId("android.condition.tts_speaking"),
+                kind = FeatureKind.CONDITION,
+            ),
+            speakingEvaluator,
+        )
         registry.registerAction(
             FeatureDescriptor(
                 FeatureId("android.tts.speak"),
@@ -164,6 +185,8 @@ private class SpeechController(private val context: Context) {
             utteranceId?.let { completions.remove(it)?.complete(false) }
         }
     }
+
+    fun isSpeaking(): Boolean = runCatching { engine?.isSpeaking == true }.getOrDefault(false)
 
     suspend fun speak(
         text: String,
