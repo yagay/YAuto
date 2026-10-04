@@ -29,6 +29,7 @@ class AndroidFinalParityFeaturePack(context: Context) : FeaturePack {
         registerTelephonyShell(registry)
         registerTaskerPluginBridge(registry)
         registerWidgetBridge(registry)
+        registerFinalUtilities(registry)
     }
 
     private fun registerNotificationChannels(registry: FeatureRegistry) {
@@ -524,6 +525,81 @@ class AndroidFinalParityFeaturePack(context: Context) : FeaturePack {
             val provider = ComponentName(context.packageName, "com.yagay.yauto.YAutoWidgetProvider")
             val accepted = manager.requestPinAppWidget(provider, null, null)
             ActionExecutionResult(accepted, ConfigValue.BooleanValue(accepted))
+        }
+    }
+
+
+    private fun registerFinalUtilities(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.external.service.stop"), FeatureKind.ACTION,
+                "Stop external service",
+                "Stop an explicitly named Android service component",
+                FeatureCategory.APP,
+                fields = listOf(FieldSchema.Text("component", "Service component package/class", true)),
+                keywords = setOf("stop service", "service", "shortx", "intent"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val component = android.content.ComponentName.unflattenFromString(
+                feature.config.string("component").resolveVariables(ctx.variables).trim()
+            ) ?: return@registerAction ActionExecutionResult(false)
+            runCatching {
+                val stopped = context.stopService(Intent().setComponent(component))
+                ActionExecutionResult(stopped, ConfigValue.BooleanValue(stopped))
+            }.getOrElse { failure(it) }
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.ui.wait_for_idle"), FeatureKind.ACTION,
+                "Wait for UI idle",
+                "Wait until Android's main message queue becomes idle or the timeout expires",
+                FeatureCategory.FLOW,
+                fields = listOf(FieldSchema.Duration("timeoutMs", "Maximum wait")),
+                keywords = setOf("wait idle", "ui idle", "shortx", "message queue"),
+                ownerPackId = id,
+            )
+        ) { feature, _ ->
+            val timeoutMs = ((feature.config["timeoutMs"].numberOrNull() ?: 5_000.0).toLong()).coerceIn(100L, 60_000L)
+            val idle = kotlinx.coroutines.withTimeoutOrNull(timeoutMs) {
+                kotlinx.coroutines.suspendCancellableCoroutine<Boolean> { continuation ->
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        android.os.Looper.getMainLooper().queue.addIdleHandler {
+                            if (continuation.isActive) continuation.resume(true) { _, _, _ -> }
+                            false
+                        }
+                    }
+                }
+            } ?: false
+            ActionExecutionResult(idle, ConfigValue.BooleanValue(idle))
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.text.pinyin"), FeatureKind.ACTION,
+                "Convert Chinese text to Pinyin",
+                "Transliterate Han characters to Latin/Pinyin using Android ICU",
+                FeatureCategory.VARIABLE,
+                fields = listOf(
+                    FieldSchema.Text("text", "Text", true, multiline = true),
+                    FieldSchema.Toggle("ascii", "Strip accents"),
+                    FieldSchema.Variable("resultVariable", "Store Pinyin text", true),
+                ),
+                fieldBehaviors = mapOf("text" to FieldBehavior(supportsVariables = true)),
+                keywords = setOf("pinyin", "Chinese", "transliterate", "shortx", "text"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val input = feature.config.string("text").resolveVariables(ctx.variables)
+            val id = if (feature.config.boolean("ascii", false)) "Han-Latin; Latin-ASCII" else "Han-Latin"
+            val outputText = runCatching { android.icu.text.Transliterator.getInstance(id).transliterate(input) }
+                .getOrElse { return@registerAction failure(it) }
+            val output = ConfigValue.StringValue(outputText)
+            val name = feature.config.string("resultVariable").trim()
+            if (name.isBlank()) return@registerAction ActionExecutionResult(false)
+            ctx.variables.set(name, output)
+            ActionExecutionResult(true, output)
         }
     }
 
