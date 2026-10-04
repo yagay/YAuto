@@ -73,6 +73,13 @@ sealed interface ActionNode {
         val actions: List<ActionNode>,
     ) : ActionNode
 
+    @Serializable @SerialName("do_while")
+    data class DoWhile(
+        override val id: NodeId,
+        val condition: PredicateNode,
+        val actions: List<ActionNode>,
+    ) : ActionNode
+
     @Serializable @SerialName("for_each")
     data class ForEach(
         override val id: NodeId,
