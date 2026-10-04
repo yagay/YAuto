@@ -26,6 +26,23 @@ interface AutomationControl {
     suspend fun isCategoryEnabled(category: String): Boolean?
 
     suspend fun lastRunEpochMs(target: String): Long?
+
+    suspend fun setRuntimeEnabled(mode: AutomationEnableMode): ActionExecutionResult
+
+    suspend fun isRuntimeEnabled(): Boolean
+
+    suspend fun setTriggerEnabled(
+        automation: String,
+        triggerType: String,
+        tag: String,
+        mode: AutomationEnableMode,
+    ): ActionExecutionResult
+
+    suspend fun isTriggerEnabled(
+        automation: String,
+        triggerType: String,
+        tag: String,
+    ): Boolean?
 }
 
 enum class AutomationEnableMode {
