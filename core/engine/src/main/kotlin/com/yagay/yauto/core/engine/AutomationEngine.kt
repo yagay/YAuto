@@ -186,10 +186,19 @@ class AutomationEngine(
                 if (finalSignal != Signal.Next) finalSignal else handled
             }
             is ActionNode.WaitUntil -> {
-                if (node.timeoutMs <= 0L || node.pollIntervalMs <= 0L) {
+                if ((!node.unlimited && node.timeoutMs <= 0L) || node.pollIntervalMs <= 0L) {
                     return Signal.Failure(userText("engine.wait_until_invalid"))
                 }
                 val pollInterval = node.pollIntervalMs.coerceIn(100L, 60_000L)
+                if (node.unlimited) {
+                    while (currentCoroutineContext().isActive) {
+                        if (evaluatePredicate(node.condition, executionId, node.id, variables)) {
+                            return Signal.Next
+                        }
+                        delay(pollInterval)
+                    }
+                    return Signal.Failure(userText("runtime.automation_cancelled", automation.name))
+                }
                 val completed = withTimeoutOrNull(node.timeoutMs) {
                     while (currentCoroutineContext().isActive) {
                         if (evaluatePredicate(node.condition, executionId, node.id, variables)) {
