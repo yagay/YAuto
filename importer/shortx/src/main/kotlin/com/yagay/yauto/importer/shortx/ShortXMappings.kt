@@ -61,7 +61,7 @@ internal object ShortXMappings {
             val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return null
             if (obj["customContextDataKey"] != null && obj["customContextDataKey"] !is JsonNull) return null
             val raw = any.value.toString(Charsets.UTF_8)
-            return when (shortName(any.typeUrl)) {
+            val mapped = when (shortName(any.typeUrl)) {
                 "ScreenOn" -> sourceFeature("android.event.screen_on", importerId, any.typeUrl, raw)
                 "ScreenOff" -> sourceFeature("android.event.screen_off", importerId, any.typeUrl, raw)
                 "UserPresent" -> sourceFeature("android.event.user_present", importerId, any.typeUrl, raw)
@@ -113,11 +113,12 @@ internal object ShortXMappings {
                 } else null
                 else -> null
             }
+            return mapped?.let { withFactTag(it, jsonFactTag(obj)) }
         }
 
         val fields = runCatching { ProtoFields(any.value) }.getOrNull() ?: return null
         if (fields.has(98)) return null
-        return when (shortName(any.typeUrl)) {
+        val mapped = when (shortName(any.typeUrl)) {
             "ScreenOn" -> noBusinessFact(any, importerId, fields, "android.event.screen_on")
             "ScreenOff" -> noBusinessFact(any, importerId, fields, "android.event.screen_off")
             "UserPresent" -> noBusinessFact(any, importerId, fields, "android.event.user_present")
@@ -155,6 +156,7 @@ internal object ShortXMappings {
             "AppUpdated" -> noBusinessFact(any, importerId, fields, "android.event.package_replaced")
             else -> null
         }
+        return mapped?.let { withFactTag(it, fields.string(97)) }
     }
 
     fun nativeCondition(any: AnyStub, importerId: String): FeatureRef? {
@@ -923,6 +925,15 @@ internal object ShortXMappings {
         if (!preferredValue.isNullOrBlank()) return preferredValue.toDoubleOrNull()?.takeIf(Double::isFinite)
         return (obj[deprecated] as? JsonPrimitive)?.doubleOrNull?.takeIf(Double::isFinite) ?: 0.0
     }
+
+    private fun withFactTag(feature: FeatureRef, tag: String?): FeatureRef {
+        val value = tag?.trim().orEmpty()
+        if (value.isBlank()) return feature
+        return feature.copy(config = feature.config + ("tag" to ConfigValue.StringValue(value)))
+    }
+
+    private fun jsonFactTag(obj: JsonObject): String? =
+        (obj["tag"] as? JsonPrimitive)?.contentOrNull?.trim()?.takeIf(String::isNotBlank)
 
     private fun binaryFeature(any: AnyStub, importerId: String, target: String, extra: Map<String, ConfigValue>) =
         sourceFeature(
