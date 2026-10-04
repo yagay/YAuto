@@ -530,6 +530,84 @@ class OverlaySurfaceController(context: Context) {
         return true
     }
 
+
+    fun showScreenFlash(
+        id: String,
+        color: Int,
+        alpha: Int,
+        durationMs: Long,
+    ): Boolean {
+        if (!canDraw() || id.isBlank()) return false
+        main.post {
+            hideInternal(id)
+            val view = View(context).apply {
+                setBackgroundColor(
+                    android.graphics.Color.argb(
+                        alpha.coerceIn(0, 255),
+                        android.graphics.Color.red(color),
+                        android.graphics.Color.green(color),
+                        android.graphics.Color.blue(color),
+                    )
+                )
+            }
+            addSurface(
+                id = id,
+                view = view,
+                gravity = "center",
+                autoHideMs = durationMs.coerceIn(50L, 60_000L),
+                width = WindowManager.LayoutParams.MATCH_PARENT,
+                height = WindowManager.LayoutParams.MATCH_PARENT,
+                touchable = false,
+            )
+            SurfaceRuntimeBridge.emit(id, "flash_shown")
+        }
+        return true
+    }
+
+    fun showDanmu(
+        id: String,
+        text: String,
+        color: Int,
+        textSizeSp: Float,
+        durationMs: Long,
+        gravity: String,
+    ): Boolean {
+        if (!canDraw() || id.isBlank() || text.isBlank()) return false
+        main.post {
+            hideInternal(id)
+            val view = TextView(context).apply {
+                this.text = text
+                setTextColor(color)
+                textSize = textSizeSp.coerceIn(8f, 72f)
+                setShadowLayer(4f, 1f, 1f, android.graphics.Color.BLACK)
+                setSingleLine(true)
+                setPadding(8, 4, 8, 4)
+            }
+            val duration = durationMs.coerceIn(500L, 120_000L)
+            addSurface(
+                id = id,
+                view = view,
+                gravity = gravity,
+                autoHideMs = duration + 500L,
+                touchable = false,
+            )
+            view.post {
+                val screenWidth = context.resources.displayMetrics.widthPixels.toFloat()
+                view.translationX = screenWidth
+                view.animate()
+                    .translationX(-screenWidth - view.width.toFloat())
+                    .setDuration(duration)
+                    .withEndAction {
+                        SurfaceRuntimeBridge.emit(id, "danmu_finished", text)
+                        hide(id)
+                    }
+                    .start()
+            }
+            SurfaceRuntimeBridge.emit(id, "danmu_started", text)
+        }
+        return true
+    }
+
     private fun loadOverlayBitmap(source: String): Bitmap? = runCatching {
         when {
             source.startsWith("content://") -> context.contentResolver.openInputStream(android.net.Uri.parse(source))?.use(BitmapFactory::decodeStream)
