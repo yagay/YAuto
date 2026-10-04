@@ -465,6 +465,31 @@ class OverlaySurfaceController(context: Context) {
         }
     }.getOrNull()
 
+    fun showEdgeLighting(
+        id: String,
+        color: Int,
+        thicknessDp: Int,
+        autoHideMs: Long,
+    ): Boolean {
+        if (!canDraw() || id.isBlank()) return false
+        main.post {
+            hideInternal(id)
+            val density = context.resources.displayMetrics.density
+            val thickness = (thicknessDp.coerceIn(1, 48) * density).toInt()
+            val view = EdgeLightingView(context, color, thickness)
+            addSurface(
+                id = id,
+                view = view,
+                gravity = "center",
+                autoHideMs = autoHideMs.coerceAtLeast(250L),
+                width = WindowManager.LayoutParams.MATCH_PARENT,
+                height = WindowManager.LayoutParams.MATCH_PARENT,
+                touchable = false,
+            )
+        }
+        return true
+    }
+
     fun showProgress(
         id: String,
         title: String,
@@ -533,10 +558,12 @@ class OverlaySurfaceController(context: Context) {
         focusable: Boolean = false,
         width: Int = WindowManager.LayoutParams.WRAP_CONTENT,
         height: Int = WindowManager.LayoutParams.WRAP_CONTENT,
+        touchable: Boolean = true,
     ) {
         val density = context.resources.displayMetrics.density
         val flags = (if (focusable) 0 else WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) or
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+            (if (touchable) 0 else WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
         val params = WindowManager.LayoutParams(
             width,
             height,
@@ -701,4 +728,31 @@ private class DrawingBoardView(context: Context) : View(context) {
         bitmap.recycle()
         true
     }.getOrDefault(false)
+}
+
+
+private class EdgeLightingView(
+    context: Context,
+    private val edgeColor: Int,
+    private val thickness: Int,
+) : View(context) {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = edgeColor
+        style = Paint.Style.STROKE
+        strokeWidth = thickness.toFloat()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        val inset = thickness / 2f
+        canvas.drawRoundRect(
+            inset,
+            inset,
+            width - inset,
+            height - inset,
+            24f * resources.displayMetrics.density,
+            24f * resources.displayMetrics.density,
+            paint,
+        )
+    }
 }
