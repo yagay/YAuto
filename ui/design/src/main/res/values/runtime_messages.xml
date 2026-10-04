@@ -184,4 +184,6 @@
     <string name="runtime_feature_audio_measurement_failed">Sound-level measurement failed</string>
     <string name="runtime_feature_weather_query_failed">Weather query failed</string>
     <string name="runtime_feature_java_target_unresolved">Unable to resolve Java target: %1$s</string>
+    <string name="runtime_import_trace_shortx_function">Imported ShortX function: %1$s</string>
+    <string name="runtime_import_trace_shortx_direct_action">Imported ShortX direct action: %1$s</string>
 </resources>
