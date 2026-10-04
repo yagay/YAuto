@@ -221,18 +221,29 @@ class AutomationRuntime(
         return ActionExecutionResult(result.success, result.returnValue, result.error)
     }
 
-    override suspend fun setEnabled(target: String, mode: AutomationEnableMode): ActionExecutionResult =
-        workspaceMutationLock.withLock {
-            val trimmed = target.trim()
-            if (trimmed.isEmpty()) return@withLock ActionExecutionResult(false, message = userText("runtime.automation_target_required"))
+    override suspend fun setEnabled(
+        target: String,
+        mode: AutomationEnableMode,
+    ): ActionExecutionResult {
+        val trimmed = target.trim()
+        if (trimmed.isEmpty()) {
+            return ActionExecutionResult(false, message = userText("runtime.automation_target_required"))
+        }
+        var changedAutomation: Automation? = null
+        var newEnabled = false
+        val result = workspaceMutationLock.withLock {
             val workspace = workspaceRepository.load()
             val automation = resolveAutomation(workspace, trimmed)
-                ?: return@withLock ActionExecutionResult(false, message = userText("runtime.automation_not_found", trimmed))
+                ?: return@withLock ActionExecutionResult(
+                    false,
+                    message = userText("runtime.automation_not_found", trimmed),
+                )
             val enabled = when (mode) {
                 AutomationEnableMode.ENABLE -> true
                 AutomationEnableMode.DISABLE -> false
                 AutomationEnableMode.TOGGLE -> !automation.enabled
             }
+            newEnabled = enabled
             if (enabled != automation.enabled) {
                 workspaceRepository.save(
                     workspace.copy(
@@ -241,6 +252,7 @@ class AutomationRuntime(
                         }
                     )
                 )
+                changedAutomation = automation
                 if (!enabled) {
                     cancelJobs(automation.id.value)
                     resetState(automation.id)
@@ -248,6 +260,21 @@ class AutomationRuntime(
             }
             ActionExecutionResult(true, ConfigValue.BooleanValue(enabled))
         }
+        changedAutomation?.let { automation ->
+            dispatch(
+                RuntimeEvent(
+                    typeId = "core.event.automation_enabled_changed",
+                    payload = mapOf(
+                        "automationId" to ConfigValue.StringValue(automation.id.value),
+                        "automationName" to ConfigValue.StringValue(automation.name),
+                        "enabled" to ConfigValue.BooleanValue(newEnabled),
+                    ),
+                    source = "runtime.automation_control",
+                )
+            )
+        }
+        return result
+    }
 
     override suspend fun cancel(target: String): ActionExecutionResult {
         val trimmed = target.trim()
