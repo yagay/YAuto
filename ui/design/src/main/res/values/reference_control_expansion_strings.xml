@@ -9,7 +9,7 @@
     <string name="feature_android_display_immersive_set_field_mode_option_full">Full immersive</string>
 
     <string name="feature_android_audio_volume_ui_show_title">Show volume panel</string>
-    <string name="feature_android_audio_volume_ui_show_description">Show Android\\'s system volume panel for a selected audio stream</string>
+    <string name="feature_android_audio_volume_ui_show_description">Show Android\'s system volume panel for a selected audio stream</string>
     <string name="feature_android_audio_volume_ui_show_field_stream">Audio stream</string>
     <string name="feature_android_audio_volume_ui_show_field_stream_option_alarm">Alarm</string>
     <string name="feature_android_audio_volume_ui_show_field_stream_option_music">Music</string>
