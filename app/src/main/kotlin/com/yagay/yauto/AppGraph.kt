@@ -16,6 +16,7 @@ import com.yagay.yauto.platform.accessibility.AccessibilityDiagnosticCollector
 import com.yagay.yauto.platform.accessibility.AccessibilityFeaturePack
 import com.yagay.yauto.platform.accessibility.AccessibilityKeyFeaturePack
 import com.yagay.yauto.platform.accessibility.AccessibilityInspectorFeaturePack
+import com.yagay.yauto.platform.accessibility.AccessibilityContinuousPointerFeaturePack
 import com.yagay.yauto.platform.accessibility.AccessibilityBeanShellFeaturePack
 import com.yagay.yauto.platform.accessibility.AccessibilityMvelFeaturePack
 import com.yagay.yauto.platform.accessibility.AccessibilityWindowSnapshot
@@ -79,6 +80,7 @@ class AppGraph(context: Context) {
         }
         installPack("feature:accessibility.key") { AccessibilityKeyFeaturePack() }
         installPack("feature:accessibility.inspectors") { AccessibilityInspectorFeaturePack(appContext) }
+        installPack("feature:accessibility.pointer") { AccessibilityContinuousPointerFeaturePack(appContext) }
         installPack("feature:accessibility.beanshell") { AccessibilityBeanShellFeaturePack(appContext) }
         installPack("feature:accessibility.mvel") { AccessibilityMvelFeaturePack(appContext) }
 
