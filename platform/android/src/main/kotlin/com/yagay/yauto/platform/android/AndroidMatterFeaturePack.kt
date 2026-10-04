@@ -22,6 +22,7 @@ class AndroidMatterFeaturePack(context: Context) : FeaturePack {
         registerCommission(registry)
         registerLight(registry)
         registerLightState(registry)
+        registerGenericCommand(registry)
     }
 
     private fun registerCommission(registry: FeatureRegistry) {
@@ -160,6 +161,78 @@ class AndroidMatterFeaturePack(context: Context) : FeaturePack {
             state.copy(id = FeatureId("android.condition.matter_light"), kind = FeatureKind.CONDITION),
             evaluator,
         )
+    }
+
+    private fun registerGenericCommand(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.matter.command"),
+                FeatureKind.ACTION,
+                "Matter cluster command",
+                "Run a generic chip-tool cluster command against a Matter node",
+                FeatureCategory.DEVICE,
+                fields = listOf(
+                    FieldSchema.Text("cluster", "Cluster", true),
+                    FieldSchema.Text("command", "Command", true),
+                    FieldSchema.Text("arguments", "Arguments before node/endpoint"),
+                    FieldSchema.Text("deviceId", "Matter node ID", true),
+                    FieldSchema.Number("endpointId", "Matter endpoint ID", min = 0.0, max = 65535.0),
+                    FieldSchema.Text("chipToolPath", "chip-tool binary path"),
+                    FieldSchema.Variable("resultVariable", "Store result"),
+                ),
+                fieldBehaviors = mapOf(
+                    "cluster" to FieldBehavior(supportsVariables = true),
+                    "command" to FieldBehavior(supportsVariables = true),
+                    "arguments" to FieldBehavior(supportsVariables = true),
+                    "deviceId" to FieldBehavior(supportsVariables = true),
+                    "chipToolPath" to FieldBehavior(supportsVariables = true),
+                ),
+                capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
+                implementationOptions = listOf(
+                    FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+                    FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+                ),
+                keywords = setOf("matter", "cluster", "command", "chip tool", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val cluster = feature.config.string("cluster").resolveVariables(ctx.variables).trim()
+            val command = feature.config.string("command").resolveVariables(ctx.variables).trim()
+            val node = feature.config.string("deviceId").resolveVariables(ctx.variables).trim()
+            val endpoint = (feature.config["endpointId"].numberOrNull() ?: 1.0).toInt().coerceIn(0, 65535)
+            val path = feature.config.string("chipToolPath", "chip-tool")
+                .resolveVariables(ctx.variables).trim().ifBlank { "chip-tool" }
+            if (!SAFE_TOKEN.matches(cluster) || !SAFE_TOKEN.matches(command) ||
+                !NODE_ID.matches(node) || !SAFE_PATH.matches(path)
+            ) return@registerAction ActionExecutionResult(false)
+
+            val rawArgs = feature.config.string("arguments").resolveVariables(ctx.variables).trim()
+            val args = if (rawArgs.isBlank()) "" else {
+                val tokens = rawArgs.split(Regex("""\s+""")).filter(String::isNotBlank)
+                if (tokens.size > 32 || tokens.any { !SAFE_ARGUMENT.matches(it) }) {
+                    return@registerAction ActionExecutionResult(false)
+                }
+                tokens.joinToString(" ") { shellArg(it) }
+            }
+
+            val shellCommand = buildString {
+                append(shellArg(path)).append(' ')
+                append(cluster).append(' ').append(command).append(' ')
+                if (args.isNotBlank()) append(args).append(' ')
+                append(node).append(' ').append(endpoint)
+            }
+            val result = ctx.capabilities.execute(
+                CapabilityRequest(
+                    capability = CapabilityIds.PRIVILEGED_SHELL,
+                    operationId = "system.shell.execute",
+                    payload = mapOf("command" to ConfigValue.StringValue(shellCommand)),
+                )
+            )
+            feature.config.string("resultVariable").trim().takeIf(String::isNotBlank)?.let {
+                ctx.variables.set(it, result.value)
+            }
+            ActionExecutionResult(result.success, result.value, result.message)
+        }
     }
 
     private suspend fun controlChipTool(
@@ -369,6 +442,8 @@ class AndroidMatterFeaturePack(context: Context) : FeaturePack {
 
         val NODE_ID = Regex("(?:0x)?[0-9A-Fa-f]{1,16}|[0-9]{1,20}")
         val SAFE_PATH = Regex("[A-Za-z0-9_./-]{1,256}")
+        val SAFE_TOKEN = Regex("[A-Za-z0-9_-]{1,80}")
+        val SAFE_ARGUMENT = Regex("[A-Za-z0-9_+.,:/=@%#-]{1,256}")
         val HA_ENTITY = Regex("[A-Za-z0-9_]+\\.[A-Za-z0-9_]+")
     }
 }
