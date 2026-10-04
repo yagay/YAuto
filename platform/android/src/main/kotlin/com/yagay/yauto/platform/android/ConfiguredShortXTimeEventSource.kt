@@ -169,7 +169,7 @@ class ConfiguredShortXTimeEventSource(
 
 
 internal fun shortXTimeRuleKey(feature: FeatureRef): String =
-    feature.typeId + "|" + feature.config.entries
+    feature.typeId + "|" + feature.config
         .filterKeys { it != "source.raw" && it != "source.type" && it != "source.importer" && it != "tag" }
         .toSortedMap()
         .entries
