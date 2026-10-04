@@ -65,6 +65,7 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
         registerLocation(registry)
         registerNetwork(registry)
         registerTelephony(registry)
+        registerKeyguard(registry)
         registerDeviceQueries(registry)
         registerPackageQueries(registry)
         registerAudioAndTorch(registry)
@@ -237,6 +238,33 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
             val subId = feature.config["subscriptionId"].numberOrNull()?.toInt()
                 ?: return@registerAction ActionExecutionResult(false)
             privilegedShell(ctx, "cmd phone data set-default-subscription $subId")
+        }
+    }
+
+    private fun registerKeyguard(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.keyguard.set"), FeatureKind.ACTION,
+                "Set keyguard behavior",
+                "Enable or disable lock-screen enforcement using Android locksettings through Root or Shizuku",
+                FeatureCategory.SYSTEM,
+                fields = listOf(
+                    FieldSchema.Choice("mode", "Mode", true, listOf("enable", "disable", "lock_now", "dismiss")),
+                ),
+                capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
+                implementationOptions = privilegedOptions(),
+                keywords = setOf("keyguard", "lock screen", "locksettings", "macrodroid", "root", "shizuku"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val command = when (feature.config.string("mode", "enable")) {
+                "enable" -> "locksettings set-disabled false"
+                "disable" -> "locksettings set-disabled true"
+                "lock_now" -> "input keyevent 223"
+                "dismiss" -> "wm dismiss-keyguard"
+                else -> return@registerAction ActionExecutionResult(false)
+            }
+            privilegedShell(ctx, command)
         }
     }
 
