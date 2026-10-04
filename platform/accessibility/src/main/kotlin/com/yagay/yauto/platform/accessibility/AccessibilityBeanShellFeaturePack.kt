@@ -52,12 +52,12 @@ class AccessibilityBeanShellFeaturePack(
         ) { feature, ctx ->
             val script = feature.config.string("script")
             if (script.isBlank() || script.length > MAX_SCRIPT_LENGTH) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "invalid script"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.beanshell_script_invalid"))
             }
             val timeoutMs = ((feature.config["timeoutMs"] as? ConfigValue.NumberValue)?.value ?: 10_000.0)
                 .toLong().coerceIn(100L, 30_000L)
             val output = runBeanShell(script, timeoutMs, ctx.variables)
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "BeanShell timeout or error"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.beanshell_failed"))
 
             feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let {
                 ctx.variables.set(it, output.value)
