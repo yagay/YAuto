@@ -179,6 +179,15 @@
         </service>
 
 
+
+        <receiver
+            android:name=".PpnActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.yagay.yauto.PPN_ACTION" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name=".YAutoWidgetProvider"
             android:exported="true">
