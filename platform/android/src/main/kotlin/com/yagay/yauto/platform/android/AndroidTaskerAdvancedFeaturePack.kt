@@ -16,7 +16,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.mvel2.MVEL
 
 class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.tasker.advanced"
@@ -31,7 +30,6 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
         registerBeanShell(registry)
         registerJavaFunction(registry)
         registerJavaObject(registry)
-        registerMvel(registry)
         registerPluginAction(registry)
         registerPluginCondition(registry)
         registerPluginEvent(registry)
@@ -42,7 +40,7 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
     private fun registerBeanShell(registry: FeatureRegistry) {
         registry.registerAction(
             FeatureDescriptor(
-                FeatureId("script.beanshell.execute"),
+                FeatureId("script.tasker.beanshell.execute"),
                 FeatureKind.ACTION,
                 "Run Java / BeanShell",
                 "Execute Tasker/MacroDroid-style Java code with Android context and YAuto variables",
@@ -176,88 +174,6 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
             }
             ActionExecutionResult(ok)
         }
-    }
-
-    private fun registerMvel(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("script.mvel.execute"),
-                FeatureKind.ACTION,
-                "Run MVEL",
-                "Execute an MVEL expression/script using YAuto variables",
-                FeatureCategory.SCRIPT,
-                fields = listOf(
-                    FieldSchema.Text("script", "MVEL", true, multiline = true),
-                    FieldSchema.Duration("timeoutMs", "Execution timeout"),
-                    FieldSchema.Variable("resultVariable", "Store returned value"),
-                ),
-                fieldBehaviors = mapOf("script" to FieldBehavior(supportsVariables = true)),
-                keywords = setOf("mvel", "script", "shortx"),
-                ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            val script = feature.config.string("script").resolveVariables(ctx.variables)
-            if (script.isBlank()) return@registerAction ActionExecutionResult(false)
-            val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 3_000.0)
-                .toLong().coerceIn(100L, 60_000L)
-            val vars = mvelVariables(ctx.variables.snapshot())
-            val future = scriptExecutor.submit(Callable { MVEL.eval(script, vars) })
-            val result = runCatching {
-                withContext(Dispatchers.IO) { future.get(timeout, TimeUnit.MILLISECONDS) }
-            }.onFailure { future.cancel(true) }
-            if (result.isFailure) {
-                return@registerAction ActionExecutionResult(
-                    false,
-                    message = userText(
-                        "feature.operation_failed",
-                        result.exceptionOrNull()?.message ?: "MVEL",
-                    ),
-                )
-            }
-            val output = javaToConfig(result.getOrNull())
-            feature.config.string("resultVariable").trim().takeIf(String::isNotBlank)?.let {
-                ctx.variables.set(it, output)
-            }
-            ActionExecutionResult(true, output)
-        }
-
-        val evaluator = ConditionEvaluator { feature, ctx ->
-            val expression = feature.config.string("expression").resolveVariables(ctx.variables)
-            if (expression.isBlank()) return@ConditionEvaluator false
-            val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 1_500.0)
-                .toLong().coerceIn(100L, 30_000L)
-            val future = scriptExecutor.submit(Callable {
-                MVEL.eval(expression, mvelVariables(ctx.variables.snapshot()))
-            })
-            val result = runCatching {
-                withContext(Dispatchers.IO) { future.get(timeout, TimeUnit.MILLISECONDS) }
-            }.onFailure { future.cancel(true) }.getOrNull()
-            when (result) {
-                is Boolean -> result
-                is Number -> result.toDouble() != 0.0
-                is String -> result.equals("true", true)
-                else -> false
-            }
-        }
-        val descriptor = FeatureDescriptor(
-            FeatureId("script.mvel.condition"),
-            FeatureKind.CONDITION,
-            "MVEL condition",
-            "Evaluate an MVEL expression as a boolean condition",
-            FeatureCategory.SCRIPT,
-            fields = listOf(
-                FieldSchema.Text("expression", "MVEL expression", true, multiline = true),
-                FieldSchema.Duration("timeoutMs", "Execution timeout"),
-            ),
-            fieldBehaviors = mapOf("expression" to FieldBehavior(supportsVariables = true)),
-            keywords = setOf("mvel", "condition", "shortx"),
-            ownerPackId = id,
-        )
-        registry.registerCondition(descriptor, evaluator)
-        registry.registerState(
-            descriptor.copy(id = FeatureId("script.mvel.state"), kind = FeatureKind.STATE),
-            evaluator,
-        )
     }
 
     private fun registerPluginAction(registry: FeatureRegistry) {
