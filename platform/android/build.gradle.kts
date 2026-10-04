@@ -30,6 +30,7 @@ dependencies {
     implementation(libs.mlkit.text.recognition)
     implementation(libs.beanshell)
     implementation(libs.mvel)
+    implementation(libs.play.services.wearable)
     testImplementation(libs.junit)
     testImplementation(project(":core:runtime"))
 }
