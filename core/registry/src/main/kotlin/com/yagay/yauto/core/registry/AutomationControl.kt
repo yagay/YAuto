@@ -18,6 +18,8 @@ interface AutomationControl {
     suspend fun cancel(target: String): ActionExecutionResult
 
     suspend fun isEnabled(target: String): Boolean?
+
+    suspend fun isRunning(target: String): Boolean?
 }
 
 enum class AutomationEnableMode {
