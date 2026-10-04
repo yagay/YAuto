@@ -1,7 +1,6 @@
 package com.yagay.yauto.platform.android
 
 import android.content.Context
-import android.content.Intent
 import android.media.AudioManager
 import android.provider.Settings
 import android.util.DisplayMetrics
@@ -309,15 +308,6 @@ class AndroidReferenceControlExpansionFeaturePack(context: Context) : FeaturePac
         )
     }
 
-    private fun launch(intent: Intent, operationId: String): ActionExecutionResult = runCatching {
-        if (intent.resolveActivity(context.packageManager) == null) {
-            return@runCatching ActionExecutionResult(false, message = userText("feature.no_compatible_app"))
-        }
-        context.startActivity(intent)
-        ActionExecutionResult(true)
-    }.getOrElse {
-        ActionExecutionResult(false, message = userText("feature.operation_failed", operationId))
-    }
 }
 
 internal fun densityCommand(scalePercent: Int, stableDensityDpi: Int): String? {
