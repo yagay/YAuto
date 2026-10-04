@@ -559,6 +559,7 @@ private fun accessRequirementResource(requirement: AccessRequirement): Int = whe
     AccessRequirement.SMS -> TextR.string.access_sms
     AccessRequirement.PHONE -> TextR.string.access_phone
     AccessRequirement.RECORD_AUDIO -> TextR.string.access_record_audio
+    AccessRequirement.ACTIVITY_RECOGNITION -> TextR.string.access_activity_recognition
 }
 
 @Composable
