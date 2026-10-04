@@ -31,7 +31,7 @@ object AndroidFeaturePacks {
         AndroidWakeLockFeaturePack(context),
         AndroidTelephonyStateExpansionFeaturePack(context),
         AndroidAccessStateFeaturePack(context),
-        AndroidRoleStateFeaturePack(context),
+        AndroidRoleStateFeaturePack(context),\n        AndroidWorkProfileFeaturePack(context),
         AndroidReferenceCompletionFeaturePack(context),
         AndroidReferenceCompletionEventFeaturePack(),
         AndroidUsbFeaturePack(context),
