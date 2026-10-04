@@ -4,10 +4,14 @@ import com.yagay.yauto.core.importer.sourceFeature
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.FeatureRef
 import org.w3c.dom.Element
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 /** Native mappings for Tasker action codes whose exported argument layout is stable and known. */
 object TaskerMappings {
-    fun nativeAction(action: Element, code: String, importerId: String, raw: String): FeatureRef? = when (code) {
+    fun nativeAction(action: Element, code: String, importerId: String, raw: String): FeatureRef? {
+        pluginFeature(action, importerId, raw, "android.plugin.locale.action")?.let { return it }
+        return when (code) {
         "20" -> launchApp(action, importerId, code, raw)
         "25" -> noConfigAction(action, importerId, code, raw, "android.home.launch")
         "30" -> wait(action, importerId, code, raw)
@@ -36,6 +40,7 @@ object TaskerMappings {
         "812" -> displayTimeout(action, importerId, code, raw)
         "822" -> booleanAction(action, importerId, code, raw, "android.display.auto_rotate.set")
         else -> null
+        }
     }
 
 
@@ -46,6 +51,11 @@ object TaskerMappings {
         importerId: String,
         raw: String,
     ): FeatureRef? {
+        if (tagName == "Event") {
+            pluginFeature(context, importerId, raw, "android.event.plugin_locale")?.let { return it }
+        } else if (tagName == "State") {
+            pluginFeature(context, importerId, raw, "android.plugin.locale.condition")?.let { return it }
+        }
         if (tagName != "Event") return null
         val target = when (code) {
             "208" -> "android.event.screen_on"
@@ -114,6 +124,57 @@ object TaskerMappings {
                 }
             },
         )
+    }
+
+    private fun pluginFeature(
+        element: Element,
+        importerId: String,
+        raw: String,
+        target: String,
+    ): FeatureRef? {
+        val bundle = element.arg(0)?.takeIf { it.tagName == "Bundle" } ?: return null
+        val packageName = element.stringArg(1)?.trim().orEmpty()
+        val activityClass = element.stringArg(2)?.trim().orEmpty()
+        if (!PACKAGE.matches(packageName) || activityClass.isBlank()) return null
+        val timeoutSeconds = element.intArg(3)?.coerceIn(0L, 3_600L) ?: 10L
+        return sourceFeature(
+            target,
+            importerId,
+            "TaskerPlugin",
+            raw,
+            extra = mapOf(
+                "package" to ConfigValue.StringValue(packageName),
+                "receiverClass" to ConfigValue.StringValue(activityClass),
+                "bundleJson" to ConfigValue.StringValue(bundleToJson(bundle).toString()),
+                "timeoutMs" to ConfigValue.NumberValue((timeoutSeconds.coerceAtLeast(1L) * 1_000L).toDouble()),
+            ),
+        )
+    }
+
+    private fun bundleToJson(bundle: Element): JsonObject {
+        val values = bundle.elementChildren().firstOrNull { it.tagName == "Vals" } ?: bundle
+        val children = values.elementChildren()
+        val types = children
+            .filter { it.tagName.endsWith("-type") }
+            .associate { it.tagName.removeSuffix("-type") to it.textContent.trim() }
+        val pairs = linkedMapOf<String, JsonPrimitive>()
+        children
+            .filterNot { it.tagName.endsWith("-type") }
+            .forEach { child ->
+                val key = child.tagName
+                val raw = child.textContent.orEmpty()
+                val type = types[key].orEmpty()
+                val value = when {
+                    type.endsWith("Boolean") -> JsonPrimitive(raw.equals("true", true) || raw == "1")
+                    type.endsWith("Integer") || type.endsWith("Long") ->
+                        raw.trim().toLongOrNull()?.let(::JsonPrimitive) ?: JsonPrimitive(raw)
+                    type.endsWith("Float") || type.endsWith("Double") ->
+                        raw.trim().toDoubleOrNull()?.let(::JsonPrimitive) ?: JsonPrimitive(raw)
+                    else -> JsonPrimitive(raw)
+                }
+                pairs[key] = value
+            }
+        return JsonObject(pairs)
     }
 
     private fun wait(action: Element, importerId: String, code: String, raw: String): FeatureRef {
@@ -317,6 +378,8 @@ object TaskerMappings {
 
     private fun Element.childText(name: String): String? =
         elementChildren().firstOrNull { it.tagName == name }?.textContent?.trim()?.takeIf { it.isNotEmpty() }
+
+    private val PACKAGE = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
 
     private fun Element.elementChildren(): List<Element> =
         (0 until childNodes.length).mapNotNull { childNodes.item(it) as? Element }
