@@ -1,13 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_android_display_density_set_title">Set display density</string>
-    <string name="feature_android_display_density_set_description">Set Android display density as a percentage of the device stable density</string>
-    <string name="feature_android_display_density_set_field_scalepercent">Display scale percent</string>
-
-    <string name="feature_android_display_font_scale_set_title">Set font scale</string>
-    <string name="feature_android_display_font_scale_set_description">Set the Android font scale percentage</string>
-    <string name="feature_android_display_font_scale_set_field_scalepercent">Font scale percent</string>
-
     <string name="feature_android_display_immersive_set_title">Set immersive mode</string>
     <string name="feature_android_display_immersive_set_description">Show or hide Android status and navigation bars system-wide</string>
     <string name="feature_android_display_immersive_set_field_mode">Immersive mode</string>
@@ -15,15 +7,6 @@
     <string name="feature_android_display_immersive_set_field_mode_option_navigation">Hide navigation bar</string>
     <string name="feature_android_display_immersive_set_field_mode_option_status">Hide status bar</string>
     <string name="feature_android_display_immersive_set_field_mode_option_full">Full immersive</string>
-
-    <string name="feature_android_display_animation_scale_set_title">Set animation scale</string>
-    <string name="feature_android_display_animation_scale_set_description">Set Android window, transition, animator, or all animation scales</string>
-    <string name="feature_android_display_animation_scale_set_field_target">Animation scale target</string>
-    <string name="feature_android_display_animation_scale_set_field_target_option_all">All animation scales</string>
-    <string name="feature_android_display_animation_scale_set_field_target_option_window">Window animation</string>
-    <string name="feature_android_display_animation_scale_set_field_target_option_transition">Transition animation</string>
-    <string name="feature_android_display_animation_scale_set_field_target_option_animator">Animator duration</string>
-    <string name="feature_android_display_animation_scale_set_field_scale">Animation scale</string>
 
     <string name="feature_android_audio_microphone_mute_set_title">Set microphone mute</string>
     <string name="feature_android_audio_microphone_mute_set_description">Mute, unmute, or toggle the Android system microphone mute state</string>
