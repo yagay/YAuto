@@ -4,6 +4,9 @@ import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
 import android.app.role.RoleManager
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
+import android.content.Intent
 import android.content.Context
 import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
@@ -25,6 +28,7 @@ class AndroidFinalParityFeaturePack(context: Context) : FeaturePack {
         registerRoleManagement(registry)
         registerTelephonyShell(registry)
         registerTaskerPluginBridge(registry)
+        registerWidgetBridge(registry)
     }
 
     private fun registerNotificationChannels(registry: FeatureRegistry) {
@@ -440,6 +444,86 @@ class AndroidFinalParityFeaturePack(context: Context) : FeaturePack {
                 context.sendBroadcast(intent)
                 ActionExecutionResult(true)
             }.getOrElse { failure(it) }
+        }
+    }
+
+
+    private fun registerWidgetBridge(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.widget.configure"), FeatureKind.ACTION,
+                "Configure YAuto widget",
+                "Update the label and command used by all YAuto home-screen widgets",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Text("label", "Widget label", true),
+                    FieldSchema.Text("command", "Command value"),
+                ),
+                fieldBehaviors = mapOf(
+                    "label" to FieldBehavior(supportsVariables = true),
+                    "command" to FieldBehavior(supportsVariables = true),
+                ),
+                keywords = setOf("widget", "home screen", "button", "tasker", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val label = feature.config.string("label").resolveVariables(ctx.variables).trim()
+            if (label.isBlank()) return@registerAction ActionExecutionResult(false)
+            val command = feature.config.string("command").resolveVariables(ctx.variables)
+            val intent = Intent("com.yagay.yauto.WIDGET_CONFIGURE")
+                .setPackage(context.packageName)
+                .putExtra("label", label)
+                .putExtra("command", command)
+            runCatching {
+                context.sendBroadcast(intent)
+                ActionExecutionResult(true)
+            }.getOrElse { failure(it) }
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.widget.refresh"), FeatureKind.ACTION,
+                "Refresh YAuto widgets",
+                "Force all YAuto home-screen widgets to refresh their current configuration",
+                FeatureCategory.UI_AUTOMATION,
+                keywords = setOf("widget", "refresh", "update"), ownerPackId = id,
+            )
+        ) { _, _ ->
+            runCatching {
+                context.sendBroadcast(Intent("com.yagay.yauto.WIDGET_REFRESH").setPackage(context.packageName))
+                ActionExecutionResult(true)
+            }.getOrElse { failure(it) }
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.widget.pin"), FeatureKind.ACTION,
+                "Pin YAuto widget",
+                "Ask the current launcher to pin the YAuto widget to the home screen",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Text("label", "Widget label"),
+                    FieldSchema.Text("command", "Command value"),
+                ),
+                keywords = setOf("widget", "pin", "home screen", "launcher"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val manager = context.getSystemService(AppWidgetManager::class.java)
+            if (!manager.isRequestPinAppWidgetSupported) return@registerAction ActionExecutionResult(false)
+            val label = feature.config.string("label").resolveVariables(ctx.variables).trim()
+            val command = feature.config.string("command").resolveVariables(ctx.variables)
+            if (label.isNotBlank()) {
+                context.sendBroadcast(
+                    Intent("com.yagay.yauto.WIDGET_CONFIGURE")
+                        .setPackage(context.packageName)
+                        .putExtra("label", label)
+                        .putExtra("command", command)
+                )
+            }
+            val provider = ComponentName(context.packageName, "com.yagay.yauto.YAutoWidgetProvider")
+            val accepted = manager.requestPinAppWidget(provider, null, null)
+            ActionExecutionResult(accepted, ConfigValue.BooleanValue(accepted))
         }
     }
 
