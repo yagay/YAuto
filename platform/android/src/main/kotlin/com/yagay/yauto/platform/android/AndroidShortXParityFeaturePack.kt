@@ -173,7 +173,7 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.package_set.create"), FeatureKind.ACTION,
                 "Create package set",
                 "Create or replace a package-set variable",
-                FeatureCategory.DATA,
+                FeatureCategory.VARIABLE,
                 fields = listOf(
                     FieldSchema.Text("name", "Set name", true),
                     FieldSchema.Text("packages", "Packages, one per line", multiline = true),
@@ -200,7 +200,7 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
             FeatureDescriptor(
                 FeatureId(featureId), FeatureKind.ACTION, title,
                 if (add) "Add package names to a package-set variable" else "Remove package names from a package-set variable",
-                FeatureCategory.DATA,
+                FeatureCategory.VARIABLE,
                 fields = listOf(
                     FieldSchema.Variable("name", "Package-set variable", true),
                     FieldSchema.Text("packages", "Packages, one per line", true, multiline = true),
