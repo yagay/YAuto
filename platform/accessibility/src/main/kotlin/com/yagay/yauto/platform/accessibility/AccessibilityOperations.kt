@@ -14,7 +14,7 @@ object AccessibilityOperations {
     const val SCROLL = "accessibility.scroll"
     const val FIND_TEXT = "accessibility.find_text"
     const val FIND_TEXT_ADVANCED = "accessibility.find_text_advanced"
-    const val FIND_VIEW_ID = "accessibility.find_view_id"
+    const val FIND_VIEW_ID = "accessibility.find_view_id"\n    const val KEYBOARD_VISIBLE = "accessibility.keyboard_visible"
     const val GET_SCREEN_TEXT = "accessibility.screen_text.get"
     const val GET_VIEW_TEXT = "accessibility.view_text.get"
     const val GET_UI_NODES = "accessibility.ui_nodes.get"
