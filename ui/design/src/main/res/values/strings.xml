@@ -262,4 +262,5 @@
     <string name="access_sms">SMS</string>
     <string name="access_phone">Phone</string>
     <string name="access_record_audio">Microphone recording</string>
+    <string name="access_activity_recognition">Activity recognition</string>
 </resources>
