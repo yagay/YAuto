@@ -32,7 +32,6 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
         registerPackageSets(registry)
         registerPinnedIntent(registry)
         registerActivityAndTaskControls(registry)
-        registerWaitForIdle(registry)
     }
 
     private fun registerQuickSettingsClick(registry: FeatureRegistry) {
@@ -328,40 +327,6 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
             ActionExecutionResult(removed > 0, output)
         }
     }
-
-    private fun registerWaitForIdle(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.ui.wait_for_idle"), FeatureKind.ACTION,
-                "Wait for main queue idle",
-                "Continue when YAuto's Android main message queue reaches an idle point",
-                FeatureCategory.UI_AUTOMATION,
-                fields = listOf(FieldSchema.Duration("timeoutMs", "Maximum wait")),
-                keywords = setOf("wait idle", "ui idle", "shortx"),
-                ownerPackId = id,
-            )
-        ) { feature, _ ->
-            val timeoutMs = ((feature.config["timeoutMs"] as? ConfigValue.NumberValue)?.value ?: 5_000.0)
-                .toLong().coerceIn(1L, 60_000L)
-            val ok = waitForMainQueueIdle(timeoutMs)
-            ActionExecutionResult(ok, ConfigValue.BooleanValue(ok))
-        }
-    }
-
-    private suspend fun waitForMainQueueIdle(timeoutMs: Long): Boolean =
-        kotlinx.coroutines.withTimeoutOrNull(timeoutMs) {
-            suspendCancellableCoroutine { continuation ->
-                Handler(Looper.getMainLooper()).post {
-                    val queue = Looper.myQueue()
-                    val handler = MessageQueue.IdleHandler {
-                        if (continuation.isActive) continuation.resume(true)
-                        false
-                    }
-                    queue.addIdleHandler(handler)
-                    continuation.invokeOnCancellation { queue.removeIdleHandler(handler) }
-                }
-            }
-        } ?: false
 
     private suspend fun shellResult(ctx: FeatureExecutionContext, command: String) =
         ctx.capabilities.execute(
