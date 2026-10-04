@@ -161,6 +161,7 @@ class AutomationRuntimeService : Service() {
                 "focused" -> "android.event.ui_focused"
                 "scrolled" -> "android.event.ui_scrolled"
                 "content_changed" -> "android.event.screen_content_changed"
+                "toast" -> "android.event.toast_shown"
                 else -> return@setUiEventListener
             }
             dispatcher.dispatch(
@@ -173,6 +174,12 @@ class AutomationRuntimeService : Service() {
                         "description" to ConfigValue.StringValue(event.contentDescription),
                         "viewId" to ConfigValue.StringValue(event.viewId),
                         "screenText" to ConfigValue.StringValue(event.screenText),
+                        "left" to ConfigValue.NumberValue(event.left.toDouble()),
+                        "top" to ConfigValue.NumberValue(event.top.toDouble()),
+                        "right" to ConfigValue.NumberValue(event.right.toDouble()),
+                        "bottom" to ConfigValue.NumberValue(event.bottom.toDouble()),
+                        "x" to ConfigValue.NumberValue(event.centerX.toDouble()),
+                        "y" to ConfigValue.NumberValue(event.centerY.toDouble()),
                     ),
                     source = "accessibility.ui",
                 )
