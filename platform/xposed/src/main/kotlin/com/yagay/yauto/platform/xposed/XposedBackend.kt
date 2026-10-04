@@ -35,6 +35,9 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
         SystemOperations.REBOOT_RECOVERY,
         SystemOperations.REBOOT_BOOTLOADER,
         SystemOperations.SHUTDOWN,
+        SystemOperations.SENSORS_OFF_ENABLE,
+        SystemOperations.SENSORS_OFF_DISABLE,
+        SystemOperations.SENSORS_OFF_QUERY,
     )
 
     override suspend fun isAvailable(environment: RuntimeEnvironment): Boolean =
@@ -50,16 +53,17 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
             else -> requestSystem(request.operationId)
         }
         val success = result?.getBoolean("success") == true
-        val value = if (request.capability == CapabilityIds.LSPOSED_HOOK && result != null) {
-            ConfigValue.ObjectValue(
+        val value = when {
+            request.capability == CapabilityIds.LSPOSED_HOOK && result != null -> ConfigValue.ObjectValue(
                 mapOf(
                     "hookedCount" to ConfigValue.NumberValue(result.getInt("hookedCount", 0).toDouble()),
                     "targetPackage" to ConfigValue.StringValue(request.payload.string("package")),
                     "sessionId" to ConfigValue.StringValue(request.payload.string("sessionId")),
                 )
             )
-        } else {
-            ConfigValue.NullValue
+            request.operationId == SystemOperations.SENSORS_OFF_QUERY && result != null ->
+                ConfigValue.BooleanValue(result.getBoolean("enabled", false))
+            else -> ConfigValue.NullValue
         }
         return CapabilityResult(
             success = success,
