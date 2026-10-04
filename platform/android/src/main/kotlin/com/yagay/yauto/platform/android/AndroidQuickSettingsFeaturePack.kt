@@ -105,6 +105,8 @@ class AndroidQuickSettingsFeaturePack(private val controller: QuickSettingsTileC
             runCatching { controller.configure(slot, label, state); ActionExecutionResult(true) }
                 .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
+    }
+
     private fun registerTileState(registry: FeatureRegistry, kind: FeatureKind, typeId: String) {
         val descriptor = FeatureDescriptor(
             FeatureId(typeId), kind,
