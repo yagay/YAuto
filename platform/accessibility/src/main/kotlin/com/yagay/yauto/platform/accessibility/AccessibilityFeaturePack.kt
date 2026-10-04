@@ -91,6 +91,8 @@ class AccessibilityFeaturePack(
 
         foregroundState(registry, FeatureKind.STATE, "android.state.app_foreground")
         foregroundState(registry, FeatureKind.CONDITION, "android.condition.app_foreground")
+        keyboardState(registry, FeatureKind.STATE, "android.state.keyboard_visible")
+        keyboardState(registry, FeatureKind.CONDITION, "android.condition.keyboard_visible")
     }
 
     private fun foregroundEvent(registry: FeatureRegistry, typeId: String, title: String) {
@@ -178,6 +180,29 @@ class AccessibilityFeaturePack(
         val viewId = feature.config.string("viewIdContains")
         if (viewId.isNotBlank() && !payload.string("viewId").contains(viewId, ignoreCase)) return false
         return true
+    }
+
+    private fun keyboardState(registry: FeatureRegistry, kind: FeatureKind, typeId: String) {
+        val descriptor = FeatureDescriptor(
+            FeatureId(typeId),
+            kind,
+            "Software keyboard visible",
+            "Check whether Accessibility currently exposes an input-method window",
+            FeatureCategory.UI_AUTOMATION,
+            capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+            fields = listOf(FieldSchema.Toggle("value", "Visible")),
+            keywords = setOf("keyboard", "ime", "input method", "soft keyboard", "macrodroid"),
+            ownerPackId = id,
+        )
+        val evaluator = ConditionEvaluator { feature, ctx ->
+            val result = ctx.capabilities.execute(
+                CapabilityRequest(CapabilityIds.ACCESSIBILITY, AccessibilityOperations.KEYBOARD_VISIBLE)
+            )
+            result.success &&
+                ((result.value as? ConfigValue.BooleanValue)?.value == feature.config.boolean("value", true))
+        }
+        if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator)
+        else registry.registerCondition(descriptor, evaluator)
     }
 
     private fun foregroundState(registry: FeatureRegistry, kind: FeatureKind, typeId: String) {
