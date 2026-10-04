@@ -59,6 +59,7 @@ object AndroidFeaturePacks {
         AndroidTextProcessingFeaturePack(),
         AndroidRemainingSourceParityFeaturePack(context),
         AndroidShortXRuntimeEventFeaturePack(),
+        AndroidShortXTimeFeaturePack(context),
         AndroidUsbFeaturePack(context),
         AndroidMediaDeviceFeaturePack(context),
         AndroidAudioFeaturePack(context),
