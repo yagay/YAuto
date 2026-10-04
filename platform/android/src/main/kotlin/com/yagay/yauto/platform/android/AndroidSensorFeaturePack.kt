@@ -38,6 +38,18 @@ class AndroidSensorFeaturePack : FeaturePack {
 
         registry.registerEvent(
             FeatureDescriptor(
+                FeatureId("android.event.significant_motion"),
+                FeatureKind.EVENT,
+                "Significant motion",
+                "Run when Android's one-shot significant-motion sensor detects device movement",
+                FeatureCategory.DEVICE,
+                keywords = setOf("significant motion", "motion", "sensor", "tasker"),
+                ownerPackId = id,
+            )
+        ) { _, ctx -> ctx.event.typeId == "android.event.significant_motion" }
+
+        registry.registerEvent(
+            FeatureDescriptor(
                 FeatureId("android.event.shake"), FeatureKind.EVENT,
                 "Shake device", "Run when accelerometer linear magnitude exceeds a threshold",
                 FeatureCategory.DEVICE,
