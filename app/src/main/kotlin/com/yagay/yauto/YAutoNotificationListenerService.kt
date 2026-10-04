@@ -3,10 +3,18 @@ package com.yagay.yauto
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.RemoteInput
+import android.content.ComponentName
 import android.content.Intent
+import android.media.MediaMetadata
+import android.media.session.MediaController
+import android.media.session.MediaSession
+import android.media.session.MediaSessionManager
+import android.media.session.PlaybackState
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.platform.android.ActiveNotificationSnapshot
 import com.yagay.yauto.platform.android.NotificationControlBridge
 import com.yagay.yauto.platform.android.NotificationController
@@ -19,14 +27,29 @@ import kotlinx.coroutines.cancel
 class YAutoNotificationListenerService : NotificationListenerService(), NotificationController {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val dispatcher by lazy { RuntimeEventDispatcher((application as YAutoApplication).graph, scope) }
+    private val mediaSessionManager by lazy { getSystemService(MediaSessionManager::class.java) }
+    private val mediaCallbacks = LinkedHashMap<MediaSession.Token, Pair<MediaController, MediaController.Callback>>()
+    private val mediaMetadataSignatures = HashMap<MediaSession.Token, String>()
+    private val mediaPlaybackSignatures = HashMap<MediaSession.Token, String>()
+
+    private val activeSessionsListener = MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
+        syncMediaSessions(controllers.orEmpty())
+    }
 
     override fun onListenerConnected() {
         super.onListenerConnected()
         NotificationControlBridge.attach(this)
+        runCatching {
+            val component = ComponentName(this, YAutoNotificationListenerService::class.java)
+            mediaSessionManager.addOnActiveSessionsChangedListener(activeSessionsListener, component)
+            syncMediaSessions(mediaSessionManager.getActiveSessions(component))
+        }
     }
 
     override fun onListenerDisconnected() {
         if (NotificationControlBridge.current() === this) NotificationControlBridge.attach(null)
+        clearMediaSessions()
+        runCatching { mediaSessionManager.removeOnActiveSessionsChangedListener(activeSessionsListener) }
         super.onListenerDisconnected()
     }
 
@@ -100,6 +123,90 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
         true
     }.getOrDefault(false)
 
+    private fun syncMediaSessions(controllers: List<MediaController>) {
+        clearMediaSessions()
+        controllers.forEach { controller ->
+            val token = controller.sessionToken
+            val callback = object : MediaController.Callback() {
+                override fun onMetadataChanged(metadata: MediaMetadata?) {
+                    metadata ?: return
+                    val title = metadata.getString(MediaMetadata.METADATA_KEY_TITLE)
+                        ?: metadata.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE)
+                        ?: ""
+                    val artist = metadata.getString(MediaMetadata.METADATA_KEY_ARTIST)
+                        ?: metadata.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST)
+                        ?: ""
+                    val album = metadata.getString(MediaMetadata.METADATA_KEY_ALBUM).orEmpty()
+                    val mediaId = metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_ID).orEmpty()
+                    val duration = metadata.getLong(MediaMetadata.METADATA_KEY_DURATION)
+                    val signature = listOf(title, artist, album, mediaId, duration.toString()).joinToString("\u0000")
+                    if (mediaMetadataSignatures[token] == signature) return
+                    mediaMetadataSignatures[token] = signature
+                    dispatcher.dispatch(
+                        RuntimeEvent(
+                            "android.event.media_track_changed",
+                            mapOf(
+                                "package" to ConfigValue.StringValue(controller.packageName),
+                                "title" to ConfigValue.StringValue(title),
+                                "artist" to ConfigValue.StringValue(artist),
+                                "album" to ConfigValue.StringValue(album),
+                                "mediaId" to ConfigValue.StringValue(mediaId),
+                                "durationMs" to ConfigValue.NumberValue(duration.toDouble()),
+                            ),
+                            source = "android.media_session",
+                        )
+                    )
+                }
+
+                override fun onPlaybackStateChanged(state: PlaybackState?) {
+                    state ?: return
+                    val stateName = playbackStateName(state.state)
+                    val signature = "${stateName}:${state.position}:${state.playbackSpeed}:${state.actions}"
+                    if (mediaPlaybackSignatures[token] == signature) return
+                    mediaPlaybackSignatures[token] = signature
+                    dispatcher.dispatch(
+                        RuntimeEvent(
+                            "android.event.media_playback_state_changed",
+                            mapOf(
+                                "package" to ConfigValue.StringValue(controller.packageName),
+                                "state" to ConfigValue.StringValue(stateName),
+                                "positionMs" to ConfigValue.NumberValue(state.position.toDouble()),
+                                "speed" to ConfigValue.NumberValue(state.playbackSpeed.toDouble()),
+                                "actions" to ConfigValue.NumberValue(state.actions.toDouble()),
+                            ),
+                            source = "android.media_session",
+                        )
+                    )
+                }
+            }
+            controller.registerCallback(callback)
+            mediaCallbacks[token] = controller to callback
+        }
+    }
+
+    private fun clearMediaSessions() {
+        mediaCallbacks.values.forEach { (controller, callback) -> runCatching { controller.unregisterCallback(callback) } }
+        mediaCallbacks.clear()
+        mediaMetadataSignatures.clear()
+        mediaPlaybackSignatures.clear()
+    }
+
+    private fun playbackStateName(state: Int): String = when (state) {
+        PlaybackState.STATE_NONE -> "none"
+        PlaybackState.STATE_STOPPED -> "stopped"
+        PlaybackState.STATE_PAUSED -> "paused"
+        PlaybackState.STATE_PLAYING -> "playing"
+        PlaybackState.STATE_FAST_FORWARDING -> "fast_forwarding"
+        PlaybackState.STATE_REWINDING -> "rewinding"
+        PlaybackState.STATE_BUFFERING -> "buffering"
+        PlaybackState.STATE_ERROR -> "error"
+        PlaybackState.STATE_CONNECTING -> "connecting"
+        PlaybackState.STATE_SKIPPING_TO_PREVIOUS -> "skipping_previous"
+        PlaybackState.STATE_SKIPPING_TO_NEXT -> "skipping_next"
+        PlaybackState.STATE_SKIPPING_TO_QUEUE_ITEM -> "skipping_queue_item"
+        else -> "unknown"
+    }
+
     private fun send(intent: PendingIntent?): Boolean = runCatching {
         intent ?: return false
         intent.send()
@@ -108,6 +215,8 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
 
     override fun onDestroy() {
         if (NotificationControlBridge.current() === this) NotificationControlBridge.attach(null)
+        clearMediaSessions()
+        runCatching { mediaSessionManager.removeOnActiveSessionsChangedListener(activeSessionsListener) }
         scope.cancel()
         super.onDestroy()
     }
