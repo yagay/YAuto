@@ -57,6 +57,89 @@ class AccessibilityFeaturePack(
         action(registry, AccessibilityOperations.SWIPE, "Swipe", "Dispatch a swipe gesture between screen coordinates", listOf(FieldSchema.Number("x1", "Start X", true, min = 0.0), FieldSchema.Number("y1", "Start Y", true, min = 0.0), FieldSchema.Number("x2", "End X", true, min = 0.0), FieldSchema.Number("y2", "End Y", true, min = 0.0), FieldSchema.Duration("durationMs", "Duration")), setOf("swipe", "gesture", "accessibility"))
         action(registry, AccessibilityOperations.GESTURE_PATH, "Recorded gesture path", "Replay a multi-point gesture path; enter one X,Y coordinate per line", listOf(FieldSchema.Text("path", "Gesture points", true, multiline = true), FieldSchema.Duration("durationMs", "Duration")), setOf("gesture", "recorded gesture", "path", "shortx", "accessibility"))
 
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("accessibility.screen_color.find_and_click"), FeatureKind.ACTION,
+                "Find screen color and click",
+                "Capture the current screen, find the first sampled pixel near a target RGB color, and tap it",
+                FeatureCategory.UI_AUTOMATION,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                fields = listOf(
+                    FieldSchema.Text("color", "Target color (#RRGGBB)", true),
+                    FieldSchema.Number("tolerance", "Per-channel tolerance", min = 0.0, max = 255.0),
+                    FieldSchema.Number("step", "Search step pixels", min = 1.0, max = 32.0),
+                    FieldSchema.Duration("tapDurationMs", "Tap duration"),
+                ),
+                keywords = setOf("find color", "click color", "screen pixel", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, _ ->
+            val service = YAutoAccessibilityService.current ?: return@registerAction ActionExecutionResult(false)
+            val target = runCatching { android.graphics.Color.parseColor(feature.config.string("color").trim()) }.getOrNull()
+                ?: return@registerAction ActionExecutionResult(false)
+            val tolerance = ((feature.config["tolerance"] as? ConfigValue.NumberValue)?.value ?: 16.0).toInt().coerceIn(0, 255)
+            val step = ((feature.config["step"] as? ConfigValue.NumberValue)?.value ?: 2.0).toInt().coerceIn(1, 32)
+            val bitmap = service.captureScreenshotBitmap() ?: return@registerAction ActionExecutionResult(false)
+            var matchX = -1
+            var matchY = -1
+            try {
+                var y = 0
+                outer@ while (y < bitmap.height) {
+                    var x = 0
+                    while (x < bitmap.width) {
+                        val color = bitmap.getPixel(x, y)
+                        if (
+                            kotlin.math.abs(android.graphics.Color.red(color) - android.graphics.Color.red(target)) <= tolerance &&
+                            kotlin.math.abs(android.graphics.Color.green(color) - android.graphics.Color.green(target)) <= tolerance &&
+                            kotlin.math.abs(android.graphics.Color.blue(color) - android.graphics.Color.blue(target)) <= tolerance
+                        ) {
+                            matchX = x
+                            matchY = y
+                            break@outer
+                        }
+                        x += step
+                    }
+                    y += step
+                }
+            } finally {
+                bitmap.recycle()
+            }
+            if (matchX < 0 || matchY < 0) return@registerAction ActionExecutionResult(false)
+            val ok = service.tap(
+                matchX.toFloat(),
+                matchY.toFloat(),
+                feature.config.long("tapDurationMs", 40L),
+            )
+            ActionExecutionResult(
+                ok,
+                ConfigValue.ObjectValue(
+                    mapOf(
+                        "x" to ConfigValue.NumberValue(matchX.toDouble()),
+                        "y" to ConfigValue.NumberValue(matchY.toDouble()),
+                    )
+                )
+            )
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("accessibility.context_menu.perform"), FeatureKind.ACTION,
+                "Perform focused text context action",
+                "Perform select-all, copy, cut, paste or clear on the currently focused editable Accessibility node",
+                FeatureCategory.UI_AUTOMATION,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                fields = listOf(
+                    FieldSchema.Choice("action", "Action", true, listOf("select_all", "copy", "cut", "paste", "clear")),
+                ),
+                keywords = setOf("context menu", "copy", "paste", "select all", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, _ ->
+            val service = YAutoAccessibilityService.current ?: return@registerAction ActionExecutionResult(false)
+            ActionExecutionResult(service.performFocusedContextAction(feature.config.string("action")))
+        }
+
         registry.registerAction(
             FeatureDescriptor(
                 FeatureId("accessibility.capture_next_click"), FeatureKind.ACTION,
