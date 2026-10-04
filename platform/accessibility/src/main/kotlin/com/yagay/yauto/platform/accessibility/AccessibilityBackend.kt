@@ -12,6 +12,8 @@ import com.yagay.yauto.core.model.listOrEmpty
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
+import android.graphics.Bitmap
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -68,6 +70,43 @@ class AccessibilityBackend : CapabilityBackend {
                     val value = service.textByViewId(request.payload.string("viewId"))
                         ?: return@withContext CapabilityResult(success = false, value = ConfigValue.NullValue)
                     return@withContext CapabilityResult(success = true, value = ConfigValue.StringValue(value))
+                }
+                AccessibilityOperations.CAPTURE_SCREENSHOT -> {
+                    val bitmap = service.captureScreenshotBitmap()
+                        ?: return@withContext CapabilityResult(success = false, message = userText("feature.operation_failed", "screenshot"))
+                    val x = request.payload["x"].numberOrNull()?.toInt()
+                    val y = request.payload["y"].numberOrNull()?.toInt()
+                    val width = request.payload["width"].numberOrNull()?.toInt()
+                    val height = request.payload["height"].numberOrNull()?.toInt()
+                    val outputBitmap = if (x != null || y != null || width != null || height != null) {
+                        val left = x ?: 0
+                        val top = y ?: 0
+                        val w = width ?: (bitmap.width - left)
+                        val h = height ?: (bitmap.height - top)
+                        if (left < 0 || top < 0 || w <= 0 || h <= 0 || left + w > bitmap.width || top + h > bitmap.height) {
+                            bitmap.recycle()
+                            return@withContext CapabilityResult(success = false, message = userText("feature.operation_failed", "invalid screenshot area"))
+                        }
+                        Bitmap.createBitmap(bitmap, left, top, w, h).also { bitmap.recycle() }
+                    } else bitmap
+                    val requested = request.payload.string("fileName").trim()
+                    val safeName = requested.ifBlank { "screenshot-" + System.currentTimeMillis() + ".png" }
+                        .let { if (it.lowercase().endsWith(".png")) it else "$it.png" }
+                        .takeIf { !it.contains('/') && !it.contains('\\') && it != "." && it != ".." }
+                        ?: run {
+                            outputBitmap.recycle()
+                            return@withContext CapabilityResult(success = false, message = userText("feature.operation_failed", "invalid filename"))
+                        }
+                    val file = File(service.getExternalFilesDir(null) ?: service.filesDir, "Screenshots/$safeName")
+                    val saved = withContext(Dispatchers.IO) {
+                        runCatching {
+                            file.parentFile?.mkdirs()
+                            file.outputStream().use { outputBitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                        }.getOrDefault(false)
+                    }
+                    outputBitmap.recycle()
+                    if (!saved) return@withContext CapabilityResult(success = false, message = userText("feature.operation_failed", "screenshot save"))
+                    return@withContext CapabilityResult(success = true, value = ConfigValue.StringValue(file.absolutePath))
                 }
                 AccessibilityOperations.GET_VIEW_BOUNDS -> {
                     val bounds = service.viewBounds(request.payload.string("viewId"))
