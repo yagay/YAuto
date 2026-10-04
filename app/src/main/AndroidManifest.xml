@@ -59,7 +59,10 @@
         <intent>
             <action android:name="com.twofortyfouram.locale.intent.action.EDIT_CONDITION" />
         </intent>
-    </queries>
+            <intent>
+            <action android:name="com.google.android.gms.home.matter.ACTION_START_COMMISSIONING" />
+        </intent>
+</queries>
 
     <application
         android:name=".YAutoApplication"
