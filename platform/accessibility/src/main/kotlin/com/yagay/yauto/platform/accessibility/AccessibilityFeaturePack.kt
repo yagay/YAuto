@@ -96,6 +96,21 @@ class AccessibilityFeaturePack(
         )
         resultAction(
             registry,
+            AccessibilityOperations.CAPTURE_SCREENSHOT,
+            "Capture screenshot / area",
+            "Capture the screen through Accessibility and optionally crop a rectangular area to PNG",
+            listOf(
+                FieldSchema.Text("fileName", "PNG file name"),
+                FieldSchema.Number("x", "Left X", min = 0.0),
+                FieldSchema.Number("y", "Top Y", min = 0.0),
+                FieldSchema.Number("width", "Width", min = 1.0),
+                FieldSchema.Number("height", "Height", min = 1.0),
+                FieldSchema.Variable("resultVariable", "Store screenshot path", true),
+            ),
+            setOf("screenshot", "area screenshot", "crop", "shortx", "accessibility"),
+        )
+        resultAction(
+            registry,
             AccessibilityOperations.GET_VIEW_BOUNDS,
             "Get View bounds",
             "Return screen bounds and center coordinates for a view resource ID",
