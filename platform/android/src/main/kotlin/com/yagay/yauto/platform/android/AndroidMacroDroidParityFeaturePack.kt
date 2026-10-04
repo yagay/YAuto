@@ -333,7 +333,7 @@ class AndroidMacroDroidParityFeaturePack(context: Context) : FeaturePack {
         is ConfigValue.StringValue -> value.value
         is ConfigValue.NumberValue -> value.value.toString().removeSuffix(".0")
         is ConfigValue.BooleanValue -> value.value.toString()
-        is ConfigValue.ListValue -> value.value.joinToString(",")(::valueText)
+        is ConfigValue.ListValue -> value.value.joinToString(",") { valueText(it) }
         is ConfigValue.ObjectValue -> value.value.toString()
     }
 }
