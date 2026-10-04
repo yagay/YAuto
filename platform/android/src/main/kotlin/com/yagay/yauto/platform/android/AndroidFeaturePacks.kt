@@ -100,6 +100,7 @@ object AndroidFeaturePacks {
         AndroidBleFeaturePack(context),
         AndroidScriptFeaturePack(),
         AndroidQuickSettingsFeaturePack(quickSettingsTiles),
+        AndroidCustomRecentsFeaturePack(context, overlaySurfaces),
         AndroidSurfaceFeaturePack(overlaySurfaces),
         AndroidExternalCommandFeaturePack(context),
     )
