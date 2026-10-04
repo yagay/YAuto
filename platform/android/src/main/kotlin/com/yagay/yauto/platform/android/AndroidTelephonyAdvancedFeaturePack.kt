@@ -215,7 +215,7 @@ class AndroidTelephonyAdvancedFeaturePack(context: Context) : FeaturePack {
         ActionExecutionResult(false, message = userText("feature.operation_failed", error.message ?: error.javaClass.simpleName))
 }
 
-private fun cellInfoValue(info: CellInfo): ConfigValue.ObjectValue {
+internal fun cellInfoValue(info: CellInfo): ConfigValue.ObjectValue {
     val identity: CellIdentity?
     val dbm: Int
     val technology: String
