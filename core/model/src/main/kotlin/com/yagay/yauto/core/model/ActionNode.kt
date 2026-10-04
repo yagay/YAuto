@@ -119,6 +119,15 @@ sealed interface ActionNode {
         val unlimited: Boolean = false,
     ) : ActionNode
 
+    @Serializable @SerialName("wait_event")
+    data class WaitEvent(
+        override val id: NodeId,
+        val events: List<FeatureRef>,
+        val timeoutMs: Long = 60_000L,
+        val unlimited: Boolean = false,
+        val continueOnTimeout: Boolean = false,
+    ) : ActionNode
+
     @Serializable @SerialName("call_flow")
     data class CallFlow(
         override val id: NodeId,
