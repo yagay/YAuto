@@ -35,7 +35,10 @@ class AndroidShortXTimeFeaturePack(context: Context) : FeaturePack {
                 keywords = setOf("alarm", "time", "shortx"),
                 ownerPackId = id,
             )
-        ) { _, ctx -> ctx.event.typeId == "android.event.alarm_time" }
+        ) { feature, ctx ->
+            ctx.event.typeId == "android.event.alarm_time" &&
+                ctx.event.payload.string("ruleKey") == shortXTimeRuleKey(feature)
+        }
 
         registry.registerEvent(
             FeatureDescriptor(
@@ -52,7 +55,10 @@ class AndroidShortXTimeFeaturePack(context: Context) : FeaturePack {
                 keywords = setOf("fixed interval", "period", "schedule", "shortx"),
                 ownerPackId = id,
             )
-        ) { _, ctx -> ctx.event.typeId == "android.event.fixed_in_period" }
+        ) { feature, ctx ->
+            ctx.event.typeId == "android.event.fixed_in_period" &&
+                ctx.event.payload.string("ruleKey") == shortXTimeRuleKey(feature)
+        }
 
         registry.registerEvent(
             FeatureDescriptor(
@@ -68,7 +74,10 @@ class AndroidShortXTimeFeaturePack(context: Context) : FeaturePack {
                 keywords = setOf("random time", "period", "schedule", "shortx"),
                 ownerPackId = id,
             )
-        ) { _, ctx -> ctx.event.typeId == "android.event.random_in_period" }
+        ) { feature, ctx ->
+            ctx.event.typeId == "android.event.random_in_period" &&
+                ctx.event.payload.string("ruleKey") == shortXTimeRuleKey(feature)
+        }
 
         registry.registerCondition(
             FeatureDescriptor(
