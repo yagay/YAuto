@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_keyboard_visible_title">软件键盘可见</string>
+    <string name="feature_android_state_keyboard_visible_description">检查无障碍服务当前是否检测到输入法窗口</string>
+    <string name="feature_android_state_keyboard_visible_field_value">可见</string>
+    <string name="feature_android_condition_keyboard_visible_title">软件键盘可见</string>
+    <string name="feature_android_condition_keyboard_visible_description">检查无障碍服务当前是否检测到输入法窗口</string>
+    <string name="feature_android_condition_keyboard_visible_field_value">可见</string>
+</resources>
