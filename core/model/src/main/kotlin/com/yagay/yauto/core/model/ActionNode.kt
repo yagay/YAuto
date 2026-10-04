@@ -136,6 +136,18 @@ sealed interface ActionNode {
         val resultVariable: String? = null,
     ) : ActionNode
 
+    @Serializable @SerialName("label")
+    data class Label(
+        override val id: NodeId,
+        val name: String,
+    ) : ActionNode
+
+    @Serializable @SerialName("goto")
+    data class Goto(
+        override val id: NodeId,
+        val label: String,
+    ) : ActionNode
+
     @Serializable @SerialName("return")
     data class Return(
         override val id: NodeId,
