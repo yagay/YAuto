@@ -121,6 +121,7 @@ internal object ShortXFeatureSuggestions {
         "TakePhoto" -> "android.camera.photo.capture"
         "ScreenFlash" -> "surface.screen_flash.show"
         "ShowDanmu" -> "surface.danmu.show"
+        "ShowRecentApps" -> "accessibility.recents.show"
         "RequestAudioFocus" -> "android.audio.focus.request"
         "ExecuteMVEL", "RemoteExecuteMVEL" -> "script.mvel.execute"
         "AreaScreenshot" -> "accessibility.screenshot.capture"
