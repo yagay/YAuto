@@ -21,6 +21,27 @@ class AndroidMediaStoreEventFeaturePack : FeaturePack {
         register(registry, "android.event.media_store_updated", "Media updated", "Run when MediaStore reports an updated media item")
         register(registry, "android.event.media_store_deleted", "Media deleted", "Run when MediaStore reports a deleted media item")
         register(registry, "android.event.media_store_changed", "MediaStore changed", "Run on any MediaStore content change")
+        convenienceInsert(registry, "android.event.photo_taken", "Photo created", "images")
+        convenienceInsert(registry, "android.event.video_created", "Video created", "video")
+        convenienceInsert(registry, "android.event.audio_created", "Audio created", "audio")
+    }
+
+    private fun convenienceInsert(registry: FeatureRegistry, typeId: String, title: String, collection: String) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId(typeId), FeatureKind.EVENT, title,
+                "Run when MediaStore reports a new $collection item",
+                FeatureCategory.FILE,
+                fields = listOf(FieldSchema.Text("uriContains", "URI contains")),
+                keywords = setOf("media", "photo", "video", "created", "camera"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            ctx.event.typeId == "android.event.media_store_inserted" &&
+                ctx.event.payload.string("collection") == collection &&
+                (feature.config.string("uriContains").isBlank() ||
+                    ctx.event.payload.string("uri").contains(feature.config.string("uriContains"), ignoreCase = true))
+        }
     }
 
     private fun register(registry: FeatureRegistry, typeId: String, title: String, description: String) {
