@@ -67,6 +67,23 @@ object TaskerMappings {
     fun stopTaskTarget(action: Element): String? =
         action.stringArg(0)?.trim()?.takeIf { it.isNotEmpty() }
 
+    fun forVariable(action: Element): String? =
+        action.stringArg(0)?.trim()?.takeIf { it.startsWith("%") }
+
+    fun forItems(action: Element): String? =
+        action.stringArg(1)?.takeIf { it.isNotBlank() }
+
+    fun forMode(action: Element): Long = action.intArg(2) ?: 0L
+
+    fun waitUntilPollIntervalMs(action: Element): Long {
+        val milliseconds = action.intArg(0) ?: 0L
+        val seconds = action.intArg(1) ?: 0L
+        val minutes = action.intArg(2) ?: 0L
+        val hours = action.intArg(3) ?: 0L
+        val total = milliseconds + seconds * 1_000L + minutes * 60_000L + hours * 3_600_000L
+        return total.takeIf { it > 0L }?.coerceIn(100L, 60_000L) ?: 1_000L
+    }
+
     fun performTaskTarget(action: Element): String? = action.stringArg(0)?.takeIf { it.isNotBlank() }
     fun performTaskParam1(action: Element): String? = action.stringArg(2)?.takeIf { it.isNotBlank() }
     fun performTaskParam2(action: Element): String? = action.stringArg(3)?.takeIf { it.isNotBlank() }
