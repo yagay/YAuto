@@ -21,6 +21,7 @@ class AndroidMacroDroidSystemParityFeaturePack(context: Context) : FeaturePack {
         registerOpenLatestMedia(registry)
         registerContactViaApp(registry)
         registerLocationUpdateRate(registry)
+        registerConfirmation(registry)
     }
 
     private fun registerAccessibilityService(registry: FeatureRegistry) {
@@ -173,6 +174,54 @@ class AndroidMacroDroidSystemParityFeaturePack(context: Context) : FeaturePack {
             val launched = runCatching { context.startActivity(intent); true }.getOrDefault(false)
             ActionExecutionResult(launched)
         }
+    }
+
+
+    private fun registerConfirmation(registry: FeatureRegistry) {
+        val evaluator = ConditionEvaluator { feature, ctx ->
+            val token = java.util.UUID.randomUUID().toString()
+            val deferred = ConfirmationRuntimeBridge.register(token)
+            val intent = Intent()
+                .setClassName(context.packageName, "com.yagay.yauto.ConfirmationActivity")
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                .putExtra("token", token)
+                .putExtra("title", feature.config.string("title").resolveVariables(ctx.variables))
+                .putExtra("message", feature.config.string("message").resolveVariables(ctx.variables))
+                .putExtra("positive", feature.config.string("positive", "OK").resolveVariables(ctx.variables))
+                .putExtra("negative", feature.config.string("negative", "Cancel").resolveVariables(ctx.variables))
+            if (!runCatching { context.startActivity(intent); true }.getOrDefault(false)) {
+                ConfirmationRuntimeBridge.cancel(token)
+                return@ConditionEvaluator false
+            }
+            val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 60_000.0)
+                .toLong().coerceIn(1_000L, 3_600_000L)
+            val result = kotlinx.coroutines.withTimeoutOrNull(timeout) { deferred.await() } == true
+            ConfirmationRuntimeBridge.cancel(token)
+            result
+        }
+        val descriptor = FeatureDescriptor(
+            FeatureId("android.condition.user_confirm"),
+            FeatureKind.CONDITION,
+            "User confirmation",
+            "Show a confirmation dialog and continue only when the user accepts it",
+            FeatureCategory.UI_AUTOMATION,
+            fields = listOf(
+                FieldSchema.Text("title", "Title"),
+                FieldSchema.Text("message", "Message", true, multiline = true),
+                FieldSchema.Text("positive", "Positive button"),
+                FieldSchema.Text("negative", "Negative button"),
+                FieldSchema.Duration("timeoutMs", "Timeout"),
+            ),
+            fieldBehaviors = mapOf(
+                "title" to FieldBehavior(supportsVariables = true),
+                "message" to FieldBehavior(supportsVariables = true),
+                "positive" to FieldBehavior(defaultValue = ConfigValue.StringValue("OK"), supportsVariables = true),
+                "negative" to FieldBehavior(defaultValue = ConfigValue.StringValue("Cancel"), supportsVariables = true),
+            ),
+            keywords = setOf("confirm", "confirmation", "yes no", "macrodroid"),
+            ownerPackId = id,
+        )
+        registry.registerCondition(descriptor, evaluator)
     }
 
     private fun registerLocationUpdateRate(registry: FeatureRegistry) {
