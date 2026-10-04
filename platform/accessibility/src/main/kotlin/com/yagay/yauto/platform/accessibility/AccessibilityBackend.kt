@@ -73,7 +73,7 @@ class AccessibilityBackend : CapabilityBackend {
                 }
                 AccessibilityOperations.CAPTURE_SCREENSHOT -> {
                     val bitmap = service.captureScreenshotBitmap()
-                        ?: return@withContext CapabilityResult(success = false, message = userText("feature.operation_failed", "screenshot"))
+                        ?: return@withContext CapabilityResult(success = false, message = userText("feature.screenshot_capture_failed"))
                     val x = request.payload["x"].numberOrNull()?.toInt()
                     val y = request.payload["y"].numberOrNull()?.toInt()
                     val width = request.payload["width"].numberOrNull()?.toInt()
@@ -85,7 +85,7 @@ class AccessibilityBackend : CapabilityBackend {
                         val h = height ?: (bitmap.height - top)
                         if (left < 0 || top < 0 || w <= 0 || h <= 0 || left + w > bitmap.width || top + h > bitmap.height) {
                             bitmap.recycle()
-                            return@withContext CapabilityResult(success = false, message = userText("feature.operation_failed", "invalid screenshot area"))
+                            return@withContext CapabilityResult(success = false, message = userText("feature.screenshot_area_invalid"))
                         }
                         Bitmap.createBitmap(bitmap, left, top, w, h).also { bitmap.recycle() }
                     } else bitmap
@@ -95,7 +95,7 @@ class AccessibilityBackend : CapabilityBackend {
                         .takeIf { !it.contains('/') && !it.contains('\\') && it != "." && it != ".." }
                         ?: run {
                             outputBitmap.recycle()
-                            return@withContext CapabilityResult(success = false, message = userText("feature.operation_failed", "invalid filename"))
+                            return@withContext CapabilityResult(success = false, message = userText("feature.screenshot_filename_invalid"))
                         }
                     val file = File(service.getExternalFilesDir(null) ?: service.filesDir, "Screenshots/$safeName")
                     val saved = withContext(Dispatchers.IO) {
@@ -105,7 +105,7 @@ class AccessibilityBackend : CapabilityBackend {
                         }.getOrDefault(false)
                     }
                     outputBitmap.recycle()
-                    if (!saved) return@withContext CapabilityResult(success = false, message = userText("feature.operation_failed", "screenshot save"))
+                    if (!saved) return@withContext CapabilityResult(success = false, message = userText("feature.screenshot_save_failed"))
                     return@withContext CapabilityResult(success = true, value = ConfigValue.StringValue(file.absolutePath))
                 }
                 AccessibilityOperations.GET_VIEW_BOUNDS -> {
