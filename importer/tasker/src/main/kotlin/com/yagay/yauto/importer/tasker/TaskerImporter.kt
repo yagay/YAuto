@@ -644,7 +644,7 @@ class TaskerImporter : AutomationImporter {
         value.forEach { ch ->
             when (ch) {
                 '\\' -> append("\\\\")
-                '"' -> append("\\"")
+                '"' -> append("\\\"")
                 '\n' -> append("\\n")
                 '\r' -> append("\\r")
                 '\t' -> append("\\t")
