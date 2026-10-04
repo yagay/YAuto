@@ -175,6 +175,7 @@ class YAutoXposedModule : XposedModule() {
         installProcessDeathHooks(context, classLoader)
         installTaskRemovedHooks(context, classLoader)
         installBackNavigationHooks(context, classLoader)
+        installAssistantHooks(context, classLoader)
     }
 
     private fun installProcessDeathHooks(context: Context, classLoader: ClassLoader) {
@@ -306,6 +307,55 @@ class YAutoXposedModule : XposedModule() {
                     result
                 }
             }
+    }
+
+
+    private fun installAssistantHooks(context: Context, classLoader: ClassLoader) {
+        val classNames = listOf(
+            "com.android.server.voiceinteraction.VoiceInteractionManagerServiceImpl",
+            "com.android.server.voiceinteraction.VoiceInteractionManagerService\$VoiceInteractionManagerServiceStub",
+        )
+        classNames.forEach { className ->
+            val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
+            clazz.declaredMethods
+                .filter { method ->
+                    method.name in setOf(
+                        "showSessionLocked",
+                        "showSession",
+                        "showSessionForActiveService",
+                        "showSessionFromSession",
+                    )
+                }
+                .forEach { method ->
+                    val key = "system-assistant|" + method.toGenericString()
+                    if (!installedHooks.add(key)) return@forEach
+                    method.isAccessible = true
+                    hook(method).intercept { chain ->
+                        val component = chain.args.filterIsInstance<android.content.ComponentName>().firstOrNull()
+                        val info = reflectedValue(
+                            chain.thisObject,
+                            "mInfo",
+                            "mVoiceInteractionServiceInfo",
+                            "mServiceInfo",
+                        )
+                        val serviceInfo = reflectedValue(info, "mServiceInfo", "serviceInfo") ?: info
+                        val packageName = component?.packageName
+                            ?: reflectedString(serviceInfo, "packageName", "mPackageName")
+                        emitSystemRuntimeEvent(
+                            context = context,
+                            type = "android.event.assistant_activated",
+                            dedupKey = "assistant:" + packageName,
+                            extras = mapOf(
+                                "package" to packageName,
+                                "component" to component?.flattenToString().orEmpty(),
+                                "method" to method.name,
+                            ),
+                            dedupWindowMs = 350L,
+                        )
+                        chain.proceed()
+                    }
+                }
+        }
     }
 
     private fun emitSystemRuntimeEvent(
