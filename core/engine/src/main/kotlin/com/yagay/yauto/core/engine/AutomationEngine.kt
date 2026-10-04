@@ -82,6 +82,12 @@ class AutomationEngine(
             val result = when (signal) {
                 is Signal.Failure -> EngineResult(false, executionId, variables = variables.snapshot(), error = signal.message)
                 is Signal.Return -> EngineResult(true, executionId, signal.value, variables.snapshot())
+                is Signal.Goto -> EngineResult(
+                    false,
+                    executionId,
+                    variables = variables.snapshot(),
+                    error = userText("engine.unknown_action", "label:" + signal.label),
+                )
                 Signal.Break, Signal.Continue, Signal.Next -> EngineResult(true, executionId, variables = variables.snapshot())
             }
             trace(executionId, TraceKind.EXECUTION_END, if (result.success) userText("engine.execution_completed") else userText("engine.execution_failed", result.error.orEmpty()), automation, success = result.success)
@@ -106,13 +112,31 @@ class AutomationEngine(
         flow: Flow?,
         maxLoopIterations: Int,
     ): Signal {
-        for (node in nodes) {
+        val labels = nodes.mapIndexedNotNull { index, node ->
+            (node as? ActionNode.Label)?.name?.trim()?.takeIf(String::isNotBlank)?.let { it to index }
+        }.toMap()
+        var index = 0
+        var jumpCount = 0
+        while (index < nodes.size) {
             currentCoroutineContext().ensureActive()
+            val node = nodes[index]
             val start = System.currentTimeMillis()
             trace(executionId, TraceKind.NODE_START, userText("engine.node_start"), automation, flow, node.id)
             val signal = executeNode(node, executionId, variables, automation, flow, maxLoopIterations)
             trace(executionId, TraceKind.NODE_END, userText("engine.node_end"), automation, flow, node.id, success = signal !is Signal.Failure, durationMs = System.currentTimeMillis() - start)
+            if (signal is Signal.Goto) {
+                val target = labels[signal.label]
+                if (target != null) {
+                    if (++jumpCount > maxLoopIterations) {
+                        return Signal.Failure(userText("engine.loop_limit"))
+                    }
+                    index = target + 1
+                    continue
+                }
+                return signal
+            }
             if (signal != Signal.Next) return signal
+            index++
         }
         return Signal.Next
     }
@@ -286,6 +310,8 @@ class AutomationEngine(
                     else -> Signal.Next
                 }
             }
+            is ActionNode.Label -> Signal.Next
+            is ActionNode.Goto -> Signal.Goto(node.label.trim())
             is ActionNode.Return -> Signal.Return(node.value.resolveVariables(variables))
             is ActionNode.Break -> Signal.Break
             is ActionNode.Continue -> Signal.Continue
@@ -440,6 +466,7 @@ class AutomationEngine(
         data object Break : Signal
         data object Continue : Signal
         data class Return(val value: ConfigValue) : Signal
+        data class Goto(val label: String) : Signal
         data class Failure(val message: String) : Signal
     }
 
