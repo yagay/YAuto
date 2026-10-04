@@ -74,6 +74,7 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
         registerExternalIntegration(registry)
         registerConfigurationAndSimEvents(registry)
         registerWeather(registry)
+        registerWeatherEvent(registry)
     }
 
     private fun registerLocation(registry: FeatureRegistry) {
@@ -680,6 +681,62 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
         }
     }
 
+    private fun registerWeatherEvent(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.weather_changed"), FeatureKind.EVENT,
+                "Weather condition update",
+                "Run when configured weather data updates and matches temperature, wind, humidity, condition or wind-direction filters",
+                FeatureCategory.NETWORK,
+                fields = listOf(
+                    FieldSchema.Number("latitude", "Latitude", true, min = -90.0, max = 90.0),
+                    FieldSchema.Number("longitude", "Longitude", true, min = -180.0, max = 180.0),
+                    FieldSchema.Duration("intervalMs", "Refresh interval"),
+                    FieldSchema.Choice("metric", "Weather metric", true, listOf("any_update", "temperature", "wind_speed", "humidity", "condition", "wind_direction")),
+                    FieldSchema.Choice("operator", "Comparison", options = listOf("any", "above", "below")),
+                    FieldSchema.Number("value", "Threshold"),
+                    FieldSchema.Choice("condition", "Weather condition", options = listOf("any", "clear", "cloudy", "rain", "thunder", "snow")),
+                    FieldSchema.Number("directionMin", "Wind direction minimum °", min = 0.0, max = 360.0),
+                    FieldSchema.Number("directionMax", "Wind direction maximum °", min = 0.0, max = 360.0),
+                ),
+                keywords = setOf("weather trigger", "temperature", "wind", "humidity", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.weather_changed") return@registerEvent false
+            val lat = feature.config["latitude"].numberOrNull()
+            val lon = feature.config["longitude"].numberOrNull()
+            if (lat != null && kotlin.math.abs(ctx.event.payload["latitude"].numberOrNull().orZero() - lat) > 0.001) return@registerEvent false
+            if (lon != null && kotlin.math.abs(ctx.event.payload["longitude"].numberOrNull().orZero() - lon) > 0.001) return@registerEvent false
+            when (feature.config.string("metric", "any_update")) {
+                "temperature" -> weatherCompare(ctx.event.payload["temperatureC"].numberOrNull(), feature)
+                "wind_speed" -> weatherCompare(ctx.event.payload["windSpeedKmh"].numberOrNull(), feature)
+                "humidity" -> weatherCompare(ctx.event.payload["humidityPercent"].numberOrNull(), feature)
+                "condition" -> {
+                    val wanted = feature.config.string("condition", "any")
+                    wanted == "any" || ctx.event.payload.string("condition") == wanted
+                }
+                "wind_direction" -> {
+                    val value = ctx.event.payload["windDirectionDeg"].numberOrNull() ?: return@registerEvent false
+                    val min = feature.config["directionMin"].numberOrNull() ?: 0.0
+                    val max = feature.config["directionMax"].numberOrNull() ?: 360.0
+                    if (min <= max) value in min..max else value >= min || value <= max
+                }
+                else -> true
+            }
+        }
+    }
+
+    private fun weatherCompare(actual: Double?, feature: com.yagay.yauto.core.model.FeatureRef): Boolean {
+        actual ?: return false
+        val threshold = feature.config["value"].numberOrNull() ?: return false
+        return when (feature.config.string("operator", "any")) {
+            "above" -> actual >= threshold
+            "below" -> actual <= threshold
+            else -> true
+        }
+    }
+
     private fun registerWeather(registry: FeatureRegistry) {
         registry.registerAction(
             FeatureDescriptor(
@@ -707,7 +764,7 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
         val url = URL(
             "https://api.open-meteo.com/v1/forecast?latitude=" + latitude +
                 "&longitude=" + longitude +
-                "&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m&timezone=auto"
+                "&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m&timezone=auto"
         )
         val connection = (url.openConnection() as HttpURLConnection).apply {
             connectTimeout = 15_000
@@ -727,6 +784,7 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
                     "time" to ConfigValue.StringValue(current.optString("time")),
                     "temperatureC" to ConfigValue.NumberValue(current.optDouble("temperature_2m", Double.NaN)),
                     "apparentTemperatureC" to ConfigValue.NumberValue(current.optDouble("apparent_temperature", Double.NaN)),
+                    "humidityPercent" to ConfigValue.NumberValue(current.optDouble("relative_humidity_2m", Double.NaN)),
                     "precipitationMm" to ConfigValue.NumberValue(current.optDouble("precipitation", 0.0)),
                     "weatherCode" to ConfigValue.NumberValue(current.optDouble("weather_code", -1.0)),
                     "windSpeedKmh" to ConfigValue.NumberValue(current.optDouble("wind_speed_10m", 0.0)),
@@ -993,6 +1051,7 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
             put(key, line.substring(index + 1))
         }
     }
+    private fun Double?.orZero(): Double = this ?: 0.0
 }
 
 private class TorchStateMonitor(context: Context, camera: CameraManager) {
