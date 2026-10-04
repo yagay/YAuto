@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_display_density_set_title">Set display density</string>
+    <string name="feature_android_display_density_set_description">Set Android display density as a percentage of the device stable density</string>
+    <string name="feature_android_display_density_set_field_scalepercent">Display scale percent</string>
+
+    <string name="feature_android_display_font_scale_set_title">Set font scale</string>
+    <string name="feature_android_display_font_scale_set_description">Set the Android font scale percentage</string>
+    <string name="feature_android_display_font_scale_set_field_scalepercent">Font scale percent</string>
+
+    <string name="feature_android_display_immersive_set_title">Set immersive mode</string>
+    <string name="feature_android_display_immersive_set_description">Show or hide Android status and navigation bars system-wide</string>
+    <string name="feature_android_display_immersive_set_field_mode">Immersive mode</string>
+    <string name="feature_android_display_immersive_set_field_mode_option_off">Off</string>
+    <string name="feature_android_display_immersive_set_field_mode_option_navigation">Hide navigation bar</string>
+    <string name="feature_android_display_immersive_set_field_mode_option_status">Hide status bar</string>
+    <string name="feature_android_display_immersive_set_field_mode_option_full">Full immersive</string>
+
+    <string name="feature_android_display_animation_scale_set_title">Set animation scale</string>
+    <string name="feature_android_display_animation_scale_set_description">Set Android window, transition, animator, or all animation scales</string>
+    <string name="feature_android_display_animation_scale_set_field_target">Animation scale target</string>
+    <string name="feature_android_display_animation_scale_set_field_target_option_all">All animation scales</string>
+    <string name="feature_android_display_animation_scale_set_field_target_option_window">Window animation</string>
+    <string name="feature_android_display_animation_scale_set_field_target_option_transition">Transition animation</string>
+    <string name="feature_android_display_animation_scale_set_field_target_option_animator">Animator duration</string>
+    <string name="feature_android_display_animation_scale_set_field_scale">Animation scale</string>
+
+    <string name="feature_android_audio_microphone_mute_set_title">Set microphone mute</string>
+    <string name="feature_android_audio_microphone_mute_set_description">Mute, unmute, or toggle the Android system microphone mute state</string>
+    <string name="feature_android_audio_microphone_mute_set_field_mode">Microphone state</string>
+    <string name="feature_android_audio_microphone_mute_set_field_mode_option_mute">Mute</string>
+    <string name="feature_android_audio_microphone_mute_set_field_mode_option_unmute">Unmute</string>
+    <string name="feature_android_audio_microphone_mute_set_field_mode_option_toggle">Toggle</string>
+
+    <string name="feature_android_audio_speakerphone_set_title">Set speakerphone</string>
+    <string name="feature_android_audio_speakerphone_set_description">Enable, disable, or toggle speakerphone routing</string>
+    <string name="feature_android_audio_speakerphone_set_field_mode">Speakerphone state</string>
+    <string name="feature_android_audio_speakerphone_set_field_mode_option_enable">Enable</string>
+    <string name="feature_android_audio_speakerphone_set_field_mode_option_disable">Disable</string>
+    <string name="feature_android_audio_speakerphone_set_field_mode_option_toggle">Toggle</string>
+
+    <string name="feature_android_audio_volume_ui_show_title">Show volume panel</string>
+    <string name="feature_android_audio_volume_ui_show_description">Show Android's system volume panel for a selected audio stream</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream">Audio stream</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_alarm">Alarm</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_music">Music</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_notification">Notification</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_ringer">Ringer</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_system">System</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_voice_call">Voice call</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_bluetooth_voice">Bluetooth voice</string>
+
+    <string name="feature_android_home_open_title">Open home screen</string>
+    <string name="feature_android_home_open_description">Return to the Android home screen using the standard home intent</string>
+
+    <string name="feature_android_ime_picker_show_title">Show input method picker</string>
+    <string name="feature_android_ime_picker_show_description">Show Android's keyboard / input-method picker</string>
+
+    <string name="feature_android_state_display_density_percent_title">Display density percent</string>
+    <string name="feature_android_state_display_density_percent_description">Compare the current display density with a percentage of the device stable density</string>
+    <string name="feature_android_state_display_density_percent_field_minpercent">Minimum percent</string>
+    <string name="feature_android_state_display_density_percent_field_maxpercent">Maximum percent</string>
+    <string name="feature_android_condition_display_density_percent_title">Display density percent</string>
+    <string name="feature_android_condition_display_density_percent_description">Compare the current display density with a percentage of the device stable density</string>
+    <string name="feature_android_condition_display_density_percent_field_minpercent">Minimum percent</string>
+    <string name="feature_android_condition_display_density_percent_field_maxpercent">Maximum percent</string>
+
+    <string name="feature_android_state_font_scale_percent_title">Font scale percent</string>
+    <string name="feature_android_state_font_scale_percent_description">Compare the current Android font scale percentage</string>
+    <string name="feature_android_state_font_scale_percent_field_minpercent">Minimum percent</string>
+    <string name="feature_android_state_font_scale_percent_field_maxpercent">Maximum percent</string>
+    <string name="feature_android_condition_font_scale_percent_title">Font scale percent</string>
+    <string name="feature_android_condition_font_scale_percent_description">Compare the current Android font scale percentage</string>
+    <string name="feature_android_condition_font_scale_percent_field_minpercent">Minimum percent</string>
+    <string name="feature_android_condition_font_scale_percent_field_maxpercent">Maximum percent</string>
+
+    <string name="feature_android_state_immersive_mode_title">Immersive mode</string>
+    <string name="feature_android_state_immersive_mode_description">Match the current system-wide immersive policy</string>
+    <string name="feature_android_state_immersive_mode_field_value">Value</string>
+    <string name="feature_android_state_immersive_mode_field_value_option_off">Off</string>
+    <string name="feature_android_state_immersive_mode_field_value_option_navigation">Hide navigation bar</string>
+    <string name="feature_android_state_immersive_mode_field_value_option_status">Hide status bar</string>
+    <string name="feature_android_state_immersive_mode_field_value_option_full">Full immersive</string>
+    <string name="feature_android_condition_immersive_mode_title">Immersive mode</string>
+    <string name="feature_android_condition_immersive_mode_description">Match the current system-wide immersive policy</string>
+    <string name="feature_android_condition_immersive_mode_field_value">Value</string>
+    <string name="feature_android_condition_immersive_mode_field_value_option_off">Off</string>
+    <string name="feature_android_condition_immersive_mode_field_value_option_navigation">Hide navigation bar</string>
+    <string name="feature_android_condition_immersive_mode_field_value_option_status">Hide status bar</string>
+    <string name="feature_android_condition_immersive_mode_field_value_option_full">Full immersive</string>
+
+    <string name="feature_android_state_animation_scale_title">Animation scale</string>
+    <string name="feature_android_state_animation_scale_description">Compare the current Android animation scale</string>
+    <string name="feature_android_state_animation_scale_field_target">Animation scale target</string>
+    <string name="feature_android_state_animation_scale_field_target_option_window">Window animation</string>
+    <string name="feature_android_state_animation_scale_field_target_option_transition">Transition animation</string>
+    <string name="feature_android_state_animation_scale_field_target_option_animator">Animator duration</string>
+    <string name="feature_android_state_animation_scale_field_min">Minimum scale</string>
+    <string name="feature_android_state_animation_scale_field_max">Maximum scale</string>
+    <string name="feature_android_condition_animation_scale_title">Animation scale</string>
+    <string name="feature_android_condition_animation_scale_description">Compare the current Android animation scale</string>
+    <string name="feature_android_condition_animation_scale_field_target">Animation scale target</string>
+    <string name="feature_android_condition_animation_scale_field_target_option_window">Window animation</string>
+    <string name="feature_android_condition_animation_scale_field_target_option_transition">Transition animation</string>
+    <string name="feature_android_condition_animation_scale_field_target_option_animator">Animator duration</string>
+    <string name="feature_android_condition_animation_scale_field_min">Minimum scale</string>
+    <string name="feature_android_condition_animation_scale_field_max">Maximum scale</string>
+</resources>
