@@ -574,6 +574,71 @@ class AndroidSurfaceFeaturePack(
             )
         }
 
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("surface.gesture_recorder.show"), FeatureKind.ACTION,
+                "Record gesture",
+                "Show a full-screen gesture recorder and emit gesture_recorded with replayable X,Y points",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Text("surfaceId", "Surface ID", true),
+                    FieldSchema.Number("maxPoints", "Maximum recorded points", min = 16.0, max = 4096.0),
+                    FieldSchema.Duration("autoHideMs", "Auto hide after"),
+                ),
+                accessRequirements = setOf(AccessRequirement.OVERLAY),
+                keywords = setOf("gesture recording", "record gesture", "shortx", "touch path"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            ActionExecutionResult(
+                controller.showGestureRecorder(
+                    id = feature.config.string("surfaceId").resolveVariables(ctx.variables).trim(),
+                    maxPoints = (feature.config["maxPoints"].numberOrNull() ?: 1024.0).toInt(),
+                    autoHideMs = feature.config.long("autoHideMs", 0L),
+                )
+            )
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("surface.gesture_recording.get"), FeatureKind.ACTION,
+                "Get recorded gesture",
+                "Return the latest recorded gesture path for a recorder Surface ID",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Text("surfaceId", "Surface ID", true),
+                    FieldSchema.Variable("resultVariable", "Store gesture path", true),
+                ),
+                keywords = setOf("gesture recording", "gesture path", "replay", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val surfaceId = feature.config.string("surfaceId").resolveVariables(ctx.variables).trim()
+            val path = controller.recordedGesture(surfaceId) ?: return@registerAction ActionExecutionResult(false)
+            val output = com.yagay.yauto.core.model.ConfigValue.StringValue(path)
+            val resultName = feature.config.string("resultVariable").trim()
+            if (resultName.isBlank()) return@registerAction ActionExecutionResult(false)
+            ctx.variables.set(resultName, output)
+            ActionExecutionResult(true, output)
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("surface.gesture_recording.clear"), FeatureKind.ACTION,
+                "Clear recorded gesture", "Clear the latest stored gesture path for a recorder Surface ID",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(FieldSchema.Text("surfaceId", "Surface ID", true)),
+                keywords = setOf("gesture recording", "clear", "shortx"), ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            ActionExecutionResult(
+                controller.clearRecordedGesture(
+                    feature.config.string("surfaceId").resolveVariables(ctx.variables).trim()
+                )
+            )
+        }
+
         registry.registerEvent(
             FeatureDescriptor(
                 FeatureId("android.event.surface_action"), FeatureKind.EVENT,
