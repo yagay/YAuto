@@ -458,6 +458,10 @@ internal val REFERENCE_SIGNAL_PAIR_KEYS = listOf(
     "audio_recording_count",
     "camera_count",
     "camera_flash_available",
+    "torch_available",
+    "torch_enabled",
+    "camera_in_use",
+    "camera_unavailable_count",
 )
 
 internal val BIOMETRIC_STATUS_OPTIONS = listOf(
