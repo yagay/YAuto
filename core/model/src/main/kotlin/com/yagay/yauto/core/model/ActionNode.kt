@@ -108,6 +108,8 @@ sealed interface ActionNode {
         val condition: PredicateNode,
         val timeoutMs: Long = 60_000L,
         val pollIntervalMs: Long = 500L,
+        /** Wait without a deadline. Used by sources such as Tasker's Wait Until. */
+        val unlimited: Boolean = false,
     ) : ActionNode
 
     @Serializable @SerialName("call_flow")
