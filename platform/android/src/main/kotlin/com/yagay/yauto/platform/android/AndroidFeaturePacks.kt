@@ -109,6 +109,7 @@ object AndroidFeaturePacks {
         AndroidScriptFeaturePack(),
         AndroidQuickSettingsFeaturePack(quickSettingsTiles),
         AndroidCustomRecentsFeaturePack(context, overlaySurfaces),
+        AndroidTaskerSceneFeaturePack(overlaySurfaces),
         AndroidSurfaceFeaturePack(overlaySurfaces),
         AndroidExternalCommandFeaturePack(context),
     )
