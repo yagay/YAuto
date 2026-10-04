@@ -232,7 +232,8 @@ class MacroDroidImporter(
                     NodeId(UUID.randomUUID().toString()),
                     ConfigValue.NullValue,
                 )
-                "EmptyAction", "SeparatorAction", "ActionGroupAction", "ActionGroupEndAction" ->
+                "EmptyAction", "SeparatorAction", "ActionGroupAction", "ActionGroupEndAction",
+                "ConditionAction", "ParentAction", "ElseParentAction", "EndParentAction" ->
                     out += ActionNode.Action(
                         NodeId(UUID.randomUUID().toString()),
                         FeatureRef("core.noop"),
