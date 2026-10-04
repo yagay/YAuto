@@ -204,7 +204,7 @@ class ConfiguredRuntimeParityEventSource(
     private fun currentBootId(): String =
         runCatching { File("/proc/sys/kernel/random/boot_id").readText().trim() }
             .getOrNull()
-            .takeUnless(String?::isNullOrBlank)
+            .takeUnless { it.isNullOrBlank() }
             ?: (System.currentTimeMillis() - SystemClock.elapsedRealtime()).toString()
 
     private fun readCpuSnapshot(): CpuSnapshot? = runCatching {
