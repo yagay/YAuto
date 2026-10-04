@@ -47,7 +47,7 @@ class AutomationRuntimeService : Service() {
         registerSource("network-profile") { NetworkProfileEventSource(this) }
         registerSource("wifi-scan") { WifiScanEventSource(this) }
         registerSource("clipboard") { ClipboardEventSource(this) }
-        registerSource("device-setting") { DeviceSettingEventSource(this) }
+        registerSource("device-setting") { DeviceSettingEventSource(this) }\n        registerSource("reference-runtime-signals") { ReferenceRuntimeSignalEventSource(this) }
         registerSource("audio-device") { AudioDeviceEventSource(this) }
         registerSource("bluetooth-device") { BluetoothDeviceEventSource(this) }
         registerSource("communication") { CommunicationEventSource(this) }
