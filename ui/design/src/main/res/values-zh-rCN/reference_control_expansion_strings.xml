@@ -8,20 +8,6 @@
     <string name="feature_android_display_immersive_set_field_mode_option_status">隐藏状态栏</string>
     <string name="feature_android_display_immersive_set_field_mode_option_full">完全沉浸</string>
 
-    <string name="feature_android_audio_microphone_mute_set_title">设置麦克风静音</string>
-    <string name="feature_android_audio_microphone_mute_set_description">静音、取消静音或切换 Android 系统麦克风静音状态</string>
-    <string name="feature_android_audio_microphone_mute_set_field_mode">麦克风状态</string>
-    <string name="feature_android_audio_microphone_mute_set_field_mode_option_mute">静音</string>
-    <string name="feature_android_audio_microphone_mute_set_field_mode_option_unmute">取消静音</string>
-    <string name="feature_android_audio_microphone_mute_set_field_mode_option_toggle">切换</string>
-
-    <string name="feature_android_audio_speakerphone_set_title">设置扬声器</string>
-    <string name="feature_android_audio_speakerphone_set_description">启用、禁用或切换扬声器通话路由</string>
-    <string name="feature_android_audio_speakerphone_set_field_mode">扬声器状态</string>
-    <string name="feature_android_audio_speakerphone_set_field_mode_option_enable">启用</string>
-    <string name="feature_android_audio_speakerphone_set_field_mode_option_disable">禁用</string>
-    <string name="feature_android_audio_speakerphone_set_field_mode_option_toggle">切换</string>
-
     <string name="feature_android_audio_volume_ui_show_title">显示音量面板</string>
     <string name="feature_android_audio_volume_ui_show_description">为指定音频流显示 Android 系统音量面板</string>
     <string name="feature_android_audio_volume_ui_show_field_stream">音频流</string>
