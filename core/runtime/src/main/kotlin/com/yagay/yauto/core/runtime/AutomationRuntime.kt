@@ -92,9 +92,22 @@ class AutomationRuntime(
                 })
 
                 val phases = evaluationLocks.getOrPut(automation.id.value) { Mutex() }.withLock {
-                    val eventMatches = !statesOnly && automation.activation.events.any {
-                        matchEvent(it, event, variables, dispatchId)
+                    var matchedEventFeature: FeatureRef? = null
+                    val eventMatches = if (statesOnly) {
+                        false
+                    } else {
+                        for (candidate in automation.activation.events) {
+                            if (matchEvent(candidate, event, variables, dispatchId)) {
+                                matchedEventFeature = candidate
+                                break
+                            }
+                        }
+                        matchedEventFeature != null
                     }
+                    matchedEventFeature
+                        ?.config
+                        ?.get("tag")
+                        ?.let { tag -> variables.set("event.fact_tag", tag) }
 
                     val stateful = automation.activation.states.isNotEmpty()
                     val statesMatch = automation.activation.states.all { state ->
