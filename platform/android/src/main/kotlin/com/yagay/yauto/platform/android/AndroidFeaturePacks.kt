@@ -61,6 +61,7 @@ object AndroidFeaturePacks {
         AndroidShortXRuntimeEventFeaturePack(),
         AndroidShortXTimeFeaturePack(context),
         AndroidInvocationParityFeaturePack(context),
+        AndroidLsposedSystemEventFeaturePack(),
         AndroidUsbFeaturePack(context),
         AndroidMediaDeviceFeaturePack(context),
         AndroidAudioFeaturePack(context),
