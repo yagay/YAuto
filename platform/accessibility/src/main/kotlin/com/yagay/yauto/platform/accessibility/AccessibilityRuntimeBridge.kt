@@ -1,5 +1,6 @@
 package com.yagay.yauto.platform.accessibility
 
+import android.graphics.Bitmap
 import java.util.concurrent.atomic.AtomicReference
 
 data class AccessibilityWindowSnapshot(
@@ -28,6 +29,11 @@ data class AccessibilityUiEventSnapshot(
     val timestampEpochMs: Long = System.currentTimeMillis(),
 )
 
+data class AccessibilityFingerprintGestureSnapshot(
+    val gesture: String,
+    val timestampEpochMs: Long = System.currentTimeMillis(),
+)
+
 data class AccessibilityNodeSnapshot(
     val text: String,
     val contentDescription: String,
@@ -48,6 +54,8 @@ object AccessibilityRuntimeBridge {
     @Volatile private var listener: ((previous: AccessibilityWindowSnapshot?, current: AccessibilityWindowSnapshot) -> Unit)? = null
     @Volatile private var keyListener: ((AccessibilityKeySnapshot) -> Unit)? = null
     @Volatile private var uiEventListener: ((AccessibilityUiEventSnapshot) -> Unit)? = null
+    @Volatile private var fingerprintGestureListener: ((AccessibilityFingerprintGestureSnapshot) -> Unit)? = null
+    @Volatile private var fingerprintGestureAvailable: Boolean = false
 
     fun currentWindow(): AccessibilityWindowSnapshot? = current.get()
 
@@ -61,6 +69,22 @@ object AccessibilityRuntimeBridge {
 
     fun setUiEventListener(value: ((AccessibilityUiEventSnapshot) -> Unit)?) {
         uiEventListener = value
+    }
+
+    fun setFingerprintGestureListener(value: ((AccessibilityFingerprintGestureSnapshot) -> Unit)?) {
+        fingerprintGestureListener = value
+    }
+
+    fun isFingerprintGestureAvailable(): Boolean = fingerprintGestureAvailable
+
+    suspend fun captureScreenshot(): Bitmap? = YAutoAccessibilityService.current?.captureScreenshotBitmap()
+
+    internal fun updateFingerprintGestureAvailability(value: Boolean) {
+        fingerprintGestureAvailable = value
+    }
+
+    internal fun dispatchFingerprintGesture(gesture: String) {
+        fingerprintGestureListener?.invoke(AccessibilityFingerprintGestureSnapshot(gesture))
     }
 
     internal fun update(packageName: String?, className: String?) {
@@ -82,5 +106,6 @@ object AccessibilityRuntimeBridge {
 
     internal fun clearIfServiceStops() {
         current.set(null)
+        fingerprintGestureAvailable = false
     }
 }

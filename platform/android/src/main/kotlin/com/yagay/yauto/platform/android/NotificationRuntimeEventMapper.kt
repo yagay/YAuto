@@ -13,6 +13,13 @@ object NotificationRuntimeEventMapper {
             source = "android.notification_listener",
         )
 
+    fun clicked(sbn: StatusBarNotification): RuntimeEvent =
+        RuntimeEvent(
+            typeId = "android.event.notification_clicked",
+            payload = payload(sbn),
+            source = "android.notification_listener",
+        )
+
     fun removed(sbn: StatusBarNotification, reason: Int? = null): RuntimeEvent =
         RuntimeEvent(
             typeId = "android.event.notification_removed",
@@ -38,6 +45,7 @@ object NotificationRuntimeEventMapper {
             sbn.tag?.let { put("tag", ConfigValue.StringValue(it)) }
             put("postTime", ConfigValue.NumberValue(sbn.postTime.toDouble()))
             put("ongoing", ConfigValue.BooleanValue(sbn.isOngoing))
+            put("actionCount", ConfigValue.NumberValue(notification.actions.orEmpty().size.toDouble()))
             put("clearable", ConfigValue.BooleanValue(sbn.isClearable))
             put("title", ConfigValue.StringValue(title))
             put("text", ConfigValue.StringValue(text))
@@ -45,6 +53,7 @@ object NotificationRuntimeEventMapper {
             put("channel", ConfigValue.StringValue(notification.channelId.orEmpty()))
             put("category", ConfigValue.StringValue(notification.category.orEmpty()))
             put("group", ConfigValue.StringValue(notification.group.orEmpty()))
+            put("groupKey", ConfigValue.StringValue(sbn.groupKey.orEmpty()))
             put("flags", ConfigValue.NumberValue(notification.flags.toDouble()))
         }
     }

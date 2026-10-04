@@ -88,6 +88,10 @@ class AccessibilityFeaturePack(
         uiEvent(registry, "android.event.ui_focused", "UI element focused", "focused")
         uiEvent(registry, "android.event.ui_scrolled", "UI content scrolled", "scrolled")
         screenContentEvent(registry)
+        screenTextAppearedEvent(registry)
+        fingerprintGestureEvent(registry)
+        fingerprintGestureState(registry, FeatureKind.STATE, "android.state.fingerprint_gesture_available")
+        fingerprintGestureState(registry, FeatureKind.CONDITION, "android.condition.fingerprint_gesture_available")
 
         foregroundState(registry, FeatureKind.STATE, "android.state.app_foreground")
         foregroundState(registry, FeatureKind.CONDITION, "android.condition.app_foreground")
@@ -167,6 +171,72 @@ class AccessibilityFeaturePack(
                 ignoreCase = feature.config.boolean("ignoreCase", true),
             )
         }
+    }
+
+    private fun screenTextAppearedEvent(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.screen_text_appeared"), FeatureKind.EVENT,
+                "Screen text appeared", "Trigger when changed Accessibility screen content contains matching text",
+                FeatureCategory.UI_AUTOMATION,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "App / package"),
+                    FieldSchema.Choice("mode", "Match mode", true, listOf("contains", "exact", "regex")),
+                    FieldSchema.Text("text", "Text / pattern", true),
+                    FieldSchema.Toggle("ignoreCase", "Ignore case"),
+                ),
+                keywords = setOf("screen text", "appeared", "content", "accessibility", "visual"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.screen_content_changed") return@registerEvent false
+            val pkg = feature.config.string("package")
+            if (pkg.isNotBlank() && ctx.event.payload.string("package") != pkg) return@registerEvent false
+            matchesText(
+                actual = ctx.event.payload.string("screenText"),
+                expected = feature.config.string("text"),
+                mode = feature.config.string("mode", "contains"),
+                ignoreCase = feature.config.boolean("ignoreCase", true),
+            )
+        }
+    }
+
+    private fun fingerprintGestureEvent(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.fingerprint_gesture"), FeatureKind.EVENT,
+                "Fingerprint gesture", "Run when Accessibility detects a fingerprint-sensor swipe gesture",
+                FeatureCategory.UI_AUTOMATION,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                fields = listOf(
+                    FieldSchema.Choice("gesture", "Gesture", true, listOf("any", "swipe_up", "swipe_down", "swipe_left", "swipe_right")),
+                ),
+                keywords = setOf("fingerprint", "gesture", "swipe", "accessibility"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.fingerprint_gesture") return@registerEvent false
+            val expected = feature.config.string("gesture", "any")
+            expected == "any" || ctx.event.payload.string("gesture") == expected
+        }
+    }
+
+    private fun fingerprintGestureState(registry: FeatureRegistry, kind: FeatureKind, typeId: String) {
+        val descriptor = FeatureDescriptor(
+            FeatureId(typeId), kind,
+            "Fingerprint gestures available", "Check whether Accessibility can currently receive fingerprint gestures",
+            FeatureCategory.UI_AUTOMATION,
+            capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+            fields = listOf(FieldSchema.Toggle("value", "Available")),
+            keywords = setOf("fingerprint", "gesture", "available"),
+            ownerPackId = id,
+        )
+        val evaluator = ConditionEvaluator { feature, _ ->
+            AccessibilityRuntimeBridge.isFingerprintGestureAvailable() == feature.config.boolean("value", true)
+        }
+        if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator)
+        else registry.registerCondition(descriptor, evaluator)
     }
 
     private fun matchUiEvent(feature: com.yagay.yauto.core.model.FeatureRef, payload: Map<String, ConfigValue>): Boolean {

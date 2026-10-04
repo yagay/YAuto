@@ -69,6 +69,7 @@ class AutomationRuntimeService : Service() {
         registerSource("http-server") { HttpServerEventSource() }
         registerSource("stopwatch") { StopwatchEventSource() }
         registerSource("configured-data-usage") { ConfiguredDataUsageEventSource(this, appGraph.workspace) }
+        registerSource("hinge-angle") { HingeAngleEventSource(this) }
         registerSource("usage-foreground") {
             UsageStatsForegroundEventSource(
                 context = this,
@@ -137,6 +138,16 @@ class AutomationRuntimeService : Service() {
                 previous?.let { dispatcher.dispatch(RuntimeEvent("android.event.app_background", mapOf("package" to ConfigValue.StringValue(it.packageName), "class" to ConfigValue.StringValue(it.className.orEmpty()), "nextPackage" to ConfigValue.StringValue(current.packageName)), source = "accessibility.window")) }
                 dispatcher.dispatch(RuntimeEvent("android.event.app_foreground", currentPayload, source = "accessibility.window"))
             }
+        }
+        AccessibilityRuntimeBridge.setFingerprintGestureListener { gesture ->
+            dispatcher.dispatch(
+                RuntimeEvent(
+                    "android.event.fingerprint_gesture",
+                    mapOf("gesture" to ConfigValue.StringValue(gesture.gesture)),
+                    source = "accessibility.fingerprint",
+                    timestampEpochMs = gesture.timestampEpochMs,
+                )
+            )
         }
         AccessibilityRuntimeBridge.setKeyListener { key ->
             val action = when (key.action) { KeyEvent.ACTION_DOWN -> "down"; KeyEvent.ACTION_UP -> "up"; else -> "other" }
@@ -214,7 +225,7 @@ class AutomationRuntimeService : Service() {
         return START_STICKY
     }
 
-    override fun onDestroy() { AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); XposedHookRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
+    override fun onDestroy() { AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); AccessibilityRuntimeBridge.setFingerprintGestureListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); XposedHookRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
     override fun onBind(intent: Intent?): IBinder? = null
     private fun registerSource(component: String, factory: () -> AndroidEventSource) { eventSources.add(component, factory)?.let(::reportSourceFailure) }
     private fun reportSourceFailure(failure: EventSourceFailure) {

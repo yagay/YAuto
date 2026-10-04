@@ -1,8 +1,11 @@
 package com.yagay.yauto.platform.accessibility
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.FingerprintGestureController
 import android.accessibilityservice.GestureDescription
+import android.graphics.Bitmap
 import android.graphics.Path
+import android.view.Display
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
@@ -12,9 +15,30 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 class YAutoAccessibilityService : AccessibilityService() {
+    private val fingerprintCallback = object : FingerprintGestureController.FingerprintGestureCallback() {
+        override fun onGestureDetectionAvailabilityChanged(available: Boolean) {
+            AccessibilityRuntimeBridge.updateFingerprintGestureAvailability(available)
+        }
+
+        override fun onGestureDetected(gesture: Int) {
+            val name = when (gesture) {
+                FingerprintGestureController.FINGERPRINT_GESTURE_SWIPE_UP -> "swipe_up"
+                FingerprintGestureController.FINGERPRINT_GESTURE_SWIPE_DOWN -> "swipe_down"
+                FingerprintGestureController.FINGERPRINT_GESTURE_SWIPE_LEFT -> "swipe_left"
+                FingerprintGestureController.FINGERPRINT_GESTURE_SWIPE_RIGHT -> "swipe_right"
+                else -> "unknown"
+            }
+            AccessibilityRuntimeBridge.dispatchFingerprintGesture(name)
+        }
+    }
+
     override fun onServiceConnected() {
         current = this
         super.onServiceConnected()
+        runCatching {
+            fingerprintGestureController.registerFingerprintGestureCallback(fingerprintCallback, null)
+            AccessibilityRuntimeBridge.updateFingerprintGestureAvailability(fingerprintGestureController.isGestureDetectionAvailable)
+        }
         rootInActiveWindow?.let { root ->
             AccessibilityRuntimeBridge.update(root.packageName?.toString(), root.className?.toString())
         }
@@ -78,6 +102,7 @@ class YAutoAccessibilityService : AccessibilityService() {
     override fun onInterrupt() = Unit
 
     override fun onDestroy() {
+        runCatching { fingerprintGestureController.unregisterFingerprintGestureCallback(fingerprintCallback) }
         if (current === this) current = null
         AccessibilityRuntimeBridge.clearIfServiceStops()
         super.onDestroy()
@@ -188,6 +213,27 @@ class YAutoAccessibilityService : AccessibilityService() {
             else -> return false
         }
         return performGlobalAction(action)
+    }
+
+    internal suspend fun captureScreenshotBitmap(): Bitmap? = suspendCancellableCoroutine { continuation ->
+        takeScreenshot(
+            Display.DEFAULT_DISPLAY,
+            mainExecutor,
+            object : AccessibilityService.TakeScreenshotCallback {
+                override fun onSuccess(screenshot: AccessibilityService.ScreenshotResult) {
+                    val buffer = screenshot.hardwareBuffer
+                    val bitmap = runCatching {
+                        Bitmap.wrapHardwareBuffer(buffer, screenshot.colorSpace)?.copy(Bitmap.Config.ARGB_8888, false)
+                    }.getOrNull()
+                    runCatching { buffer.close() }
+                    if (continuation.isActive) continuation.resume(bitmap)
+                }
+
+                override fun onFailure(errorCode: Int) {
+                    if (continuation.isActive) continuation.resume(null)
+                }
+            }
+        )
     }
 
     internal suspend fun tap(x: Float, y: Float, durationMs: Long): Boolean {

@@ -136,6 +136,8 @@ internal object ShortXFeatureSuggestions {
         "WifiConnectedTo", "WifiDisconnectedFrom", "WifiStatusChanged", "ConnectedWifiSignalLevelChanged" -> "android.event.wifi_changed"
         "VPNConnected", "VPNDisconnected" -> "android.event.network_changed"
         "MethodHook" -> "android.event.lsposed_method_called"
+        "FingerprintGesture", "FingerprintGestureTrigger" -> "android.event.fingerprint_gesture"
+        "ScreenTextAppeared", "ScreenContentTrigger" -> "android.event.screen_text_appeared"
         "ActivityStarted" -> "android.event.activity_lifecycle"
         "AppProcessStarted" -> "android.event.app_process_started"
         "AppProcessRemoved" -> "android.event.app_background"
@@ -161,6 +163,7 @@ internal object ShortXFeatureSuggestions {
         "ScreenStayAwake" -> "android.condition.stay_awake_while_charging"
         "FlashlightIsOn" -> null // YAuto has a torch action but no reliable public torch-state condition yet.
         "IsInCall", "IsRinging" -> "android.condition.phone_call_state"
+        "FoldAngle", "FoldAngleCondition", "HingeAngle" -> "android.condition.hinge_angle"
         "True" -> "core.boolean"
         "False" -> "core.boolean"
         else -> null

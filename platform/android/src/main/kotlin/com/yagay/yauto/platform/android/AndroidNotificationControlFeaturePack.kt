@@ -57,6 +57,43 @@ class AndroidNotificationControlFeaturePack : FeaturePack {
         registerCount(registry)
         registerActiveState(registry)
         registerCountState(registry)
+        registerClickedEvent(registry)
+    }
+
+    private fun registerClickedEvent(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.notification_clicked"), FeatureKind.EVENT,
+                "Notification clicked", "Run when Android reports that the user clicked a notification",
+                FeatureCategory.NOTIFICATION,
+                fields = filterFields(),
+                accessRequirements = setOf(AccessRequirement.NOTIFICATION_LISTENER),
+                keywords = setOf("notification", "clicked", "tap", "opened", "user"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.notification_clicked") return@registerEvent false
+            val match = NotificationMatch.from(feature)
+            val payload = ctx.event.payload
+            val ongoing = (payload["ongoing"] as? ConfigValue.BooleanValue)?.value ?: false
+            val actionCount = (payload["actionCount"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
+            (match.pkg.isBlank() || payload.string("package") == match.pkg) &&
+                (match.title.isBlank() || payload.string("title").contains(match.title, true)) &&
+                (match.text.isBlank() || payload.string("text").contains(match.text, true)) &&
+                (match.channelId.isBlank() || payload.string("channel") == match.channelId) &&
+                (match.category.isBlank() || payload.string("category") == match.category) &&
+                (match.groupKey.isBlank() || payload.string("groupKey") == match.groupKey) &&
+                when (match.ongoing) {
+                    "only" -> ongoing
+                    "exclude" -> !ongoing
+                    else -> true
+                } &&
+                when (match.hasActions) {
+                    "yes" -> actionCount > 0
+                    "no" -> actionCount == 0
+                    else -> true
+                }
+        }
     }
 
     private fun registerReply(registry: FeatureRegistry) {

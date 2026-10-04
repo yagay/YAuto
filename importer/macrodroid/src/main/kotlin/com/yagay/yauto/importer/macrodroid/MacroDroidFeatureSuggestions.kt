@@ -98,6 +98,10 @@ object MacroDroidFeatureSuggestions {
     }
 
     private fun event(sourceType: String): String? = when (sourceType) {
+        "FingerprintGestureTrigger" -> "android.event.fingerprint_gesture"
+        "FoldAngleTrigger", "HingeAngleTrigger" -> "android.event.hinge_angle_changed"
+        "NotificationClickTrigger", "NotificationClickedTrigger" -> "android.event.notification_clicked"
+        "ScreenTextAppearedTrigger" -> "android.event.screen_text_appeared"
         "HttpServerTrigger" -> "android.event.http_server_request"
         "StopWatchTrigger", "StopwatchTrigger" -> "android.event.stopwatch_reached"
         "DataUsedTrigger" -> "android.event.data_usage_threshold"
@@ -132,6 +136,7 @@ object MacroDroidFeatureSuggestions {
     }
 
     private fun condition(sourceType: String): String? = when (sourceType) {
+        "FoldAngleConstraint", "HingeAngleConstraint" -> "android.condition.hinge_angle"
         "StopWatchConstraint", "StopwatchConstraint" -> "android.condition.stopwatch"
         "DataUsedConstraint" -> "android.condition.data_usage"
         "CellTowerConstraint", "ACellTowerConstraint", "ICellTowerConstraint" -> "android.condition.cell_tower_match"

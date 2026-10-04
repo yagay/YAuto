@@ -62,6 +62,7 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
+        if (reason == REASON_CLICK) dispatcher.dispatch(NotificationRuntimeEventMapper.clicked(sbn))
         dispatcher.dispatch(NotificationRuntimeEventMapper.removed(sbn, reason))
     }
 
