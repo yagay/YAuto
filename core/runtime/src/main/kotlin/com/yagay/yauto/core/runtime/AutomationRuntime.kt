@@ -260,6 +260,13 @@ class AutomationRuntime(
         return resolveAutomation(workspaceRepository.load(), trimmed)?.enabled
     }
 
+    override suspend fun isRunning(target: String): Boolean? {
+        val trimmed = target.trim()
+        if (trimmed.isEmpty()) return null
+        val automation = resolveAutomation(workspaceRepository.load(), trimmed) ?: return null
+        return runningExecutions[automation.id.value]?.any { it.isActive } == true
+    }
+
     override suspend fun get(name: String): ConfigValue? {
         val key = name.trim()
         if (key.isEmpty()) return null
