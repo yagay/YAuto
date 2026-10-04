@@ -72,7 +72,7 @@ class AndroidSolarFeaturePack(context: Context) : FeaturePack {
                 ?: return@registerAction ActionExecutionResult(false, message = userText("feature.location_unavailable"))
             val date = LocalDate.now()
             val times = calculateSolarTimes(date, point.latitude, point.longitude)
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Solar times unavailable"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.solar_times_unavailable"))
             val zone = ZoneId.systemDefault()
             val output = ConfigValue.ObjectValue(
                 mapOf(
@@ -157,7 +157,7 @@ class AndroidSolarFeaturePack(context: Context) : FeaturePack {
         val location = runCatching {
             locations.getProviders(true)
                 .mapNotNull { provider -> runCatching { locations.getLastKnownLocation(provider) }.getOrNull() }
-                .maxByOrNull(Location::getTime)
+                .maxByOrNull { it.time }
         }.getOrNull() ?: return null
         return SolarPoint(location.latitude, location.longitude)
     }
