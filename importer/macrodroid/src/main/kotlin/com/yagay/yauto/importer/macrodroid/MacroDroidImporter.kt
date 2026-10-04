@@ -59,9 +59,12 @@ class MacroDroidImporter(
             val events = obj.array("m_triggerList", "triggerList", "triggers").mapIndexed { i, item ->
                 mapSourceFeature(item, SourceFeatureKind.EVENT, CompatFeatureIds.SOURCE_EVENT, "macro[$index].trigger[$i]", issues)
             }
-            val conditions = obj.array("m_constraintList", "constraintList", "constraints").mapIndexed { i, item ->
-                PredicateNode.Condition(mapSourceFeature(item, SourceFeatureKind.CONDITION, CompatFeatureIds.SOURCE_CONDITION, "macro[$index].constraint[$i]", issues))
-            }
+            val condition = predicateFromConstraintItems(
+                obj.array("m_constraintList", "constraintList", "constraints"),
+                "macro[$index].constraint",
+                issues,
+                defaultOr = obj.bool("m_isOrCondition") == true,
+            )
             val actions = mapActions(
                 obj.array("m_actionList", "actionList", "actions"),
                 "macro[$index]",
@@ -73,7 +76,7 @@ class MacroDroidImporter(
                 name = name,
                 enabled = obj.bool("m_enabled") ?: obj.bool("enabled") ?: true,
                 category = macroCategoryName(obj),
-                activation = Activation(events = events, condition = if (conditions.isEmpty()) null else PredicateNode.All(conditions)),
+                activation = Activation(events = events, condition = condition),
                 onEvent = actions,
                 description = obj.string("m_description", "description"),
                 source = SourceMetadata(id, sourceId = sourceId, sourceType = "Macro"),
@@ -82,7 +85,7 @@ class MacroDroidImporter(
                 "macro[$index]",
                 automation.id.value,
                 "IMPORTED",
-                userText("import.trace.macrodroid_macro", events.size, actions.size, conditions.size),
+                userText("import.trace.macrodroid_macro", events.size, actions.size, obj.array("m_constraintList", "constraintList", "constraints").size),
             )
             automation
         }
@@ -550,24 +553,61 @@ class MacroDroidImporter(
         obj: JsonObject,
         path: String,
         issues: MutableList<CompatibilityIssue>,
+    ): PredicateNode? =
+        predicateFromConstraintItems(
+            obj.array("m_constraintList", "constraintList", "constraints"),
+            path,
+            issues,
+            defaultOr = obj.bool("m_isOrCondition") == true,
+        )
+
+    private fun predicateFromConstraintItems(
+        items: List<JsonElement>,
+        path: String,
+        issues: MutableList<CompatibilityIssue>,
+        defaultOr: Boolean = false,
     ): PredicateNode? {
-        val constraints = obj.array("m_constraintList", "constraintList", "constraints")
-            .filterNot { (it as? JsonObject)?.bool("m_isDisabled") == true }
-        if (constraints.isEmpty()) return null
-        val nodes = constraints.mapIndexed { index, item ->
-            PredicateNode.Condition(
-                mapSourceFeature(
-                    item,
-                    SourceFeatureKind.CONDITION,
-                    CompatFeatureIds.SOURCE_CONDITION,
-                    path + "[" + index + "]",
-                    issues,
-                )
-            )
+        val nodes = items.mapIndexedNotNull { index, item ->
+            val obj = item as? JsonObject ?: return@mapIndexedNotNull null
+            if (obj.bool("m_isDisabled") == true) return@mapIndexedNotNull null
+            predicateFromConstraintItem(obj, path + "[" + index + "]", issues)
         }
+        if (nodes.isEmpty()) return null
         if (nodes.size == 1) return nodes.first()
-        return if (obj.bool("m_isOrCondition") == true) PredicateNode.Any(nodes)
-        else PredicateNode.All(nodes)
+        return if (defaultOr) PredicateNode.Any(nodes) else PredicateNode.All(nodes)
+    }
+
+    private fun predicateFromConstraintItem(
+        obj: JsonObject,
+        path: String,
+        issues: MutableList<CompatibilityIssue>,
+    ): PredicateNode? {
+        val sourceType = obj.string("m_classType", "classType", "type") ?: "Unknown"
+        if (sourceType == "LogicConstraint") {
+            val children = obj.array("m_childConstraints", "childConstraints", "children")
+                .mapIndexedNotNull { index, child ->
+                    val childObj = child as? JsonObject ?: return@mapIndexedNotNull null
+                    if (childObj.bool("m_isDisabled") == true) return@mapIndexedNotNull null
+                    predicateFromConstraintItem(childObj, path + ".child[" + index + "]", issues)
+                }
+            if (children.isEmpty()) return PredicateNode.Literal(true)
+            if (children.size == 1) return children.first()
+            return when (obj.number("m_option", "option")?.toInt() ?: 0) {
+                1 -> PredicateNode.Any(children)
+                2 -> PredicateNode.Xor(children)
+                else -> PredicateNode.All(children)
+            }
+        }
+        if (sourceType == "SeparatorConstraint") return PredicateNode.Literal(true)
+        return PredicateNode.Condition(
+            mapSourceFeature(
+                obj,
+                SourceFeatureKind.CONDITION,
+                CompatFeatureIds.SOURCE_CONDITION,
+                path,
+                issues,
+            )
+        )
     }
 
     private fun compatibilityAction(
