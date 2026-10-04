@@ -149,22 +149,227 @@ class MacroDroidImporter(
         parentPath: String,
         issues: MutableList<CompatibilityIssue>,
         blockAliases: Map<String, FlowId>,
-    ): List<ActionNode> = items.mapIndexed { index, item ->
-        val path = "$parentPath.action[$index]"
+    ): List<ActionNode> {
+        val out = mutableListOf<ActionNode>()
+        var index = 0
+        while (index < items.size) {
+            val item = items[index]
+            val obj = item as? JsonObject ?: JsonObject(emptyMap())
+            val sourceType = obj.string("m_classType", "classType", "type") ?: "Unknown"
+            val path = parentPath + ".action[" + index + "]"
+
+            if (sourceType == "IfConditionAction" && obj.bool("m_isDisabled") != true) {
+                val parsed = parseConditional(items, index, parentPath, issues, blockAliases)
+                if (parsed != null) {
+                    out += parsed.node
+                    index = parsed.nextIndex
+                    continue
+                }
+            }
+
+            when (sourceType) {
+                "BreakFromLoopAction" -> out += ActionNode.Break(NodeId(UUID.randomUUID().toString()))
+                "ContinueLoopAction" -> out += ActionNode.Continue(NodeId(UUID.randomUUID().toString()))
+                "EmptyAction", "SeparatorAction", "ActionGroupAction", "ActionGroupEndAction" ->
+                    out += ActionNode.Action(
+                        NodeId(UUID.randomUUID().toString()),
+                        FeatureRef("core.noop"),
+                    )
+                "ElseAction", "ElseIfConditionAction", "EndIfAction" -> {
+                    // Stray branch markers are preserved instead of being silently discarded.
+                    out += compatibilityAction(item, path, sourceType, issues)
+                }
+                else -> out += mapSingleAction(item, path, issues, blockAliases)
+            }
+            index++
+        }
+        return out
+    }
+
+    private data class ParsedConditional(val node: ActionNode, val nextIndex: Int)
+    private data class ConditionalSegment(
+        val marker: JsonObject?,
+        val start: Int,
+        val end: Int,
+    )
+
+    private fun parseConditional(
+        items: List<JsonElement>,
+        startIndex: Int,
+        parentPath: String,
+        issues: MutableList<CompatibilityIssue>,
+        blockAliases: Map<String, FlowId>,
+    ): ParsedConditional? {
+        val first = items.getOrNull(startIndex) as? JsonObject ?: return null
+        val firstPredicate = predicateFromConstraints(
+            first,
+            parentPath + ".action[" + startIndex + "].condition",
+            issues,
+        ) ?: return null
+
+        val segments = mutableListOf<ConditionalSegment>()
+        var depth = 0
+        var segmentMarker: JsonObject? = first
+        var segmentStart = startIndex + 1
+        var endIfIndex = -1
+        var index = startIndex + 1
+
+        while (index < items.size) {
+            val obj = items[index] as? JsonObject
+            val type = obj?.string("m_classType", "classType", "type").orEmpty()
+            when (type) {
+                "IfConditionAction" -> depth++
+                "EndIfAction" -> {
+                    if (depth == 0) {
+                        segments += ConditionalSegment(segmentMarker, segmentStart, index)
+                        endIfIndex = index
+                        break
+                    }
+                    depth--
+                }
+                "ElseAction", "ElseIfConditionAction" -> if (depth == 0) {
+                    segments += ConditionalSegment(segmentMarker, segmentStart, index)
+                    segmentMarker = obj
+                    segmentStart = index + 1
+                }
+            }
+            index++
+        }
+        if (endIfIndex < 0 || segments.isEmpty()) return null
+
+        var elseBranch: List<ActionNode> = emptyList()
+        for (segmentIndex in segments.indices.reversed()) {
+            val segment = segments[segmentIndex]
+            val actions = mapActions(
+                items.subList(segment.start, segment.end),
+                parentPath + ".if[" + startIndex + "].branch[" + segmentIndex + "]",
+                issues,
+                blockAliases,
+            )
+            val marker = segment.marker
+            val markerType = marker?.string("m_classType", "classType", "type").orEmpty()
+            when {
+                markerType == "ElseAction" -> elseBranch = actions
+                markerType == "IfConditionAction" -> {
+                    elseBranch = listOf(
+                        ActionNode.If(
+                            NodeId(UUID.randomUUID().toString()),
+                            firstPredicate,
+                            actions,
+                            elseBranch,
+                        )
+                    )
+                }
+                markerType == "ElseIfConditionAction" -> {
+                    val predicate = predicateFromConstraints(
+                        marker ?: return null,
+                        parentPath + ".if[" + startIndex + "].elseif[" + segmentIndex + "]",
+                        issues,
+                    ) ?: return null
+                    elseBranch = listOf(
+                        ActionNode.If(
+                            NodeId(UUID.randomUUID().toString()),
+                            predicate,
+                            actions,
+                            elseBranch,
+                        )
+                    )
+                }
+                else -> return null
+            }
+        }
+        return ParsedConditional(elseBranch.singleOrNull() ?: return null, endIfIndex + 1)
+    }
+
+    private fun mapSingleAction(
+        item: JsonElement,
+        path: String,
+        issues: MutableList<CompatibilityIssue>,
+        blockAliases: Map<String, FlowId>,
+    ): ActionNode {
         val obj = item as? JsonObject ?: JsonObject(emptyMap())
         val sourceType = obj.string("m_classType", "classType", "type") ?: "Unknown"
-        if (sourceType == "ActionBlockAction") {
+        val base = if (sourceType == "ActionBlockAction") {
             val sourceBlockId = obj.primitiveText("actionBlockId") ?: obj.primitiveText("m_actionBlockId")
             val target = sourceBlockId?.let(blockAliases::get)
             if (target != null) {
                 ActionNode.CallFlow(NodeId(UUID.randomUUID().toString()), target)
             } else {
-                issues += CompatibilityIssue(ImportSeverity.WARNING, path, sourceType, userText("import.macrodroid.block_unresolved"))
-                ActionNode.Action(NodeId(UUID.randomUUID().toString()), sourceFeature(CompatFeatureIds.SOURCE_ACTION, id, sourceType, item.toString()))
+                issues += CompatibilityIssue(
+                    ImportSeverity.WARNING,
+                    path,
+                    sourceType,
+                    userText("import.macrodroid.block_unresolved"),
+                )
+                compatibilityAction(item, path, sourceType, issues, addIssue = false)
             }
         } else {
-            ActionNode.Action(NodeId(UUID.randomUUID().toString()), mapSourceFeature(item, SourceFeatureKind.ACTION, CompatFeatureIds.SOURCE_ACTION, path, issues))
+            ActionNode.Action(
+                NodeId(UUID.randomUUID().toString()),
+                mapSourceFeature(
+                    item,
+                    SourceFeatureKind.ACTION,
+                    CompatFeatureIds.SOURCE_ACTION,
+                    path,
+                    issues,
+                ),
+                enabled = obj.bool("m_isDisabled") != true,
+                comment = obj.string("m_comment", "comment"),
+                failurePolicy = ActionFailurePolicy.CONTINUE,
+            )
         }
+
+        val predicate = predicateFromConstraints(obj, path + ".constraint", issues)
+        return if (predicate == null) base
+        else ActionNode.If(
+            NodeId(UUID.randomUUID().toString()),
+            predicate,
+            listOf(base),
+        )
+    }
+
+    private fun predicateFromConstraints(
+        obj: JsonObject,
+        path: String,
+        issues: MutableList<CompatibilityIssue>,
+    ): PredicateNode? {
+        val constraints = obj.array("m_constraintList", "constraintList", "constraints")
+        if (constraints.isEmpty()) return null
+        val nodes = constraints.mapIndexed { index, item ->
+            PredicateNode.Condition(
+                mapSourceFeature(
+                    item,
+                    SourceFeatureKind.CONDITION,
+                    CompatFeatureIds.SOURCE_CONDITION,
+                    path + "[" + index + "]",
+                    issues,
+                )
+            )
+        }
+        if (nodes.size == 1) return nodes.first()
+        return if (obj.bool("m_isOrCondition") == true) PredicateNode.Any(nodes)
+        else PredicateNode.All(nodes)
+    }
+
+    private fun compatibilityAction(
+        item: JsonElement,
+        path: String,
+        sourceType: String,
+        issues: MutableList<CompatibilityIssue>,
+        addIssue: Boolean = true,
+    ): ActionNode.Action {
+        if (addIssue) {
+            issues += CompatibilityIssue(
+                ImportSeverity.WARNING,
+                path,
+                sourceType,
+                userText("import.macrodroid.no_mapping"),
+            )
+        }
+        return ActionNode.Action(
+            NodeId(UUID.randomUUID().toString()),
+            sourceFeature(CompatFeatureIds.SOURCE_ACTION, id, sourceType, item.toString()),
+        )
     }
 
     private fun mapSourceFeature(
@@ -178,10 +383,7 @@ class MacroDroidImporter(
         val sourceType = obj.string("m_classType", "classType", "type") ?: "Unknown"
 
         val native = if (kind == SourceFeatureKind.ACTION) {
-            // Per-action constraints cannot be dropped during conversion.
-            if (obj.array("m_constraintList", "constraintList", "constraints").isEmpty())
-                MacroDroidMappings.nativeAction(obj, id, sourceType, item.toString())
-            else null
+            MacroDroidMappings.nativeAction(obj, id, sourceType, item.toString())
         } else {
             MacroDroidMappings.nativeContext(obj, kind, id, sourceType, item.toString())
         }
