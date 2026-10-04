@@ -17,6 +17,14 @@ class AccessibilityFeaturePack(
         action(registry, AccessibilityOperations.CLICK_TEXT_ADVANCED, "Click text with match mode", "Find visible text using contains, exact or regular-expression matching and click it", listOf(FieldSchema.Text("text", "Text / pattern", true), FieldSchema.Choice("mode", "Match mode", true, listOf("contains", "exact", "regex")), FieldSchema.Toggle("ignoreCase", "Ignore case")), setOf("click", "text", "regex", "screen", "shortx"))
         action(registry, AccessibilityOperations.LONG_CLICK_TEXT, "Long-click text", "Find visible text and perform the nearest supported long-click action", listOf(FieldSchema.Text("text", "Text", true), FieldSchema.Toggle("exact", "Exact text match")), setOf("long click", "long press", "text", "ui"))
         action(registry, AccessibilityOperations.CLICK_VIEW_ID, "Click View ID", "Find a view by resource ID and click the nearest clickable node", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("view id", "resource id", "ui", "accessibility"))
+        action(registry, AccessibilityOperations.LONG_CLICK_VIEW_ID, "Long-click View ID", "Long-click a node found by resource ID", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("view id", "long press", "shortx", "accessibility"))
+        action(registry, AccessibilityOperations.FOCUS_VIEW_ID, "Focus View ID", "Move Accessibility focus to a node found by resource ID", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("focus", "view id", "accessibility"))
+        action(registry, AccessibilityOperations.CLEAR_TEXT_VIEW_ID, "Clear text by View ID", "Clear text from an editable node found by resource ID", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("clear text", "view id", "input"))
+        action(registry, AccessibilityOperations.SCROLL_VIEW_ID, "Scroll View ID", "Scroll a specific view by resource ID", listOf(FieldSchema.Text("viewId", "View ID", true), FieldSchema.Choice("direction", "Direction", true, listOf("forward", "backward", "up", "down", "left", "right"))), setOf("scroll", "view id", "accessibility"))
+        action(registry, AccessibilityOperations.SELECT_ALL_VIEW_ID, "Select all text by View ID", "Select the full text range of an editable node", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("select all", "view id", "text"))
+        action(registry, AccessibilityOperations.COPY_VIEW_ID, "Copy by View ID", "Invoke Accessibility copy on a node found by resource ID", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("copy", "view id", "clipboard"))
+        action(registry, AccessibilityOperations.CUT_VIEW_ID, "Cut by View ID", "Invoke Accessibility cut on a node found by resource ID", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("cut", "view id", "clipboard"))
+        action(registry, AccessibilityOperations.PASTE_VIEW_ID, "Paste by View ID", "Invoke Accessibility paste on a node found by resource ID", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("paste", "view id", "clipboard"))
         action(registry, AccessibilityOperations.CLICK_DESCRIPTION, "Click content description", "Find a node by accessibility content description and click it", listOf(FieldSchema.Text("description", "Content description", true), FieldSchema.Toggle("exact", "Exact match")), setOf("content description", "accessibility label", "click", "ui"))
         action(registry, AccessibilityOperations.INPUT_TEXT, "Input text", "Set text on the currently focused editable accessibility node", listOf(FieldSchema.Text("text", "Text", true, multiline = true)), setOf("input", "type", "text", "accessibility"))
         action(registry, AccessibilityOperations.INPUT_TEXT_VIEW_ID, "Set text by View ID", "Set text directly on an editable node found by resource ID", listOf(FieldSchema.Text("viewId", "View ID", true), FieldSchema.Text("text", "Text", true, multiline = true)), setOf("input", "view id", "set text", "ui"))
@@ -24,6 +32,7 @@ class AccessibilityFeaturePack(
         action(registry, AccessibilityOperations.SCROLL, "Scroll UI", "Scroll the first suitable scrollable node in the active window", listOf(FieldSchema.Choice("direction", "Direction", true, listOf("forward", "backward", "up", "down", "left", "right"))), setOf("scroll", "page", "ui", "swipe"))
         action(registry, AccessibilityOperations.TAP, "Tap coordinates", "Dispatch a tap gesture at screen coordinates", listOf(FieldSchema.Number("x", "X", true, min = 0.0), FieldSchema.Number("y", "Y", true, min = 0.0), FieldSchema.Duration("durationMs", "Press duration")), setOf("tap", "gesture", "coordinate", "accessibility"))
         action(registry, AccessibilityOperations.SWIPE, "Swipe", "Dispatch a swipe gesture between screen coordinates", listOf(FieldSchema.Number("x1", "Start X", true, min = 0.0), FieldSchema.Number("y1", "Start Y", true, min = 0.0), FieldSchema.Number("x2", "End X", true, min = 0.0), FieldSchema.Number("y2", "End Y", true, min = 0.0), FieldSchema.Duration("durationMs", "Duration")), setOf("swipe", "gesture", "accessibility"))
+        action(registry, AccessibilityOperations.GESTURE_PATH, "Recorded gesture path", "Replay a multi-point gesture path; enter one X,Y coordinate per line", listOf(FieldSchema.Text("path", "Gesture points", true, multiline = true), FieldSchema.Duration("durationMs", "Duration")), setOf("gesture", "recorded gesture", "path", "shortx", "accessibility"))
 
         resultAction(
             registry,
@@ -48,6 +57,17 @@ class AccessibilityFeaturePack(
                 FieldSchema.Variable("resultVariable", "Store text", true),
             ),
             setOf("view id", "get text", "screen", "accessibility"),
+        )
+        resultAction(
+            registry,
+            AccessibilityOperations.GET_VIEW_BOUNDS,
+            "Get View bounds",
+            "Return screen bounds and center coordinates for a view resource ID",
+            listOf(
+                FieldSchema.Text("viewId", "View ID", true),
+                FieldSchema.Variable("resultVariable", "Store bounds object", true),
+            ),
+            setOf("view bounds", "coordinates", "view id", "accessibility"),
         )
         resultAction(
             registry,
