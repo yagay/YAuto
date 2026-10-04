@@ -171,7 +171,7 @@ class ConfiguredSoundLevelEventSource(
 }
 
 internal fun soundRuleKey(feature: FeatureRef): String =
-    feature.config.entries
+    feature.config
         .filterKeys { it !in setOf("source.raw", "source.type", "source.importer", "tag") }
         .toSortedMap()
         .entries
