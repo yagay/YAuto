@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -114,7 +115,7 @@ class YAutoAccessibilityService : AccessibilityService() {
 
     internal fun hasText(text: String, exact: Boolean): Boolean = findTextNode(text, exact) != null
     internal fun hasViewId(viewId: String): Boolean = findViewIdNode(viewId) != null
-    internal fun matchesText(text: String, mode: String, ignoreCase: Boolean): Boolean =
+    internal fun keyboardVisible(): Boolean = windows.orEmpty().any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }\n    internal fun matchesText(text: String, mode: String, ignoreCase: Boolean): Boolean =
         findMatchingNode(text, mode, ignoreCase) != null
 
     internal fun textByViewId(viewId: String): String? {
