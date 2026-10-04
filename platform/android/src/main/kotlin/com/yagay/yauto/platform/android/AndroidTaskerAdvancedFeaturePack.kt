@@ -37,6 +37,7 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
         registerPluginEvent(registry)
         registerPluginScan(registry)
         registerAdbWifi(registry)
+        registerMatter(registry)
     }
 
     private fun registerBeanShell(registry: FeatureRegistry) {
@@ -381,6 +382,272 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
     }
 
 
+
+    private fun registerMatter(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.matter.light"),
+                FeatureKind.ACTION,
+                "Matter light control",
+                "Control a Matter light with chip-tool: on/off/toggle, brightness and RGB/XY color",
+                FeatureCategory.DEVICE,
+                fields = listOf(
+                    FieldSchema.Text("deviceId", "Matter node ID", true),
+                    FieldSchema.Number("endpointId", "Endpoint ID", min = 0.0, max = 65535.0),
+                    FieldSchema.Choice("set", "Power", options = listOf("unchanged", "on", "off", "toggle")),
+                    FieldSchema.Number("brightness", "Brightness %", min = 0.0, max = 100.0),
+                    FieldSchema.Text("color", "Color #RRGGBB"),
+                    FieldSchema.Text("binaryPath", "chip-tool binary"),
+                    FieldSchema.Variable("resultVariable", "Store command output"),
+                ),
+                capabilities = setOf(com.yagay.yauto.core.capability.CapabilityIds.PRIVILEGED_SHELL),
+                implementationOptions = privilegedOptions(),
+                keywords = setOf("matter", "light", "chip tool", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val node = matterNode(feature.config.string("deviceId").resolveVariables(ctx.variables))
+                ?: return@registerAction ActionExecutionResult(false)
+            val endpoint = (feature.config["endpointId"].numberOrNull() ?: 1.0).toInt().coerceIn(0, 65535)
+            val binary = matterBinary(feature.config.string("binaryPath").resolveVariables(ctx.variables))
+                ?: return@registerAction ActionExecutionResult(false)
+            val commands = mutableListOf<String>()
+            when (feature.config.string("set", "unchanged")) {
+                "on" -> commands += shellArg(binary) + " onoff on " + node + " " + endpoint
+                "off" -> commands += shellArg(binary) + " onoff off " + node + " " + endpoint
+                "toggle" -> commands += shellArg(binary) + " onoff toggle " + node + " " + endpoint
+            }
+            feature.config["brightness"].numberOrNull()?.let { percent ->
+                val level = (percent.coerceIn(0.0, 100.0) * 254.0 / 100.0).toInt().coerceIn(0, 254)
+                commands += shellArg(binary) + " levelcontrol move-to-level " + level + " 0 0 0 " + node + " " + endpoint
+            }
+            val color = feature.config.string("color").trim()
+            if (color.isNotBlank()) {
+                val rgb = parseRgb(color) ?: return@registerAction ActionExecutionResult(false)
+                val xy = rgbToMatterXy(rgb.first, rgb.second, rgb.third)
+                commands += shellArg(binary) + " colorcontrol move-to-color " + xy.first + " " + xy.second +
+                    " 0 0 0 " + node + " " + endpoint
+            }
+            if (commands.isEmpty()) return@registerAction ActionExecutionResult(false)
+            val result = privilegedShell(ctx, commands.joinToString(" && "))
+            feature.config.string("resultVariable").trim().takeIf(String::isNotBlank)?.let {
+                ctx.variables.set(it, result.value)
+            }
+            ActionExecutionResult(result.success, result.value, result.message)
+        }
+
+        val matterStateEvaluator = ConditionEvaluator { feature, ctx ->
+            val node = matterNode(feature.config.string("deviceId").resolveVariables(ctx.variables))
+                ?: return@ConditionEvaluator false
+            val endpoint = (feature.config["endpointId"].numberOrNull() ?: 1.0).toInt().coerceIn(0, 65535)
+            val binary = matterBinary(feature.config.string("binaryPath").resolveVariables(ctx.variables))
+                ?: return@ConditionEvaluator false
+            val result = privilegedShell(
+                ctx,
+                shellArg(binary) + " onoff read on-off " + node + " " + endpoint,
+            )
+            if (!result.success) return@ConditionEvaluator false
+            val stdout = capabilityStdout(result)
+            val on = Regex("""(?i)(?:OnOff|on-off|value)\s*[:=]\s*(?:true|1|0x01)""").containsMatchIn(stdout)
+            when (feature.config.string("expected", "on")) {
+                "off" -> !on
+                else -> on
+            }
+        }
+        val matterState = FeatureDescriptor(
+            FeatureId("android.condition.matter_light"),
+            FeatureKind.CONDITION,
+            "Matter light state",
+            "Read a Matter OnOff cluster with chip-tool and compare the current state",
+            FeatureCategory.DEVICE,
+            fields = listOf(
+                FieldSchema.Text("deviceId", "Matter node ID", true),
+                FieldSchema.Number("endpointId", "Endpoint ID", min = 0.0, max = 65535.0),
+                FieldSchema.Choice("expected", "Expected", true, listOf("on", "off")),
+                FieldSchema.Text("binaryPath", "chip-tool binary"),
+            ),
+            capabilities = setOf(com.yagay.yauto.core.capability.CapabilityIds.PRIVILEGED_SHELL),
+            implementationOptions = privilegedOptions(),
+            keywords = setOf("matter", "light state", "chip tool", "tasker"),
+            ownerPackId = id,
+        )
+        registry.registerCondition(matterState, matterStateEvaluator)
+        registry.registerState(
+            matterState.copy(id = FeatureId("android.state.matter_light"), kind = FeatureKind.STATE),
+            matterStateEvaluator,
+        )
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.matter.command"),
+                FeatureKind.ACTION,
+                "Matter cluster command",
+                "Run a generic chip-tool cluster command against a Matter node",
+                FeatureCategory.DEVICE,
+                fields = listOf(
+                    FieldSchema.Text("cluster", "Cluster", true),
+                    FieldSchema.Text("command", "Command", true),
+                    FieldSchema.Text("arguments", "Arguments before node/endpoint"),
+                    FieldSchema.Text("deviceId", "Matter node ID", true),
+                    FieldSchema.Number("endpointId", "Endpoint ID", min = 0.0, max = 65535.0),
+                    FieldSchema.Text("binaryPath", "chip-tool binary"),
+                    FieldSchema.Variable("resultVariable", "Store command output"),
+                ),
+                fieldBehaviors = mapOf(
+                    "cluster" to FieldBehavior(supportsVariables = true),
+                    "command" to FieldBehavior(supportsVariables = true),
+                    "arguments" to FieldBehavior(supportsVariables = true),
+                ),
+                capabilities = setOf(com.yagay.yauto.core.capability.CapabilityIds.PRIVILEGED_SHELL),
+                implementationOptions = privilegedOptions(),
+                keywords = setOf("matter", "cluster", "command", "chip tool"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val cluster = feature.config.string("cluster").resolveVariables(ctx.variables).trim()
+            val command = feature.config.string("command").resolveVariables(ctx.variables).trim()
+            val args = feature.config.string("arguments").resolveVariables(ctx.variables).trim()
+            if (!MATTER_TOKEN.matches(cluster) || !MATTER_TOKEN.matches(command)) {
+                return@registerAction ActionExecutionResult(false)
+            }
+            val safeArgs = args.takeIf(String::isNotBlank)?.let(::safeMatterArguments)
+                ?: if (args.isBlank()) "" else return@registerAction ActionExecutionResult(false)
+            val node = matterNode(feature.config.string("deviceId").resolveVariables(ctx.variables))
+                ?: return@registerAction ActionExecutionResult(false)
+            val endpoint = (feature.config["endpointId"].numberOrNull() ?: 1.0).toInt().coerceIn(0, 65535)
+            val binary = matterBinary(feature.config.string("binaryPath").resolveVariables(ctx.variables))
+                ?: return@registerAction ActionExecutionResult(false)
+            val shell = buildString {
+                append(shellArg(binary)).append(' ')
+                append(cluster).append(' ').append(command).append(' ')
+                if (safeArgs.isNotBlank()) append(safeArgs).append(' ')
+                append(node).append(' ').append(endpoint)
+            }
+            val result = privilegedShell(ctx, shell)
+            feature.config.string("resultVariable").trim().takeIf(String::isNotBlank)?.let {
+                ctx.variables.set(it, result.value)
+            }
+            ActionExecutionResult(result.success, result.value, result.message)
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.matter.commission"),
+                FeatureKind.ACTION,
+                "Commission Matter device",
+                "Commission a Matter device using chip-tool pairing code, on-network or BLE/Wi-Fi",
+                FeatureCategory.DEVICE,
+                fields = listOf(
+                    FieldSchema.Choice("method", "Method", true, listOf("code", "onnetwork", "ble_wifi")),
+                    FieldSchema.Text("deviceId", "New node ID", true),
+                    FieldSchema.Text("setupCode", "QR/manual pairing code"),
+                    FieldSchema.Number("pinCode", "Setup PIN", min = 0.0),
+                    FieldSchema.Number("discriminator", "Discriminator", min = 0.0, max = 4095.0),
+                    FieldSchema.Text("ssid", "Wi-Fi SSID"),
+                    FieldSchema.Text("password", "Wi-Fi password"),
+                    FieldSchema.Text("binaryPath", "chip-tool binary"),
+                    FieldSchema.Variable("resultVariable", "Store pairing output"),
+                ),
+                capabilities = setOf(com.yagay.yauto.core.capability.CapabilityIds.PRIVILEGED_SHELL),
+                implementationOptions = privilegedOptions(),
+                keywords = setOf("matter", "commission", "pair", "chip tool", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val node = matterNode(feature.config.string("deviceId").resolveVariables(ctx.variables))
+                ?: return@registerAction ActionExecutionResult(false)
+            val binary = matterBinary(feature.config.string("binaryPath").resolveVariables(ctx.variables))
+                ?: return@registerAction ActionExecutionResult(false)
+            val command = when (feature.config.string("method", "code")) {
+                "code" -> {
+                    val code = feature.config.string("setupCode").resolveVariables(ctx.variables).trim()
+                    if (!MATTER_SETUP_CODE.matches(code)) return@registerAction ActionExecutionResult(false)
+                    shellArg(binary) + " pairing code " + node + " " + shellArg(code)
+                }
+                "onnetwork" -> {
+                    val pin = feature.config["pinCode"].numberOrNull()?.toLong()
+                        ?: return@registerAction ActionExecutionResult(false)
+                    shellArg(binary) + " pairing onnetwork " + node + " " + pin.coerceAtLeast(0L)
+                }
+                "ble_wifi" -> {
+                    val ssid = feature.config.string("ssid").resolveVariables(ctx.variables)
+                    val password = feature.config.string("password").resolveVariables(ctx.variables)
+                    val pin = feature.config["pinCode"].numberOrNull()?.toLong()
+                        ?: return@registerAction ActionExecutionResult(false)
+                    val discriminator = feature.config["discriminator"].numberOrNull()?.toInt()
+                        ?: return@registerAction ActionExecutionResult(false)
+                    shellArg(binary) + " pairing ble-wifi " + node + " " + shellArg(ssid) + " " +
+                        shellArg(password) + " " + pin.coerceAtLeast(0L) + " " + discriminator.coerceIn(0, 4095)
+                }
+                else -> return@registerAction ActionExecutionResult(false)
+            }
+            val result = privilegedShell(ctx, command)
+            feature.config.string("resultVariable").trim().takeIf(String::isNotBlank)?.let {
+                ctx.variables.set(it, result.value)
+            }
+            ActionExecutionResult(result.success, result.value, result.message)
+        }
+    }
+
+    private suspend fun privilegedShell(
+        ctx: FeatureExecutionContext,
+        command: String,
+    ): com.yagay.yauto.core.capability.CapabilityResult =
+        ctx.capabilities.execute(
+            com.yagay.yauto.core.capability.CapabilityRequest(
+                capability = com.yagay.yauto.core.capability.CapabilityIds.PRIVILEGED_SHELL,
+                operationId = "system.shell.execute",
+                payload = mapOf("command" to ConfigValue.StringValue(command)),
+            )
+        )
+
+    private fun capabilityStdout(result: com.yagay.yauto.core.capability.CapabilityResult): String =
+        ((result.value as? ConfigValue.ObjectValue)?.value?.get("stdout") as? ConfigValue.StringValue)?.value.orEmpty()
+
+    private fun privilegedOptions() = listOf(
+        FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+        FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+    )
+
+    private fun matterBinary(raw: String): String? {
+        val value = raw.trim().ifBlank { "chip-tool" }
+        return value.takeIf { MATTER_BINARY.matches(it) }
+    }
+
+    private fun matterNode(raw: String): String? {
+        val value = raw.trim()
+        return value.takeIf { MATTER_NODE.matches(it) }
+    }
+
+    private fun safeMatterArguments(raw: String): String? {
+        val tokens = raw.split(Regex("""\s+""")).filter(String::isNotBlank)
+        if (tokens.size > 32 || tokens.any { !MATTER_ARGUMENT.matches(it) }) return null
+        return tokens.joinToString(" ") { shellArg(it) }
+    }
+
+    private fun parseRgb(raw: String): Triple<Int, Int, Int>? {
+        val match = Regex("""^#?([0-9A-Fa-f]{6})$""").matchEntire(raw.trim()) ?: return null
+        val value = match.groupValues[1].toInt(16)
+        return Triple((value shr 16) and 0xff, (value shr 8) and 0xff, value and 0xff)
+    }
+
+    private fun rgbToMatterXy(r: Int, g: Int, b: Int): Pair<Int, Int> {
+        fun linear(v: Int): Double {
+            val n = v / 255.0
+            return if (n > 0.04045) Math.pow((n + 0.055) / 1.055, 2.4) else n / 12.92
+        }
+        val rr = linear(r)
+        val gg = linear(g)
+        val bb = linear(b)
+        val x = rr * 0.664511 + gg * 0.154324 + bb * 0.162028
+        val y = rr * 0.283881 + gg * 0.668433 + bb * 0.047685
+        val z = rr * 0.000088 + gg * 0.072310 + bb * 0.986039
+        val sum = x + y + z
+        if (sum <= 0.0) return 0 to 0
+        return ((x / sum) * 65535.0).toInt().coerceIn(0, 65535) to
+            ((y / sum) * 65535.0).toInt().coerceIn(0, 65535)
+    }
+
     private fun registerAdbWifi(registry: FeatureRegistry) {
         registry.registerAction(
             FeatureDescriptor(
@@ -583,6 +850,11 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
     private companion object {
         val JAVA_IDENTIFIER = Regex("[A-Za-z_$][A-Za-z0-9_$]*")
         val ADB_TARGET = Regex("(?:127\\.0\\.0\\.1|localhost|[0-9A-Fa-f:.]+):[0-9]{1,5}")
+        val MATTER_BINARY = Regex("(?:chip-tool|/[A-Za-z0-9_./-]{1,240})")
+        val MATTER_NODE = Regex("(?:0[xX][0-9A-Fa-f]{1,16}|[0-9]{1,20})")
+        val MATTER_TOKEN = Regex("[A-Za-z0-9_-]{1,80}")
+        val MATTER_ARGUMENT = Regex("[A-Za-z0-9_+.,:/=@%#-]{1,256}")
+        val MATTER_SETUP_CODE = Regex("[0-9A-Za-z+:/.-]{4,512}")
     }
 }
 
