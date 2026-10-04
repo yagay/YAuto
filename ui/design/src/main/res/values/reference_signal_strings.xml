@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_reference_signal_biometric_strong_title">Strong biometric authentication</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_description">Match the current Android runtime/system value</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value">Expected value</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_success">Success</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_no_hardware">No hardware</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_none_enrolled">None enrolled</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_hardware_unavailable">Hardware unavailable</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_security_update_required">Security update required</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_unsupported">Unsupported</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_unknown">Unknown</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_error">Error</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_title">Strong biometric authentication</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_description">Match the current Android runtime/system value</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value">Expected value</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_success">Success</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_no_hardware">No hardware</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_none_enrolled">None enrolled</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_hardware_unavailable">Hardware unavailable</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_security_update_required">Security update required</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_unsupported">Unsupported</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_unknown">Unknown</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_error">Error</string>
+
+    <string name="feature_android_state_reference_signal_biometric_weak_title">Biometric authentication</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_description">Match the current Android runtime/system value</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value">Expected value</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_success">Success</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_no_hardware">No hardware</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_none_enrolled">None enrolled</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_hardware_unavailable">Hardware unavailable</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_security_update_required">Security update required</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_unsupported">Unsupported</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_unknown">Unknown</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_error">Error</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_title">Biometric authentication</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_description">Match the current Android runtime/system value</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value">Expected value</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_success">Success</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_no_hardware">No hardware</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_none_enrolled">None enrolled</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_hardware_unavailable">Hardware unavailable</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_security_update_required">Security update required</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_unsupported">Unsupported</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_unknown">Unknown</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_error">Error</string>
+
+    <string name="feature_android_state_reference_signal_device_credential_title">Device credential authentication</string>
+    <string name="feature_android_state_reference_signal_device_credential_description">Match the current Android runtime/system value</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value">Expected value</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_success">Success</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_no_hardware">No hardware</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_none_enrolled">None enrolled</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_hardware_unavailable">Hardware unavailable</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_security_update_required">Security update required</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_unsupported">Unsupported</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_unknown">Unknown</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_error">Error</string>
+    <string name="feature_android_condition_reference_signal_device_credential_title">Device credential authentication</string>
+    <string name="feature_android_condition_reference_signal_device_credential_description">Match the current Android runtime/system value</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value">Expected value</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_success">Success</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_no_hardware">No hardware</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_none_enrolled">None enrolled</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_hardware_unavailable">Hardware unavailable</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_security_update_required">Security update required</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_unsupported">Unsupported</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_unknown">Unknown</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_error">Error</string>
+
+    <string name="feature_android_state_reference_signal_developer_options_title">Developer options enabled</string>
+    <string name="feature_android_state_reference_signal_developer_options_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_developer_options_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_developer_options_title">Developer options enabled</string>
+    <string name="feature_android_condition_reference_signal_developer_options_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_developer_options_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_reference_signal_adb_debugging_title">ADB debugging enabled</string>
+    <string name="feature_android_state_reference_signal_adb_debugging_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_adb_debugging_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_adb_debugging_title">ADB debugging enabled</string>
+    <string name="feature_android_condition_reference_signal_adb_debugging_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_adb_debugging_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_reference_signal_screen_brightness_mode_title">Screen brightness mode</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_mode_description">Match the current Android runtime/system value</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_mode_field_value">Expected value</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_mode_field_value_option_manual">Manual</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_mode_field_value_option_automatic">Automatic</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_mode_field_value_option_unknown">Unknown</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_mode_title">Screen brightness mode</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_mode_description">Match the current Android runtime/system value</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_mode_field_value">Expected value</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_mode_field_value_option_manual">Manual</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_mode_field_value_option_automatic">Automatic</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_mode_field_value_option_unknown">Unknown</string>
+
+    <string name="feature_android_state_reference_signal_screen_brightness_title">Screen brightness</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_description">Compare the current Android runtime/system numeric value</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_field_min">Minimum</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_field_max">Maximum</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_title">Screen brightness</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_description">Compare the current Android runtime/system numeric value</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_field_min">Minimum</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_field_max">Maximum</string>
+
+    <string name="feature_android_state_reference_signal_pointer_speed_title">Pointer speed</string>
+    <string name="feature_android_state_reference_signal_pointer_speed_description">Compare the current Android runtime/system numeric value</string>
+    <string name="feature_android_state_reference_signal_pointer_speed_field_min">Minimum</string>
+    <string name="feature_android_state_reference_signal_pointer_speed_field_max">Maximum</string>
+    <string name="feature_android_condition_reference_signal_pointer_speed_title">Pointer speed</string>
+    <string name="feature_android_condition_reference_signal_pointer_speed_description">Compare the current Android runtime/system numeric value</string>
+    <string name="feature_android_condition_reference_signal_pointer_speed_field_min">Minimum</string>
+    <string name="feature_android_condition_reference_signal_pointer_speed_field_max">Maximum</string>
+
+    <string name="feature_android_state_reference_signal_show_touches_title">Show touch points</string>
+    <string name="feature_android_state_reference_signal_show_touches_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_show_touches_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_show_touches_title">Show touch points</string>
+    <string name="feature_android_condition_reference_signal_show_touches_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_show_touches_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_reference_signal_pointer_location_title">Pointer location overlay</string>
+    <string name="feature_android_state_reference_signal_pointer_location_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_pointer_location_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_pointer_location_title">Pointer location overlay</string>
+    <string name="feature_android_condition_reference_signal_pointer_location_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_pointer_location_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_reference_signal_vibrate_when_ringing_title">Vibrate while ringing</string>
+    <string name="feature_android_state_reference_signal_vibrate_when_ringing_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_vibrate_when_ringing_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_vibrate_when_ringing_title">Vibrate while ringing</string>
+    <string name="feature_android_condition_reference_signal_vibrate_when_ringing_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_vibrate_when_ringing_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_reference_signal_lockscreen_sounds_title">Lock-screen sounds</string>
+    <string name="feature_android_state_reference_signal_lockscreen_sounds_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_lockscreen_sounds_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_lockscreen_sounds_title">Lock-screen sounds</string>
+    <string name="feature_android_condition_reference_signal_lockscreen_sounds_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_lockscreen_sounds_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_reference_signal_dial_pad_tones_title">Dial-pad tones</string>
+    <string name="feature_android_state_reference_signal_dial_pad_tones_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_dial_pad_tones_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_dial_pad_tones_title">Dial-pad tones</string>
+    <string name="feature_android_condition_reference_signal_dial_pad_tones_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_dial_pad_tones_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_reference_signal_dnd_filter_title">Do Not Disturb filter</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_description">Match the current Android runtime/system value</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_field_value">Expected value</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_field_value_option_all">All</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_field_value_option_priority">Priority only</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_field_value_option_none">None</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_field_value_option_alarms">Alarms only</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_field_value_option_unknown">Unknown</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_title">Do Not Disturb filter</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_description">Match the current Android runtime/system value</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_field_value">Expected value</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_field_value_option_all">All</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_field_value_option_priority">Priority only</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_field_value_option_none">None</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_field_value_option_alarms">Alarms only</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_field_value_option_unknown">Unknown</string>
+
+    <string name="feature_android_state_reference_signal_audio_playback_active_title">Audio playback active</string>
+    <string name="feature_android_state_reference_signal_audio_playback_active_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_audio_playback_active_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_active_title">Audio playback active</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_active_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_active_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_reference_signal_audio_playback_count_title">Active audio playback count</string>
+    <string name="feature_android_state_reference_signal_audio_playback_count_description">Compare the current Android runtime/system numeric value</string>
+    <string name="feature_android_state_reference_signal_audio_playback_count_field_min">Minimum</string>
+    <string name="feature_android_state_reference_signal_audio_playback_count_field_max">Maximum</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_count_title">Active audio playback count</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_count_description">Compare the current Android runtime/system numeric value</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_count_field_min">Minimum</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_count_field_max">Maximum</string>
+
+    <string name="feature_android_state_reference_signal_audio_recording_active_title">Audio recording active</string>
+    <string name="feature_android_state_reference_signal_audio_recording_active_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_audio_recording_active_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_active_title">Audio recording active</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_active_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_active_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_reference_signal_audio_recording_count_title">Active audio recording count</string>
+    <string name="feature_android_state_reference_signal_audio_recording_count_description">Compare the current Android runtime/system numeric value</string>
+    <string name="feature_android_state_reference_signal_audio_recording_count_field_min">Minimum</string>
+    <string name="feature_android_state_reference_signal_audio_recording_count_field_max">Maximum</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_count_title">Active audio recording count</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_count_description">Compare the current Android runtime/system numeric value</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_count_field_min">Minimum</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_count_field_max">Maximum</string>
+
+    <string name="feature_android_state_reference_signal_camera_count_title">Camera count</string>
+    <string name="feature_android_state_reference_signal_camera_count_description">Compare the current Android runtime/system numeric value</string>
+    <string name="feature_android_state_reference_signal_camera_count_field_min">Minimum</string>
+    <string name="feature_android_state_reference_signal_camera_count_field_max">Maximum</string>
+    <string name="feature_android_condition_reference_signal_camera_count_title">Camera count</string>
+    <string name="feature_android_condition_reference_signal_camera_count_description">Compare the current Android runtime/system numeric value</string>
+    <string name="feature_android_condition_reference_signal_camera_count_field_min">Minimum</string>
+    <string name="feature_android_condition_reference_signal_camera_count_field_max">Maximum</string>
+
+    <string name="feature_android_state_reference_signal_camera_flash_available_title">Camera flash available</string>
+    <string name="feature_android_state_reference_signal_camera_flash_available_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_camera_flash_available_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_camera_flash_available_title">Camera flash available</string>
+    <string name="feature_android_condition_reference_signal_camera_flash_available_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_camera_flash_available_field_value">Enabled / true</string>
+
+    <string name="feature_android_event_system_setting_changed_filtered_title">System setting changed</string>
+    <string name="feature_android_event_system_setting_changed_filtered_description">Trigger when a System, Secure or Global Android setting changes</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_namespace">Settings namespace</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_namespace_option_any">Any</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_namespace_option_system">System</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_namespace_option_secure">Secure</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_namespace_option_global">Global</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_keymode">Key match</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_keymode_option_any">Any</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_keymode_option_exact">Exact</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_keymode_option_contains">Contains</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_keymode_option_regex">Regular expression</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_key">Setting key</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_valuecontains">New value contains</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_ignorecase">Ignore case</string>
+
+    <string name="feature_android_event_dnd_filter_changed_filtered_title">Do Not Disturb changed</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_description">Trigger when Android\'s interruption filter changes</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter">DND filter</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter_option_any">Any</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter_option_all">All</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter_option_priority">Priority only</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter_option_none">None</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter_option_alarms">Alarms only</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter_option_unknown">Unknown</string>
+
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_title">Audio playback activity changed</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_description">Trigger when the system audio activity configuration changes</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_field_active">Activity state</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_field_active_option_any">Any</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_field_active_option_active">Active</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_field_active_option_inactive">Inactive</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_field_mincount">Minimum active count</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_field_maxcount">Maximum active count</string>
+
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_title">Audio recording activity changed</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_description">Trigger when the system audio activity configuration changes</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_field_active">Activity state</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_field_active_option_any">Any</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_field_active_option_active">Active</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_field_active_option_inactive">Inactive</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_field_mincount">Minimum active count</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_field_maxcount">Maximum active count</string>
+
+    <string name="feature_android_event_torch_state_changed_filtered_title">Torch state changed</string>
+    <string name="feature_android_event_torch_state_changed_filtered_description">Trigger when a camera torch becomes enabled, disabled or unavailable</string>
+    <string name="feature_android_event_torch_state_changed_filtered_field_cameraid">Camera ID</string>
+    <string name="feature_android_event_torch_state_changed_filtered_field_state">Torch state</string>
+    <string name="feature_android_event_torch_state_changed_filtered_field_state_option_any">Any</string>
+    <string name="feature_android_event_torch_state_changed_filtered_field_state_option_on">On</string>
+    <string name="feature_android_event_torch_state_changed_filtered_field_state_option_off">Off</string>
+    <string name="feature_android_event_torch_state_changed_filtered_field_state_option_unavailable">Unavailable</string>
+
+    <string name="feature_android_event_clipboard_text_filtered_title">Filtered clipboard text changed</string>
+    <string name="feature_android_event_clipboard_text_filtered_description">Trigger when clipboard text changes and matches text or a regular expression</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_mode">Text match</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_mode_option_any">Any</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_mode_option_exact">Exact</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_mode_option_contains">Contains</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_mode_option_regex">Regular expression</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_text">Text / pattern</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_ignorecase">Ignore case</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_requiretext">Require non-empty text</string>
+
+    <string name="feature_android_event_developer_options_changed_title">Developer options changed</string>
+    <string name="feature_android_event_developer_options_changed_description">Trigger when the corresponding Android setting changes</string>
+
+    <string name="feature_android_event_adb_debugging_changed_title">ADB debugging changed</string>
+    <string name="feature_android_event_adb_debugging_changed_description">Trigger when the corresponding Android setting changes</string>
+
+    <string name="feature_android_event_screen_brightness_changed_title">Screen brightness changed</string>
+    <string name="feature_android_event_screen_brightness_changed_description">Trigger when the corresponding Android setting changes</string>
+
+    <string name="feature_android_event_brightness_mode_changed_title">Brightness mode changed</string>
+    <string name="feature_android_event_brightness_mode_changed_description">Trigger when the corresponding Android setting changes</string>
+
+    <string name="feature_android_event_show_touches_changed_title">Show touches changed</string>
+    <string name="feature_android_event_show_touches_changed_description">Trigger when the corresponding Android setting changes</string>
+
+    <string name="feature_android_event_pointer_location_changed_title">Pointer location changed</string>
+    <string name="feature_android_event_pointer_location_changed_description">Trigger when the corresponding Android setting changes</string>
+
+    <string name="feature_android_event_pointer_speed_changed_title">Pointer speed changed</string>
+    <string name="feature_android_event_pointer_speed_changed_description">Trigger when the corresponding Android setting changes</string>
+
+    <string name="feature_android_event_vibrate_when_ringing_changed_title">Vibrate while ringing changed</string>
+    <string name="feature_android_event_vibrate_when_ringing_changed_description">Trigger when the corresponding Android setting changes</string>
+
+    <string name="feature_android_event_lockscreen_sounds_changed_title">Lock-screen sounds changed</string>
+    <string name="feature_android_event_lockscreen_sounds_changed_description">Trigger when the corresponding Android setting changes</string>
+
+    <string name="feature_android_event_dial_pad_tones_changed_title">Dial-pad tones changed</string>
+    <string name="feature_android_event_dial_pad_tones_changed_description">Trigger when the corresponding Android setting changes</string>
+
+</resources>
