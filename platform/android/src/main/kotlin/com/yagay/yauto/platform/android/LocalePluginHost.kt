@@ -225,7 +225,7 @@ internal class LocalePluginHost(private val context: Context) {
         is LongArray -> ConfigValue.ListValue(value.map { ConfigValue.NumberValue(it.toDouble()) })
         is FloatArray -> ConfigValue.ListValue(value.map { ConfigValue.NumberValue(it.toDouble()) })
         is DoubleArray -> ConfigValue.ListValue(value.map { ConfigValue.NumberValue(it) })
-        is BooleanArray -> ConfigValue.ListValue(value.map(ConfigValue::BooleanValue))
+        is BooleanArray -> ConfigValue.ListValue(value.map { ConfigValue.BooleanValue(it) })
         else -> ConfigValue.StringValue(value.toString())
     }
 
