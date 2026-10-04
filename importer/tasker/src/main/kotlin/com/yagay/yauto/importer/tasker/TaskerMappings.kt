@@ -37,6 +37,36 @@ object TaskerMappings {
         else -> null
     }
 
+
+    fun nativeContext(
+        context: Element,
+        code: String,
+        tagName: String,
+        importerId: String,
+        raw: String,
+    ): FeatureRef? {
+        if (tagName != "Event") return null
+        val target = when (code) {
+            "208" -> "android.event.screen_on"
+            "210" -> "android.event.screen_off"
+            "300" -> "android.event.date_changed"
+            "302" -> "android.event.time_changed"
+            "304" -> "android.event.timezone_changed"
+            "411" -> "android.event.boot"
+            "422" -> "android.event.storage_low"
+            "429" -> "android.event.locale_changed"
+            "1000" -> "android.event.user_present"
+            else -> return null
+        }
+        if (!context.otherArgsAreDefault(emptySet())) return null
+        return sourceFeature(target, importerId, "TaskerEvent:" + code, raw)
+    }
+
+    fun returnValue(action: Element): String? = action.stringArg(0)
+
+    fun stopTaskTarget(action: Element): String? =
+        action.stringArg(0)?.trim()?.takeIf { it.isNotEmpty() }
+
     fun performTaskTarget(action: Element): String? = action.stringArg(0)?.takeIf { it.isNotBlank() }
     fun performTaskParam1(action: Element): String? = action.stringArg(2)?.takeIf { it.isNotBlank() }
     fun performTaskParam2(action: Element): String? = action.stringArg(3)?.takeIf { it.isNotBlank() }
