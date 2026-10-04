@@ -237,14 +237,14 @@ class YAutoXposedModule : XposedModule() {
         method.isAccessible = true
         hook(method).intercept { chain ->
             if (mode == "replace") {
-                emitMethodCalled(context, sessionId, eventToken, packageName, processName, className, method.name, "before")
+                emitMethodCalled(context, sessionId, eventToken, packageName, processName, chain.thisObject?.javaClass?.name ?: className, method.name, "before")
                 parseReplacement(method.returnType, replacementType, replacementValue)
             } else if (lifecycle == "after") {
                 val result = chain.proceed()
-                emitMethodCalled(context, sessionId, eventToken, packageName, processName, className, method.name, "after")
+                emitMethodCalled(context, sessionId, eventToken, packageName, processName, chain.thisObject?.javaClass?.name ?: className, method.name, "after")
                 result
             } else {
-                emitMethodCalled(context, sessionId, eventToken, packageName, processName, className, method.name, "before")
+                emitMethodCalled(context, sessionId, eventToken, packageName, processName, chain.thisObject?.javaClass?.name ?: className, method.name, "before")
                 chain.proceed()
             }
         }

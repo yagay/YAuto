@@ -136,9 +136,11 @@ internal object ShortXFeatureSuggestions {
         "WifiConnectedTo", "WifiDisconnectedFrom", "WifiStatusChanged", "ConnectedWifiSignalLevelChanged" -> "android.event.wifi_changed"
         "VPNConnected", "VPNDisconnected" -> "android.event.network_changed"
         "MethodHook" -> "android.event.lsposed_method_called"
-        "ActivityStarted" -> "android.event.window_changed"
-        "AppProcessStarted" -> "android.event.app_foreground"
+        "ActivityStarted" -> "android.event.activity_lifecycle"
+        "AppProcessStarted" -> "android.event.app_process_started"
         "AppProcessRemoved" -> "android.event.app_background"
+        "MediaStoreInsert" -> "android.event.media_store_inserted"
+        "MediaStoreDelete" -> "android.event.media_store_deleted"
         else -> null
     }
 

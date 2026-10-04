@@ -19,6 +19,9 @@ object MacroDroidFeatureSuggestions {
     }
 
     private fun action(sourceType: String): String? = when (sourceType) {
+        "HttpServerResponseAction" -> "android.http_server.respond"
+        "SyncAccountAction" -> "android.sync.account.request"
+        "GetDataUsedAction" -> "android.data_usage.query"
         "AiLlmQueryAction" -> "ai.llm.query"
         "SummariseTextAction" -> "ai.text.summarize"
         "RewriteTextAction" -> "ai.text.rewrite"
@@ -95,6 +98,10 @@ object MacroDroidFeatureSuggestions {
     }
 
     private fun event(sourceType: String): String? = when (sourceType) {
+        "HttpServerTrigger" -> "android.event.http_server_request"
+        "StopWatchTrigger", "StopwatchTrigger" -> "android.event.stopwatch_reached"
+        "DataUsedTrigger" -> "android.event.data_usage_threshold"
+        "AppActivityLaunchedTrigger" -> "android.event.activity_lifecycle"
         "BluetoothBeaconTrigger", "JBluetoothBeaconTrigger" -> "android.event.ble_advertisement"
         "LogcatTrigger", "SystemLogTrigger" -> "android.event.system_log_entry"
         "CellTowerTrigger", "FCellTowerTrigger" -> "android.event.cell_tower_changed"
@@ -125,6 +132,8 @@ object MacroDroidFeatureSuggestions {
     }
 
     private fun condition(sourceType: String): String? = when (sourceType) {
+        "StopWatchConstraint", "StopwatchConstraint" -> "android.condition.stopwatch"
+        "DataUsedConstraint" -> "android.condition.data_usage"
         "CellTowerConstraint", "ACellTowerConstraint", "ICellTowerConstraint" -> "android.condition.cell_tower_match"
         "CalendarConstraint" -> "android.condition.calendar_event"
         "MicrophoneRecordingConstraint" -> "android.condition.audio_recording_active"

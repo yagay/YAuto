@@ -65,6 +65,10 @@ class AutomationRuntimeService : Service() {
         registerSource("configured-location") { ConfiguredLocationEventSource(this, appGraph.workspace) }
         registerSource("configured-interval") { ConfiguredIntervalEventSource(appGraph.workspace) }
         registerSource("configured-file") { ConfiguredFileEventSource(appGraph.workspace) }
+        registerSource("media-store") { MediaStoreEventSource(this) }
+        registerSource("http-server") { HttpServerEventSource() }
+        registerSource("stopwatch") { StopwatchEventSource() }
+        registerSource("configured-data-usage") { ConfiguredDataUsageEventSource(this, appGraph.workspace) }
         registerSource("usage-foreground") {
             UsageStatsForegroundEventSource(
                 context = this,
@@ -74,7 +78,58 @@ class AutomationRuntimeService : Service() {
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
         SurfaceRuntimeBridge.attach(emitter)
         AdvancedParityRuntimeBridge.attach(emitter)
-        XposedHookRuntimeBridge.attach { event -> dispatcher.dispatch(XposedHookRuntimeBridge.toRuntimeEvent(event)) }
+        XposedHookRuntimeBridge.attach { event ->
+            dispatcher.dispatch(XposedHookRuntimeBridge.toRuntimeEvent(event))
+            val mapped = when {
+                event.sessionId.contains("-activity_start-") && event.methodName == "onStart" -> RuntimeEvent(
+                    "android.event.activity_lifecycle",
+                    mapOf(
+                        "package" to ConfigValue.StringValue(event.packageName),
+                        "processName" to ConfigValue.StringValue(event.processName),
+                        "className" to ConfigValue.StringValue(event.className),
+                        "lifecycle" to ConfigValue.StringValue("started"),
+                    ),
+                    source = "lsposed.lifecycle",
+                    timestampEpochMs = event.timestampEpochMs,
+                )
+                event.sessionId.contains("-activity_stop-") && event.methodName == "onStop" -> RuntimeEvent(
+                    "android.event.activity_lifecycle",
+                    mapOf(
+                        "package" to ConfigValue.StringValue(event.packageName),
+                        "processName" to ConfigValue.StringValue(event.processName),
+                        "className" to ConfigValue.StringValue(event.className),
+                        "lifecycle" to ConfigValue.StringValue("stopped"),
+                    ),
+                    source = "lsposed.lifecycle",
+                    timestampEpochMs = event.timestampEpochMs,
+                )
+                event.sessionId.contains("-activity_destroy-") && event.methodName == "onDestroy" -> RuntimeEvent(
+                    "android.event.activity_lifecycle",
+                    mapOf(
+                        "package" to ConfigValue.StringValue(event.packageName),
+                        "processName" to ConfigValue.StringValue(event.processName),
+                        "className" to ConfigValue.StringValue(event.className),
+                        "lifecycle" to ConfigValue.StringValue("destroyed"),
+                    ),
+                    source = "lsposed.lifecycle",
+                    timestampEpochMs = event.timestampEpochMs,
+                )
+                event.sessionId.contains("-process_start-") && event.methodName == "onCreate" -> {
+                    RuntimeEvent(
+                        "android.event.app_process_started",
+                        mapOf(
+                            "package" to ConfigValue.StringValue(event.packageName),
+                            "processName" to ConfigValue.StringValue(event.processName),
+                            "className" to ConfigValue.StringValue(event.className),
+                        ),
+                        source = "lsposed.lifecycle",
+                        timestampEpochMs = event.timestampEpochMs,
+                    )
+                }
+                else -> null
+            }
+            if (mapped != null) dispatcher.dispatch(mapped)
+        }
         AccessibilityRuntimeBridge.setListener { previous, current ->
             val currentPayload = mapOf("package" to ConfigValue.StringValue(current.packageName), "class" to ConfigValue.StringValue(current.className.orEmpty()))
             dispatcher.dispatch(RuntimeEvent("android.event.window_changed", currentPayload, source = "accessibility.window"))

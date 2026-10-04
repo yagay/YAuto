@@ -23,6 +23,7 @@ object AndroidFeaturePacks {
         AndroidPrivilegedParityFeaturePack(),
         AndroidTetheringFeaturePack(),
         AndroidLsposedFeaturePack(),
+        AndroidLsposedLifecycleFeaturePack(),
         AndroidPrivilegedStateFeaturePack(),
         AndroidPowerUserFeaturePack(context),
         AndroidNativeEnvironmentFeaturePack(context),
