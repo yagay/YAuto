@@ -61,6 +61,7 @@ class AutomationRuntimeService : Service() {
         registerSource("midi-device") { MidiDeviceEventSource(this) }
         registerSource("usb-device") { UsbDeviceEventSource(this) }
         registerSource("personal-data") { PersonalDataEventSource(this) }
+        registerSource("personal-changes") { PersonalChangeEventSource(this) }
         registerSource("configured-logcat") { ConfiguredLogcatEventSource(appGraph.workspace) }
         registerSource("configured-ble") { ConfiguredBleEventSource(this, appGraph.workspace) }
         registerSource("configured-cell-tower") { ConfiguredCellTowerEventSource(this, appGraph.workspace) }
