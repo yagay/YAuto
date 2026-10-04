@@ -36,6 +36,8 @@ object MacroDroidFeatureSuggestions {
         "GetCalendarEventsAction", "BGetCalendarEventsAction" -> "android.calendar.events.query"
         "GetContactsAction" -> "android.contacts.query"
         "RecordMicrophoneAction", "ORecordMicrophoneAction" -> "android.audio.record.start"
+        "TakePictureAction" -> "android.camera.photo.capture"
+        "RecordVideoAction" -> "android.camera.video.record"
         "AnswerCallAction" -> "android.phone.answer"
         "RejectCallAction" -> "android.phone.end"
         "MakeCallAction" -> "android.phone.call"
