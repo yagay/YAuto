@@ -45,6 +45,8 @@ object StandardFeaturePacks {
         override suspend fun cancel(target: String): ActionExecutionResult = ActionExecutionResult(false)
 
         override suspend fun isEnabled(target: String): Boolean? = null
+
+        override suspend fun isRunning(target: String): Boolean? = null
     }
 
     private object UnsupportedPersistentVariableControl : PersistentVariableControl {
