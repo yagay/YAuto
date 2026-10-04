@@ -18,24 +18,58 @@ internal object TaskerJavaObjectStore {
     )
 
     private val buckets = ConcurrentHashMap<String, Bucket>()
+    private val globals = ConcurrentHashMap<String, Any>()
 
-    fun get(executionId: ExecutionId, name: String): Any? =
-        buckets[executionId.value]?.also { it.touchedAt = System.currentTimeMillis() }?.values?.get(name)
+    fun get(executionId: ExecutionId, name: String): Any? {
+        val normalized = name.trim()
+        if (isGlobal(normalized)) return globals[normalized]
+        return buckets[executionId.value]
+            ?.also { it.touchedAt = System.currentTimeMillis() }
+            ?.values
+            ?.get(normalized)
+    }
 
     fun put(executionId: ExecutionId, name: String, value: Any?) {
-        if (name.isBlank() || value == null) return
+        val normalized = name.trim()
+        if (normalized.isBlank() || value == null) return
+        if (isGlobal(normalized)) {
+            globals[normalized] = value
+            return
+        }
         prune()
         val bucket = buckets.computeIfAbsent(executionId.value) { Bucket() }
         bucket.touchedAt = System.currentTimeMillis()
-        bucket.values[name] = value
+        bucket.values[normalized] = value
     }
 
-    fun snapshot(executionId: ExecutionId): Map<String, Any> =
-        buckets[executionId.value]?.also { it.touchedAt = System.currentTimeMillis() }?.values?.toMap().orEmpty()
+    fun snapshot(executionId: ExecutionId): Map<String, Any> = buildMap {
+        putAll(globals)
+        buckets[executionId.value]
+            ?.also { it.touchedAt = System.currentTimeMillis() }
+            ?.values
+            ?.let(::putAll)
+    }
+
+    fun remove(executionId: ExecutionId, name: String): Boolean {
+        val normalized = name.trim()
+        if (normalized.isBlank()) return false
+        return if (isGlobal(normalized)) {
+            globals.remove(normalized) != null
+        } else {
+            buckets[executionId.value]?.values?.remove(normalized) != null
+        }
+    }
 
     fun clear(executionId: ExecutionId) {
         buckets.remove(executionId.value)
     }
+
+    fun clearGlobals() {
+        globals.clear()
+    }
+
+    private fun isGlobal(name: String): Boolean =
+        name.any(Char::isUpperCase)
 
     private fun prune() {
         if (buckets.size < 128) return
