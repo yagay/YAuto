@@ -14,6 +14,7 @@ object TaskerFeatureSuggestions {
         "30" -> "core.delay"
         "59" -> "android.device.reboot"
         "61" -> "android.vibrate"
+        "63" -> "script.beanshell.execute"
         "102" -> "android.file.open"
         "104" -> "android.uri.open"
         "105" -> "android.clipboard.set"
