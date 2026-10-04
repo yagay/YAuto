@@ -29,4 +29,5 @@ object AccessibilityOperations {
     const val PASTE_VIEW_ID = "accessibility.paste_view_id"
     const val GET_VIEW_BOUNDS = "accessibility.view_bounds.get"
     const val GESTURE_PATH = "accessibility.gesture.path"
+    const val CAPTURE_SCREENSHOT = "accessibility.screenshot.capture"
 }
