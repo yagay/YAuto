@@ -26,6 +26,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.okhttp)
     implementation(libs.rhino)
+    implementation("org.apache-extras.beanshell:bsh:2.0b6")
     implementation(libs.zxing.core)
     implementation(libs.mlkit.text.recognition)
     testImplementation(libs.junit)
