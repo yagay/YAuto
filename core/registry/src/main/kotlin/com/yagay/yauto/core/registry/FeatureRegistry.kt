@@ -57,6 +57,7 @@ enum class AccessRequirement(val id: String) {
     SMS("sms"),
     PHONE("phone"),
     RECORD_AUDIO("record_audio"),
+    ACTIVITY_RECOGNITION("activity_recognition"),
 }
 
 /** Language-neutral implementation metadata. UI copy is resolved by backendId in the Android layer. */
