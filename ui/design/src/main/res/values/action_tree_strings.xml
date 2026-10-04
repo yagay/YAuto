@@ -78,4 +78,8 @@
     <string name="tree_none">None</string>
     <string name="tree_wait_unlimited">Unlimited</string>
     <string name="tree_wait_continue_on_timeout">Continue on timeout</string>
+    <string name="tree_label_format">Label: %1$s</string>
+    <string name="tree_goto_format">Go to: %1$s</string>
+    <string name="tree_label_name">Label name</string>
+    <string name="tree_goto_target">Target label</string>
 </resources>
