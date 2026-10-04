@@ -13,14 +13,24 @@ import com.google.android.gms.location.ActivityTransition
 import com.google.android.gms.location.ActivityTransitionRequest
 import com.google.android.gms.location.ActivityTransitionResult
 import com.google.android.gms.location.DetectedActivity
+import com.google.android.gms.location.SleepClassifyEvent
 import com.google.android.gms.location.SleepSegmentEvent
 import com.google.android.gms.location.SleepSegmentRequest
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.RuntimeEvent
 import java.util.concurrent.atomic.AtomicBoolean
 
+data class SleepClassificationSnapshot(
+    val confidence: Int,
+    val light: Int,
+    val motion: Int,
+    val sourceTimestampMs: Long,
+    val receivedEpochMs: Long,
+)
+
 object ActivityRecognitionRuntimeBridge {
     @Volatile private var emitter: RuntimeEventEmitter? = null
+    @Volatile private var latestSleepClassification: SleepClassificationSnapshot? = null
 
     fun attach(value: RuntimeEventEmitter?) {
         emitter = value
@@ -29,6 +39,12 @@ object ActivityRecognitionRuntimeBridge {
     internal fun emit(event: RuntimeEvent) {
         emitter?.emit(event)
     }
+
+    internal fun updateSleepClassification(value: SleepClassificationSnapshot) {
+        latestSleepClassification = value
+    }
+
+    fun sleepClassification(): SleepClassificationSnapshot? = latestSleepClassification
 }
 
 class YAutoActivityRecognitionReceiver : BroadcastReceiver() {
@@ -70,6 +86,31 @@ class YAutoActivityRecognitionReceiver : BroadcastReceiver() {
                             "transition" to ConfigValue.StringValue("sample"),
                         ),
                         source = "google.activity_recognition",
+                    )
+                )
+            }
+        }
+
+        if (SleepClassifyEvent.hasEvents(value)) {
+            SleepClassifyEvent.extractEvents(value).forEach { event ->
+                val snapshot = SleepClassificationSnapshot(
+                    confidence = event.confidence,
+                    light = event.light,
+                    motion = event.motion,
+                    sourceTimestampMs = event.timestampMillis,
+                    receivedEpochMs = System.currentTimeMillis(),
+                )
+                ActivityRecognitionRuntimeBridge.updateSleepClassification(snapshot)
+                ActivityRecognitionRuntimeBridge.emit(
+                    RuntimeEvent(
+                        typeId = "android.event.sleep_classification",
+                        payload = mapOf(
+                            "confidence" to ConfigValue.NumberValue(event.confidence.toDouble()),
+                            "light" to ConfigValue.NumberValue(event.light.toDouble()),
+                            "motion" to ConfigValue.NumberValue(event.motion.toDouble()),
+                            "timestampMs" to ConfigValue.NumberValue(event.timestampMillis.toDouble()),
+                        ),
+                        source = "google.sleep_classify",
                     )
                 )
             }
