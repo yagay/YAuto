@@ -163,4 +163,25 @@
     <string name="runtime_feature_websocket_not_connected">WebSocket 尚未连接</string>
     <string name="runtime_feature_websocket_unknown">未找到 WebSocket 会话</string>
     <string name="runtime_feature_wifi_network_input_invalid">Wi-Fi 网络输入无效</string>
+    <string name="runtime_engine_unknown_label">未知标签：%1$s</string>
+    <string name="runtime_engine_wait_event_empty">等待事件至少需要一个事件</string>
+    <string name="runtime_engine_wait_event_unavailable">运行时事件等待功能不可用</string>
+    <string name="runtime_runtime_trigger_target_required">必须指定触发器目标</string>
+    <string name="runtime_runtime_trigger_not_found">未找到触发器</string>
+    <string name="runtime_feature_screenshot_capture_failed">截图失败</string>
+    <string name="runtime_feature_screenshot_area_invalid">截图裁剪区域无效</string>
+    <string name="runtime_feature_screenshot_filename_invalid">截图文件名无效</string>
+    <string name="runtime_feature_screenshot_save_failed">无法保存截图</string>
+    <string name="runtime_feature_beanshell_script_invalid">BeanShell 脚本为空或过大</string>
+    <string name="runtime_feature_beanshell_failed">BeanShell 执行超时或失败</string>
+    <string name="runtime_feature_mvel_failed">MVEL 执行超时或失败</string>
+    <string name="runtime_feature_camera_filename_invalid">相机输出文件名无效</string>
+    <string name="runtime_feature_camera_capture_failed">拍照失败</string>
+    <string name="runtime_feature_camera_microphone_permission_required">需要相机和麦克风权限</string>
+    <string name="runtime_feature_camera_video_start_failed">无法开始相机录像</string>
+    <string name="runtime_feature_camera_video_not_recording">当前没有正在进行的相机录像</string>
+    <string name="runtime_feature_geocode_failed">地理编码没有返回结果</string>
+    <string name="runtime_feature_audio_measurement_failed">声音级别测量失败</string>
+    <string name="runtime_feature_weather_query_failed">天气查询失败</string>
+    <string name="runtime_feature_java_target_unresolved">无法解析 Java 目标：%1$s</string>
 </resources>
