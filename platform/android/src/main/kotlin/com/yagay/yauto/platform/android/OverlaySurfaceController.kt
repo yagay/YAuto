@@ -188,6 +188,56 @@ class OverlaySurfaceController(context: Context) {
         return true
     }
 
+
+    fun showAppLauncherList(
+        id: String,
+        title: String,
+        apps: List<Pair<String, String>>,
+        columns: Int,
+        gravity: String,
+        autoHideMs: Long,
+    ): Boolean {
+        if (!canDraw() || id.isBlank() || apps.isEmpty()) return false
+        main.post {
+            hideInternal(id)
+            val density = context.resources.displayMetrics.density
+            val grid = GridLayout(context).apply {
+                columnCount = columns.coerceIn(1, 6)
+                apps.take(120).forEach { (label, packageName) ->
+                    addView(Button(context).apply {
+                        text = label
+                        setOnClickListener {
+                            val launched = runCatching {
+                                val launch = context.packageManager.getLaunchIntentForPackage(packageName)
+                                    ?: return@runCatching false
+                                launch.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(launch)
+                                true
+                            }.getOrDefault(false)
+                            SurfaceRuntimeBridge.emit(
+                                id,
+                                if (launched) "recent_app_selected" else "recent_app_launch_failed",
+                                packageName,
+                            )
+                            if (launched) hide(id)
+                        }
+                    })
+                }
+            }
+            val root = basePanel(title, density).apply {
+                addView(ScrollView(context).apply {
+                    addView(grid)
+                    layoutParams = LinearLayout.LayoutParams(
+                        (340 * density).toInt(),
+                        (480 * density).toInt(),
+                    )
+                })
+            }
+            addSurface(id, root, gravity, autoHideMs)
+        }
+        return true
+    }
+
     fun showButtonGrid(
         id: String,
         title: String,
