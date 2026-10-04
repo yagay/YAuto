@@ -74,4 +74,8 @@
     <string name="predicate_none_satisfied">No conditions are satisfied</string>
     <string name="predicate_condition_format">Condition %1$d</string>
     <string name="predicate_add_condition">Add condition</string>
+    <string name="tree_wait_event_events_format">Events: %1$s</string>
+    <string name="tree_none">None</string>
+    <string name="tree_wait_unlimited">Unlimited</string>
+    <string name="tree_wait_continue_on_timeout">Continue on timeout</string>
 </resources>
