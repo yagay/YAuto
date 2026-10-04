@@ -78,4 +78,8 @@
     <string name="tree_none">无</string>
     <string name="tree_wait_unlimited">无限等待</string>
     <string name="tree_wait_continue_on_timeout">超时后继续</string>
+    <string name="tree_label_format">标签：%1$s</string>
+    <string name="tree_goto_format">跳转到：%1$s</string>
+    <string name="tree_label_name">标签名称</string>
+    <string name="tree_goto_target">目标标签</string>
 </resources>
