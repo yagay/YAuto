@@ -147,6 +147,22 @@ class AutomationEngine(
                 }
                 Signal.Next
             }
+            is ActionNode.DoWhile -> {
+                var iterations = 0
+                do {
+                    currentCoroutineContext().ensureActive()
+                    if (++iterations > maxLoopIterations) {
+                        return Signal.Failure(userText("engine.loop_limit"))
+                    }
+                    when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
+                        Signal.Next, Signal.Continue -> Unit
+                        Signal.Break -> return Signal.Next
+                        else -> return signal
+                    }
+                } while (evaluatePredicate(node.condition, executionId, variables, automation, flow))
+                Signal.Next
+            }
+
             is ActionNode.ForEach -> {
                 val values = node.sourceVariable?.takeIf { it.isNotBlank() }?.let { sourceName ->
                     (variables.get(sourceName) as? ConfigValue.ListValue)?.value
