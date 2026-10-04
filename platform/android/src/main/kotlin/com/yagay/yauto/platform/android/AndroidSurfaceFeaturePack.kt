@@ -503,5 +503,4 @@ class AndroidSurfaceFeaturePack(
         }
         .take(100)
         .toList()
-    }
 }
