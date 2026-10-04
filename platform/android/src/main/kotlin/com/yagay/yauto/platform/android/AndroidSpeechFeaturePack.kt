@@ -3,10 +3,7 @@ package com.yagay.yauto.platform.android
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
-import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import com.yagay.yauto.core.model.ConfigValue
@@ -30,7 +27,6 @@ class AndroidSpeechFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.speech"
     private val context = context.applicationContext
     private val controller = SpeechController(this.context)
-    private val voiceInput = VoiceInputController(this.context)
 
     override fun install(registry: FeatureRegistry) {
         registerVoiceSearch(registry)
@@ -93,32 +89,49 @@ class AndroidSpeechFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.voice_input.capture"),
                 FeatureKind.ACTION,
                 "Capture voice input",
-                "Listen with Android SpeechRecognizer and return the best recognized phrase plus alternatives",
+                "Open Android speech recognition, wait for one spoken result and store it in a variable",
                 FeatureCategory.AUDIO,
                 fields = listOf(
+                    FieldSchema.Text("prompt", "Prompt"),
                     FieldSchema.Text("languageTag", "Language tag"),
-                    FieldSchema.Number("maxResults", "Maximum results", min = 1.0, max = 20.0),
                     FieldSchema.Duration("timeoutMs", "Recognition timeout"),
-                    FieldSchema.Variable("resultVariable", "Store recognition object"),
+                    FieldSchema.Variable("resultVariable", "Store recognized text"),
+                ),
+                fieldBehaviors = mapOf(
+                    "prompt" to FieldBehavior(supportsVariables = true),
+                    "languageTag" to FieldBehavior(supportsVariables = true),
                 ),
                 accessRequirements = setOf(AccessRequirement.RECORD_AUDIO),
                 keywords = setOf("voice input", "speech recognition", "microphone", "macrodroid", "tasker"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            val language = feature.config.string("languageTag").resolveVariables(ctx.variables).trim()
-            val maxResults = (feature.config["maxResults"].numberOrNull() ?: 5.0).toInt().coerceIn(1, 20)
-            val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 30_000.0).toLong().coerceIn(1_000L, 120_000L)
-            val phrases = voiceInput.capture(language, maxResults, timeout)
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Speech recognition failed or timed out"))
-            val output = ConfigValue.ObjectValue(
-                mapOf(
-                    "text" to ConfigValue.StringValue(phrases.firstOrNull().orEmpty()),
-                    "alternatives" to ConfigValue.ListValue(phrases.map(ConfigValue::StringValue)),
+            val token = UUID.randomUUID().toString()
+            val pending = VoiceInputRuntimeBridge.register(token)
+            val launched = runCatching {
+                context.startActivity(
+                    Intent()
+                        .setClassName(context.packageName, "com.yagay.yauto.VoiceInputActivity")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra("token", token)
+                        .putExtra("prompt", feature.config.string("prompt").resolveVariables(ctx.variables))
+                        .putExtra("language", feature.config.string("languageTag").resolveVariables(ctx.variables))
                 )
-            )
+                true
+            }.getOrDefault(false)
+            if (!launched) {
+                VoiceInputRuntimeBridge.cancel(token)
+                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Unable to open speech recognition"))
+            }
+            val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 60_000.0).toLong().coerceIn(1_000L, 180_000L)
+            val text = withTimeoutOrNull(timeout) { pending.await() }
+            VoiceInputRuntimeBridge.cancel(token)
+            if (text.isNullOrBlank()) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "No speech result"))
+            }
+            val output = ConfigValue.StringValue(text)
             feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
-            ActionExecutionResult(phrases.isNotEmpty(), output)
+            ActionExecutionResult(true, output)
         }
     }
 
@@ -305,59 +318,5 @@ private class SpeechController(private val context: Context) {
     private companion object {
         const val INIT_TIMEOUT_MS = 5_000L
         const val MAX_WAIT_MS = 10 * 60_000L
-    }
-}
-
-
-private class VoiceInputController(private val context: Context) {
-    private val mutex = Mutex()
-
-    suspend fun capture(languageTag: String, maxResults: Int, timeoutMs: Long): List<String>? = mutex.withLock {
-        if (!SpeechRecognizer.isRecognitionAvailable(context)) return@withLock null
-        val result = CompletableDeferred<List<String>?>()
-        var recognizer: SpeechRecognizer? = null
-
-        val created = runCatching {
-            withContext(Dispatchers.Main.immediate) {
-                SpeechRecognizer.createSpeechRecognizer(context).also { engine ->
-                    recognizer = engine
-                    engine.setRecognitionListener(object : RecognitionListener {
-                        override fun onReadyForSpeech(params: Bundle?) = Unit
-                        override fun onBeginningOfSpeech() = Unit
-                        override fun onRmsChanged(rmsdB: Float) = Unit
-                        override fun onBufferReceived(buffer: ByteArray?) = Unit
-                        override fun onEndOfSpeech() = Unit
-                        override fun onError(error: Int) {
-                            if (!result.isCompleted) result.complete(null)
-                        }
-                        override fun onResults(results: Bundle?) {
-                            val values = results
-                                ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                                ?.take(maxResults)
-                                .orEmpty()
-                            if (!result.isCompleted) result.complete(values)
-                        }
-                        override fun onPartialResults(partialResults: Bundle?) = Unit
-                        override fun onEvent(eventType: Int, params: Bundle?) = Unit
-                    })
-                    engine.startListening(
-                        Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, maxResults)
-                            if (languageTag.isNotBlank()) putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
-                        }
-                    )
-                }
-            }
-        }.isSuccess
-        if (!created) return@withLock null
-
-        val values = withTimeoutOrNull(timeoutMs) { result.await() }
-        withContext(Dispatchers.Main.immediate) {
-            runCatching { recognizer?.cancel() }
-            runCatching { recognizer?.destroy() }
-        }
-        values
     }
 }
