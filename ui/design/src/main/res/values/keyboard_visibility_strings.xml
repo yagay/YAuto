@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_keyboard_visible_title">Software keyboard visible</string>
+    <string name="feature_android_state_keyboard_visible_description">Check whether Accessibility currently exposes an input-method window</string>
+    <string name="feature_android_state_keyboard_visible_field_value">Visible</string>
+    <string name="feature_android_condition_keyboard_visible_title">Software keyboard visible</string>
+    <string name="feature_android_condition_keyboard_visible_description">Check whether Accessibility currently exposes an input-method window</string>
+    <string name="feature_android_condition_keyboard_visible_field_value">Visible</string>
+</resources>
