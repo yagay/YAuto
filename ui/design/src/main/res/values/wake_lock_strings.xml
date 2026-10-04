@@ -4,7 +4,7 @@
     <string name="feature_android_power_wake_lock_acquire_description">Keep the CPU awake for a bounded duration using Android PARTIAL_WAKE_LOCK</string>
     <string name="feature_android_power_wake_lock_acquire_field_timeoutms">Maximum hold duration</string>
     <string name="feature_android_power_wake_lock_release_title">Release CPU wake lock</string>
-    <string name="feature_android_power_wake_lock_release_description">Release YAuto's currently held CPU wake lock</string>
+    <string name="feature_android_power_wake_lock_release_description">Release YAuto\\'s currently held CPU wake lock</string>
     <string name="feature_android_state_wake_lock_held_title">CPU wake lock held</string>
     <string name="feature_android_state_wake_lock_held_description">Check whether YAuto currently holds its bounded CPU wake lock</string>
     <string name="feature_android_state_wake_lock_held_field_value">Wake lock held</string>
