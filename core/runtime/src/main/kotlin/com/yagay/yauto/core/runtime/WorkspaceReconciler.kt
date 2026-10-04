@@ -57,6 +57,10 @@ class WorkspaceReconciler(
             condition = predicate(value.condition),
             actions = actions(value.actions),
         )
+        is ActionNode.DoWhile -> value.copy(
+            condition = predicate(value.condition),
+            actions = actions(value.actions),
+        )
         is ActionNode.ForEach -> value.copy(actions = actions(value.actions))
         is ActionNode.Parallel -> value.copy(branches = value.branches.map(::actions))
         is ActionNode.Try -> value.copy(
@@ -65,7 +69,10 @@ class WorkspaceReconciler(
             finallyActions = actions(value.finallyActions),
         )
         is ActionNode.WaitUntil -> value.copy(condition = predicate(value.condition))
+        is ActionNode.WaitEvent -> value.copy(events = value.events.map { feature(it, FeatureKind.EVENT) })
         is ActionNode.CallFlow,
+        is ActionNode.Label,
+        is ActionNode.Goto,
         is ActionNode.Return,
         is ActionNode.Break,
         is ActionNode.Continue -> value
@@ -75,6 +82,7 @@ class WorkspaceReconciler(
         is PredicateNode.All -> value.copy(children = value.children.map(::predicate))
         is PredicateNode.Any -> value.copy(children = value.children.map(::predicate))
         is PredicateNode.None -> value.copy(children = value.children.map(::predicate))
+        is PredicateNode.Xor -> value.copy(children = value.children.map(::predicate))
         is PredicateNode.Condition -> value.copy(feature = feature(value.feature, FeatureKind.CONDITION))
         is PredicateNode.Expression,
         is PredicateNode.Literal -> value
