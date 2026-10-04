@@ -35,10 +35,6 @@
 
     <string name="feature_android_home_open_title">Open home screen</string>
     <string name="feature_android_home_open_description">Return to the Android home screen using the standard home intent</string>
-
-    <string name="feature_android_ime_picker_show_title">Show input method picker</string>
-    <string name="feature_android_ime_picker_show_description">Show Android's keyboard / input-method picker</string>
-
     <string name="feature_android_state_display_density_percent_title">Display density percent</string>
     <string name="feature_android_state_display_density_percent_description">Compare the current display density with a percentage of the device stable density</string>
     <string name="feature_android_state_display_density_percent_field_minpercent">Minimum percent</string>
