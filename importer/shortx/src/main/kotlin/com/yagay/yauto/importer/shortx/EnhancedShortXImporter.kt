@@ -118,6 +118,7 @@ internal object ShortXFeatureSuggestions {
         "SwitchMobileDataSlot" -> "android.sim.default_data.set"
         "TakePhoto" -> "android.camera.photo.capture"
         "RequestAudioFocus" -> "android.audio.focus.request"
+        "ExecuteMVEL", "RemoteExecuteMVEL" -> "script.mvel.execute"
         "AreaScreenshot" -> "accessibility.screenshot.capture"
         "DrawBoard", "ShowDrawBoard" -> "surface.draw_board.show"
         "ShowPieMenu", "PieMenu" -> "surface.pie.show"
