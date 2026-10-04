@@ -1,6 +1,7 @@
 package com.yagay.yauto.platform.android
 
 import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
