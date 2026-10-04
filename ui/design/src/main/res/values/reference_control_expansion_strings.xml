@@ -8,20 +8,6 @@
     <string name="feature_android_display_immersive_set_field_mode_option_status">Hide status bar</string>
     <string name="feature_android_display_immersive_set_field_mode_option_full">Full immersive</string>
 
-    <string name="feature_android_audio_microphone_mute_set_title">Set microphone mute</string>
-    <string name="feature_android_audio_microphone_mute_set_description">Mute, unmute, or toggle the Android system microphone mute state</string>
-    <string name="feature_android_audio_microphone_mute_set_field_mode">Microphone state</string>
-    <string name="feature_android_audio_microphone_mute_set_field_mode_option_mute">Mute</string>
-    <string name="feature_android_audio_microphone_mute_set_field_mode_option_unmute">Unmute</string>
-    <string name="feature_android_audio_microphone_mute_set_field_mode_option_toggle">Toggle</string>
-
-    <string name="feature_android_audio_speakerphone_set_title">Set speakerphone</string>
-    <string name="feature_android_audio_speakerphone_set_description">Enable, disable, or toggle speakerphone routing</string>
-    <string name="feature_android_audio_speakerphone_set_field_mode">Speakerphone state</string>
-    <string name="feature_android_audio_speakerphone_set_field_mode_option_enable">Enable</string>
-    <string name="feature_android_audio_speakerphone_set_field_mode_option_disable">Disable</string>
-    <string name="feature_android_audio_speakerphone_set_field_mode_option_toggle">Toggle</string>
-
     <string name="feature_android_audio_volume_ui_show_title">Show volume panel</string>
     <string name="feature_android_audio_volume_ui_show_description">Show Android's system volume panel for a selected audio stream</string>
     <string name="feature_android_audio_volume_ui_show_field_stream">Audio stream</string>
