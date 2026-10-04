@@ -5,6 +5,7 @@ import com.yagay.yauto.core.engine.AutomationEngine
 import com.yagay.yauto.core.engine.AutomationPhase
 import com.yagay.yauto.core.engine.EngineResult
 import com.yagay.yauto.core.engine.FlowResolver
+import com.yagay.yauto.core.engine.RuntimeEventWaiter
 import com.yagay.yauto.core.engine.SimpleExpressionEngine
 import com.yagay.yauto.core.logging.ExecutionTracer
 import com.yagay.yauto.core.logging.TraceEvent
@@ -23,6 +24,7 @@ import com.yagay.yauto.core.registry.VariableAccess
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.WorkspaceRepository
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -30,6 +32,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.AbstractCoroutineContextElement
@@ -58,6 +61,7 @@ class AutomationRuntime(
     private val locks = ConcurrentHashMap<String, Mutex>()
     private val evaluationLocks = ConcurrentHashMap<String, Mutex>()
     private val runningExecutions = ConcurrentHashMap<String, MutableSet<Job>>()
+    private val eventWaitRequests = ConcurrentHashMap<String, EventWaitRequest>()
     private val workspaceMutationLock = Mutex()
     private val expressions = SimpleExpressionEngine()
 
@@ -73,6 +77,7 @@ class AutomationRuntime(
                 attributes = event.payload.mapValues { (_, value) -> value.asTraceText() },
             )
         )
+        notifyEventWaiters(event)
 
         val workspace = workspaceRepository.load()
         val flows = workspace.flows.associateBy { it.id }
@@ -417,6 +422,15 @@ class AutomationRuntime(
                         capabilities = capabilities,
                         tracer = tracer,
                         flowResolver = FlowResolver { id -> flows[id] },
+                        eventWaiter = RuntimeEventWaiter { events, baseVariables, timeoutMs, waitExecutionId, nodeId ->
+                            waitForRuntimeEvent(
+                                events = events,
+                                baseVariables = baseVariables,
+                                timeoutMs = timeoutMs,
+                                executionId = waitExecutionId,
+                                nodeId = nodeId,
+                            )
+                        },
                     )
                     val results = phases.map { phase -> engine.execute(automation, phase, variables) }
                     if (emitLifecycle) {
@@ -469,6 +483,74 @@ class AutomationRuntime(
         }
     }
 
+
+    private suspend fun waitForRuntimeEvent(
+        events: List<FeatureRef>,
+        baseVariables: Map<String, ConfigValue>,
+        timeoutMs: Long?,
+        executionId: ExecutionId,
+        nodeId: NodeId,
+    ): Boolean {
+        if (events.isEmpty()) return false
+        val id = UUID.randomUUID().toString()
+        val deferred = CompletableDeferred<Boolean>()
+        val request = EventWaitRequest(
+            id = id,
+            events = events,
+            baseVariables = baseVariables,
+            executionId = executionId,
+            nodeId = nodeId,
+            deferred = deferred,
+        )
+        eventWaitRequests[id] = request
+        return try {
+            if (timeoutMs == null) {
+                deferred.await()
+            } else {
+                withTimeoutOrNull(timeoutMs.coerceAtLeast(1L)) { deferred.await() } ?: false
+            }
+        } finally {
+            eventWaitRequests.remove(id)
+        }
+    }
+
+    private suspend fun notifyEventWaiters(event: RuntimeEvent) {
+        if (eventWaitRequests.isEmpty()) return
+        val snapshot = eventWaitRequests.values.toList()
+        for (request in snapshot) {
+            if (request.deferred.isCompleted) continue
+            val variables = MapVariableAccess(buildMap {
+                putAll(request.baseVariables)
+                event.payload.forEach { (key, value) -> put("event.$key", value) }
+                put("event.type", ConfigValue.StringValue(event.typeId))
+                put("event.source", ConfigValue.StringValue(event.source))
+            })
+            val matched = request.events.any { feature ->
+                val matcher = registry.eventMatcher(feature.typeId)
+                if (matcher != null) {
+                    runCatching {
+                        matcher.matches(
+                            feature,
+                            EventMatchContext(
+                                request.executionId,
+                                event,
+                                variables,
+                                capabilities,
+                                tracer,
+                            ),
+                        )
+                    }.getOrDefault(false)
+                } else {
+                    feature.typeId == event.typeId
+                }
+            }
+            if (matched) {
+                eventWaitRequests.remove(request.id)
+                request.deferred.complete(true)
+            }
+        }
+    }
+
     private fun resolveAutomation(workspace: WorkspaceData, target: String): Automation? {
         workspace.automations.firstOrNull { it.id.value == target }?.let { return it }
         val matches = workspace.automations.filter { it.name.equals(target, ignoreCase = true) }
@@ -493,6 +575,15 @@ class AutomationRuntime(
         jobs.forEach(Job::cancel)
         return jobs.isNotEmpty()
     }
+
+    private data class EventWaitRequest(
+        val id: String,
+        val events: List<FeatureRef>,
+        val baseVariables: Map<String, ConfigValue>,
+        val executionId: ExecutionId,
+        val nodeId: NodeId,
+        val deferred: CompletableDeferred<Boolean>,
+    )
 
     private class MapVariableAccess(initial: Map<String, ConfigValue>) : VariableAccess {
         private val values = initial.toMutableMap()
