@@ -1,12 +1,17 @@
 package com.yagay.yauto.platform.android
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.PixelFormat
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.view.Gravity
+import android.view.MotionEvent
+import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
@@ -16,6 +21,11 @@ import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.PI
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.min
+import kotlin.math.sin
 
 class OverlaySurfaceController(context: Context) {
     private val context = context.applicationContext
@@ -223,6 +233,58 @@ class OverlaySurfaceController(context: Context) {
         return true
     }
 
+    fun showTouchBlocker(id: String, autoHideMs: Long): Boolean {
+        if (!canDraw() || id.isBlank()) return false
+        main.post {
+            hideInternal(id)
+            val blocker = View(context).apply {
+                setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                setOnTouchListener { _, event ->
+                    if (event.actionMasked == MotionEvent.ACTION_DOWN || event.actionMasked == MotionEvent.ACTION_UP) {
+                        SurfaceRuntimeBridge.emit(id, "touch", "${event.rawX.toInt()},${event.rawY.toInt()}")
+                    }
+                    true
+                }
+            }
+            addSurface(
+                id = id,
+                view = blocker,
+                gravity = "center",
+                autoHideMs = autoHideMs,
+                width = WindowManager.LayoutParams.MATCH_PARENT,
+                height = WindowManager.LayoutParams.MATCH_PARENT,
+            )
+        }
+        return true
+    }
+
+    fun showPie(
+        id: String,
+        items: List<Pair<String, String>>,
+        gravity: String,
+        autoHideMs: Long,
+    ): Boolean {
+        if (!canDraw() || id.isBlank() || items.isEmpty()) return false
+        main.post {
+            hideInternal(id)
+            val density = context.resources.displayMetrics.density
+            val pie = PieMenuView(context, items.take(12)) { label, action ->
+                SurfaceRuntimeBridge.emit(id, action.ifBlank { label }, label)
+            }.apply {
+                layoutParams = android.view.ViewGroup.LayoutParams((300 * density).toInt(), (300 * density).toInt())
+            }
+            addSurface(
+                id = id,
+                view = pie,
+                gravity = gravity,
+                autoHideMs = autoHideMs,
+                width = (300 * density).toInt(),
+                height = (300 * density).toInt(),
+            )
+        }
+        return true
+    }
+
     fun showProgress(
         id: String,
         title: String,
@@ -289,13 +351,15 @@ class OverlaySurfaceController(context: Context) {
         gravity: String,
         autoHideMs: Long,
         focusable: Boolean = false,
+        width: Int = WindowManager.LayoutParams.WRAP_CONTENT,
+        height: Int = WindowManager.LayoutParams.WRAP_CONTENT,
     ) {
         val density = context.resources.displayMetrics.density
         val flags = (if (focusable) 0 else WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) or
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
         val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            width,
+            height,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             flags,
             PixelFormat.TRANSLUCENT,
@@ -342,5 +406,56 @@ class OverlaySurfaceController(context: Context) {
         val view = surfaces.remove(id) ?: return
         runCatching { windowManager.removeView(view) }
         SurfaceRuntimeBridge.emit(id, "hidden")
+    }
+}
+
+
+private class PieMenuView(
+    context: Context,
+    private val items: List<Pair<String, String>>,
+    private val onSelect: (String, String) -> Unit,
+) : View(context) {
+    private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xEE202124.toInt() }
+    private val divider = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF5F6368.toInt()
+        style = Paint.Style.STROKE
+        strokeWidth = resources.displayMetrics.density
+    }
+    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        textAlign = Paint.Align.CENTER
+        textSize = 13f * resources.displayMetrics.scaledDensity
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        if (items.isEmpty()) return
+        val size = min(width, height).toFloat()
+        val left = (width - size) / 2f
+        val top = (height - size) / 2f
+        val oval = RectF(left, top, left + size, top + size)
+        val sweep = 360f / items.size
+        items.forEachIndexed { index, (label, _) ->
+            val start = -90f + index * sweep
+            canvas.drawArc(oval, start, sweep, true, fill)
+            canvas.drawArc(oval, start, sweep, true, divider)
+            val angle = (start + sweep / 2f) * PI / 180.0
+            val radius = size * 0.31f
+            val cx = width / 2f + (cos(angle) * radius).toFloat()
+            val cy = height / 2f + (sin(angle) * radius).toFloat() - (textPaint.ascent() + textPaint.descent()) / 2f
+            canvas.drawText(label.take(18), cx, cy, textPaint)
+        }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.actionMasked != MotionEvent.ACTION_UP || items.isEmpty()) return true
+        val dx = event.x - width / 2f
+        val dy = event.y - height / 2f
+        var degrees = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())) + 90.0
+        if (degrees < 0) degrees += 360.0
+        val index = (degrees / (360.0 / items.size)).toInt().coerceIn(0, items.lastIndex)
+        val (label, action) = items[index]
+        onSelect(label, action)
+        return true
     }
 }
