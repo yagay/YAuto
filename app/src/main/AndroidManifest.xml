@@ -249,6 +249,17 @@
 
 
 
+
+        <receiver
+            android:name="com.yagay.yauto.platform.android.PebbleBridgeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.getpebble.action.PEBBLE_CONNECTED" />
+                <action android:name="com.getpebble.action.PEBBLE_DISCONNECTED" />
+                <action android:name="com.getpebble.action.app.RECEIVE" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name=".MenuActionReceiver"
             android:exported="false">
