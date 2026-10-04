@@ -356,6 +356,60 @@ class AndroidFinalParityFeaturePack(context: Context) : FeaturePack {
         }
     }
 
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.telephony.network_mode.set"), FeatureKind.ACTION,
+                "Set mobile network mode",
+                "Set a common Android allowed-network-types preset for a SIM slot",
+                FeatureCategory.NETWORK,
+                fields = listOf(
+                    FieldSchema.Number("slotId", "SIM slot ID", min = 0.0, max = 7.0),
+                    FieldSchema.Choice("mode", "Network mode", true, listOf("nr_only", "nr_lte", "all", "lte_legacy", "lte_only", "custom")),
+                    FieldSchema.Text("customBitmask", "Custom binary bitmask"),
+                ),
+                capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
+                implementationOptions = privilegedOptions(),
+                keywords = setOf("5g", "4g", "lte", "nr", "preferred network", "network mode", "sim"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val slot = (feature.config["slotId"].numberOrNull() ?: 0.0).toInt().coerceIn(0, 7)
+            val bitmask = when (feature.config.string("mode", "nr_lte")) {
+                "nr_only" -> "10000000000000000000"
+                "nr_lte" -> "11000001000000000000"
+                "all" -> "11001111101111111111"
+                "lte_legacy" -> "01001111101111111111"
+                "lte_only" -> "01000001000000000000"
+                "custom" -> feature.config.string("customBitmask").trim()
+                else -> return@registerAction ActionExecutionResult(false)
+            }
+            if (!bitmask.matches(Regex("[01]{1,64}"))) return@registerAction ActionExecutionResult(false)
+            shell(ctx, "cmd phone set-allowed-network-types-for-users -s " + slot + " " + bitmask)
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.telephony.physical_subscription.set"), FeatureKind.ACTION,
+                "Enable or disable physical SIM",
+                "Enable or disable a physical subscription by subscription ID. Android restricts this shell command to Root.",
+                FeatureCategory.NETWORK,
+                fields = listOf(
+                    FieldSchema.Number("subscriptionId", "Subscription ID", true, min = 0.0),
+                    FieldSchema.Toggle("enabled", "SIM enabled"),
+                ),
+                capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
+                implementationOptions = listOf(FeatureImplementationOption("root", setOf(AccessRequirement.ROOT))),
+                keywords = setOf("sim", "physical sim", "subscription", "enable sim", "root"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val subId = feature.config["subscriptionId"].numberOrNull()?.toInt()
+                ?: return@registerAction ActionExecutionResult(false)
+            val verb = if (feature.config.boolean("enabled", true)) "enable-physical-subscription" else "disable-physical-subscription"
+            shell(ctx, "cmd phone " + verb + " " + subId)
+        }
+
     private fun registerTaskerPluginBridge(registry: FeatureRegistry) {
         registry.registerAction(
             FeatureDescriptor(
