@@ -2,11 +2,9 @@ name: Android Debug
 
 on:
   push:
-    branches:
-      - feature/mass-data-flow-expansion-20261003
+    branches: [ main, test ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 permissions:
   contents: read
@@ -24,6 +22,18 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.4.1'
+      - name: Localization guard
+        run: python3 .github/scripts/check-localization.py
+      - name: Localization quality guard
+        run: python3 .github/scripts/check-localization-quality.py
+      - name: Startup safety guard
+        run: python3 .github/scripts/check-startup-safety.py
+      - name: Runtime event contract guard
+        run: python3 .github/scripts/check-event-contracts.py
+      - name: Architecture maintainability guard
+        run: python3 .github/scripts/check-architecture.py
+      - name: Unit tests
+        run: gradle :core:engine:test :core:runtime:test :core:storage:test :core:diagnostics:test :core:registry:test :core:importer:test :feature:standard:test :plugin:api:test :platform:android:testDebugUnitTest :platform:accessibility:testDebugUnitTest --stacktrace
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace
       - name: Normalize APK name
