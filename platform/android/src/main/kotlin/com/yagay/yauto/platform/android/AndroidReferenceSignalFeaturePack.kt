@@ -6,7 +6,7 @@ import android.content.pm.PackageManager
 import android.hardware.biometrics.BiometricManager
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
-import android.media.AudioPlaybackConfiguration
+
 import android.provider.Settings
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.numberOrNull
@@ -438,8 +438,8 @@ internal fun referenceBiometricStatusName(status: Int): String = when (status) {
     BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> "none_enrolled"
     BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> "hardware_unavailable"
     BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED -> "security_update_required"
-    BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED -> "unsupported"
-    BiometricManager.BIOMETRIC_STATUS_UNKNOWN -> "unknown"
+    -2 -> "unsupported"
+    -1 -> "unknown"
     else -> "error"
 }
 
