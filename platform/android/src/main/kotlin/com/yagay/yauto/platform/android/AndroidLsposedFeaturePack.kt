@@ -16,6 +16,7 @@ class AndroidLsposedFeaturePack : FeaturePack {
         registerMethodHook(registry)
         registerMethodCalled(registry)
         registerSystemOperation(registry)
+        registerSensorsOff(registry)
     }
 
     private fun registerMethodHook(registry: FeatureRegistry) {
@@ -195,6 +196,69 @@ class AndroidLsposedFeaturePack : FeaturePack {
             )
             ActionExecutionResult(result.success, result.value, result.message)
         }
+    }
+
+
+    private fun registerSensorsOff(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.sensors_off.set"),
+                FeatureKind.ACTION,
+                "Set Sensors Off",
+                "Enable or disable Android's system-wide Sensors Off privacy switch through the LSPosed system_server bridge",
+                FeatureCategory.SYSTEM,
+                fields = listOf(FieldSchema.Toggle("enabled", "Sensors Off enabled")),
+                capabilities = setOf(CapabilityIds.SYSTEM_UI),
+                accessRequirements = setOf(AccessRequirement.LSPOSED),
+                keywords = setOf("sensors off", "sensor privacy", "lsposed", "shortx", "privacy"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val operation = if (feature.config.boolean("enabled", true)) {
+                com.yagay.yauto.core.capability.SystemOperations.SENSORS_OFF_ENABLE
+            } else {
+                com.yagay.yauto.core.capability.SystemOperations.SENSORS_OFF_DISABLE
+            }
+            val result = ctx.capabilities.execute(
+                CapabilityRequest(
+                    capability = CapabilityIds.SYSTEM_UI,
+                    operationId = operation,
+                    preferredBackendId = "lsposed",
+                    allowFallback = false,
+                )
+            )
+            ActionExecutionResult(result.success, result.value, result.message)
+        }
+
+        val evaluator = ConditionEvaluator { feature, ctx ->
+            val result = ctx.capabilities.execute(
+                CapabilityRequest(
+                    capability = CapabilityIds.SYSTEM_UI,
+                    operationId = com.yagay.yauto.core.capability.SystemOperations.SENSORS_OFF_QUERY,
+                    preferredBackendId = "lsposed",
+                    allowFallback = false,
+                )
+            )
+            val enabled = (result.value as? ConfigValue.BooleanValue)?.value ?: return@ConditionEvaluator false
+            enabled == feature.config.boolean("value", true)
+        }
+        val state = FeatureDescriptor(
+            FeatureId("android.state.sensors_off"),
+            FeatureKind.STATE,
+            "Sensors Off",
+            "Check Android's system-wide Sensors Off privacy state through LSPosed",
+            FeatureCategory.SYSTEM,
+            fields = listOf(FieldSchema.Toggle("value", "Sensors Off enabled")),
+            capabilities = setOf(CapabilityIds.SYSTEM_UI),
+            accessRequirements = setOf(AccessRequirement.LSPOSED),
+            keywords = setOf("sensors off", "sensor privacy", "lsposed", "shortx"),
+            ownerPackId = id,
+        )
+        registry.registerState(state, evaluator)
+        registry.registerCondition(
+            state.copy(id = FeatureId("android.condition.sensors_off"), kind = FeatureKind.CONDITION),
+            evaluator,
+        )
     }
 
     private companion object {
