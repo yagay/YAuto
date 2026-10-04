@@ -84,7 +84,11 @@ class AutomationRuntime(
         val runs = mutableListOf<RuntimeAutomationRun>()
         val callStack = currentCoroutineContext()[AutomationCallStack]?.ids.orEmpty()
 
-        for (automation in workspace.automations.filter { it.enabled && it.id.value !in callStack }) {
+        for (automation in workspace.automations.filter {
+            it.enabled &&
+                it.id.value !in callStack &&
+                categoryEnabled(it.category, workspace.disabledCategories)
+        }) {
             if (statesOnly && automation.activation.states.isEmpty()) continue
             try {
                 val variables = MapVariableAccess(buildMap {
@@ -189,7 +193,7 @@ class AutomationRuntime(
         val workspace = workspaceRepository.load()
         val automation = resolveAutomation(workspace, trimmed)
             ?: return ActionExecutionResult(false, message = userText("runtime.automation_not_found", trimmed))
-        if (!automation.enabled && !allowDisabled) {
+        if ((!automation.enabled || !categoryEnabled(automation.category, workspace.disabledCategories)) && !allowDisabled) {
             return ActionExecutionResult(false, message = userText("runtime.automation_disabled", automation.name))
         }
 
@@ -270,6 +274,64 @@ class AutomationRuntime(
         if (trimmed.isEmpty()) return null
         val automation = resolveAutomation(workspaceRepository.load(), trimmed) ?: return null
         return runningExecutions[automation.id.value]?.any { it.isActive } == true
+    }
+
+    override suspend fun setCategoryEnabled(
+        category: String,
+        mode: AutomationEnableMode,
+    ): ActionExecutionResult {
+        val name = category.trim()
+        if (name.isEmpty()) return ActionExecutionResult(false)
+        val changed = workspaceMutationLock.withLock {
+            val workspace = workspaceRepository.load()
+            val currentlyEnabled = name !in workspace.disabledCategories
+            val enabled = when (mode) {
+                AutomationEnableMode.ENABLE -> true
+                AutomationEnableMode.DISABLE -> false
+                AutomationEnableMode.TOGGLE -> !currentlyEnabled
+            }
+            if (enabled != currentlyEnabled) {
+                val disabled = if (enabled) workspace.disabledCategories - name
+                else workspace.disabledCategories + name
+                workspaceRepository.save(workspace.copy(disabledCategories = disabled))
+                if (!enabled) {
+                    workspace.automations
+                        .filter { it.category?.trim() == name }
+                        .forEach {
+                            cancelJobs(it.id.value)
+                            resetState(it.id)
+                        }
+                }
+            }
+            currentlyEnabled to enabled
+        }
+        if (changed.first != changed.second) {
+            dispatch(
+                RuntimeEvent(
+                    typeId = "core.event.category_enabled_changed",
+                    payload = mapOf(
+                        "category" to ConfigValue.StringValue(name),
+                        "enabled" to ConfigValue.BooleanValue(changed.second),
+                    ),
+                    source = "runtime.category",
+                )
+            )
+        }
+        return ActionExecutionResult(true, ConfigValue.BooleanValue(changed.second))
+    }
+
+    override suspend fun isCategoryEnabled(category: String): Boolean? {
+        val name = category.trim()
+        if (name.isEmpty()) return null
+        return name !in workspaceRepository.load().disabledCategories
+    }
+
+    override suspend fun lastRunEpochMs(target: String): Long? {
+        val trimmed = target.trim()
+        if (trimmed.isEmpty()) return null
+        val workspace = workspaceRepository.load()
+        val automation = resolveAutomation(workspace, trimmed) ?: return null
+        return workspace.automationLastRunEpochMs[automation.id.value]
     }
 
     override suspend fun get(name: String): ConfigValue? {
@@ -433,6 +495,8 @@ class AutomationRuntime(
                         },
                     )
                     val results = phases.map { phase -> engine.execute(automation, phase, variables) }
+                    val finishedAt = System.currentTimeMillis()
+                    recordLastRun(automation.id, finishedAt)
                     if (emitLifecycle) {
                         val success = results.all { it.success }
                         dispatch(
@@ -442,7 +506,7 @@ class AutomationRuntime(
                                     "automationId" to ConfigValue.StringValue(automation.id.value),
                                     "automationName" to ConfigValue.StringValue(automation.name),
                                     "success" to ConfigValue.BooleanValue(success),
-                                    "durationMs" to ConfigValue.NumberValue((System.currentTimeMillis() - startedAt).toDouble()),
+                                    "durationMs" to ConfigValue.NumberValue((finishedAt - startedAt).toDouble()),
                                     "phases" to ConfigValue.ListValue(phases.map { ConfigValue.StringValue(it.name.lowercase()) }),
                                 ),
                                 source = "runtime.automation",
@@ -483,6 +547,24 @@ class AutomationRuntime(
         }
     }
 
+
+    private suspend fun recordLastRun(automationId: AutomationId, timestamp: Long) {
+        workspaceMutationLock.withLock {
+            val workspace = workspaceRepository.load()
+            if (workspace.automationLastRunEpochMs[automationId.value] == timestamp) return@withLock
+            workspaceRepository.save(
+                workspace.copy(
+                    automationLastRunEpochMs =
+                        workspace.automationLastRunEpochMs + (automationId.value to timestamp),
+                )
+            )
+        }
+    }
+
+    private fun categoryEnabled(category: String?, disabledCategories: Set<String>): Boolean {
+        val name = category?.trim().orEmpty()
+        return name.isBlank() || name !in disabledCategories
+    }
 
     private suspend fun waitForRuntimeEvent(
         events: List<FeatureRef>,
