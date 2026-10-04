@@ -1,13 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_android_display_density_set_title">设置显示密度</string>
-    <string name="feature_android_display_density_set_description">按设备稳定密度的百分比设置 Android 显示密度</string>
-    <string name="feature_android_display_density_set_field_scalepercent">显示缩放百分比</string>
-
-    <string name="feature_android_display_font_scale_set_title">设置字体缩放</string>
-    <string name="feature_android_display_font_scale_set_description">设置 Android 字体缩放百分比</string>
-    <string name="feature_android_display_font_scale_set_field_scalepercent">字体缩放百分比</string>
-
     <string name="feature_android_display_immersive_set_title">设置沉浸模式</string>
     <string name="feature_android_display_immersive_set_description">在系统范围显示或隐藏 Android 状态栏和导航栏</string>
     <string name="feature_android_display_immersive_set_field_mode">沉浸模式</string>
@@ -15,15 +7,6 @@
     <string name="feature_android_display_immersive_set_field_mode_option_navigation">隐藏导航栏</string>
     <string name="feature_android_display_immersive_set_field_mode_option_status">隐藏状态栏</string>
     <string name="feature_android_display_immersive_set_field_mode_option_full">完全沉浸</string>
-
-    <string name="feature_android_display_animation_scale_set_title">设置动画倍率</string>
-    <string name="feature_android_display_animation_scale_set_description">设置 Android 窗口、过渡、动画器或全部动画倍率</string>
-    <string name="feature_android_display_animation_scale_set_field_target">动画倍率目标</string>
-    <string name="feature_android_display_animation_scale_set_field_target_option_all">全部动画倍率</string>
-    <string name="feature_android_display_animation_scale_set_field_target_option_window">窗口动画</string>
-    <string name="feature_android_display_animation_scale_set_field_target_option_transition">过渡动画</string>
-    <string name="feature_android_display_animation_scale_set_field_target_option_animator">动画器时长</string>
-    <string name="feature_android_display_animation_scale_set_field_scale">动画倍率</string>
 
     <string name="feature_android_audio_microphone_mute_set_title">设置麦克风静音</string>
     <string name="feature_android_audio_microphone_mute_set_description">静音、取消静音或切换 Android 系统麦克风静音状态</string>
