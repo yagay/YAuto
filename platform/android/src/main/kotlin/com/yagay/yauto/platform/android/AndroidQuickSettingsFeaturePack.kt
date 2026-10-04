@@ -53,6 +53,39 @@ class AndroidQuickSettingsFeaturePack(private val controller: QuickSettingsTileC
             ctx.event.payload["slot"].numberOrNull()?.toInt() == expected
         }
 
+        registerTileState(registry, FeatureKind.STATE, "android.state.qs_tile_state")
+        registerTileState(registry, FeatureKind.CONDITION, "android.condition.qs_tile_state")
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.qs_tile.info"), FeatureKind.ACTION,
+                "Get Quick Settings tile info", "Read a YAuto tile label and visual state into a variable",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Number("slot", "Tile slot (1-3)", true, min = 1.0, max = 3.0),
+                    FieldSchema.Variable("resultVariable", "Store tile info", true),
+                ),
+                keywords = setOf("quick settings", "tile", "state", "label"), ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val slot = feature.config["slot"].numberOrNull()?.toInt() ?: 1
+            if (slot !in 1..3) return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Tile slot must be 1-3"))
+            val stateName = when (controller.state(slot)) {
+                Tile.STATE_ACTIVE -> "active"
+                Tile.STATE_UNAVAILABLE -> "unavailable"
+                else -> "inactive"
+            }
+            val output = ConfigValue.ObjectValue(
+                mapOf(
+                    "slot" to ConfigValue.NumberValue(slot.toDouble()),
+                    "label" to ConfigValue.StringValue(controller.label(slot)),
+                    "state" to ConfigValue.StringValue(stateName),
+                )
+            )
+            ctx.variables.set(feature.config.string("resultVariable"), output)
+            ActionExecutionResult(true, output)
+        }
+
         registry.registerAction(
             FeatureDescriptor(
                 FeatureId("android.qs_tile.configure"), FeatureKind.ACTION,
@@ -72,5 +105,27 @@ class AndroidQuickSettingsFeaturePack(private val controller: QuickSettingsTileC
             runCatching { controller.configure(slot, label, state); ActionExecutionResult(true) }
                 .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
+    private fun registerTileState(registry: FeatureRegistry, kind: FeatureKind, typeId: String) {
+        val descriptor = FeatureDescriptor(
+            FeatureId(typeId), kind,
+            "Quick Settings tile state", "Match a YAuto Quick Settings tile active, inactive or unavailable state",
+            FeatureCategory.UI_AUTOMATION,
+            fields = listOf(
+                FieldSchema.Number("slot", "Tile slot (1-3)", true, min = 1.0, max = 3.0),
+                FieldSchema.Choice("state", "State", true, listOf("active", "inactive", "unavailable")),
+            ),
+            keywords = setOf("quick settings", "tile", "state", "constraint"), ownerPackId = id,
+        )
+        val evaluator = ConditionEvaluator { feature, _ ->
+            val slot = feature.config["slot"].numberOrNull()?.toInt() ?: 1
+            if (slot !in 1..3) return@ConditionEvaluator false
+            val actual = when (controller.state(slot)) {
+                Tile.STATE_ACTIVE -> "active"
+                Tile.STATE_UNAVAILABLE -> "unavailable"
+                else -> "inactive"
+            }
+            actual == feature.config.string("state", "inactive")
+        }
+        if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator) else registry.registerCondition(descriptor, evaluator)
     }
 }
