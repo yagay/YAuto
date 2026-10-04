@@ -179,7 +179,7 @@ object BeanShellGlobals {
     @JvmStatic fun keys(): Array<String> = values.keys.sorted().toTypedArray()
 }
 
-private fun configToJava(value: ConfigValue?): Any? = when (value) {
+internal fun configToJava(value: ConfigValue?): Any? = when (value) {
     null, ConfigValue.NullValue -> null
     is ConfigValue.StringValue -> value.value
     is ConfigValue.NumberValue -> value.value
@@ -188,7 +188,7 @@ private fun configToJava(value: ConfigValue?): Any? = when (value) {
     is ConfigValue.ObjectValue -> value.value.mapValues { configToJava(it.value) }
 }
 
-private fun javaToConfig(value: Any?, depth: Int = 0): ConfigValue {
+internal fun javaToConfig(value: Any?, depth: Int = 0): ConfigValue {
     if (depth >= 16) return ConfigValue.StringValue(value?.toString().orEmpty())
     return when (value) {
         null -> ConfigValue.NullValue
