@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_reference_signal_camera_in_use_title">摄像头正在使用</string>
+    <string name="feature_android_state_reference_signal_camera_in_use_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_camera_in_use_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_camera_in_use_title">摄像头正在使用</string>
+    <string name="feature_android_condition_reference_signal_camera_in_use_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_camera_in_use_field_value">已启用 / true</string>
+
+    <string name="feature_android_state_reference_signal_camera_unavailable_count_title">不可用摄像头数量</string>
+    <string name="feature_android_state_reference_signal_camera_unavailable_count_description">将当前 Android 运行时/系统数值与设定范围进行比较</string>
+    <string name="feature_android_state_reference_signal_camera_unavailable_count_field_min">最小值</string>
+    <string name="feature_android_state_reference_signal_camera_unavailable_count_field_max">最大值</string>
+    <string name="feature_android_condition_reference_signal_camera_unavailable_count_title">不可用摄像头数量</string>
+    <string name="feature_android_condition_reference_signal_camera_unavailable_count_description">将当前 Android 运行时/系统数值与设定范围进行比较</string>
+    <string name="feature_android_condition_reference_signal_camera_unavailable_count_field_min">最小值</string>
+    <string name="feature_android_condition_reference_signal_camera_unavailable_count_field_max">最大值</string>
+
+    <string name="feature_android_event_camera_in_use_changed_title">摄像头使用状态已更改</string>
+    <string name="feature_android_event_camera_in_use_changed_description">当摄像头变为不可用或恢复可用时触发，通常表示摄像头开始或停止被使用</string>
+    <string name="feature_android_event_camera_in_use_changed_field_cameraid">摄像头 ID</string>
+    <string name="feature_android_event_camera_in_use_changed_field_state">摄像头状态</string>
+    <string name="feature_android_event_camera_in_use_changed_field_state_option_any">任意</string>
+    <string name="feature_android_event_camera_in_use_changed_field_state_option_in_use">正在使用</string>
+    <string name="feature_android_event_camera_in_use_changed_field_state_option_available">可用</string>
+</resources>
