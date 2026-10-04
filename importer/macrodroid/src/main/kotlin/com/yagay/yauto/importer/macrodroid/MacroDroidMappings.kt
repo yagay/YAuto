@@ -41,6 +41,14 @@ object MacroDroidMappings {
                 "ConnectivityCheckAction" -> "android.network.connectivity.check"
                 "OpenCallLogAction" -> "android.call_log.open"
                 "SetRingtoneAction", "SetNotificationSoundAction" -> "android.audio.default_sound.set"
+                "DisplayDensityAction" -> "android.display.density.set"
+                "FontScaleAction" -> "android.display.font_scale.set"
+                "ImmersiveModeAction" -> "android.display.immersive.set"
+                "MuteMicrophoneAction" -> "android.audio.microphone_mute.set"
+                "SpeakerPhoneAction" -> "android.audio.speakerphone.set"
+                "ShowVolumePopupAction" -> "android.audio.volume_ui.show"
+                "LaunchHomeScreenAction" -> "android.home.open"
+                "SetKeyboardAction" -> "android.ime.picker.show"
                 else -> null
             }
             SourceFeatureKind.EVENT -> when (sourceType) {
@@ -90,6 +98,14 @@ object MacroDroidMappings {
         "OpenCallLogAction" -> sourceFeature("android.call_log.open", importerId, sourceType, raw)
         "SetRingtoneAction" -> defaultSound(obj, "ringtone", importerId, sourceType, raw)
         "SetNotificationSoundAction" -> defaultSound(obj, "notification", importerId, sourceType, raw)
+        "DisplayDensityAction" -> percentageAction(obj, "android.display.density.set", "scalePercent", importerId, sourceType, raw, 50.0, 150.0)
+        "FontScaleAction" -> percentageAction(obj, "android.display.font_scale.set", "scalePercent", importerId, sourceType, raw, 50.0, 250.0)
+        "ImmersiveModeAction" -> immersiveMode(obj, importerId, sourceType, raw)
+        "MuteMicrophoneAction" -> microphoneMute(obj, importerId, sourceType, raw)
+        "SpeakerPhoneAction" -> speakerphone(obj, importerId, sourceType, raw)
+        "ShowVolumePopupAction" -> volumePopup(obj, importerId, sourceType, raw)
+        "LaunchHomeScreenAction" -> launchHome(obj, importerId, sourceType, raw)
+        "SetKeyboardAction" -> sourceFeature("android.ime.picker.show", importerId, sourceType, raw)
         else -> null
     }
 
@@ -237,6 +253,137 @@ object MacroDroidMappings {
                 "silent" to ConfigValue.BooleanValue(false),
             ),
         )
+    }
+
+    private fun percentageAction(
+        obj: JsonObject,
+        target: String,
+        key: String,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+        min: Double,
+        max: Double,
+    ): FeatureRef? {
+        if (obj["variable"] != null && obj["variable"] !is JsonNull) return null
+        val dictionaryKeys = obj.array("varDictionaryKeys")
+        if (!dictionaryKeys.isNullOrEmpty()) return null
+        val value = obj.number(key)?.takeIf { it.isFinite() && it in min..max } ?: return null
+        return sourceFeature(
+            target,
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("scalePercent" to ConfigValue.NumberValue(value)),
+        )
+    }
+
+    private fun immersiveMode(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = when (obj.number("m_option")?.toInt()) {
+            0 -> "off"
+            1 -> "navigation"
+            2 -> "status"
+            3 -> "full"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.display.immersive.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("mode" to ConfigValue.StringValue(mode)),
+        )
+    }
+
+    private fun microphoneMute(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = when (obj.number("m_state")?.toInt()) {
+            0 -> "mute"
+            1 -> "unmute"
+            2 -> "toggle"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.audio.microphone_mute.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("mode" to ConfigValue.StringValue(mode)),
+        )
+    }
+
+    private fun speakerphone(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = when (obj.number("m_state")?.toInt()) {
+            0 -> "enable"
+            1 -> "disable"
+            2 -> "toggle"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.audio.speakerphone.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("mode" to ConfigValue.StringValue(mode)),
+        )
+    }
+
+    private fun volumePopup(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val stream = when (obj.number("audioStream")?.toInt()) {
+            0 -> "alarm"
+            1 -> "music"
+            2 -> "notification"
+            3 -> "ringer"
+            4 -> "system"
+            5 -> "voice_call"
+            6 -> "bluetooth_voice"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.audio.volume_ui.show",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("stream" to ConfigValue.StringValue(stream)),
+        )
+    }
+
+    private fun launchHome(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef {
+        return if (obj.bool("useAccessibilityService") == true) {
+            sourceFeature(
+                "accessibility.global_action",
+                importerId,
+                sourceType,
+                raw,
+                extra = mapOf("action" to ConfigValue.StringValue("home")),
+            )
+        } else {
+            sourceFeature("android.home.open", importerId, sourceType, raw)
+        }
     }
 
     private fun notificationTrigger(obj: JsonObject, importerId: String, sourceType: String, raw: String): FeatureRef? {
