@@ -30,6 +30,7 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
         registerPluginCondition(registry)
         registerPluginEvent(registry)
         registerPluginScan(registry)
+        registerAdbWifi(registry)
     }
 
     private fun registerBeanShell(registry: FeatureRegistry) {
@@ -289,6 +290,100 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
         }
     }
 
+
+    private fun registerAdbWifi(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.adb_wifi.command"),
+                FeatureKind.ACTION,
+                "ADB Wi-Fi / privileged shell command",
+                "Run a Tasker-style privileged command using Root or Shizuku; optionally target an already-paired local adb client",
+                FeatureCategory.SYSTEM,
+                fields = listOf(
+                    FieldSchema.Text("command", "Shell command", true, multiline = true),
+                    FieldSchema.Choice("transport", "Transport", options = listOf("privileged", "adb")),
+                    FieldSchema.Text("adbTarget", "ADB host:port"),
+                    FieldSchema.Duration("timeoutMs", "Timeout"),
+                    FieldSchema.Variable("resultVariable", "Store command result"),
+                ),
+                fieldBehaviors = mapOf(
+                    "command" to FieldBehavior(supportsVariables = true),
+                    "adbTarget" to FieldBehavior(
+                        visibleWhen = FieldRule.Equals("transport", ConfigValue.StringValue("adb")),
+                        supportsVariables = true,
+                    ),
+                ),
+                capabilities = setOf(com.yagay.yauto.core.capability.CapabilityIds.PRIVILEGED_SHELL),
+                implementationOptions = listOf(
+                    FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+                    FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+                ),
+                keywords = setOf("adb wifi", "wireless debugging", "shell", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val command = feature.config.string("command").resolveVariables(ctx.variables).trim()
+            if (command.isBlank()) return@registerAction ActionExecutionResult(false)
+            val shellCommand = if (feature.config.string("transport", "privileged") == "adb") {
+                val target = feature.config.string("adbTarget").resolveVariables(ctx.variables).trim()
+                if (!ADB_TARGET.matches(target)) return@registerAction ActionExecutionResult(false)
+                "adb -s " + shellArg(target) + " shell " + shellArg(command)
+            } else command
+            val result = ctx.capabilities.execute(
+                com.yagay.yauto.core.capability.CapabilityRequest(
+                    capability = com.yagay.yauto.core.capability.CapabilityIds.PRIVILEGED_SHELL,
+                    operationId = "system.shell.execute",
+                    payload = mapOf("command" to ConfigValue.StringValue(shellCommand)),
+                )
+            )
+            feature.config.string("resultVariable").trim().takeIf(String::isNotBlank)?.let {
+                ctx.variables.set(it, result.value)
+            }
+            ActionExecutionResult(result.success, result.value, result.message)
+        }
+
+        val evaluator = ConditionEvaluator { _, ctx ->
+            val result = ctx.capabilities.execute(
+                com.yagay.yauto.core.capability.CapabilityRequest(
+                    capability = com.yagay.yauto.core.capability.CapabilityIds.PRIVILEGED_SHELL,
+                    operationId = "system.shell.execute",
+                    payload = mapOf(
+                        "command" to ConfigValue.StringValue(
+                            "settings get global adb_wifi_enabled 2>/dev/null; getprop service.adb.tls.port; getprop service.adb.tcp.port"
+                        )
+                    ),
+                )
+            )
+            if (!result.success) return@ConditionEvaluator false
+            val stdout = ((result.value as? ConfigValue.ObjectValue)?.value?.get("stdout") as? ConfigValue.StringValue)?.value.orEmpty()
+            stdout.lineSequence().any {
+                val value = it.trim()
+                value == "1" || value.toIntOrNull()?.let { port -> port > 0 } == true
+            }
+        }
+        val descriptor = FeatureDescriptor(
+            FeatureId("android.condition.adb_wifi_available"),
+            FeatureKind.CONDITION,
+            "ADB Wi-Fi available",
+            "Check whether wireless debugging / adb TCP is enabled on this Android device",
+            FeatureCategory.SYSTEM,
+            capabilities = setOf(com.yagay.yauto.core.capability.CapabilityIds.PRIVILEGED_SHELL),
+            implementationOptions = listOf(
+                FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+                FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+            ),
+            keywords = setOf("adb wifi", "wireless debugging", "tasker"),
+            ownerPackId = id,
+        )
+        registry.registerCondition(descriptor, evaluator)
+        registry.registerState(
+            descriptor.copy(id = FeatureId("android.state.adb_wifi_available"), kind = FeatureKind.STATE),
+            evaluator,
+        )
+    }
+
+    private fun shellArg(value: String): String = "'" + value.replace("'", "'\\''") + "'"
+
     private fun pluginFields(): List<FieldSchema> = listOf(
         FieldSchema.AppPicker("package", "Plugin package", true),
         FieldSchema.Text("receiverClass", "Plugin receiver class", true),
@@ -336,6 +431,7 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
 
     private companion object {
         val JAVA_IDENTIFIER = Regex("[A-Za-z_$][A-Za-z0-9_$]*")
+        val ADB_TARGET = Regex("(?:127\\.0\\.0\\.1|localhost|[0-9A-Fa-f:.]+):[0-9]{1,5}")
     }
 }
 
