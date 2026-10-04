@@ -17,7 +17,8 @@ import android.os.Looper
 import android.provider.Settings
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.RuntimeEvent
-import java.util.concurrent.ConcurrentHashMap\nimport java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Runtime signals repeatedly exposed by MacroDroid, ShortX and Tasker but not covered by
@@ -145,7 +146,8 @@ class ReferenceRuntimeSignalEventSource(context: Context) : AndroidEventSource {
             registerDndReceiver()
             audio.registerAudioPlaybackCallback(playbackCallback, handler)
             audio.registerAudioRecordingCallback(recordingCallback, handler)
-            camera.registerTorchCallback(torchCallback, handler)\n            camera.registerAvailabilityCallback(cameraAvailabilityCallback, handler)
+            camera.registerTorchCallback(torchCallback, handler)
+            camera.registerAvailabilityCallback(cameraAvailabilityCallback, handler)
         } catch (error: Exception) {
             stop()
             throw error
@@ -158,7 +160,9 @@ class ReferenceRuntimeSignalEventSource(context: Context) : AndroidEventSource {
         runCatching { context.unregisterReceiver(dndReceiver) }
         runCatching { audio.unregisterAudioPlaybackCallback(playbackCallback) }
         runCatching { audio.unregisterAudioRecordingCallback(recordingCallback) }
-        runCatching { camera.unregisterTorchCallback(torchCallback) }\n        runCatching { camera.unregisterAvailabilityCallback(cameraAvailabilityCallback) }\n        cameraUnavailable.clear()
+        runCatching { camera.unregisterTorchCallback(torchCallback) }
+        runCatching { camera.unregisterAvailabilityCallback(cameraAvailabilityCallback) }
+        cameraUnavailable.clear()
         emitter = null
     }
 
