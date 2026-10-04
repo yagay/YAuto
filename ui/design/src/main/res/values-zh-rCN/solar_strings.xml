@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_solar_times_title">获取日出和日落时间</string>
+    <string name="feature_android_solar_times_description">根据经纬度在本机计算今天的日出和日落时间</string>
+    <string name="feature_android_solar_times_field_uselastknown">使用最近位置</string>
+    <string name="feature_android_solar_times_field_latitude">纬度</string>
+    <string name="feature_android_solar_times_field_longitude">经度</string>
+    <string name="feature_android_solar_times_field_resultvariable">保存日出日落时间</string>
+
+    <string name="feature_android_state_daylight_title">太阳在地平线上方</string>
+    <string name="feature_android_state_daylight_description">检查当前时间是否位于今天计算出的日出与日落之间</string>
+    <string name="feature_android_state_daylight_field_uselastknown">使用最近位置</string>
+    <string name="feature_android_state_daylight_field_latitude">纬度</string>
+    <string name="feature_android_state_daylight_field_longitude">经度</string>
+    <string name="feature_android_state_daylight_field_value">白天 / 太阳升起</string>
+    <string name="feature_android_condition_daylight_title">太阳在地平线上方</string>
+    <string name="feature_android_condition_daylight_description">检查当前时间是否位于今天计算出的日出与日落之间</string>
+    <string name="feature_android_condition_daylight_field_uselastknown">使用最近位置</string>
+    <string name="feature_android_condition_daylight_field_latitude">纬度</string>
+    <string name="feature_android_condition_daylight_field_longitude">经度</string>
+    <string name="feature_android_condition_daylight_field_value">白天 / 太阳升起</string>
+
+    <string name="feature_android_event_sunrise_sunset_title">日出或日落</string>
+    <string name="feature_android_event_sunrise_sunset_description">在计算出的日出或日落分钟触发，并支持时间偏移</string>
+    <string name="feature_android_event_sunrise_sunset_field_uselastknown">使用最近位置</string>
+    <string name="feature_android_event_sunrise_sunset_field_latitude">纬度</string>
+    <string name="feature_android_event_sunrise_sunset_field_longitude">经度</string>
+    <string name="feature_android_event_sunrise_sunset_field_event">太阳事件</string>
+    <string name="feature_android_event_sunrise_sunset_field_event_option_sunrise">日出</string>
+    <string name="feature_android_event_sunrise_sunset_field_event_option_sunset">日落</string>
+    <string name="feature_android_event_sunrise_sunset_field_offsetminutes">偏移分钟数</string>
+</resources>
