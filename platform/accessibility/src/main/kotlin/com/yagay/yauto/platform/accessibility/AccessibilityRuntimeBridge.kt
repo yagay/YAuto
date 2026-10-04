@@ -17,11 +17,37 @@ data class AccessibilityKeySnapshot(
     val timestampEpochMs: Long = System.currentTimeMillis(),
 )
 
-/** Process-local bridge carrying only foreground identity and non-text KeyEvent metadata. */
+data class AccessibilityUiEventSnapshot(
+    val event: String,
+    val packageName: String,
+    val className: String? = null,
+    val text: String = "",
+    val contentDescription: String = "",
+    val viewId: String = "",
+    val screenText: String = "",
+    val timestampEpochMs: Long = System.currentTimeMillis(),
+)
+
+data class AccessibilityNodeSnapshot(
+    val text: String,
+    val contentDescription: String,
+    val viewId: String,
+    val className: String,
+    val packageName: String,
+    val clickable: Boolean,
+    val longClickable: Boolean,
+    val editable: Boolean,
+    val scrollable: Boolean,
+    val enabled: Boolean,
+    val visible: Boolean,
+)
+
+/** Process-local bridge carrying foreground identity, hardware-key metadata and UI event snapshots. */
 object AccessibilityRuntimeBridge {
     private val current = AtomicReference<AccessibilityWindowSnapshot?>(null)
     @Volatile private var listener: ((previous: AccessibilityWindowSnapshot?, current: AccessibilityWindowSnapshot) -> Unit)? = null
     @Volatile private var keyListener: ((AccessibilityKeySnapshot) -> Unit)? = null
+    @Volatile private var uiEventListener: ((AccessibilityUiEventSnapshot) -> Unit)? = null
 
     fun currentWindow(): AccessibilityWindowSnapshot? = current.get()
 
@@ -31,6 +57,10 @@ object AccessibilityRuntimeBridge {
 
     fun setKeyListener(value: ((AccessibilityKeySnapshot) -> Unit)?) {
         keyListener = value
+    }
+
+    fun setUiEventListener(value: ((AccessibilityUiEventSnapshot) -> Unit)?) {
+        uiEventListener = value
     }
 
     internal fun update(packageName: String?, className: String?) {
@@ -44,6 +74,10 @@ object AccessibilityRuntimeBridge {
 
     internal fun dispatchKey(keyCode: Int, action: Int, repeatCount: Int, metaState: Int, deviceId: Int) {
         keyListener?.invoke(AccessibilityKeySnapshot(keyCode, action, repeatCount, metaState, deviceId))
+    }
+
+    internal fun dispatchUiEvent(snapshot: AccessibilityUiEventSnapshot) {
+        uiEventListener?.invoke(snapshot)
     }
 
     internal fun clearIfServiceStops() {
