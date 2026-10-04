@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/mass-data-flow-expansion-20261003
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
