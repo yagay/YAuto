@@ -113,6 +113,31 @@ class AccessibilityFeaturePack(
         fingerprintGestureState(registry, FeatureKind.STATE, "android.state.fingerprint_gesture_available")
         fingerprintGestureState(registry, FeatureKind.CONDITION, "android.condition.fingerprint_gesture_available")
 
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("accessibility.current_window.get"), FeatureKind.ACTION,
+                "Get current app / Activity",
+                "Return the current Accessibility foreground package and Activity/class name",
+                FeatureCategory.APP,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                fields = listOf(FieldSchema.Variable("resultVariable", "Store window object", true)),
+                keywords = setOf("current activity", "current app", "foreground", "shortx", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val current = AccessibilityRuntimeBridge.currentWindow()
+                ?: return@registerAction ActionExecutionResult(false)
+            val value = ConfigValue.ObjectValue(
+                mapOf(
+                    "package" to ConfigValue.StringValue(current.packageName),
+                    "class" to ConfigValue.StringValue(current.className.orEmpty()),
+                    "timestamp" to ConfigValue.NumberValue(current.timestampEpochMs.toDouble()),
+                )
+            )
+            feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, value) }
+            ActionExecutionResult(true, value)
+        }
+
         foregroundState(registry, FeatureKind.STATE, "android.state.app_foreground")
         foregroundState(registry, FeatureKind.CONDITION, "android.condition.app_foreground")
         keyboardState(registry, FeatureKind.STATE, "android.state.keyboard_visible")
