@@ -49,7 +49,7 @@ object MacroDroidFeatureSuggestions {
         "BubbleNotificationAction" -> "surface.bubble.show"
         "ConfigureAppNotificationsAction" -> "android.app.notification_settings.open"
         "HeadsUpNotificationsAction" -> "android.notification.heads_up.set"
-        "LocalePluginAction" -> "android.plugin.locale.fire"
+        "LocalePluginAction" -> "android.plugin.locale.action"
         "ConfigureWidgetButtonAction" -> "android.widget.configure"
         "RefreshWidgetAction" -> "android.widget.refresh"
         "OptionDialogAction", "SelectionDialogAction" -> "surface.list.show"
@@ -174,7 +174,7 @@ object MacroDroidFeatureSuggestions {
         "DisableCategoryAction" -> "core.category.set_enabled"
         "AccessibilityServiceAction" -> "android.accessibility_service.set"
         "ClipboardAction" -> "android.clipboard.set"
-        "CustomSceneAction" -> "surface.scene.show"
+        "CustomSceneAction" -> "tasker.scene.show"
         "ExpandCollapseStatusBarAction" -> "android.status_bar.control"
         "SetPriorityMode" -> "android.dnd.set"
         "SetVibrateAction", "SilentModeVibrateOffAction" -> "android.audio.ringer_mode.set"
@@ -184,8 +184,8 @@ object MacroDroidFeatureSuggestions {
         "OpenLastPhotoAction" -> "android.media.latest.open"
         "WhatsAppAction", "ContactViaAppAction" -> "android.contact_via_app.send"
         "SetLocationUpdateRateAction" -> "android.location.update_rate.set"
-        "CameraNotificationCircleAction" -> "surface.camera_ring.show"
-        "MacroDroidDrawerAction" -> "surface.drawer.show"
+        "CameraNotificationCircleAction" -> "surface.edge_lighting.show"
+        "MacroDroidDrawerAction" -> "surface.sidebar.show"
         else -> null
     }
 
