@@ -88,10 +88,16 @@ class TaskerImporter : AutomationImporter {
                 val path = "profile[" + profileId + "].context[" + ci + "]"
                 val isEvent = context.tagName == "Event"
                 val raw = context.toCompactXml()
-                val native = TaskerMappings.nativeContext(context, code, context.tagName, id, raw)
+                val plugin = taskerPluginFeature(context, if (isEvent) "event" else "condition", raw)
+                val native = plugin ?: TaskerMappings.nativeContext(context, code, context.tagName, id, raw)
                 if (native != null) {
                     if (isEvent) events += native else states += native
-                    trace += ImportTrace(path, native.typeId, "MAPPED", context.tagName + ":" + code)
+                    trace += ImportTrace(
+                        path,
+                        native.typeId,
+                        if (plugin != null) "PLUGIN" else "MAPPED",
+                        context.tagName + ":" + code,
+                    )
                 } else {
                     val fallback = if (isEvent) CompatFeatureIds.SOURCE_EVENT else CompatFeatureIds.SOURCE_STATE
                     val feature = sourceFeature(fallback, id, context.tagName + ":" + code, raw)
@@ -368,7 +374,10 @@ class TaskerImporter : AutomationImporter {
         issues: MutableList<CompatibilityIssue>,
     ): ActionNode {
         val raw = action.toCompactXml()
-        val base: ActionNode = if (code == "130") {
+        val pluginFeature = taskerPluginFeature(action, "action", raw)
+        val base: ActionNode = if (pluginFeature != null) {
+            ActionNode.Action(NodeId(UUID.randomUUID().toString()), pluginFeature)
+        } else if (code == "130") {
             val targetName = TaskerMappings.performTaskTarget(action)
             val target = targetName?.let(flowAliases::get)
             if (target != null) {
@@ -475,6 +484,105 @@ class TaskerImporter : AutomationImporter {
             }
         }
         return nodes.singleOrNull()
+    }
+
+    private fun taskerPluginFeature(
+        element: Element,
+        kind: String,
+        raw: String,
+    ): FeatureRef? {
+        val bundle = element.argElement(0)
+            ?.takeIf { it.tagName == "Bundle" }
+            ?: element.children("Bundle").firstOrNull { it.getAttribute("sr") == "arg0" }
+            ?: return null
+        val packageName = element.stringArg(1)?.trim().orEmpty()
+        if (!TASKER_PACKAGE.matches(packageName)) return null
+        val configActivity = element.stringArg(2)?.trim().orEmpty()
+        val timeoutSeconds = element.intArg(3)?.coerceIn(1L, 120L) ?: 10L
+        val bundleJson = bundle.taskerBundleJson()
+        val target = when (kind) {
+            "action" -> "android.plugin.locale.action"
+            "condition" -> "android.plugin.locale.condition"
+            "event" -> "android.event.plugin_locale"
+            else -> return null
+        }
+        return sourceFeature(
+            target,
+            id,
+            "TaskerPlugin:" + packageName,
+            raw,
+            extra = buildMap {
+                put("package", ConfigValue.StringValue(packageName))
+                put("bundleJson", ConfigValue.StringValue(bundleJson))
+                put("timeoutMs", ConfigValue.NumberValue(timeoutSeconds * 1_000.0))
+                if (configActivity.isNotBlank()) {
+                    put("configActivity", ConfigValue.StringValue(configActivity))
+                }
+                if (kind == "action") put("ordered", ConfigValue.BooleanValue(true))
+            },
+        )
+    }
+
+    private fun Element.taskerBundleJson(): String {
+        val vals = children("Vals").firstOrNull() ?: return "{}"
+        val all = vals.elementChildren()
+        val types = all.asSequence()
+            .filter { it.tagName.endsWith("-type") }
+            .associate { it.tagName.removeSuffix("-type") to it.textContent.orEmpty().trim() }
+        return all.asSequence()
+            .filterNot { it.tagName.endsWith("-type") }
+            .joinToString(prefix = "{", postfix = "}", separator = ",") { child ->
+                val key = child.tagName
+                val rawValue = child.textContent.orEmpty()
+                val type = types[key].orEmpty()
+                jsonString(key) + ":" + taskerJsonValue(rawValue, type)
+            }
+    }
+
+    private fun taskerJsonValue(value: String, type: String): String = when (type) {
+        "java.lang.Boolean", "boolean" ->
+            if (value.equals("true", true) || value == "1") "true" else "false"
+        "java.lang.Integer", "java.lang.Long", "java.lang.Short", "java.lang.Byte",
+        "int", "long", "short", "byte" -> value.trim().toLongOrNull()?.toString() ?: jsonString(value)
+        "java.lang.Float", "java.lang.Double", "float", "double" ->
+            value.trim().toDoubleOrNull()?.toString() ?: jsonString(value)
+        else -> jsonString(value)
+    }
+
+    private fun jsonString(value: String): String = buildString(value.length + 2) {
+        append('"')
+        value.forEach { ch ->
+            when (ch) {
+                '\\' -> append("\\\\")
+                '"' -> append("\\"")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> if (ch.code < 0x20) append("\\u%04x".format(ch.code)) else append(ch)
+            }
+        }
+        append('"')
+    }
+
+    private fun Element.argElement(index: Int): Element? =
+        elementChildren().firstOrNull { it.getAttribute("sr") == "arg" + index }
+
+    private fun Element.stringArg(index: Int): String? {
+        val arg = argElement(index) ?: return null
+        return when {
+            arg.hasAttribute("val") -> arg.getAttribute("val")
+            else -> arg.textContent?.trim()
+        }?.takeIf(String::isNotEmpty)
+    }
+
+    private fun Element.intArg(index: Int): Long? {
+        val arg = argElement(index) ?: return null
+        return arg.getAttribute("val").takeIf(String::isNotBlank)?.toLongOrNull()
+            ?: arg.textContent?.trim()?.toLongOrNull()
+    }
+
+    private companion object {
+        val TASKER_PACKAGE = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
     }
 
     private fun compatibilityAction(code: String, raw: String): ActionNode.Action = ActionNode.Action(
