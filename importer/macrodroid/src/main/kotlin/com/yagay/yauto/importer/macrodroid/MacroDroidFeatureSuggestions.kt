@@ -120,7 +120,7 @@ object MacroDroidFeatureSuggestions {
         "CancelActiveMacroAction", "TerminateRunningAction", "StopAction" -> "core.automation.cancel"
         "ClearCallLogAction" -> "android.call_log.clear"
         "DeleteSMSAction" -> "android.sms.delete"
-        "DisableCameraAction" -> "android.sensor_privacy.camera.set"
+        "DisableCameraAction" -> "android.sensor_privacy.set"
         "DemoModeAction" -> "android.systemui.demo"
         "ChangeKeyboardAction" -> "android.ime.set"
         "SetKeyboardAction" -> "android.ime.set"
