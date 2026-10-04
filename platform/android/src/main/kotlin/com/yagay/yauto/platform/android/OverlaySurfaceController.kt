@@ -457,6 +457,79 @@ class OverlaySurfaceController(context: Context) {
         return true
     }
 
+
+    fun showEdgeGesture(
+        id: String,
+        edge: String,
+        thicknessDp: Int,
+        minDistanceDp: Int,
+        autoHideMs: Long,
+    ): Boolean {
+        if (!canDraw() || id.isBlank()) return false
+        val validEdge = edge in setOf("left", "right", "top", "bottom", "top_left", "top_right", "bottom_left", "bottom_right")
+        if (!validEdge) return false
+        main.post {
+            hideInternal(id)
+            val density = context.resources.displayMetrics.density
+            val thickness = (thicknessDp.coerceIn(4, 96) * density).toInt()
+            val corner = edge.contains("_")
+            val width = when {
+                corner -> thickness * 3
+                edge == "left" || edge == "right" -> thickness
+                else -> WindowManager.LayoutParams.MATCH_PARENT
+            }
+            val height = when {
+                corner -> thickness * 3
+                edge == "top" || edge == "bottom" -> thickness
+                else -> WindowManager.LayoutParams.MATCH_PARENT
+            }
+            val view = EdgeGestureView(
+                context = context,
+                edge = edge,
+                minDistancePx = minDistanceDp.coerceIn(8, 400) * density,
+            ) { action, value ->
+                SurfaceRuntimeBridge.emit(id, action, value)
+            }
+            addSurface(
+                id = id,
+                view = view,
+                gravity = edge,
+                autoHideMs = autoHideMs,
+                width = width,
+                height = height,
+            )
+        }
+        return true
+    }
+
+    fun showRegionSelector(
+        id: String,
+        autoHideMs: Long,
+    ): Boolean {
+        if (!canDraw() || id.isBlank()) return false
+        main.post {
+            hideInternal(id)
+            val view = RegionSelectorView(context) { left, top, right, bottom ->
+                SurfaceRuntimeBridge.emit(
+                    id,
+                    "region_selected",
+                    listOf(left, top, right, bottom).joinToString(","),
+                )
+                hide(id)
+            }
+            addSurface(
+                id = id,
+                view = view,
+                gravity = "center",
+                autoHideMs = autoHideMs,
+                focusable = true,
+                width = WindowManager.LayoutParams.MATCH_PARENT,
+                height = WindowManager.LayoutParams.MATCH_PARENT,
+            )
+        }
+        return true
+    }
+
     private fun loadOverlayBitmap(source: String): Bitmap? = runCatching {
         when {
             source.startsWith("content://") -> context.contentResolver.openInputStream(android.net.Uri.parse(source))?.use(BitmapFactory::decodeStream)
@@ -754,5 +827,117 @@ private class EdgeLightingView(
             24f * resources.displayMetrics.density,
             paint,
         )
+    }
+}
+
+
+private class EdgeGestureView(
+    context: Context,
+    private val edge: String,
+    private val minDistancePx: Float,
+    private val emit: (String, String) -> Unit,
+) : View(context) {
+    private var downX = 0f
+    private var downY = 0f
+
+    init {
+        setBackgroundColor(android.graphics.Color.TRANSPARENT)
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                downX = event.rawX
+                downY = event.rawY
+                return true
+            }
+            MotionEvent.ACTION_UP -> {
+                val dx = event.rawX - downX
+                val dy = event.rawY - downY
+                val distance = kotlin.math.sqrt(dx * dx + dy * dy)
+                if (distance >= minDistancePx) {
+                    val direction = if (kotlin.math.abs(dx) >= kotlin.math.abs(dy)) {
+                        if (dx >= 0f) "right" else "left"
+                    } else {
+                        if (dy >= 0f) "down" else "up"
+                    }
+                    val value = "edge=" + edge +
+                        ";direction=" + direction +
+                        ";start=" + downX.toInt() + "," + downY.toInt() +
+                        ";end=" + event.rawX.toInt() + "," + event.rawY.toInt()
+                    emit("edge_swipe", value)
+                } else {
+                    emit("edge_tap", "edge=" + edge + ";x=" + event.rawX.toInt() + ";y=" + event.rawY.toInt())
+                }
+                return true
+            }
+        }
+        return true
+    }
+}
+
+private class RegionSelectorView(
+    context: Context,
+    private val selected: (Int, Int, Int, Int) -> Unit,
+) : View(context) {
+    private var startX = 0f
+    private var startY = 0f
+    private var endX = 0f
+    private var endY = 0f
+    private var selecting = false
+    private val shade = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66000000 }
+    private val border = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        style = Paint.Style.STROKE
+        strokeWidth = 2f * resources.displayMetrics.density
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                startX = event.x
+                startY = event.y
+                endX = startX
+                endY = startY
+                selecting = true
+                invalidate()
+                return true
+            }
+            MotionEvent.ACTION_MOVE -> {
+                endX = event.x
+                endY = event.y
+                invalidate()
+                return true
+            }
+            MotionEvent.ACTION_UP -> {
+                endX = event.x
+                endY = event.y
+                invalidate()
+                val left = minOf(startX, endX).toInt().coerceAtLeast(0)
+                val top = minOf(startY, endY).toInt().coerceAtLeast(0)
+                val right = maxOf(startX, endX).toInt().coerceAtMost(width)
+                val bottom = maxOf(startY, endY).toInt().coerceAtMost(height)
+                selecting = false
+                if (right - left >= 4 && bottom - top >= 4) selected(left, top, right, bottom)
+                return true
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                selecting = false
+                invalidate()
+                return true
+            }
+        }
+        return true
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), shade)
+        if (!selecting) return
+        val left = minOf(startX, endX)
+        val top = minOf(startY, endY)
+        val right = maxOf(startX, endX)
+        val bottom = maxOf(startY, endY)
+        canvas.drawRect(left, top, right, bottom, border)
     }
 }
