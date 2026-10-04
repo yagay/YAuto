@@ -29,10 +29,7 @@ class AndroidReferenceControlExpansionFeaturePack(context: Context) : FeaturePac
     private val inputMethod = this.context.getSystemService(InputMethodManager::class.java)
 
     override fun install(registry: FeatureRegistry) {
-        registerDensity(registry)
-        registerFontScale(registry)
         registerImmersiveMode(registry)
-        registerAnimationScale(registry)
         registerMicrophoneMute(registry)
         registerSpeakerphone(registry)
         registerVolumeUi(registry)
@@ -71,50 +68,6 @@ class AndroidReferenceControlExpansionFeaturePack(context: Context) : FeaturePac
         animationScalePair(registry)
     }
 
-    private fun registerDensity(registry: FeatureRegistry) {
-        privilegedAction(
-            registry,
-            "android.display.density.set",
-            "Set display density",
-            "Set Android display density as a percentage of the device stable density",
-            FeatureCategory.DISPLAY,
-            listOf(FieldSchema.Number("scalePercent", "Display scale percent", true, min = 50.0, max = 150.0)),
-            setOf("density", "dpi", "display scale", "MacroDroid"),
-        ) { feature, ctx ->
-            val scale = feature.config["scalePercent"].numberOrNull()?.roundToInt()
-                ?: return@privilegedAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
-            val command = densityCommand(scale, DisplayMetrics.DENSITY_DEVICE_STABLE)
-                ?: return@privilegedAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
-            executeShell(feature.typeId, command, ctx)
-        }
-    }
-
-    private fun registerFontScale(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.display.font_scale.set"),
-                FeatureKind.ACTION,
-                "Set font scale",
-                "Set the Android font scale percentage",
-                FeatureCategory.DISPLAY,
-                fields = listOf(FieldSchema.Number("scalePercent", "Font scale percent", true, min = 50.0, max = 250.0)),
-                accessRequirements = setOf(AccessRequirement.WRITE_SETTINGS),
-                keywords = setOf("font", "font scale", "display", "MacroDroid"),
-                ownerPackId = id,
-            )
-        ) { feature, _ ->
-            val percent = feature.config["scalePercent"].numberOrNull()?.takeIf { it.isFinite() && it in 50.0..250.0 }
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
-            if (!Settings.System.canWrite(context)) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.modify_settings_denied"))
-            }
-            val ok = runCatching {
-                Settings.System.putFloat(context.contentResolver, "font_scale", (percent / 100.0).toFloat())
-            }.getOrDefault(false)
-            ActionExecutionResult(ok, if (ok) ConfigValue.NumberValue(percent) else null, if (ok) null else userText("feature.operation_failed", feature.typeId))
-        }
-    }
-
     private fun registerImmersiveMode(registry: FeatureRegistry) {
         privilegedAction(
             registry,
@@ -126,28 +79,6 @@ class AndroidReferenceControlExpansionFeaturePack(context: Context) : FeaturePac
             setOf("immersive", "status bar", "navigation bar", "insets", "MacroDroid", "ShortX"),
         ) { feature, ctx ->
             val command = immersiveModeCommand(feature.config.string("mode", "off"))
-                ?: return@privilegedAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
-            executeShell(feature.typeId, command, ctx)
-        }
-    }
-
-    private fun registerAnimationScale(registry: FeatureRegistry) {
-        privilegedAction(
-            registry,
-            "android.display.animation_scale.set",
-            "Set animation scale",
-            "Set Android window, transition, animator, or all animation scales",
-            FeatureCategory.DISPLAY,
-            listOf(
-                FieldSchema.Choice("target", "Animation scale target", true, listOf("all", "window", "transition", "animator")),
-                FieldSchema.Number("scale", "Animation scale", true, min = 0.0, max = 10.0),
-            ),
-            setOf("animation scale", "window animation", "animator duration", "Tasker"),
-        ) { feature, ctx ->
-            val target = feature.config.string("target", "all")
-            val scale = feature.config["scale"].numberOrNull()?.takeIf { it.isFinite() && it in 0.0..10.0 }
-                ?: return@privilegedAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
-            val command = animationScaleCommand(target, scale)
                 ?: return@privilegedAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
             executeShell(feature.typeId, command, ctx)
         }
