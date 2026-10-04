@@ -13,6 +13,13 @@ object NotificationRuntimeEventMapper {
             source = "android.notification_listener",
         )
 
+    fun updated(sbn: StatusBarNotification): RuntimeEvent =
+        RuntimeEvent(
+            typeId = "android.event.notification_updated",
+            payload = payload(sbn),
+            source = "android.notification_listener",
+        )
+
     fun clicked(sbn: StatusBarNotification): RuntimeEvent =
         RuntimeEvent(
             typeId = "android.event.notification_clicked",
