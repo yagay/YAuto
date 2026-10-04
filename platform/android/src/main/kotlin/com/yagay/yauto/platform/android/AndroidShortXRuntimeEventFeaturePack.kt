@@ -58,6 +58,31 @@ class AndroidShortXRuntimeEventFeaturePack : FeaturePack {
 
         registry.registerEvent(
             FeatureDescriptor(
+                FeatureId("android.event.sound_level"), FeatureKind.EVENT,
+                "Sound level",
+                "Run when a microphone RMS/dBFS sample is inside the configured range",
+                FeatureCategory.AUDIO,
+                fields = listOf(
+                    FieldSchema.Number("minDbfs", "Minimum dBFS", min = -120.0, max = 0.0),
+                    FieldSchema.Number("maxDbfs", "Maximum dBFS", min = -120.0, max = 0.0),
+                    FieldSchema.Duration("intervalMs", "Sampling interval"),
+                    FieldSchema.Duration("sampleMs", "Sample duration"),
+                ),
+                accessRequirements = setOf(AccessRequirement.RECORD_AUDIO),
+                keywords = setOf("sound", "microphone", "dbfs", "noise", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.sound_level") return@registerEvent false
+            if (ctx.event.payload.string("ruleKey") != soundRuleKey(feature)) return@registerEvent false
+            val value = ctx.event.payload["dbfs"].numberOrNull() ?: return@registerEvent false
+            val min = feature.config["minDbfs"].numberOrNull() ?: -120.0
+            val max = feature.config["maxDbfs"].numberOrNull() ?: 0.0
+            min <= max && value in min..max
+        }
+
+        registry.registerEvent(
+            FeatureDescriptor(
                 FeatureId("android.event.user_present_first_after_boot"), FeatureKind.EVENT,
                 "First unlock after boot",
                 "Run only on the first USER_PRESENT event in the current Android boot",
