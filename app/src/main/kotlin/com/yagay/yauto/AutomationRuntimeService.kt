@@ -21,6 +21,7 @@ import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
 import com.yagay.yauto.platform.android.*
 import com.yagay.yauto.platform.xposed.XposedHookRuntimeBridge
+import com.yagay.yauto.platform.xposed.XposedSystemEventRuntimeBridge
 import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -85,6 +86,7 @@ class AutomationRuntimeService : Service() {
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
         SurfaceRuntimeBridge.attach(emitter)
         AdvancedParityRuntimeBridge.attach(emitter)
+        XposedSystemEventRuntimeBridge.attach { event -> dispatcher.dispatch(event) }
         XposedHookRuntimeBridge.attach { event ->
             dispatcher.dispatch(XposedHookRuntimeBridge.toRuntimeEvent(event))
             val mapped = when {
@@ -238,7 +240,7 @@ class AutomationRuntimeService : Service() {
         return START_STICKY
     }
 
-    override fun onDestroy() { AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); AccessibilityRuntimeBridge.setFingerprintGestureListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); XposedHookRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
+    override fun onDestroy() { AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); AccessibilityRuntimeBridge.setFingerprintGestureListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); XposedHookRuntimeBridge.attach(null); XposedSystemEventRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
     override fun onBind(intent: Intent?): IBinder? = null
     private fun registerSource(component: String, factory: () -> AndroidEventSource) { eventSources.add(component, factory)?.let(::reportSourceFailure) }
     private fun reportSourceFailure(failure: EventSourceFailure) {
