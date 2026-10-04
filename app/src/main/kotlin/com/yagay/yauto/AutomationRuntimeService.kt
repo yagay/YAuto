@@ -74,6 +74,7 @@ class AutomationRuntimeService : Service() {
         registerSource("configured-data-usage") { ConfiguredDataUsageEventSource(this, appGraph.workspace) }
         registerSource("runtime-parity") { ConfiguredRuntimeParityEventSource(this, appGraph.workspace) }
         registerSource("shortx-time") { ConfiguredShortXTimeEventSource(appGraph.workspace) }
+        registerSource("sound-level") { ConfiguredSoundLevelEventSource(this, appGraph.workspace) }
         registerSource("hinge-angle") { HingeAngleEventSource(this) }
         registerSource("usage-foreground") {
             UsageStatsForegroundEventSource(
