@@ -389,13 +389,46 @@ class AutomationRuntime(
             coroutineScope {
                 val parentStack = currentCoroutineContext()[AutomationCallStack]?.ids.orEmpty()
                 val job = async(AutomationCallStack(parentStack + key)) {
+                    val lifecycleSourceEvent = (variables["event.type"] as? ConfigValue.StringValue)?.value.orEmpty()
+                    val emitLifecycle = !lifecycleSourceEvent.startsWith("core.event.automation_")
+                    val startedAt = System.currentTimeMillis()
+                    if (emitLifecycle) {
+                        dispatch(
+                            RuntimeEvent(
+                                typeId = "core.event.automation_started",
+                                payload = mapOf(
+                                    "automationId" to ConfigValue.StringValue(automation.id.value),
+                                    "automationName" to ConfigValue.StringValue(automation.name),
+                                    "phases" to ConfigValue.ListValue(phases.map { ConfigValue.StringValue(it.name.lowercase()) }),
+                                ),
+                                source = "runtime.automation",
+                            )
+                        )
+                    }
                     val engine = AutomationEngine(
                         registry = registry,
                         capabilities = capabilities,
                         tracer = tracer,
                         flowResolver = FlowResolver { id -> flows[id] },
                     )
-                    phases.map { phase -> engine.execute(automation, phase, variables) }
+                    val results = phases.map { phase -> engine.execute(automation, phase, variables) }
+                    if (emitLifecycle) {
+                        val success = results.all { it.success }
+                        dispatch(
+                            RuntimeEvent(
+                                typeId = "core.event.automation_finished",
+                                payload = mapOf(
+                                    "automationId" to ConfigValue.StringValue(automation.id.value),
+                                    "automationName" to ConfigValue.StringValue(automation.name),
+                                    "success" to ConfigValue.BooleanValue(success),
+                                    "durationMs" to ConfigValue.NumberValue((System.currentTimeMillis() - startedAt).toDouble()),
+                                    "phases" to ConfigValue.ListValue(phases.map { ConfigValue.StringValue(it.name.lowercase()) }),
+                                ),
+                                source = "runtime.automation",
+                            )
+                        )
+                    }
+                    results
                 }
                 trackJob(key, job)
                 try {
