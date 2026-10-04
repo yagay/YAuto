@@ -504,6 +504,76 @@ class AndroidSurfaceFeaturePack(
             )
         }
 
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("surface.screen_flash.show"), FeatureKind.ACTION,
+                "Screen flash",
+                "Show a full-screen non-touchable color flash overlay",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Text("surfaceId", "Surface ID", true),
+                    FieldSchema.Text("color", "Color (#RRGGBB or #AARRGGBB)"),
+                    FieldSchema.Number("alpha", "Opacity 0-255", min = 0.0, max = 255.0),
+                    FieldSchema.Duration("durationMs", "Duration"),
+                ),
+                accessRequirements = setOf(AccessRequirement.OVERLAY),
+                keywords = setOf("screen flash", "flash", "overlay", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val color = runCatching {
+                android.graphics.Color.parseColor(
+                    feature.config.string("color", "#FFFFFF").resolveVariables(ctx.variables).ifBlank { "#FFFFFF" }
+                )
+            }.getOrDefault(android.graphics.Color.WHITE)
+            ActionExecutionResult(
+                controller.showScreenFlash(
+                    id = feature.config.string("surfaceId").resolveVariables(ctx.variables).trim(),
+                    color = color,
+                    alpha = (feature.config["alpha"].numberOrNull() ?: 220.0).toInt(),
+                    durationMs = feature.config.long("durationMs", 500L),
+                )
+            )
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("surface.danmu.show"), FeatureKind.ACTION,
+                "Show danmu / scrolling text",
+                "Show scrolling overlay text across the screen",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Text("surfaceId", "Surface ID", true),
+                    FieldSchema.Text("text", "Text", true),
+                    FieldSchema.Text("color", "Text color"),
+                    FieldSchema.Number("textSizeSp", "Text size sp", min = 8.0, max = 72.0),
+                    FieldSchema.Duration("durationMs", "Travel duration"),
+                    FieldSchema.Choice("gravity", "Vertical position", options = listOf("top", "center", "bottom")),
+                ),
+                fieldBehaviors = mapOf("text" to FieldBehavior(supportsVariables = true)),
+                accessRequirements = setOf(AccessRequirement.OVERLAY),
+                keywords = setOf("danmu", "marquee", "scrolling text", "overlay", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val color = runCatching {
+                android.graphics.Color.parseColor(
+                    feature.config.string("color", "#FFFFFF").resolveVariables(ctx.variables).ifBlank { "#FFFFFF" }
+                )
+            }.getOrDefault(android.graphics.Color.WHITE)
+            ActionExecutionResult(
+                controller.showDanmu(
+                    id = feature.config.string("surfaceId").resolveVariables(ctx.variables).trim(),
+                    text = feature.config.string("text").resolveVariables(ctx.variables),
+                    color = color,
+                    textSizeSp = (feature.config["textSizeSp"].numberOrNull() ?: 18.0).toFloat(),
+                    durationMs = feature.config.long("durationMs", 8_000L),
+                    gravity = feature.config.string("gravity", "top"),
+                )
+            )
+        }
+
         registry.registerEvent(
             FeatureDescriptor(
                 FeatureId("android.event.surface_action"), FeatureKind.EVENT,
