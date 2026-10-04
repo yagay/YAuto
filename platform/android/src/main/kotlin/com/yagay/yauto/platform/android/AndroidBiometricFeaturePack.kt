@@ -56,7 +56,7 @@ class BiometricPromptActivity : Activity() {
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence?) {
-                    BiometricRuntime.complete(token, false, "error:$errorCode:${errString.orEmpty()}")
+                    BiometricRuntime.complete(token, false, "error:$errorCode:${errString?.toString().orEmpty()}")
                     finish()
                 }
 
