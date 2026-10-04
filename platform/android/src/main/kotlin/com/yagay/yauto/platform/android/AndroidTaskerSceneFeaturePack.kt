@@ -1,6 +1,7 @@
 package com.yagay.yauto.platform.android
 
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.long
 import com.yagay.yauto.core.registry.*
 
 class AndroidTaskerSceneFeaturePack(
