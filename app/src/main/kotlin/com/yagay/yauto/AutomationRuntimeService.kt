@@ -89,6 +89,7 @@ class AutomationRuntimeService : Service() {
         AdvancedParityRuntimeBridge.attach(emitter)
         ModeRuntimeBridge.attach(emitter)
         WearRuntimeBridge.attach(emitter)
+        VendorBridgeRuntime.attach(emitter)
         XposedSystemEventRuntimeBridge.attach { event -> dispatcher.dispatch(event) }
         XposedHookRuntimeBridge.attach { event ->
             dispatcher.dispatch(XposedHookRuntimeBridge.toRuntimeEvent(event))
@@ -243,7 +244,7 @@ class AutomationRuntimeService : Service() {
         return START_STICKY
     }
 
-    override fun onDestroy() { AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); AccessibilityRuntimeBridge.setFingerprintGestureListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); ModeRuntimeBridge.attach(null); WearRuntimeBridge.attach(null); XposedHookRuntimeBridge.attach(null); XposedSystemEventRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
+    override fun onDestroy() { AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); AccessibilityRuntimeBridge.setFingerprintGestureListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); ModeRuntimeBridge.attach(null); WearRuntimeBridge.attach(null); VendorBridgeRuntime.attach(null); XposedHookRuntimeBridge.attach(null); XposedSystemEventRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
     override fun onBind(intent: Intent?): IBinder? = null
     private fun registerSource(component: String, factory: () -> AndroidEventSource) { eventSources.add(component, factory)?.let(::reportSourceFailure) }
     private fun reportSourceFailure(failure: EventSourceFailure) {
