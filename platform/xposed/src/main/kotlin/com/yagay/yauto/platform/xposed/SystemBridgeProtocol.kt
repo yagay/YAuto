@@ -7,5 +7,6 @@ object SystemBridgeProtocol {
     const val PING = "ping"
     const val HOOK_ACTION = "com.yagay.yauto.LSPOSED_HOOK"
     const val HOOK_EVENT_ACTION = "com.yagay.yauto.LSPOSED_HOOK_EVENT"
+    const val SYSTEM_EVENT_ACTION = "com.yagay.yauto.LSPOSED_SYSTEM_EVENT"
     const val HOOK_INSTALL_SESSION = "lsposed.hook.install_session"
 }
