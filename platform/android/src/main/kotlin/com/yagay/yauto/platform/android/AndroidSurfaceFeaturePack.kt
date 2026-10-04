@@ -397,6 +397,32 @@ class AndroidSurfaceFeaturePack(
 
         registry.registerAction(
             FeatureDescriptor(
+                FeatureId("surface.edge_lighting.show"), FeatureKind.ACTION,
+                "Show edge lighting", "Show a non-interactive colored border around the display",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Text("surfaceId", "Surface ID", true),
+                    FieldSchema.Text("color", "Color (#RRGGBB or #AARRGGBB)"),
+                    FieldSchema.Number("thicknessDp", "Border thickness dp", min = 1.0, max = 48.0),
+                    FieldSchema.Duration("autoHideMs", "Duration"),
+                ),
+                accessRequirements = setOf(AccessRequirement.OVERLAY),
+                keywords = setOf("edge lighting", "border", "notification light", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val raw = feature.config.string("color", "#448AFF").resolveVariables(ctx.variables).trim()
+            val color = runCatching { android.graphics.Color.parseColor(raw) }.getOrDefault(0xFF448AFF.toInt())
+            ActionExecutionResult(controller.showEdgeLighting(
+                id = feature.config.string("surfaceId").resolveVariables(ctx.variables).trim(),
+                color = color,
+                thicknessDp = (feature.config["thicknessDp"].numberOrNull() ?: 6.0).toInt(),
+                autoHideMs = feature.config.long("autoHideMs", 3_000L),
+            ))
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
                 FeatureId("surface.progress.show"), FeatureKind.ACTION,
                 "Show progress overlay", "Show determinate or indeterminate progress on an overlay surface",
                 FeatureCategory.UI_AUTOMATION,
