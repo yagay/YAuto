@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_share_text_title">分享文本</string>
+    <string name="feature_android_share_text_description">通过 Android 分享面板发送文本、主题和 MIME 类型</string>
+    <string name="feature_android_share_text_field_text">文本</string>
+    <string name="feature_android_share_text_field_subject">主题</string>
+    <string name="feature_android_share_text_field_mimetype">MIME 类型</string>
+    <string name="feature_android_share_text_field_chooser">始终显示分享选择器</string>
+
+    <string name="feature_android_event_share_text_received_title">文本已分享到 YAuto</string>
+    <string name="feature_android_event_share_text_received_description">当其他应用通过 Android 分享面板向 YAuto 分享文本时触发</string>
+    <string name="feature_android_event_share_text_received_field_mode">文本匹配</string>
+    <string name="feature_android_event_share_text_received_field_mode_option_any">任意</string>
+    <string name="feature_android_event_share_text_received_field_mode_option_contains">包含</string>
+    <string name="feature_android_event_share_text_received_field_mode_option_exact">完全匹配</string>
+    <string name="feature_android_event_share_text_received_field_mode_option_regex">正则表达式</string>
+    <string name="feature_android_event_share_text_received_field_text">文本 / 模式</string>
+    <string name="feature_android_event_share_text_received_field_subjectcontains">主题包含</string>
+    <string name="feature_android_event_share_text_received_field_mimecontains">MIME 类型包含</string>
+    <string name="feature_android_event_share_text_received_field_ignorecase">忽略大小写</string>
+
+    <string name="feature_android_event_share_file_received_title">文件已分享到 YAuto</string>
+    <string name="feature_android_event_share_file_received_description">当其他应用向 YAuto 分享一个或多个文件时触发</string>
+    <string name="feature_android_event_share_file_received_field_mimecontains">MIME 类型包含</string>
+    <string name="feature_android_event_share_file_received_field_uricontains">URI 包含</string>
+    <string name="feature_android_event_share_file_received_field_mincount">最少文件数</string>
+    <string name="feature_android_event_share_file_received_field_maxcount">最多文件数</string>
+    <string name="feature_android_event_share_file_received_field_ignorecase">忽略大小写</string>
+</resources>
