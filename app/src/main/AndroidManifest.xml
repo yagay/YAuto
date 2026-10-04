@@ -76,6 +76,37 @@
             android:excludeFromRecents="true"
             android:noHistory="true" />
 
+
+        <activity
+            android:name=".DeepLinkDispatchActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="yauto" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".BrowserInterceptActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".ShareDispatchActivity"
             android:exported="true"
@@ -179,6 +210,15 @@
         </service>
 
 
+
+
+        <receiver
+            android:name=".MenuActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.yagay.yauto.MENU_ACTION" />
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name=".PpnActionReceiver"
