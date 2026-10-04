@@ -148,8 +148,12 @@ class AutomationEngine(
                 Signal.Next
             }
             is ActionNode.ForEach -> {
-                if (node.values.size > maxLoopIterations) return Signal.Failure(userText("engine.foreach_limit"))
-                for (value in node.values) {
+                val values = node.sourceVariable?.takeIf { it.isNotBlank() }?.let { sourceName ->
+                    (variables.get(sourceName) as? ConfigValue.ListValue)?.value
+                        ?: return Signal.Failure(userText("feature.variable_not_list"))
+                } ?: node.values
+                if (values.size > maxLoopIterations) return Signal.Failure(userText("engine.foreach_limit"))
+                for (value in values) {
                     currentCoroutineContext().ensureActive()
                     variables.set(node.variableName, value)
                     when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
