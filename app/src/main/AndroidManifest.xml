@@ -250,6 +250,15 @@
             </intent-filter>
         </receiver>
 
+
+        <receiver
+            android:name="com.yagay.yauto.platform.xposed.XposedSystemEventReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.yagay.yauto.LSPOSED_SYSTEM_EVENT" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name="com.yagay.yauto.platform.xposed.XposedHookEventReceiver"
             android:exported="true">
