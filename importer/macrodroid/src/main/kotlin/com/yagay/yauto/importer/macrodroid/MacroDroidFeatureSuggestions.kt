@@ -42,6 +42,7 @@ object MacroDroidFeatureSuggestions {
         "RejectCallAction" -> "android.phone.end"
         "MakeCallAction" -> "android.phone.call"
         "JavaScriptAction", "AJavaScriptAction", "SJavaScriptAction" -> "script.javascript.execute"
+        "JavaAction" -> "script.beanshell.execute"
         "SetHotspotAction", "USBTetheringAction", "BluetoothTetheringAction" -> "android.network.tether.set"
         "AuthenticateUserAction" -> "android.biometric.authenticate"
         "OverlayDialogAction", "AnimationOverlayAction" -> "surface.overlay.show"
