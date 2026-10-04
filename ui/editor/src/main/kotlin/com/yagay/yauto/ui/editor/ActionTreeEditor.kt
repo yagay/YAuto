@@ -364,9 +364,15 @@ private fun NodeDialog(
                         )
                     }
                     is ActionNode.WaitEvent -> {
-                        Text("Events: " + if (node.events.isEmpty()) "(none)" else node.events.joinToString { it.typeId })
+                        Text(
+                            stringResource(
+                                TextR.string.tree_wait_event_events_format,
+                                if (node.events.isEmpty()) stringResource(TextR.string.tree_none)
+                                else node.events.joinToString { it.typeId },
+                            )
+                        )
                         Row {
-                            Text("Unlimited")
+                            Text(stringResource(TextR.string.tree_wait_unlimited))
                             Switch(
                                 checked = node.unlimited,
                                 onCheckedChange = { draft = node.copy(unlimited = it) },
@@ -384,7 +390,7 @@ private fun NodeDialog(
                             )
                         }
                         Row {
-                            Text("Continue on timeout")
+                            Text(stringResource(TextR.string.tree_wait_continue_on_timeout))
                             Switch(
                                 checked = node.continueOnTimeout,
                                 onCheckedChange = { draft = node.copy(continueOnTimeout = it) },
