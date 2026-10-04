@@ -289,6 +289,7 @@ class AndroidSurfaceFeaturePack(
             }
             if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator) else registry.registerCondition(descriptor, evaluator)
         }
+    }
 
     private fun compactSurfaceFields(): List<FieldSchema> = listOf(
         FieldSchema.Text("surfaceId", "Surface ID", true),
