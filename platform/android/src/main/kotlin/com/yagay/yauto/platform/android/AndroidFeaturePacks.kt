@@ -27,6 +27,7 @@ object AndroidFeaturePacks {
         AndroidReferenceSystemExpansionFeaturePack(context),
         AndroidReferenceUtilityExpansionFeaturePack(context),
         AndroidReferenceControlExpansionFeaturePack(context),
+        AndroidWakeLockFeaturePack(context),
         AndroidTelephonyStateExpansionFeaturePack(context),
         AndroidAccessStateFeaturePack(context),
         AndroidRoleStateFeaturePack(context),
