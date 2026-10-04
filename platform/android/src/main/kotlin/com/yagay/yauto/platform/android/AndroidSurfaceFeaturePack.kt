@@ -228,6 +228,50 @@ class AndroidSurfaceFeaturePack(
 
         registry.registerAction(
             FeatureDescriptor(
+                FeatureId("surface.touch_blocker.show"), FeatureKind.ACTION,
+                "Block screen touches", "Show a full-screen transparent overlay that consumes touch input until hidden",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Text("surfaceId", "Surface ID", true),
+                    FieldSchema.Duration("autoHideMs", "Auto hide after"),
+                ),
+                accessRequirements = setOf(AccessRequirement.OVERLAY),
+                keywords = setOf("block touches", "touch lock", "overlay", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            ActionExecutionResult(controller.showTouchBlocker(
+                feature.config.string("surfaceId").resolveVariables(ctx.variables).trim(),
+                feature.config.long("autoHideMs", 0),
+            ))
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("surface.pie.show"), FeatureKind.ACTION,
+                "Show pie menu", "Show a radial overlay menu; each line is Label=action",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Text("surfaceId", "Surface ID", true),
+                    FieldSchema.Text("items", "Pie items, Label=action per line", true, multiline = true),
+                    FieldSchema.Choice("gravity", "Position", true, listOf("center", "top", "bottom", "left", "right", "top_left", "top_right", "bottom_left", "bottom_right")),
+                    FieldSchema.Duration("autoHideMs", "Auto hide after"),
+                ),
+                accessRequirements = setOf(AccessRequirement.OVERLAY),
+                keywords = setOf("pie", "radial", "menu", "shortx", "scene"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            ActionExecutionResult(controller.showPie(
+                id = feature.config.string("surfaceId").resolveVariables(ctx.variables).trim(),
+                items = parseSurfaceItems(feature.config.string("items").resolveVariables(ctx.variables)),
+                gravity = feature.config.string("gravity", "center"),
+                autoHideMs = feature.config.long("autoHideMs", 0),
+            ))
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
                 FeatureId("surface.progress.show"), FeatureKind.ACTION,
                 "Show progress overlay", "Show determinate or indeterminate progress on an overlay surface",
                 FeatureCategory.UI_AUTOMATION,
