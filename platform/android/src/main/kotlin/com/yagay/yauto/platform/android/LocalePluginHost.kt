@@ -64,12 +64,16 @@ internal class LocalePluginHost(private val context: Context) {
         ordered: Boolean,
         timeoutMs: Long,
     ): LocalePluginResult {
-        val component = validComponent(packageName, receiverClass)
-            ?: return LocalePluginResult(false)
+        val component = resolveReceiver(
+            packageName,
+            receiverClass,
+            LocalePluginProtocol.ACTION_FIRE_SETTING,
+        ) ?: return LocalePluginResult(false)
         val intent = Intent(LocalePluginProtocol.ACTION_FIRE_SETTING)
             .setComponent(component)
             .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES or Intent.FLAG_FROM_BACKGROUND)
             .putExtra(LocalePluginProtocol.EXTRA_BUNDLE, parseBundle(bundleJson))
+            .putExtra(LocalePluginProtocol.EXTRA_STRING_ACTIVITY_CLASS_NAME, normalizeClass(packageName, receiverClass))
         return if (!ordered) {
             runCatching {
                 appContext.sendBroadcast(intent)
@@ -87,12 +91,16 @@ internal class LocalePluginHost(private val context: Context) {
         timeoutMs: Long,
         passthrough: Bundle? = null,
     ): LocalePluginResult {
-        val component = validComponent(packageName, receiverClass)
-            ?: return LocalePluginResult(false)
+        val component = resolveReceiver(
+            packageName,
+            receiverClass,
+            LocalePluginProtocol.ACTION_QUERY_CONDITION,
+        ) ?: return LocalePluginResult(false)
         val intent = Intent(LocalePluginProtocol.ACTION_QUERY_CONDITION)
             .setComponent(component)
             .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES or Intent.FLAG_FROM_BACKGROUND)
             .putExtra(LocalePluginProtocol.EXTRA_BUNDLE, parseBundle(bundleJson))
+            .putExtra(LocalePluginProtocol.EXTRA_STRING_ACTIVITY_CLASS_NAME, normalizeClass(packageName, receiverClass))
         passthrough?.keySet()?.forEach { key ->
             when (val value = passthrough.get(key)) {
                 is String -> intent.putExtra(key, value)
@@ -171,13 +179,39 @@ internal class LocalePluginHost(private val context: Context) {
             ?: LocalePluginResult(false)
     }
 
-    private fun validComponent(packageName: String, receiverClass: String): ComponentName? {
+    private fun resolveReceiver(
+        packageName: String,
+        configuredClass: String,
+        action: String,
+    ): ComponentName? {
         val pkg = packageName.trim()
-        val cls = receiverClass.trim()
-        if (!PACKAGE.matches(pkg) || cls.isBlank() || cls.length > 512) return null
-        val normalized = if (cls.startsWith(".")) pkg + cls else cls
-        if (!CLASS.matches(normalized)) return null
-        return ComponentName(pkg, normalized)
+        if (!PACKAGE.matches(pkg)) return null
+        val normalized = normalizeClass(pkg, configuredClass)
+        if (normalized.isNotBlank() && CLASS.matches(normalized)) {
+            val explicit = ComponentName(pkg, normalized)
+            val resolvesExplicitly = runCatching {
+                appContext.packageManager.queryBroadcastReceivers(
+                    Intent(action).setComponent(explicit),
+                    0,
+                ).isNotEmpty()
+            }.getOrDefault(false)
+            if (resolvesExplicitly) return explicit
+        }
+
+        val candidates = runCatching {
+            appContext.packageManager.queryBroadcastReceivers(
+                Intent(action).setPackage(pkg),
+                0,
+            ).mapNotNull { it.activityInfo?.let { info -> ComponentName(info.packageName, info.name) } }
+                .distinct()
+        }.getOrDefault(emptyList())
+        return candidates.singleOrNull()
+    }
+
+    private fun normalizeClass(packageName: String, className: String): String {
+        val cls = className.trim()
+        if (cls.isBlank()) return ""
+        return if (cls.startsWith(".")) packageName.trim() + cls else cls
     }
 
     private fun parseBundle(raw: String): Bundle {
