@@ -248,7 +248,7 @@ class AutomationEngine(
                         }
                         delay(pollInterval)
                     }
-                    return Signal.Failure(userText("runtime.automation_cancelled", automation.name))
+                    return Signal.Failure(userText("runtime.automation_cancelled", automation?.name.orEmpty()))
                 }
                 val completed = withTimeoutOrNull(node.timeoutMs) {
                     while (currentCoroutineContext().isActive) {
