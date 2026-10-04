@@ -53,16 +53,16 @@ class AndroidCameraCaptureFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!hasCameraPermission()) return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "camera_permission"))
+            if (!hasCameraPermission()) return@registerAction ActionExecutionResult(false, message = userText("feature.camera_permission_denied"))
             val path = photoPath(feature.config.string("fileName").resolveVariables(ctx.variables))
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "invalid_filename"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.camera_filename_invalid"))
             val ok = capturePhoto(
                 front = feature.config.string("camera", "back") == "front",
                 flash = feature.config.string("flash", "off"),
                 autoFocus = feature.config.boolean("autoFocus", true),
                 path = path,
             )
-            if (!ok) return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "camera_capture"))
+            if (!ok) return@registerAction ActionExecutionResult(false, message = userText("feature.camera_capture_failed"))
             val output = ConfigValue.StringValue(path)
             feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
             ActionExecutionResult(true, output)
@@ -82,17 +82,17 @@ class AndroidCameraCaptureFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, ctx ->
             if (!hasCameraPermission() || !hasAudioPermission()) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "camera_or_microphone_permission"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.camera_microphone_permission_required"))
             }
             val path = videoPath(feature.config.string("fileName").resolveVariables(ctx.variables))
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "invalid_filename"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.camera_filename_invalid"))
             val ok = CameraVideoRuntime.start(
                 front = feature.config.string("camera", "back") == "front",
                 quality = feature.config.string("quality", "HD"),
                 rotation = feature.config.string("rotation", "0").toIntOrNull() ?: 0,
                 path = path,
             )
-            if (!ok) return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "camera_video_start"))
+            if (!ok) return@registerAction ActionExecutionResult(false, message = userText("feature.camera_video_start_failed"))
             val output = ConfigValue.StringValue(path)
             feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
             ActionExecutionResult(true, output)
@@ -113,7 +113,7 @@ class AndroidCameraCaptureFeaturePack(context: Context) : FeaturePack {
             val path = CameraVideoRuntime.stop()
             val output = ConfigValue.StringValue(path)
             feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
-            ActionExecutionResult(path.isNotBlank(), output, if (path.isNotBlank()) null else userText("feature.operation_failed", "camera_video_not_recording"))
+            ActionExecutionResult(path.isNotBlank(), output, if (path.isNotBlank()) null else userText("feature.camera_video_not_recording"))
         }
     }
 
@@ -130,17 +130,17 @@ class AndroidCameraCaptureFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, ctx ->
             if (!hasCameraPermission() || !hasAudioPermission()) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "camera_or_microphone_permission"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.camera_microphone_permission_required"))
             }
             val path = videoPath(feature.config.string("fileName").resolveVariables(ctx.variables))
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "invalid_filename"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.camera_filename_invalid"))
             val started = CameraVideoRuntime.start(
                 front = feature.config.string("camera", "back") == "front",
                 quality = feature.config.string("quality", "HD"),
                 rotation = feature.config.string("rotation", "0").toIntOrNull() ?: 0,
                 path = path,
             )
-            if (!started) return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "camera_video_start"))
+            if (!started) return@registerAction ActionExecutionResult(false, message = userText("feature.camera_video_start_failed"))
             val duration = (feature.config["durationSeconds"].numberOrNull() ?: 30.0).toLong().coerceIn(1L, 1_800L)
             try {
                 delay(duration * 1_000L)
