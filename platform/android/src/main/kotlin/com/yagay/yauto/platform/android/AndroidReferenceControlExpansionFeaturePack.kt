@@ -27,8 +27,6 @@ class AndroidReferenceControlExpansionFeaturePack(context: Context) : FeaturePac
 
     override fun install(registry: FeatureRegistry) {
         registerImmersiveMode(registry)
-        registerMicrophoneMute(registry)
-        registerSpeakerphone(registry)
         registerVolumeUi(registry)
 
         numericPercentPair(
@@ -76,63 +74,6 @@ class AndroidReferenceControlExpansionFeaturePack(context: Context) : FeaturePac
             val command = immersiveModeCommand(feature.config.string("mode", "off"))
                 ?: return@privilegedAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
             executeShell(feature.typeId, command, ctx)
-        }
-    }
-
-    private fun registerMicrophoneMute(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.audio.microphone_mute.set"),
-                FeatureKind.ACTION,
-                "Set microphone mute",
-                "Mute, unmute, or toggle the Android system microphone mute state",
-                FeatureCategory.AUDIO,
-                fields = listOf(FieldSchema.Choice("mode", "Microphone state", true, listOf("mute", "unmute", "toggle"))),
-                keywords = setOf("microphone", "mute", "call", "voip", "MacroDroid"),
-                ownerPackId = id,
-            )
-        ) { feature, _ ->
-            val mute = when (feature.config.string("mode", "mute")) {
-                "mute" -> true
-                "unmute" -> false
-                "toggle" -> !audio.isMicrophoneMute
-                else -> return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
-            }
-            @Suppress("DEPRECATION")
-            val ok = runCatching {
-                audio.isMicrophoneMute = mute
-                audio.isMicrophoneMute == mute
-            }.getOrDefault(false)
-            ActionExecutionResult(ok, ConfigValue.BooleanValue(mute), if (ok) null else userText("feature.operation_failed", feature.typeId))
-        }
-    }
-
-    private fun registerSpeakerphone(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.audio.speakerphone.set"),
-                FeatureKind.ACTION,
-                "Set speakerphone",
-                "Enable, disable, or toggle speakerphone routing",
-                FeatureCategory.AUDIO,
-                fields = listOf(FieldSchema.Choice("mode", "Speakerphone state", true, listOf("enable", "disable", "toggle"))),
-                keywords = setOf("speakerphone", "speaker", "call", "audio route", "MacroDroid"),
-                ownerPackId = id,
-            )
-        ) { feature, _ ->
-            @Suppress("DEPRECATION")
-            val enabled = when (feature.config.string("mode", "enable")) {
-                "enable" -> true
-                "disable" -> false
-                "toggle" -> !audio.isSpeakerphoneOn
-                else -> return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
-            }
-            @Suppress("DEPRECATION")
-            val ok = runCatching {
-                audio.isSpeakerphoneOn = enabled
-                audio.isSpeakerphoneOn == enabled
-            }.getOrDefault(false)
-            ActionExecutionResult(ok, ConfigValue.BooleanValue(enabled), if (ok) null else userText("feature.operation_failed", feature.typeId))
         }
     }
 
