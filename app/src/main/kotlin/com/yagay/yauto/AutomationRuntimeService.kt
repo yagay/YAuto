@@ -67,6 +67,7 @@ class AutomationRuntimeService : Service() {
         registerSource("configured-cell-tower") { ConfiguredCellTowerEventSource(this, appGraph.workspace) }
         registerSource("configured-broadcast") { ConfiguredBroadcastEventSource(this, appGraph.workspace) }
         registerSource("configured-sensor") { ConfiguredSensorEventSource(this, appGraph.workspace) }
+        registerSource("configured-significant-motion") { ConfiguredSignificantMotionEventSource(this, appGraph.workspace) }
         registerSource("configured-location") { ConfiguredLocationEventSource(this, appGraph.workspace) }
         registerSource("configured-interval") { ConfiguredIntervalEventSource(appGraph.workspace) }
         registerSource("configured-file") { ConfiguredFileEventSource(appGraph.workspace) }
