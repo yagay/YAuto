@@ -35,7 +35,7 @@ class ConfiguredLocalePluginEventSource(
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action != LocalePluginProtocol.ACTION_REQUEST_QUERY) return
             if (!querying.compareAndSet(false, true)) return
-            val passthrough = intent.extras?.let(::android.os.Bundle)
+            val passthrough = intent.extras?.let { android.os.Bundle(it) }
             scope.launch {
                 try {
                     queryConfiguredEvents(passthrough)
