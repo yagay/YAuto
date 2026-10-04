@@ -1,14 +1,9 @@
 package com.yagay.yauto.platform.android
 
-import android.content.Context
-import android.content.Intent
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.numberOrNull
-import com.yagay.yauto.core.model.resolveVariables
 import com.yagay.yauto.core.model.string
-import com.yagay.yauto.core.model.userText
-import com.yagay.yauto.core.registry.ActionExecutionResult
 import com.yagay.yauto.core.registry.FeatureCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureId
@@ -18,58 +13,12 @@ import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.registry.FieldSchema
 
 /** Share-sheet actions and incoming Share Text / Share File automation triggers. */
-class AndroidShareFeaturePack(context: Context) : FeaturePack {
+class AndroidShareFeaturePack : FeaturePack {
     override val id: String = "android.share"
-    private val context = context.applicationContext
 
     override fun install(registry: FeatureRegistry) {
-        registerShareTextAction(registry)
         registerShareTextEvent(registry)
         registerShareFileEvent(registry)
-    }
-
-    private fun registerShareTextAction(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.share.text"),
-                FeatureKind.ACTION,
-                "Share text",
-                "Open the Android share sheet with text, subject and MIME type",
-                FeatureCategory.APP,
-                fields = listOf(
-                    FieldSchema.Text("text", "Text", true, multiline = true),
-                    FieldSchema.Text("subject", "Subject"),
-                    FieldSchema.Text("mimeType", "MIME type"),
-                    FieldSchema.Toggle("chooser", "Always show chooser"),
-                ),
-                keywords = setOf("share", "send text", "intent", "shortx", "macrodroid"),
-                ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            val text = feature.config.string("text").resolveVariables(ctx.variables)
-            val subject = feature.config.string("subject").resolveVariables(ctx.variables)
-            val mimeType = feature.config.string("mimeType", "text/plain").resolveVariables(ctx.variables).ifBlank { "text/plain" }
-            if (text.isBlank() && subject.isBlank()) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.share_text_empty"))
-            }
-            runCatching {
-                val send = Intent(Intent.ACTION_SEND).apply {
-                    type = mimeType
-                    putExtra(Intent.EXTRA_TEXT, text)
-                    if (subject.isNotBlank()) putExtra(Intent.EXTRA_SUBJECT, subject)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                val target = if (feature.config.boolean("chooser", true)) {
-                    Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                } else {
-                    send
-                }
-                context.startActivity(target)
-                ActionExecutionResult(true)
-            }.getOrElse {
-                ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName))
-            }
-        }
     }
 
     private fun registerShareTextEvent(registry: FeatureRegistry) {
