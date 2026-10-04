@@ -108,6 +108,12 @@ class AndroidReferenceSignalFeaturePack(context: Context) : FeaturePack {
         booleanPair(registry, "camera_flash_available", "Camera flash available", FeatureCategory.DEVICE) {
             packages.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)
         }
+        booleanPair(registry, "camera_in_use", "Camera in use", FeatureCategory.DEVICE) {
+            ReferenceRuntimeSignalState.cameraInUse()
+        }
+        numberPair(registry, "camera_unavailable_count", "Unavailable camera count", FeatureCategory.DEVICE, 0.0, 64.0) {
+            ReferenceRuntimeSignalState.unavailableCameraCount().toDouble()
+        }
 
         registerGenericSettingEvent(registry)
         registerDndEvent(registry)
@@ -337,6 +343,33 @@ class AndroidReferenceSignalFeaturePack(context: Context) : FeaturePack {
                 "on" -> available && enabled
                 "off" -> available && !enabled
                 "unavailable" -> !available
+                else -> true
+            }
+        }
+    }
+
+    private fun registerCameraAvailabilityEvent(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.camera_in_use_changed"),
+                FeatureKind.EVENT,
+                "Camera usage changed",
+                "Trigger when a camera becomes unavailable or available, commonly indicating camera use starting or stopping",
+                FeatureCategory.DEVICE,
+                fields = listOf(
+                    FieldSchema.Text("cameraId", "Camera ID"),
+                    FieldSchema.Choice("state", "Camera state", options = listOf("any", "in_use", "available")),
+                ),
+                keywords = setOf("camera in use", "camera availability", "camera busy", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, context ->
+            if (context.event.typeId != "android.event.camera_availability_changed") return@registerEvent false
+            val cameraId = feature.config.string("cameraId")
+            if (cameraId.isNotBlank() && context.event.payload.string("cameraId") != cameraId) return@registerEvent false
+            when (feature.config.string("state", "any")) {
+                "in_use" -> context.event.payload.boolean("inUse")
+                "available" -> context.event.payload.boolean("available")
                 else -> true
             }
         }
