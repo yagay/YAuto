@@ -22,6 +22,7 @@ class YAutoXposedModule : XposedModule() {
     private val systemRegistered = AtomicBoolean(false)
     private val appReceivers = ConcurrentHashMap.newKeySet<String>()
     private val installedHooks = ConcurrentHashMap.newKeySet<String>()
+    private val systemEventDedup = ConcurrentHashMap<String, Long>()
 
     override fun onSystemServerStarting(param: SystemServerStartingParam) {
         try {
@@ -32,7 +33,7 @@ class YAutoXposedModule : XposedModule() {
                     try {
                         val field = server.getDeclaredField("mSystemContext").apply { isAccessible = true }
                         val context = field.get(chain.thisObject) as? Context
-                        if (context != null) registerSystemBridge(context)
+                        if (context != null) registerSystemBridge(context, param.classLoader)
                     } catch (error: Exception) {
                         log(Log.ERROR, "YAuto", "System bridge registration failed", error)
                     }
@@ -61,7 +62,7 @@ class YAutoXposedModule : XposedModule() {
         }
     }
 
-    private fun registerSystemBridge(context: Context) {
+    private fun registerSystemBridge(context: Context, classLoader: ClassLoader) {
         if (!systemRegistered.compareAndSet(false, true)) return
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(received: Context?, intent: Intent?) {
@@ -160,12 +161,250 @@ class YAutoXposedModule : XposedModule() {
                 @Suppress("DEPRECATION")
                 context.registerReceiver(receiver, IntentFilter(SystemBridgeProtocol.ACTION), SystemBridgeProtocol.PERMISSION, null)
             }
+            installSystemRuntimeHooks(context, classLoader)
             log(Log.INFO, "YAuto", "System bridge ready")
         } catch (error: Exception) {
             systemRegistered.set(false)
             throw error
         }
     }
+
+
+
+    private fun installSystemRuntimeHooks(context: Context, classLoader: ClassLoader) {
+        installProcessDeathHooks(context, classLoader)
+        installTaskRemovedHooks(context, classLoader)
+        installBackNavigationHooks(context, classLoader)
+    }
+
+    private fun installProcessDeathHooks(context: Context, classLoader: ClassLoader) {
+        val clazz = runCatching { classLoader.loadClass("com.android.server.am.ProcessRecord") }.getOrNull() ?: return
+        clazz.declaredMethods
+            .filter { method ->
+                method.name in setOf("killLocked", "kill", "makeInactive") &&
+                    method.returnType == Void.TYPE
+            }
+            .forEach { method ->
+                val key = "system-process-death|" + method.toGenericString()
+                if (!installedHooks.add(key)) return@forEach
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    val process = processSnapshot(chain.thisObject)
+                    val result = chain.proceed()
+                    if (process.packageName.isNotBlank() || process.processName.isNotBlank()) {
+                        emitSystemRuntimeEvent(
+                            context = context,
+                            type = "android.event.app_process_stopped",
+                            dedupKey = "process:" + process.uid + ":" + process.pid + ":" + process.processName,
+                            extras = mapOf(
+                                "package" to process.packageName,
+                                "processName" to process.processName,
+                                "uid" to process.uid,
+                                "pid" to process.pid,
+                                "reason" to method.name,
+                            ),
+                        )
+                    }
+                    result
+                }
+            }
+    }
+
+    private fun installTaskRemovedHooks(context: Context, classLoader: ClassLoader) {
+        val recentTasks = runCatching { classLoader.loadClass("com.android.server.wm.RecentTasks") }.getOrNull()
+        recentTasks?.declaredMethods
+            ?.filter { method ->
+                method.name == "remove" &&
+                    method.parameterTypes.any { it.name == "com.android.server.wm.Task" }
+            }
+            ?.forEach { method ->
+                val key = "system-task-removed|" + method.toGenericString()
+                if (!installedHooks.add(key)) return@forEach
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    val task = chain.args.firstOrNull { it?.javaClass?.name == "com.android.server.wm.Task" }
+                    val snapshot = taskSnapshot(task)
+                    val result = chain.proceed()
+                    emitSystemRuntimeEvent(
+                        context = context,
+                        type = "android.event.task_removed",
+                        dedupKey = "task:" + snapshot.taskId + ":" + snapshot.packageName,
+                        extras = mapOf(
+                            "taskId" to snapshot.taskId,
+                            "package" to snapshot.packageName,
+                            "activity" to snapshot.activityName,
+                            "reason" to method.name,
+                        ),
+                    )
+                    result
+                }
+            }
+
+        val taskClass = runCatching { classLoader.loadClass("com.android.server.wm.Task") }.getOrNull() ?: return
+        taskClass.declaredMethods
+            .filter { it.name in setOf("removeImmediately", "removeIfPossible") }
+            .forEach { method ->
+                val key = "system-task-direct-remove|" + method.toGenericString()
+                if (!installedHooks.add(key)) return@forEach
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    val snapshot = taskSnapshot(chain.thisObject)
+                    val result = chain.proceed()
+                    emitSystemRuntimeEvent(
+                        context = context,
+                        type = "android.event.task_removed",
+                        dedupKey = "task:" + snapshot.taskId + ":" + snapshot.packageName,
+                        extras = mapOf(
+                            "taskId" to snapshot.taskId,
+                            "package" to snapshot.packageName,
+                            "activity" to snapshot.activityName,
+                            "reason" to method.name,
+                        ),
+                    )
+                    result
+                }
+            }
+    }
+
+    private fun installBackNavigationHooks(context: Context, classLoader: ClassLoader) {
+        val clazz = runCatching { classLoader.loadClass("com.android.server.wm.BackNavigationController") }.getOrNull() ?: return
+        clazz.declaredMethods
+            .filter { method ->
+                method.name in setOf(
+                    "startBackNavigation",
+                    "onBackNavigationDone",
+                    "finishBackNavigation",
+                    "clearBackAnimations",
+                    "clearBackAnimateTarget",
+                )
+            }
+            .forEach { method ->
+                val started = method.name == "startBackNavigation"
+                val key = "system-back-nav|" + method.toGenericString()
+                if (!installedHooks.add(key)) return@forEach
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    if (started) {
+                        emitSystemRuntimeEvent(
+                            context = context,
+                            type = "android.event.back_navigation_started",
+                            dedupKey = "back-start",
+                            extras = mapOf("method" to method.name),
+                            dedupWindowMs = 150L,
+                        )
+                    }
+                    val result = chain.proceed()
+                    if (!started) {
+                        emitSystemRuntimeEvent(
+                            context = context,
+                            type = "android.event.back_navigation_finished",
+                            dedupKey = "back-finish",
+                            extras = mapOf("method" to method.name),
+                            dedupWindowMs = 150L,
+                        )
+                    }
+                    result
+                }
+            }
+    }
+
+    private fun emitSystemRuntimeEvent(
+        context: Context,
+        type: String,
+        dedupKey: String,
+        extras: Map<String, Any?>,
+        dedupWindowMs: Long = 1_000L,
+    ) {
+        val now = System.currentTimeMillis()
+        val previous = systemEventDedup.put(dedupKey, now)
+        if (previous != null && now - previous < dedupWindowMs) return
+        if (systemEventDedup.size > 256) {
+            systemEventDedup.entries.removeIf { now - it.value > 60_000L }
+        }
+        val intent = Intent(SystemBridgeProtocol.SYSTEM_EVENT_ACTION)
+            .setPackage(YAUTO_PACKAGE)
+            .putExtra("type", type)
+            .putExtra("timestampEpochMs", now)
+        extras.forEach { (key, value) ->
+            when (value) {
+                is String -> intent.putExtra(key, value)
+                is Int -> intent.putExtra(key, value)
+                is Long -> intent.putExtra(key, value)
+                is Boolean -> intent.putExtra(key, value)
+            }
+        }
+        runCatching { context.sendBroadcast(intent) }
+    }
+
+    private fun processSnapshot(target: Any?): ProcessSnapshot {
+        if (target == null) return ProcessSnapshot()
+        val info = reflectedValue(target, "info", "mInfo")
+        val packageName = reflectedString(info, "packageName")
+            .ifBlank { reflectedString(target, "packageName", "mPackageName") }
+        return ProcessSnapshot(
+            packageName = packageName,
+            processName = reflectedString(target, "processName", "mProcessName"),
+            uid = reflectedInt(target, "uid", "mUid"),
+            pid = reflectedInt(target, "pid", "mPid"),
+        )
+    }
+
+    private fun taskSnapshot(target: Any?): TaskSnapshot {
+        if (target == null) return TaskSnapshot()
+        val taskId = reflectedInt(target, "mTaskId", "taskId")
+        val component = reflectedValue(target, "realActivity", "origActivity", "mRealActivity") as? android.content.ComponentName
+        val intent = reflectedValue(target, "intent", "mIntent") as? Intent
+        val resolved = component ?: intent?.component
+        return TaskSnapshot(
+            taskId = taskId,
+            packageName = resolved?.packageName.orEmpty(),
+            activityName = resolved?.className.orEmpty(),
+        )
+    }
+
+    private fun reflectedString(target: Any?, vararg names: String): String =
+        reflectedValue(target, *names)?.toString().orEmpty()
+
+    private fun reflectedInt(target: Any?, vararg names: String): Int =
+        when (val value = reflectedValue(target, *names)) {
+            is Int -> value
+            is Number -> value.toInt()
+            else -> -1
+        }
+
+    private fun reflectedValue(target: Any?, vararg names: String): Any? {
+        if (target == null) return null
+        var type: Class<*>? = target.javaClass
+        while (type != null) {
+            for (name in names) {
+                val field = runCatching { type.getDeclaredField(name) }.getOrNull() ?: continue
+                field.isAccessible = true
+                return runCatching { field.get(target) }.getOrNull()
+            }
+            type = type.superclass
+        }
+        for (name in names) {
+            val getter = target.javaClass.methods.firstOrNull {
+                it.parameterCount == 0 &&
+                    (it.name.equals(name, true) || it.name.equals("get" + name.replaceFirstChar(Char::uppercase), true))
+            } ?: continue
+            return runCatching { getter.invoke(target) }.getOrNull()
+        }
+        return null
+    }
+
+    private data class ProcessSnapshot(
+        val packageName: String = "",
+        val processName: String = "",
+        val uid: Int = -1,
+        val pid: Int = -1,
+    )
+
+    private data class TaskSnapshot(
+        val taskId: Int = -1,
+        val packageName: String = "",
+        val activityName: String = "",
+    )
 
     private fun registerAppHookBridge(context: Context, packageName: String, classLoader: ClassLoader) {
         val processName = runCatching { Application.getProcessName() }.getOrDefault(packageName)
