@@ -8,6 +8,7 @@ object AndroidFeaturePacks {
         context: Context,
         quickSettingsTiles: QuickSettingsTileController,
         overlaySurfaces: OverlaySurfaceController,
+        workspace: com.yagay.yauto.core.storage.WorkspaceRepository,
     ): List<FeaturePack> = listOf(
         AndroidFeaturePack(context),
         AndroidCommunicationFeaturePack(context),
@@ -66,6 +67,7 @@ object AndroidFeaturePacks {
         AndroidMacroDroidParityFeaturePack(context),
         AndroidModeFeaturePack(context),
         AndroidMatterFeaturePack(context),
+        AndroidStandaloneExportFeaturePack(context, workspace),
         AndroidUsbFeaturePack(context),
         AndroidMediaDeviceFeaturePack(context),
         AndroidAudioFeaturePack(context),
