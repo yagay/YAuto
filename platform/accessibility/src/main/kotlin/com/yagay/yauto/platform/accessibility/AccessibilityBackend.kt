@@ -66,7 +66,7 @@ class AccessibilityBackend : CapabilityBackend {
                 AccessibilityOperations.GET_VIEW_TEXT -> {
                     val value = service.textByViewId(request.payload.string("viewId"))
                         ?: return@withContext CapabilityResult(success = false, value = ConfigValue.NullValue)
-                    return@withContext CapabilityResult(true, ConfigValue.StringValue(value))
+                    return@withContext CapabilityResult(success = true, value = ConfigValue.StringValue(value))
                 }
                 AccessibilityOperations.GET_UI_NODES -> {
                     val nodes = service.uiNodes(
