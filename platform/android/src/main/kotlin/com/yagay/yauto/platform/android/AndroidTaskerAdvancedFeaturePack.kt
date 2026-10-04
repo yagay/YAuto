@@ -504,7 +504,7 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
 }
 
 internal fun localePluginRuleKey(feature: FeatureRef): String =
-    feature.config.entries
+    feature.config
         .filterKeys { it !in setOf("source.raw", "source.type", "source.importer", "tag", "timeoutMs") }
         .toSortedMap()
         .entries
