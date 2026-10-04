@@ -124,4 +124,7 @@
     <string name="runtime_value_false">False</string>
     <string name="runtime_value_true">True</string>
     <string name="runtime_qs_tile_default_label">YAuto %1$d</string>
+    <string name="runtime_feature_tile_slot_invalid">Tile slot must be between 1 and 3</string>
+    <string name="runtime_feature_solar_times_unavailable">Sunrise and sunset are unavailable for this date and location</string>
+    <string name="runtime_feature_share_text_empty">Share text and subject are both empty</string>
 </resources>
