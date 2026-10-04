@@ -123,6 +123,31 @@ class AndroidFileFeaturePack : FeaturePack {
             }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         } }
 
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("file.properties"),
+                FeatureKind.ACTION,
+                "Get file properties",
+                "Read filesystem metadata for an accessible file or directory",
+                FeatureCategory.FILE,
+                fields = listOf(
+                    FieldSchema.Text("path", "Path", true),
+                    FieldSchema.Variable("resultVariable", "Store properties object", true),
+                ),
+                keywords = setOf("file", "properties", "metadata", "size", "modified", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx -> withContext(Dispatchers.IO) {
+            runCatching {
+                val file = File(feature.config.string("path").resolveVariables(ctx.variables))
+                val output = filePropertiesValue(file)
+                ctx.variables.set(feature.config.string("resultVariable"), output)
+                ActionExecutionResult(true, output)
+            }.getOrElse {
+                ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName))
+            }
+        } }
+
         registerExists(registry, FeatureKind.STATE, "file.state.exists")
         registerExists(registry, FeatureKind.CONDITION, "file.condition.exists")
     }
@@ -165,4 +190,27 @@ class AndroidFileFeaturePack : FeaturePack {
         }
         if (kind == FeatureKind.STATE) registry.registerState(descriptor, evaluator) else registry.registerCondition(descriptor, evaluator)
     }
+}
+
+
+internal fun filePropertiesValue(file: File): ConfigValue.ObjectValue {
+    val exists = file.exists()
+    return ConfigValue.ObjectValue(
+        mapOf(
+            "path" to ConfigValue.StringValue(file.path),
+            "absolutePath" to ConfigValue.StringValue(file.absolutePath),
+            "canonicalPath" to ConfigValue.StringValue(runCatching { file.canonicalPath }.getOrDefault(file.absolutePath)),
+            "name" to ConfigValue.StringValue(file.name),
+            "extension" to ConfigValue.StringValue(file.extension),
+            "exists" to ConfigValue.BooleanValue(exists),
+            "isFile" to ConfigValue.BooleanValue(file.isFile),
+            "isDirectory" to ConfigValue.BooleanValue(file.isDirectory),
+            "isHidden" to ConfigValue.BooleanValue(file.isHidden),
+            "sizeBytes" to ConfigValue.NumberValue(if (exists && file.isFile) file.length().toDouble() else 0.0),
+            "lastModifiedEpochMs" to ConfigValue.NumberValue(if (exists) file.lastModified().toDouble() else 0.0),
+            "canRead" to ConfigValue.BooleanValue(exists && file.canRead()),
+            "canWrite" to ConfigValue.BooleanValue(exists && file.canWrite()),
+            "canExecute" to ConfigValue.BooleanValue(exists && file.canExecute()),
+        )
+    )
 }
