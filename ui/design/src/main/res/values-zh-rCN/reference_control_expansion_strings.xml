@@ -31,11 +31,7 @@
     <string name="feature_android_audio_volume_ui_show_field_stream_option_ringer">铃声</string>
     <string name="feature_android_audio_volume_ui_show_field_stream_option_system">系统</string>
     <string name="feature_android_audio_volume_ui_show_field_stream_option_voice_call">通话</string>
-    <string name="feature_android_audio_volume_ui_show_field_stream_option_bluetooth_voice">蓝牙通话</string>
-
-    <string name="feature_android_home_open_title">打开主屏幕</string>
-    <string name="feature_android_home_open_description">通过标准 Home Intent 返回 Android 主屏幕</string>
-    <string name="feature_android_state_display_density_percent_title">显示密度百分比</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_bluetooth_voice">蓝牙通话</string>    <string name="feature_android_state_display_density_percent_title">显示密度百分比</string>
     <string name="feature_android_state_display_density_percent_description">将当前显示密度与设备稳定密度百分比进行比较</string>
     <string name="feature_android_state_display_density_percent_field_minpercent">最小百分比</string>
     <string name="feature_android_state_display_density_percent_field_maxpercent">最大百分比</string>
