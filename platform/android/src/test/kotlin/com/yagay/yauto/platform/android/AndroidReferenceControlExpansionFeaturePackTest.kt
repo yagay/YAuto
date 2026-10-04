@@ -50,7 +50,7 @@ class AndroidReferenceControlExpansionFeaturePackTest {
         assertEquals(AudioManager.STREAM_RING, audioStream("ringer"))
         assertEquals(AudioManager.STREAM_SYSTEM, audioStream("system"))
         assertEquals(AudioManager.STREAM_VOICE_CALL, audioStream("voice_call"))
-        assertEquals(AudioManager.STREAM_BLUETOOTH_SCO, audioStream("bluetooth_voice"))
+        assertEquals(6, audioStream("bluetooth_voice"))
         assertNull(audioStream("unknown"))
     }
 }
