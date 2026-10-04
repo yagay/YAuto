@@ -65,7 +65,7 @@ class AppGraph(context: Context) {
     init {
         installCatalog("features.standard.catalog") { StandardFeaturePacks.all(runtime, runtime) }
         installCatalog("features.android.catalog") {
-            AndroidFeaturePacks.all(appContext, quickSettingsTiles, overlaySurfaces)
+            AndroidFeaturePacks.all(appContext, quickSettingsTiles, overlaySurfaces, workspace)
         }
         installPack("feature:accessibility") {
             AccessibilityFeaturePack {
