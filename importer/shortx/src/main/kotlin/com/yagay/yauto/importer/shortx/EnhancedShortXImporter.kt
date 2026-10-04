@@ -315,7 +315,6 @@ internal object ShortXFeatureSuggestions {
         "MatchJS" -> "script.javascript.condition"
         "VPNIsConnected" -> "android.condition.network_profile"
         "IsRuleEnabled" -> "core.automation.enabled"
-        "MatchMVEL" -> "script.mvel.condition"
         "IsInCall", "IsRinging" -> "android.condition.phone_call_state"
         "FoldAngle", "FoldAngleCondition", "HingeAngle" -> "android.condition.hinge_angle"
         "RequireScreenRotate" -> "android.condition.reference.display_rotation"
