@@ -28,7 +28,6 @@ class AndroidLegacyParityFeaturePack(context: Context) : FeaturePack {
         registerAppLocale(registry)
         registerAssistant(registry)
         registerDemoMode(registry)
-        registerSensorRead(registry)
         registerSensorCondition(registry)
     }
 
@@ -295,52 +294,6 @@ class AndroidLegacyParityFeaturePack(context: Context) : FeaturePack {
             state.copy(id = FeatureId("android.condition.sensor_value"), kind = FeatureKind.CONDITION),
             evaluator,
         )
-    }
-
-    private fun registerSensorRead(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.sensor.read"), FeatureKind.ACTION,
-                "Read sensor once",
-                "Read one sample from an Android hardware sensor and store its values",
-                FeatureCategory.DEVICE,
-                fields = listOf(
-                    FieldSchema.Choice(
-                        "sensor", "Sensor", true,
-                        listOf(
-                            "light", "proximity", "accelerometer", "gyroscope", "magnetic_field",
-                            "pressure", "gravity", "linear_acceleration", "rotation_vector",
-                            "relative_humidity", "ambient_temperature",
-                        ),
-                    ),
-                    FieldSchema.Duration("timeoutMs", "Timeout"),
-                    FieldSchema.Variable("resultVariable", "Store sensor sample", true),
-                ),
-                keywords = setOf("sensor", "light level", "proximity", "macrodroid"),
-                ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            val type = SENSOR_TYPES[feature.config.string("sensor")]
-                ?: return@registerAction ActionExecutionResult(false)
-            val sensor = sensors.getDefaultSensor(type)
-                ?: return@registerAction ActionExecutionResult(false)
-            val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 5_000.0)
-                .toLong().coerceIn(100L, 60_000L)
-            val sample = withTimeoutOrNull(timeout) { readSensor(sensor) }
-                ?: return@registerAction ActionExecutionResult(false)
-            val output = ConfigValue.ObjectValue(
-                buildMap {
-                    put("sensorType", ConfigValue.NumberValue(sensor.type.toDouble()))
-                    put("name", ConfigValue.StringValue(sensor.name))
-                    put("vendor", ConfigValue.StringValue(sensor.vendor))
-                    put("accuracy", ConfigValue.NumberValue(sample.accuracy.toDouble()))
-                    put("timestampNs", ConfigValue.NumberValue(sample.timestamp.toDouble()))
-                    put("values", ConfigValue.ListValue(sample.values.map { ConfigValue.NumberValue(it.toDouble()) }))
-                }
-            )
-            ctx.variables.set(feature.config.string("resultVariable"), output)
-            ActionExecutionResult(true, output)
-        }
     }
 
     private suspend fun readSensor(sensor: Sensor): SensorSample? =
