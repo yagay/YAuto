@@ -170,9 +170,31 @@ class TaskerImporter : AutomationImporter {
                     continue
                 }
             }
+            if (code == "39") {
+                val parsed = parseTaskerFor(actions, index, end, task, flowAliases, issues)
+                if (parsed != null) {
+                    output += parsed.node
+                    index = parsed.nextIndex
+                    continue
+                }
+            }
+            if (code == "35") {
+                val conditionList = action.children("ConditionList").firstOrNull()
+                val predicate = conditionList?.let(::taskerConditionList)
+                if (predicate != null) {
+                    output += ActionNode.WaitUntil(
+                        id = NodeId(UUID.randomUUID().toString()),
+                        condition = predicate,
+                        pollIntervalMs = TaskerMappings.waitUntilPollIntervalMs(action),
+                        unlimited = true,
+                    )
+                    index++
+                    continue
+                }
+            }
 
             when (code) {
-                "38", "43" -> {
+                "38", "40", "43" -> {
                     // Stray control marker: preserve rather than silently changing execution.
                     issues += CompatibilityIssue(
                         ImportSeverity.WARNING,
@@ -259,6 +281,82 @@ class TaskerImporter : AutomationImporter {
                 elseActions,
             ),
             endIfIndex + 1,
+        )
+    }
+
+    private data class ParsedFor(val node: ActionNode.ForEach, val nextIndex: Int)
+
+    private fun parseTaskerFor(
+        actions: List<Element>,
+        start: Int,
+        end: Int,
+        task: TaskDef,
+        flowAliases: Map<String, FlowId>,
+        issues: MutableList<CompatibilityIssue>,
+    ): ParsedFor? {
+        val action = actions[start]
+        if (TaskerMappings.forMode(action) != 0L) return null
+        val variable = TaskerMappings.forVariable(action) ?: return null
+        val rawItems = TaskerMappings.forItems(action) ?: return null
+
+        var depth = 0
+        var endFor = -1
+        var index = start + 1
+        while (index < end) {
+            when (actions[index].childText("code")) {
+                "39" -> depth++
+                "40" -> {
+                    if (depth == 0) {
+                        endFor = index
+                        break
+                    }
+                    depth--
+                }
+            }
+            index++
+        }
+        if (endFor < 0) return null
+
+        val body = mapActionRange(actions, start + 1, endFor, task, flowAliases, issues)
+        val trimmed = rawItems.trim()
+        val arrayMatch = Regex("""^(%[A-Za-z0-9_]+)\(\)$""").matchEntire(trimmed)
+        if (arrayMatch != null) {
+            return ParsedFor(
+                ActionNode.ForEach(
+                    id = NodeId(UUID.randomUUID().toString()),
+                    variableName = variable,
+                    actions = body,
+                    sourceVariable = arrayMatch.groupValues[1],
+                ),
+                endFor + 1,
+            )
+        }
+
+        val range = Regex("""^(-?\d+)\s*:\s*(-?\d+)$""").matchEntire(trimmed)
+        val values = if (range != null) {
+            val from = range.groupValues[1].toIntOrNull() ?: return null
+            val to = range.groupValues[2].toIntOrNull() ?: return null
+            val count = kotlin.math.abs(to.toLong() - from.toLong()) + 1L
+            if (count > 10_000L) return null
+            if (from <= to) (from..to).map { ConfigValue.NumberValue(it.toDouble()) }
+            else (from downTo to).map { ConfigValue.NumberValue(it.toDouble()) }
+        } else {
+            if ('%' in trimmed) return null
+            trimmed.split(',')
+                .map(String::trim)
+                .filter(String::isNotEmpty)
+                .map { ConfigValue.StringValue(it) }
+        }
+        if (values.isEmpty()) return null
+
+        return ParsedFor(
+            ActionNode.ForEach(
+                id = NodeId(UUID.randomUUID().toString()),
+                values = values,
+                variableName = variable,
+                actions = body,
+            ),
+            endFor + 1,
         )
     }
 
