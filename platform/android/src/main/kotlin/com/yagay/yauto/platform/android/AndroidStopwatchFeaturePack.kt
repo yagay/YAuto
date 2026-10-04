@@ -34,7 +34,7 @@ class AndroidStopwatchFeaturePack : FeaturePack {
             FeatureDescriptor(
                 FeatureId("android.stopwatch.get"), FeatureKind.ACTION,
                 "Get stopwatch", "Return elapsed time and running state for a named stopwatch",
-                FeatureCategory.TIME,
+                FeatureCategory.CORE,
                 fields = listOf(
                     FieldSchema.Text("name", "Stopwatch name", true),
                     FieldSchema.Variable("resultVariable", "Store stopwatch object", true),
@@ -74,7 +74,7 @@ class AndroidStopwatchFeaturePack : FeaturePack {
         val state = FeatureDescriptor(
             FeatureId("android.state.stopwatch"), FeatureKind.STATE,
             "Stopwatch state", "Check elapsed time and running state of a named stopwatch",
-            FeatureCategory.TIME,
+            FeatureCategory.CORE,
             fields = fields,
             keywords = setOf("stopwatch", "elapsed", "running"),
             ownerPackId = id,
@@ -86,7 +86,7 @@ class AndroidStopwatchFeaturePack : FeaturePack {
             FeatureDescriptor(
                 FeatureId("android.event.stopwatch_reached"), FeatureKind.EVENT,
                 "Stopwatch reached", "Run when a named stopwatch reaches a configured elapsed duration",
-                FeatureCategory.TIME,
+                FeatureCategory.CORE,
                 fields = listOf(
                     FieldSchema.Text("name", "Stopwatch name", true),
                     FieldSchema.Duration("elapsedMs", "Elapsed duration", true),
@@ -114,7 +114,7 @@ class AndroidStopwatchFeaturePack : FeaturePack {
             FeatureDescriptor(
                 FeatureId(typeId), FeatureKind.ACTION,
                 title, "$title for a named YAuto stopwatch",
-                FeatureCategory.TIME,
+                FeatureCategory.CORE,
                 fields = listOf(FieldSchema.Text("name", "Stopwatch name", true)),
                 keywords = setOf("stopwatch", "timer", title.lowercase()),
                 ownerPackId = id,
