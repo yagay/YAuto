@@ -119,6 +119,29 @@ class YAutoXposedModule : XposedModule() {
                             } ?: error("shutdown unavailable")
                             shutdown.invoke(power, false, "YAuto", false, false)
                         }
+                        SystemOperations.SENSORS_OFF_ENABLE,
+                        SystemOperations.SENSORS_OFF_DISABLE,
+                        SystemOperations.SENSORS_OFF_QUERY -> {
+                            val manager = context.getSystemService("sensor_privacy")
+                                ?: error("Sensor privacy service unavailable")
+                            val operation = intent.getStringExtra("operation")
+                            if (operation == SystemOperations.SENSORS_OFF_QUERY) {
+                                val query = manager.javaClass.methods.firstOrNull {
+                                    it.name == "isAllSensorPrivacyEnabled" && it.parameterCount == 0
+                                } ?: error("isAllSensorPrivacyEnabled unavailable")
+                                response.putBoolean("enabled", query.invoke(manager) as? Boolean == true)
+                            } else {
+                                val enabled = operation == SystemOperations.SENSORS_OFF_ENABLE
+                                val setter = manager.javaClass.methods.firstOrNull {
+                                    it.name == "setAllSensorPrivacy" &&
+                                        it.parameterCount == 1 &&
+                                        (it.parameterTypes[0] == Boolean::class.javaPrimitiveType ||
+                                            it.parameterTypes[0] == java.lang.Boolean::class.java)
+                                } ?: error("setAllSensorPrivacy unavailable")
+                                setter.invoke(manager, enabled)
+                                response.putBoolean("enabled", enabled)
+                            }
+                        }
                         else -> error("Unsupported operation")
                     }
                     response.putBoolean("success", true)
