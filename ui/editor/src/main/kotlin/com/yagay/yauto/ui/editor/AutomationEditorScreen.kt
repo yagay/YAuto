@@ -577,6 +577,8 @@ private fun actionNodeTitle(node: ActionNode, flows: List<Flow>): String = when 
         TextR.string.node_call_flow_format,
         flows.firstOrNull { it.id == node.flowId }?.name ?: node.flowId.value,
     )
+    is ActionNode.Label -> stringResource(TextR.string.tree_label_format, node.name)
+    is ActionNode.Goto -> stringResource(TextR.string.tree_goto_format, node.label)
     is ActionNode.Return -> stringResource(TextR.string.node_return)
     is ActionNode.Break -> stringResource(TextR.string.node_break)
     is ActionNode.Continue -> stringResource(TextR.string.node_continue)
