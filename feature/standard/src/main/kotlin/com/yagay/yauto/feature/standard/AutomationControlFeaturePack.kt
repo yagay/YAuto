@@ -95,6 +95,20 @@ class AutomationControlFeaturePack(
         },
         conditionFeature(
             automationDescriptor(
+                "core.automation.running",
+                FeatureKind.CONDITION,
+                "Automation running",
+                "Check whether a YAuto automation currently has an active execution",
+                fields = listOf(FieldSchema.Text("target", "Target automation", true)),
+                keywords = setOf("automation", "running", "active", "macro", "task"),
+                behaviors = mapOf("target" to FieldBehavior(supportsVariables = true)),
+            )
+        ) { feature, context ->
+            val target = feature.config.string("target").resolveVariables(context.variables)
+            control.isRunning(target) == true
+        },
+        conditionFeature(
+            automationDescriptor(
                 "core.automation.enabled",
                 FeatureKind.CONDITION,
                 "Automation enabled",
