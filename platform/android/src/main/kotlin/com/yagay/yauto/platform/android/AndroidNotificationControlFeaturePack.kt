@@ -54,6 +54,9 @@ class AndroidNotificationControlFeaturePack : FeaturePack {
         registerReply(registry)
         registerDismissAll(registry)
         registerQuery(registry)
+        registerHistory(registry)
+        registerRestore(registry)
+        registerClearHistory(registry)
         registerCount(registry)
         registerActiveState(registry)
         registerCountState(registry)
@@ -173,6 +176,104 @@ class AndroidNotificationControlFeaturePack : FeaturePack {
             val ordered = if (order == "oldest") source.sortedBy { it.postTimeEpochMs } else source.sortedByDescending { it.postTimeEpochMs }
             val output = ConfigValue.ListValue(ordered.take(limit).map(::notificationObject))
             ctx.variables.set(feature.config.string("resultVariable"), output)
+            ActionExecutionResult(true, output)
+        }
+    }
+
+    private fun registerHistory(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.notification.history.query"), FeatureKind.ACTION,
+                "Query removed notification history",
+                "Return recently removed notifications captured while YAuto notification access was connected",
+                FeatureCategory.NOTIFICATION,
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "App / package"),
+                    FieldSchema.Text("titleContains", "Title contains"),
+                    FieldSchema.Text("textContains", "Text contains"),
+                    FieldSchema.Number("maxCount", "Maximum results", min = 1.0, max = 200.0),
+                    FieldSchema.Variable("resultVariable", "Store history list", true),
+                ),
+                accessRequirements = setOf(AccessRequirement.NOTIFICATION_LISTENER),
+                keywords = setOf("notification history", "removed", "restore", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val controller = NotificationControlBridge.current()
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.notification_listener_disconnected"))
+            val pkg = feature.config.string("package").trim()
+            val title = feature.config.string("titleContains")
+            val text = feature.config.string("textContains")
+            val limit = (feature.config["maxCount"].numberOrNull()?.toInt() ?: 100).coerceIn(1, 200)
+            val output = ConfigValue.ListValue(
+                controller.history().asSequence()
+                    .filter { pkg.isBlank() || it.packageName == pkg }
+                    .filter { title.isBlank() || it.title.contains(title, ignoreCase = true) }
+                    .filter { text.isBlank() || it.text.contains(text, ignoreCase = true) }
+                    .take(limit)
+                    .map(::historicalNotificationObject)
+                    .toList()
+            )
+            val target = feature.config.string("resultVariable").trim()
+            if (target.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.result_variable_empty"))
+            ctx.variables.set(target, output)
+            ActionExecutionResult(true, output)
+        }
+    }
+
+    private fun registerRestore(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.notification.restore"), FeatureKind.ACTION,
+                "Restore removed notifications",
+                "Repost copies of recently removed notifications through YAuto while preserving available original content/action intents",
+                FeatureCategory.NOTIFICATION,
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "App / package"),
+                    FieldSchema.Toggle("excludePackage", "Exclude selected package"),
+                    FieldSchema.Text("titleContains", "Title contains"),
+                    FieldSchema.Text("textContains", "Text contains"),
+                    FieldSchema.Number("maxCount", "Maximum to restore", min = 1.0, max = 100.0),
+                    FieldSchema.Variable("resultVariable", "Store restored count"),
+                ),
+                accessRequirements = setOf(AccessRequirement.NOTIFICATION_LISTENER, AccessRequirement.POST_NOTIFICATIONS),
+                keywords = setOf("restore notifications", "notification history", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val controller = NotificationControlBridge.current()
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.notification_listener_disconnected"))
+            val restored = controller.restore(
+                packageName = feature.config.string("package").trim(),
+                titleContains = feature.config.string("titleContains"),
+                textContains = feature.config.string("textContains"),
+                maxCount = (feature.config["maxCount"].numberOrNull()?.toInt() ?: 50).coerceIn(1, 100),
+                excludePackage = feature.config.boolean("excludePackage", false),
+            )
+            val output = ConfigValue.NumberValue(restored.toDouble())
+            feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
+            ActionExecutionResult(restored > 0, output, if (restored > 0) null else userText("feature.notification_operation_failed"))
+        }
+    }
+
+    private fun registerClearHistory(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.notification.history.clear"), FeatureKind.ACTION,
+                "Clear notification history",
+                "Clear YAuto's in-memory removed-notification history and return the number removed",
+                FeatureCategory.NOTIFICATION,
+                fields = listOf(FieldSchema.Variable("resultVariable", "Store cleared count")),
+                accessRequirements = setOf(AccessRequirement.NOTIFICATION_LISTENER),
+                keywords = setOf("notification history", "clear history"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val controller = NotificationControlBridge.current()
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.notification_listener_disconnected"))
+            val count = controller.clearHistory()
+            val output = ConfigValue.NumberValue(count.toDouble())
+            feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
             ActionExecutionResult(true, output)
         }
     }
@@ -356,5 +457,20 @@ private fun notificationObject(item: ActiveNotificationSnapshot): ConfigValue.Ob
         "groupKey" to ConfigValue.StringValue(item.groupKey),
         "actionTitles" to ConfigValue.ListValue(item.actionTitles.map { ConfigValue.StringValue(it) }),
         "replyActionIndexes" to ConfigValue.ListValue(item.replyActionIndexes.map { ConfigValue.NumberValue(it.toDouble()) }),
+    )
+)
+
+
+private fun historicalNotificationObject(item: HistoricalNotificationSnapshot): ConfigValue.ObjectValue = ConfigValue.ObjectValue(
+    mapOf(
+        "package" to ConfigValue.StringValue(item.packageName),
+        "title" to ConfigValue.StringValue(item.title),
+        "text" to ConfigValue.StringValue(item.text),
+        "removedAtEpochMs" to ConfigValue.NumberValue(item.removedAtEpochMs.toDouble()),
+        "originalPostTimeEpochMs" to ConfigValue.NumberValue(item.originalPostTimeEpochMs.toDouble()),
+        "channelId" to ConfigValue.StringValue(item.channelId),
+        "category" to ConfigValue.StringValue(item.category),
+        "groupKey" to ConfigValue.StringValue(item.groupKey),
+        "reason" to (item.reason?.let { ConfigValue.NumberValue(it.toDouble()) } ?: ConfigValue.NullValue),
     )
 )
