@@ -32,6 +32,54 @@ class CoreFeaturePack : FeaturePack {
         ) { _, _ -> true },
         eventFeature(
             FeatureDescriptor(
+                id = FeatureId("core.event.automation_started"),
+                kind = FeatureKind.EVENT,
+                title = "Automation started",
+                description = "Run when another YAuto automation begins execution",
+                category = FeatureCategory.CORE,
+                fields = listOf(FieldSchema.Text("automation", "Automation ID or name")),
+                keywords = setOf("automation", "started", "operation", "shortx"),
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "core.event.automation_started") false
+            else {
+                val expected = feature.config.string("automation").trim()
+                expected.isBlank() ||
+                    ctx.event.payload.string("automationId") == expected ||
+                    ctx.event.payload.string("automationName").equals(expected, ignoreCase = true)
+            }
+        },
+        eventFeature(
+            FeatureDescriptor(
+                id = FeatureId("core.event.automation_finished"),
+                kind = FeatureKind.EVENT,
+                title = "Automation finished",
+                description = "Run when another YAuto automation finishes execution",
+                category = FeatureCategory.CORE,
+                fields = listOf(
+                    FieldSchema.Text("automation", "Automation ID or name"),
+                    FieldSchema.Choice("result", "Result", options = listOf("any", "success", "failure")),
+                ),
+                keywords = setOf("automation", "finished", "operation", "shortx"),
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "core.event.automation_finished") false
+            else {
+                val expected = feature.config.string("automation").trim()
+                val result = feature.config.string("result", "any")
+                val targetMatches = expected.isBlank() ||
+                    ctx.event.payload.string("automationId") == expected ||
+                    ctx.event.payload.string("automationName").equals(expected, ignoreCase = true)
+                val success = ctx.event.payload.boolean("success")
+                targetMatches && when (result) {
+                    "success" -> success
+                    "failure" -> !success
+                    else -> true
+                }
+            }
+        },
+        eventFeature(
+            FeatureDescriptor(
                 id = FeatureId("core.event.manual"),
                 kind = FeatureKind.EVENT,
                 title = "Manual event",
