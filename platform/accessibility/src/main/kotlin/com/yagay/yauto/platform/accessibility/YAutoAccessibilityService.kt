@@ -180,6 +180,29 @@ class YAutoAccessibilityService : AccessibilityService() {
         return clickNearest(node)
     }
 
+
+    internal fun performFocusedContextAction(action: String): Boolean {
+        val root = rootInActiveWindow ?: return false
+        val node = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            ?: root.findFocus(AccessibilityNodeInfo.FOCUS_ACCESSIBILITY)
+            ?: return false
+        return when (action) {
+            "select_all" -> {
+                val length = node.text?.length ?: return false
+                val args = Bundle().apply {
+                    putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, 0)
+                    putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, length)
+                }
+                node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, args)
+            }
+            "copy" -> node.performAction(AccessibilityNodeInfo.ACTION_COPY)
+            "cut" -> node.performAction(AccessibilityNodeInfo.ACTION_CUT)
+            "paste" -> node.performAction(AccessibilityNodeInfo.ACTION_PASTE)
+            "clear" -> setNodeText(node, "")
+            else -> false
+        }
+    }
+
     internal fun setFocusedText(text: String): Boolean {
         val root = rootInActiveWindow ?: return false
         val node = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) ?: return false
