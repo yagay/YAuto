@@ -101,6 +101,14 @@
 
 
 
+
+        <activity
+            android:name=".ConfirmationActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <activity
             android:name=".VoiceInputActivity"
             android:exported="false"
