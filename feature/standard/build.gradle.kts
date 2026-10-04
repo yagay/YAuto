@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":core:capability"))
     implementation(project(":core:registry"))
     implementation(project(":core:importer"))
+    implementation(project(":core:engine"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit)
