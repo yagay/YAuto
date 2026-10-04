@@ -359,8 +359,6 @@ class AndroidFinalParityFeaturePack(context: Context) : FeaturePack {
             val user = (feature.config["userId"].numberOrNull() ?: 0.0).toInt().coerceAtLeast(0)
             shell(ctx, "cmd phone sms set-default-app --user " + user + " " + shellArg(pkg))
         }
-    }
-
 
         registry.registerAction(
             FeatureDescriptor(
@@ -414,6 +412,7 @@ class AndroidFinalParityFeaturePack(context: Context) : FeaturePack {
             val verb = if (feature.config.boolean("enabled", true)) "enable-physical-subscription" else "disable-physical-subscription"
             shell(ctx, "cmd phone " + verb + " " + subId)
         }
+    }
 
     private fun registerTaskerPluginBridge(registry: FeatureRegistry) {
         registry.registerAction(
@@ -602,6 +601,19 @@ class AndroidFinalParityFeaturePack(context: Context) : FeaturePack {
             ActionExecutionResult(true, output)
         }
     }
+
+    private fun parseExtras(raw: String): List<Pair<String, String>> =
+        raw.lineSequence()
+            .map(String::trim)
+            .filter(String::isNotBlank)
+            .mapNotNull { line ->
+                val split = line.split('=', limit = 2)
+                if (split.size != 2) null
+                else split[0].trim().takeIf { it.matches(Regex("[A-Za-z0-9_.-]{1,128}")) }
+                    ?.let { it to split[1] }
+            }
+            .take(100)
+            .toList()
 
     private fun roleName(key: String): String? = when (key) {
         "sms" -> RoleManager.ROLE_SMS
