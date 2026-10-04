@@ -68,6 +68,7 @@ object AndroidFeaturePacks {
         AndroidModeFeaturePack(context),
         AndroidMatterFeaturePack(context),
         AndroidWearFeaturePack(context),
+        AndroidVendorBridgeFeaturePack(context),
         AndroidStandaloneExportFeaturePack(context, workspace),
         AndroidUsbFeaturePack(context),
         AndroidMediaDeviceFeaturePack(context),
