@@ -72,7 +72,7 @@ internal object ExpressionFeatures {
         stateFeature(
             FeatureDescriptor(
                 FeatureId("expression.state"), FeatureKind.STATE,
-                "Expression state",
+                "Expression condition",
                 "Evaluate a portable boolean expression against current YAuto variables",
                 FeatureCategory.SCRIPT,
                 fields = listOf(FieldSchema.Text("expression", "Expression", true, multiline = true)),
