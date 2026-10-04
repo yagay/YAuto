@@ -199,6 +199,9 @@ internal object ShortXFeatureSuggestions {
     }
 
     private fun fact(name: String): String? = when (name) {
+        "TaskRemoved", "TaskRemovedAny" -> "android.event.task_removed"
+        "BackNavStart" -> "android.event.back_navigation_started"
+        "BackNavDone" -> "android.event.back_navigation_finished"
         "DeepLinkCall" -> "android.event.deep_link"
         "BrowserIntercept" -> "android.event.browser_intercept"
         "OnMenuActionTrigger" -> "android.event.menu_action"
@@ -248,8 +251,8 @@ internal object ShortXFeatureSuggestions {
         "OnStartDynamicShortcut" -> "android.event.shortcut"
         "IMEVisibilityChange" -> "android.event.window_changed"
         "WindowRotationChange" -> "android.event.orientation_changed"
-        "AppProcessStarted" -> "android.event.app_process_started"
-        "AppProcessRemoved" -> "android.event.app_background"
+        "AppProcessStarted", "PkgStartRunning", "PkgStartRunningAny" -> "android.event.app_process_started"
+        "AppProcessRemoved", "PkgStopRunning", "PkgStopRunningAny" -> "android.event.app_process_stopped"
         "MediaStoreInsert" -> "android.event.media_store_inserted"
         "MediaStoreDelete" -> "android.event.media_store_deleted"
         "HotSpotStatusChanged" -> "android.event.tethering_changed"
