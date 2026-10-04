@@ -15,6 +15,11 @@
     <string name="feature_android_display_animation_scale_set_title">设置系统动画倍率</string>
     <string name="feature_android_display_animation_scale_set_description">同时设置 Android 窗口、过渡和动画时长倍率</string>
     <string name="feature_android_display_animation_scale_set_field_scale">动画倍率</string>
+    <string name="feature_android_display_animation_scale_set_field_target">动画倍率目标</string>
+    <string name="feature_android_display_animation_scale_set_field_target_option_all">全部动画倍率</string>
+    <string name="feature_android_display_animation_scale_set_field_target_option_window">窗口动画</string>
+    <string name="feature_android_display_animation_scale_set_field_target_option_transition">过渡动画</string>
+    <string name="feature_android_display_animation_scale_set_field_target_option_animator">动画器时长</string>
 
     <string name="feature_android_display_size_set_title">设置显示分辨率覆盖</string>
     <string name="feature_android_display_size_set_description">应用或重置 Android wm 显示尺寸覆盖</string>
@@ -26,6 +31,7 @@
     <string name="feature_android_display_density_set_description">应用或重置 Android wm 显示密度覆盖</string>
     <string name="feature_android_display_density_set_field_reset">恢复物理密度</string>
     <string name="feature_android_display_density_set_field_dpi">密度 DPI</string>
+    <string name="feature_android_display_density_set_field_scalepercent">显示缩放百分比</string>
 
     <string name="feature_android_network_data_saver_set_title">设置流量节省</string>
     <string name="feature_android_network_data_saver_set_description">通过 netpolicy 开启或关闭 Android 后台数据限制</string>
