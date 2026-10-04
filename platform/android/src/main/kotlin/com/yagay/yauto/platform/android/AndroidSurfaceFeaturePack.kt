@@ -451,6 +451,59 @@ class AndroidSurfaceFeaturePack(
             ))
         }
 
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("surface.edge_gesture.show"), FeatureKind.ACTION,
+                "Show edge gesture trigger",
+                "Create a transparent edge/corner gesture zone and emit edge_swipe or edge_tap surface events",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Text("surfaceId", "Surface ID", true),
+                    FieldSchema.Choice("edge", "Edge / corner", true, listOf("left", "right", "top", "bottom", "top_left", "top_right", "bottom_left", "bottom_right")),
+                    FieldSchema.Number("thicknessDp", "Touch-zone thickness dp", min = 4.0, max = 96.0),
+                    FieldSchema.Number("minDistanceDp", "Minimum swipe distance dp", min = 8.0, max = 400.0),
+                    FieldSchema.Duration("autoHideMs", "Auto hide after"),
+                ),
+                accessRequirements = setOf(AccessRequirement.OVERLAY),
+                keywords = setOf("edge", "corner", "swipe", "gesture", "shortx", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            ActionExecutionResult(
+                controller.showEdgeGesture(
+                    id = feature.config.string("surfaceId").resolveVariables(ctx.variables).trim(),
+                    edge = feature.config.string("edge", "left"),
+                    thicknessDp = (feature.config["thicknessDp"].numberOrNull() ?: 24.0).toInt(),
+                    minDistanceDp = (feature.config["minDistanceDp"].numberOrNull() ?: 48.0).toInt(),
+                    autoHideMs = feature.config.long("autoHideMs", 0),
+                )
+            )
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("surface.region_selector.show"), FeatureKind.ACTION,
+                "Select screen region",
+                "Show a full-screen selection overlay and emit region_selected with left,top,right,bottom coordinates",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Text("surfaceId", "Surface ID", true),
+                    FieldSchema.Duration("autoHideMs", "Auto hide after"),
+                ),
+                accessRequirements = setOf(AccessRequirement.OVERLAY),
+                keywords = setOf("screen region", "area select", "crop", "screenshot", "shortx", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            ActionExecutionResult(
+                controller.showRegionSelector(
+                    id = feature.config.string("surfaceId").resolveVariables(ctx.variables).trim(),
+                    autoHideMs = feature.config.long("autoHideMs", 0),
+                )
+            )
+        }
+
         registry.registerEvent(
             FeatureDescriptor(
                 FeatureId("android.event.surface_action"), FeatureKind.EVENT,
