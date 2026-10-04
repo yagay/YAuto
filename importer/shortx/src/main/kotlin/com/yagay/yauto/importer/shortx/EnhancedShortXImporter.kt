@@ -250,6 +250,7 @@ internal object ShortXFeatureSuggestions {
         "ScreenStayAwake" -> "android.condition.stay_awake_while_charging"
         "FlashlightIsOn" -> "android.condition.torch_on"
         "TextFromScreenNodeMatches", "HasNodeOnScreen" -> "accessibility.condition.text_matches"
+        "HasFoundPointsByColor" -> "accessibility.condition.screen_color_found"
         "MatchMVEL" -> "script.mvel.condition"
         "MatchJS" -> "script.javascript.condition"
         "VPNIsConnected" -> "android.condition.network_profile"
