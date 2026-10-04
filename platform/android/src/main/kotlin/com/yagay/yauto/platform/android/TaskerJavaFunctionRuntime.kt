@@ -3,7 +3,6 @@ package com.yagay.yauto.platform.android
 import android.content.Context
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.ExecutionId
-import com.yagay.yauto.core.model.resolveVariables
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
