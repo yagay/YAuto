@@ -5,6 +5,9 @@ import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 
+private fun shortXScreenRuleKey(feature: com.yagay.yauto.core.model.FeatureRef): String =
+    feature.config.string("from", "screen_on") + ":" + (feature.config["seconds"].numberOrNull() ?: 0.0)
+
 class AndroidShortXRuntimeEventFeaturePack : FeaturePack {
     override val id: String = "android.shortx.runtime_events"
 
@@ -27,6 +30,7 @@ class AndroidShortXRuntimeEventFeaturePack : FeaturePack {
             val wantedFrom = feature.config.string("from", "screen_on")
             val threshold = feature.config["seconds"].numberOrNull() ?: 0.0
             ctx.event.payload.string("from") == wantedFrom &&
+                ctx.event.payload.string("ruleKey") == shortXScreenRuleKey(feature) &&
                 (ctx.event.payload["seconds"].numberOrNull() ?: 0.0) >= threshold
         }
 
