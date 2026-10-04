@@ -10,9 +10,9 @@ import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.long
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.yagay.yauto.core.model.userText
 
 class AccessibilityBackend : CapabilityBackend {
     override val id: String = "accessibility"
@@ -37,9 +37,57 @@ class AccessibilityBackend : CapabilityBackend {
                     )
                     return@withContext CapabilityResult(success = true, value = ConfigValue.BooleanValue(found))
                 }
+                AccessibilityOperations.FIND_TEXT_ADVANCED -> {
+                    val found = service.matchesText(
+                        request.payload.string("text"),
+                        request.payload.string("mode", "contains"),
+                        request.payload.boolean("ignoreCase", true),
+                    )
+                    return@withContext CapabilityResult(success = true, value = ConfigValue.BooleanValue(found))
+                }
                 AccessibilityOperations.FIND_VIEW_ID -> {
                     val found = service.hasViewId(request.payload.string("viewId"))
                     return@withContext CapabilityResult(success = true, value = ConfigValue.BooleanValue(found))
+                }
+                AccessibilityOperations.GET_SCREEN_TEXT -> {
+                    val value = service.screenText(
+                        includeDescriptions = request.payload.boolean("includeDescriptions", true),
+                        unique = request.payload.boolean("unique", true),
+                        limit = request.payload.long("limit", 500).toInt(),
+                    )
+                    return@withContext CapabilityResult(true, ConfigValue.StringValue(value))
+                }
+                AccessibilityOperations.GET_VIEW_TEXT -> {
+                    val value = service.textByViewId(request.payload.string("viewId"))
+                        ?: return@withContext CapabilityResult(false, ConfigValue.NullValue)
+                    return@withContext CapabilityResult(true, ConfigValue.StringValue(value))
+                }
+                AccessibilityOperations.GET_UI_NODES -> {
+                    val nodes = service.uiNodes(
+                        limit = request.payload.long("limit", 500).toInt(),
+                        onlyVisible = request.payload.boolean("onlyVisible", true),
+                        clickableOnly = request.payload.boolean("clickableOnly", false),
+                    )
+                    val output = ConfigValue.ListValue(
+                        nodes.map { node ->
+                            ConfigValue.ObjectValue(
+                                mapOf(
+                                    "text" to ConfigValue.StringValue(node.text),
+                                    "contentDescription" to ConfigValue.StringValue(node.contentDescription),
+                                    "viewId" to ConfigValue.StringValue(node.viewId),
+                                    "class" to ConfigValue.StringValue(node.className),
+                                    "package" to ConfigValue.StringValue(node.packageName),
+                                    "clickable" to ConfigValue.BooleanValue(node.clickable),
+                                    "longClickable" to ConfigValue.BooleanValue(node.longClickable),
+                                    "editable" to ConfigValue.BooleanValue(node.editable),
+                                    "scrollable" to ConfigValue.BooleanValue(node.scrollable),
+                                    "enabled" to ConfigValue.BooleanValue(node.enabled),
+                                    "visible" to ConfigValue.BooleanValue(node.visible),
+                                )
+                            )
+                        }
+                    )
+                    return@withContext CapabilityResult(true, output)
                 }
             }
 
@@ -47,6 +95,11 @@ class AccessibilityBackend : CapabilityBackend {
                 AccessibilityOperations.CLICK_TEXT -> service.clickText(
                     request.payload.string("text"),
                     request.payload.boolean("exact"),
+                )
+                AccessibilityOperations.CLICK_TEXT_ADVANCED -> service.clickTextAdvanced(
+                    request.payload.string("text"),
+                    request.payload.string("mode", "contains"),
+                    request.payload.boolean("ignoreCase", true),
                 )
                 AccessibilityOperations.LONG_CLICK_TEXT -> service.longClickText(
                     request.payload.string("text"),
