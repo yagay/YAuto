@@ -71,7 +71,7 @@ internal object ShortXStructuralMappings {
         if ((fields.varint(4) ?: 0L) != 0L) return null
         val raw = fields.string(1) ?: return null
         // Runtime-variable interpolation would make a static YAuto ForEach lossy, so preserve it.
-        if ('%' in raw || '{' in raw || raw.contains("${")) return null
+        if ('%' in raw || '{' in raw || raw.contains("\${")) return null
         val delimiters = fields.allStrings(2).filter(String::isNotEmpty)
         val values = when {
             delimiters.isEmpty() -> raw.lineSequence().toList()
