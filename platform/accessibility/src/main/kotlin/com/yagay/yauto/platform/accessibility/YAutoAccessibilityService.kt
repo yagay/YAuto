@@ -127,8 +127,15 @@ class YAutoAccessibilityService : AccessibilityService() {
     internal fun clearTextByViewId(viewId: String): Boolean =
         findViewIdNode(viewId)?.let { setNodeText(it, "") } == true
 
-    internal fun selectAllByViewId(viewId: String): Boolean =
-        findViewIdNode(viewId)?.performAction(AccessibilityNodeInfo.ACTION_SELECT) == true
+    internal fun selectAllByViewId(viewId: String): Boolean {
+        val node = findViewIdNode(viewId) ?: return false
+        val length = node.text?.length ?: return false
+        val args = Bundle().apply {
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, 0)
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, length)
+        }
+        return node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, args)
+    }
 
     internal fun copyByViewId(viewId: String): Boolean =
         findViewIdNode(viewId)?.performAction(AccessibilityNodeInfo.ACTION_COPY) == true
