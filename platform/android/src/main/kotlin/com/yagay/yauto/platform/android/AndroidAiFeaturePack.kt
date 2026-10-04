@@ -48,6 +48,7 @@ class AndroidAiFeaturePack(context: Context) : FeaturePack {
             "Translate the following text to $extra. Preserve meaning and formatting. Return only the translation:\n\n$text"
         }
         registerImageDescription(registry)
+        registerImageGeneration(registry)
     }
 
     private fun registerLlm(registry: FeatureRegistry) {
@@ -142,6 +143,126 @@ class AndroidAiFeaturePack(context: Context) : FeaturePack {
             val dataUrl = "data:$mime;base64,${Base64.getEncoder().encodeToString(bytes)}"
             val prompt = feature.config.string("prompt").resolveVariables(ctx.variables).ifBlank { "Describe this image in detail." }
             executeChat(feature, ctx, prompt, "", dataUrl)
+        }
+    }
+
+    private fun registerImageGeneration(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("ai.image.generate"),
+                FeatureKind.ACTION,
+                "Generate AI image",
+                "Generate an image through an OpenAI-compatible Images endpoint and optionally save it to a file",
+                FeatureCategory.ADVANCED,
+                fields = listOf(
+                    FieldSchema.Text("endpoint", "Images endpoint", true),
+                    FieldSchema.Text("apiKey", "API key"),
+                    FieldSchema.Text("model", "Model", true),
+                    FieldSchema.Text("prompt", "Prompt", true, multiline = true),
+                    FieldSchema.Choice(
+                        "size",
+                        "Image size",
+                        options = listOf("256x256", "512x512", "1024x1024", "1024x1792", "1792x1024"),
+                    ),
+                    FieldSchema.Choice("quality", "Quality", options = listOf("default", "standard", "hd")),
+                    FieldSchema.Choice("responseFormat", "Response format", options = listOf("url", "b64_json")),
+                    FieldSchema.Duration("timeoutMs", "Request timeout"),
+                    FieldSchema.Text("outputPath", "Optional output image path"),
+                    FieldSchema.Variable("resultVariable", "Store generated-image object"),
+                ),
+                fieldBehaviors = mapOf(
+                    "apiKey" to FieldBehavior(supportsVariables = true, advanced = true),
+                    "prompt" to FieldBehavior(supportsVariables = true),
+                    "outputPath" to FieldBehavior(supportsVariables = true),
+                ),
+                keywords = setOf("ai", "image generation", "text to image", "openai compatible", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val endpoint = feature.config.string("endpoint").resolveVariables(ctx.variables).trim()
+            val apiKey = feature.config.string("apiKey").resolveVariables(ctx.variables).trim()
+            val model = feature.config.string("model").resolveVariables(ctx.variables).trim()
+            val prompt = feature.config.string("prompt").resolveVariables(ctx.variables)
+            if ((!endpoint.startsWith("https://") && !endpoint.startsWith("http://")) || model.isBlank() || prompt.isBlank()) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.ai_config_invalid"))
+            }
+            val responseFormat = feature.config.string("responseFormat", "url").takeIf { it in setOf("url", "b64_json") } ?: "url"
+            val body = buildJsonObject {
+                put("model", JsonPrimitive(model))
+                put("prompt", JsonPrimitive(prompt))
+                put("size", JsonPrimitive(feature.config.string("size", "1024x1024")))
+                put("response_format", JsonPrimitive(responseFormat))
+                feature.config.string("quality", "default").takeIf { it != "default" }?.let {
+                    put("quality", JsonPrimitive(it))
+                }
+            }.toString()
+            val timeout = ((feature.config["timeoutMs"].numberOrNull() ?: 180_000.0).toLong()).coerceIn(1_000L, 900_000L)
+            val client = OkHttpClient.Builder().callTimeout(timeout, TimeUnit.MILLISECONDS).build()
+            val request = Request.Builder()
+                .url(endpoint)
+                .post(body.toRequestBody("application/json; charset=utf-8".toMediaType()))
+                .apply { if (apiKey.isNotBlank()) header("Authorization", "Bearer " + apiKey) }
+                .build()
+            val generated = runCatching {
+                withContext(Dispatchers.IO) {
+                    client.newCall(request).execute().use { response ->
+                        val raw = response.body?.string().orEmpty()
+                        if (!response.isSuccessful) error("HTTP " + response.code + ": " + raw.take(1000))
+                        val item = json.parseToJsonElement(raw).jsonObject["data"]
+                            ?.jsonArray?.firstOrNull()?.jsonObject
+                            ?: error("No generated image in response")
+                        val url = item["url"]?.jsonPrimitive?.content.orEmpty()
+                        val base64 = item["b64_json"]?.jsonPrimitive?.content.orEmpty()
+                        if (url.isBlank() && base64.isBlank()) error("Image response contains neither url nor b64_json")
+                        GeneratedImageResult(
+                            url = url,
+                            base64 = base64,
+                            revisedPrompt = item["revised_prompt"]?.jsonPrimitive?.content.orEmpty(),
+                        )
+                    }
+                }
+            }.getOrElse {
+                return@registerAction ActionExecutionResult(
+                    false,
+                    message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName),
+                )
+            }
+
+            val outputPath = feature.config.string("outputPath").resolveVariables(ctx.variables).trim()
+            val savedPath = if (outputPath.isBlank()) "" else runCatching {
+                withContext(Dispatchers.IO) {
+                    val bytes = if (generated.base64.isNotBlank()) {
+                        Base64.getDecoder().decode(generated.base64)
+                    } else {
+                        client.newCall(Request.Builder().url(generated.url).get().build()).execute().use { response ->
+                            if (!response.isSuccessful) error("Image download HTTP " + response.code)
+                            response.body?.bytes() ?: error("Generated image body is empty")
+                        }
+                    }
+                    val file = File(outputPath)
+                    file.parentFile?.mkdirs()
+                    file.writeBytes(bytes)
+                    file.absolutePath
+                }
+            }.getOrElse {
+                return@registerAction ActionExecutionResult(
+                    false,
+                    message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName),
+                )
+            }
+
+            val output = ConfigValue.ObjectValue(
+                buildMap {
+                    put("url", ConfigValue.StringValue(generated.url))
+                    put("path", ConfigValue.StringValue(savedPath))
+                    put("revisedPrompt", ConfigValue.StringValue(generated.revisedPrompt))
+                    if (savedPath.isBlank() && generated.base64.isNotBlank()) {
+                        put("base64", ConfigValue.StringValue(generated.base64))
+                    }
+                }
+            )
+            feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
+            ActionExecutionResult(true, output)
         }
     }
 
@@ -247,3 +368,10 @@ class AndroidAiFeaturePack(context: Context) : FeaturePack {
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "image/jpeg"
     }
 }
+
+
+private data class GeneratedImageResult(
+    val url: String,
+    val base64: String,
+    val revisedPrompt: String,
+)
