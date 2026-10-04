@@ -553,6 +553,13 @@ class AutomationRuntime(
         is PredicateNode.All -> predicate.children.all { evaluatePredicate(it, variables, dispatchId, automationId) }
         is PredicateNode.Any -> predicate.children.any { evaluatePredicate(it, variables, dispatchId, automationId) }
         is PredicateNode.None -> predicate.children.none { evaluatePredicate(it, variables, dispatchId, automationId) }
+        is PredicateNode.Xor -> {
+            var matches = 0
+            for (child in predicate.children) {
+                if (evaluatePredicate(child, variables, dispatchId, automationId)) matches++
+            }
+            matches == 1
+        }
         is PredicateNode.Literal -> predicate.value
         is PredicateNode.Expression -> expressions.evaluateBoolean(predicate.expression, variables)
         is PredicateNode.Condition -> {
