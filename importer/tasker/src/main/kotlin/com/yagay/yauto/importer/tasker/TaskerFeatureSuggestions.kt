@@ -21,7 +21,7 @@ object TaskerFeatureSuggestions {
         "119" -> "android.maps.open"
         "123" -> "system.shell.execute"
         "125" -> "android.email.compose"
-        "176", "249", "374" -> "android.screenshot.capture"
+        "176", "249", "374" -> "android.screen.screenshot"
         "192" -> "android.audio.play"
         "245" -> "android.input.keyevent"
         "247" -> "android.input.keyevent"

@@ -256,4 +256,10 @@
     <string name="capability_system_ui">System UI</string>
     <string name="capability_lsposed">LSPosed</string>
     <string name="capability_other">Advanced capability</string>
+    <string name="access_calendar">Calendar</string>
+    <string name="access_contacts">Contacts</string>
+    <string name="access_call_log">Call log</string>
+    <string name="access_sms">SMS</string>
+    <string name="access_phone">Phone</string>
+    <string name="access_record_audio">Microphone recording</string>
 </resources>

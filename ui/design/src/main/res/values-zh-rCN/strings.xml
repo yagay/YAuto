@@ -256,4 +256,10 @@
     <string name="capability_system_ui">系统界面</string>
     <string name="capability_lsposed">LSPosed</string>
     <string name="capability_other">高级能力</string>
+    <string name="access_calendar">日历</string>
+    <string name="access_contacts">联系人</string>
+    <string name="access_call_log">通话记录</string>
+    <string name="access_sms">短信</string>
+    <string name="access_phone">电话</string>
+    <string name="access_record_audio">麦克风录音</string>
 </resources>

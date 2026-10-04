@@ -19,6 +19,24 @@ object MacroDroidFeatureSuggestions {
     }
 
     private fun action(sourceType: String): String? = when (sourceType) {
+        "AiLlmQueryAction" -> "ai.llm.query"
+        "SummariseTextAction" -> "ai.text.summarize"
+        "RewriteTextAction" -> "ai.text.rewrite"
+        "ProofreadingAction" -> "ai.text.proofread"
+        "TranslateTextAction" -> "ai.text.translate"
+        "ImageDescriptionAction" -> "ai.image.describe"
+        "GenerateQRCodeAction", "MGenerateQRCodeAction" -> "android.qr.generate"
+        "ReadQRCodeAction" -> "android.qr.decode"
+        "OCRAction", "ReadScreenshotContentsAction", "CheckTextInScreenshotAction" -> "android.ocr.text"
+        "CheckImageOnScreenAction" -> "android.image.match"
+        "CheckPixelColorAction" -> "android.image.color.find"
+        "GetCalendarEventsAction", "BGetCalendarEventsAction" -> "android.calendar.events.query"
+        "GetContactsAction" -> "android.contacts.query"
+        "RecordMicrophoneAction", "ORecordMicrophoneAction" -> "android.audio.record.start"
+        "AnswerCallAction" -> "android.phone.answer"
+        "RejectCallAction" -> "android.phone.end"
+        "MakeCallAction" -> "android.phone.call"
+        "JavaScriptAction", "AJavaScriptAction", "SJavaScriptAction" -> "script.javascript.execute"
         "SetNFCAction" -> "android.nfc.set"
         "SetLocationModeAction", "SetGPSAction" -> "android.location.enabled.set"
         "SetAutoRotateAction" -> "android.display.auto_rotate.set"
@@ -29,7 +47,7 @@ object MacroDroidFeatureSuggestions {
         "SpeakTextAction", "SayTimeAction" -> "android.tts.speak"
         "ScreenOnAction" -> "android.screen.wake"
         "InputKeyEventAction", "PressBackAction" -> "android.input.keyevent"
-        "TakeScreenshotAction" -> "android.screenshot.capture"
+        "TakeScreenshotAction" -> "android.screen.screenshot"
         "ControlMediaAction" -> "android.media.transport"
         "SetAlarmClockAction" -> "android.alarm.set"
         "AddCalendarEntryAction" -> "android.calendar.event.add"
@@ -74,6 +92,9 @@ object MacroDroidFeatureSuggestions {
     }
 
     private fun event(sourceType: String): String? = when (sourceType) {
+        "BluetoothBeaconTrigger", "JBluetoothBeaconTrigger" -> "android.event.ble_advertisement"
+        "LogcatTrigger", "SystemLogTrigger" -> "android.event.system_log_entry"
+        "CellTowerTrigger", "FCellTowerTrigger" -> "android.event.cell_tower_changed"
         "BootTrigger", "MacroDroidInitialisedTrigger" -> "android.event.boot"
         "AirplaneModeTrigger" -> "android.event.airplane_mode_changed"
         "AutoRotateChangeTrigger" -> "android.event.auto_rotate_changed"
@@ -99,6 +120,9 @@ object MacroDroidFeatureSuggestions {
     }
 
     private fun condition(sourceType: String): String? = when (sourceType) {
+        "CellTowerConstraint", "ACellTowerConstraint", "ICellTowerConstraint" -> "android.condition.cell_tower_match"
+        "CalendarConstraint" -> "android.condition.calendar_event"
+        "MicrophoneRecordingConstraint" -> "android.condition.audio_recording_active"
         "AutoRotateConstraint" -> "android.condition.auto_rotate"
         "BatterySaverStateConstraint" -> "android.condition.power_save"
         "DarkThemeConstraint" -> "android.condition.dark_mode"

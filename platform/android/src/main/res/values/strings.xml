@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="audio_record_channel_name">YAuto audio recording</string>
+    <string name="audio_record_notification_text">Recording audio</string>
+</resources>

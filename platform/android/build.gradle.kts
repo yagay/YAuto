@@ -24,6 +24,10 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.okhttp)
+    implementation(libs.rhino)
+    implementation(libs.zxing.core)
+    implementation(libs.mlkit.text.recognition)
     testImplementation(libs.junit)
     testImplementation(project(":core:runtime"))
 }

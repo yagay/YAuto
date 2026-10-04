@@ -51,6 +51,12 @@ enum class AccessRequirement(val id: String) {
     BLUETOOTH_CONNECT("bluetooth_connect"),
     DND_POLICY("dnd_policy"),
     DEVICE_ADMIN("device_admin"),
+    CALENDAR("calendar"),
+    CONTACTS("contacts"),
+    CALL_LOG("call_log"),
+    SMS("sms"),
+    PHONE("phone"),
+    RECORD_AUDIO("record_audio"),
 }
 
 /** Language-neutral implementation metadata. UI copy is resolved by backendId in the Android layer. */

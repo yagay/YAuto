@@ -140,8 +140,7 @@ class YAutoAccessibilityService : AccessibilityService() {
                 if (!unique || seen.add(value)) values += value
             }
         }
-        return values.joinToString("
-").take(MAX_SCREEN_TEXT)
+        return values.joinToString("\\n").take(MAX_SCREEN_TEXT)
     }
 
     internal fun uiNodes(limit: Int, onlyVisible: Boolean, clickableOnly: Boolean): List<AccessibilityNodeSnapshot> =

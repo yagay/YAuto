@@ -54,6 +54,10 @@ class AutomationRuntimeService : Service() {
         registerSource("communication") { CommunicationEventSource(this) }
         registerSource("midi-device") { MidiDeviceEventSource(this) }
         registerSource("usb-device") { UsbDeviceEventSource(this) }
+        registerSource("personal-data") { PersonalDataEventSource(this) }
+        registerSource("configured-logcat") { ConfiguredLogcatEventSource(appGraph.workspace) }
+        registerSource("configured-ble") { ConfiguredBleEventSource(this, appGraph.workspace) }
+        registerSource("configured-cell-tower") { ConfiguredCellTowerEventSource(this, appGraph.workspace) }
         registerSource("configured-broadcast") { ConfiguredBroadcastEventSource(this, appGraph.workspace) }
         registerSource("configured-sensor") { ConfiguredSensorEventSource(this, appGraph.workspace) }
         registerSource("configured-location") { ConfiguredLocationEventSource(this, appGraph.workspace) }
@@ -67,6 +71,7 @@ class AutomationRuntimeService : Service() {
         }
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
         SurfaceRuntimeBridge.attach(emitter)
+        AdvancedParityRuntimeBridge.attach(emitter)
         AccessibilityRuntimeBridge.setListener { previous, current ->
             val currentPayload = mapOf("package" to ConfigValue.StringValue(current.packageName), "class" to ConfigValue.StringValue(current.className.orEmpty()))
             dispatcher.dispatch(RuntimeEvent("android.event.window_changed", currentPayload, source = "accessibility.window"))
@@ -151,7 +156,7 @@ class AutomationRuntimeService : Service() {
         return START_STICKY
     }
 
-    override fun onDestroy() { AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); SurfaceRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
+    override fun onDestroy() { AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
     override fun onBind(intent: Intent?): IBinder? = null
     private fun registerSource(component: String, factory: () -> AndroidEventSource) { eventSources.add(component, factory)?.let(::reportSourceFailure) }
     private fun reportSourceFailure(failure: EventSourceFailure) {

@@ -553,6 +553,12 @@ private fun accessRequirementResource(requirement: AccessRequirement): Int = whe
     AccessRequirement.BLUETOOTH_CONNECT -> TextR.string.access_bluetooth
     AccessRequirement.DND_POLICY -> TextR.string.access_dnd_policy
     AccessRequirement.DEVICE_ADMIN -> TextR.string.access_device_admin
+    AccessRequirement.CALENDAR -> TextR.string.access_calendar
+    AccessRequirement.CONTACTS -> TextR.string.access_contacts
+    AccessRequirement.CALL_LOG -> TextR.string.access_call_log
+    AccessRequirement.SMS -> TextR.string.access_sms
+    AccessRequirement.PHONE -> TextR.string.access_phone
+    AccessRequirement.RECORD_AUDIO -> TextR.string.access_record_audio
 }
 
 @Composable
