@@ -5,6 +5,7 @@ import android.accessibilityservice.FingerprintGestureController
 import android.accessibilityservice.GestureDescription
 import android.graphics.Bitmap
 import android.graphics.Path
+import android.graphics.Rect
 import android.view.Display
 import android.os.Bundle
 import android.view.KeyEvent
@@ -116,6 +117,41 @@ class YAutoAccessibilityService : AccessibilityService() {
 
     internal fun longClickText(text: String, exact: Boolean): Boolean =
         findTextNode(text, exact)?.let { performNearest(it, AccessibilityNodeInfo.ACTION_LONG_CLICK) } == true
+
+    internal fun longClickViewId(viewId: String): Boolean =
+        findViewIdNode(viewId)?.let { performNearest(it, AccessibilityNodeInfo.ACTION_LONG_CLICK) } == true
+
+    internal fun focusViewId(viewId: String): Boolean =
+        findViewIdNode(viewId)?.performAction(AccessibilityNodeInfo.ACTION_FOCUS) == true
+
+    internal fun clearTextByViewId(viewId: String): Boolean =
+        findViewIdNode(viewId)?.let { setNodeText(it, "") } == true
+
+    internal fun selectAllByViewId(viewId: String): Boolean =
+        findViewIdNode(viewId)?.performAction(AccessibilityNodeInfo.ACTION_SELECT) == true
+
+    internal fun copyByViewId(viewId: String): Boolean =
+        findViewIdNode(viewId)?.performAction(AccessibilityNodeInfo.ACTION_COPY) == true
+
+    internal fun cutByViewId(viewId: String): Boolean =
+        findViewIdNode(viewId)?.performAction(AccessibilityNodeInfo.ACTION_CUT) == true
+
+    internal fun pasteByViewId(viewId: String): Boolean =
+        findViewIdNode(viewId)?.performAction(AccessibilityNodeInfo.ACTION_PASTE) == true
+
+    internal fun scrollViewId(viewId: String, direction: String): Boolean {
+        val action = when (direction) {
+            "forward", "down", "right" -> AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+            "backward", "up", "left" -> AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
+            else -> return false
+        }
+        return findViewIdNode(viewId)?.performAction(action) == true
+    }
+
+    internal fun viewBounds(viewId: String): Rect? {
+        val node = findViewIdNode(viewId) ?: return null
+        return Rect().also(node::getBoundsInScreen)
+    }
 
     internal fun clickViewId(viewId: String): Boolean =
         findViewIdNode(viewId)?.let(::clickNearest) == true
@@ -245,6 +281,15 @@ class YAutoAccessibilityService : AccessibilityService() {
         val path = Path().apply {
             moveTo(x1, y1)
             lineTo(x2, y2)
+        }
+        return gesture(path, durationMs.coerceIn(1, 60_000))
+    }
+
+    internal suspend fun gesturePath(points: List<Pair<Float, Float>>, durationMs: Long): Boolean {
+        if (points.isEmpty()) return false
+        val path = Path().apply {
+            moveTo(points.first().first, points.first().second)
+            points.drop(1).forEach { (x, y) -> lineTo(x, y) }
         }
         return gesture(path, durationMs.coerceIn(1, 60_000))
     }
