@@ -5,6 +5,7 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.resolveVariables
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
@@ -89,7 +90,7 @@ internal class TaskerJavaFunctionExecutor(private val context: Context) {
 
         val target = resolveTarget(targetRaw, ctx) ?: return ActionExecutionResult(
             false,
-            message = "Unable to resolve Java target: $targetRaw",
+            message = userText("feature.java_target_unresolved", targetRaw),
         )
         val parameterCount = signatureParameterCount(signature).coerceIn(0, 10)
         val args = (0 until parameterCount).map { index ->
@@ -98,7 +99,7 @@ internal class TaskerJavaFunctionExecutor(private val context: Context) {
         }
 
         val result = runCatching { invoke(target, signature, args) }.getOrElse {
-            return ActionExecutionResult(false, message = it.message ?: it.javaClass.simpleName)
+            return ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName))
         }
 
         val resultTarget = normalizeResultTarget(feature.config.string("resultTarget"))
