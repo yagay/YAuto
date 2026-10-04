@@ -9,6 +9,7 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 import java.util.UUID
 
@@ -195,7 +196,7 @@ class AndroidVendorBridgeFeaturePack(context: Context) : FeaturePack {
                         .putExtra("notificationData", data)
                 )
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = it.message) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -234,7 +235,7 @@ class AndroidVendorBridgeFeaturePack(context: Context) : FeaturePack {
                         .putExtra("msg_data", bytes)
                 )
                 ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = it.message) }
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
         val connectedEvaluator = ConditionEvaluator { feature, _ ->
