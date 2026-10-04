@@ -80,6 +80,9 @@ class AutomationRuntime(
         notifyEventWaiters(event)
 
         val workspace = workspaceRepository.load()
+        if (!workspace.runtimeEnabled && event.typeId != "core.event.runtime_enabled_changed") {
+            return@coroutineScope RuntimeDispatchResult(dispatchId, event, emptyList())
+        }
         val flows = workspace.flows.associateBy { it.id }
         val runs = mutableListOf<RuntimeAutomationRun>()
         val callStack = currentCoroutineContext()[AutomationCallStack]?.ids.orEmpty()
@@ -106,6 +109,7 @@ class AutomationRuntime(
                         false
                     } else {
                         for (candidate in automation.activation.events) {
+                            if (!triggerEnabled(workspace, automation, candidate)) continue
                             if (matchEvent(candidate, event, variables, dispatchId)) {
                                 matchedEventFeature = candidate
                                 break
@@ -301,6 +305,100 @@ class AutomationRuntime(
         if (trimmed.isEmpty()) return null
         val automation = resolveAutomation(workspaceRepository.load(), trimmed) ?: return null
         return runningExecutions[automation.id.value]?.any { it.isActive } == true
+    }
+
+    override suspend fun setRuntimeEnabled(mode: AutomationEnableMode): ActionExecutionResult {
+        var previous = true
+        var enabled = true
+        val result = workspaceMutationLock.withLock {
+            val workspace = workspaceRepository.load()
+            previous = workspace.runtimeEnabled
+            enabled = when (mode) {
+                AutomationEnableMode.ENABLE -> true
+                AutomationEnableMode.DISABLE -> false
+                AutomationEnableMode.TOGGLE -> !workspace.runtimeEnabled
+            }
+            if (enabled != workspace.runtimeEnabled) {
+                workspaceRepository.save(workspace.copy(runtimeEnabled = enabled))
+                if (!enabled) {
+                    runningExecutions.keys.toList().forEach(::cancelJobs)
+                    activeStates.clear()
+                }
+            }
+            ActionExecutionResult(true, ConfigValue.BooleanValue(enabled))
+        }
+        if (previous != enabled) {
+            dispatch(
+                RuntimeEvent(
+                    typeId = "core.event.runtime_enabled_changed",
+                    payload = mapOf("enabled" to ConfigValue.BooleanValue(enabled)),
+                    source = "runtime.master_control",
+                )
+            )
+        }
+        return result
+    }
+
+    override suspend fun isRuntimeEnabled(): Boolean = workspaceRepository.load().runtimeEnabled
+
+    override suspend fun setTriggerEnabled(
+        automation: String,
+        triggerType: String,
+        tag: String,
+        mode: AutomationEnableMode,
+    ): ActionExecutionResult {
+        val target = automation.trim()
+        val type = triggerType.trim()
+        val triggerTag = tag.trim()
+        if (target.isEmpty() || (type.isEmpty() && triggerTag.isEmpty())) {
+            return ActionExecutionResult(false, message = userText("feature.operation_failed", "Trigger target required"))
+        }
+        return workspaceMutationLock.withLock {
+            val workspace = workspaceRepository.load()
+            val resolved = resolveAutomation(workspace, target)
+                ?: return@withLock ActionExecutionResult(
+                    false,
+                    message = userText("runtime.automation_not_found", target),
+                )
+            val candidates = resolved.activation.events.filter { feature ->
+                (type.isBlank() || feature.typeId == type || feature.config["source.type"]?.asTraceText() == type) &&
+                    (triggerTag.isBlank() || feature.config.string("tag") == triggerTag)
+            }
+            if (candidates.isEmpty()) {
+                return@withLock ActionExecutionResult(
+                    false,
+                    message = userText("feature.operation_failed", "Trigger not found"),
+                )
+            }
+            val keys = candidates.map { triggerKey(resolved, it) }.toSet()
+            val currentlyEnabled = keys.any { it !in workspace.disabledTriggerKeys }
+            val enable = when (mode) {
+                AutomationEnableMode.ENABLE -> true
+                AutomationEnableMode.DISABLE -> false
+                AutomationEnableMode.TOGGLE -> !currentlyEnabled
+            }
+            val disabled = if (enable) workspace.disabledTriggerKeys - keys
+            else workspace.disabledTriggerKeys + keys
+            workspaceRepository.save(workspace.copy(disabledTriggerKeys = disabled))
+            ActionExecutionResult(true, ConfigValue.BooleanValue(enable))
+        }
+    }
+
+    override suspend fun isTriggerEnabled(
+        automation: String,
+        triggerType: String,
+        tag: String,
+    ): Boolean? {
+        val workspace = workspaceRepository.load()
+        val resolved = resolveAutomation(workspace, automation.trim()) ?: return null
+        val type = triggerType.trim()
+        val triggerTag = tag.trim()
+        val candidates = resolved.activation.events.filter { feature ->
+            (type.isBlank() || feature.typeId == type || feature.config["source.type"]?.asTraceText() == type) &&
+                (triggerTag.isBlank() || feature.config.string("tag") == triggerTag)
+        }
+        if (candidates.isEmpty()) return null
+        return candidates.any { triggerKey(resolved, it) !in workspace.disabledTriggerKeys }
     }
 
     override suspend fun setCategoryEnabled(
@@ -659,6 +757,18 @@ class AutomationRuntime(
             }
         }
     }
+
+    private fun triggerKey(automation: Automation, feature: FeatureRef): String {
+        val sourceType = feature.config["source.type"]?.asTraceText().orEmpty()
+        val tag = feature.config.string("tag").trim()
+        return automation.id.value + "|" + (if (sourceType.isNotBlank()) sourceType else feature.typeId) + "|" + tag
+    }
+
+    private fun triggerEnabled(
+        workspace: WorkspaceData,
+        automation: Automation,
+        feature: FeatureRef,
+    ): Boolean = triggerKey(automation, feature) !in workspace.disabledTriggerKeys
 
     private fun resolveAutomation(workspace: WorkspaceData, target: String): Automation? {
         workspace.automations.firstOrNull { it.id.value == target }?.let { return it }
