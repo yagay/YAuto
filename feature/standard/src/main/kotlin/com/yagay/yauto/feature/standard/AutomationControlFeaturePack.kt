@@ -203,6 +203,32 @@ class AutomationControlFeaturePack(
                 else -> true
             }
         },
+        eventFeature(
+            automationDescriptor(
+                "core.event.automation_enabled_changed",
+                FeatureKind.EVENT,
+                "Automation enabled state changed",
+                "Run when another YAuto automation is enabled or disabled",
+                fields = listOf(
+                    FieldSchema.Text("target", "Target automation"),
+                    FieldSchema.Choice("state", "State", options = listOf("any", "enabled", "disabled")),
+                ),
+                keywords = setOf("automation", "enabled", "disabled", "changed", "macrodroid"),
+                behaviors = mapOf("target" to FieldBehavior(supportsVariables = true)),
+            )
+        ) { feature, context ->
+            if (context.event.typeId != "core.event.automation_enabled_changed") return@eventFeature false
+            val target = feature.config.string("target").resolveVariables(context.variables).trim()
+            val targetMatches = target.isBlank() ||
+                context.event.payload.string("automationId") == target ||
+                context.event.payload.string("automationName").equals(target, true)
+            val enabled = (context.event.payload["enabled"] as? ConfigValue.BooleanValue)?.value
+            targetMatches && when (feature.config.string("state", "any")) {
+                "enabled" -> enabled == true
+                "disabled" -> enabled == false
+                else -> true
+            }
+        },
         conditionFeature(
             automationDescriptor(
                 "core.automation.running",
