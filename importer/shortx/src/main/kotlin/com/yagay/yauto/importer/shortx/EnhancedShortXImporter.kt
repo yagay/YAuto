@@ -165,6 +165,7 @@ internal object ShortXFeatureSuggestions {
         "RemoveTasks", "RemoveTasksByPkg" -> "android.tasks.remove"
         "WaitForIdle" -> "android.ui.wait_for_idle"
         "ScrollViewTo" -> "accessibility.scroll_to"
+        "ContinuousGesturePointer" -> "accessibility.pointer.show"
         "StartLastApp" -> "android.app.last_used.launch"
         "LaunchPinedItem", "AppShortcut" -> "android.intent_uri.launch"
         "StartActivity", "StartActivityIntent", "StartActivityIntentUri", "StartActivityUrlSchema" -> "android.external.intent.invoke"
