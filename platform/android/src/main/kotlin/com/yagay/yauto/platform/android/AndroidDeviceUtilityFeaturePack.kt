@@ -1,6 +1,7 @@
 package com.yagay.yauto.platform.android
 
 import android.app.ActivityManager
+import android.app.AlarmManager
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
@@ -33,6 +34,8 @@ class AndroidDeviceUtilityFeaturePack(context: Context) : FeaturePack {
         registerUptime(registry)
         registerThermal(registry)
         registerLocaleInfo(registry)
+        registerNextAlarm(registry)
+        registerMaterialYouColors(registry)
     }
 
     private fun registerClipboardClear(registry: FeatureRegistry) {
@@ -242,6 +245,61 @@ class AndroidDeviceUtilityFeaturePack(context: Context) : FeaturePack {
         }
     }
 
+    private fun registerNextAlarm(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.alarm.next.query"),
+                FeatureKind.ACTION,
+                "Get next alarm",
+                "Read Android's next scheduled alarm-clock trigger and source package",
+                FeatureCategory.SYSTEM,
+                fields = listOf(FieldSchema.Variable("resultVariable", "Store next-alarm object", true)),
+                keywords = setOf("next alarm", "alarm clock", "query", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val info = context.getSystemService(AlarmManager::class.java).nextAlarmClock
+            val output = if (info == null) {
+                ConfigValue.ObjectValue(
+                    mapOf(
+                        "scheduled" to ConfigValue.BooleanValue(false),
+                        "triggerEpochMs" to ConfigValue.NullValue,
+                        "package" to ConfigValue.StringValue(""),
+                    )
+                )
+            } else {
+                ConfigValue.ObjectValue(
+                    mapOf(
+                        "scheduled" to ConfigValue.BooleanValue(true),
+                        "triggerEpochMs" to ConfigValue.NumberValue(info.triggerTime.toDouble()),
+                        "package" to ConfigValue.StringValue(info.showIntent?.creatorPackage.orEmpty()),
+                    )
+                )
+            }
+            ctx.variables.set(feature.config.string("resultVariable"), output)
+            ActionExecutionResult(true, output)
+        }
+    }
+
+    private fun registerMaterialYouColors(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.material_colors.get"),
+                FeatureKind.ACTION,
+                "Get Material You colors",
+                "Read Android 12+ system dynamic accent and neutral palette colors",
+                FeatureCategory.DISPLAY,
+                fields = listOf(FieldSchema.Variable("resultVariable", "Store color palette object", true)),
+                keywords = setOf("material you", "dynamic color", "monet", "accent", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val output = materialYouColorValue(context)
+            ctx.variables.set(feature.config.string("resultVariable"), output)
+            ActionExecutionResult(true, output)
+        }
+    }
+
     private fun batteryIntent(): Intent? = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
 }
 
@@ -296,3 +354,23 @@ private fun batteryProperty(value: Int): ConfigValue =
 
 private fun batteryLongProperty(value: Long): ConfigValue =
     if (value == Long.MIN_VALUE) ConfigValue.NullValue else ConfigValue.NumberValue(value.toDouble())
+
+
+internal fun materialYouColorValue(context: Context): ConfigValue.ObjectValue {
+    val groups = listOf("accent1", "accent2", "accent3", "neutral1", "neutral2")
+    val tones = listOf("0", "10", "50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "1000")
+    return ConfigValue.ObjectValue(
+        groups.associateWith { group ->
+            ConfigValue.ObjectValue(
+                tones.mapNotNull { tone ->
+                    val name = "system_" + group + "_" + tone
+                    val id = context.resources.getIdentifier(name, "color", "android")
+                    if (id == 0) null else {
+                        val color = runCatching { context.getColor(id) }.getOrNull() ?: return@mapNotNull null
+                        tone to ConfigValue.StringValue(String.format("#%08X", color))
+                    }
+                }.toMap()
+            )
+        }
+    )
+}
