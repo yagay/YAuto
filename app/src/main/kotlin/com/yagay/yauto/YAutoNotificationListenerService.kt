@@ -342,6 +342,12 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
         scope.cancel()
         super.onDestroy()
     }
+
+    private data class RemovedNotificationRecord(
+        val snapshot: HistoricalNotificationSnapshot,
+        val notification: Notification,
+    )
+
     private companion object {
         const val RESTORED_CHANNEL_ID = "yauto_restored_notifications"
         const val MAX_NOTIFICATION_HISTORY = 200
