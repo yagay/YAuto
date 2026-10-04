@@ -20,5 +20,6 @@ dependencies {
     implementation(project(":core:registry"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    implementation("org.apache-extras.beanshell:bsh:2.0b6")
     testImplementation(libs.junit)
 }
