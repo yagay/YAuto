@@ -155,7 +155,7 @@ internal object ShortXFeatureSuggestions {
         "WebDavGet", "WebDavList", "WebDavPut" -> "android.webdav.request"
         "WebSocketConnect" -> "android.websocket.connect"
         "WebSocketSend" -> "android.websocket.send"
-        "PluginAction" -> "android.plugin.locale.fire"
+        "PluginAction" -> "android.plugin.locale.action"
         "PerformContextMenuAction" -> "accessibility.context_menu.perform"
         "ClickTile" -> "android.qs_tile.click"
         "ShowGlobalActionsMenu" -> "android.global_actions.show"
