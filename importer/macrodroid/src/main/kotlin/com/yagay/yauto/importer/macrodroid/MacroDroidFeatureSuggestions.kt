@@ -186,6 +186,17 @@ object MacroDroidFeatureSuggestions {
         "SetLocationUpdateRateAction" -> "android.location.update_rate.set"
         "CameraNotificationCircleAction" -> "surface.edge_lighting.show"
         "MacroDroidDrawerAction" -> "surface.sidebar.show"
+        "AllowLEDNotificationLightAction" -> "android.notification.led.set"
+        "AmbientDisplayAction" -> "android.ambient_display.set"
+        "CreateChartAction" -> "android.chart.create"
+        "DisableMacroDroidAction" -> "core.runtime.set_enabled"
+        "DisableTriggerAction" -> "core.trigger.set_enabled"
+        "MacroDroidNotificationTextAction" -> "android.notification.ppn.show"
+        "MacroDroidSettingAction" -> "android.yauto.setting.set"
+        "OpenMacroDroidLogAction" -> "android.log.export"
+        "PinUnlockAction" -> "android.keyguard.pin_unlock"
+        "SetMacroDroidIconAction" -> "android.launcher.entry.set"
+        "SummariseMacrosAction" -> "android.automation.summary"
         else -> null
     }
 
