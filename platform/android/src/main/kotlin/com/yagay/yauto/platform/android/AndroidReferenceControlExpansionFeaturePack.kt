@@ -31,7 +31,6 @@ class AndroidReferenceControlExpansionFeaturePack(context: Context) : FeaturePac
         registerMicrophoneMute(registry)
         registerSpeakerphone(registry)
         registerVolumeUi(registry)
-        registerHome(registry)
 
         numericPercentPair(
             registry,
@@ -165,28 +164,6 @@ class AndroidReferenceControlExpansionFeaturePack(context: Context) : FeaturePac
                 true
             }.getOrDefault(false)
             ActionExecutionResult(ok, message = if (ok) null else userText("feature.operation_failed", feature.typeId))
-        }
-    }
-
-    private fun registerHome(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.home.open"),
-                FeatureKind.ACTION,
-                "Open home screen",
-                "Return to the Android home screen using the standard home intent",
-                FeatureCategory.APP,
-                accessRequirements = setOf(AccessRequirement.OVERLAY),
-                keywords = setOf("home", "launcher", "desktop", "MacroDroid"),
-                ownerPackId = id,
-            )
-        ) { feature, _ ->
-            launch(
-                Intent(Intent.ACTION_MAIN)
-                    .addCategory(Intent.CATEGORY_HOME)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                feature.typeId,
-            )
         }
     }
 
