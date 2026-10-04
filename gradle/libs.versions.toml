@@ -16,6 +16,7 @@ mlkitText = "16.0.1"
 beanshell = "2.0b6"
 mvel = "2.5.4.Final"
 playServicesWearable = "20.0.1"
+playServicesLocation = "21.3.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
@@ -37,6 +38,7 @@ mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version
 beanshell = { module = "org.apache-extras.beanshell:bsh", version.ref = "beanshell" }
 mvel = { module = "org.mvel:mvel2", version.ref = "mvel" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
