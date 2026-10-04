@@ -3,6 +3,7 @@ package com.yagay.yauto.platform.accessibility
 import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 
@@ -13,6 +14,7 @@ class AccessibilityFeaturePack(
 
     override fun install(registry: FeatureRegistry) {
         action(registry, AccessibilityOperations.CLICK_TEXT, "Click text", "Find visible text in the active window and click the nearest clickable node", listOf(FieldSchema.Text("text", "Text", true), FieldSchema.Toggle("exact", "Exact text match")), setOf("click", "text", "ui", "accessibility"))
+        action(registry, AccessibilityOperations.CLICK_TEXT_ADVANCED, "Click text with match mode", "Find visible text using contains, exact or regular-expression matching and click it", listOf(FieldSchema.Text("text", "Text / pattern", true), FieldSchema.Choice("mode", "Match mode", true, listOf("contains", "exact", "regex")), FieldSchema.Toggle("ignoreCase", "Ignore case")), setOf("click", "text", "regex", "screen", "shortx"))
         action(registry, AccessibilityOperations.LONG_CLICK_TEXT, "Long-click text", "Find visible text and perform the nearest supported long-click action", listOf(FieldSchema.Text("text", "Text", true), FieldSchema.Toggle("exact", "Exact text match")), setOf("long click", "long press", "text", "ui"))
         action(registry, AccessibilityOperations.CLICK_VIEW_ID, "Click View ID", "Find a view by resource ID and click the nearest clickable node", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("view id", "resource id", "ui", "accessibility"))
         action(registry, AccessibilityOperations.CLICK_DESCRIPTION, "Click content description", "Find a node by accessibility content description and click it", listOf(FieldSchema.Text("description", "Content description", true), FieldSchema.Toggle("exact", "Exact match")), setOf("content description", "accessibility label", "click", "ui"))
@@ -23,7 +25,46 @@ class AccessibilityFeaturePack(
         action(registry, AccessibilityOperations.TAP, "Tap coordinates", "Dispatch a tap gesture at screen coordinates", listOf(FieldSchema.Number("x", "X", true, min = 0.0), FieldSchema.Number("y", "Y", true, min = 0.0), FieldSchema.Duration("durationMs", "Press duration")), setOf("tap", "gesture", "coordinate", "accessibility"))
         action(registry, AccessibilityOperations.SWIPE, "Swipe", "Dispatch a swipe gesture between screen coordinates", listOf(FieldSchema.Number("x1", "Start X", true, min = 0.0), FieldSchema.Number("y1", "Start Y", true, min = 0.0), FieldSchema.Number("x2", "End X", true, min = 0.0), FieldSchema.Number("y2", "End Y", true, min = 0.0), FieldSchema.Duration("durationMs", "Duration")), setOf("swipe", "gesture", "accessibility"))
 
+        resultAction(
+            registry,
+            AccessibilityOperations.GET_SCREEN_TEXT,
+            "Read screen text",
+            "Read visible text and content descriptions from the active Accessibility window",
+            listOf(
+                FieldSchema.Toggle("includeDescriptions", "Include content descriptions"),
+                FieldSchema.Toggle("unique", "Remove duplicate text"),
+                FieldSchema.Number("limit", "Maximum nodes", min = 1.0, max = 2000.0),
+                FieldSchema.Variable("resultVariable", "Store screen text", true),
+            ),
+            setOf("screen text", "read screen", "accessibility", "shortx", "macrodroid"),
+        )
+        resultAction(
+            registry,
+            AccessibilityOperations.GET_VIEW_TEXT,
+            "Read text by View ID",
+            "Read text or content description from a view resource ID",
+            listOf(
+                FieldSchema.Text("viewId", "View ID", true),
+                FieldSchema.Variable("resultVariable", "Store text", true),
+            ),
+            setOf("view id", "get text", "screen", "accessibility"),
+        )
+        resultAction(
+            registry,
+            AccessibilityOperations.GET_UI_NODES,
+            "Read UI node tree",
+            "Read visible Accessibility nodes and their text, IDs and interaction flags into a list",
+            listOf(
+                FieldSchema.Number("limit", "Maximum nodes", min = 1.0, max = 2000.0),
+                FieldSchema.Toggle("onlyVisible", "Only visible nodes"),
+                FieldSchema.Toggle("clickableOnly", "Only clickable nodes"),
+                FieldSchema.Variable("resultVariable", "Store node list", true),
+            ),
+            setOf("ui tree", "nodes", "view id", "screen contents", "accessibility"),
+        )
+
         condition(registry, "accessibility.condition.text_present", AccessibilityOperations.FIND_TEXT, "Text on screen", "Check whether text/content description is currently visible", listOf(FieldSchema.Text("text", "Text", true), FieldSchema.Toggle("exact", "Exact text match")), setOf("text present", "screen text", "ui", "accessibility"))
+        condition(registry, "accessibility.condition.text_matches", AccessibilityOperations.FIND_TEXT_ADVANCED, "Screen text matches", "Check visible text using contains, exact or regular-expression matching", listOf(FieldSchema.Text("text", "Text / pattern", true), FieldSchema.Choice("mode", "Match mode", true, listOf("contains", "exact", "regex")), FieldSchema.Toggle("ignoreCase", "Ignore case")), setOf("text present", "regex", "screen content", "shortx"))
         condition(registry, "accessibility.condition.view_id_present", AccessibilityOperations.FIND_VIEW_ID, "View ID on screen", "Check whether a resource ID exists in the active window", listOf(FieldSchema.Text("viewId", "View ID", true)), setOf("view id", "resource id", "exists", "ui"))
 
         foregroundEvent(registry, "android.event.app_foreground", "App became foreground")
@@ -40,6 +81,13 @@ class AccessibilityFeaturePack(
             if (ctx.event.typeId != "android.event.window_changed") return@registerEvent false
             matchForeground(feature, ctx.event.payload.string("package"), ctx.event.payload.string("class"))
         }
+
+        uiEvent(registry, "android.event.ui_click", "UI element clicked", "click")
+        uiEvent(registry, "android.event.ui_long_click", "UI element long-clicked", "long_click")
+        uiEvent(registry, "android.event.ui_text_changed", "UI text changed", "text_changed")
+        uiEvent(registry, "android.event.ui_focused", "UI element focused", "focused")
+        uiEvent(registry, "android.event.ui_scrolled", "UI content scrolled", "scrolled")
+        screenContentEvent(registry)
 
         foregroundState(registry, FeatureKind.STATE, "android.state.app_foreground")
         foregroundState(registry, FeatureKind.CONDITION, "android.condition.app_foreground")
@@ -60,6 +108,76 @@ class AccessibilityFeaturePack(
                 foregroundSourceMatches(feature, ctx.event.source) &&
                 matchForeground(feature, ctx.event.payload.string("package"), ctx.event.payload.string("class"))
         }
+    }
+
+    private fun uiEvent(registry: FeatureRegistry, typeId: String, title: String, eventName: String) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId(typeId),
+                FeatureKind.EVENT,
+                title,
+                "Trigger on Accessibility UI interaction events and optionally filter app, text, content description or View ID",
+                FeatureCategory.UI_AUTOMATION,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "App / package"),
+                    FieldSchema.Choice("textMode", "Text match", options = listOf("any", "contains", "exact", "regex")),
+                    FieldSchema.Text("text", "Text / pattern"),
+                    FieldSchema.Text("descriptionContains", "Content description contains"),
+                    FieldSchema.Text("viewIdContains", "View ID contains"),
+                    FieldSchema.Toggle("ignoreCase", "Ignore case"),
+                ),
+                keywords = setOf("ui click", "accessibility event", "view", eventName, "shortx", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != typeId) return@registerEvent false
+            matchUiEvent(feature, ctx.event.payload)
+        }
+    }
+
+    private fun screenContentEvent(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.screen_content_changed"),
+                FeatureKind.EVENT,
+                "Screen content matched",
+                "Trigger when Accessibility reports changed screen content matching text or a regular expression",
+                FeatureCategory.UI_AUTOMATION,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "App / package"),
+                    FieldSchema.Choice("mode", "Match mode", true, listOf("contains", "regex")),
+                    FieldSchema.Text("text", "Text / pattern", true),
+                    FieldSchema.Toggle("ignoreCase", "Ignore case"),
+                ),
+                keywords = setOf("screen content", "text appeared", "regex", "accessibility", "macrodroid", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.screen_content_changed") return@registerEvent false
+            val pkg = feature.config.string("package")
+            if (pkg.isNotBlank() && ctx.event.payload.string("package") != pkg) return@registerEvent false
+            matchesText(
+                actual = ctx.event.payload.string("screenText"),
+                expected = feature.config.string("text"),
+                mode = feature.config.string("mode", "contains"),
+                ignoreCase = feature.config.boolean("ignoreCase", true),
+            )
+        }
+    }
+
+    private fun matchUiEvent(feature: com.yagay.yauto.core.model.FeatureRef, payload: Map<String, ConfigValue>): Boolean {
+        val pkg = feature.config.string("package")
+        if (pkg.isNotBlank() && payload.string("package") != pkg) return false
+        val ignoreCase = feature.config.boolean("ignoreCase", true)
+        val mode = feature.config.string("textMode", "any")
+        if (mode != "any" && !matchesText(payload.string("text"), feature.config.string("text"), mode, ignoreCase)) return false
+        val description = feature.config.string("descriptionContains")
+        if (description.isNotBlank() && !payload.string("description").contains(description, ignoreCase)) return false
+        val viewId = feature.config.string("viewIdContains")
+        if (viewId.isNotBlank() && !payload.string("viewId").contains(viewId, ignoreCase)) return false
+        return true
     }
 
     private fun foregroundState(registry: FeatureRegistry, kind: FeatureKind, typeId: String) {
@@ -92,12 +210,8 @@ class AccessibilityFeaturePack(
 
     private fun foregroundSourceMatches(feature: com.yagay.yauto.core.model.FeatureRef, source: String): Boolean =
         when (feature.preferredBackendId()) {
-            // Historical/runtime test events did not carry a source. Treat blank as the original
-            // Accessibility source for backwards compatibility, but never as explicit Usage Stats.
             "accessibility" -> source.isBlank() || source == ACCESSIBILITY_WINDOW_SOURCE
             "usage_stats" -> source == USAGE_STATS_SOURCE
-            // Auto/default mode also covers historical RuntimeEvent sources such as "runtime".
-            // Only an explicitly selected backend should reject events from another source.
             else -> true
         }
 
@@ -117,12 +231,35 @@ class AccessibilityFeaturePack(
         }
     }
 
+    private fun resultAction(registry: FeatureRegistry, typeId: String, title: String, description: String, fields: List<FieldSchema>, keywords: Set<String>) {
+        registry.registerAction(
+            FeatureDescriptor(id = FeatureId(typeId), kind = FeatureKind.ACTION, title = title, description = description, category = FeatureCategory.UI_AUTOMATION, capabilities = setOf(CapabilityIds.ACCESSIBILITY), fields = fields, keywords = keywords, ownerPackId = id)
+        ) { feature, ctx ->
+            val result = ctx.capabilities.execute(CapabilityRequest(CapabilityIds.ACCESSIBILITY, typeId, feature.config))
+            if (result.success) {
+                feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, result.value) }
+            }
+            ActionExecutionResult(result.success, result.value, result.message)
+        }
+    }
+
     private fun condition(registry: FeatureRegistry, typeId: String, operationId: String, title: String, description: String, fields: List<FieldSchema>, keywords: Set<String>) {
         registry.registerCondition(
             FeatureDescriptor(id = FeatureId(typeId), kind = FeatureKind.CONDITION, title = title, description = description, category = FeatureCategory.UI_AUTOMATION, capabilities = setOf(CapabilityIds.ACCESSIBILITY), fields = fields, keywords = keywords, ownerPackId = id)
         ) { feature, ctx ->
             val result = ctx.capabilities.execute(CapabilityRequest(CapabilityIds.ACCESSIBILITY, operationId, feature.config))
             result.success && (result.value as? ConfigValue.BooleanValue)?.value == true
+        }
+    }
+
+    private fun matchesText(actual: String, expected: String, mode: String, ignoreCase: Boolean): Boolean {
+        if (expected.isBlank()) return false
+        return when (mode) {
+            "exact" -> actual.equals(expected, ignoreCase)
+            "regex" -> runCatching {
+                Regex(expected, if (ignoreCase) setOf(RegexOption.IGNORE_CASE) else emptySet()).containsMatchIn(actual)
+            }.getOrDefault(false)
+            else -> actual.contains(expected, ignoreCase)
         }
     }
 
