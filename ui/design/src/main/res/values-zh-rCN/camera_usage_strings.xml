@@ -23,4 +23,17 @@
     <string name="feature_android_event_camera_in_use_changed_field_state_option_any">任意</string>
     <string name="feature_android_event_camera_in_use_changed_field_state_option_in_use">正在使用</string>
     <string name="feature_android_event_camera_in_use_changed_field_state_option_available">可用</string>
+
+    <string name="feature_android_state_reference_signal_torch_available_title">手电筒可用</string>
+    <string name="feature_android_state_reference_signal_torch_available_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_torch_available_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_torch_available_title">手电筒可用</string>
+    <string name="feature_android_condition_reference_signal_torch_available_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_torch_available_field_value">已启用 / true</string>
+    <string name="feature_android_state_reference_signal_torch_enabled_title">手电筒已开启</string>
+    <string name="feature_android_state_reference_signal_torch_enabled_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_torch_enabled_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_torch_enabled_title">手电筒已开启</string>
+    <string name="feature_android_condition_reference_signal_torch_enabled_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_torch_enabled_field_value">已启用 / true</string>
 </resources>
