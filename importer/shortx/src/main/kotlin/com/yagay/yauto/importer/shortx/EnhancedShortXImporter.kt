@@ -153,6 +153,7 @@ internal object ShortXFeatureSuggestions {
         "AppUpdated" -> "android.event.package_replaced"
         "NotificationPosted" -> "android.event.notification_posted"
         "NotificationRemoved" -> "android.event.notification_removed"
+        "NotificationUpdated" -> "android.event.notification_updated"
         "Broadcast" -> "android.event.broadcast"
         "CallStateChanged" -> "android.event.phone_state_changed"
         "ShakeDevice" -> "android.event.shake"
