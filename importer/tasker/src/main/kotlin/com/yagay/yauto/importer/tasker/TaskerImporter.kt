@@ -85,12 +85,26 @@ class TaskerImporter : AutomationImporter {
             val states = mutableListOf<FeatureRef>()
             contexts.forEachIndexed { ci, context ->
                 val code = context.childText("code") ?: "unknown"
-                val path = "profile[$profileId].context[$ci]"
+                val path = "profile[" + profileId + "].context[" + ci + "]"
                 val isEvent = context.tagName == "Event"
-                val fallback = if (isEvent) CompatFeatureIds.SOURCE_EVENT else CompatFeatureIds.SOURCE_STATE
-                val feature = sourceFeature(fallback, id, "${context.tagName}:$code", context.toCompactXml())
-                if (isEvent) events += feature else states += feature
-                issues += CompatibilityIssue(ImportSeverity.WARNING, path, "${context.tagName}:$code", userText("import.tasker.context_preserved"))
+                val raw = context.toCompactXml()
+                val native = TaskerMappings.nativeContext(context, code, context.tagName, id, raw)
+                if (native != null) {
+                    if (isEvent) events += native else states += native
+                    trace += ImportTrace(path, native.typeId, "MAPPED", context.tagName + ":" + code)
+                } else {
+                    val fallback = if (isEvent) CompatFeatureIds.SOURCE_EVENT else CompatFeatureIds.SOURCE_STATE
+                    val feature = sourceFeature(fallback, id, context.tagName + ":" + code, raw)
+                    if (isEvent) events += feature else states += feature
+                    val suggested = if (isEvent) TaskerFeatureSuggestions.event(code) else TaskerFeatureSuggestions.state(code)
+                    issues += CompatibilityIssue(
+                        ImportSeverity.WARNING,
+                        path,
+                        context.tagName + ":" + code,
+                        userText("import.tasker.context_preserved"),
+                        suggestedFeatureId = suggested,
+                    )
+                }
             }
 
             fun flowCall(childName: String): List<ActionNode> {
@@ -128,12 +142,135 @@ class TaskerImporter : AutomationImporter {
         task: TaskDef,
         flowAliases: Map<String, FlowId>,
         issues: MutableList<CompatibilityIssue>,
-    ): List<ActionNode> = task.element.children("Action").mapIndexed { index, action ->
-        val code = action.childText("code") ?: "unknown"
-        val path = "task[${task.id}].action[$index]"
-        val raw = action.toCompactXml()
+    ): List<ActionNode> {
+        val actions = task.element.children("Action")
+        return mapActionRange(actions, 0, actions.size, task, flowAliases, issues)
+    }
 
-        if (code == "130" && action.children("ConditionList").isEmpty()) {
+    private fun mapActionRange(
+        actions: List<Element>,
+        start: Int,
+        end: Int,
+        task: TaskDef,
+        flowAliases: Map<String, FlowId>,
+        issues: MutableList<CompatibilityIssue>,
+    ): List<ActionNode> {
+        val output = mutableListOf<ActionNode>()
+        var index = start
+        while (index < end) {
+            val action = actions[index]
+            val code = action.childText("code") ?: "unknown"
+            val path = "task[" + task.id + "].action[" + index + "]"
+
+            if (code == "37") {
+                val parsed = parseTaskerIf(actions, index, end, task, flowAliases, issues)
+                if (parsed != null) {
+                    output += parsed.node
+                    index = parsed.nextIndex
+                    continue
+                }
+            }
+
+            when (code) {
+                "38", "43" -> {
+                    // Stray control marker: preserve rather than silently changing execution.
+                    issues += CompatibilityIssue(
+                        ImportSeverity.WARNING,
+                        path,
+                        "code:" + code,
+                        userText("import.tasker.action_preserved"),
+                    )
+                    output += compatibilityAction(code, action.toCompactXml())
+                }
+                "126" -> {
+                    output += ActionNode.Return(
+                        NodeId(UUID.randomUUID().toString()),
+                        ConfigValue.StringValue(TaskerMappings.returnValue(action).orEmpty()),
+                    )
+                }
+                "137" -> {
+                    val target = TaskerMappings.stopTaskTarget(action)
+                    if (target.isNullOrBlank()) {
+                        output += ActionNode.Return(NodeId(UUID.randomUUID().toString()), ConfigValue.NullValue)
+                    } else {
+                        output += ActionNode.Action(
+                            NodeId(UUID.randomUUID().toString()),
+                            sourceFeature(
+                                "core.automation.cancel",
+                                id,
+                                "TaskerAction:" + code,
+                                action.toCompactXml(),
+                                extra = mapOf("target" to ConfigValue.StringValue(target)),
+                            ),
+                        )
+                    }
+                }
+                else -> output += mapTaskerLeafAction(action, code, path, flowAliases, issues)
+            }
+            index++
+        }
+        return output
+    }
+
+    private data class ParsedIf(val node: ActionNode.If, val nextIndex: Int)
+
+    private fun parseTaskerIf(
+        actions: List<Element>,
+        start: Int,
+        end: Int,
+        task: TaskDef,
+        flowAliases: Map<String, FlowId>,
+        issues: MutableList<CompatibilityIssue>,
+    ): ParsedIf? {
+        val conditionList = actions[start].children("ConditionList").firstOrNull() ?: return null
+        val predicate = taskerConditionList(conditionList) ?: return null
+
+        var depth = 0
+        var elseIndex = -1
+        var endIfIndex = -1
+        var index = start + 1
+        while (index < end) {
+            when (actions[index].childText("code")) {
+                "37" -> depth++
+                "38" -> {
+                    if (depth == 0) {
+                        endIfIndex = index
+                        break
+                    }
+                    depth--
+                }
+                "43" -> if (depth == 0 && elseIndex < 0) elseIndex = index
+            }
+            index++
+        }
+        if (endIfIndex < 0) return null
+
+        val thenEnd = if (elseIndex >= 0) elseIndex else endIfIndex
+        val thenActions = mapActionRange(actions, start + 1, thenEnd, task, flowAliases, issues)
+        val elseActions = if (elseIndex >= 0) {
+            mapActionRange(actions, elseIndex + 1, endIfIndex, task, flowAliases, issues)
+        } else emptyList()
+
+        return ParsedIf(
+            ActionNode.If(
+                NodeId(UUID.randomUUID().toString()),
+                predicate,
+                thenActions,
+                elseActions,
+            ),
+            endIfIndex + 1,
+        )
+    }
+
+    private fun mapTaskerLeafAction(
+        action: Element,
+        code: String,
+        path: String,
+        flowAliases: Map<String, FlowId>,
+        issues: MutableList<CompatibilityIssue>,
+    ): ActionNode {
+        val raw = action.toCompactXml()
+        val base: ActionNode = if (code == "130") {
             val targetName = TaskerMappings.performTaskTarget(action)
             val target = targetName?.let(flowAliases::get)
             if (target != null) {
@@ -148,19 +285,98 @@ class TaskerImporter : AutomationImporter {
                     resultVariable = TaskerMappings.performTaskResultVariable(action),
                 )
             } else {
-                issues += CompatibilityIssue(ImportSeverity.WARNING, path, "code:$code", userText("import.tasker.target_unresolved"))
+                issues += CompatibilityIssue(
+                    ImportSeverity.WARNING,
+                    path,
+                    "code:" + code,
+                    userText("import.tasker.target_unresolved"),
+                )
                 compatibilityAction(code, raw)
             }
         } else {
-            // Conditional actions need a condition translator; preserve them until then.
-            val native = if (action.children("ConditionList").isEmpty()) TaskerMappings.nativeAction(action, code, id, raw) else null
+            val native = TaskerMappings.nativeAction(action, code, id, raw)
             if (native != null) {
                 ActionNode.Action(NodeId(UUID.randomUUID().toString()), native)
             } else {
-                issues += CompatibilityIssue(ImportSeverity.WARNING, path, "code:$code", userText("import.tasker.action_preserved"))
+                issues += CompatibilityIssue(
+                    ImportSeverity.WARNING,
+                    path,
+                    "code:" + code,
+                    userText("import.tasker.action_preserved"),
+                    suggestedFeatureId = TaskerFeatureSuggestions.action(code),
+                )
                 compatibilityAction(code, raw)
             }
         }
+
+        val list = action.children("ConditionList").firstOrNull() ?: return base
+        val predicate = taskerConditionList(list) ?: return base
+        return ActionNode.If(
+            NodeId(UUID.randomUUID().toString()),
+            predicate,
+            listOf(base),
+        )
+    }
+
+    private fun taskerConditionList(list: Element): PredicateNode? {
+        val conditions = list.elementChildren().filter { it.tagName == "Condition" }
+        if (conditions.isEmpty()) return null
+        val nodes = conditions.map { condition ->
+            val lhs = condition.childText("lhs").orEmpty()
+            val op = condition.childText("op")?.toIntOrNull() ?: return null
+            val rhs = condition.childText("rhs").orEmpty()
+            PredicateNode.Condition(
+                FeatureRef(
+                    "tasker.condition.compare",
+                    mapOf(
+                        "lhs" to ConfigValue.StringValue(lhs),
+                        "operator" to ConfigValue.NumberValue(op.toDouble()),
+                        "rhs" to ConfigValue.StringValue(rhs),
+                    ),
+                )
+            )
+        }.toMutableList()
+
+        if (nodes.size == 1) return nodes.first()
+        val operators = (0 until nodes.lastIndex).map { index ->
+            list.childText("bool" + index)?.trim().orEmpty().ifBlank { "And" }
+        }.toMutableList()
+        if (operators.size != nodes.size - 1) return null
+
+        val precedence = listOf(
+            setOf("And2"),
+            setOf("Or2"),
+            setOf("Xor2"),
+            setOf("And"),
+            setOf("Or"),
+            setOf("Xor"),
+        )
+        precedence.forEach { level ->
+            var i = 0
+            while (i < operators.size) {
+                if (operators[i] !in level) {
+                    i++
+                    continue
+                }
+                val left = nodes[i]
+                val right = nodes[i + 1]
+                val combined = when (operators[i]) {
+                    "And", "And2" -> PredicateNode.All(listOf(left, right))
+                    "Or", "Or2" -> PredicateNode.Any(listOf(left, right))
+                    "Xor", "Xor2" -> PredicateNode.Any(
+                        listOf(
+                            PredicateNode.All(listOf(left, PredicateNode.None(listOf(right)))),
+                            PredicateNode.All(listOf(PredicateNode.None(listOf(left)), right)),
+                        )
+                    )
+                    else -> return null
+                }
+                nodes[i] = combined
+                nodes.removeAt(i + 1)
+                operators.removeAt(i)
+            }
+        }
+        return nodes.singleOrNull()
     }
 
     private fun compatibilityAction(code: String, raw: String): ActionNode.Action = ActionNode.Action(
