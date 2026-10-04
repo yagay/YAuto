@@ -5,7 +5,6 @@ import android.content.Intent
 import android.media.AudioManager
 import android.provider.Settings
 import android.util.DisplayMetrics
-import android.view.inputmethod.InputMethodManager
 import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigMap
@@ -26,7 +25,6 @@ class AndroidReferenceControlExpansionFeaturePack(context: Context) : FeaturePac
     override val id: String = "android.reference_control_expansion"
     private val context = context.applicationContext
     private val audio = this.context.getSystemService(AudioManager::class.java)
-    private val inputMethod = this.context.getSystemService(InputMethodManager::class.java)
 
     override fun install(registry: FeatureRegistry) {
         registerImmersiveMode(registry)
@@ -34,7 +32,6 @@ class AndroidReferenceControlExpansionFeaturePack(context: Context) : FeaturePac
         registerSpeakerphone(registry)
         registerVolumeUi(registry)
         registerHome(registry)
-        registerImePicker(registry)
 
         numericPercentPair(
             registry,
@@ -190,27 +187,6 @@ class AndroidReferenceControlExpansionFeaturePack(context: Context) : FeaturePac
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                 feature.typeId,
             )
-        }
-    }
-
-    private fun registerImePicker(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.ime.picker.show"),
-                FeatureKind.ACTION,
-                "Show input method picker",
-                "Show Android's keyboard / input-method picker",
-                FeatureCategory.SYSTEM,
-                accessRequirements = setOf(AccessRequirement.OVERLAY),
-                keywords = setOf("keyboard", "ime", "input method", "picker", "MacroDroid"),
-                ownerPackId = id,
-            )
-        ) { feature, _ ->
-            val ok = runCatching {
-                inputMethod.showInputMethodPicker()
-                true
-            }.getOrDefault(false)
-            ActionExecutionResult(ok, message = if (ok) null else userText("feature.operation_failed", feature.typeId))
         }
     }
 
