@@ -863,6 +863,24 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
 
 
     private fun registerRuntimeStates(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.mobile_data_changed"), FeatureKind.EVENT,
+                "Mobile data changed", "Run when Android's global mobile-data setting changes",
+                FeatureCategory.NETWORK,
+                fields = listOf(FieldSchema.Choice("state", "State", options = listOf("any", "enabled", "disabled"))),
+                keywords = setOf("mobile data", "cellular data", "changed", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.mobile_data_changed") return@registerEvent false
+            when (feature.config.string("state", "any")) {
+                "enabled" -> ctx.event.payload.boolean("enabled")
+                "disabled" -> !ctx.event.payload.boolean("enabled")
+                else -> true
+            }
+        }
+
         val mobileEvaluator = ConditionEvaluator { feature, _ ->
             if (!runtimePermissionGranted(context, "phone")) return@ConditionEvaluator false
             val actual = runCatching {
