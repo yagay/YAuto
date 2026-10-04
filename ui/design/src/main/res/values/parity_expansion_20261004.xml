@@ -596,7 +596,7 @@
     <string name="feature_android_process_kill_by_name_field_signal_option_term">TERM</string>
     <string name="feature_android_process_kill_by_name_field_signal_option_kill">KILL</string>
     <string name="feature_android_network_access_set_title">Set app network access</string>
-    <string name="feature_android_network_access_set_description">Allow or block an app's Wi-Fi, mobile-data or all network output using UID-based firewall rules</string>
+    <string name="feature_android_network_access_set_description">Allow or block an app\'s Wi-Fi, mobile-data or all network output using UID-based firewall rules</string>
     <string name="feature_android_network_access_set_field_package">App / package</string>
     <string name="feature_android_network_access_set_field_network">Network</string>
     <string name="feature_android_network_access_set_field_allowed">Allowed</string>
