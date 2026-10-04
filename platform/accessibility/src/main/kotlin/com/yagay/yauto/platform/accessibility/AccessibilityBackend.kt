@@ -87,13 +87,22 @@ class AccessibilityBackend : CapabilityBackend {
                     return@withContext CapabilityResult(success = true, value = output)
                 }
                 AccessibilityOperations.GESTURE_PATH -> {
-                    val points = request.payload["points"].listOrEmpty().mapNotNull { item ->
+                    val listPoints = request.payload["points"].listOrEmpty().mapNotNull { item ->
                         val obj = (item as? ConfigValue.ObjectValue)?.value ?: return@mapNotNull null
                         val x = obj["x"].numberOrNull() ?: return@mapNotNull null
                         val y = obj["y"].numberOrNull() ?: return@mapNotNull null
                         if (!x.isFinite() || !y.isFinite() || x < 0 || y < 0) return@mapNotNull null
                         x.toFloat() to y.toFloat()
                     }
+                    val textPoints = request.payload.string("path").lineSequence().mapNotNull { line ->
+                        val parts = line.trim().split(',', ' ', ';').filter { it.isNotBlank() }
+                        if (parts.size < 2) return@mapNotNull null
+                        val x = parts[0].toDoubleOrNull() ?: return@mapNotNull null
+                        val y = parts[1].toDoubleOrNull() ?: return@mapNotNull null
+                        if (!x.isFinite() || !y.isFinite() || x < 0 || y < 0) return@mapNotNull null
+                        x.toFloat() to y.toFloat()
+                    }.toList()
+                    val points = if (listPoints.isNotEmpty()) listPoints else textPoints
                     if (points.isEmpty()) return@withContext CapabilityResult(success = false, value = ConfigValue.BooleanValue(false))
                     val completed = service.gesturePath(points, request.payload.long("durationMs", 500))
                     return@withContext CapabilityResult(success = completed, value = ConfigValue.BooleanValue(completed))
