@@ -91,9 +91,9 @@ internal class TaskerJavaFunctionExecutor(private val context: Context) {
             false,
             message = "Unable to resolve Java target: $targetRaw",
         )
-        val args = (0..9).mapNotNull { index ->
-            val raw = (feature.config["arg$index"] as? ConfigValue.StringValue)?.value
-                ?: return@mapNotNull null
+        val parameterCount = signatureParameterCount(signature).coerceIn(0, 10)
+        val args = (0 until parameterCount).map { index ->
+            val raw = (feature.config["arg" + index] as? ConfigValue.StringValue)?.value.orEmpty()
             resolveArgument(raw.resolveVariables(ctx.variables), ctx)
         }
 
@@ -135,6 +135,9 @@ internal class TaskerJavaFunctionExecutor(private val context: Context) {
                 add("android.content.$normalized")
                 add("android.provider.Settings\$$normalized")
                 add("android.net.$normalized")
+                add("android.location.$normalized")
+                add("android.hardware.$normalized")
+                add("android.telephony.$normalized")
                 add("android.net.wifi.$normalized")
                 add("android.bluetooth.$normalized")
                 add("android.media.$normalized")
@@ -164,6 +167,21 @@ internal class TaskerJavaFunctionExecutor(private val context: Context) {
             (value.startsWith(''') && value.endsWith('''))
         ) return value.substring(1, value.length - 1)
         return value
+    }
+
+    private fun signatureParameterCount(signature: String): Int {
+        val raw = signature.substringAfterLast('(', "").substringBeforeLast(')', "")
+        if (raw.isBlank()) return 0
+        var depth = 0
+        var count = 1
+        raw.forEach { ch ->
+            when (ch) {
+                '<', '[', '(' -> depth++
+                '>', ']', ')' -> if (depth > 0) depth--
+                ',' -> if (depth == 0) count++
+            }
+        }
+        return count
     }
 
     private fun invoke(target: Any, signature: String, args: List<Any?>): Any? {
