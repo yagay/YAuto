@@ -29,7 +29,7 @@ class AndroidFoldFeaturePack : FeaturePack {
         val angleState = FeatureDescriptor(
             FeatureId("android.state.hinge_angle"), FeatureKind.STATE,
             "Hinge angle", "Check the current foldable-device hinge angle",
-            FeatureCategory.SENSOR,
+            FeatureCategory.DEVICE,
             fields = angleFields,
             keywords = setOf("fold", "hinge", "angle", "foldable"),
             ownerPackId = id,
@@ -46,7 +46,7 @@ class AndroidFoldFeaturePack : FeaturePack {
         val foldState = FeatureDescriptor(
             FeatureId("android.state.fold_state"), FeatureKind.STATE,
             "Fold state", "Check whether a foldable device is folded, half-open or flat",
-            FeatureCategory.SENSOR,
+            FeatureCategory.DEVICE,
             fields = foldFields,
             keywords = setOf("fold", "hinge", "foldable", "state"),
             ownerPackId = id,
@@ -58,7 +58,7 @@ class AndroidFoldFeaturePack : FeaturePack {
             FeatureDescriptor(
                 FeatureId("android.event.hinge_angle_changed"), FeatureKind.EVENT,
                 "Hinge angle changed", "Run when the foldable-device hinge angle changes",
-                FeatureCategory.SENSOR,
+                FeatureCategory.DEVICE,
                 fields = angleFields + listOf(
                     FieldSchema.Choice("state", "Fold state", options = listOf("any", "folded", "half_open", "flat")),
                 ),
