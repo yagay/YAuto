@@ -2,6 +2,7 @@ package com.yagay.yauto.platform.android
 
 import android.content.Context
 import android.provider.Settings
+import android.util.DisplayMetrics
 import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigValue
@@ -71,14 +72,18 @@ class AndroidAdvancedSystemFeaturePack(context: Context) : FeaturePack {
             registry,
             "android.display.animation_scale.set",
             "Set system animation scale",
-            "Set Android window, transition and animator duration scales together",
+            "Set Android window, transition, animator, or all animation scales",
             FeatureCategory.DISPLAY,
-            listOf(FieldSchema.Number("scale", "Animation scale", true, min = 0.0, max = 10.0)),
+            listOf(
+                FieldSchema.Number("scale", "Animation scale", true, min = 0.0, max = 10.0),
+                FieldSchema.Choice("target", "Animation scale target", options = listOf("all", "window", "transition", "animator")),
+            ),
             setOf("animation", "scale", "developer", "transition"),
         ) { feature, ctx ->
             val scale = feature.config["scale"].numberOrNull()
                 ?: return@action ActionExecutionResult(false, message = userText("feature.animation_scale_invalid"))
-            val command = animationScaleCommand(scale)
+            val target = feature.config.string("target", "all")
+            val command = animationScaleCommand(target, scale)
                 ?: return@action ActionExecutionResult(false, message = userText("feature.animation_scale_invalid"))
             executeShell("android.display.animation_scale.set", command, ctx)
         }
@@ -117,13 +122,19 @@ class AndroidAdvancedSystemFeaturePack(context: Context) : FeaturePack {
             listOf(
                 FieldSchema.Toggle("reset", "Reset to physical density"),
                 FieldSchema.Number("dpi", "Density DPI", min = 120.0, max = 1000.0),
+                FieldSchema.Number("scalePercent", "Display scale percent", min = 50.0, max = 150.0),
             ),
             setOf("dpi", "density", "display", "wm density"),
         ) { feature, ctx ->
-            val command = displayDensityCommand(
-                feature.config.boolean("reset"),
-                feature.config["dpi"].numberOrNull()?.toInt(),
-            ) ?: return@action ActionExecutionResult(false, message = userText("feature.display_density_invalid"))
+            val reset = feature.config.boolean("reset")
+            val dpi = feature.config["dpi"].numberOrNull()?.toInt()
+            val percent = feature.config["scalePercent"].numberOrNull()?.toInt()
+            val command = when {
+                reset -> displayDensityCommand(true, null)
+                dpi != null -> displayDensityCommand(false, dpi)
+                percent != null -> densityCommand(percent, DisplayMetrics.DENSITY_DEVICE_STABLE)
+                else -> null
+            } ?: return@action ActionExecutionResult(false, message = userText("feature.display_density_invalid"))
             executeShell("android.display.density.set", command, ctx)
         }
     }
@@ -280,11 +291,7 @@ internal fun rotationCommand(rotation: String): String? {
 internal fun fontScaleCommand(scale: Double): String? =
     scale.takeIf { it.isFinite() && it in 0.5..2.0 }?.let { "settings put system font_scale ${decimal(it)}" }
 
-internal fun animationScaleCommand(scale: Double): String? =
-    scale.takeIf { it.isFinite() && it in 0.0..10.0 }?.let {
-        val value = decimal(it)
-        "settings put global window_animation_scale $value; settings put global transition_animation_scale $value; settings put global animator_duration_scale $value"
-    }
+internal fun animationScaleCommand(scale: Double): String? = animationScaleCommand("all", scale)
 
 internal fun displaySizeCommand(reset: Boolean, width: Int?, height: Int?): String? = when {
     reset -> "wm size reset"
