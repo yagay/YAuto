@@ -17,7 +17,7 @@ import android.os.Looper
 import android.provider.Settings
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.RuntimeEvent
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.ConcurrentHashMap\nimport java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Runtime signals repeatedly exposed by MacroDroid, ShortX and Tasker but not covered by
@@ -89,6 +89,20 @@ class ReferenceRuntimeSignalEventSource(context: Context) : AndroidEventSource {
         }
     }
 
+    private val cameraUnavailable = ConcurrentHashMap.newKeySet<String>()
+
+    private val cameraAvailabilityCallback = object : CameraManager.AvailabilityCallback() {
+        override fun onCameraAvailable(cameraId: String) {
+            cameraUnavailable.remove(cameraId)
+            emitCameraAvailability(cameraId, available = true)
+        }
+
+        override fun onCameraUnavailable(cameraId: String) {
+            cameraUnavailable.add(cameraId)
+            emitCameraAvailability(cameraId, available = false)
+        }
+    }
+
     private val torchCallback = object : CameraManager.TorchCallback() {
         override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
             emitter?.emit(
@@ -129,7 +143,7 @@ class ReferenceRuntimeSignalEventSource(context: Context) : AndroidEventSource {
             registerDndReceiver()
             audio.registerAudioPlaybackCallback(playbackCallback, handler)
             audio.registerAudioRecordingCallback(recordingCallback, handler)
-            camera.registerTorchCallback(torchCallback, handler)
+            camera.registerTorchCallback(torchCallback, handler)\n            camera.registerAvailabilityCallback(cameraAvailabilityCallback, handler)
         } catch (error: Exception) {
             stop()
             throw error
@@ -142,7 +156,7 @@ class ReferenceRuntimeSignalEventSource(context: Context) : AndroidEventSource {
         runCatching { context.unregisterReceiver(dndReceiver) }
         runCatching { audio.unregisterAudioPlaybackCallback(playbackCallback) }
         runCatching { audio.unregisterAudioRecordingCallback(recordingCallback) }
-        runCatching { camera.unregisterTorchCallback(torchCallback) }
+        runCatching { camera.unregisterTorchCallback(torchCallback) }\n        runCatching { camera.unregisterAvailabilityCallback(cameraAvailabilityCallback) }\n        cameraUnavailable.clear()
         emitter = null
     }
 
@@ -154,6 +168,24 @@ class ReferenceRuntimeSignalEventSource(context: Context) : AndroidEventSource {
             @Suppress("DEPRECATION")
             context.registerReceiver(dndReceiver, filter)
         }
+    }
+
+    private fun emitCameraAvailability(cameraId: String, available: Boolean) {
+        val unavailableCount = cameraUnavailable.size
+        ReferenceRuntimeSignalState.updateUnavailableCameras(cameraUnavailable)
+        emitter?.emit(
+            RuntimeEvent(
+                typeId = "android.event.camera_availability_changed",
+                payload = mapOf(
+                    "cameraId" to ConfigValue.StringValue(cameraId),
+                    "available" to ConfigValue.BooleanValue(available),
+                    "inUse" to ConfigValue.BooleanValue(!available),
+                    "unavailableCount" to ConfigValue.NumberValue(unavailableCount.toDouble()),
+                    "cameraCount" to ConfigValue.NumberValue(runCatching { camera.cameraIdList.size.toDouble() }.getOrDefault(0.0)),
+                ),
+                source = id,
+            )
+        )
     }
 
     private fun emitSetting(uri: Uri?) {
@@ -191,4 +223,17 @@ internal fun referenceSettingNamespace(uri: Uri): String? = when {
     uri.toString().startsWith(Settings.Secure.CONTENT_URI.toString()) -> "secure"
     uri.toString().startsWith(Settings.Global.CONTENT_URI.toString()) -> "global"
     else -> null
+}
+
+
+internal object ReferenceRuntimeSignalState {
+    private val unavailableCameras = ConcurrentHashMap.newKeySet<String>()
+
+    fun updateUnavailableCameras(values: Collection<String>) {
+        unavailableCameras.clear()
+        unavailableCameras.addAll(values)
+    }
+
+    fun cameraInUse(): Boolean = unavailableCameras.isNotEmpty()
+    fun unavailableCameraCount(): Int = unavailableCameras.size
 }
