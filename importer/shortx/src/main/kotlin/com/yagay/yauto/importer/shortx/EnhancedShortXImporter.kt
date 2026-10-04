@@ -117,6 +117,8 @@ internal object ShortXFeatureSuggestions {
         "Toggle5G" -> "android.telephony.network_mode.set"
         "SwitchMobileDataSlot" -> "android.sim.default_data.set"
         "TakePhoto" -> "android.camera.photo.capture"
+        "ScreenFlash" -> "surface.screen_flash.show"
+        "ShowDanmu" -> "surface.danmu.show"
         "RequestAudioFocus" -> "android.audio.focus.request"
         "ExecuteMVEL", "RemoteExecuteMVEL" -> "script.mvel.execute"
         "AreaScreenshot" -> "accessibility.screenshot.capture"
