@@ -62,6 +62,7 @@ internal object ShortXMappings {
             if (obj["customContextDataKey"] != null && obj["customContextDataKey"] !is JsonNull) return null
             val raw = any.value.toString(Charsets.UTF_8)
             val mapped = when (shortName(any.typeUrl)) {
+                "AnyFact" -> sourceFeature("core.event.any", importerId, any.typeUrl, raw)
                 "ScreenOn" -> sourceFeature("android.event.screen_on", importerId, any.typeUrl, raw)
                 "ScreenOff" -> sourceFeature("android.event.screen_off", importerId, any.typeUrl, raw)
                 "UserPresent" -> sourceFeature("android.event.user_present", importerId, any.typeUrl, raw)
@@ -119,6 +120,7 @@ internal object ShortXMappings {
         val fields = runCatching { ProtoFields(any.value) }.getOrNull() ?: return null
         if (fields.has(98)) return null
         val mapped = when (shortName(any.typeUrl)) {
+            "AnyFact" -> noBusinessFact(any, importerId, fields, "core.event.any")
             "ScreenOn" -> noBusinessFact(any, importerId, fields, "android.event.screen_on")
             "ScreenOff" -> noBusinessFact(any, importerId, fields, "android.event.screen_off")
             "UserPresent" -> noBusinessFact(any, importerId, fields, "android.event.user_present")
@@ -166,6 +168,14 @@ internal object ShortXMappings {
         val fields = runCatching { ProtoFields(any.value) }.getOrNull() ?: return null
         if (fields.has(97)) return null
         return when (shortName(any.typeUrl)) {
+            "RequireFactTag" -> {
+                if (!fields.onlyBusinessFields(1)) null
+                else fields.string(1)?.takeIf { it.isNotBlank() }?.let { tag ->
+                    binaryFeature(any, importerId, "core.condition.event_tag", mapOf("tag" to ConfigValue.StringValue(tag)))
+                }
+            }
+            "TRUE", "True" -> noBusinessCondition(any, importerId, fields, "core.boolean", mapOf("value" to ConfigValue.BooleanValue(true)))
+            "FALSE", "False" -> noBusinessCondition(any, importerId, fields, "core.boolean", mapOf("value" to ConfigValue.BooleanValue(false)))
             "ScreenIsOn" -> noBusinessCondition(any, importerId, fields, "android.condition.screen", mapOf("value" to ConfigValue.BooleanValue(true)))
             "VPNIsConnected" -> noBusinessCondition(
                 any, importerId, fields, "android.condition.network_profile",
@@ -453,6 +463,11 @@ internal object ShortXMappings {
         if (obj["customContextDataKey"] != null && obj["customContextDataKey"] !is JsonNull) return null
         val raw = any.value.toString(Charsets.UTF_8)
         return when (shortName(any.typeUrl)) {
+            "RequireFactTag" -> (obj["tag"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() }?.let { tag ->
+                sourceFeature("core.condition.event_tag", importerId, any.typeUrl, raw, extra = mapOf("tag" to ConfigValue.StringValue(tag)))
+            }
+            "TRUE", "True" -> sourceFeature("core.boolean", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(true)))
+            "FALSE", "False" -> sourceFeature("core.boolean", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(false)))
             "ScreenIsOn" -> sourceFeature("android.condition.screen", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(true)))
             "VPNIsConnected" -> sourceFeature(
                 "android.condition.network_profile", importerId, any.typeUrl, raw,
