@@ -306,6 +306,17 @@ object MacroDroidFeatureSuggestions {
         "ActivityRecognitionTrigger" -> "android.event.activity_recognition"
         "SleepTrigger" -> "android.event.sleep_transition"
         "DrawerOpenCloseTrigger" -> "android.event.surface_action"
+        "AccessibilityServiceStateTrigger" -> "android.event.accessibility_state_changed"
+        "CustomSceneTrigger" -> "android.event.surface_action"
+        "DayTrigger" -> "android.event.date_changed"
+        "DialNumberTrigger" -> "android.event.phone_state_changed"
+        "EmailReceivedTrigger" -> "android.event.email_received"
+        "InvokedByQuickRunTrigger", "InvokedByTestActionsTrigger", "InvokedByTestMacroTrigger" -> "core.event.manual"
+        "InvokedByRunMacroTrigger" -> "core.event.automation_started"
+        "MacroDroidEnabledTrigger" -> "core.event.runtime_enabled_changed"
+        "ShizukuStoppedTrigger" -> "android.event.shizuku_stopped"
+        "SignalOnOffTrigger" -> "android.event.cellular_service_changed"
+        "WearOSComplicationClickTrigger" -> "android.event.wear_message"
         else -> null
     }
 
