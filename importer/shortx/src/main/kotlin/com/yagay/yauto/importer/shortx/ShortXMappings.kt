@@ -983,6 +983,15 @@ internal class ProtoFields(bytes: ByteArray) {
         .firstOrNull { it.number == number && it.wire == 2 }
         ?.bytes
 
+    fun allBytes(number: Int): List<ByteArray> = fields
+        .asSequence()
+        .filter { it.number == number && it.wire == 2 }
+        .mapNotNull { it.bytes }
+        .toList()
+
+    fun allStrings(number: Int): List<String> = allBytes(number)
+        .mapNotNull { it.toString(Charsets.UTF_8).takeIf(String::isNotEmpty) }
+
     fun varint(number: Int): Long? = fields
         .firstOrNull { it.number == number && it.wire == 0 }
         ?.varint
