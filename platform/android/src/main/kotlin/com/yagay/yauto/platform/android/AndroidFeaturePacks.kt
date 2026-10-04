@@ -50,7 +50,7 @@ object AndroidFeaturePacks {
         AndroidNetworkUtilityFeaturePack(),
         AndroidNetworkProfileEventFeaturePack(),
         AndroidBluetoothAudioEventFeaturePack(),
-        AndroidLocationRadiusFeaturePack(context),
+        AndroidLocationRadiusFeaturePack(context),\n        AndroidSolarFeaturePack(context),
         AndroidLocationEventFeaturePack(),
         AndroidNfcFeaturePack(context),
         AndroidMidiFeaturePack(context),
