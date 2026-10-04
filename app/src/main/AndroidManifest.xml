@@ -178,6 +178,20 @@
             </intent-filter>
         </service>
 
+
+        <receiver
+            android:name=".YAutoWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.yagay.yauto.WIDGET_CONFIGURE" />
+                <action android:name="com.yagay.yauto.WIDGET_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/yauto_widget_info" />
+        </receiver>
+
         <receiver
             android:name=".BootReceiver"
             android:enabled="true"
