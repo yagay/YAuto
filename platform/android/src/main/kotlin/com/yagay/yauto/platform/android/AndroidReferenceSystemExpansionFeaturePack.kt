@@ -44,6 +44,7 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
 
         registerAudioFocusRequest(registry)
         registerAudioFocusAbandon(registry)
+        registerAudioFocusEvents(registry)
 
         booleanPair(registry, "car_mode", "Car mode", "Check whether Android is currently in car UI mode", FeatureCategory.SYSTEM) {
             carModeEnabled()
@@ -68,6 +69,47 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
         }
         booleanPair(registry, "audio_focus_held", "Audio focus held by YAuto", "Check whether YAuto's most recent audio-focus request currently has focus", FeatureCategory.AUDIO) {
             audioFocus.hasFocus
+        }
+    }
+
+
+    private fun registerAudioFocusEvents(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.audio_focus_changed"), FeatureKind.EVENT,
+                "Audio focus changed",
+                "Run when YAuto's requested Android audio focus changes",
+                FeatureCategory.AUDIO,
+                fields = listOf(
+                    FieldSchema.Choice(
+                        "change", "Focus change", true,
+                        listOf("any", "gain", "loss", "loss_transient", "loss_can_duck")
+                    )
+                ),
+                keywords = setOf("audio focus", "gain", "loss", "duck", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.audio_focus_changed") return@registerEvent false
+            val wanted = feature.config.string("change", "any")
+            wanted == "any" || ctx.event.payload.string("change") == wanted
+        }
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.audio_focus_gain"), FeatureKind.EVENT,
+                "Audio focus gained", "Run when YAuto gains Android audio focus",
+                FeatureCategory.AUDIO, ownerPackId = id,
+            )
+        ) { _, ctx -> ctx.event.typeId == "android.event.audio_focus_changed" && ctx.event.payload.string("change") == "gain" }
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.audio_focus_lost"), FeatureKind.EVENT,
+                "Audio focus lost", "Run when YAuto loses Android audio focus",
+                FeatureCategory.AUDIO, ownerPackId = id,
+            )
+        ) { _, ctx ->
+            ctx.event.typeId == "android.event.audio_focus_changed" &&
+                ctx.event.payload.string("change") in setOf("loss", "loss_transient", "loss_can_duck")
         }
     }
 
@@ -331,6 +373,7 @@ internal class AudioFocusController(private val audio: AudioManager) {
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> false
             else -> hasFocus
         }
+        AudioFocusRuntimeBridge.dispatch(change)
     }
 
     fun request(gain: String): Boolean {
@@ -388,3 +431,36 @@ internal fun headsUpCommand(enabled: Boolean): String =
     "settings put global heads_up_notifications_enabled ${if (enabled) 1 else 0}"
 internal fun dataRoamingCommand(enabled: Boolean): String =
     "settings put global data_roaming ${if (enabled) 1 else 0}"
+
+
+object AudioFocusRuntimeBridge {
+    @Volatile private var emitter: RuntimeEventEmitter? = null
+
+    fun attach(value: RuntimeEventEmitter?) { emitter = value }
+
+    fun dispatch(change: Int) {
+        val name = when (change) {
+            AudioManager.AUDIOFOCUS_GAIN -> "gain"
+            AudioManager.AUDIOFOCUS_LOSS -> "loss"
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> "loss_transient"
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> "loss_can_duck"
+            else -> "unknown"
+        }
+        emitter?.emit(
+            com.yagay.yauto.core.model.RuntimeEvent(
+                typeId = "android.event.audio_focus_changed",
+                payload = mapOf(
+                    "change" to ConfigValue.StringValue(name),
+                    "raw" to ConfigValue.NumberValue(change.toDouble()),
+                ),
+                source = "android.audio.focus",
+            )
+        )
+    }
+}
+
+class AudioFocusEventSource : AndroidEventSource {
+    override val id: String = "android.audio.focus"
+    override fun start(emitter: RuntimeEventEmitter) { AudioFocusRuntimeBridge.attach(emitter) }
+    override fun stop() { AudioFocusRuntimeBridge.attach(null) }
+}
