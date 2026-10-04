@@ -259,6 +259,7 @@ internal object ShortXFeatureSuggestions {
         "RandomInPeriod" -> "android.event.random_in_period"
         "ScreenOnTime" -> "android.event.screen_on_duration"
         "CpuAvgAvailability" -> "android.event.cpu_availability"
+        "Sound" -> "android.event.sound_level"
         "UserPresentAtTheFirstTime" -> "android.event.user_present_first_after_boot"
         "AnyFact" -> "core.event.any"
         "Notification" -> "android.event.notification_posted"
