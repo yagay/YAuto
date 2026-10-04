@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_accessibility_click_text_advanced_title">按匹配方式点击文本</string>
+    <string name="feature_accessibility_click_text_advanced_description">使用包含、完全匹配或正则表达式查找可见文本并点击</string>
+    <string name="feature_accessibility_click_text_advanced_field_text">文本 / 模式</string>
+    <string name="feature_accessibility_click_text_advanced_field_mode">匹配方式</string>
+    <string name="feature_accessibility_click_text_advanced_field_mode_option_contains">包含</string>
+    <string name="feature_accessibility_click_text_advanced_field_mode_option_exact">完全匹配</string>
+    <string name="feature_accessibility_click_text_advanced_field_mode_option_regex">正则表达式</string>
+    <string name="feature_accessibility_click_text_advanced_field_ignorecase">忽略大小写</string>
+
+    <string name="feature_accessibility_screen_text_get_title">读取屏幕文本</string>
+    <string name="feature_accessibility_screen_text_get_description">读取当前无障碍窗口中的可见文本和内容描述</string>
+    <string name="feature_accessibility_screen_text_get_field_includedescriptions">包含内容描述</string>
+    <string name="feature_accessibility_screen_text_get_field_unique">移除重复文本</string>
+    <string name="feature_accessibility_screen_text_get_field_limit">最大节点数</string>
+    <string name="feature_accessibility_screen_text_get_field_resultvariable">保存屏幕文本</string>
+
+    <string name="feature_accessibility_view_text_get_title">按 View ID 读取文本</string>
+    <string name="feature_accessibility_view_text_get_description">从指定资源 ID 的控件读取文本或内容描述</string>
+    <string name="feature_accessibility_view_text_get_field_viewid">View ID</string>
+    <string name="feature_accessibility_view_text_get_field_resultvariable">保存文本</string>
+
+    <string name="feature_accessibility_ui_nodes_get_title">读取 UI 节点树</string>
+    <string name="feature_accessibility_ui_nodes_get_description">将可见无障碍节点的文本、ID 和交互状态读取为列表</string>
+    <string name="feature_accessibility_ui_nodes_get_field_limit">最大节点数</string>
+    <string name="feature_accessibility_ui_nodes_get_field_onlyvisible">仅可见节点</string>
+    <string name="feature_accessibility_ui_nodes_get_field_clickableonly">仅可点击节点</string>
+    <string name="feature_accessibility_ui_nodes_get_field_resultvariable">保存节点列表</string>
+
+    <string name="feature_accessibility_condition_text_matches_title">屏幕文本匹配</string>
+    <string name="feature_accessibility_condition_text_matches_description">使用包含、完全匹配或正则表达式检查可见文本</string>
+    <string name="feature_accessibility_condition_text_matches_field_text">文本 / 模式</string>
+    <string name="feature_accessibility_condition_text_matches_field_mode">匹配方式</string>
+    <string name="feature_accessibility_condition_text_matches_field_mode_option_contains">包含</string>
+    <string name="feature_accessibility_condition_text_matches_field_mode_option_exact">完全匹配</string>
+    <string name="feature_accessibility_condition_text_matches_field_mode_option_regex">正则表达式</string>
+    <string name="feature_accessibility_condition_text_matches_field_ignorecase">忽略大小写</string>
+
+    <string name="feature_android_event_ui_click_title">UI 元素已点击</string>
+    <string name="feature_android_event_ui_long_click_title">UI 元素已长按</string>
+    <string name="feature_android_event_ui_text_changed_title">UI 文本已更改</string>
+    <string name="feature_android_event_ui_focused_title">UI 元素已获得焦点</string>
+    <string name="feature_android_event_ui_scrolled_title">UI 内容已滚动</string>
+    <string name="feature_phrase_trigger_on_accessibility_ui_interaction_events_and_optionally_filter_app_text_content_description_or_view_id">在无障碍 UI 交互发生时触发，并可按应用、文本、内容描述或 View ID 过滤</string>
+    <string name="feature_phrase_app_package">应用 / 包名</string>
+    <string name="feature_phrase_text_match">文本匹配</string>
+    <string name="feature_phrase_text_pattern">文本 / 模式</string>
+    <string name="feature_phrase_content_description_contains">内容描述包含</string>
+    <string name="feature_phrase_view_id_contains">View ID 包含</string>
+    <string name="feature_phrase_ignore_case">忽略大小写</string>
+    <string name="feature_phrase_any">任意</string>
+    <string name="feature_phrase_contains">包含</string>
+    <string name="feature_phrase_exact">完全匹配</string>
+    <string name="feature_phrase_regular_expression">正则表达式</string>
+
+    <string name="feature_android_event_screen_content_changed_title">屏幕内容匹配</string>
+    <string name="feature_android_event_screen_content_changed_description">当无障碍服务检测到屏幕内容变化并匹配文本或正则表达式时触发</string>
+    <string name="feature_android_event_screen_content_changed_field_package">应用 / 包名</string>
+    <string name="feature_android_event_screen_content_changed_field_mode">匹配方式</string>
+    <string name="feature_android_event_screen_content_changed_field_mode_option_contains">包含</string>
+    <string name="feature_android_event_screen_content_changed_field_mode_option_regex">正则表达式</string>
+    <string name="feature_android_event_screen_content_changed_field_text">文本 / 模式</string>
+    <string name="feature_android_event_screen_content_changed_field_ignorecase">忽略大小写</string>
+</resources>
