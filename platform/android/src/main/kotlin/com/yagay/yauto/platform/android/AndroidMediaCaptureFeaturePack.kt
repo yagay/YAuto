@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
