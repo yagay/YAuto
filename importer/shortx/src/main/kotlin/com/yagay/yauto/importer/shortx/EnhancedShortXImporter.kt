@@ -108,6 +108,8 @@ internal object ShortXFeatureSuggestions {
         "HideOverlayButton" -> "surface.overlay.hide"
         "SelectScreenArea" -> "surface.region_selector.show"
         "InjectGestureRecording" -> "accessibility.gesture.path"
+        "StartGestureRecording", "ToggleGestureRecording" -> "surface.gesture_recorder.show"
+        "StopGestureRecording" -> "surface.overlay.hide"
         "GetTextFromScreenNode" -> "accessibility.ui_nodes.get"
         "EnableViewIdViewer" -> "accessibility.ui_nodes.get"
         "EnableUniversalCopy" -> "accessibility.screen_text.get"
