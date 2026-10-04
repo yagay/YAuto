@@ -48,6 +48,36 @@ internal fun timePredicateFeatures(clock: Clock): List<FeatureDefinition> = buil
     }
 
     addStateAndCondition(
+        key = "day_of_month",
+        title = "Day of month",
+        description = "Match local calendar day numbers from 1 through 31",
+        fields = listOf(FieldSchema.Text("days", "Days (comma separated, 1-31)", true)),
+        keywords = setOf("day of month", "calendar", "date", "macrodroid"),
+    ) { feature ->
+        val days = feature.config.string("days")
+            .split(',')
+            .mapNotNull { it.trim().toIntOrNull() }
+            .toSet()
+        require(days.isNotEmpty() && days.all { it in 1..31 })
+        LocalDate.now(clock).dayOfMonth in days
+    }
+
+    addStateAndCondition(
+        key = "month_of_year",
+        title = "Month of year",
+        description = "Match local calendar months from 1 through 12",
+        fields = listOf(FieldSchema.Text("months", "Months (comma separated, 1-12)", true)),
+        keywords = setOf("month", "calendar", "date", "macrodroid"),
+    ) { feature ->
+        val months = feature.config.string("months")
+            .split(',')
+            .mapNotNull { it.trim().toIntOrNull() }
+            .toSet()
+        require(months.isNotEmpty() && months.all { it in 1..12 })
+        LocalDate.now(clock).monthValue in months
+    }
+
+    addStateAndCondition(
         key = "date_range",
         title = "Date range",
         description = "Match an inclusive local date range using yyyy-MM-dd",
