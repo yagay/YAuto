@@ -79,6 +79,31 @@ class AutomationRuntimeService : Service() {
             val action = when (key.action) { KeyEvent.ACTION_DOWN -> "down"; KeyEvent.ACTION_UP -> "up"; else -> "other" }
             dispatcher.dispatch(RuntimeEvent("android.event.hardware_key", mapOf("keyCode" to ConfigValue.NumberValue(key.keyCode.toDouble()), "action" to ConfigValue.StringValue(action), "repeatCount" to ConfigValue.NumberValue(key.repeatCount.toDouble()), "metaState" to ConfigValue.NumberValue(key.metaState.toDouble()), "deviceId" to ConfigValue.NumberValue(key.deviceId.toDouble())), source = "accessibility.key"))
         }
+        AccessibilityRuntimeBridge.setUiEventListener { event ->
+            val typeId = when (event.event) {
+                "click" -> "android.event.ui_click"
+                "long_click" -> "android.event.ui_long_click"
+                "text_changed" -> "android.event.ui_text_changed"
+                "focused" -> "android.event.ui_focused"
+                "scrolled" -> "android.event.ui_scrolled"
+                "content_changed" -> "android.event.screen_content_changed"
+                else -> return@setUiEventListener
+            }
+            dispatcher.dispatch(
+                RuntimeEvent(
+                    typeId,
+                    mapOf(
+                        "package" to ConfigValue.StringValue(event.packageName),
+                        "class" to ConfigValue.StringValue(event.className.orEmpty()),
+                        "text" to ConfigValue.StringValue(event.text),
+                        "description" to ConfigValue.StringValue(event.contentDescription),
+                        "viewId" to ConfigValue.StringValue(event.viewId),
+                        "screenText" to ConfigValue.StringValue(event.screenText),
+                    ),
+                    source = "accessibility.ui",
+                )
+            )
+        }
         eventSources.startAll(emitter).forEach(::reportSourceFailure)
         dispatcher.dispatch(RuntimeEvent("android.event.runtime_started", source = "android.runtime"), statesOnly = true)
     }
@@ -89,7 +114,7 @@ class AutomationRuntimeService : Service() {
         return START_STICKY
     }
 
-    override fun onDestroy() { AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); SurfaceRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
+    override fun onDestroy() { AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); SurfaceRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
     override fun onBind(intent: Intent?): IBinder? = null
     private fun registerSource(component: String, factory: () -> AndroidEventSource) { eventSources.add(component, factory)?.let(::reportSourceFailure) }
     private fun reportSourceFailure(failure: EventSourceFailure) {
