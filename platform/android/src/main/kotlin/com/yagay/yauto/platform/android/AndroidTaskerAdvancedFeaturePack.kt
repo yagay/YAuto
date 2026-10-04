@@ -434,7 +434,7 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
 
     private fun pluginFields(): List<FieldSchema> = listOf(
         FieldSchema.AppPicker("package", "Plugin package", true),
-        FieldSchema.Text("receiverClass", "Plugin receiver class", true),
+        FieldSchema.Text("receiverClass", "Plugin receiver class (optional)"),
         FieldSchema.Text("bundleJson", "Plugin Bundle as JSON", multiline = true),
         FieldSchema.Duration("timeoutMs", "Timeout"),
     )
