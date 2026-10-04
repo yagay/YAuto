@@ -59,7 +59,7 @@ class ReferenceRuntimeSignalEventSource(context: Context) : AndroidEventSource {
 
     private val playbackCallback = object : AudioManager.AudioPlaybackCallback() {
         override fun onPlaybackConfigChanged(configs: MutableList<AudioPlaybackConfiguration>) {
-            val activeCount = configs.count { it.playerState == AudioPlaybackConfiguration.PLAYER_STATE_STARTED }
+            val activeCount = configs.size
             emitter?.emit(
                 RuntimeEvent(
                     typeId = "android.event.audio_playback_activity_changed",
