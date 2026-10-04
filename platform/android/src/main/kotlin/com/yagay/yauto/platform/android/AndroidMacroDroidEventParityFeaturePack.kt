@@ -60,6 +60,66 @@ class AndroidMacroDroidEventParityFeaturePack : FeaturePack {
 
         registry.registerEvent(
             FeatureDescriptor(
+                FeatureId("android.event.sleep_classification"),
+                FeatureKind.EVENT,
+                "Sleep classification",
+                "Run when Google Sleep API reports current sleep confidence, light and motion values",
+                FeatureCategory.DEVICE,
+                fields = listOf(
+                    FieldSchema.Number("minConfidence", "Minimum sleep confidence %", min = 0.0, max = 100.0),
+                    FieldSchema.Number("maxMotion", "Maximum motion score", min = 0.0, max = 6.0),
+                    FieldSchema.Number("maxLight", "Maximum light score", min = 0.0, max = 6.0),
+                ),
+                accessRequirements = setOf(AccessRequirement.ACTIVITY_RECOGNITION),
+                keywords = setOf("sleep", "sleeping", "confidence", "motion", "light", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.sleep_classification") return@registerEvent false
+            val confidence = ctx.event.payload["confidence"].numberOrNull() ?: return@registerEvent false
+            val motion = ctx.event.payload["motion"].numberOrNull() ?: return@registerEvent false
+            val light = ctx.event.payload["light"].numberOrNull() ?: return@registerEvent false
+            confidence >= (feature.config["minConfidence"].numberOrNull() ?: 50.0) &&
+                motion <= (feature.config["maxMotion"].numberOrNull() ?: 6.0) &&
+                light <= (feature.config["maxLight"].numberOrNull() ?: 6.0)
+        }
+
+        val sleepingEvaluator = ConditionEvaluator { feature, _ ->
+            val snapshot = ActivityRecognitionRuntimeBridge.sleepClassification() ?: return@ConditionEvaluator false
+            val maxAgeMs = (feature.config["maxAgeMs"].numberOrNull() ?: 900_000.0).coerceAtLeast(1_000.0)
+            val fresh = System.currentTimeMillis() - snapshot.receivedEpochMs <= maxAgeMs
+            val sleeping = fresh &&
+                snapshot.confidence >= (feature.config["minConfidence"].numberOrNull() ?: 50.0) &&
+                snapshot.motion <= (feature.config["maxMotion"].numberOrNull() ?: 6.0) &&
+                snapshot.light <= (feature.config["maxLight"].numberOrNull() ?: 6.0)
+            sleeping == ((feature.config["value"] as? com.yagay.yauto.core.model.ConfigValue.BooleanValue)?.value ?: true)
+        }
+        val sleepingFields = listOf(
+            FieldSchema.Number("minConfidence", "Minimum sleep confidence %", min = 0.0, max = 100.0),
+            FieldSchema.Number("maxMotion", "Maximum motion score", min = 0.0, max = 6.0),
+            FieldSchema.Number("maxLight", "Maximum light score", min = 0.0, max = 6.0),
+            FieldSchema.Duration("maxAgeMs", "Maximum classification age"),
+            FieldSchema.Toggle("value", "Sleeping"),
+        )
+        val sleepingState = FeatureDescriptor(
+            FeatureId("android.state.sleeping"),
+            FeatureKind.STATE,
+            "Sleeping",
+            "Check the latest Google Sleep API classification using confidence, motion and light thresholds",
+            FeatureCategory.DEVICE,
+            fields = sleepingFields,
+            accessRequirements = setOf(AccessRequirement.ACTIVITY_RECOGNITION),
+            keywords = setOf("sleeping", "sleep", "confidence", "tasker"),
+            ownerPackId = id,
+        )
+        registry.registerState(sleepingState, sleepingEvaluator)
+        registry.registerCondition(
+            sleepingState.copy(id = FeatureId("android.condition.sleeping"), kind = FeatureKind.CONDITION),
+            sleepingEvaluator,
+        )
+
+        registry.registerEvent(
+            FeatureDescriptor(
                 FeatureId("android.event.calendar_changed"),
                 FeatureKind.EVENT,
                 "Calendar changed",
