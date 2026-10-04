@@ -20,6 +20,7 @@ class DeviceSettingEventSource(context: Context) : AndroidEventSource {
 
     private val autoRotateUri = Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION)
     private val screenTimeoutUri = Settings.System.getUriFor(Settings.System.SCREEN_OFF_TIMEOUT)
+    private val mobileDataUri = Settings.Global.getUriFor("mobile_data")
 
     private val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
         override fun onChange(selfChange: Boolean, uri: Uri?) {
@@ -27,6 +28,7 @@ class DeviceSettingEventSource(context: Context) : AndroidEventSource {
             when (uri) {
                 autoRotateUri -> emitAutoRotate()
                 screenTimeoutUri -> emitScreenTimeout()
+                mobileDataUri -> emitMobileData()
             }
         }
     }
@@ -37,6 +39,7 @@ class DeviceSettingEventSource(context: Context) : AndroidEventSource {
         try {
             resolver.registerContentObserver(autoRotateUri, false, observer)
             resolver.registerContentObserver(screenTimeoutUri, false, observer)
+            resolver.registerContentObserver(mobileDataUri, false, observer)
         } catch (error: Exception) {
             stop()
             throw error
@@ -56,6 +59,19 @@ class DeviceSettingEventSource(context: Context) : AndroidEventSource {
         emitter?.emit(
             RuntimeEvent(
                 typeId = "android.event.auto_rotate_changed",
+                payload = mapOf("enabled" to ConfigValue.BooleanValue(enabled)),
+                source = id,
+            )
+        )
+    }
+
+    private fun emitMobileData() {
+        val enabled = runCatching {
+            Settings.Global.getInt(resolver, "mobile_data", 0) == 1
+        }.getOrDefault(false)
+        emitter?.emit(
+            RuntimeEvent(
+                typeId = "android.event.mobile_data_changed",
                 payload = mapOf("enabled" to ConfigValue.BooleanValue(enabled)),
                 source = id,
             )
