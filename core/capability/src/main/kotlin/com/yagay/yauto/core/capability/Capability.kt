@@ -31,6 +31,9 @@ object SystemOperations {
     const val REBOOT_RECOVERY = "system.device.reboot.recovery"
     const val REBOOT_BOOTLOADER = "system.device.reboot.bootloader"
     const val SHUTDOWN = "system.device.shutdown"
+    const val SENSORS_OFF_ENABLE = "system.sensors_off.enable"
+    const val SENSORS_OFF_DISABLE = "system.sensors_off.disable"
+    const val SENSORS_OFF_QUERY = "system.sensors_off.query"
     fun shellCommand(operation: String): String? = when (operation) {
         SLEEP -> "input keyevent 223"
         EXPAND_NOTIFICATIONS -> "cmd statusbar expand-notifications"
