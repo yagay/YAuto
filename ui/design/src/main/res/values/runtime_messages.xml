@@ -163,4 +163,25 @@
     <string name="runtime_feature_websocket_not_connected">WebSocket is not connected</string>
     <string name="runtime_feature_websocket_unknown">WebSocket session was not found</string>
     <string name="runtime_feature_wifi_network_input_invalid">Wi-Fi network input is invalid</string>
+    <string name="runtime_engine_unknown_label">Unknown label: %1$s</string>
+    <string name="runtime_engine_wait_event_empty">Wait-for-event requires at least one event</string>
+    <string name="runtime_engine_wait_event_unavailable">Runtime event waiting is unavailable</string>
+    <string name="runtime_runtime_trigger_target_required">Trigger target is required</string>
+    <string name="runtime_runtime_trigger_not_found">Trigger was not found</string>
+    <string name="runtime_feature_screenshot_capture_failed">Screenshot capture failed</string>
+    <string name="runtime_feature_screenshot_area_invalid">Screenshot crop area is invalid</string>
+    <string name="runtime_feature_screenshot_filename_invalid">Screenshot file name is invalid</string>
+    <string name="runtime_feature_screenshot_save_failed">Screenshot could not be saved</string>
+    <string name="runtime_feature_beanshell_script_invalid">BeanShell script is empty or too large</string>
+    <string name="runtime_feature_beanshell_failed">BeanShell execution timed out or failed</string>
+    <string name="runtime_feature_mvel_failed">MVEL execution timed out or failed</string>
+    <string name="runtime_feature_camera_filename_invalid">Camera output file name is invalid</string>
+    <string name="runtime_feature_camera_capture_failed">Camera photo capture failed</string>
+    <string name="runtime_feature_camera_microphone_permission_required">Camera and microphone permissions are required</string>
+    <string name="runtime_feature_camera_video_start_failed">Camera video recording could not be started</string>
+    <string name="runtime_feature_camera_video_not_recording">No camera video recording is active</string>
+    <string name="runtime_feature_geocode_failed">Geocoding did not return a result</string>
+    <string name="runtime_feature_audio_measurement_failed">Sound-level measurement failed</string>
+    <string name="runtime_feature_weather_query_failed">Weather query failed</string>
+    <string name="runtime_feature_java_target_unresolved">Unable to resolve Java target: %1$s</string>
 </resources>
