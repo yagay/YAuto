@@ -115,7 +115,8 @@ class YAutoAccessibilityService : AccessibilityService() {
 
     internal fun hasText(text: String, exact: Boolean): Boolean = findTextNode(text, exact) != null
     internal fun hasViewId(viewId: String): Boolean = findViewIdNode(viewId) != null
-    internal fun keyboardVisible(): Boolean = windows.orEmpty().any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }\n    internal fun matchesText(text: String, mode: String, ignoreCase: Boolean): Boolean =
+    internal fun keyboardVisible(): Boolean = windows.orEmpty().any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+    internal fun matchesText(text: String, mode: String, ignoreCase: Boolean): Boolean =
         findMatchingNode(text, mode, ignoreCase) != null
 
     internal fun textByViewId(viewId: String): String? {
@@ -139,7 +140,8 @@ class YAutoAccessibilityService : AccessibilityService() {
                 if (!unique || seen.add(value)) values += value
             }
         }
-        return values.joinToString("\n").take(MAX_SCREEN_TEXT)
+        return values.joinToString("
+").take(MAX_SCREEN_TEXT)
     }
 
     internal fun uiNodes(limit: Int, onlyVisible: Boolean, clickableOnly: Boolean): List<AccessibilityNodeSnapshot> =
@@ -217,9 +219,13 @@ class YAutoAccessibilityService : AccessibilityService() {
 
     private fun findMatchingNode(text: String, mode: String, ignoreCase: Boolean): AccessibilityNodeInfo? {
         if (text.isBlank()) return null
-        val regex = if (mode == "regex") runCatching {
-            Regex(text, if (ignoreCase) setOf(RegexOption.IGNORE_CASE) else emptySet())
-        }.getOrNull() ?: if (mode == "regex") return null else null
+        val regex = if (mode == "regex") {
+            runCatching {
+                Regex(text, if (ignoreCase) setOf(RegexOption.IGNORE_CASE) else emptySet())
+            }.getOrNull() ?: return null
+        } else {
+            null
+        }
         return walkActiveWindow().firstOrNull { node ->
             val candidates = listOf(node.text?.toString().orEmpty(), node.contentDescription?.toString().orEmpty())
             candidates.any { candidate ->
