@@ -106,6 +106,7 @@ object MacroDroidMappings {
         "ShowVolumePopupAction" -> volumePopup(obj, importerId, sourceType, raw)
         "LaunchHomeScreenAction" -> launchHome(obj, importerId, sourceType, raw)
         "SetKeyboardAction" -> sourceFeature("android.ime.picker.show", importerId, sourceType, raw)
+        "DisableCategoryAction" -> categoryAction(obj, importerId, sourceType, raw)
         else -> null
     }
 
@@ -131,10 +132,64 @@ object MacroDroidMappings {
                 "IsRoamingConstraint" -> booleanConstraint(obj, "m_isRoaming", "android.condition.network_roaming", importerId, sourceType, raw)
                 "RoamingOnOffConstraint" -> booleanConstraint(obj, "m_roamingOn", "android.condition.data_roaming_setting", importerId, sourceType, raw)
                 "SignalOnOffConstraint" -> signalConstraint(obj, importerId, sourceType, raw)
+                "CategoryEnabledConstraint" -> categoryConstraint(obj, importerId, sourceType, raw)
                 else -> null
             }
             else -> null
         }
+
+    private fun categoryAction(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val category = categoryName(obj) ?: return null
+        return sourceFeature(
+            "core.category.set_enabled",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "category" to ConfigValue.StringValue(category),
+                "mode" to ConfigValue.StringValue("disable"),
+            ),
+        )
+    }
+
+    private fun categoryConstraint(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val category = categoryName(obj) ?: return null
+        val expected = when (obj.number("m_option", "option")?.toInt()) {
+            0 -> true
+            1 -> false
+            null -> true
+            else -> return null
+        }
+        return sourceFeature(
+            "core.category.enabled",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "category" to ConfigValue.StringValue(category),
+                "value" to ConfigValue.BooleanValue(expected),
+            ),
+        )
+    }
+
+    private fun categoryName(obj: JsonObject): String? =
+        obj.string("m_categoryName", "categoryName", "m_category", "category")
+            ?.trim()
+            ?.takeIf(String::isNotBlank)
+            ?: obj.objectValue("m_category", "category")
+                ?.string("m_name", "name", "m_categoryName", "categoryName")
+                ?.trim()
+                ?.takeIf(String::isNotBlank)
 
     private fun modeAction(
         obj: JsonObject,
