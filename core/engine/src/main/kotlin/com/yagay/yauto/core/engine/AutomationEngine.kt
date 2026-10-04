@@ -431,6 +431,7 @@ class AutomationEngine(
         is PredicateNode.All -> predicate.children.all { evaluatePredicate(it, executionId, nodeId, variables) }
         is PredicateNode.Any -> predicate.children.any { evaluatePredicate(it, executionId, nodeId, variables) }
         is PredicateNode.None -> predicate.children.none { evaluatePredicate(it, executionId, nodeId, variables) }
+        is PredicateNode.Xor -> predicate.children.count { evaluatePredicate(it, executionId, nodeId, variables) } == 1
         is PredicateNode.Literal -> predicate.value
         is PredicateNode.Expression -> expressions.evaluateBoolean(predicate.expression, variables)
         is PredicateNode.Condition -> {
