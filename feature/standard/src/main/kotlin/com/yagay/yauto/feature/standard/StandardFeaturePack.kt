@@ -15,6 +15,7 @@ object StandardFeaturePacks {
     ): List<FeaturePack> = listOf(
         CoreFeaturePack(),
         ExpressionFeaturePack(),
+        TaskerConditionFeaturePack(),
         AutomationControlFeaturePack(control),
         VariableFeaturePack(),
         VariableAdvancedFeaturePack(),
