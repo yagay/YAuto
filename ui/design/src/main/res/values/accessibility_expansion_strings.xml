@@ -43,18 +43,14 @@
     <string name="feature_android_event_ui_focused_title">UI element focused</string>
     <string name="feature_android_event_ui_scrolled_title">UI content scrolled</string>
     <string name="feature_phrase_trigger_on_accessibility_ui_interaction_events_and_optionally_filter_app_text_content_description_or_view_id">Trigger on Accessibility UI interaction events and optionally filter app, text, content description or View ID</string>
-    <string name="feature_phrase_app_package">App / package</string>
-    <string name="feature_phrase_text_match">Text match</string>
+<string name="feature_phrase_text_match">Text match</string>
     <string name="feature_phrase_text_pattern">Text / pattern</string>
     <string name="feature_phrase_content_description_contains">Content description contains</string>
     <string name="feature_phrase_view_id_contains">View ID contains</string>
     <string name="feature_phrase_ignore_case">Ignore case</string>
-    <string name="feature_phrase_any">Any</string>
-    <string name="feature_phrase_contains">Contains</string>
+<string name="feature_phrase_contains">Contains</string>
     <string name="feature_phrase_exact">Exact</string>
-    <string name="feature_phrase_regular_expression">Regular expression</string>
-
-    <string name="feature_android_event_screen_content_changed_title">Screen content matched</string>
+<string name="feature_android_event_screen_content_changed_title">Screen content matched</string>
     <string name="feature_android_event_screen_content_changed_description">Trigger when Accessibility reports changed screen content matching text or a regular expression</string>
     <string name="feature_android_event_screen_content_changed_field_package">App / package</string>
     <string name="feature_android_event_screen_content_changed_field_mode">Match mode</string>
