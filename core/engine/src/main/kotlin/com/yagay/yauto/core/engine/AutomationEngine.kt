@@ -86,7 +86,7 @@ class AutomationEngine(
                     false,
                     executionId,
                     variables = variables.snapshot(),
-                    error = userText("engine.unknown_action", "label:" + signal.label),
+                    error = userText("engine.unknown_label", signal.label),
                 )
                 Signal.Break, Signal.Continue, Signal.Next -> EngineResult(true, executionId, variables = variables.snapshot())
             }
@@ -262,12 +262,12 @@ class AutomationEngine(
                 if (completed) Signal.Next else Signal.Failure(userText("engine.wait_until_timeout", node.timeoutMs))
             }
             is ActionNode.WaitEvent -> {
-                if (node.events.isEmpty()) return Signal.Failure(userText("engine.unknown_event", "empty"))
+                if (node.events.isEmpty()) return Signal.Failure(userText("engine.wait_event_empty"))
                 if (!node.unlimited && node.timeoutMs <= 0L) {
                     return Signal.Failure(userText("engine.wait_until_invalid"))
                 }
                 val waiter = eventWaiter
-                    ?: return Signal.Failure(userText("feature.operation_failed", "Runtime event waiter unavailable"))
+                    ?: return Signal.Failure(userText("engine.wait_event_unavailable"))
                 val matched = waiter.await(
                     events = node.events,
                     variables = variables.snapshot(),
