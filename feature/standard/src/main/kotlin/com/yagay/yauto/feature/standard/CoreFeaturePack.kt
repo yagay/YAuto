@@ -21,6 +21,17 @@ class CoreFeaturePack : FeaturePack {
     private val definitions: List<FeatureDefinition> = listOf(
         eventFeature(
             FeatureDescriptor(
+                id = FeatureId("core.event.any"),
+                kind = FeatureKind.EVENT,
+                title = "Any runtime event",
+                description = "Run for any YAuto runtime event",
+                category = FeatureCategory.CORE,
+                fields = listOf(FieldSchema.Text("tag", "Source tag")),
+                keywords = setOf("any event", "wildcard", "fact", "tag"),
+            )
+        ) { _, _ -> true },
+        eventFeature(
+            FeatureDescriptor(
                 id = FeatureId("core.event.manual"),
                 kind = FeatureKind.EVENT,
                 title = "Manual event",
@@ -88,6 +99,21 @@ class CoreFeaturePack : FeaturePack {
                 )
             )
             ActionExecutionResult(true, message = message)
+        },
+        conditionFeature(
+            FeatureDescriptor(
+                id = FeatureId("core.condition.event_tag"),
+                kind = FeatureKind.CONDITION,
+                title = "Event source tag",
+                description = "Match the tag of the event feature that triggered the current automation",
+                category = FeatureCategory.CORE,
+                fields = listOf(FieldSchema.Text("tag", "Tag", true)),
+                fieldBehaviors = mapOf("tag" to FieldBehavior(supportsVariables = true)),
+                keywords = setOf("event tag", "fact tag", "shortx"),
+            )
+        ) { feature, ctx ->
+            val expected = feature.config.string("tag").resolveVariables(ctx.variables)
+            (ctx.variables.get("event.fact_tag") as? ConfigValue.StringValue)?.value == expected
         },
         conditionFeature(
             FeatureDescriptor(
