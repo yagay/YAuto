@@ -61,6 +61,41 @@ class AndroidNotificationControlFeaturePack : FeaturePack {
         registerActiveState(registry)
         registerCountState(registry)
         registerClickedEvent(registry)
+        registerUpdatedEvent(registry)
+    }
+
+
+    private fun registerUpdatedEvent(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.notification_updated"), FeatureKind.EVENT,
+                "Notification updated", "Run when an existing notification changes title, text, actions, flags, category, group or channel",
+                FeatureCategory.NOTIFICATION,
+                fields = filterFields(),
+                accessRequirements = setOf(AccessRequirement.NOTIFICATION_LISTENER),
+                keywords = setOf("notification", "updated", "changed", "progress", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.notification_updated") return@registerEvent false
+            val match = NotificationMatch.from(feature)
+            val payload = ctx.event.payload
+            match.matches(
+                ActiveNotificationSnapshot(
+                    key = payload.string("key"),
+                    packageName = payload.string("package"),
+                    title = payload.string("title"),
+                    text = payload.string("text"),
+                    actionCount = (payload["actionCount"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0,
+                    ongoing = (payload["ongoing"] as? ConfigValue.BooleanValue)?.value == true,
+                    postTimeEpochMs = (payload["postTime"] as? ConfigValue.NumberValue)?.value?.toLong() ?: 0L,
+                    notificationId = (payload["id"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0,
+                    channelId = payload.string("channel"),
+                    category = payload.string("category"),
+                    groupKey = payload.string("groupKey"),
+                )
+            )
+        }
     }
 
     private fun registerClickedEvent(registry: FeatureRegistry) {
