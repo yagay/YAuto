@@ -1,6 +1,8 @@
 package com.yagay.yauto
 
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.RemoteInput
 import android.content.ComponentName
@@ -16,6 +18,7 @@ import android.service.notification.StatusBarNotification
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.platform.android.ActiveNotificationSnapshot
+import com.yagay.yauto.platform.android.HistoricalNotificationSnapshot
 import com.yagay.yauto.platform.android.NotificationControlBridge
 import com.yagay.yauto.platform.android.NotificationController
 import com.yagay.yauto.platform.android.NotificationRuntimeEventMapper
@@ -23,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import java.util.concurrent.atomic.AtomicInteger
 
 class YAutoNotificationListenerService : NotificationListenerService(), NotificationController {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -31,6 +35,8 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
     private val mediaCallbacks = LinkedHashMap<MediaSession.Token, Pair<MediaController, MediaController.Callback>>()
     private val mediaMetadataSignatures = HashMap<MediaSession.Token, String>()
     private val mediaPlaybackSignatures = HashMap<MediaSession.Token, String>()
+    private val notificationHistory = LinkedHashMap<String, RemovedNotificationRecord>()
+    private val restoredNotificationIds = AtomicInteger(40_000)
 
     private val activeSessionsListener = MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
         syncMediaSessions(controllers.orEmpty())
@@ -58,10 +64,12 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
+        rememberRemoved(sbn, null)
         dispatcher.dispatch(NotificationRuntimeEventMapper.removed(sbn))
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
+        rememberRemoved(sbn, reason)
         if (reason == REASON_CLICK) dispatcher.dispatch(NotificationRuntimeEventMapper.clicked(sbn))
         dispatcher.dispatch(NotificationRuntimeEventMapper.removed(sbn, reason))
     }
@@ -86,6 +94,94 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
             category = notification.category.orEmpty(),
             groupKey = sbn.groupKey.orEmpty(),
         )
+    }
+
+    override fun history(): List<HistoricalNotificationSnapshot> = synchronized(notificationHistory) {
+        notificationHistory.values.map { it.snapshot }.reversed()
+    }
+
+    override fun clearHistory(): Int = synchronized(notificationHistory) {
+        val count = notificationHistory.size
+        notificationHistory.clear()
+        count
+    }
+
+    override fun restore(
+        packageName: String,
+        titleContains: String,
+        textContains: String,
+        maxCount: Int,
+        excludePackage: Boolean,
+    ): Int {
+        val records = synchronized(notificationHistory) {
+            notificationHistory.values.toList().asReversed()
+        }.filter { record ->
+            val packageMatches = packageName.isBlank() || record.snapshot.packageName == packageName
+            val packageAllowed = if (excludePackage && packageName.isNotBlank()) !packageMatches else packageMatches
+            packageAllowed &&
+                (titleContains.isBlank() || record.snapshot.title.contains(titleContains, ignoreCase = true)) &&
+                (textContains.isBlank() || record.snapshot.text.contains(textContains, ignoreCase = true))
+        }.take(maxCount.coerceIn(1, 100))
+        if (records.isEmpty()) return 0
+
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(
+            NotificationChannel(
+                RESTORED_CHANNEL_ID,
+                "Restored notifications",
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ).apply {
+                description = "Copies of previously removed notifications restored by YAuto"
+            }
+        )
+        var restored = 0
+        records.asReversed().forEach { record ->
+            val snapshot = record.snapshot
+            val appLabel = runCatching {
+                packageManager.getApplicationLabel(packageManager.getApplicationInfo(snapshot.packageName, 0)).toString()
+            }.getOrDefault(snapshot.packageName)
+            val original = record.notification
+            val builder = Notification.Builder(this, RESTORED_CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle(snapshot.title.ifBlank { appLabel })
+                .setContentText(snapshot.text)
+                .setSubText("Restored from $appLabel")
+                .setWhen(snapshot.originalPostTimeEpochMs.takeIf { it > 0 } ?: snapshot.removedAtEpochMs)
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
+            original.contentIntent?.let(builder::setContentIntent)
+            original.deleteIntent?.let(builder::setDeleteIntent)
+            original.actions.orEmpty().take(4).forEach(builder::addAction)
+            runCatching {
+                manager.notify(restoredNotificationIds.incrementAndGet(), builder.build())
+                restored++
+            }
+        }
+        return restored
+    }
+
+    private fun rememberRemoved(sbn: StatusBarNotification, reason: Int?) {
+        val notification = sbn.notification
+        val extras = notification.extras
+        val snapshot = HistoricalNotificationSnapshot(
+            packageName = sbn.packageName,
+            title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty(),
+            text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty(),
+            removedAtEpochMs = System.currentTimeMillis(),
+            originalPostTimeEpochMs = sbn.postTime,
+            channelId = notification.channelId.orEmpty(),
+            category = notification.category.orEmpty(),
+            groupKey = sbn.groupKey.orEmpty(),
+            reason = reason,
+        )
+        val key = sbn.key + ":" + sbn.postTime
+        synchronized(notificationHistory) {
+            notificationHistory[key] = RemovedNotificationRecord(snapshot, notification)
+            while (notificationHistory.size > MAX_NOTIFICATION_HISTORY) {
+                val first = notificationHistory.entries.firstOrNull()?.key ?: break
+                notificationHistory.remove(first)
+            }
+        }
     }
 
     override fun dismiss(key: String): Boolean = runCatching {
@@ -221,4 +317,9 @@ class YAutoNotificationListenerService : NotificationListenerService(), Notifica
         scope.cancel()
         super.onDestroy()
     }
+    private companion object {
+        const val RESTORED_CHANNEL_ID = "yauto_restored_notifications"
+        const val MAX_NOTIFICATION_HISTORY = 200
+    }
+
 }
