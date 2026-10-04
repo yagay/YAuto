@@ -12,6 +12,7 @@ object TaskerMappings {
         "25" -> noConfigAction(action, importerId, code, raw, "android.home.launch")
         "30" -> wait(action, importerId, code, raw)
         "61" -> vibrate(action, importerId, code, raw)
+        "63" -> javaCode(action, importerId, code, raw)
         "102" -> openFile(action, importerId, code, raw)
         "104" -> openUri(action, importerId, code, raw)
         "105" -> setClipboard(action, importerId, code, raw)
@@ -88,6 +89,32 @@ object TaskerMappings {
     fun performTaskParam1(action: Element): String? = action.stringArg(2)?.takeIf { it.isNotBlank() }
     fun performTaskParam2(action: Element): String? = action.stringArg(3)?.takeIf { it.isNotBlank() }
     fun performTaskResultVariable(action: Element): String? = action.stringArg(4)?.takeIf { it.isNotBlank() }
+
+    private fun javaCode(
+        action: Element,
+        importerId: String,
+        code: String,
+        raw: String,
+    ): FeatureRef? {
+        val script = action.stringArg(0)?.takeIf { it.isNotBlank() } ?: return null
+        val timeoutSeconds = action.intArg(1)?.coerceIn(0L, 600L) ?: 0L
+        val resultVariable = action.stringArg(2).orEmpty()
+        return sourceFeature(
+            "script.beanshell.execute",
+            importerId,
+            "TaskerAction:" + code,
+            raw,
+            extra = buildMap {
+                put("script", ConfigValue.StringValue(script))
+                if (timeoutSeconds > 0L) {
+                    put("timeoutMs", ConfigValue.NumberValue(timeoutSeconds * 1_000.0))
+                }
+                if (resultVariable.isNotBlank()) {
+                    put("resultVariable", ConfigValue.StringValue(resultVariable))
+                }
+            },
+        )
+    }
 
     private fun wait(action: Element, importerId: String, code: String, raw: String): FeatureRef {
         // Kept compatible with Tasker's currently exported Wait layout already covered by importer tests.
