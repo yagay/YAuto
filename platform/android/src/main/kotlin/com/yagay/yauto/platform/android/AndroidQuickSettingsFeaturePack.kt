@@ -69,7 +69,7 @@ class AndroidQuickSettingsFeaturePack(private val controller: QuickSettingsTileC
             )
         ) { feature, ctx ->
             val slot = feature.config["slot"].numberOrNull()?.toInt() ?: 1
-            if (slot !in 1..3) return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Tile slot must be 1-3"))
+            if (slot !in 1..3) return@registerAction ActionExecutionResult(false, message = userText("feature.tile_slot_invalid"))
             val stateName = when (controller.state(slot)) {
                 Tile.STATE_ACTIVE -> "active"
                 Tile.STATE_UNAVAILABLE -> "unavailable"
