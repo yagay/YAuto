@@ -15,6 +15,8 @@ import com.yagay.yauto.platform.accessibility.AccessibilityBackend
 import com.yagay.yauto.platform.accessibility.AccessibilityDiagnosticCollector
 import com.yagay.yauto.platform.accessibility.AccessibilityFeaturePack
 import com.yagay.yauto.platform.accessibility.AccessibilityKeyFeaturePack
+import com.yagay.yauto.platform.accessibility.AccessibilityBeanShellFeaturePack
+import com.yagay.yauto.platform.accessibility.AccessibilityMvelFeaturePack
 import com.yagay.yauto.platform.accessibility.AccessibilityWindowSnapshot
 import com.yagay.yauto.platform.android.*
 import com.yagay.yauto.platform.root.*
@@ -75,6 +77,8 @@ class AppGraph(context: Context) {
             }
         }
         installPack("feature:accessibility.key") { AccessibilityKeyFeaturePack() }
+        installPack("feature:accessibility.beanshell") { AccessibilityBeanShellFeaturePack(appContext) }
+        installPack("feature:accessibility.mvel") { AccessibilityMvelFeaturePack(appContext) }
 
         safelyUnit("backend:root") { capabilities.register(RootBackend(rootShell)) }
         safelyUnit("backend:shizuku") { capabilities.register(shizuku) }
