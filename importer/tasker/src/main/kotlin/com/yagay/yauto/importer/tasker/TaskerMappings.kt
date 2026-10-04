@@ -113,7 +113,7 @@ object TaskerMappings {
         val timeoutSeconds = action.intArg(1)?.coerceIn(0L, 600L) ?: 0L
         val resultVariable = action.stringArg(2).orEmpty()
         return sourceFeature(
-            "script.beanshell.execute",
+            "script.tasker.beanshell.execute",
             importerId,
             "TaskerAction:" + code,
             raw,
