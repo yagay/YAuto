@@ -167,6 +167,15 @@ class MacroDroidImporter(
                 }
             }
 
+            if (sourceType == "LoopAction" && obj.bool("m_isDisabled") != true) {
+                val parsed = parseLoop(items, index, parentPath, issues, blockAliases)
+                if (parsed != null) {
+                    out += parsed.node
+                    index = parsed.nextIndex
+                    continue
+                }
+            }
+
             when (sourceType) {
                 "BreakFromLoopAction" -> out += ActionNode.Break(NodeId(UUID.randomUUID().toString()))
                 "ContinueLoopAction" -> out += ActionNode.Continue(NodeId(UUID.randomUUID().toString()))
@@ -175,7 +184,7 @@ class MacroDroidImporter(
                         NodeId(UUID.randomUUID().toString()),
                         FeatureRef("core.noop"),
                     )
-                "ElseAction", "ElseIfConditionAction", "EndIfAction" -> {
+                "ElseAction", "ElseIfConditionAction", "EndIfAction", "EndLoopAction" -> {
                     // Stray branch markers are preserved instead of being silently discarded.
                     out += compatibilityAction(item, path, sourceType, issues)
                 }
@@ -186,12 +195,85 @@ class MacroDroidImporter(
         return out
     }
 
+    private data class ParsedLoop(val node: ActionNode, val nextIndex: Int)
+
     private data class ParsedConditional(val node: ActionNode, val nextIndex: Int)
     private data class ConditionalSegment(
         val marker: JsonObject?,
         val start: Int,
         val end: Int,
     )
+
+
+    private fun parseLoop(
+        items: List<JsonElement>,
+        startIndex: Int,
+        parentPath: String,
+        issues: MutableList<CompatibilityIssue>,
+        blockAliases: Map<String, FlowId>,
+    ): ParsedLoop? {
+        val loop = items.getOrNull(startIndex) as? JsonObject ?: return null
+        var depth = 0
+        var endIndex = -1
+        var index = startIndex + 1
+        while (index < items.size) {
+            val obj = items[index] as? JsonObject
+            when (obj?.string("m_classType", "classType", "type")) {
+                "LoopAction" -> depth++
+                "EndLoopAction" -> {
+                    if (depth == 0) {
+                        endIndex = index
+                        break
+                    }
+                    depth--
+                }
+            }
+            index++
+        }
+        if (endIndex < 0) return null
+
+        val body = mapActions(
+            items.subList(startIndex + 1, endIndex),
+            parentPath + ".loop[" + startIndex + "]",
+            issues,
+            blockAliases,
+        )
+        val option = loop.number("m_option", "option")?.toInt() ?: return null
+        val node = when (option) {
+            0 -> {
+                val count = loop.number("m_fixedOptionCount", "fixedOptionCount")?.toInt() ?: return null
+                if (count <= 0) return null
+                ActionNode.Repeat(
+                    NodeId(UUID.randomUUID().toString()),
+                    count.coerceAtMost(100_000),
+                    body,
+                )
+            }
+            1 -> {
+                val predicate = predicateFromConstraints(
+                    loop,
+                    parentPath + ".loop[" + startIndex + "].condition",
+                    issues,
+                ) ?: return null
+                ActionNode.While(NodeId(UUID.randomUUID().toString()), predicate, body)
+            }
+            2 -> {
+                val predicate = predicateFromConstraints(
+                    loop,
+                    parentPath + ".loop[" + startIndex + "].condition",
+                    issues,
+                ) ?: return null
+                ActionNode.DoWhile(NodeId(UUID.randomUUID().toString()), predicate, body)
+            }
+            3 -> ActionNode.While(
+                NodeId(UUID.randomUUID().toString()),
+                PredicateNode.Literal(true),
+                body,
+            )
+            else -> return null
+        }
+        return ParsedLoop(node, endIndex + 1)
+    }
 
     private fun parseConditional(
         items: List<JsonElement>,
@@ -334,6 +416,7 @@ class MacroDroidImporter(
         issues: MutableList<CompatibilityIssue>,
     ): PredicateNode? {
         val constraints = obj.array("m_constraintList", "constraintList", "constraints")
+            .filterNot { (it as? JsonObject)?.bool("m_isDisabled") == true }
         if (constraints.isEmpty()) return null
         val nodes = constraints.mapIndexed { index, item ->
             PredicateNode.Condition(
@@ -413,6 +496,8 @@ class MacroDroidImporter(
 
     private fun JsonObject.string(vararg keys: String): String? = keys.firstNotNullOfOrNull { (this[it] as? JsonPrimitive)?.contentOrNull }
     private fun JsonObject.bool(key: String): Boolean? = (this[key] as? JsonPrimitive)?.booleanOrNull
+    private fun JsonObject.number(vararg keys: String): Double? =
+        keys.firstNotNullOfOrNull { (this[it] as? JsonPrimitive)?.doubleOrNull }
     private fun JsonObject.array(vararg keys: String): List<JsonElement> = keys.firstNotNullOfOrNull { this[it] as? JsonArray }?.toList().orEmpty()
     private fun JsonObject.primitiveText(key: String): String? = (this[key] as? JsonPrimitive)?.contentOrNull
 }
