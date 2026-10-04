@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_media_track_changed_title">媒体曲目已更改</string>
+    <string name="feature_android_event_media_track_changed_description">当活动的 Android 媒体会话发布新的曲目信息时触发</string>
+    <string name="feature_android_event_media_track_changed_field_package">应用 / 包名</string>
+    <string name="feature_android_event_media_track_changed_field_titlecontains">标题包含</string>
+    <string name="feature_android_event_media_track_changed_field_artistcontains">歌手包含</string>
+    <string name="feature_android_event_media_track_changed_field_albumcontains">专辑包含</string>
+    <string name="feature_android_event_media_track_changed_field_mediaidcontains">Media ID 包含</string>
+    <string name="feature_android_event_media_track_changed_field_ignorecase">忽略大小写</string>
+
+    <string name="feature_android_event_media_playback_state_changed_title">媒体播放状态已更改</string>
+    <string name="feature_android_event_media_playback_state_changed_description">当活动媒体会话的播放状态变化时触发</string>
+    <string name="feature_android_event_media_playback_state_changed_field_package">应用 / 包名</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state">播放状态</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_any">任意</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_none">无</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_stopped">已停止</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_paused">已暂停</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_playing">正在播放</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_fast_forwarding">快进中</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_rewinding">快退中</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_buffering">缓冲中</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_error">错误</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_connecting">连接中</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_skipping_previous">切换到上一首</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_skipping_next">切换到下一首</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_skipping_queue_item">切换播放队列项目</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_unknown">未知</string>
+</resources>
