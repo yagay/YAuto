@@ -29,6 +29,8 @@ import android.widget.TextView
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import java.io.File
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.PI
 import kotlin.math.atan2
@@ -42,6 +44,7 @@ class OverlaySurfaceController(context: Context) {
     private val main = Handler(Looper.getMainLooper())
     private val surfaces = ConcurrentHashMap<String, android.view.View>()
     private val recordedGestures = ConcurrentHashMap<String, String>()
+    private val taskerSceneModels = ConcurrentHashMap<String, String>()
 
     fun canDraw(): Boolean = Settings.canDrawOverlays(context)
 
@@ -692,6 +695,161 @@ class OverlaySurfaceController(context: Context) {
     fun recordedGesture(id: String): String? = recordedGestures[id]
 
     fun clearRecordedGesture(id: String): Boolean = recordedGestures.remove(id) != null
+
+
+    fun createTaskerScene(id: String, modelJson: String): Boolean {
+        if (id.isBlank() || modelJson.isBlank()) return false
+        return runCatching {
+            JSONObject(modelJson)
+            taskerSceneModels[id] = modelJson
+            true
+        }.getOrDefault(false)
+    }
+
+    fun showTaskerScene(
+        id: String,
+        title: String,
+        modelJson: String,
+        gravity: String,
+        autoHideMs: Long,
+    ): Boolean {
+        if (!canDraw() || id.isBlank()) return false
+        val resolved = modelJson.takeIf { it.isNotBlank() } ?: taskerSceneModels[id] ?: return false
+        val model = runCatching { JSONObject(resolved) }.getOrNull() ?: return false
+        taskerSceneModels[id] = resolved
+        main.post {
+            hideInternal(id)
+            val density = context.resources.displayMetrics.density
+            val content = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+            val elements = model.optJSONArray("elements") ?: JSONArray()
+            for (index in 0 until elements.length()) {
+                val item = elements.optJSONObject(index) ?: continue
+                val kind = item.optString("kind")
+                val elementId = item.optString("id", "element_" + index)
+                val label = item.optString("label")
+                val value = item.optString("value")
+                val clickTask = item.optString("clickTask")
+                val longClickTask = item.optString("longClickTask")
+                fun emitTask(taskId: String, action: String, extra: String = "") {
+                    if (taskId.isBlank()) return
+                    SurfaceRuntimeBridge.emit(
+                        id,
+                        "task:" + taskId,
+                        elementId + if (extra.isBlank()) "" else ":" + extra,
+                    )
+                    SurfaceRuntimeBridge.emit(id, action, elementId)
+                }
+                when (kind) {
+                    "button" -> content.addView(Button(context).apply {
+                        text = label.ifBlank { elementId }
+                        setOnClickListener { emitTask(clickTask, "scene_click") }
+                        if (longClickTask.isNotBlank()) setOnLongClickListener {
+                            emitTask(longClickTask, "scene_long_click")
+                            true
+                        }
+                    })
+                    "text" -> content.addView(TextView(context).apply {
+                        text = value.ifBlank { label.ifBlank { elementId } }
+                        setTextColor(android.graphics.Color.WHITE)
+                        textSize = 15f
+                        setPadding((8 * density).toInt(), (6 * density).toInt(), (8 * density).toInt(), (6 * density).toInt())
+                        if (clickTask.isNotBlank()) setOnClickListener { emitTask(clickTask, "scene_click") }
+                        if (longClickTask.isNotBlank()) setOnLongClickListener {
+                            emitTask(longClickTask, "scene_long_click")
+                            true
+                        }
+                    })
+                    "input" -> content.addView(EditText(context).apply {
+                        hint = label
+                        setText(value)
+                        setTextColor(android.graphics.Color.WHITE)
+                        setHintTextColor(0xFF9AA0A6.toInt())
+                        setOnFocusChangeListener { _, hasFocus ->
+                            if (!hasFocus) emitTask(clickTask, "scene_input", text.toString())
+                        }
+                    })
+                    "image" -> content.addView(ImageView(context).apply {
+                        adjustViewBounds = true
+                        value.takeIf(String::isNotBlank)?.let { source ->
+                            loadOverlayBitmap(source)?.let(::setImageBitmap)
+                        }
+                        if (clickTask.isNotBlank()) setOnClickListener { emitTask(clickTask, "scene_click") }
+                        if (longClickTask.isNotBlank()) setOnLongClickListener {
+                            emitTask(longClickTask, "scene_long_click")
+                            true
+                        }
+                    })
+                    "list", "spinner" -> {
+                        val items = item.optJSONArray("items") ?: JSONArray()
+                        val group = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+                        for (itemIndex in 0 until items.length()) {
+                            val itemText = items.optString(itemIndex)
+                            group.addView(Button(context).apply {
+                                text = itemText
+                                setOnClickListener { emitTask(clickTask, "scene_item", itemText) }
+                            })
+                        }
+                        content.addView(group)
+                    }
+                    "slider" -> content.addView(SeekBar(context).apply {
+                        max = item.optInt("max", 100).coerceAtLeast(1)
+                        progress = item.optInt("progress", 0).coerceIn(0, max)
+                        setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) = Unit
+                            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                                emitTask(clickTask, "scene_value", progress.toString())
+                            }
+                        })
+                    })
+                    "toggle", "switch", "checkbox" -> content.addView(Switch(context).apply {
+                        text = label.ifBlank { elementId }
+                        isChecked = item.optBoolean("checked", false)
+                        setTextColor(android.graphics.Color.WHITE)
+                        setOnCheckedChangeListener { _, checked ->
+                            emitTask(clickTask, "scene_value", checked.toString())
+                        }
+                    })
+                    "web" -> content.addView(WebView(context).apply {
+                        settings.javaScriptEnabled = false
+                        webViewClient = WebViewClient()
+                        if (value.startsWith("http://") || value.startsWith("https://")) loadUrl(value)
+                        else loadDataWithBaseURL(null, value, "text/html", "UTF-8", null)
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            (320 * density).toInt(),
+                        )
+                    })
+                    else -> if (label.isNotBlank() || value.isNotBlank()) {
+                        content.addView(TextView(context).apply {
+                            text = listOf(label, value).filter(String::isNotBlank).joinToString(" ")
+                            setTextColor(0xFFE8EAED.toInt())
+                        })
+                    }
+                }
+            }
+            val root = basePanel(title.ifBlank { model.optString("name") }, density).apply {
+                addView(
+                    ScrollView(context).apply { addView(content) },
+                    LinearLayout.LayoutParams(
+                        (360 * density).toInt(),
+                        (520 * density).toInt(),
+                    ),
+                )
+            }
+            addSurface(id, root, gravity, autoHideMs)
+            SurfaceRuntimeBridge.emit(id, "scene_shown")
+        }
+        return true
+    }
+
+    fun destroyTaskerScene(id: String): Boolean {
+        val existed = taskerSceneModels.remove(id) != null
+        hide(id)
+        return existed
+    }
 
     private fun loadOverlayBitmap(source: String): Bitmap? = runCatching {
         when {
