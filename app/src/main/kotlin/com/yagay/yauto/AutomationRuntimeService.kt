@@ -55,6 +55,7 @@ class AutomationRuntimeService : Service() {
         registerSource("bluetooth-device") { BluetoothDeviceEventSource(this) }
         registerSource("communication") { CommunicationEventSource(this) }
         registerSource("sim-subscriptions") { SubscriptionChangeEventSource(this) }
+        registerSource("configured-weather") { ConfiguredWeatherEventSource(this, appGraph.workspace) }
         registerSource("midi-device") { MidiDeviceEventSource(this) }
         registerSource("usb-device") { UsbDeviceEventSource(this) }
         registerSource("personal-data") { PersonalDataEventSource(this) }
