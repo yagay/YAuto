@@ -61,11 +61,11 @@ class AccessibilityBackend : CapabilityBackend {
                         unique = request.payload.boolean("unique", true),
                         limit = request.payload.long("limit", 500).toInt(),
                     )
-                    return@withContext CapabilityResult(true, ConfigValue.StringValue(value))
+                    return@withContext CapabilityResult(success = true, value = ConfigValue.StringValue(value))
                 }
                 AccessibilityOperations.GET_VIEW_TEXT -> {
                     val value = service.textByViewId(request.payload.string("viewId"))
-                        ?: return@withContext CapabilityResult(false, ConfigValue.NullValue)
+                        ?: return@withContext CapabilityResult(success = false, value = ConfigValue.NullValue)
                     return@withContext CapabilityResult(true, ConfigValue.StringValue(value))
                 }
                 AccessibilityOperations.GET_UI_NODES -> {
@@ -93,7 +93,7 @@ class AccessibilityBackend : CapabilityBackend {
                             )
                         }
                     )
-                    return@withContext CapabilityResult(true, output)
+                    return@withContext CapabilityResult(success = true, value = output)
                 }
             }
 
