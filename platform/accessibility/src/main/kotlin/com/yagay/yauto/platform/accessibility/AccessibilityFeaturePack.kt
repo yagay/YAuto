@@ -4,6 +4,7 @@ import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
+import com.yagay.yauto.core.model.long
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 
@@ -33,6 +34,41 @@ class AccessibilityFeaturePack(
         action(registry, AccessibilityOperations.TAP, "Tap coordinates", "Dispatch a tap gesture at screen coordinates", listOf(FieldSchema.Number("x", "X", true, min = 0.0), FieldSchema.Number("y", "Y", true, min = 0.0), FieldSchema.Duration("durationMs", "Press duration")), setOf("tap", "gesture", "coordinate", "accessibility"))
         action(registry, AccessibilityOperations.SWIPE, "Swipe", "Dispatch a swipe gesture between screen coordinates", listOf(FieldSchema.Number("x1", "Start X", true, min = 0.0), FieldSchema.Number("y1", "Start Y", true, min = 0.0), FieldSchema.Number("x2", "End X", true, min = 0.0), FieldSchema.Number("y2", "End Y", true, min = 0.0), FieldSchema.Duration("durationMs", "Duration")), setOf("swipe", "gesture", "accessibility"))
         action(registry, AccessibilityOperations.GESTURE_PATH, "Recorded gesture path", "Replay a multi-point gesture path; enter one X,Y coordinate per line", listOf(FieldSchema.Text("path", "Gesture points", true, multiline = true), FieldSchema.Duration("durationMs", "Duration")), setOf("gesture", "recorded gesture", "path", "shortx", "accessibility"))
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("accessibility.capture_next_click"), FeatureKind.ACTION,
+                "Capture next click coordinates",
+                "Wait for the next Accessibility click and store its screen coordinates, bounds and source metadata",
+                FeatureCategory.UI_AUTOMATION,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                fields = listOf(
+                    FieldSchema.Duration("timeoutMs", "Timeout"),
+                    FieldSchema.Variable("resultVariable", "Store click object", true),
+                ),
+                keywords = setOf("capture click", "xy", "coordinates", "touch", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val snapshot = AccessibilityRuntimeBridge.awaitNextClick(feature.config.long("timeoutMs", 30_000L))
+                ?: return@registerAction ActionExecutionResult(false)
+            val value = ConfigValue.ObjectValue(
+                mapOf(
+                    "package" to ConfigValue.StringValue(snapshot.packageName),
+                    "class" to ConfigValue.StringValue(snapshot.className.orEmpty()),
+                    "text" to ConfigValue.StringValue(snapshot.text),
+                    "viewId" to ConfigValue.StringValue(snapshot.viewId),
+                    "x" to ConfigValue.NumberValue(snapshot.centerX.toDouble()),
+                    "y" to ConfigValue.NumberValue(snapshot.centerY.toDouble()),
+                    "left" to ConfigValue.NumberValue(snapshot.left.toDouble()),
+                    "top" to ConfigValue.NumberValue(snapshot.top.toDouble()),
+                    "right" to ConfigValue.NumberValue(snapshot.right.toDouble()),
+                    "bottom" to ConfigValue.NumberValue(snapshot.bottom.toDouble()),
+                )
+            )
+            feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, value) }
+            ActionExecutionResult(true, value)
+        }
 
         resultAction(
             registry,
@@ -100,6 +136,35 @@ class AccessibilityFeaturePack(
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.window_changed") return@registerEvent false
             matchForeground(feature, ctx.event.payload.string("package"), ctx.event.payload.string("class"))
+        }
+
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.toast_shown"), FeatureKind.EVENT,
+                "Toast / transient message shown",
+                "Trigger when Accessibility reports a transient notification-state message such as an app Toast",
+                FeatureCategory.UI_AUTOMATION,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "App / package"),
+                    FieldSchema.Choice("mode", "Text match", options = listOf("any", "contains", "exact", "regex")),
+                    FieldSchema.Text("text", "Text / pattern"),
+                    FieldSchema.Toggle("ignoreCase", "Ignore case"),
+                ),
+                keywords = setOf("toast", "transient", "message", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.toast_shown") return@registerEvent false
+            val pkg = feature.config.string("package")
+            if (pkg.isNotBlank() && ctx.event.payload.string("package") != pkg) return@registerEvent false
+            val mode = feature.config.string("mode", "any")
+            mode == "any" || matchesText(
+                ctx.event.payload.string("text"),
+                feature.config.string("text"),
+                mode,
+                feature.config.boolean("ignoreCase", true),
+            )
         }
 
         uiEvent(registry, "android.event.ui_click", "UI element clicked", "click")
