@@ -7,6 +7,7 @@ import android.provider.MediaStore
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.core.storage.StandaloneAutomationCodec
 import com.yagay.yauto.core.storage.WorkspaceRepository
@@ -52,7 +53,7 @@ class AndroidStandaloneExportFeaturePack(
                     includePersistentVariables = feature.config.boolean("includeVariables", true),
                 )
             }.getOrElse {
-                return@registerAction ActionExecutionResult(false, message = it.message)
+                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName))
             }
 
             val requested = feature.config.string("fileName").resolveVariables(ctx.variables).trim()
