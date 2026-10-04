@@ -14,6 +14,10 @@ data class WorkspaceData(
     val globalVariables: Map<String, String> = emptyMap(),
     /** Canonical typed persistent variables used by native YAuto automation features. */
     val persistentVariables: Map<String, ConfigValue> = emptyMap(),
+    /** Named automation categories currently disabled at runtime. */
+    val disabledCategories: Set<String> = emptySet(),
+    /** Persistent last successful/finished execution timestamp by automation ID. */
+    val automationLastRunEpochMs: Map<String, Long> = emptyMap(),
 )
 
 interface WorkspaceRepository {
