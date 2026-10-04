@@ -89,6 +89,8 @@ internal object ShortXFeatureSuggestions {
         "SetAPMModeEnabled" -> "android.airplane_mode.set"
         "SetDataEnabled", "ToggleData" -> "android.mobile_data.set"
         "PostNotification" -> "android.notification.show"
+        "ShowPPN" -> "android.notification.ppn.show"
+        "RemovePPN" -> "android.notification.ppn.remove"
         "RemoveNotification", "RemoveNotificationForPackage", "RemoveNotificationForPackageByPkg" -> "android.notification.dismiss"
         "ClickNotification" -> "android.notification.open"
         "ClickNotificationActionButton" -> "android.notification.action"
