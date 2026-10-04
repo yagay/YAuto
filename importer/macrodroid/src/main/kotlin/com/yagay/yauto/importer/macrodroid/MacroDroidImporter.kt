@@ -167,6 +167,15 @@ class MacroDroidImporter(
                 }
             }
 
+            if (sourceType == "WaitUntilTriggerAction" && obj.bool("m_isDisabled") != true) {
+                val parsed = parseWaitUntilTrigger(item, path, issues)
+                if (parsed != null) {
+                    out += parsed
+                    index++
+                    continue
+                }
+            }
+
             if (sourceType == "LoopAction" && obj.bool("m_isDisabled") != true) {
                 val parsed = parseLoop(items, index, parentPath, issues, blockAliases)
                 if (parsed != null) {
@@ -179,6 +188,10 @@ class MacroDroidImporter(
             when (sourceType) {
                 "BreakFromLoopAction" -> out += ActionNode.Break(NodeId(UUID.randomUUID().toString()))
                 "ContinueLoopAction" -> out += ActionNode.Continue(NodeId(UUID.randomUUID().toString()))
+                "ExitMacroAction", "StopMacroAction" -> out += ActionNode.Return(
+                    NodeId(UUID.randomUUID().toString()),
+                    ConfigValue.NullValue,
+                )
                 "EmptyAction", "SeparatorAction", "ActionGroupAction", "ActionGroupEndAction" ->
                     out += ActionNode.Action(
                         NodeId(UUID.randomUUID().toString()),
@@ -204,6 +217,54 @@ class MacroDroidImporter(
         val end: Int,
     )
 
+
+    private fun parseWaitUntilTrigger(
+        item: JsonElement,
+        path: String,
+        issues: MutableList<CompatibilityIssue>,
+    ): ActionNode? {
+        val obj = item as? JsonObject ?: return null
+        val triggerItems = obj.array(
+            "m_triggersToWaitFor",
+            "triggersToWaitFor",
+            "m_triggerList",
+            "triggerList",
+            "triggers",
+        )
+        if (triggerItems.isEmpty()) return null
+        val events = triggerItems.mapIndexed { index, trigger ->
+            mapSourceFeature(
+                trigger,
+                SourceFeatureKind.EVENT,
+                CompatFeatureIds.SOURCE_EVENT,
+                path + ".waitTrigger[" + index + "]",
+                issues,
+            )
+        }
+        val timeoutEnabled = obj.bool("m_timeoutEnabled")
+            ?: obj.bool("timeoutEnabled")
+            ?: false
+        val timeoutSeconds = obj.number("m_timeoutSeconds", "timeoutSeconds")
+            ?.coerceAtLeast(0.0)
+            ?: 0.0
+        val continueOnTimeout = obj.bool("m_continueOnTimeout")
+            ?: obj.bool("continueOnTimeout")
+            ?: false
+        val base = ActionNode.WaitEvent(
+            id = NodeId(UUID.randomUUID().toString()),
+            events = events,
+            timeoutMs = (timeoutSeconds * 1_000.0).toLong().coerceAtMost(7L * 24L * 60L * 60L * 1_000L),
+            unlimited = !timeoutEnabled,
+            continueOnTimeout = continueOnTimeout,
+        )
+        val constraint = predicateFromConstraints(obj, path + ".constraint", issues)
+        return if (constraint == null) base
+        else ActionNode.If(
+            NodeId(UUID.randomUUID().toString()),
+            constraint,
+            listOf(base),
+        )
+    }
 
     private fun parseLoop(
         items: List<JsonElement>,
