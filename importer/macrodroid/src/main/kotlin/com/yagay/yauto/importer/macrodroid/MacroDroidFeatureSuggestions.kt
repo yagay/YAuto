@@ -168,7 +168,7 @@ object MacroDroidFeatureSuggestions {
         "NotificationAction", "NotifAction" -> "android.notification.show"
         "LaunchAppActivityAction", "LaunchAndPressAction" -> "android.app.launch"
         "FileOperationAction", "FileOperationAllFilesAction", "FileOperationV21Action" -> "file.copy"
-        "FileSelectionAction" -> "android.file.open"
+        "FileSelectionAction" -> "file.pick"
         "LogAction" -> "android.log.write"
         "StopWatchAction" -> "android.stopwatch.start"
         "DisableCategoryAction" -> "core.category.set_enabled"
