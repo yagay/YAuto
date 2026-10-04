@@ -264,6 +264,31 @@ class YAutoAccessibilityService : AccessibilityService() {
             }
             .toList()
 
+
+    internal fun scrollToLocation(location: String): Boolean {
+        val action = when (location) {
+            "top", "top_force", "backward" -> AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
+            "bottom", "bottom_force", "forward" -> AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+            else -> return false
+        }
+        val root = rootInActiveWindow ?: return false
+        val node = walk(root).firstOrNull {
+            it.isScrollable && it.actionList.any { actionInfo -> actionInfo.id == action }
+        } ?: return false
+        val repeat = when (location) {
+            "top_force", "bottom_force" -> 64
+            "top", "bottom" -> 16
+            else -> 1
+        }
+        var changed = false
+        repeat(repeat) {
+            val ok = node.performAction(action)
+            if (!ok) return@repeat
+            changed = true
+        }
+        return changed
+    }
+
     internal fun scroll(direction: String): Boolean {
         val action = when (direction) {
             "forward", "down", "right" -> AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
