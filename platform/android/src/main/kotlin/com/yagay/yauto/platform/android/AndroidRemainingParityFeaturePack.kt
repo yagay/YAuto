@@ -179,15 +179,6 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
                 )
             )
         }
-
-        registerBooleanPair(
-            registry,
-            "android.state.mobile_data_enabled",
-            "android.condition.mobile_data_enabled",
-            "Mobile data enabled",
-            FeatureCategory.NETWORK,
-            setOf(AccessRequirement.PHONE),
-        ) { _ -> runCatching { telephony.isDataEnabled }.getOrDefault(false) }
     }
 
     private fun registerTelephony(registry: FeatureRegistry) {
@@ -397,7 +388,6 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
                             "package" to ConfigValue.StringValue(item.packageName.orEmpty()),
                             "exported" to ConfigValue.BooleanValue(item.exported),
                             "enabled" to ConfigValue.BooleanValue(item.enabled),
-                            "permission" to ConfigValue.StringValue(item.permission.orEmpty()),
                         )
                     )
                 })
