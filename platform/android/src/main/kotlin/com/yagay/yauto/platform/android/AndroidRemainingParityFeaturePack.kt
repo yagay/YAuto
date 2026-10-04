@@ -13,7 +13,10 @@ import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
+import android.media.AudioFormat
 import android.media.AudioManager
+import android.media.AudioRecord
+import android.media.MediaRecorder
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
@@ -41,6 +44,8 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
+import kotlin.math.log10
+import kotlin.math.sqrt
 
 class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.remaining_parity"
@@ -59,6 +64,7 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
         registerDeviceQueries(registry)
         registerPackageQueries(registry)
         registerAudioAndTorch(registry)
+        registerSoundLevel(registry)
         registerSensorPrivacy(registry)
         registerExternalIntegration(registry)
     }
@@ -477,6 +483,91 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
         )
         registry.registerState(state, evaluator)
         registry.registerCondition(state.copy(id = FeatureId("android.condition.torch_on"), kind = FeatureKind.CONDITION), evaluator)
+    }
+
+    private fun registerSoundLevel(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.audio.sound_level.measure"), FeatureKind.ACTION,
+                "Measure sound level", "Sample the microphone and return RMS, peak and relative dBFS level",
+                FeatureCategory.AUDIO,
+                fields = listOf(
+                    FieldSchema.Duration("durationMs", "Measurement duration"),
+                    FieldSchema.Choice("sampleRate", "Sample rate", options = listOf("8000", "16000", "44100")),
+                    FieldSchema.Variable("resultVariable", "Store level object", true),
+                ),
+                accessRequirements = setOf(AccessRequirement.RECORD_AUDIO),
+                keywords = setOf("sound level", "noise", "microphone", "db", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "record_audio_permission"))
+            }
+            val durationMs = (feature.config["durationMs"].numberOrNull() ?: 1_000.0).toLong().coerceIn(100L, 10_000L)
+            val sampleRate = feature.config.string("sampleRate", "16000").toIntOrNull()?.takeIf { it in setOf(8000, 16000, 44100) } ?: 16000
+            val output = withContext(Dispatchers.IO) {
+                runCatching { measureSoundLevel(sampleRate, durationMs) }.getOrNull()
+            } ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "audio_record"))
+            store(feature, ctx, output)
+        }
+    }
+
+    @Suppress("MissingPermission")
+    private fun measureSoundLevel(sampleRate: Int, durationMs: Long): ConfigValue.ObjectValue {
+        val min = AudioRecord.getMinBufferSize(
+            sampleRate,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+        ).coerceAtLeast(sampleRate / 2)
+        val recorder = AudioRecord.Builder()
+            .setAudioSource(MediaRecorder.AudioSource.DEFAULT)
+            .setAudioFormat(
+                AudioFormat.Builder()
+                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                    .setSampleRate(sampleRate)
+                    .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                    .build()
+            )
+            .setBufferSizeInBytes(min * 2)
+            .build()
+        if (recorder.state != AudioRecord.STATE_INITIALIZED) {
+            recorder.release()
+            error("AudioRecord initialization failed")
+        }
+        val buffer = ShortArray(min)
+        var sumSquares = 0.0
+        var peak = 0
+        var count = 0L
+        val end = android.os.SystemClock.elapsedRealtime() + durationMs
+        try {
+            recorder.startRecording()
+            while (android.os.SystemClock.elapsedRealtime() < end) {
+                val read = recorder.read(buffer, 0, buffer.size)
+                if (read <= 0) continue
+                for (index in 0 until read) {
+                    val value = buffer[index].toInt()
+                    val abs = kotlin.math.abs(value)
+                    if (abs > peak) peak = abs
+                    sumSquares += value.toDouble() * value.toDouble()
+                }
+                count += read
+            }
+        } finally {
+            runCatching { recorder.stop() }
+            recorder.release()
+        }
+        val rms = if (count > 0) sqrt(sumSquares / count) else 0.0
+        val dbfs = if (rms > 0.0) 20.0 * log10(rms / Short.MAX_VALUE.toDouble()) else -120.0
+        return ConfigValue.ObjectValue(
+            mapOf(
+                "rms" to ConfigValue.NumberValue(rms),
+                "peak" to ConfigValue.NumberValue(peak.toDouble()),
+                "dbfs" to ConfigValue.NumberValue(dbfs.coerceAtLeast(-120.0)),
+                "sampleCount" to ConfigValue.NumberValue(count.toDouble()),
+                "sampleRate" to ConfigValue.NumberValue(sampleRate.toDouble()),
+            )
+        )
     }
 
     private fun registerSensorPrivacy(registry: FeatureRegistry) {
