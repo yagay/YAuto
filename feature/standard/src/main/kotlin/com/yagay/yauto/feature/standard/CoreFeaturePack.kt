@@ -38,6 +38,17 @@ class CoreFeaturePack : FeaturePack {
         },
         actionFeature(
             FeatureDescriptor(
+                id = FeatureId("core.noop"),
+                kind = FeatureKind.ACTION,
+                title = "No operation",
+                description = "Continue without performing an operation",
+                category = FeatureCategory.CORE,
+                fields = emptyList(),
+                keywords = setOf("noop", "empty", "continue"),
+            )
+        ) { _, _ -> ActionExecutionResult(true) },
+        actionFeature(
+            FeatureDescriptor(
                 id = FeatureId("core.delay"),
                 kind = FeatureKind.ACTION,
                 title = "Delay",
