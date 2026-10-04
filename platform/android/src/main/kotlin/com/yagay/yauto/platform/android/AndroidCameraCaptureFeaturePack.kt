@@ -303,7 +303,7 @@ private object CameraVideoRuntime {
         }
 
     suspend fun stop(): String = withContext(Dispatchers.Main.immediate) {
-        if (!recording.get()) return@withContext path
+        if (!recording.get()) return@withContext ""
         val saved = path
         val stopped = runCatching { recorder?.stop(); true }.getOrDefault(false)
         cleanup(deleteBroken = !stopped)
@@ -321,7 +321,7 @@ private object CameraVideoRuntime {
         camera = null
         runCatching { texture?.release() }
         texture = null
-        path = if (deleteBroken) "" else brokenPath
+        path = ""
         recording.set(false)
         if (deleteBroken && brokenPath.isNotBlank()) runCatching { File(brokenPath).delete() }
     }
