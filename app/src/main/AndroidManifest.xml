@@ -46,6 +46,21 @@
     <permission android:name="com.yagay.yauto.permission.SYSTEM_BRIDGE" android:protectionLevel="signature" />
     <uses-permission android:name="com.yagay.yauto.permission.SYSTEM_BRIDGE" />
 
+    <queries>
+        <intent>
+            <action android:name="com.twofortyfouram.locale.intent.action.FIRE_SETTING" />
+        </intent>
+        <intent>
+            <action android:name="com.twofortyfouram.locale.intent.action.QUERY_CONDITION" />
+        </intent>
+        <intent>
+            <action android:name="com.twofortyfouram.locale.intent.action.EDIT_SETTING" />
+        </intent>
+        <intent>
+            <action android:name="com.twofortyfouram.locale.intent.action.EDIT_CONDITION" />
+        </intent>
+    </queries>
+
     <application
         android:name=".YAutoApplication"
         android:allowBackup="true"
