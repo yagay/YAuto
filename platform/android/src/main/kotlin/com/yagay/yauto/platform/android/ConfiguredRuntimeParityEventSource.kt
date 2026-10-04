@@ -141,6 +141,7 @@ class ConfiguredRuntimeParityEventSource(
                         "seconds" to ConfigValue.NumberValue(elapsed / 1_000.0),
                         "thresholdSeconds" to ConfigValue.NumberValue(thresholdMs / 1_000.0),
                         "from" to ConfigValue.StringValue(from),
+                        "ruleKey" to ConfigValue.StringValue(screenRuleKey(feature)),
                     ),
                     source = id,
                 )
