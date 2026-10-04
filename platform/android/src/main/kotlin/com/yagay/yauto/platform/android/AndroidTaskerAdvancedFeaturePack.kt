@@ -424,8 +424,8 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
         is IntArray -> ConfigValue.ListValue(value.map { ConfigValue.NumberValue(it.toDouble()) })
         is LongArray -> ConfigValue.ListValue(value.map { ConfigValue.NumberValue(it.toDouble()) })
         is FloatArray -> ConfigValue.ListValue(value.map { ConfigValue.NumberValue(it.toDouble()) })
-        is DoubleArray -> ConfigValue.ListValue(value.map(ConfigValue::NumberValue))
-        is BooleanArray -> ConfigValue.ListValue(value.map(ConfigValue::BooleanValue))
+        is DoubleArray -> ConfigValue.ListValue(value.map { ConfigValue.NumberValue(it) })
+        is BooleanArray -> ConfigValue.ListValue(value.map { ConfigValue.BooleanValue(it) })
         else -> ConfigValue.StringValue(value.toString())
     }
 
