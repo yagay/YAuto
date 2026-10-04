@@ -14,6 +14,7 @@ object StandardFeaturePacks {
         persistentVariables: PersistentVariableControl = UnsupportedPersistentVariableControl,
     ): List<FeaturePack> = listOf(
         CoreFeaturePack(),
+        ExpressionFeaturePack(),
         AutomationControlFeaturePack(control),
         VariableFeaturePack(),
         VariableAdvancedFeaturePack(),
