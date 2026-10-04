@@ -200,6 +200,8 @@ private fun nodeLabel(
         TextR.string.tree_call_format,
         flows.firstOrNull { it.id == node.flowId }?.name ?: node.flowId.value,
     )
+    is ActionNode.Label -> stringResource(TextR.string.tree_label_format, node.name)
+    is ActionNode.Goto -> stringResource(TextR.string.tree_goto_format, node.label)
     is ActionNode.Return -> stringResource(TextR.string.tree_return_value)
     is ActionNode.Break -> stringResource(TextR.string.tree_break)
     is ActionNode.Continue -> stringResource(TextR.string.tree_continue)
@@ -458,6 +460,16 @@ private fun NodeDialog(
                         )
                         ConfigMapEditor(node.input) { draft = node.copy(input = it) }
                     }
+                    is ActionNode.Label -> OutlinedTextField(
+                        node.name,
+                        { draft = node.copy(name = it) },
+                        label = { Text(stringResource(TextR.string.tree_label_name)) },
+                    )
+                    is ActionNode.Goto -> OutlinedTextField(
+                        node.label,
+                        { draft = node.copy(label = it) },
+                        label = { Text(stringResource(TextR.string.tree_goto_target)) },
+                    )
                     is ActionNode.Return -> TypedValueEditor(node.value) { draft = node.copy(value = it) }
                     is ActionNode.Action -> Text(stringResource(TextR.string.tree_missing_feature))
                     is ActionNode.Break -> Text(stringResource(TextR.string.tree_break_description))
