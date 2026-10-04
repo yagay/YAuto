@@ -87,7 +87,7 @@ internal fun executeJavaScript(script: String, input: String, timeoutMs: Long): 
         override fun makeContext(): Context = super.makeContext().apply {
             optimizationLevel = -1
             instructionObserverThreshold = 10_000
-            classShutter = ClassShutter { false }
+            setClassShutter(ClassShutter { false })
         }
 
         override fun observeInstructionCount(cx: Context, instructionCount: Int) {
