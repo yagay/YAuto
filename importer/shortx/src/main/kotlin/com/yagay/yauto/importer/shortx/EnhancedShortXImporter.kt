@@ -101,6 +101,10 @@ internal object ShortXFeatureSuggestions {
         "SendSMS" -> "android.sms.compose"
         "ShareContent" -> "android.share.text"
         "Delay" -> "core.delay"
+        "KillProcessByName" -> "android.process.kill_by_name"
+        "StartAppProcess", "StartAppProcessByPkg" -> "android.app.launch"
+        "ShowOverlayButton" -> "surface.overlay.show"
+        "HideOverlayButton" -> "surface.overlay.hide"
         else -> ShortXMappings.suggestedActionFeature(name)
     }
 
@@ -131,6 +135,10 @@ internal object ShortXFeatureSuggestions {
         "AccelerometerSensor", "LightSensor", "ProximitySensor", "SensorValueTrend" -> "android.event.sensor_value"
         "WifiConnectedTo", "WifiDisconnectedFrom", "WifiStatusChanged", "ConnectedWifiSignalLevelChanged" -> "android.event.wifi_changed"
         "VPNConnected", "VPNDisconnected" -> "android.event.network_changed"
+        "MethodHook" -> "android.event.lsposed_method_called"
+        "ActivityStarted" -> "android.event.window_changed"
+        "AppProcessStarted" -> "android.event.app_foreground"
+        "AppProcessRemoved" -> "android.event.app_background"
         else -> null
     }
 

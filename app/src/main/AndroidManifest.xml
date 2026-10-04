@@ -188,6 +188,14 @@
         </receiver>
 
         <receiver
+            android:name="com.yagay.yauto.platform.xposed.XposedHookEventReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.yagay.yauto.LSPOSED_HOOK_EVENT" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".ExternalCommandReceiver"
             android:exported="true">
             <intent-filter>
