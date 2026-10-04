@@ -88,14 +88,19 @@ class TaskerImporter : AutomationImporter {
                 val path = "profile[" + profileId + "].context[" + ci + "]"
                 val isEvent = context.tagName == "Event"
                 val raw = context.toCompactXml()
+                val matter = taskerMatterFeature(context, if (isEvent) "event" else "condition", raw)
                 val plugin = taskerPluginFeature(context, if (isEvent) "event" else "condition", raw)
-                val native = plugin ?: TaskerMappings.nativeContext(context, code, context.tagName, id, raw)
+                val native = matter ?: plugin ?: TaskerMappings.nativeContext(context, code, context.tagName, id, raw)
                 if (native != null) {
                     if (isEvent) events += native else states += native
                     trace += ImportTrace(
                         path,
                         native.typeId,
-                        if (plugin != null) "PLUGIN" else "MAPPED",
+                        when {
+                            matter != null -> "MATTER"
+                            plugin != null -> "PLUGIN"
+                            else -> "MAPPED"
+                        },
                         context.tagName + ":" + code,
                     )
                 } else {
@@ -374,8 +379,11 @@ class TaskerImporter : AutomationImporter {
         issues: MutableList<CompatibilityIssue>,
     ): ActionNode {
         val raw = action.toCompactXml()
+        val matterFeature = taskerMatterFeature(action, "action", raw)
         val pluginFeature = taskerPluginFeature(action, "action", raw)
-        val base: ActionNode = if (pluginFeature != null) {
+        val base: ActionNode = if (matterFeature != null) {
+            ActionNode.Action(NodeId(UUID.randomUUID().toString()), matterFeature)
+        } else if (pluginFeature != null) {
             ActionNode.Action(NodeId(UUID.randomUUID().toString()), pluginFeature)
         } else if (code == "130") {
             val targetName = TaskerMappings.performTaskTarget(action)
@@ -484,6 +492,88 @@ class TaskerImporter : AutomationImporter {
             }
         }
         return nodes.singleOrNull()
+    }
+
+    private fun taskerMatterFeature(
+        element: Element,
+        kind: String,
+        raw: String,
+    ): FeatureRef? {
+        val lower = raw.lowercase(Locale.ROOT)
+        if (
+            "matter_light" !in lower &&
+            "matterlight" !in lower &&
+            "mattdevi" !in lower
+        ) return null
+
+        val values = element.descendantsIncludingSelf().associate { node ->
+            val key = buildString {
+                append(node.tagName.lowercase(Locale.ROOT))
+                listOf("name", "key", "n", "sr").forEach { attr ->
+                    if (node.hasAttribute(attr)) {
+                        append('|')
+                        append(node.getAttribute(attr).lowercase(Locale.ROOT))
+                    }
+                }
+            }
+            key to node.textContent.orEmpty().trim()
+        }
+
+        fun named(vararg tokens: String): String? =
+            values.entries.firstOrNull { (key, value) ->
+                value.isNotBlank() && tokens.any { token -> key.contains(token) }
+            }?.value
+
+        val device = named("deviceid", "device_id", "matterdevice", "mattdevi", "device")
+            ?: element.stringArg(0)
+            ?: return null
+        val stateRaw = named("set", "onoff", "state", "command")
+            ?: element.stringArg(1).orEmpty()
+        val state = when (stateRaw.trim().lowercase(Locale.ROOT)) {
+            "on", "1", "true" -> "on"
+            "off", "0", "false" -> "off"
+            else -> "toggle"
+        }
+        val color = named("colour", "color", "rgb")
+            ?: element.stringArg(2).orEmpty()
+        val brightness = named("brightness", "bright", "level")
+            ?.filter { it.isDigit() || it == '.' || it == '-' }
+            ?.toDoubleOrNull()
+            ?: element.stringArg(3)?.toDoubleOrNull()
+
+        val target = when (kind) {
+            "action" -> "android.matter.light"
+            "condition" -> "android.condition.matter_light"
+            else -> return null
+        }
+        return sourceFeature(
+            target,
+            id,
+            "TaskerMatterLight",
+            raw,
+            extra = buildMap {
+                put("backend", ConfigValue.StringValue("chip_tool"))
+                put("deviceId", ConfigValue.StringValue(device))
+                put("endpointId", ConfigValue.NumberValue(1.0))
+                if (kind == "action") {
+                    put("set", ConfigValue.StringValue(state))
+                    if (color.isNotBlank()) put("color", ConfigValue.StringValue(color))
+                    brightness?.coerceIn(0.0, 100.0)?.let {
+                        put("brightness", ConfigValue.NumberValue(it))
+                    }
+                } else {
+                    put("expected", ConfigValue.StringValue(if (state == "off") "off" else "on"))
+                }
+            },
+        )
+    }
+
+    private fun Element.descendantsIncludingSelf(): List<Element> = buildList {
+        fun walk(node: Element) {
+            add(node)
+            node.elementChildren().forEach(::walk)
+        }
+        walk(this@descendantsIncludingSelf)
     }
 
     private fun taskerPluginFeature(
