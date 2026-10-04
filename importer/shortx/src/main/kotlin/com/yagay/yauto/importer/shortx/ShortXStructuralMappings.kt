@@ -34,6 +34,8 @@ internal object ShortXStructuralMappings {
             )
             "IfThenElse" -> convertIf(fields, predicate, action, path)
             "ForEach" -> convertForEach(fields, action, path)
+            "ForEachPkgSet" -> convertForEachPackageSet(fields, action, path)
+            "SwitchCase" -> convertSwitchCases(fields, predicate, action, path)
             "WaitUtilConditionMatch" -> convertWaitUntil(fields, predicate, path)
             "WhileLoop" -> convertWhile(fields, predicate, action, path)
             else -> null
@@ -90,6 +92,54 @@ internal object ShortXStructuralMappings {
             variableName = "shortxItem",
             actions = children,
         )
+    }
+
+
+    private fun convertForEachPackageSet(
+        fields: ProtoFields,
+        action: (AnyStub, String) -> ActionNode,
+        path: String,
+    ): ActionNode? {
+        val source = fields.string(1)?.trim().orEmpty()
+        if (source.isBlank()) return null
+        val children = fields.allBytes(2).mapIndexed { index, bytes ->
+            action(decodeAny(bytes), path + ".foreach_pkg.action[" + index + "]")
+        }
+        return ActionNode.ForEach(
+            id = nodeId(),
+            variableName = "shortxPackage",
+            actions = children,
+            sourceVariable = source,
+        )
+    }
+
+    private fun convertSwitchCases(
+        fields: ProtoFields,
+        predicate: (AnyStub, String) -> PredicateNode,
+        action: (AnyStub, String) -> ActionNode,
+        path: String,
+    ): ActionNode? {
+        val cases = fields.allBytes(1).map(::ProtoFields)
+        if (cases.isEmpty()) return null
+        // A break-after-case ShortX switch is equivalent to a nested YAuto if/else chain.
+        if (cases.any { (it.varint(9) ?: 0L) != 0L || it.varint(8) == 1L || it.varint(7) != 1L }) return null
+        val defaultActions = fields.bytes(2)?.let(::ProtoFields)?.allBytes(4).orEmpty()
+            .mapIndexed { index, bytes -> action(decodeAny(bytes), path + ".switch.default[" + index + "]") }
+
+        var elseBranch: List<ActionNode> = defaultActions
+        for (index in cases.indices.reversed()) {
+            val item = cases[index]
+            val conditions = item.allBytes(1).mapIndexed { condIndex, bytes ->
+                predicate(decodeAny(bytes), path + ".switch.case[" + index + "].condition[" + condIndex + "]")
+            }
+            if (conditions.isEmpty()) return null
+            val combined = combine(conditions, item.varint(2) ?: 0L) ?: return null
+            val actions = item.allBytes(4).mapIndexed { actionIndex, bytes ->
+                action(decodeAny(bytes), path + ".switch.case[" + index + "].action[" + actionIndex + "]")
+            }
+            elseBranch = listOf(ActionNode.If(nodeId(), combined, actions, elseBranch))
+        }
+        return elseBranch.singleOrNull()
     }
 
     private fun convertWaitUntil(
