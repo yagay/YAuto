@@ -168,7 +168,7 @@ class ShortXImporter : AutomationImporter {
                     "function[" + index + "]",
                     shortXFlowId("function", function.id).value,
                     "IMPORTED",
-                    function.name,
+                    userText("import.trace.shortx_function", function.name),
                 )
             }
             content.directActions.forEachIndexed { index, direct ->
@@ -189,7 +189,7 @@ class ShortXImporter : AutomationImporter {
                     "directAction[" + index + "]",
                     shortXFlowId("da", direct.id).value,
                     "IMPORTED",
-                    direct.title,
+                    userText("import.trace.shortx_direct_action", direct.title),
                 )
             }
         }
