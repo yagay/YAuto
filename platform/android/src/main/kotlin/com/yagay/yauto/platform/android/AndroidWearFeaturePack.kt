@@ -60,9 +60,9 @@ class YAutoWearableListenerService : WearableListenerService() {
                             put("nodeId", ConfigValue.StringValue(item.uri.host.orEmpty()))
                             put("path", ConfigValue.StringValue(item.uri.path.orEmpty()))
                             put("uri", ConfigValue.StringValue(item.uri.toString()))
-                            dataMap?.keySet()?.forEach { key ->
-                                val value = dataMap.get(key)
-                                put("data." + key, wearValue(value))
+                            val bundle = dataMap?.toBundle()
+                            bundle?.keySet()?.forEach { key ->
+                                put("data." + key, wearValue(bundle.get(key)))
                             }
                         },
                         source = "wear.data_layer",
