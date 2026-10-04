@@ -176,6 +176,7 @@ class AndroidExtendedStateFeaturePack(private val reader: AndroidExtendedStateRe
         booleanPair(registry, "next_alarm_set", "Next alarm is set", FeatureCategory.SYSTEM, reader::nextAlarmSet)
         booleanPair(registry, "network_validated", "Network validated", FeatureCategory.NETWORK, reader::networkValidated)
         booleanPair(registry, "network_metered", "Metered network", FeatureCategory.NETWORK, reader::networkMetered)
+        booleanPair(registry, "network_roaming", "Network roaming", FeatureCategory.NETWORK, reader::networkRoaming)
         booleanPair(registry, "network_internet", "Network has internet capability", FeatureCategory.NETWORK, reader::networkInternet)
         booleanPair(registry, "network_restricted", "Restricted network", FeatureCategory.NETWORK, reader::networkRestricted)
         booleanPair(registry, "network_suspended", "Suspended network", FeatureCategory.NETWORK, reader::networkSuspended)
