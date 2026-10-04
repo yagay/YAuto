@@ -105,6 +105,12 @@ internal object ShortXFeatureSuggestions {
         "StartAppProcess", "StartAppProcessByPkg" -> "android.app.launch"
         "ShowOverlayButton" -> "surface.overlay.show"
         "HideOverlayButton" -> "surface.overlay.hide"
+        "AreaScreenshot" -> "accessibility.screenshot.capture"
+        "DrawBoard", "ShowDrawBoard" -> "surface.draw_board.show"
+        "ShowPieMenu", "PieMenu" -> "surface.pie.show"
+        "ShowSidebar", "Sidebar" -> "surface.sidebar.show"
+        "ShowFloatButton", "FloatingButton" -> "surface.bubble.show"
+        "ExecuteMVEL" -> "expression.text.evaluate"
         else -> ShortXMappings.suggestedActionFeature(name)
     }
 
@@ -161,7 +167,8 @@ internal object ShortXFeatureSuggestions {
         "RequireWifiConnected", "RequireWifiDisconnected", "ConnectedWifiSignal" -> "android.condition.wifi_network"
         "RequireRingerMode" -> "android.condition.audio.ringer_mode"
         "ScreenStayAwake" -> "android.condition.stay_awake_while_charging"
-        "FlashlightIsOn" -> null // YAuto has a torch action but no reliable public torch-state condition yet.
+        "FlashlightIsOn" -> "android.condition.torch_on"
+        "MatchMVEL" -> "expression.condition"
         "IsInCall", "IsRinging" -> "android.condition.phone_call_state"
         "FoldAngle", "FoldAngleCondition", "HingeAngle" -> "android.condition.hinge_angle"
         "True" -> "core.boolean"
