@@ -98,7 +98,6 @@ class AndroidMatterFeaturePack(context: Context) : FeaturePack {
                         supportsVariables = true,
                     ),
                 ),
-                capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
                 implementationOptions = listOf(
                     FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
                     FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
@@ -148,7 +147,6 @@ class AndroidMatterFeaturePack(context: Context) : FeaturePack {
             "Query a Matter light On/Off state",
             FeatureCategory.DEVICE,
             fields = fields,
-            capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
             implementationOptions = listOf(
                 FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
                 FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
