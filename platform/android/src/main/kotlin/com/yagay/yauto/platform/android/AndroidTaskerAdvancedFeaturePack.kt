@@ -1,6 +1,9 @@
 package com.yagay.yauto.platform.android
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import bsh.Interpreter
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.FeatureRef
@@ -19,12 +22,14 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.tasker.advanced"
     private val context = context.applicationContext
     private val plugins = LocalePluginHost(this.context)
+    private val javaFunctions = TaskerJavaFunctionExecutor(this.context)
     private val scriptExecutor = Executors.newCachedThreadPool { runnable ->
         Thread(runnable, "YAuto-Script").apply { isDaemon = true }
     }
 
     override fun install(registry: FeatureRegistry) {
         registerBeanShell(registry)
+        registerJavaFunction(registry)
         registerMvel(registry)
         registerPluginAction(registry)
         registerPluginCondition(registry)
@@ -67,7 +72,27 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
                         runCatching { interpreter.set(name, configToJava(value)) }
                     }
                 }
-                interpreter.eval(script)
+                val value = interpreter.eval(script)
+                runCatching {
+                    interpreter.nameSpace.variableNames.orEmpty().forEach { name ->
+                        if (
+                            name !in setOf("context", "yautoContext", "variables", "tasker") &&
+                            JAVA_IDENTIFIER.matches(name)
+                        ) {
+                            val candidate = interpreter.get(name)
+                            if (
+                                candidate != null &&
+                                candidate !is String &&
+                                candidate !is Number &&
+                                candidate !is Boolean &&
+                                candidate !is Char
+                            ) {
+                                TaskerJavaObjectStore.put(ctx.executionId, name, candidate)
+                            }
+                        }
+                    }
+                }
+                value
             })
             val result = runCatching {
                 withContext(Dispatchers.IO) { future.get(timeout, TimeUnit.MILLISECONDS) }
@@ -87,6 +112,37 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
             }
             ActionExecutionResult(true, output)
         }
+    }
+
+    private fun registerJavaFunction(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("script.java_function"),
+                FeatureKind.ACTION,
+                "Tasker Java Function",
+                "Invoke an Android/Java method while preserving Java object references across actions in the same execution",
+                FeatureCategory.SCRIPT,
+                fields = buildList {
+                    add(FieldSchema.Text("resultTarget", "Result variable / Java object name"))
+                    add(FieldSchema.Text("target", "Object or class", true))
+                    add(FieldSchema.Text("signature", "Function signature", true))
+                    repeat(10) { index -> add(FieldSchema.Text("arg" + index, "Argument " + (index + 1))) }
+                },
+                fieldBehaviors = buildMap {
+                    put("resultTarget", FieldBehavior(supportsVariables = true))
+                    put("target", FieldBehavior(supportsVariables = true))
+                    put("signature", FieldBehavior(supportsVariables = true))
+                    repeat(10) { index ->
+                        put(
+                            "arg" + index,
+                            FieldBehavior(supportsVariables = true, advanced = index >= 4),
+                        )
+                    }
+                },
+                keywords = setOf("java function", "java object", "reflection", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx -> javaFunctions.execute(feature, ctx) }
     }
 
     private fun registerMvel(registry: FeatureRegistry) {
@@ -429,6 +485,51 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
             is ConfigValue.BooleanValue -> value.value.toString()
             is ConfigValue.ListValue -> value.value.joinToString(",") { configAsString(it) }
             is ConfigValue.ObjectValue -> value.value.toString()
+        }
+    }
+
+    private inner class ScriptTaskerBridge(
+        private val ctx: FeatureExecutionContext,
+    ) {
+        fun getVariable(name: String): String =
+            ctx.variables.get(normalizeTaskerVariable(name))?.let(::configText).orEmpty()
+
+        fun setVariable(name: String, value: Any?) {
+            ctx.variables.set(normalizeTaskerVariable(name), javaToConfig(value))
+        }
+
+        fun getJavaVariable(name: String): Any? =
+            TaskerJavaObjectStore.get(ctx.executionId, name.trim())
+
+        fun setJavaVariable(name: String, value: Any?) {
+            TaskerJavaObjectStore.put(ctx.executionId, name.trim(), value)
+        }
+
+        fun showToast(text: Any?) {
+            val message = text?.toString().orEmpty()
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        fun logAndToast(text: Any?) {
+            showToast(text)
+        }
+    }
+
+    private fun normalizeTaskerVariable(name: String): String {
+        val value = name.trim()
+        return if (value.startsWith("%")) value else "%" + value
+    }
+
+    private fun configText(value: ConfigValue): String = when (value) {
+        ConfigValue.NullValue -> ""
+        is ConfigValue.StringValue -> value.value
+        is ConfigValue.NumberValue -> value.value.toString().removeSuffix(".0")
+        is ConfigValue.BooleanValue -> value.value.toString()
+        is ConfigValue.ListValue -> value.value.joinToString(",") { configText(it) }
+        is ConfigValue.ObjectValue -> value.value.entries.joinToString(",") {
+            it.key + "=" + configText(it.value)
         }
     }
 
