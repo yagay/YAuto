@@ -199,6 +199,11 @@ internal object ShortXFeatureSuggestions {
     }
 
     private fun fact(name: String): String? = when (name) {
+        "DeepLinkCall" -> "android.event.deep_link"
+        "BrowserIntercept" -> "android.event.browser_intercept"
+        "OnMenuActionTrigger" -> "android.event.menu_action"
+        "OnStartOp" -> "core.event.automation_started"
+        "OnFinishOp" -> "core.event.automation_finished"
         "APMStatusChanged" -> "android.event.airplane_mode_changed"
         "BTStatusChanged" -> "android.event.bluetooth_state"
         "BTConnectedTo", "BTDisconnectedFrom" -> "android.event.bluetooth_device_connection"
