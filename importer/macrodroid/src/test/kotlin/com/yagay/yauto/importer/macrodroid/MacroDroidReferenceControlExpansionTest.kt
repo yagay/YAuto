@@ -36,7 +36,7 @@ class MacroDroidReferenceControlExpansionTest {
                 "android.audio.microphone_mute.set",
                 "android.audio.speakerphone.set",
                 "android.audio.volume_ui.show",
-                "android.home.open",
+                "android.home.launch",
                 "accessibility.global_action",
                 "android.ime.picker.show",
             ),
