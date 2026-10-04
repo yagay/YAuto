@@ -229,6 +229,131 @@ class AutomationControlFeaturePack(
                 else -> true
             }
         },
+        actionFeature(
+            automationDescriptor(
+                "core.runtime.set_enabled",
+                FeatureKind.ACTION,
+                "Set YAuto runtime state",
+                "Enable, disable, or toggle automatic YAuto event execution",
+                fields = listOf(
+                    FieldSchema.Choice("mode", "Mode", true, listOf("enable", "disable", "toggle")),
+                    FieldSchema.Variable("resultVariable", "Store enabled state"),
+                ),
+                keywords = setOf("runtime", "master", "enable", "disable", "macrodroid"),
+                behaviors = mapOf("mode" to FieldBehavior(defaultValue = ConfigValue.StringValue("toggle"))),
+            )
+        ) { feature, context ->
+            val mode = when (feature.config.string("mode", "toggle").lowercase()) {
+                "enable" -> AutomationEnableMode.ENABLE
+                "disable" -> AutomationEnableMode.DISABLE
+                else -> AutomationEnableMode.TOGGLE
+            }
+            val result = control.setRuntimeEnabled(mode)
+            if (result.success) {
+                feature.config.string("resultVariable").trim().takeIf(String::isNotBlank)?.let {
+                    context.variables.set(it, result.value)
+                }
+            }
+            result
+        },
+        conditionFeature(
+            automationDescriptor(
+                "core.runtime.enabled",
+                FeatureKind.CONDITION,
+                "YAuto runtime enabled",
+                "Check the master automatic-execution state",
+                fields = listOf(FieldSchema.Toggle("value", "Enabled")),
+                keywords = setOf("runtime", "master", "enabled", "macrodroid"),
+            )
+        ) { feature, _ ->
+            val expected = (feature.config["value"] as? ConfigValue.BooleanValue)?.value ?: true
+            control.isRuntimeEnabled() == expected
+        },
+        eventFeature(
+            automationDescriptor(
+                "core.event.runtime_enabled_changed",
+                FeatureKind.EVENT,
+                "YAuto runtime state changed",
+                "Run when the master automatic-execution state changes",
+                fields = listOf(FieldSchema.Choice("state", "State", options = listOf("any", "enabled", "disabled"))),
+                keywords = setOf("runtime", "enabled", "disabled", "macrodroid"),
+            )
+        ) { feature, context ->
+            if (context.event.typeId != "core.event.runtime_enabled_changed") return@eventFeature false
+            val enabled = (context.event.payload["enabled"] as? ConfigValue.BooleanValue)?.value
+            when (feature.config.string("state", "any")) {
+                "enabled" -> enabled == true
+                "disabled" -> enabled == false
+                else -> true
+            }
+        },
+        actionFeature(
+            automationDescriptor(
+                "core.trigger.set_enabled",
+                FeatureKind.ACTION,
+                "Set automation trigger state",
+                "Enable, disable, or toggle matching activation triggers inside another automation",
+                fields = listOf(
+                    FieldSchema.Text("automation", "Automation ID or name", true),
+                    FieldSchema.Text("triggerType", "Trigger type / source type"),
+                    FieldSchema.Text("tag", "Trigger tag"),
+                    FieldSchema.Choice("mode", "Mode", true, listOf("enable", "disable", "toggle")),
+                    FieldSchema.Variable("resultVariable", "Store enabled state"),
+                ),
+                keywords = setOf("trigger", "enable", "disable", "macrodroid"),
+                behaviors = mapOf(
+                    "automation" to FieldBehavior(supportsVariables = true),
+                    "triggerType" to FieldBehavior(supportsVariables = true),
+                    "tag" to FieldBehavior(supportsVariables = true),
+                    "mode" to FieldBehavior(defaultValue = ConfigValue.StringValue("toggle")),
+                ),
+            )
+        ) { feature, context ->
+            val mode = when (feature.config.string("mode", "toggle").lowercase()) {
+                "enable" -> AutomationEnableMode.ENABLE
+                "disable" -> AutomationEnableMode.DISABLE
+                else -> AutomationEnableMode.TOGGLE
+            }
+            val result = control.setTriggerEnabled(
+                automation = feature.config.string("automation").resolveVariables(context.variables),
+                triggerType = feature.config.string("triggerType").resolveVariables(context.variables),
+                tag = feature.config.string("tag").resolveVariables(context.variables),
+                mode = mode,
+            )
+            if (result.success) {
+                feature.config.string("resultVariable").trim().takeIf(String::isNotBlank)?.let {
+                    context.variables.set(it, result.value)
+                }
+            }
+            result
+        },
+        conditionFeature(
+            automationDescriptor(
+                "core.trigger.enabled",
+                FeatureKind.CONDITION,
+                "Automation trigger enabled",
+                "Check whether a matching activation trigger is enabled",
+                fields = listOf(
+                    FieldSchema.Text("automation", "Automation ID or name", true),
+                    FieldSchema.Text("triggerType", "Trigger type / source type"),
+                    FieldSchema.Text("tag", "Trigger tag"),
+                    FieldSchema.Toggle("value", "Enabled"),
+                ),
+                keywords = setOf("trigger", "enabled", "macrodroid"),
+                behaviors = mapOf(
+                    "automation" to FieldBehavior(supportsVariables = true),
+                    "triggerType" to FieldBehavior(supportsVariables = true),
+                    "tag" to FieldBehavior(supportsVariables = true),
+                ),
+            )
+        ) { feature, context ->
+            val expected = (feature.config["value"] as? ConfigValue.BooleanValue)?.value ?: true
+            control.isTriggerEnabled(
+                automation = feature.config.string("automation").resolveVariables(context.variables),
+                triggerType = feature.config.string("triggerType").resolveVariables(context.variables),
+                tag = feature.config.string("tag").resolveVariables(context.variables),
+            ) == expected
+        },
         conditionFeature(
             automationDescriptor(
                 "core.automation.running",
