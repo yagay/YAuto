@@ -164,7 +164,7 @@ internal class TaskerJavaFunctionExecutor(private val context: Context) {
         value.toDoubleOrNull()?.let { return it }
         if (
             (value.startsWith('"') && value.endsWith('"')) ||
-            (value.startsWith(''') && value.endsWith('''))
+            (value.startsWith('\'') && value.endsWith('\''))
         ) return value.substring(1, value.length - 1)
         return value
     }
