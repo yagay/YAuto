@@ -65,6 +65,7 @@ object AndroidFeaturePacks {
         AndroidLegacyParityFeaturePack(context),
         AndroidMacroDroidParityFeaturePack(context),
         AndroidModeFeaturePack(context),
+        AndroidMatterFeaturePack(context),
         AndroidUsbFeaturePack(context),
         AndroidMediaDeviceFeaturePack(context),
         AndroidAudioFeaturePack(context),
