@@ -61,6 +61,7 @@ class YAutoAccessibilityService : AccessibilityService() {
             AccessibilityEvent.TYPE_VIEW_FOCUSED -> "focused"
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> "scrolled"
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> "content_changed"
+            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> "toast"
             else -> null
         } ?: return
 
@@ -70,6 +71,7 @@ class YAutoAccessibilityService : AccessibilityService() {
         val text = eventText.ifBlank { sourceText }.take(MAX_EVENT_TEXT)
         val description = source?.contentDescription?.toString().orEmpty().take(MAX_EVENT_TEXT)
         val viewId = source?.viewIdResourceName.orEmpty().take(MAX_VIEW_ID)
+        val bounds = Rect().also { rect -> source?.getBoundsInScreen(rect) }
         val screenText = if (kind == "content_changed") {
             screenText(includeDescriptions = true, unique = true, limit = EVENT_SCREEN_TEXT_NODE_LIMIT)
                 .take(MAX_SCREEN_TEXT)
@@ -85,6 +87,12 @@ class YAutoAccessibilityService : AccessibilityService() {
                 contentDescription = description,
                 viewId = viewId,
                 screenText = screenText,
+                left = bounds.left,
+                top = bounds.top,
+                right = bounds.right,
+                bottom = bounds.bottom,
+                centerX = if (source != null) bounds.centerX() else -1,
+                centerY = if (source != null) bounds.centerY() else -1,
             )
         )
     }
