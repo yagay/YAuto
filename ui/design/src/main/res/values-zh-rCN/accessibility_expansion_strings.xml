@@ -43,18 +43,14 @@
     <string name="feature_android_event_ui_focused_title">UI 元素已获得焦点</string>
     <string name="feature_android_event_ui_scrolled_title">UI 内容已滚动</string>
     <string name="feature_phrase_trigger_on_accessibility_ui_interaction_events_and_optionally_filter_app_text_content_description_or_view_id">在无障碍 UI 交互发生时触发，并可按应用、文本、内容描述或 View ID 过滤</string>
-    <string name="feature_phrase_app_package">应用 / 包名</string>
-    <string name="feature_phrase_text_match">文本匹配</string>
+<string name="feature_phrase_text_match">文本匹配</string>
     <string name="feature_phrase_text_pattern">文本 / 模式</string>
     <string name="feature_phrase_content_description_contains">内容描述包含</string>
     <string name="feature_phrase_view_id_contains">View ID 包含</string>
     <string name="feature_phrase_ignore_case">忽略大小写</string>
-    <string name="feature_phrase_any">任意</string>
-    <string name="feature_phrase_contains">包含</string>
+<string name="feature_phrase_contains">包含</string>
     <string name="feature_phrase_exact">完全匹配</string>
-    <string name="feature_phrase_regular_expression">正则表达式</string>
-
-    <string name="feature_android_event_screen_content_changed_title">屏幕内容匹配</string>
+<string name="feature_android_event_screen_content_changed_title">屏幕内容匹配</string>
     <string name="feature_android_event_screen_content_changed_description">当无障碍服务检测到屏幕内容变化并匹配文本或正则表达式时触发</string>
     <string name="feature_android_event_screen_content_changed_field_package">应用 / 包名</string>
     <string name="feature_android_event_screen_content_changed_field_mode">匹配方式</string>
