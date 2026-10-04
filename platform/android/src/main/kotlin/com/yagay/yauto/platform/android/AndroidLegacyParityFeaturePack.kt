@@ -29,6 +29,7 @@ class AndroidLegacyParityFeaturePack(context: Context) : FeaturePack {
         registerAssistant(registry)
         registerDemoMode(registry)
         registerSensorRead(registry)
+        registerSensorCondition(registry)
     }
 
     private fun registerCallLogClear(registry: FeatureRegistry) {
@@ -239,6 +240,61 @@ class AndroidLegacyParityFeaturePack(context: Context) : FeaturePack {
                     if (extras.isBlank()) "" else " " + extras,
             )
         }
+    }
+
+
+    private fun registerSensorCondition(registry: FeatureRegistry) {
+        val fields = listOf(
+            FieldSchema.Choice(
+                "sensor", "Sensor", true,
+                listOf(
+                    "light", "proximity", "accelerometer", "gyroscope", "magnetic_field",
+                    "pressure", "gravity", "linear_acceleration", "rotation_vector",
+                    "relative_humidity", "ambient_temperature",
+                ),
+            ),
+            FieldSchema.Number("valueIndex", "Value index", min = 0.0, max = 15.0),
+            FieldSchema.Choice("operator", "Operator", true, listOf("<", "<=", "==", ">=", ">")),
+            FieldSchema.Number("value", "Compare value", true),
+            FieldSchema.Number("tolerance", "Equality tolerance", min = 0.0),
+            FieldSchema.Duration("timeoutMs", "Sample timeout"),
+        )
+        val evaluator = ConditionEvaluator { feature, _ ->
+            val type = SENSOR_TYPES[feature.config.string("sensor")]
+                ?: return@ConditionEvaluator false
+            val sensor = sensors.getDefaultSensor(type) ?: return@ConditionEvaluator false
+            val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 2_000.0)
+                .toLong().coerceIn(100L, 30_000L)
+            val sample = withTimeoutOrNull(timeout) { readSensor(sensor) }
+                ?: return@ConditionEvaluator false
+            val index = (feature.config["valueIndex"].numberOrNull() ?: 0.0).toInt()
+            val actual = sample.values.getOrNull(index)?.toDouble() ?: return@ConditionEvaluator false
+            val expected = feature.config["value"].numberOrNull() ?: return@ConditionEvaluator false
+            val tolerance = feature.config["tolerance"].numberOrNull()?.coerceAtLeast(0.0) ?: 0.01
+            when (feature.config.string("operator", "==")) {
+                "<" -> actual < expected
+                "<=" -> actual <= expected
+                "==" -> kotlin.math.abs(actual - expected) <= tolerance
+                ">=" -> actual >= expected
+                ">" -> actual > expected
+                else -> false
+            }
+        }
+        val state = FeatureDescriptor(
+            FeatureId("android.state.sensor_value"),
+            FeatureKind.STATE,
+            "Sensor value",
+            "Sample an Android sensor and compare one value",
+            FeatureCategory.DEVICE,
+            fields = fields,
+            keywords = setOf("sensor", "light", "proximity", "value", "macrodroid"),
+            ownerPackId = id,
+        )
+        registry.registerState(state, evaluator)
+        registry.registerCondition(
+            state.copy(id = FeatureId("android.condition.sensor_value"), kind = FeatureKind.CONDITION),
+            evaluator,
+        )
     }
 
     private fun registerSensorRead(registry: FeatureRegistry) {
