@@ -78,6 +78,7 @@ class AutomationRuntimeService : Service() {
         registerSource("sound-level") { ConfiguredSoundLevelEventSource(this, appGraph.workspace) }
         registerSource("locale-plugin-events") { ConfiguredLocalePluginEventSource(this, appGraph.workspace) }
         registerSource("hinge-angle") { HingeAngleEventSource(this) }
+        registerSource("activity-recognition") { ActivityRecognitionEventSource(this) }
         registerSource("usage-foreground") {
             UsageStatsForegroundEventSource(
                 context = this,
