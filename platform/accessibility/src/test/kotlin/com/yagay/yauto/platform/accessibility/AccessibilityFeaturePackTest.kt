@@ -46,7 +46,7 @@ class AccessibilityFeaturePackTest {
     @Test
     fun `pack registers removable UI automation actions conditions and foreground features`() = runBlocking {
         val registry = FeatureRegistry().apply { install(AccessibilityFeaturePack()) }
-        assertEquals(17, registry.allDescriptors().count { it.ownerPackId == "accessibility.actions" })
+        assertEquals(53, registry.allDescriptors().count { it.ownerPackId == "accessibility.actions" })
         assertNotNull(registry.actionExecutor(AccessibilityOperations.CLICK_TEXT))
         assertNotNull(registry.actionExecutor(AccessibilityOperations.LONG_CLICK_TEXT))
         assertNotNull(registry.actionExecutor(AccessibilityOperations.INPUT_TEXT_VIEW_ID))
