@@ -188,7 +188,9 @@ class MacroDroidImporter(
                 continue
             }
 
-            if (sourceType == "IfConditionAction" && obj.bool("m_isDisabled") != true) {
+            if (sourceType in setOf("IfConditionAction", "IfConfirmedThenAction") &&
+                obj.bool("m_isDisabled") != true
+            ) {
                 val parsed = parseConditional(items, index, parentPath, issues, blockAliases)
                 if (parsed != null) {
                     out += parsed.node
@@ -235,7 +237,7 @@ class MacroDroidImporter(
                         NodeId(UUID.randomUUID().toString()),
                         FeatureRef("core.noop"),
                     )
-                "ElseAction", "ElseIfConditionAction", "EndIfAction", "EndLoopAction" -> {
+                "ElseAction", "ElseIfConditionAction", "ElseIfConfirmedThenAction", "EndIfAction", "EndLoopAction" -> {
                     // Stray branch markers are preserved instead of being silently discarded.
                     out += compatibilityAction(item, path, sourceType, issues)
                 }
@@ -382,7 +384,7 @@ class MacroDroidImporter(
         blockAliases: Map<String, FlowId>,
     ): ParsedConditional? {
         val first = items.getOrNull(startIndex) as? JsonObject ?: return null
-        val firstPredicate = predicateFromConstraints(
+        val firstPredicate = predicateForConditionalMarker(
             first,
             parentPath + ".action[" + startIndex + "].condition",
             issues,
@@ -399,7 +401,7 @@ class MacroDroidImporter(
             val obj = items[index] as? JsonObject
             val type = obj?.string("m_classType", "classType", "type").orEmpty()
             when (type) {
-                "IfConditionAction" -> depth++
+                "IfConditionAction", "IfConfirmedThenAction" -> depth++
                 "EndIfAction" -> {
                     if (depth == 0) {
                         segments += ConditionalSegment(segmentMarker, segmentStart, index)
@@ -408,7 +410,7 @@ class MacroDroidImporter(
                     }
                     depth--
                 }
-                "ElseAction", "ElseIfConditionAction" -> if (depth == 0) {
+                "ElseAction", "ElseIfConditionAction", "ElseIfConfirmedThenAction" -> if (depth == 0) {
                     segments += ConditionalSegment(segmentMarker, segmentStart, index)
                     segmentMarker = obj
                     segmentStart = index + 1
@@ -431,7 +433,7 @@ class MacroDroidImporter(
             val markerType = marker?.string("m_classType", "classType", "type").orEmpty()
             when {
                 markerType == "ElseAction" -> elseBranch = actions
-                markerType == "IfConditionAction" -> {
+                markerType == "IfConditionAction" || markerType == "IfConfirmedThenAction" -> {
                     elseBranch = listOf(
                         ActionNode.If(
                             NodeId(UUID.randomUUID().toString()),
@@ -441,8 +443,8 @@ class MacroDroidImporter(
                         )
                     )
                 }
-                markerType == "ElseIfConditionAction" -> {
-                    val predicate = predicateFromConstraints(
+                markerType == "ElseIfConditionAction" || markerType == "ElseIfConfirmedThenAction" -> {
+                    val predicate = predicateForConditionalMarker(
                         marker ?: return null,
                         parentPath + ".if[" + startIndex + "].elseif[" + segmentIndex + "]",
                         issues,
@@ -507,6 +509,40 @@ class MacroDroidImporter(
             predicate,
             listOf(base),
         )
+    }
+
+    private fun predicateForConditionalMarker(
+        obj: JsonObject,
+        path: String,
+        issues: MutableList<CompatibilityIssue>,
+    ): PredicateNode? {
+        return when (obj.string("m_classType", "classType", "type")) {
+            "IfConfirmedThenAction", "ElseIfConfirmedThenAction" -> {
+                val message = obj.string("m_message", "message", "m_messageText", "messageText").orEmpty()
+                val title = obj.string("m_title", "title", "m_titleText", "titleText").orEmpty()
+                if (message.isBlank() && title.isBlank()) return null
+                PredicateNode.Condition(
+                    FeatureRef(
+                        typeId = "android.condition.user_confirm",
+                        config = buildMap {
+                            put("title", ConfigValue.StringValue(title))
+                            put("message", ConfigValue.StringValue(message))
+                            put("positive", ConfigValue.StringValue("OK"))
+                            put("negative", ConfigValue.StringValue("Cancel"))
+                            obj.number("m_timeoutDelay", "timeoutDelay")?.takeIf { it > 0.0 }?.let {
+                                put("timeoutMs", ConfigValue.NumberValue(it * 1_000.0))
+                            }
+                            put("source.importer", ConfigValue.StringValue(id))
+                            put("source.type", ConfigValue.StringValue(
+                                obj.string("m_classType", "classType", "type").orEmpty()
+                            ))
+                            put("source.raw", ConfigValue.StringValue(obj.toString()))
+                        },
+                    )
+                )
+            }
+            else -> predicateFromConstraints(obj, path, issues)
+        }
     }
 
     private fun predicateFromConstraints(
