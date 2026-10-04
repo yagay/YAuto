@@ -110,6 +110,43 @@ class AutomationRuntimeService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_REFRESH_LOCALIZED_SURFACES) { if (!promoteToForeground()) { stopSelf(); return START_NOT_STICKY }; return START_STICKY }
+        if (intent?.action == ACTION_SHARE_DISPATCH) {
+            val appGraph = graph ?: runCatching { (application as YAutoApplication).graph }.getOrNull()
+            if (appGraph != null) {
+                val dispatcher = RuntimeEventDispatcher(appGraph, scope)
+                val text = intent.getStringExtra(EXTRA_SHARE_TEXT).orEmpty()
+                val subject = intent.getStringExtra(EXTRA_SHARE_SUBJECT).orEmpty()
+                val mimeType = intent.getStringExtra(EXTRA_SHARE_MIME).orEmpty()
+                val uris = intent.getStringArrayListExtra(EXTRA_SHARE_URIS).orEmpty()
+                if (text.isNotBlank() || subject.isNotBlank()) {
+                    dispatcher.dispatch(
+                        RuntimeEvent(
+                            "android.event.share_text_received",
+                            mapOf(
+                                "text" to ConfigValue.StringValue(text),
+                                "subject" to ConfigValue.StringValue(subject),
+                                "mimeType" to ConfigValue.StringValue(mimeType),
+                            ),
+                            source = "android.share",
+                        )
+                    )
+                }
+                if (uris.isNotEmpty()) {
+                    dispatcher.dispatch(
+                        RuntimeEvent(
+                            "android.event.share_file_received",
+                            mapOf(
+                                "mimeType" to ConfigValue.StringValue(mimeType),
+                                "count" to ConfigValue.NumberValue(uris.size.toDouble()),
+                                "uris" to ConfigValue.ListValue(uris.map(ConfigValue::StringValue)),
+                            ),
+                            source = "android.share",
+                        )
+                    )
+                }
+            }
+            return START_STICKY
+        }
         if (intent?.getBooleanExtra("boot", false) == true) runCatching { (application as YAutoApplication).graph }.onFailure { StartupFailureRecorder.record(this, "runtime:boot-graph", it) }.getOrNull()?.let { RuntimeEventDispatcher(it, scope).dispatch(RuntimeEvent("android.event.boot", source = "android.boot")) }
         return START_STICKY
     }
@@ -140,7 +177,40 @@ class AutomationRuntimeService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(android.R.drawable.ic_popup_sync).setContentTitle(localizedContext.getString(TextR.string.runtime_notification_title)).setContentText(localizedContext.getString(TextR.string.runtime_notification_text)).setOngoing(true).setOnlyAlertOnce(true).build()
     }
     companion object {
-        const val ACTION_REFRESH_LOCALIZED_SURFACES = "com.yagay.yauto.action.REFRESH_LOCALIZED_SURFACES"; private const val CHANNEL_ID = "yauto_runtime"; private const val NOTIFICATION_ID = 1001; private const val TAG = "YAutoRuntime"
-        fun start(context: Context, boot: Boolean = false): Boolean = runCatching { ContextCompat.startForegroundService(context, Intent(context, AutomationRuntimeService::class.java).putExtra("boot", boot)); true }.getOrElse { Log.e(TAG, "Unable to start automation runtime service", it); StartupFailureRecorder.record(context, "runtime:start", it); false }
+        const val ACTION_REFRESH_LOCALIZED_SURFACES = "com.yagay.yauto.action.REFRESH_LOCALIZED_SURFACES"
+        const val ACTION_SHARE_DISPATCH = "com.yagay.yauto.action.SHARE_DISPATCH"
+        private const val EXTRA_SHARE_TEXT = "shareText"
+        private const val EXTRA_SHARE_SUBJECT = "shareSubject"
+        private const val EXTRA_SHARE_MIME = "shareMime"
+        private const val EXTRA_SHARE_URIS = "shareUris"
+        private const val CHANNEL_ID = "yauto_runtime"
+        private const val NOTIFICATION_ID = 1001
+        private const val TAG = "YAutoRuntime"
+
+        fun start(context: Context, boot: Boolean = false): Boolean = runCatching {
+            ContextCompat.startForegroundService(context, Intent(context, AutomationRuntimeService::class.java).putExtra("boot", boot))
+            true
+        }.getOrElse {
+            Log.e(TAG, "Unable to start automation runtime service", it)
+            StartupFailureRecorder.record(context, "runtime:start", it)
+            false
+        }
+
+        fun startShareDispatch(context: Context, text: String, subject: String, mimeType: String, uris: List<String>): Boolean = runCatching {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, AutomationRuntimeService::class.java)
+                    .setAction(ACTION_SHARE_DISPATCH)
+                    .putExtra(EXTRA_SHARE_TEXT, text)
+                    .putExtra(EXTRA_SHARE_SUBJECT, subject)
+                    .putExtra(EXTRA_SHARE_MIME, mimeType)
+                    .putStringArrayListExtra(EXTRA_SHARE_URIS, ArrayList(uris)),
+            )
+            true
+        }.getOrElse {
+            Log.e(TAG, "Unable to dispatch share trigger", it)
+            StartupFailureRecorder.record(context, "runtime:share-dispatch", it)
+            false
+        }
     }
 }
