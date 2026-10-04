@@ -87,12 +87,24 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.audio.microphone_mute.set"), FeatureKind.ACTION, "Microphone mute",
                 "Mute or unmute the Android microphone through AudioManager",
                 FeatureCategory.AUDIO,
-                fields = listOf(FieldSchema.Toggle("enabled", "Muted")),
+                fields = listOf(
+                    FieldSchema.Toggle("enabled", "Muted"),
+                    FieldSchema.Choice("mode", "Microphone operation", options = listOf("set", "mute", "unmute", "toggle")),
+                ),
                 keywords = setOf("microphone", "mic", "mute"), ownerPackId = id,
             )
         ) { feature, _ ->
-            runCatching { @Suppress("DEPRECATION") audio.isMicrophoneMute = feature.config.boolean("enabled", true); ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
+            @Suppress("DEPRECATION")
+            val muted = when (feature.config.string("mode", "set")) {
+                "mute" -> true
+                "unmute" -> false
+                "toggle" -> !audio.isMicrophoneMute
+                else -> feature.config.boolean("enabled", true)
+            }
+            runCatching {
+                @Suppress("DEPRECATION") audio.isMicrophoneMute = muted
+                ActionExecutionResult(true, ConfigValue.BooleanValue(muted))
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -100,12 +112,24 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.audio.speakerphone.set"), FeatureKind.ACTION, "Speakerphone",
                 "Turn communication speakerphone routing on or off",
                 FeatureCategory.AUDIO,
-                fields = listOf(FieldSchema.Toggle("enabled", "Speakerphone on")),
+                fields = listOf(
+                    FieldSchema.Toggle("enabled", "Speakerphone on"),
+                    FieldSchema.Choice("mode", "Speakerphone operation", options = listOf("set", "enable", "disable", "toggle")),
+                ),
                 keywords = setOf("speaker", "speakerphone"), ownerPackId = id,
             )
         ) { feature, _ ->
-            runCatching { @Suppress("DEPRECATION") audio.isSpeakerphoneOn = feature.config.boolean("enabled", true); ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
+            @Suppress("DEPRECATION")
+            val enabled = when (feature.config.string("mode", "set")) {
+                "enable" -> true
+                "disable" -> false
+                "toggle" -> !audio.isSpeakerphoneOn
+                else -> feature.config.boolean("enabled", true)
+            }
+            runCatching {
+                @Suppress("DEPRECATION") audio.isSpeakerphoneOn = enabled
+                ActionExecutionResult(true, ConfigValue.BooleanValue(enabled))
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
         stateAndCondition(registry, "ringer_mode", "Ringer mode",
