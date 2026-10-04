@@ -108,6 +108,12 @@ class AndroidReferenceSignalFeaturePack(context: Context) : FeaturePack {
         booleanPair(registry, "camera_flash_available", "Camera flash available", FeatureCategory.DEVICE) {
             packages.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)
         }
+        booleanPair(registry, "torch_available", "Torch available", FeatureCategory.DEVICE) {
+            ReferenceRuntimeSignalState.torchAvailable()
+        }
+        booleanPair(registry, "torch_enabled", "Torch enabled", FeatureCategory.DEVICE) {
+            ReferenceRuntimeSignalState.torchEnabled()
+        }
         booleanPair(registry, "camera_in_use", "Camera in use", FeatureCategory.DEVICE) {
             ReferenceRuntimeSignalState.cameraInUse()
         }
