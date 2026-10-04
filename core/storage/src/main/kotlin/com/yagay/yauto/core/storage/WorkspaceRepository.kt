@@ -18,6 +18,10 @@ data class WorkspaceData(
     val disabledCategories: Set<String> = emptySet(),
     /** Persistent last successful/finished execution timestamp by automation ID. */
     val automationLastRunEpochMs: Map<String, Long> = emptyMap(),
+    /** Master runtime gate. When false, automatic event dispatch is paused. */
+    val runtimeEnabled: Boolean = true,
+    /** Disabled activation event keys in "automationId|typeId|tag" form. */
+    val disabledTriggerKeys: Set<String> = emptySet(),
 )
 
 interface WorkspaceRepository {
