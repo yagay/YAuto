@@ -171,6 +171,21 @@ object MacroDroidFeatureSuggestions {
         "FileSelectionAction" -> "android.file.open"
         "LogAction" -> "android.log.write"
         "StopWatchAction" -> "android.stopwatch.start"
+        "DisableCategoryAction" -> "core.category.set_enabled"
+        "AccessibilityServiceAction" -> "android.accessibility_service.set"
+        "ClipboardAction" -> "android.clipboard.set"
+        "CustomSceneAction" -> "surface.scene.show"
+        "ExpandCollapseStatusBarAction" -> "android.status_bar.control"
+        "SetPriorityMode" -> "android.dnd.set"
+        "SetVibrateAction", "SilentModeVibrateOffAction" -> "android.audio.ringer_mode.set"
+        "TouchScreenAction", "UIInteractionAction" -> "accessibility.gesture.swipe"
+        "UploadPhotoAction" -> "android.http.upload"
+        "WebHook2wayResponseAction" -> "android.http_server.respond"
+        "OpenLastPhotoAction" -> "android.media.latest.open"
+        "WhatsAppAction", "ContactViaAppAction" -> "android.contact_via_app.send"
+        "SetLocationUpdateRateAction" -> "android.location.update_rate.set"
+        "CameraNotificationCircleAction" -> "surface.camera_ring.show"
+        "MacroDroidDrawerAction" -> "surface.drawer.show"
         else -> null
     }
 
@@ -265,6 +280,21 @@ object MacroDroidFeatureSuggestions {
         "UsbDeviceConnectionTrigger" -> "android.event.usb_device_changed"
         "VariableTrigger" -> "core.event.variable_changed"
         "WebHookTrigger", "WebHook2wayTrigger" -> "android.event.http_server_request"
+        "MacroEnabledTrigger" -> "core.event.automation_enabled_changed"
+        "AndroidWearTrigger" -> "android.event.wear_message"
+        "PebbleTrigger" -> "android.event.pebble_data"
+        "LocalePluginTrigger" -> "android.event.plugin_locale"
+        "ApplicationInstalledRemovedTrigger" -> "android.event.package_changed"
+        "ScreenOnOffTrigger" -> "android.event.screen_on"
+        "RecentAppsTrigger", "HomeButtonLongPressTrigger", "MediaButtonPressedTrigger",
+        "MediaButtonV2Trigger", "PowerButtonLongPressTrigger", "PowerButtonToggleTrigger" -> "android.event.hardware_key"
+        "SMSSentTrigger" -> "android.event.sms_sent"
+        "CalendarTrigger" -> "android.event.calendar_changed"
+        "AssistantActivatedTrigger", "GoogleAssistantTrigger" -> "android.event.assistant_activated"
+        "FailedLoginTrigger" -> "android.event.failed_unlock"
+        "ActivityRecognitionTrigger" -> "android.event.activity_recognition"
+        "SleepTrigger" -> "android.event.sleep_transition"
+        "DrawerOpenCloseTrigger" -> "android.event.surface_action"
         else -> null
     }
 
@@ -335,6 +365,16 @@ object MacroDroidFeatureSuggestions {
         "TorchConstraint" -> "android.condition.torch_on"
         "TriggerThatInvokedConstraint", "InvocationMethodConstraint" -> "core.condition.event_tag"
         "UsbDeviceConnectedConstraint" -> "android.condition.usb_device_connected"
+        "CategoryEnabledConstraint" -> "core.category.enabled"
+        "LastRunTimeConstraint" -> "core.automation.last_run"
+        "AmbientDisplayStateConstraint" -> "android.condition.ambient_display"
+        "IsAdbHackedConstraint" -> "android.condition.adb_wifi_available"
+        "PebbleConstraint" -> "android.condition.pebble_connected"
+        "ActionBlockInvocationMethodConstraint" -> "core.condition.event_tag"
+        "LightLevelConstraint", "ProximitySensorConstraint", "SensorValueConstraint" -> "android.condition.sensor_value"
+        "RoamingOnOffConstraint" -> "android.condition.data_roaming_setting"
+        "SignalOnOffConstraint" -> "android.condition.cellular_service_available"
+        "CameraCircleShowingConstraint" -> "surface.condition.shown"
         else -> null
     }
 }
