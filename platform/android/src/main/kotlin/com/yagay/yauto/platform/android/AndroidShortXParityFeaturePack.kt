@@ -4,6 +4,9 @@ import android.app.usage.UsageStatsManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.os.MessageQueue
 import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigValue
@@ -12,6 +15,8 @@ import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
     override val id = "android.shortx.parity"
@@ -26,6 +31,8 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
         registerInsets(registry)
         registerPackageSets(registry)
         registerPinnedIntent(registry)
+        registerActivityAndTaskControls(registry)
+        registerWaitForIdle(registry)
     }
 
     private fun registerQuickSettingsClick(registry: FeatureRegistry) {
@@ -235,6 +242,138 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
             }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
     }
+
+
+    private fun registerActivityAndTaskControls(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.activity.close"), FeatureKind.ACTION,
+                "Close Activity",
+                "Close the current Activity with Back, or force-stop the package that owns an explicit Activity component",
+                FeatureCategory.APP,
+                fields = listOf(
+                    FieldSchema.Choice("mode", "Mode", true, listOf("focused", "component")),
+                    FieldSchema.Text("component", "Activity component package/class"),
+                ),
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY, CapabilityIds.PRIVILEGED_SHELL),
+                keywords = setOf("close activity", "finish activity", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            when (feature.config.string("mode", "focused")) {
+                "component" -> {
+                    val parsed = ComponentName.unflattenFromString(
+                        feature.config.string("component").resolveVariables(ctx.variables).trim()
+                    ) ?: return@registerAction ActionExecutionResult(false)
+                    shell(ctx, "am force-stop " + shellArg(parsed.packageName))
+                }
+                else -> {
+                    val result = ctx.capabilities.execute(
+                        CapabilityRequest(
+                            capability = CapabilityIds.ACCESSIBILITY,
+                            operationId = "accessibility.global_action",
+                            payload = mapOf("action" to ConfigValue.StringValue("back")),
+                        )
+                    )
+                    ActionExecutionResult(result.success, result.value, result.message)
+                }
+            }
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.tasks.remove"), FeatureKind.ACTION,
+                "Remove recent tasks",
+                "Remove recent ActivityManager tasks matching selected packages using Root or Shizuku",
+                FeatureCategory.APP,
+                fields = listOf(
+                    FieldSchema.Text("packages", "Packages, one per line", true, multiline = true),
+                    FieldSchema.Toggle("allMatching", "Remove every matching task"),
+                    FieldSchema.Variable("resultVariable", "Store removed task count"),
+                ),
+                capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
+                implementationOptions = privilegedOptions(),
+                keywords = setOf("remove tasks", "recents", "task", "shortx", "root", "shizuku"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val packages = feature.config.string("packages").resolveVariables(ctx.variables)
+                .lineSequence().map(String::trim).filter { PACKAGE.matches(it) }.toSet()
+            if (packages.isEmpty()) return@registerAction ActionExecutionResult(false)
+            val dump = shellResult(ctx, "dumpsys activity recents")
+            if (!dump.success) return@registerAction ActionExecutionResult(false, dump.value, dump.message)
+            val text = stdout(dump)
+            val taskRegex = Regex("""(?s)Task\{[^#]*#(\d+)[^}]*?([A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+)/""")
+            val matches = taskRegex.findAll(text)
+                .mapNotNull { match ->
+                    val id = match.groupValues[1].toIntOrNull() ?: return@mapNotNull null
+                    val pkg = match.groupValues[2]
+                    if (pkg in packages) id to pkg else null
+                }
+                .distinctBy { it.first }
+                .toList()
+            if (matches.isEmpty()) {
+                val output = ConfigValue.NumberValue(0.0)
+                feature.config.string("resultVariable").trim().takeIf(String::isNotBlank)?.let { ctx.variables.set(it, output) }
+                return@registerAction ActionExecutionResult(true, output)
+            }
+            var removed = 0
+            for ((taskId, _) in matches) {
+                val result = shellResult(ctx, "am task remove " + taskId)
+                if (result.success) removed++
+                if (!feature.config.boolean("allMatching", true)) break
+            }
+            val output = ConfigValue.NumberValue(removed.toDouble())
+            feature.config.string("resultVariable").trim().takeIf(String::isNotBlank)?.let { ctx.variables.set(it, output) }
+            ActionExecutionResult(removed > 0, output)
+        }
+    }
+
+    private fun registerWaitForIdle(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.ui.wait_for_idle"), FeatureKind.ACTION,
+                "Wait for main queue idle",
+                "Continue when YAuto's Android main message queue reaches an idle point",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(FieldSchema.Duration("timeoutMs", "Maximum wait")),
+                keywords = setOf("wait idle", "ui idle", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, _ ->
+            val timeoutMs = ((feature.config["timeoutMs"] as? ConfigValue.NumberValue)?.value ?: 5_000.0)
+                .toLong().coerceIn(1L, 60_000L)
+            val ok = waitForMainQueueIdle(timeoutMs)
+            ActionExecutionResult(ok, ConfigValue.BooleanValue(ok))
+        }
+    }
+
+    private suspend fun waitForMainQueueIdle(timeoutMs: Long): Boolean =
+        kotlinx.coroutines.withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine { continuation ->
+                Handler(Looper.getMainLooper()).post {
+                    val queue = Looper.myQueue()
+                    val handler = MessageQueue.IdleHandler {
+                        if (continuation.isActive) continuation.resume(true)
+                        false
+                    }
+                    queue.addIdleHandler(handler)
+                    continuation.invokeOnCancellation { queue.removeIdleHandler(handler) }
+                }
+            }
+        } ?: false
+
+    private suspend fun shellResult(ctx: FeatureExecutionContext, command: String) =
+        ctx.capabilities.execute(
+            CapabilityRequest(
+                capability = CapabilityIds.PRIVILEGED_SHELL,
+                operationId = "system.shell.execute",
+                payload = mapOf("command" to ConfigValue.StringValue(command)),
+            )
+        )
+
+    private fun stdout(result: com.yagay.yauto.core.capability.CapabilityResult): String =
+        ((result.value as? ConfigValue.ObjectValue)?.value?.get("stdout") as? ConfigValue.StringValue)?.value.orEmpty()
 
     private suspend fun shell(ctx: FeatureExecutionContext, command: String): ActionExecutionResult {
         val result = ctx.capabilities.execute(
