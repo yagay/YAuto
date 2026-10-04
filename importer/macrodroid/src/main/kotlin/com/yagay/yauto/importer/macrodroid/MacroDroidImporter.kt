@@ -172,6 +172,22 @@ class MacroDroidImporter(
             val sourceType = obj.string("m_classType", "classType", "type") ?: "Unknown"
             val path = parentPath + ".action[" + index + "]"
 
+            obj.string("m_label", "label")
+                ?.trim()
+                ?.takeIf(String::isNotBlank)
+                ?.let { label ->
+                    out += ActionNode.Label(NodeId(UUID.randomUUID().toString()), label)
+                }
+
+            val disabled = obj.bool("m_isDisabled") == true
+            if (disabled && sourceType !in setOf(
+                    "ElseAction", "ElseIfConditionAction", "EndIfAction", "EndLoopAction",
+                )
+            ) {
+                index++
+                continue
+            }
+
             if (sourceType == "IfConditionAction" && obj.bool("m_isDisabled") != true) {
                 val parsed = parseConditional(items, index, parentPath, issues, blockAliases)
                 if (parsed != null) {
@@ -202,7 +218,15 @@ class MacroDroidImporter(
             when (sourceType) {
                 "BreakFromLoopAction" -> out += ActionNode.Break(NodeId(UUID.randomUUID().toString()))
                 "ContinueLoopAction" -> out += ActionNode.Continue(NodeId(UUID.randomUUID().toString()))
-                "ExitMacroAction", "StopMacroAction" -> out += ActionNode.Return(
+                "GotoAction" -> {
+                    val target = obj.string("targetLabel", "m_targetLabel")?.trim().orEmpty()
+                    if (target.isNotBlank()) {
+                        out += ActionNode.Goto(NodeId(UUID.randomUUID().toString()), target)
+                    } else {
+                        out += compatibilityAction(item, path, sourceType, issues)
+                    }
+                }
+                "ExitMacroAction", "StopMacroAction", "ExitActionBlockAction" -> out += ActionNode.Return(
                     NodeId(UUID.randomUUID().toString()),
                     ConfigValue.NullValue,
                 )
