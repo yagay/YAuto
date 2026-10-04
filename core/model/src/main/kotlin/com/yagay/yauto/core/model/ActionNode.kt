@@ -76,9 +76,11 @@ sealed interface ActionNode {
     @Serializable @SerialName("for_each")
     data class ForEach(
         override val id: NodeId,
-        val values: List<ConfigValue>,
+        val values: List<ConfigValue> = emptyList(),
         val variableName: String,
         val actions: List<ActionNode>,
+        /** Optional runtime list variable. When set, it takes precedence over [values]. */
+        val sourceVariable: String? = null,
     ) : ActionNode
 
     @Serializable @SerialName("parallel")
