@@ -19,6 +19,7 @@ import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.storage.WorkspaceData
+import com.yagay.yauto.core.storage.runtimeEventFeatureIds
 import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
 import com.yagay.yauto.platform.android.*
 import com.yagay.yauto.platform.xposed.XposedHookRuntimeBridge
@@ -270,21 +271,18 @@ class AutomationRuntimeService : Service() {
     override fun onDestroy() { workspaceSubscription?.close(); workspaceSubscription = null; AccessibilityRuntimeBridge.configureUiRuntimeEvents(emptySet()); AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); AccessibilityRuntimeBridge.setFingerprintGestureListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); ModeRuntimeBridge.attach(null); WearRuntimeBridge.attach(null); VendorBridgeRuntime.attach(null); XposedHookRuntimeBridge.attach(null); XposedSystemEventRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
     private fun configureAccessibilitySubscriptions(workspace: WorkspaceData) {
         val subscribed = buildSet {
-            workspace.automations.asSequence()
-                .filter { it.enabled && (it.category == null || it.category !in workspace.disabledCategories) }
-                .flatMap { it.activation.events.asSequence() }
-                .forEach { feature ->
-                    when (feature.typeId) {
-                        "android.event.screen_text_appeared" -> add("android.event.screen_content_changed")
-                        "android.event.ui_click",
-                        "android.event.ui_long_click",
-                        "android.event.ui_text_changed",
-                        "android.event.ui_focused",
-                        "android.event.ui_scrolled",
-                        "android.event.screen_content_changed",
-                        "android.event.toast_shown" -> add(feature.typeId)
-                    }
+            workspace.runtimeEventFeatureIds().forEach { typeId ->
+                when (typeId) {
+                    "android.event.screen_text_appeared" -> add("android.event.screen_content_changed")
+                    "android.event.ui_click",
+                    "android.event.ui_long_click",
+                    "android.event.ui_text_changed",
+                    "android.event.ui_focused",
+                    "android.event.ui_scrolled",
+                    "android.event.screen_content_changed",
+                    "android.event.toast_shown" -> add(typeId)
                 }
+            }
         }
         AccessibilityRuntimeBridge.configureUiRuntimeEvents(subscribed)
     }
