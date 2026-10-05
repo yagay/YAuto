@@ -131,6 +131,7 @@ internal fun PredicateDialog(
     var editing by remember { mutableStateOf<Pair<Int, PredicateNode>?>(null) }
     var picker by remember { mutableStateOf(false) }
     var editingFeature by remember { mutableStateOf<FeatureRef?>(null) }
+    val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -182,7 +183,7 @@ internal fun PredicateDialog(
                     }
                     is PredicateNode.Condition -> TextButton(onClick = { editingFeature = node.feature }) {
                         Text(
-                            descriptors.firstOrNull { it.id.value == node.feature.typeId }
+                            descriptorById[node.feature.typeId]
                                 ?.let { localizedFeatureTitle(it) }
                                 ?: node.feature.typeId
                         )
