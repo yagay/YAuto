@@ -36,7 +36,7 @@ class AccessibilityBeanShellFeaturePack(
         registry.registerAction(
             FeatureDescriptor(
                 FeatureId("script.beanshell.execute"), FeatureKind.ACTION,
-                "Run Java / BeanShell",
+                "Run accessibility BeanShell",
                 "Execute trusted BeanShell Java code with appContext, accessibility, magicText, variableSetter and globals bindings",
                 FeatureCategory.SCRIPT,
                 fields = listOf(
