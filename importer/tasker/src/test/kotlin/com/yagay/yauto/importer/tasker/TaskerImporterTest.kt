@@ -3,6 +3,7 @@ package com.yagay.yauto.importer.tasker
 import com.yagay.yauto.core.importer.ImportInput
 import com.yagay.yauto.core.model.ActionNode
 import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.PredicateNode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -13,8 +14,11 @@ class TaskerImporterTest {
         val xml = """<TaskerData><Task sr="task1"><id>1</id><nme>Guarded</nme><Action sr="act0" extra="kept"><code>548</code><Str sr="arg0">$longValue</Str><ConditionList sr="if"><Condition sr="c0"><lhs>%test</lhs><op>0</op><rhs>yes</rhs></Condition></ConditionList></Action></Task></TaskerData>"""
         val result = TaskerImporter().import(ImportInput("guarded.xml", null, xml.toByteArray()))
         assertTrue(result.success)
-        val feature = (result.bundle.flows.single().actions.single() as ActionNode.Action).feature
-        assertEquals("compat.source.action", feature.typeId)
+        val guarded = result.bundle.flows.single().actions.single() as ActionNode.If
+        val condition = guarded.condition as PredicateNode.Condition
+        assertEquals("tasker.condition.compare", condition.feature.typeId)
+        val feature = (guarded.thenActions.single() as ActionNode.Action).feature
+        assertEquals("android.toast.show", feature.typeId)
         val raw = (feature.config["source.raw"] as ConfigValue.StringValue).value
         assertTrue(raw.contains("extra=\"kept\""))
         assertTrue(raw.contains("<Condition sr=\"c0\">"))

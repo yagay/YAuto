@@ -17,7 +17,7 @@ class MacroDroidFeatureSuggestionsTest {
         assertEquals("android.tts.speak", mapper.targetId("SpeakTextAction", SourceFeatureKind.ACTION))
         assertEquals("android.screen.wake", mapper.targetId("ScreenOnAction", SourceFeatureKind.ACTION))
         assertEquals("android.input.keyevent", mapper.targetId("InputKeyEventAction", SourceFeatureKind.ACTION))
-        assertEquals("android.screenshot.capture", mapper.targetId("TakeScreenshotAction", SourceFeatureKind.ACTION))
+        assertEquals("android.screen.screenshot", mapper.targetId("TakeScreenshotAction", SourceFeatureKind.ACTION))
         assertEquals("android.media.transport", mapper.targetId("ControlMediaAction", SourceFeatureKind.ACTION))
         assertEquals("android.alarm.set", mapper.targetId("SetAlarmClockAction", SourceFeatureKind.ACTION))
         assertEquals("android.calendar.event.insert", mapper.targetId("AddCalendarEntryAction", SourceFeatureKind.ACTION))

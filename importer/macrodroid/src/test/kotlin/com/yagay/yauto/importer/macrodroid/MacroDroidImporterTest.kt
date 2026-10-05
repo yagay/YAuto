@@ -19,9 +19,11 @@ class MacroDroidImporterTest {
         assertEquals("android.condition.screen", condition.feature.typeId)
         assertEquals(ConfigValue.BooleanValue(false), condition.feature.config["value"])
         assertEquals("android.clipboard.set", (rule.onEvent[0] as ActionNode.Action).feature.typeId)
-        val guarded = (rule.onEvent[1] as ActionNode.Action).feature
-        assertEquals("compat.source.action", guarded.typeId)
-        assertTrue((guarded.config["source.raw"] as? ConfigValue.StringValue)?.value?.contains("UnknownConstraint") == true)
+        val guarded = rule.onEvent[1] as ActionNode.If
+        val guardedCondition = guarded.condition as PredicateNode.Condition
+        assertEquals("compat.source.condition", guardedCondition.feature.typeId)
+        assertTrue((guardedCondition.feature.config["source.raw"] as? ConfigValue.StringValue)?.value?.contains("UnknownConstraint") == true)
+        assertEquals("android.toast.show", (guarded.thenActions.single() as ActionNode.Action).feature.typeId)
     }
 
     @Test
