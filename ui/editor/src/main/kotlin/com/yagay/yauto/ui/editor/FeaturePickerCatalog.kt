@@ -1,6 +1,5 @@
 package com.yagay.yauto.ui.editor
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,26 +20,12 @@ import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.R as TextR
-import java.util.Locale
-
-internal data class CatalogCategory(
-    val id: String,
-    @StringRes val titleRes: Int,
-    @StringRes val subtitleRes: Int,
-    val order: Int,
-)
-
-internal sealed interface PickerPage {
-    data object Categories : PickerPage
-    data class Features(val category: CatalogCategory, val special: String? = null) : PickerPage
-    data class Configure(val descriptor: FeatureDescriptor, val fromCategory: Features?) : PickerPage
-}
 
 @Composable
 internal fun FeatureCategoryPage(
     modifier: Modifier,
     kind: FeatureKind,
-    descriptors: List<FeatureDescriptor>,
+    catalog: FeaturePickerCatalogModel,
     query: String,
     favorites: Set<String>,
     recent: List<String>,
@@ -49,25 +34,17 @@ internal fun FeatureCategoryPage(
     onFeature: (FeatureDescriptor) -> Unit,
     onFavorite: (String) -> Unit,
 ) {
-    val categories = remember(descriptors) {
-        descriptors.map { catalogCategory(it.category) }.distinctBy { it.id }.sortedBy { it.order }
+    val search = remember(catalog, query) {
+        if (query.isBlank()) emptyList() else catalog.search(query)
     }
-    val textResolver = rememberFeatureTextResolver()
-    val displayItems = remember(descriptors, textResolver) {
-        descriptors.map(textResolver::displayText)
-    }
-    val descriptorIds = remember(displayItems) { displayItems.asSequence().map { it.descriptor.id.value }.toHashSet() }
-    val search = remember(displayItems, query, textResolver) {
-        if (query.isBlank()) emptyList() else displayItems.filter { textResolver.matches(it.descriptor, query) }
-    }
-    val recentCount = recent.count { it in descriptorIds }
-    val favoriteCount = favorites.count { it in descriptorIds }
+    val recentCount = recent.count(catalog::contains)
+    val favoriteCount = favorites.count(catalog::contains)
 
     LazyColumn(
         modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     ) {
-        item {
+        item(contentType = "search") {
             OutlinedTextField(
                 value = query,
                 onValueChange = onQuery,
@@ -77,7 +54,7 @@ internal fun FeatureCategoryPage(
             )
         }
         if (query.isBlank()) {
-            item {
+            item(contentType = "hint") {
                 Card(colors = CardDefaults.cardColors(containerColor = kindAccent(kind).copy(alpha = .10f))) {
                     Column(Modifier.padding(12.dp)) {
                         Text(kindHelp(kind), fontWeight = FontWeight.SemiBold)
@@ -86,7 +63,7 @@ internal fun FeatureCategoryPage(
                 }
             }
             if (recentCount > 0) {
-                item {
+                item(key = "recent", contentType = "category") {
                     CategoryRow(
                         stringResource(TextR.string.feature_picker_recent),
                         stringResource(TextR.string.feature_picker_recent_subtitle_format, recentCount),
@@ -96,7 +73,7 @@ internal fun FeatureCategoryPage(
                 }
             }
             if (favoriteCount > 0) {
-                item {
+                item(key = "favorites", contentType = "category") {
                     CategoryRow(
                         stringResource(TextR.string.feature_picker_favorites),
                         stringResource(TextR.string.feature_picker_favorites_subtitle_format, favoriteCount),
@@ -106,22 +83,21 @@ internal fun FeatureCategoryPage(
                 }
             }
             items(
-                items = categories,
+                items = catalog.categories,
                 key = { it.id },
                 contentType = { "category" },
             ) { category ->
-                val count = descriptors.count { it.category.name.lowercase(Locale.ROOT) == category.id }
                 CategoryRow(
                     stringResource(category.titleRes),
                     stringResource(
                         TextR.string.editor_category_count_format,
                         stringResource(category.subtitleRes),
-                        count,
+                        catalog.categoryCount(category.id),
                     ),
                 ) { onCategory(PickerPage.Features(category)) }
             }
         } else {
-            item {
+            item(contentType = "result_count") {
                 Text(
                     stringResource(TextR.string.feature_picker_search_results_format, search.size),
                     style = MaterialTheme.typography.labelLarge,
@@ -132,15 +108,13 @@ internal fun FeatureCategoryPage(
                 key = { it.descriptor.id.value },
                 contentType = { "feature_search_result" },
             ) { item ->
-                val descriptor = item.descriptor
                 FeaturePickerRow(
-                    title = if (descriptor.id.value in favorites) {
-                        stringResource(TextR.string.editor_favorite_prefix, item.title)
-                    } else item.title,
-                    subtitle = stringResource(catalogCategory(descriptor.category).titleRes),
+                    title = favoriteTitle(item, favorites),
+                    subtitle = stringResource(item.category.titleRes),
                     accent = kindAccent(kind),
-                    onClick = { onFeature(descriptor) },
-                    onFavorite = { onFavorite(descriptor.id.value) },
+                    onClick = { onFeature(item.descriptor) },
+                    onFavorite = { onFavorite(item.descriptor.id.value) },
+                    height = 64.dp,
                 )
             }
         }
@@ -152,7 +126,7 @@ internal fun FeatureListPage(
     modifier: Modifier,
     kind: FeatureKind,
     categoryPage: PickerPage.Features,
-    descriptors: List<FeatureDescriptor>,
+    catalog: FeaturePickerCatalogModel,
     query: String,
     favorites: Set<String>,
     recent: List<String>,
@@ -160,25 +134,8 @@ internal fun FeatureListPage(
     onFeature: (FeatureDescriptor) -> Unit,
     onFavorite: (String) -> Unit,
 ) {
-    val textResolver = rememberFeatureTextResolver()
-    val locale = currentEditorLocale()
-    val titleComparator = remember(locale) { localizedStringComparator(locale) }
-    val displayItems = remember(descriptors, textResolver) {
-        descriptors.map(textResolver::displayText)
-    }
-    val displayById = remember(displayItems) {
-        displayItems.associateBy { it.descriptor.id.value }
-    }
-    val features = remember(displayItems, displayById, categoryPage, query, favorites, recent, textResolver, titleComparator) {
-        val base = when (categoryPage.special) {
-            "recent" -> recent.mapNotNull(displayById::get)
-            "favorites" -> displayItems.filter { it.descriptor.id.value in favorites }
-            else -> displayItems.filter {
-                it.descriptor.category.name.lowercase(Locale.ROOT) == categoryPage.category.id
-            }
-        }
-        base.filter { query.isBlank() || textResolver.matches(it.descriptor, query) }
-            .sortedWith { left, right -> titleComparator.compare(left.title, right.title) }
+    val features = remember(catalog, categoryPage, query, favorites, recent) {
+        catalog.items(categoryPage, favorites, recent, query)
     }
     val title = categoryTitle(categoryPage)
     val subtitle = categorySubtitle(categoryPage)
@@ -187,7 +144,7 @@ internal fun FeatureListPage(
         modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     ) {
-        item {
+        item(contentType = "search") {
             OutlinedTextField(
                 value = query,
                 onValueChange = onQuery,
@@ -196,7 +153,7 @@ internal fun FeatureListPage(
                 singleLine = true,
             )
         }
-        item {
+        item(contentType = "hint") {
             Text(
                 stringResource(
                     TextR.string.feature_picker_category_hint_format,
@@ -212,19 +169,25 @@ internal fun FeatureListPage(
             key = { it.descriptor.id.value },
             contentType = { "feature" },
         ) { item ->
-            val descriptor = item.descriptor
             FeaturePickerRow(
-                title = if (descriptor.id.value in favorites) {
-                    stringResource(TextR.string.editor_favorite_prefix, item.title)
-                } else item.title,
+                title = favoriteTitle(item, favorites),
                 subtitle = null,
                 accent = kindAccent(kind),
-                onClick = { onFeature(descriptor) },
-                onFavorite = { onFavorite(descriptor.id.value) },
+                onClick = { onFeature(item.descriptor) },
+                onFavorite = { onFavorite(item.descriptor.id.value) },
+                height = 52.dp,
             )
         }
     }
 }
+
+@Composable
+private fun favoriteTitle(item: FeaturePickerCatalogItem, favorites: Set<String>): String =
+    if (item.descriptor.id.value in favorites) {
+        stringResource(TextR.string.editor_favorite_prefix, item.title)
+    } else {
+        item.title
+    }
 
 @Composable
 private fun FeaturePickerRow(
@@ -233,11 +196,13 @@ private fun FeaturePickerRow(
     accent: Color,
     onClick: () -> Unit,
     onFavorite: () -> Unit,
+    height: androidx.compose.ui.unit.Dp,
 ) {
     val divider = MaterialTheme.colorScheme.outlineVariant
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .height(height)
             .drawBehind {
                 val accentWidth = 4.dp.toPx()
                 drawRect(accent, size = androidx.compose.ui.geometry.Size(accentWidth, size.height))
@@ -249,7 +214,7 @@ private fun FeaturePickerRow(
                 )
             }
             .clickable(onClick = onClick)
-            .padding(start = 14.dp, top = 9.dp, bottom = 9.dp),
+            .padding(start = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -275,9 +240,9 @@ private fun FeaturePickerRow(
             contentDescription = stringResource(TextR.string.icon_more_options),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
-                .size(40.dp)
+                .size(44.dp)
                 .clickable(onClick = onFavorite)
-                .padding(10.dp),
+                .padding(11.dp),
         )
     }
 }
@@ -296,24 +261,6 @@ private fun CategoryRow(title: String, subtitle: String, onClick: () -> Unit) {
         modifier = Modifier.clickable(onClick = onClick),
     )
     HorizontalDivider()
-}
-
-internal fun catalogCategory(category: FeatureCategory): CatalogCategory = when (category) {
-    FeatureCategory.CORE -> CatalogCategory("core", TextR.string.category_core, TextR.string.category_core_subtitle, 10)
-    FeatureCategory.APP -> CatalogCategory("app", TextR.string.category_app, TextR.string.category_app_subtitle, 20)
-    FeatureCategory.DEVICE -> CatalogCategory("device", TextR.string.category_device, TextR.string.category_device_subtitle, 30)
-    FeatureCategory.NETWORK -> CatalogCategory("network", TextR.string.category_network, TextR.string.category_network_subtitle, 40)
-    FeatureCategory.DISPLAY -> CatalogCategory("display", TextR.string.category_display, TextR.string.category_display_subtitle, 50)
-    FeatureCategory.AUDIO -> CatalogCategory("audio", TextR.string.category_audio, TextR.string.category_audio_subtitle, 60)
-    FeatureCategory.NOTIFICATION -> CatalogCategory("notification", TextR.string.category_notification, TextR.string.category_notification_subtitle, 70)
-    FeatureCategory.FILE -> CatalogCategory("file", TextR.string.category_file, TextR.string.category_file_subtitle, 80)
-    FeatureCategory.VARIABLE -> CatalogCategory("variable", TextR.string.category_variable, TextR.string.category_variable_subtitle, 90)
-    FeatureCategory.FLOW -> CatalogCategory("flow", TextR.string.category_flow, TextR.string.category_flow_subtitle, 100)
-    FeatureCategory.UI_AUTOMATION -> CatalogCategory("ui_automation", TextR.string.category_ui_automation, TextR.string.category_ui_automation_subtitle, 110)
-    FeatureCategory.SYSTEM -> CatalogCategory("system", TextR.string.category_system, TextR.string.category_system_subtitle, 120)
-    FeatureCategory.SCRIPT -> CatalogCategory("script", TextR.string.category_script, TextR.string.category_script_subtitle, 130)
-    FeatureCategory.ADVANCED -> CatalogCategory("advanced", TextR.string.category_advanced, TextR.string.category_advanced_subtitle, 140)
-    FeatureCategory.COMPATIBILITY -> CatalogCategory("advanced", TextR.string.category_advanced, TextR.string.category_advanced_subtitle, 150)
 }
 
 @Composable
