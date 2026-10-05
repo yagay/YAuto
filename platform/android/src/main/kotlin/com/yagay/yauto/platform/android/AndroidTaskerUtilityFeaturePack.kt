@@ -100,9 +100,9 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
                 ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "No foreground usage event available"))
             val output = ConfigValue.ObjectValue(
                 mapOf(
-                    "package" to ConfigValue.StringValue(event.packageName.orEmpty()),
-                    "activity" to ConfigValue.StringValue(event.className.orEmpty()),
-                    "timestampEpochMs" to ConfigValue.NumberValue(event.timeStamp.toDouble()),
+                    "package" to ConfigValue.StringValue(event.packageName),
+                    "activity" to ConfigValue.StringValue(event.className),
+                    "timestampEpochMs" to ConfigValue.NumberValue(event.timestampEpochMs.toDouble()),
                 )
             )
             store(feature.config.string("resultVariable"), output, ctx)
@@ -110,17 +110,21 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
         }
     }
 
-    private fun latestForegroundEvent(from: Long, to: Long): UsageEvents.Event? = runCatching {
+    private fun latestForegroundEvent(from: Long, to: Long): ForegroundUsageSnapshot? = runCatching {
         val events = usage.queryEvents(from, to)
         val current = UsageEvents.Event()
-        var latest: UsageEvents.Event? = null
+        var latest: ForegroundUsageSnapshot? = null
         while (events.hasNextEvent()) {
             events.getNextEvent(current)
             if (
                 current.eventType == UsageEvents.Event.ACTIVITY_RESUMED ||
                 current.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND
             ) {
-                latest = UsageEvents.Event(current)
+                latest = ForegroundUsageSnapshot(
+                    packageName = current.packageName.orEmpty(),
+                    className = current.className.orEmpty(),
+                    timestampEpochMs = current.timeStamp,
+                )
             }
         }
         latest
@@ -356,3 +360,10 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
         name.trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, value) }
     }
 }
+
+
+private data class ForegroundUsageSnapshot(
+    val packageName: String,
+    val className: String,
+    val timestampEpochMs: Long,
+)
