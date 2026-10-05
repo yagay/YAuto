@@ -277,4 +277,17 @@ class MacroDroidImporterTest {
         assertTrue(result.bundle.automations.single().onEvent.single() is ActionNode.CallFlow)
         assertEquals("android.toast.show", (result.bundle.flows.single().actions.single() as ActionNode.Action).feature.typeId)
     }
+
+    @Test
+    fun `default importer exposes apk verified compatibility target hints`() {
+        val json = """{"macro":{"m_GUID":"verified-hint","m_name":"Verified hint","m_triggerList":[],"m_actionList":[{"m_classType":"SetNFCAction"}]}}"""
+        val result = MacroDroidImporter().import(ImportInput("verified-hint.macro", null, json.toByteArray()))
+
+        assertTrue(result.success)
+        val action = result.bundle.automations.single().onEvent.single() as ActionNode.Action
+        assertEquals("compat.source.action", action.feature.typeId)
+        assertTrue(result.issues.any { it.sourceType == "SetNFCAction" && it.suggestedFeatureId == "android.nfc.set" })
+    }
+
+
 }

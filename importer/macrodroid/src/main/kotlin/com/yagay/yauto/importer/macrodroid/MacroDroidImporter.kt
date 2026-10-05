@@ -7,7 +7,7 @@ import java.util.UUID
 
 class MacroDroidImporter(
     private val json: Json = Json { ignoreUnknownKeys = true },
-    private val mapper: SourceFeatureMapper = MacroDroidMappings.mapper,
+    private val mapper: SourceFeatureMapper = MacroDroidFeatureSuggestions.mapper,
 ) : AutomationImporter {
     override val id = "macrodroid"
     override val displayName = "MacroDroid"

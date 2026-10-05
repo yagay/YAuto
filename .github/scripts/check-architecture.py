@@ -41,14 +41,25 @@ for rel, maximum in size_budgets.items():
     if path.exists() and path.stat().st_size > maximum:
         errors.append(f"{rel} is {path.stat().st_size} bytes; budget is {maximum}. Split responsibilities before adding more.")
 
-# Third-party compatibility importers must not return to the product startup graph.
+# Third-party compatibility parsers must stay behind the lazy compatibility catalog rather than
+# becoming direct AppGraph dependencies.
 app_graph = ROOT / "app/src/main/kotlin/com/yagay/yauto/AppGraph.kt"
 if app_graph.exists():
     graph_text = app_graph.read_text(encoding="utf-8")
     forbidden = ("MacroDroidImporter", "TaskerImporter", "ShortXImporter", "CompatibilityFeaturePack")
     for name in forbidden:
         if name in graph_text:
-            errors.append(f"AppGraph must not register legacy compatibility component: {name}")
+            errors.append(f"AppGraph must not directly register compatibility component: {name}")
+
+compat_catalog = ROOT / "app/src/main/kotlin/com/yagay/yauto/CompatibilityImporterCatalog.kt"
+if not compat_catalog.exists():
+    errors.append("CompatibilityImporterCatalog.kt is required for lazy third-party importer registration")
+else:
+    catalog_text = compat_catalog.read_text(encoding="utf-8")
+    if catalog_text.count("registerLazy(") < 3:
+        errors.append("CompatibilityImporterCatalog must lazily register MacroDroid, ShortX and Tasker")
+    if "registry.register(" in catalog_text:
+        errors.append("CompatibilityImporterCatalog must not eagerly construct importer instances")
 
 # Standard packs should remain thin aggregators; direct registration belongs in definitions.
 standard_dir = ROOT / "feature/standard/src/main/kotlin/com/yagay/yauto/feature/standard"

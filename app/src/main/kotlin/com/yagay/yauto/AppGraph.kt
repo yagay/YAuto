@@ -31,8 +31,8 @@ class AppGraph(context: Context) {
 
     val features = FeatureRegistry()
     /**
-     * Reserved for YAuto-native import/export formats. Third-party compatibility importers are
-     * intentionally not registered in the main product graph.
+     * Compatibility importers are described in a separate lazy catalog so AppGraph remains
+     * independent from third-party parser implementations and cold-start construction stays off.
      */
     val importers = ImporterRegistry()
     val diagnosticRegistry = DiagnosticRegistry()
@@ -63,6 +63,10 @@ class AppGraph(context: Context) {
     val runtime = AutomationRuntime(workspace, features, capabilities, tracer)
 
     init {
+        safelyUnit("importers:compatibility") {
+            CompatibilityImporterCatalog.registerInto(importers)
+        }
+
         installCatalog("features.standard.catalog") { StandardFeaturePacks.all(runtime, runtime) }
         installCatalog("features.android.catalog") {
             AndroidFeaturePacks.all(appContext, quickSettingsTiles, overlaySurfaces, workspace)

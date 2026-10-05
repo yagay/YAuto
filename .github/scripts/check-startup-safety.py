@@ -114,16 +114,28 @@ def main() -> int:
                 f'{app_graph}:{line_number(source, match.start())}: '
                 'Importers must use registerLazy() and stay off the cold-start path'
             )
-        # YAuto V2 deliberately keeps MacroDroid / ShortX / Tasker compatibility code outside the
-        # active application graph. If compatibility is ever reintroduced it must be an optional,
-        # lazy module rather than a startup dependency.
+        # Compatibility parser implementations stay outside AppGraph. AppGraph may invoke the
+        # generic catalog boundary, but concrete parsers must remain lazy.
         forbidden = (
             'importer.macrodroid', 'importer.shortx', 'importer.tasker',
             'MacroDroidImporter', 'EnhancedShortXImporter', 'EnhancedTaskerImporter',
         )
         for token in forbidden:
             if token in source:
-                failures.append(f'{app_graph}: compatibility importer reference must stay out of the V2 app graph: {token}')
+                failures.append(f'{app_graph}: compatibility importer implementation must stay behind the lazy catalog: {token}')
+
+    compat_catalog = ROOT / 'app/src/main/kotlin/com/yagay/yauto/CompatibilityImporterCatalog.kt'
+    if not compat_catalog.exists():
+        failures.append(f'Missing lazy compatibility importer catalog: {compat_catalog}')
+    else:
+        source = compat_catalog.read_text(encoding='utf-8')
+        if source.count('registerLazy(') < 3:
+            failures.append(f'{compat_catalog}: MacroDroid, ShortX and Tasker must all use registerLazy()')
+        for match in re.finditer(r'\.register\s*\(', source):
+            failures.append(
+                f'{compat_catalog}:{line_number(source, match.start())}: '
+                'Compatibility importer construction must stay lazy'
+            )
 
     if failures:
         print('Startup safety guard failed:\n' + '\n'.join(failures))
