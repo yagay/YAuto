@@ -234,6 +234,7 @@
     <string name="feature_phrase_export_yauto_backup">Export YAuto backup</string>
     <string name="feature_phrase_expression">Expression</string>
     <string name="feature_phrase_expression_condition">Expression condition</string>
+    <string name="feature_phrase_expression_state">Expression state</string>
     <string name="feature_phrase_extra_key_value_pairs_one_per_line">Extra key=value pairs, one per line</string>
     <string name="feature_phrase_extras_key_value_per_line">Extras, key=value per line</string>
     <string name="feature_phrase_failed_device_unlock">Failed device unlock</string>
@@ -417,6 +418,7 @@
     <string name="feature_phrase_pebble_app_data">Pebble app data</string>
     <string name="feature_phrase_pebble_app_uuid">Pebble app UUID</string>
     <string name="feature_phrase_pebble_connected">Pebble connected</string>
+    <string name="feature_phrase_pebble_connection_state">Pebble connection state</string>
     <string name="feature_phrase_pebble_disconnected">Pebble disconnected</string>
     <string name="feature_phrase_pebble_notification">Pebble notification</string>
     <string name="feature_phrase_per_channel_tolerance">Per-channel tolerance</string>
@@ -517,6 +519,8 @@
     <string name="feature_phrase_run_at_a_selected_local_wall_clock_time_on_selected_weekdays">Run at a selected local wall-clock time on selected weekdays</string>
     <string name="feature_phrase_run_for_any_yauto_runtime_event">Run for any YAuto runtime event</string>
     <string name="feature_phrase_run_java_beanshell">Run Java / BeanShell</string>
+    <string name="feature_phrase_run_tasker_beanshell">Run Tasker BeanShell</string>
+    <string name="feature_phrase_run_accessibility_beanshell">Run accessibility BeanShell</string>
     <string name="feature_phrase_run_mvel">Run MVEL</string>
     <string name="feature_phrase_run_on_sampled_cpu_availability_while_the_latest_and_rolling_average_percentages_match_thresholds">Run on sampled CPU availability while the latest and rolling-average percentages match thresholds</string>
     <string name="feature_phrase_run_once_per_matching_day_at_a_deterministic_random_local_time_inside_a_selected_period">Run once per matching day at a deterministic random local time inside a selected period</string>
