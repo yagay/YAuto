@@ -67,6 +67,7 @@ fun MacroAutomationEditorScreen(
     val loopLimit = policy.maxLoopIterations
     val unnamedAutomation = stringResource(TextR.string.automation_unnamed)
     val locale = currentEditorLocale()
+    val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
 
     fun save() {
         val simple = conditions.map { PredicateNode.Condition(it) }
@@ -172,8 +173,8 @@ fun MacroAutomationEditorScreen(
                     }
                     activationItems.forEachIndexed { index, feature ->
                         MacroItemRow(
-                            title = featureTitle(feature, descriptors),
-                            subtitle = featureSummary(feature, descriptors),
+                            title = featureTitle(feature, descriptorById),
+                            subtitle = featureSummary(feature, descriptorById),
                             accent = if (kind == FeatureKind.EVENT) MacroPalette.Trigger else MacroPalette.State,
                             onClick = { request = MacroEditRequest(kind, index, feature) },
                             onMenu = { menu = (if (kind == FeatureKind.EVENT) "event" else "state") to index },
@@ -218,8 +219,8 @@ fun MacroAutomationEditorScreen(
                     nodes.forEachIndexed { index, node ->
                         val feature = (node as? ActionNode.Action)?.feature
                         MacroItemRow(
-                            title = feature?.let { featureTitle(it, descriptors) } ?: actionNodeTitle(node, flows),
-                            subtitle = feature?.let { featureSummary(it, descriptors) },
+                            title = feature?.let { featureTitle(it, descriptorById) } ?: actionNodeTitle(node, flows),
+                            subtitle = feature?.let { featureSummary(it, descriptorById) },
                             accent = MacroPalette.Action,
                             onClick = {
                                 if (feature != null) {
@@ -255,8 +256,8 @@ fun MacroAutomationEditorScreen(
                     }
                     conditions.forEachIndexed { index, feature ->
                         MacroItemRow(
-                            title = featureTitle(feature, descriptors),
-                            subtitle = featureSummary(feature, descriptors),
+                            title = featureTitle(feature, descriptorById),
+                            subtitle = featureSummary(feature, descriptorById),
                             accent = MacroPalette.Constraint,
                             onClick = { request = MacroEditRequest(FeatureKind.CONDITION, index, feature) },
                             onMenu = { menu = "condition" to index },
@@ -532,12 +533,12 @@ private fun EmptyHint(text: String) {
 }
 
 @Composable
-private fun featureTitle(feature: FeatureRef, descriptors: List<FeatureDescriptor>): String =
-    descriptors.firstOrNull { it.id.value == feature.typeId }?.let { localizedFeatureTitle(it) } ?: feature.typeId
+private fun featureTitle(feature: FeatureRef, descriptors: Map<String, FeatureDescriptor>): String =
+    descriptors[feature.typeId]?.let { localizedFeatureTitle(it) } ?: feature.typeId
 
 @Composable
-private fun featureSummary(feature: FeatureRef, descriptors: List<FeatureDescriptor>): String {
-    val descriptor = descriptors.firstOrNull { it.id.value == feature.typeId }
+private fun featureSummary(feature: FeatureRef, descriptors: Map<String, FeatureDescriptor>): String {
+    val descriptor = descriptors[feature.typeId]
     val items = feature.config.entries
         .filterNot { it.key.startsWith("source.") }
         .take(3)
