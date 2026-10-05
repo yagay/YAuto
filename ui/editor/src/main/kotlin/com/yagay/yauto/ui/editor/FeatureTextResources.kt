@@ -16,7 +16,8 @@ internal class FeatureTextResolver(private val context: Context) {
         get() = context.resources.configuration.locales[0] ?: Locale.getDefault()
 
     fun title(descriptor: FeatureDescriptor): String =
-        resource("feature_${resourceKey(descriptor.id.value)}_title")
+        sourceAlignedFeatureTitle(descriptor.id.value)?.let(context::getString)
+            ?: resource("feature_${resourceKey(descriptor.id.value)}_title")
             ?: phrase(descriptor.title)
             ?: descriptor.title.takeIf { it.isNotBlank() }
             ?: genericTitle(descriptor)
