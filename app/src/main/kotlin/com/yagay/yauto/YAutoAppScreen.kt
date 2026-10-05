@@ -76,6 +76,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     var runtimeSummary by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val saveLock = remember { Mutex() }
+    val featureDescriptors = remember(graph) { featureDescriptors }
 
     BackHandler(enabled = page != AppPage.HOME) {
         when (page) {
@@ -288,7 +289,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     when (page) {
         AppPage.AUTOMATION -> AutomationEditorScreen(
             flows = workspace.flows,
-            descriptors = graph.features.allDescriptors(),
+            descriptors = featureDescriptors,
             initial = editingAutomation,
             onSave = { automation ->
                 val exists = workspace.automations.any { it.id == automation.id }
@@ -309,7 +310,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
 
         AppPage.FLOW -> FlowEditorScreen(
             initial = editingFlow,
-            descriptors = graph.features.allDescriptors(),
+            descriptors = featureDescriptors,
             flows = workspace.flows,
             onSave = { flow ->
                 saveWorkspace(
@@ -378,7 +379,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
                 backupLauncher.launch("YAuto-backup.json")
             },
             onRestore = { restoreLauncher.launch(arrayOf("application/json", "*/*")) },
-            featureCount = graph.features.allDescriptors().size,
+            featureCount = featureDescriptors.size,
             automations = workspace.automations,
             flowCount = workspace.flows.size,
             importerNames = graph.importers.all().map { it.displayName },
