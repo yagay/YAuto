@@ -71,7 +71,7 @@ object TaskerFeatureSuggestions {
         "548" -> "android.toast.show"
         "559" -> "android.tts.speak"
         "566" -> "android.alarm.set"
-        "567" -> "android.calendar.event.add"
+        "567" -> "android.calendar.event.insert"
         "779" -> "android.notification.cancel"
         "806" -> "android.screen.wake"
         "808", "810" -> "android.display.brightness.set"
