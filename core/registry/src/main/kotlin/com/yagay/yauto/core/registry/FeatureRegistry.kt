@@ -158,6 +158,7 @@ class FeatureRegistry {
     private val conditions = ConcurrentHashMap<String, ConditionEvaluator>()
     private val events = ConcurrentHashMap<String, EventMatcher>()
     private val states = ConcurrentHashMap<String, ConditionEvaluator>()
+    @Volatile private var descriptorSnapshot: List<FeatureDescriptor>? = null
 
     fun registerAction(descriptor: FeatureDescriptor, executor: ActionExecutor) {
         require(descriptor.kind == FeatureKind.ACTION)
@@ -224,7 +225,10 @@ class FeatureRegistry {
 
         // All validation is complete. Commit descriptor + aliases together while holding the same
         // registry monitor so a rejected descriptor cannot leave partial canonical/alias state.
-        if (existingDescriptor == null) descriptors[id] = decorated
+        if (existingDescriptor == null) {
+            descriptors[id] = decorated
+            descriptorSnapshot = null
+        }
         decorated.aliases.forEach { alias -> aliases[alias] = id }
     }
 
@@ -241,6 +245,7 @@ class FeatureRegistry {
             events.remove(it)
             states.remove(it)
         }
+        if (ids.isNotEmpty()) descriptorSnapshot = null
     }
 
     fun resolve(id: String, expectedKind: FeatureKind? = null): FeatureResolution {
@@ -282,9 +287,14 @@ class FeatureRegistry {
     fun conditionEvaluator(id: String): ConditionEvaluator? = canonicalId(id, FeatureKind.CONDITION)?.let(conditions::get)
     fun eventMatcher(id: String): EventMatcher? = canonicalId(id, FeatureKind.EVENT)?.let(events::get)
     fun stateEvaluator(id: String): ConditionEvaluator? = canonicalId(id, FeatureKind.STATE)?.let(states::get)
-    fun allDescriptors(): List<FeatureDescriptor> = descriptors.values.sortedWith(
-        compareBy<FeatureDescriptor> { it.category.name }.thenBy { it.title }
-    )
+    fun allDescriptors(): List<FeatureDescriptor> {
+        descriptorSnapshot?.let { return it }
+        return synchronized(this) {
+            descriptorSnapshot ?: descriptors.values.sortedWith(
+                compareBy<FeatureDescriptor> { it.category.name }.thenBy { it.title }
+            ).also { descriptorSnapshot = it }
+        }
+    }
 
     private fun prepareFeature(feature: FeatureRef, kind: FeatureKind): FeatureRef {
         val canonical = canonicalRef(feature, kind)
