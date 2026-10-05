@@ -72,7 +72,7 @@ object MacroDroidFeatureSuggestions {
         "TakeScreenshotAction" -> "android.screen.screenshot"
         "ControlMediaAction" -> "android.media.transport"
         "SetAlarmClockAction" -> "android.alarm.set"
-        "AddCalendarEntryAction" -> "android.calendar.event.add"
+        "AddCalendarEntryAction" -> "android.calendar.event.insert"
 
         "ClearAppDataAction" -> "android.app.data.clear"
         "KillBackgroundAppAction", "CloseApplicationAction" -> "android.app.background.kill"
