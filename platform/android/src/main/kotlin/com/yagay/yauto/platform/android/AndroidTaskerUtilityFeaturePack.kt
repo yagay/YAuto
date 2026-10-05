@@ -6,8 +6,11 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.location.LocationManager
+import android.location.provider.ProviderProperties
 import android.media.AudioManager
 import android.os.Build
+import android.os.SystemClock
 import android.os.storage.StorageManager
 import android.provider.Settings
 import android.telephony.SubscriptionManager
@@ -52,6 +55,7 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
         registerStorageVolumes(registry)
         registerSubscriptions(registry)
         registerLocationDistance(registry)
+        registerMockLocation(registry)
         registerVibrationCancel(registry)
         registerFileToContentUri(registry)
         registerDeviceName(registry)
@@ -279,6 +283,66 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
             )
             store(feature.config.string("resultVariable"), output, ctx)
             ActionExecutionResult(true, output)
+        }
+    }
+
+    private fun registerMockLocation(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.location.mock.set"),
+                FeatureKind.ACTION,
+                "Set mock location",
+                "Inject or clear an Android test-provider location. YAuto must be allowed as the system mock-location app.",
+                FeatureCategory.DEVICE,
+                fields = listOf(
+                    FieldSchema.Choice("operation", "Operation", true, listOf("set", "clear")),
+                    FieldSchema.Text("provider", "Provider name"),
+                    FieldSchema.Number("latitude", "Latitude", min = -90.0, max = 90.0),
+                    FieldSchema.Number("longitude", "Longitude", min = -180.0, max = 180.0),
+                    FieldSchema.Number("altitudeMeters", "Altitude meters", min = -1000.0, max = 100000.0),
+                    FieldSchema.Number("accuracyMeters", "Accuracy meters", min = 0.1, max = 100000.0),
+                ),
+                keywords = setOf("mock location", "fake gps", "test provider", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, _ ->
+            val manager = context.getSystemService(LocationManager::class.java)
+            val provider = feature.config.string("provider").trim().ifBlank { LocationManager.GPS_PROVIDER }
+            val operation = feature.config.string("operation", "set")
+            val result = runCatching {
+                if (operation == "clear") {
+                    runCatching { manager.setTestProviderEnabled(provider, false) }
+                    runCatching { manager.removeTestProvider(provider) }
+                    true
+                } else {
+                    val latitude = feature.config["latitude"].numberOrNull() ?: error("Latitude is required")
+                    val longitude = feature.config["longitude"].numberOrNull() ?: error("Longitude is required")
+                    require(latitude in -90.0..90.0 && longitude in -180.0..180.0) { "Invalid coordinates" }
+                    val properties = ProviderProperties.Builder()
+                        .setAccuracy(ProviderProperties.ACCURACY_FINE)
+                        .setPowerUsage(ProviderProperties.POWER_USAGE_LOW)
+                        .build()
+                    runCatching { manager.removeTestProvider(provider) }
+                    manager.addTestProvider(provider, properties)
+                    manager.setTestProviderEnabled(provider, true)
+                    val location = Location(provider).apply {
+                        this.latitude = latitude
+                        this.longitude = longitude
+                        altitude = feature.config["altitudeMeters"].numberOrNull() ?: 0.0
+                        accuracy = (feature.config["accuracyMeters"].numberOrNull() ?: 5.0).toFloat().coerceAtLeast(0.1f)
+                        time = System.currentTimeMillis()
+                        elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
+                    }
+                    manager.setTestProviderLocation(provider, location)
+                    true
+                }
+            }.getOrElse {
+                return@registerAction ActionExecutionResult(
+                    false,
+                    message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName),
+                )
+            }
+            ActionExecutionResult(result, ConfigValue.BooleanValue(result))
         }
     }
 
