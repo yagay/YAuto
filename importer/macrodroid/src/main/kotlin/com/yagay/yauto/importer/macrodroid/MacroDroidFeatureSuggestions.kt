@@ -106,7 +106,7 @@ object MacroDroidFeatureSuggestions {
         "VolumeIncrementDecrementAction" -> "android.audio.volume.adjust"
         "PlaySoundAction" -> "android.audio.play"
         "ShareTextAction" -> "android.share.text"
-        "ShellScriptAction" -> "system.shell.execute"
+        "ShellScriptAction" -> "android.shell.execute"
         "ClearNotificationsAction" -> "android.notification.dismiss_all"
         "LaunchActivityAction" -> "android.app.launch"
         "OpenWebPageAction" -> "android.uri.open"

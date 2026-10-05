@@ -81,7 +81,7 @@ internal object ShortXFeatureSuggestions {
         "HttpRequest" -> "android.http.request"
         "LaunchApp", "LaunchAppByPkg" -> "android.app.launch"
         "StopApp", "StopAppByPkg", "StopCurrentApp" -> "android.app.force_stop"
-        "ShellCommand" -> "system.shell.execute"
+        "ShellCommand" -> "android.shell.execute"
         "InputTap" -> "accessibility.gesture.tap"
         "InputSwipe" -> "accessibility.gesture.swipe"
         "InputText" -> "accessibility.input_text"

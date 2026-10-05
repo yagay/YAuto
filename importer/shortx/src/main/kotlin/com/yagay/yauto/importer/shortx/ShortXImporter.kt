@@ -99,14 +99,19 @@ class ShortXImporter : AutomationImporter {
         fun mapPredicate(any: AnyStub, path: String): PredicateNode {
             if (!ShortXMappings.conditionEnabled(any)) return PredicateNode.Literal(true)
             val shortType = shortName(any.typeUrl)
-            if (shortType == "TRUE" || shortType == "True") return PredicateNode.Literal(true)
-            if (shortType == "FALSE" || shortType == "False") return PredicateNode.Literal(false)
+            if (shortType == "TRUE" || shortType == "True") {
+                return PredicateNode.Literal(!ShortXMappings.conditionInverted(any))
+            }
+            if (shortType == "FALSE" || shortType == "False") {
+                return PredicateNode.Literal(ShortXMappings.conditionInverted(any))
+            }
             val feature = ShortXMappings.nativeCondition(any, id)
             if (feature != null) {
                 trace += ImportTrace(path, feature.typeId, "MAPPED", any.typeUrl)
-                return PredicateNode.Condition(feature)
+                val predicate = PredicateNode.Condition(feature)
+                return if (ShortXMappings.conditionInverted(any)) PredicateNode.None(listOf(predicate)) else predicate
             }
-            return PredicateNode.Condition(
+            val preserved = PredicateNode.Condition(
                 preserve(
                     any,
                     CompatFeatureIds.SOURCE_CONDITION,
@@ -114,6 +119,7 @@ class ShortXImporter : AutomationImporter {
                     ShortXMappings.suggestedConditionFeature(any.typeUrl),
                 )
             )
+            return if (ShortXMappings.conditionInverted(any)) PredicateNode.None(listOf(preserved)) else preserved
         }
 
         lateinit var mapAction: (AnyStub, String) -> ActionNode
@@ -131,7 +137,7 @@ class ShortXImporter : AutomationImporter {
                         feature,
                         enabled = ShortXMappings.enabled(any),
                         comment = ShortXMappings.note(any),
-                        failurePolicy = ActionFailurePolicy.CONTINUE,
+                        failurePolicy = if (ShortXMappings.actionBreaksOnError(any)) ActionFailurePolicy.STOP else ActionFailurePolicy.CONTINUE,
                     )
                 } else {
                     ActionNode.Action(

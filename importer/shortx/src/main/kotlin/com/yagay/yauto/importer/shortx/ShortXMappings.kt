@@ -19,7 +19,7 @@ internal object ShortXMappings {
         if (any.isJson) return nativeJsonAction(any, importerId)
         val type = shortName(any.typeUrl)
         val fields = runCatching { ProtoFields(any.value) }.getOrNull() ?: return null
-        if (fields.varint(97)?.let { it != 0L } == true || fields.has(96)) return null
+        if (fields.has(96)) return null
         return when (type) {
             "ShowToast" -> showToast(any, importerId, fields)
             "Delay" -> delay(any, importerId, fields)
@@ -29,6 +29,7 @@ internal object ShortXMappings {
             "InputTap" -> inputTap(any, importerId, fields)
             "InputSwipe" -> inputSwipe(any, importerId, fields)
             "FindAndClickViewById" -> clickViewId(any, importerId, fields)
+            "FindAndClickViewByText" -> clickText(any, importerId, fields)
             "SetWifiEnabled" -> booleanToggle(any, importerId, fields, "android.wifi.set")
             "SetBTEnabled" -> booleanToggle(any, importerId, fields, "android.bluetooth.set")
             "SetNFCEnabled" -> booleanToggle(any, importerId, fields, "android.nfc.set")
@@ -162,7 +163,7 @@ internal object ShortXMappings {
     }
 
     fun nativeCondition(any: AnyStub, importerId: String): FeatureRef? {
-        if (!conditionEnabled(any) || conditionInverted(any)) return null
+        if (!conditionEnabled(any)) return null
         if (any.isJson) return nativeJsonCondition(any, importerId)
 
         val fields = runCatching { ProtoFields(any.value) }.getOrNull() ?: return null
@@ -263,12 +264,22 @@ internal object ShortXMappings {
         return runCatching { ProtoFields(any.value).varint(96) != 1L }.getOrDefault(true)
     }
 
-    private fun conditionInverted(any: AnyStub): Boolean {
+    fun conditionInverted(any: AnyStub): Boolean {
         if (any.isJson) {
             val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return false
             return (obj["isInvert"] as? JsonPrimitive)?.booleanOrNull == true
         }
         return runCatching { ProtoFields(any.value).varint(98) == 1L }.getOrDefault(false)
+    }
+
+    fun actionBreaksOnError(any: AnyStub): Boolean {
+        if (any.isJson) {
+            val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return false
+            val value = obj["actionOnError"] as? JsonPrimitive ?: return false
+            return value.intOrNull == 1 ||
+                value.contentOrNull?.substringAfterLast('_')?.equals("break", ignoreCase = true) == true
+        }
+        return runCatching { ProtoFields(any.value).varint(97) == 1L }.getOrDefault(false)
     }
 
     fun enabled(any: AnyStub): Boolean = if (any.isJson) {
@@ -282,7 +293,7 @@ internal object ShortXMappings {
 
     private fun nativeJsonAction(any: AnyStub, importerId: String): FeatureRef? {
         val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return null
-        if (obj["customContextDataKey"] != null || (obj["actionOnError"] as? JsonPrimitive)?.contentOrNull?.let { it !in setOf("0", "") } == true) return null
+        if (obj["customContextDataKey"] != null && obj["customContextDataKey"] !is JsonNull) return null
         val raw = any.value.toString(Charsets.UTF_8)
         return when (shortName(any.typeUrl)) {
             "ShowToast" -> {
@@ -407,7 +418,7 @@ internal object ShortXMappings {
             }
             "ShellCommand" -> {
                 val command = (obj["command"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() } ?: return null
-                sourceFeature("system.shell.execute", importerId, any.typeUrl, raw,
+                sourceFeature("android.shell.execute", importerId, any.typeUrl, raw,
                     extra = mapOf("command" to ConfigValue.StringValue(command)))
             }
             "InjectKeyCode" -> {
@@ -574,7 +585,7 @@ internal object ShortXMappings {
         "LaunchApp", "LaunchAppByPkg" -> "android.app.launch"
         "WriteClipboard" -> "android.clipboard.set"
         "ReadClipboard" -> "android.clipboard.get"
-        "ShellCommand" -> "system.shell.execute"
+        "ShellCommand" -> "android.shell.execute"
         "StopApp", "StopAppByPkg", "StopCurrentApp" -> "android.app.force_stop"
         "InputText" -> "accessibility.input_text"
         "InputTap" -> "accessibility.gesture.tap"
@@ -846,10 +857,24 @@ internal object ShortXMappings {
         return binaryFeature(any, importerId, "android.uri.open", mapOf("uri" to ConfigValue.StringValue(url)))
     }
 
+    private fun clickText(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields(1)) return null
+        val text = fields.string(1)?.takeIf(String::isNotBlank) ?: return null
+        return binaryFeature(
+            any,
+            importerId,
+            "accessibility.click_text",
+            mapOf(
+                "text" to ConfigValue.StringValue(text),
+                "exact" to ConfigValue.BooleanValue(false),
+            ),
+        )
+    }
+
     private fun shellCommand(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1, 2)) return null
         val command = fields.string(1)?.takeIf { it.isNotBlank() } ?: return null
-        return binaryFeature(any, importerId, "system.shell.execute", mapOf("command" to ConfigValue.StringValue(command)))
+        return binaryFeature(any, importerId, "android.shell.execute", mapOf("command" to ConfigValue.StringValue(command)))
     }
 
     private fun injectKeyCode(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {

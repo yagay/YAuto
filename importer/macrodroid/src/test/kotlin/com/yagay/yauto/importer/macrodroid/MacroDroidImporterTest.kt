@@ -15,7 +15,7 @@ class MacroDroidImporterTest {
         assertTrue(result.success)
         val rule = result.bundle.automations.single()
         assertEquals("android.event.screen_off", rule.activation.events.single().typeId)
-        val condition = (rule.activation.condition as PredicateNode.All).children.single() as PredicateNode.Condition
+        val condition = rule.activation.condition as PredicateNode.Condition
         assertEquals("android.condition.screen", condition.feature.typeId)
         assertEquals(ConfigValue.BooleanValue(false), condition.feature.config["value"])
         assertEquals("android.clipboard.set", (rule.onEvent[0] as ActionNode.Action).feature.typeId)

@@ -20,7 +20,7 @@ object TaskerMappings {
         "102" -> openFile(action, importerId, code, raw)
         "104" -> openUri(action, importerId, code, raw)
         "105" -> setClipboard(action, importerId, code, raw)
-        "123" -> runRootShell(action, importerId, code, raw)
+        "123" -> runShell(action, importerId, code, raw)
         "245" -> keyAction(action, importerId, code, raw, "back")
         "247" -> keyAction(action, importerId, code, raw, "recents")
         "248" -> noConfigAction(action, importerId, code, raw, "system.screen.sleep")
@@ -34,7 +34,9 @@ object TaskerMappings {
         "433" -> booleanAction(action, importerId, code, raw, "android.mobile_data.set")
         "511" -> torch(action, importerId, code, raw)
         "375" -> adbWifi(action, importerId, code, raw)
+        "410" -> writeFile(action, importerId, code, raw)
         "547" -> variableSet(action, importerId, code, raw)
+        "549" -> variableClear(action, importerId, code, raw)
         "664" -> javaFunction(action, importerId, code, raw)
         "665" -> javaObject(action, importerId, code, raw)
         "548" -> flash(action, importerId, code, raw)
@@ -60,6 +62,7 @@ object TaskerMappings {
             pluginFeature(context, importerId, raw, "android.plugin.locale.condition")?.let { return it }
         }
         if (tagName != "Event") return null
+        if (code == "599") return intentReceived(context, importerId, raw)
         val target = when (code) {
             "208" -> "android.event.screen_on"
             "210" -> "android.event.screen_off"
@@ -251,17 +254,18 @@ object TaskerMappings {
         )
     }
 
-    private fun wait(action: Element, importerId: String, code: String, raw: String): FeatureRef {
-        // Kept compatible with Tasker's currently exported Wait layout already covered by importer tests.
-        val milliseconds = action.intArg(0) ?: 0L
-        val seconds = action.intArg(1) ?: 0L
-        val minutes = action.intArg(2) ?: 0L
-        val hours = action.intArg(3) ?: 0L
-        val days = action.intArg(4) ?: 0L
-        val total = milliseconds + seconds * 1_000L + minutes * 60_000L + hours * 3_600_000L + days * 86_400_000L
+    private fun wait(action: Element, importerId: String, code: String, raw: String): FeatureRef? {
+        // Tasker 6.x exports Wait as hours, minutes, milliseconds and seconds in arg0..arg3.
+        val hours = action.intArg(0) ?: 0L
+        val minutes = action.intArg(1) ?: 0L
+        val milliseconds = action.intArg(2) ?: 0L
+        val seconds = action.intArg(3) ?: 0L
+        if (hours !in 0L..24L || minutes !in 0L..59L || milliseconds !in 0L..999L || seconds !in 0L..59L) return null
+        if (!action.otherArgsAreDefault(setOf(0, 1, 2, 3))) return null
+        val total = hours * 3_600_000L + minutes * 60_000L + seconds * 1_000L + milliseconds
         return sourceFeature(
             "core.delay", importerId, "TaskerAction:$code", raw,
-            extra = mapOf("durationMs" to ConfigValue.NumberValue(total.coerceAtLeast(0).toDouble())),
+            extra = mapOf("durationMs" to ConfigValue.NumberValue(total.toDouble())),
         )
     }
 
@@ -301,18 +305,76 @@ object TaskerMappings {
         )
     }
 
-    private fun runRootShell(action: Element, importerId: String, code: String, raw: String): FeatureRef? {
-        // Tasker 6.x exports timeout separately and keeps Use Root in arg2. Non-root shell is left
-        // as a compatibility node until YAuto has a dedicated unprivileged shell backend.
-        if (action.intArg(2) != 1L) return null
-        val command = action.stringArg(0)?.takeIf { it.isNotBlank() } ?: return null
-        val resultVariable = action.stringArg(3).orEmpty()
+    private fun runShell(action: Element, importerId: String, code: String, raw: String): FeatureRef? {
+        // Tasker 6.x: arg0 command, arg1 Use Root, arg2 timeout seconds, arg3 stdout, arg4 stderr, arg5 stdin.
+        val command = action.stringArg(0)?.takeIf(String::isNotBlank) ?: return null
+        val useRoot = action.booleanArg(1) ?: false
+        val timeoutSeconds = (action.intArg(2) ?: 0L).coerceAtLeast(0L)
+        if (timeoutSeconds > 300L) return null
+        val stdoutVariable = action.stringArg(3).orEmpty()
+        val stderrVariable = action.stringArg(4).orEmpty()
+        val stdin = action.stringArg(5).orEmpty()
+        if (stdin.isNotBlank() || !action.otherArgsAreDefault(setOf(0, 1, 2, 3, 4, 5))) return null
         return sourceFeature(
-            "system.shell.execute", importerId, "TaskerAction:$code", raw,
+            if (useRoot) "android.shell.execute" else "android.shell.execute_unprivileged",
+            importerId,
+            "TaskerAction:$code",
+            raw,
             extra = buildMap {
                 put("command", ConfigValue.StringValue(command))
-                if (resultVariable.isNotBlank()) put("resultVariable", ConfigValue.StringValue(resultVariable))
+                if (timeoutSeconds > 0L) put("timeoutMs", ConfigValue.NumberValue(timeoutSeconds * 1_000.0))
+                if (stdoutVariable.isNotBlank()) put("stdoutVariable", ConfigValue.StringValue(stdoutVariable))
+                if (stderrVariable.isNotBlank()) put("stderrVariable", ConfigValue.StringValue(stderrVariable))
             },
+        )
+    }
+
+    private fun writeFile(action: Element, importerId: String, code: String, raw: String): FeatureRef? {
+        val path = action.stringArg(0)?.takeIf(String::isNotBlank) ?: return null
+        var text = action.stringArg(1).orEmpty()
+        val append = action.booleanArg(2) ?: false
+        val addNewline = action.booleanArg(3) ?: false
+        if (!action.otherArgsAreDefault(setOf(0, 1, 2, 3))) return null
+        if (addNewline) text += "\n"
+        return sourceFeature(
+            "file.write_text",
+            importerId,
+            "TaskerAction:$code",
+            raw,
+            extra = mapOf(
+                "path" to ConfigValue.StringValue(path),
+                "text" to ConfigValue.StringValue(text),
+                "append" to ConfigValue.BooleanValue(append),
+                "createParents" to ConfigValue.BooleanValue(false),
+            ),
+        )
+    }
+
+    private fun variableClear(action: Element, importerId: String, code: String, raw: String): FeatureRef? {
+        val name = action.stringArg(0)?.takeIf(String::isNotBlank) ?: return null
+        if (!action.otherArgsAreDefault(setOf(0))) return null
+        return sourceFeature(
+            "variable.clear",
+            importerId,
+            "TaskerAction:$code",
+            raw,
+            extra = mapOf("name" to ConfigValue.StringValue(name)),
+        )
+    }
+
+    private fun intentReceived(context: Element, importerId: String, raw: String): FeatureRef? {
+        val action = context.stringArg(0)?.takeIf(String::isNotBlank) ?: return null
+        val priority = context.intArg(1) ?: 0L
+        val stopEvent = context.intArg(2) ?: 0L
+        val category = context.stringArg(3).orEmpty()
+        val data = context.stringArg(4).orEmpty()
+        if (priority != 0L || stopEvent != 0L || category.isNotBlank() || data.isNotBlank()) return null
+        return sourceFeature(
+            "android.event.broadcast",
+            importerId,
+            "TaskerEvent:599",
+            raw,
+            extra = mapOf("action" to ConfigValue.StringValue(action)),
         )
     }
 
