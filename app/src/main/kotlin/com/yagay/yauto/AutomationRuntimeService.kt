@@ -91,10 +91,15 @@ class AutomationRuntimeService : Service() {
         registerSource("hinge-angle") { HingeAngleEventSource(this) }
         registerSource("activity-recognition") { ActivityRecognitionEventSource(this) }
         registerSource("usage-foreground") {
-            UsageStatsForegroundEventSource(
-                context = this,
-                primarySourceAvailable = { AccessibilityRuntimeBridge.currentWindow() != null },
-            )
+            WorkspaceGatedEventSource(
+                appGraph.workspace,
+                setOf("android.event.app_foreground", "android.event.app_background"),
+            ) {
+                UsageStatsForegroundEventSource(
+                    context = this,
+                    primarySourceAvailable = { AccessibilityRuntimeBridge.currentWindow() != null },
+                )
+            }
         }
         val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
         SurfaceRuntimeBridge.attach(emitter)
