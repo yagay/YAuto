@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_location_distance_title">计算位置距离</string>
+    <string name="feature_android_location_distance_description">计算两个坐标之间的大地距离以及起始和终止方位角</string>
+    <string name="feature_android_location_distance_field_lat1">纬度 1</string>
+    <string name="feature_android_location_distance_field_lon1">经度 1</string>
+    <string name="feature_android_location_distance_field_lat2">纬度 2</string>
+    <string name="feature_android_location_distance_field_lon2">经度 2</string>
+    <string name="feature_android_location_distance_field_resultvariable">保存距离对象</string>
+
+    <string name="feature_android_location_mock_set_title">设置测试位置</string>
+    <string name="feature_android_location_mock_set_description">设置或清除 Android 测试位置；需要系统允许 YAuto 使用测试位置功能</string>
+    <string name="feature_android_location_mock_set_field_provider">位置提供器名称</string>
+    <string name="feature_android_location_mock_set_field_altitudemeters">海拔（米）</string>
+    <string name="feature_android_location_mock_set_field_accuracymeters">精度（米）</string>
+</resources>
