@@ -1,5 +1,6 @@
 package com.yagay.yauto.ui.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -57,6 +58,12 @@ fun MacroHomeScreen(
     var tab by remember { mutableStateOf(HomeTab.HOME) }
     var automationToDelete by remember { mutableStateOf<Automation?>(null) }
     var flowToDelete by remember { mutableStateOf<Flow?>(null) }
+
+    BackHandler(
+        enabled = tab != HomeTab.HOME && automationToDelete == null && flowToDelete == null,
+    ) {
+        tab = HomeTab.HOME
+    }
 
     Scaffold(
         topBar = {
