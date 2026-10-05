@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_physical_activity_title">Physical activity</string>
+    <string name="feature_android_state_physical_activity_description">Check the latest Google Activity Recognition sample</string>
+
+    <string name="feature_android_event_sleep_classification_title">Sleep classification</string>
+    <string name="feature_android_event_sleep_classification_description">Run when Google Sleep API reports current sleep confidence, light and motion values</string>
+    <string name="feature_android_event_sleep_classification_field_minconfidence">Minimum sleep confidence percentage</string>
+    <string name="feature_android_event_sleep_classification_field_maxmotion">Maximum motion score</string>
+    <string name="feature_android_event_sleep_classification_field_maxlight">Maximum light score</string>
+
+    <string name="feature_android_state_sleeping_title">Sleeping</string>
+    <string name="feature_android_state_sleeping_description">Check the latest Google Sleep API classification using confidence, motion and light thresholds</string>
+
+    <string name="feature_android_calendar_event_update_title">Update calendar event</string>
+    <string name="feature_android_calendar_event_update_description">Replace editable fields of an existing Android calendar event</string>
+    <string name="feature_android_calendar_event_update_field_eventid">Event ID</string>
+    <string name="feature_android_calendar_event_update_field_calendarid">Calendar ID</string>
+    <string name="feature_android_calendar_event_update_field_startepochms">Start epoch ms</string>
+    <string name="feature_android_calendar_event_update_field_endepochms">End epoch ms</string>
+    <string name="feature_android_calendar_event_update_field_allday">All-day event</string>
+    <string name="feature_android_calendar_event_update_field_timezone">Time zone ID</string>
+
+    <string name="feature_android_calendar_attendees_query_title">Query calendar attendees</string>
+    <string name="feature_android_calendar_attendees_query_description">Read attendees for an Android calendar event</string>
+    <string name="feature_android_calendar_attendees_query_field_eventid">Event ID</string>
+    <string name="feature_android_calendar_attendees_query_field_resultvariable">Store attendee list</string>
+
+    <string name="feature_android_calendar_attendee_set_title">Add or update calendar attendee</string>
+    <string name="feature_android_calendar_attendee_set_description">Insert a calendar attendee or update an existing attendee row by ID</string>
+    <string name="feature_android_calendar_attendee_set_field_eventid">Event ID</string>
+    <string name="feature_android_calendar_attendee_set_field_attendeeid">Existing attendee ID, or zero to add</string>
+    <string name="feature_android_calendar_attendee_set_field_email">Email</string>
+    <string name="feature_android_calendar_attendee_set_field_relationshipcode">Relationship code</string>
+    <string name="feature_android_calendar_attendee_set_field_typecode">Type code</string>
+    <string name="feature_android_calendar_attendee_set_field_statuscode">Status code</string>
+    <string name="feature_android_calendar_attendee_set_field_resultvariable">Store attendee ID</string>
+
+    <string name="feature_android_calendar_reminders_query_title">Query calendar reminders</string>
+    <string name="feature_android_calendar_reminders_query_description">Read reminders for an Android calendar event</string>
+    <string name="feature_android_calendar_reminders_query_field_eventid">Event ID</string>
+    <string name="feature_android_calendar_reminders_query_field_resultvariable">Store reminder list</string>
+
+    <string name="feature_android_calendar_reminder_set_title">Add or update calendar reminder</string>
+    <string name="feature_android_calendar_reminder_set_description">Insert a calendar reminder or update an existing reminder row by ID</string>
+    <string name="feature_android_calendar_reminder_set_field_eventid">Event ID</string>
+    <string name="feature_android_calendar_reminder_set_field_reminderid">Existing reminder ID, or zero to add</string>
+    <string name="feature_android_calendar_reminder_set_field_minutesprior">Minutes before event</string>
+    <string name="feature_android_calendar_reminder_set_field_methodcode">Reminder method code</string>
+    <string name="feature_android_calendar_reminder_set_field_resultvariable">Store reminder ID</string>
+</resources>
