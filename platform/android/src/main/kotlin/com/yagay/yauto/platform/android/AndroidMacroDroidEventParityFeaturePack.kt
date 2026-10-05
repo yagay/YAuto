@@ -39,6 +39,41 @@ class AndroidMacroDroidEventParityFeaturePack : FeaturePack {
                 confidence >= (feature.config["minConfidence"].numberOrNull() ?: 0.0)
         }
 
+        val physicalActivityEvaluator = ConditionEvaluator { feature, _ ->
+            val snapshot = ActivityRecognitionRuntimeBridge.physicalActivity() ?: return@ConditionEvaluator false
+            val maxAgeMs = (feature.config["maxAgeMs"].numberOrNull() ?: 900_000.0).coerceAtLeast(1_000.0)
+            val fresh = System.currentTimeMillis() - snapshot.receivedEpochMs <= maxAgeMs
+            val activity = feature.config.string("activity", "any")
+            fresh &&
+                (activity == "any" || snapshot.activity == activity) &&
+                snapshot.confidence >= (feature.config["minConfidence"].numberOrNull() ?: 0.0)
+        }
+        val physicalFields = listOf(
+            FieldSchema.Choice(
+                "activity",
+                "Activity",
+                options = listOf("any", "in_vehicle", "on_bicycle", "on_foot", "running", "still", "tilting", "walking", "unknown"),
+            ),
+            FieldSchema.Number("minConfidence", "Minimum confidence %", min = 0.0, max = 100.0),
+            FieldSchema.Duration("maxAgeMs", "Maximum sample age"),
+        )
+        val physicalState = FeatureDescriptor(
+            FeatureId("android.state.physical_activity"),
+            FeatureKind.STATE,
+            "Physical activity",
+            "Check the latest Google Activity Recognition sample",
+            FeatureCategory.DEVICE,
+            fields = physicalFields,
+            accessRequirements = setOf(AccessRequirement.ACTIVITY_RECOGNITION),
+            keywords = setOf("physical activity", "walking", "running", "vehicle", "tasker"),
+            ownerPackId = id,
+        )
+        registry.registerState(physicalState, physicalActivityEvaluator)
+        registry.registerCondition(
+            physicalState.copy(id = FeatureId("android.condition.physical_activity"), kind = FeatureKind.CONDITION),
+            physicalActivityEvaluator,
+        )
+
         registry.registerEvent(
             FeatureDescriptor(
                 FeatureId("android.event.sleep_transition"),
