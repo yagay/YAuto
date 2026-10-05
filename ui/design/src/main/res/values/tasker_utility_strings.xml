@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="runtime_feature_foreground_event_unavailable">No foreground usage event is available</string>
-    <string name="runtime_feature_phone_permission_required">Phone permission is required to read SIM subscriptions</string>
 </resources>
