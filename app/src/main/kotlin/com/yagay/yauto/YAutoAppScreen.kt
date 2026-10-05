@@ -76,7 +76,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     var runtimeSummary by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val saveLock = remember { Mutex() }
-    val featureDescriptors = remember(graph) { featureDescriptors }
+    val featureDescriptors = remember(graph) { graph.features.allDescriptors() }
 
     BackHandler(enabled = page != AppPage.HOME) {
         when (page) {
