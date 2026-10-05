@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_physical_activity_title">身体活动</string>
+    <string name="feature_android_state_physical_activity_description">检查最新的 Google 活动识别采样</string>
+
+    <string name="feature_android_event_sleep_classification_title">睡眠分类</string>
+    <string name="feature_android_event_sleep_classification_description">当 Google Sleep API 报告当前睡眠置信度、光照和运动值时运行</string>
+    <string name="feature_android_event_sleep_classification_field_minconfidence">最低睡眠置信度百分比</string>
+    <string name="feature_android_event_sleep_classification_field_maxmotion">最大运动评分</string>
+    <string name="feature_android_event_sleep_classification_field_maxlight">最大光照评分</string>
+
+    <string name="feature_android_state_sleeping_title">睡眠中</string>
+    <string name="feature_android_state_sleeping_description">根据最新 Google Sleep API 的置信度、运动和光照阈值检查睡眠状态</string>
+
+    <string name="feature_android_calendar_event_update_title">更新日历事件</string>
+    <string name="feature_android_calendar_event_update_description">替换现有 Android 日历事件的可编辑字段</string>
+    <string name="feature_android_calendar_event_update_field_eventid">事件 ID</string>
+    <string name="feature_android_calendar_event_update_field_calendarid">日历 ID</string>
+    <string name="feature_android_calendar_event_update_field_startepochms">开始时间戳（毫秒）</string>
+    <string name="feature_android_calendar_event_update_field_endepochms">结束时间戳（毫秒）</string>
+    <string name="feature_android_calendar_event_update_field_allday">全天事件</string>
+    <string name="feature_android_calendar_event_update_field_timezone">时区 ID</string>
+
+    <string name="feature_android_calendar_attendees_query_title">查询日历参与者</string>
+    <string name="feature_android_calendar_attendees_query_description">读取 Android 日历事件的参与者</string>
+    <string name="feature_android_calendar_attendees_query_field_eventid">事件 ID</string>
+    <string name="feature_android_calendar_attendees_query_field_resultvariable">保存参与者列表</string>
+
+    <string name="feature_android_calendar_attendee_set_title">添加或更新日历参与者</string>
+    <string name="feature_android_calendar_attendee_set_description">添加日历参与者，或按 ID 更新已有参与者记录</string>
+    <string name="feature_android_calendar_attendee_set_field_eventid">事件 ID</string>
+    <string name="feature_android_calendar_attendee_set_field_attendeeid">已有参与者 ID，0 表示新增</string>
+    <string name="feature_android_calendar_attendee_set_field_email">电子邮件</string>
+    <string name="feature_android_calendar_attendee_set_field_relationshipcode">关系代码</string>
+    <string name="feature_android_calendar_attendee_set_field_typecode">类型代码</string>
+    <string name="feature_android_calendar_attendee_set_field_statuscode">状态代码</string>
+    <string name="feature_android_calendar_attendee_set_field_resultvariable">保存参与者 ID</string>
+
+    <string name="feature_android_calendar_reminders_query_title">查询日历提醒</string>
+    <string name="feature_android_calendar_reminders_query_description">读取 Android 日历事件的提醒</string>
+    <string name="feature_android_calendar_reminders_query_field_eventid">事件 ID</string>
+    <string name="feature_android_calendar_reminders_query_field_resultvariable">保存提醒列表</string>
+
+    <string name="feature_android_calendar_reminder_set_title">添加或更新日历提醒</string>
+    <string name="feature_android_calendar_reminder_set_description">添加日历提醒，或按 ID 更新已有提醒记录</string>
+    <string name="feature_android_calendar_reminder_set_field_eventid">事件 ID</string>
+    <string name="feature_android_calendar_reminder_set_field_reminderid">已有提醒 ID，0 表示新增</string>
+    <string name="feature_android_calendar_reminder_set_field_minutesprior">事件前分钟数</string>
+    <string name="feature_android_calendar_reminder_set_field_methodcode">提醒方式代码</string>
+    <string name="feature_android_calendar_reminder_set_field_resultvariable">保存提醒 ID</string>
+</resources>
