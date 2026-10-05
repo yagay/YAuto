@@ -140,7 +140,7 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
             val lookback = (feature.config["lookbackMs"].numberOrNull() ?: 3_600_000.0)
                 .toLong().coerceIn(60_000L, 7L * 24L * 60L * 60L * 1_000L)
             val event = latestForegroundEvent(now - lookback, now)
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "No foreground usage event available"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.foreground_event_unavailable"))
             val output = ConfigValue.ObjectValue(
                 mapOf(
                     "package" to ConfigValue.StringValue(event.packageName),
@@ -260,7 +260,7 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, ctx ->
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.runtime_permission_required", "phone"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.phone_permission_required"))
             }
             val values = runCatching {
                 subscriptions.activeSubscriptionInfoList.orEmpty().map { info ->
