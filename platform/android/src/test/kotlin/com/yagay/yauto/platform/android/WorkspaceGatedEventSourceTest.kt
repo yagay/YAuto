@@ -7,12 +7,14 @@ import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.storage.ObservableWorkspaceRepository
 import com.yagay.yauto.core.storage.WorkspaceData
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class WorkspaceGatedEventSourceTest {
     @Test
-    fun `delegate only runs while matching enabled trigger exists and is recreated after stop`() {
+    fun `delegate only runs while matching enabled trigger exists and is recreated after stop`() = runBlocking {
         val workspace = FakeObservableWorkspace()
         var created = 0
         val sources = mutableListOf<FakeSource>()
@@ -28,18 +30,25 @@ class WorkspaceGatedEventSourceTest {
         assertEquals(0, created)
 
         workspace.publish(data("android.event.sound_level"))
-        assertEquals(1, created)
-        assertEquals(1, sources.single().starts)
+        awaitCondition { created == 1 && sources.singleOrNull()?.starts == 1 }
 
         workspace.publish(WorkspaceData())
-        assertEquals(1, sources.single().stops)
+        awaitCondition { sources.singleOrNull()?.stops == 1 }
 
         workspace.publish(data("android.event.sound_level"))
-        assertEquals(2, created)
-        assertEquals(1, sources.last().starts)
+        awaitCondition { created == 2 && sources.lastOrNull()?.starts == 1 }
 
         gated.stop()
         assertEquals(1, sources.last().stops)
+    }
+
+
+    private suspend fun awaitCondition(predicate: () -> Boolean) {
+        repeat(100) {
+            if (predicate()) return
+            delay(10)
+        }
+        check(predicate()) { "Timed out waiting for gated source transition" }
     }
 
     private fun data(typeId: String) = WorkspaceData(
