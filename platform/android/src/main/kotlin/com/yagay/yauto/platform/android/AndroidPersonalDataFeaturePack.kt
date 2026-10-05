@@ -117,9 +117,9 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
     private fun registerCalendarWriteActions(registry: FeatureRegistry) {
         registry.registerAction(
             FeatureDescriptor(
-                FeatureId("android.calendar.event.add"),
+                FeatureId("android.calendar.event.insert"),
                 FeatureKind.ACTION,
-                "Add calendar event",
+                "Insert calendar event",
                 "Insert an event directly into Android CalendarProvider",
                 FeatureCategory.APP,
                 fields = listOf(
