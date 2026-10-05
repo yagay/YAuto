@@ -143,12 +143,7 @@
     <string name="feature_android_condition_sleeping_field_maxagems">Maximum classification age</string>
     <string name="feature_android_condition_sleeping_field_value">Sleeping</string>
 
-    <string name="feature_android_calendar_event_add_title">Add calendar event</string>
-    <string name="feature_android_calendar_event_add_description">Insert an event directly into Android CalendarProvider</string>
     <string name="feature_android_calendar_event_add_field_calendarid">Calendar ID</string>
-    <string name="feature_android_calendar_event_add_field_title">Title</string>
-    <string name="feature_android_calendar_event_add_field_description">Description</string>
-    <string name="feature_android_calendar_event_add_field_location">Location</string>
     <string name="feature_android_calendar_event_add_field_startepochms">Start epoch ms</string>
     <string name="feature_android_calendar_event_add_field_endepochms">End epoch ms</string>
     <string name="feature_android_calendar_event_add_field_allday">All-day event</string>
@@ -229,9 +224,6 @@
     <string name="feature_android_storage_volumes_query_description">Read Android StorageManager volume metadata</string>
     <string name="feature_android_storage_volumes_query_field_resultvariable">Store volume list</string>
 
-    <string name="feature_android_sim_subscriptions_query_title">Get SIM subscriptions</string>
-    <string name="feature_android_sim_subscriptions_query_description">Read active Android SIM/eSIM subscription metadata</string>
-    <string name="feature_android_sim_subscriptions_query_field_resultvariable">Store subscription list</string>
 
     <string name="feature_android_location_distance_title">Calculate location distance</string>
     <string name="feature_android_location_distance_description">Calculate geodesic distance and initial/final bearings between two coordinates</string>
