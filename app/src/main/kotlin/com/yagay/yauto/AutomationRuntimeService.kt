@@ -271,7 +271,7 @@ class AutomationRuntimeService : Service() {
     private fun configureAccessibilitySubscriptions(workspace: WorkspaceData) {
         val subscribed = buildSet {
             workspace.automations.asSequence()
-                .filter { it.enabled && it.category !in workspace.disabledCategories }
+                .filter { it.enabled && (it.category == null || it.category !in workspace.disabledCategories) }
                 .flatMap { it.activation.events.asSequence() }
                 .forEach { feature ->
                     when (feature.typeId) {
