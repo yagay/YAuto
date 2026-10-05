@@ -50,6 +50,7 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
 
     override fun install(registry: FeatureRegistry) {
         registerUuid(registry)
+        registerArraysCompare(registry)
         registerForegroundApp(registry)
         registerAudioStreamLimits(registry)
         registerStorageVolumes(registry)
@@ -75,6 +76,44 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, ctx ->
             val output = ConfigValue.StringValue(UUID.randomUUID().toString())
+            store(feature.config.string("resultVariable"), output, ctx)
+            ActionExecutionResult(true, output)
+        }
+    }
+
+    private fun registerArraysCompare(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("data.arrays.compare"),
+                FeatureKind.ACTION,
+                "Compare arrays",
+                "Compare two runtime list variables and return common, distinct and match results",
+                FeatureCategory.VARIABLE,
+                fields = listOf(
+                    FieldSchema.Variable("first", "First list variable", true),
+                    FieldSchema.Variable("second", "Second list variable", true),
+                    FieldSchema.Variable("resultVariable", "Store comparison object", true),
+                ),
+                keywords = setOf("arrays compare", "common", "distinct", "exact match", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val left = (ctx.variables.get(feature.config.string("first")) as? ConfigValue.ListValue)?.value
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.variable_not_list"))
+            val right = (ctx.variables.get(feature.config.string("second")) as? ConfigValue.ListValue)?.value
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.variable_not_list"))
+            val common = left.filter { item -> item in right }.distinct()
+            val leftOnly = left.filterNot { item -> item in right }.distinct()
+            val rightOnly = right.filterNot { item -> item in left }.distinct()
+            val output = ConfigValue.ObjectValue(
+                mapOf(
+                    "common" to ConfigValue.ListValue(common),
+                    "firstOnly" to ConfigValue.ListValue(leftOnly),
+                    "secondOnly" to ConfigValue.ListValue(rightOnly),
+                    "exactMatch" to ConfigValue.BooleanValue(left == right),
+                    "sameMembers" to ConfigValue.BooleanValue(left.toSet() == right.toSet()),
+                )
+            )
             store(feature.config.string("resultVariable"), output, ctx)
             ActionExecutionResult(true, output)
         }
