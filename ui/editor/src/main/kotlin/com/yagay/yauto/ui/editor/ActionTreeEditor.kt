@@ -31,6 +31,7 @@ fun ActionTreeDialog(
     var adding by remember { mutableStateOf(false) }
     var picker by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<ActionNode?>(null) }
+    val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Scaffold(
@@ -54,7 +55,7 @@ fun ActionTreeDialog(
                     key(node.id.value) {
                         Card(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(12.dp)) {
-                                Text(nodeLabel(node, descriptors, flows))
+                                Text(nodeLabel(node, descriptorById, flows))
                                 Row {
                                     TextButton(onClick = { editing = node }) {
                                         Text(stringResource(TextR.string.common_edit))
@@ -181,10 +182,10 @@ fun ActionTreeDialog(
 @Composable
 private fun nodeLabel(
     node: ActionNode,
-    descriptors: List<FeatureDescriptor>,
+    descriptors: Map<String, FeatureDescriptor>,
     flows: List<Flow>,
 ): String = when (node) {
-    is ActionNode.Action -> descriptors.firstOrNull { it.id.value == node.feature.typeId }
+    is ActionNode.Action -> descriptors[node.feature.typeId]
         ?.let { localizedFeatureTitle(it) } ?: node.feature.typeId
     is ActionNode.If -> stringResource(TextR.string.tree_if)
     is ActionNode.Switch -> stringResource(TextR.string.tree_switch_count_format, node.cases.size)
@@ -220,6 +221,7 @@ private fun NodeDialog(
     var saveChild by remember { mutableStateOf<((List<ActionNode>) -> Unit)?>(null) }
     var predicate by remember { mutableStateOf<PredicateNode?>(null) }
     var savePredicate by remember { mutableStateOf<((PredicateNode) -> Unit)?>(null) }
+    val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
 
     fun children(label: String, actions: List<ActionNode>, update: (List<ActionNode>) -> Unit) {
         child = label to actions
@@ -232,7 +234,7 @@ private fun NodeDialog(
     }
 
     val action = draft as? ActionNode.Action
-    if (action != null && descriptors.any { it.id.value == action.feature.typeId }) {
+    if (action != null && descriptorById.containsKey(action.feature.typeId)) {
         MacroFeaturePickerDialog(
             kind = FeatureKind.ACTION,
             descriptors = descriptors,
@@ -245,7 +247,7 @@ private fun NodeDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(nodeLabel(draft, descriptors, flows)) },
+        title = { Text(nodeLabel(draft, descriptorById, flows)) },
         text = {
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
