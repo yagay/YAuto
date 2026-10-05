@@ -65,6 +65,7 @@ object AccessibilityRuntimeBridge {
     @Volatile private var fingerprintGestureListener: ((AccessibilityFingerprintGestureSnapshot) -> Unit)? = null
     @Volatile private var fingerprintGestureAvailable: Boolean = false
     private val nextClick = AtomicReference<CompletableDeferred<AccessibilityUiEventSnapshot>?>(null)
+    private val subscribedUiRuntimeEvents = AtomicReference<Set<String>>(emptySet())
 
     fun currentWindow(): AccessibilityWindowSnapshot? = current.get()
 
@@ -93,6 +94,28 @@ object AccessibilityRuntimeBridge {
     fun setFingerprintGestureListener(value: ((AccessibilityFingerprintGestureSnapshot) -> Unit)?) {
         fingerprintGestureListener = value
     }
+
+    fun configureUiRuntimeEvents(typeIds: Set<String>) {
+        subscribedUiRuntimeEvents.set(typeIds.toSet())
+    }
+
+    internal fun shouldDispatchUiEvent(kind: String): Boolean {
+        if (kind == "click" && nextClick.get() != null) return true
+        val typeId = when (kind) {
+            "click" -> "android.event.ui_click"
+            "long_click" -> "android.event.ui_long_click"
+            "text_changed" -> "android.event.ui_text_changed"
+            "focused" -> "android.event.ui_focused"
+            "scrolled" -> "android.event.ui_scrolled"
+            "content_changed" -> "android.event.screen_content_changed"
+            "toast" -> "android.event.toast_shown"
+            else -> return false
+        }
+        return typeId in subscribedUiRuntimeEvents.get()
+    }
+
+    internal fun shouldCaptureScreenText(): Boolean =
+        "android.event.screen_content_changed" in subscribedUiRuntimeEvents.get()
 
     fun isFingerprintGestureAvailable(): Boolean = fingerprintGestureAvailable
 
