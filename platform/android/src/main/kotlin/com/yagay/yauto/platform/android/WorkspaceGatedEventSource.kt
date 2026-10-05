@@ -2,6 +2,7 @@ package com.yagay.yauto.platform.android
 
 import com.yagay.yauto.core.storage.ObservableWorkspaceRepository
 import com.yagay.yauto.core.storage.WorkspaceData
+import com.yagay.yauto.core.storage.runtimeEventFeatureIds
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,11 +53,7 @@ class WorkspaceGatedEventSource(
     @Synchronized
     private fun applyWorkspace(data: WorkspaceData) {
         if (!started.get()) return
-        val needed = data.automations.asSequence()
-            .filter { it.enabled && (it.category == null || it.category !in data.disabledCategories) }
-            .flatMap { it.activation.events.asSequence() }
-            .any { it.typeId in requiredEventTypeIds }
-
+        val needed = data.runtimeEventFeatureIds().any { it in requiredEventTypeIds }
         if (needed) startDelegate() else stopDelegate()
     }
 
