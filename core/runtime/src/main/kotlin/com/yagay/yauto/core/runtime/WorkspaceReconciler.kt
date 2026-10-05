@@ -10,6 +10,9 @@ import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.WorkspaceRepository
+import java.util.concurrent.CopyOnWriteArrayList
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Canonicalizes only Feature IDs that the current registry explicitly knows how to resolve for the
@@ -101,10 +104,38 @@ class ReconcilingWorkspaceRepository(
     registry: FeatureRegistry,
 ) : WorkspaceRepository {
     private val reconciler = WorkspaceReconciler(registry)
+    private val cacheLock = Mutex()
+    private val listeners = CopyOnWriteArrayList<(WorkspaceData) -> Unit>()
+    @Volatile private var cached: WorkspaceData? = null
 
-    override suspend fun load(): WorkspaceData = reconciler.reconcile(delegate.load())
+    override suspend fun load(): WorkspaceData {
+        cached?.let { return it }
+        return cacheLock.withLock {
+            cached ?: reconciler.reconcile(delegate.load()).also { loaded ->
+                cached = loaded
+                notifyListeners(loaded)
+            }
+        }
+    }
 
     override suspend fun save(data: WorkspaceData) {
-        delegate.save(reconciler.reconcile(data))
+        val reconciled = reconciler.reconcile(data)
+        cacheLock.withLock {
+            delegate.save(reconciled)
+            cached = reconciled
+        }
+        notifyListeners(reconciled)
+    }
+
+    fun snapshotOrNull(): WorkspaceData? = cached
+
+    fun addListener(listener: (WorkspaceData) -> Unit): AutoCloseable {
+        listeners += listener
+        cached?.let(listener)
+        return AutoCloseable { listeners -= listener }
+    }
+
+    private fun notifyListeners(data: WorkspaceData) {
+        listeners.forEach { listener -> runCatching { listener(data) } }
     }
 }
