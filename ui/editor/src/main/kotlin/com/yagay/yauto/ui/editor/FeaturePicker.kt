@@ -1,6 +1,7 @@
 package com.yagay.yauto.ui.editor
 
 import android.content.Context
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -57,6 +58,18 @@ fun MacroFeaturePickerDialog(
     }
     val accent = kindAccent(kind)
 
+    fun navigateBack() {
+        page = when (val current = page) {
+            PickerPage.Categories -> {
+                onDismiss()
+                PickerPage.Categories
+            }
+            is PickerPage.Features -> PickerPage.Categories
+            is PickerPage.Configure -> current.fromCategory ?: PickerPage.Categories
+        }
+        query = ""
+    }
+
     fun toggleFavorite(id: String) {
         favorites = if (id in favorites) favorites - id else favorites + id
         prefs.edit().putString(favoriteKey(kind), favorites.joinToString("\n")).apply()
@@ -68,9 +81,16 @@ fun MacroFeaturePickerDialog(
     }
 
     Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        onDismissRequest = {
+            if (page == PickerPage.Categories) onDismiss() else navigateBack()
+        },
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = false,
+        ),
     ) {
+        BackHandler { navigateBack() }
+
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -88,18 +108,7 @@ fun MacroFeaturePickerDialog(
                         )
                     },
                     navigationIcon = {
-                        TextButton(
-                            onClick = {
-                                page = when (val current = page) {
-                                    PickerPage.Categories -> {
-                                        onDismiss()
-                                        PickerPage.Categories
-                                    }
-                                    is PickerPage.Features -> PickerPage.Categories
-                                    is PickerPage.Configure -> current.fromCategory ?: PickerPage.Categories
-                                }
-                            }
-                        ) {
+                        TextButton(onClick = ::navigateBack) {
                             if (page == PickerPage.Categories) {
                                 Text(stringResource(TextR.string.common_close), color = Color.White)
                             } else {
