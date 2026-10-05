@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_calendar_event_insert_title">Insert calendar event</string>
+    <string name="feature_android_calendar_event_insert_description">Insert an event directly into Android CalendarProvider</string>
+    <string name="feature_android_calendar_event_insert_field_calendarid">Calendar ID</string>
+    <string name="feature_android_calendar_event_insert_field_title">Title</string>
+    <string name="feature_android_calendar_event_insert_field_description">Description</string>
+    <string name="feature_android_calendar_event_insert_field_location">Location</string>
+    <string name="feature_android_calendar_event_insert_field_startepochms">Start epoch ms</string>
+    <string name="feature_android_calendar_event_insert_field_endepochms">End epoch ms</string>
+    <string name="feature_android_calendar_event_insert_field_allday">All-day event</string>
+    <string name="feature_android_calendar_event_insert_field_timezone">Time zone ID</string>
+    <string name="feature_android_calendar_event_insert_field_resultvariable">Store event ID</string>
+</resources>
