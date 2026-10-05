@@ -48,16 +48,24 @@ class YAutoAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
         val eventPackage = event.packageName?.toString().orEmpty()
+        val ownPackage = eventPackage == packageName
+        if (ownPackage) {
+            // Window identity only needs real window transitions. Ignoring YAuto's own content
+            // changes also avoids snapshot allocation/atomic churn on every Compose update.
+            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+                event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED
+            ) {
+                AccessibilityRuntimeBridge.update(eventPackage, event.className?.toString())
+            }
+            return
+        }
+
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
             event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
             event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
         ) {
             AccessibilityRuntimeBridge.update(eventPackage, event.className?.toString())
         }
-
-        // Never feed YAuto's own UI back into its automation runtime. This prevents scrolling and
-        // recomposition from becoming an Accessibility -> Runtime -> Workspace -> Trace feedback loop.
-        if (eventPackage == packageName) return
 
         val kind = when (event.eventType) {
             AccessibilityEvent.TYPE_VIEW_CLICKED -> "click"
