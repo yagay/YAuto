@@ -1,5 +1,6 @@
 package com.yagay.yauto
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -75,6 +76,15 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     var runtimeSummary by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val saveLock = remember { Mutex() }
+
+    BackHandler(enabled = page != AppPage.HOME) {
+        when (page) {
+            AppPage.AUTOMATION -> editingAutomation = null
+            AppPage.FLOW -> editingFlow = null
+            else -> Unit
+        }
+        page = AppPage.HOME
+    }
 
     fun operation(block: suspend () -> Unit) {
         scope.launch {
