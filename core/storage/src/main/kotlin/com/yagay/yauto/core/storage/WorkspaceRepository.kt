@@ -29,6 +29,11 @@ interface WorkspaceRepository {
     suspend fun save(data: WorkspaceData)
 }
 
+interface ObservableWorkspaceRepository : WorkspaceRepository {
+    fun snapshotOrNull(): WorkspaceData?
+    fun addListener(listener: (WorkspaceData) -> Unit): AutoCloseable
+}
+
 fun WorkspaceData.merge(
     automationsToImport: List<Automation>,
     flowsToImport: List<Flow>,
