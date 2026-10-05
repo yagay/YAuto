@@ -20,7 +20,7 @@ class MacroDroidFeatureSuggestionsTest {
         assertEquals("android.screenshot.capture", mapper.targetId("TakeScreenshotAction", SourceFeatureKind.ACTION))
         assertEquals("android.media.transport", mapper.targetId("ControlMediaAction", SourceFeatureKind.ACTION))
         assertEquals("android.alarm.set", mapper.targetId("SetAlarmClockAction", SourceFeatureKind.ACTION))
-        assertEquals("android.calendar.event.add", mapper.targetId("AddCalendarEntryAction", SourceFeatureKind.ACTION))
+        assertEquals("android.calendar.event.insert", mapper.targetId("AddCalendarEntryAction", SourceFeatureKind.ACTION))
         assertEquals("android.app.data.clear", mapper.targetId("ClearAppDataAction", SourceFeatureKind.ACTION))
         assertEquals("android.app.background.kill", mapper.targetId("KillBackgroundAppAction", SourceFeatureKind.ACTION))
         assertEquals("android.app.enabled.set", mapper.targetId("DisableAppAction", SourceFeatureKind.ACTION))
