@@ -56,6 +56,12 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.audio.volume.adjust", ShortXFeatureSuggestions.target("AdjustVolume", path))
         assertEquals("system.notifications.expand", ShortXFeatureSuggestions.target("ExpandNotification", path))
         assertEquals("android.sms.compose", ShortXFeatureSuggestions.target("SendSMS", path))
+        assertEquals("variable.global.set", ShortXFeatureSuggestions.target("CreateGlobalVar", path))
+        assertEquals("variable.global.mutate", ShortXFeatureSuggestions.target("WriteGlobalVar", path))
+        assertEquals("variable.global.mutate", ShortXFeatureSuggestions.target("AddToGlobalVar", path))
+        assertEquals("variable.global.clear", ShortXFeatureSuggestions.target("DeleteGlobalVar", path))
+        assertEquals("android.app.previous.launch", ShortXFeatureSuggestions.target("StartPreviousApp", path))
+        assertEquals("android.app.next.launch", ShortXFeatureSuggestions.target("StartNextApp", path))
     }
 
     @Test fun `facts suggest matching runtime events`() {
@@ -82,6 +88,9 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.event.sensor_value", ShortXFeatureSuggestions.target("LightSensor", path))
         assertEquals("android.event.wifi_changed", ShortXFeatureSuggestions.target("WifiConnectedTo", path))
         assertEquals("android.event.network_changed", ShortXFeatureSuggestions.target("VPNConnected", path))
+        assertEquals("android.event.app_foreground", ShortXFeatureSuggestions.target("AppBecomeFg", path))
+        assertEquals("android.event.app_background", ShortXFeatureSuggestions.target("AppBecomeBg", path))
+        assertEquals("android.event.websocket", ShortXFeatureSuggestions.target("OnWebSocket", path))
     }
 
     @Test fun `conditions suggest compatible current states`() {
@@ -101,6 +110,8 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.condition.wifi_network", ShortXFeatureSuggestions.target("RequireWifiConnected", path))
         assertEquals("android.condition.audio.ringer_mode", ShortXFeatureSuggestions.target("RequireRingerMode", path))
         assertEquals("android.condition.phone_call_state", ShortXFeatureSuggestions.target("IsRinging", path))
+        assertEquals("android.condition.app_foreground", ShortXFeatureSuggestions.target("CurrentPkgList", path))
+        assertEquals("android.plugin.locale.condition", ShortXFeatureSuggestions.target("PluginCondition", path))
     }
 
     @Test fun `different semantics are deliberately not guessed`() {
