@@ -35,6 +35,7 @@ fun MacroFlowEditorScreen(
     var tree by remember { mutableStateOf(false) }
     var paramEdit by remember { mutableStateOf<Triple<FlowParamSide, Int?, FlowParameter?>?>(null) }
     var actionMenu by remember { mutableStateOf<Int?>(null) }
+    val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
 
     Scaffold(
         topBar = {
@@ -122,9 +123,7 @@ fun MacroFlowEditorScreen(
                     if (actions.isEmpty()) FlowEmpty(stringResource(TextR.string.flow_add_action_hint))
                     actions.forEachIndexed { index, node ->
                         val feature = (node as? ActionNode.Action)?.feature
-                        val descriptor = feature?.let { ref ->
-                            descriptors.firstOrNull { it.id.value == ref.typeId }
-                        }
+                        val descriptor = feature?.let { ref -> descriptorById[ref.typeId] }
                         val summary = feature?.config?.entries
                             ?.filterNot { it.key.startsWith("source.") }
                             ?.take(3)
