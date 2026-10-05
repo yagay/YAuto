@@ -64,9 +64,8 @@ internal class FeatureTextResolver(private val context: Context) {
                 ?: context.getString(TextR.string.feature_generic_option)
         }
 
-    fun matches(descriptor: FeatureDescriptor, query: String): Boolean {
-        if (query.isBlank()) return true
-        val searchable = searchTextCache.getOrPut(descriptor.id.value) {
+    fun searchText(descriptor: FeatureDescriptor): String =
+        searchTextCache.getOrPut(descriptor.id.value) {
             buildList {
                 add(title(descriptor))
                 add(description(descriptor))
@@ -82,8 +81,9 @@ internal class FeatureTextResolver(private val context: Context) {
                 }
             }.joinToString("\n")
         }
-        return searchable.contains(query, ignoreCase = true)
-    }
+
+    fun matches(descriptor: FeatureDescriptor, query: String): Boolean =
+        query.isBlank() || searchText(descriptor).contains(query, ignoreCase = true)
 
     private fun phrase(text: String): String? =
         resource("feature_phrase_${resourceKey(text)}")
