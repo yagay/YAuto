@@ -50,11 +50,15 @@ internal fun FeatureCategoryPage(
         descriptors.map { catalogCategory(it.category) }.distinctBy { it.id }.sortedBy { it.order }
     }
     val textResolver = rememberFeatureTextResolver()
-    val search = remember(descriptors, query, textResolver) {
-        if (query.isBlank()) emptyList() else descriptors.filter { textResolver.matches(it, query) }
+    val displayItems = remember(descriptors, textResolver) {
+        descriptors.map(textResolver::displayText)
     }
-    val recentCount = recent.count { id -> descriptors.any { it.id.value == id } }
-    val favoriteCount = favorites.count { id -> descriptors.any { it.id.value == id } }
+    val descriptorIds = remember(displayItems) { displayItems.asSequence().map { it.descriptor.id.value }.toHashSet() }
+    val search = remember(displayItems, query, textResolver) {
+        if (query.isBlank()) emptyList() else displayItems.filter { textResolver.matches(it.descriptor, query) }
+    }
+    val recentCount = recent.count { it in descriptorIds }
+    val favoriteCount = favorites.count { it in descriptorIds }
 
     LazyColumn(
         modifier.fillMaxSize(),
@@ -99,7 +103,11 @@ internal fun FeatureCategoryPage(
                     }
                 }
             }
-            items(categories, key = { it.id }) { category ->
+            items(
+                items = categories,
+                key = { it.id },
+                contentType = { "category" },
+            ) { category ->
                 val count = descriptors.count { it.category.name.lowercase(Locale.ROOT) == category.id }
                 CategoryRow(
                     stringResource(category.titleRes),
@@ -117,16 +125,20 @@ internal fun FeatureCategoryPage(
                     style = MaterialTheme.typography.labelLarge,
                 )
             }
-            items(search, key = { it.id.value }) { descriptor ->
-                val title = localizedFeatureTitle(descriptor)
+            items(
+                items = search,
+                key = { it.descriptor.id.value },
+                contentType = { "feature_search_result" },
+            ) { item ->
+                val descriptor = item.descriptor
                 MacroItemRow(
                     title = if (descriptor.id.value in favorites) {
-                        stringResource(TextR.string.editor_favorite_prefix, title)
-                    } else title,
+                        stringResource(TextR.string.editor_favorite_prefix, item.title)
+                    } else item.title,
                     subtitle = stringResource(
                         TextR.string.editor_feature_search_subtitle_format,
                         stringResource(catalogCategory(descriptor.category).titleRes),
-                        localizedFeatureDescriptionShared(descriptor),
+                        item.description,
                     ),
                     accent = kindAccent(kind),
                     onClick = { onFeature(descriptor) },
@@ -153,14 +165,22 @@ internal fun FeatureListPage(
     val textResolver = rememberFeatureTextResolver()
     val locale = currentEditorLocale()
     val titleComparator = remember(locale) { localizedStringComparator(locale) }
-    val features = remember(descriptors, categoryPage, query, favorites, recent, textResolver, titleComparator) {
+    val displayItems = remember(descriptors, textResolver) {
+        descriptors.map(textResolver::displayText)
+    }
+    val displayById = remember(displayItems) {
+        displayItems.associateBy { it.descriptor.id.value }
+    }
+    val features = remember(displayItems, displayById, categoryPage, query, favorites, recent, textResolver, titleComparator) {
         val base = when (categoryPage.special) {
-            "recent" -> recent.mapNotNull { id -> descriptors.firstOrNull { it.id.value == id } }
-            "favorites" -> descriptors.filter { it.id.value in favorites }
-            else -> descriptors.filter { it.category.name.lowercase(Locale.ROOT) == categoryPage.category.id }
+            "recent" -> recent.mapNotNull(displayById::get)
+            "favorites" -> displayItems.filter { it.descriptor.id.value in favorites }
+            else -> displayItems.filter {
+                it.descriptor.category.name.lowercase(Locale.ROOT) == categoryPage.category.id
+            }
         }
-        base.filter { query.isBlank() || textResolver.matches(it, query) }
-            .sortedWith { left, right -> titleComparator.compare(textResolver.title(left), textResolver.title(right)) }
+        base.filter { query.isBlank() || textResolver.matches(it.descriptor, query) }
+            .sortedWith { left, right -> titleComparator.compare(left.title, right.title) }
     }
     val title = categoryTitle(categoryPage)
     val subtitle = categorySubtitle(categoryPage)
@@ -190,13 +210,17 @@ internal fun FeatureListPage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        items(features, key = { it.id.value }) { descriptor ->
-            val localizedTitle = localizedFeatureTitle(descriptor)
+        items(
+            items = features,
+            key = { it.descriptor.id.value },
+            contentType = { "feature" },
+        ) { item ->
+            val descriptor = item.descriptor
             MacroItemRow(
                 title = if (descriptor.id.value in favorites) {
-                    stringResource(TextR.string.editor_favorite_prefix, localizedTitle)
-                } else localizedTitle,
-                subtitle = localizedFeatureDescriptionShared(descriptor),
+                    stringResource(TextR.string.editor_favorite_prefix, item.title)
+                } else item.title,
+                subtitle = item.description,
                 accent = kindAccent(kind),
                 onClick = { onFeature(descriptor) },
                 onMenu = { onFavorite(descriptor.id.value) },
