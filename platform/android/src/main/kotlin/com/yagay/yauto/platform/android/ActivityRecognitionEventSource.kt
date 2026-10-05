@@ -28,9 +28,17 @@ data class SleepClassificationSnapshot(
     val receivedEpochMs: Long,
 )
 
+data class PhysicalActivitySnapshot(
+    val activity: String,
+    val activityType: Int,
+    val confidence: Int,
+    val receivedEpochMs: Long,
+)
+
 object ActivityRecognitionRuntimeBridge {
     @Volatile private var emitter: RuntimeEventEmitter? = null
     @Volatile private var latestSleepClassification: SleepClassificationSnapshot? = null
+    @Volatile private var latestPhysicalActivity: PhysicalActivitySnapshot? = null
 
     fun attach(value: RuntimeEventEmitter?) {
         emitter = value
@@ -44,7 +52,13 @@ object ActivityRecognitionRuntimeBridge {
         latestSleepClassification = value
     }
 
+    internal fun updatePhysicalActivity(value: PhysicalActivitySnapshot) {
+        latestPhysicalActivity = value
+    }
+
     fun sleepClassification(): SleepClassificationSnapshot? = latestSleepClassification
+
+    fun physicalActivity(): PhysicalActivitySnapshot? = latestPhysicalActivity
 }
 
 class YAutoActivityRecognitionReceiver : BroadcastReceiver() {
@@ -76,6 +90,14 @@ class YAutoActivityRecognitionReceiver : BroadcastReceiver() {
             val result = ActivityRecognitionResult.extractResult(value)
             val activity = result?.mostProbableActivity
             if (activity != null) {
+                ActivityRecognitionRuntimeBridge.updatePhysicalActivity(
+                    PhysicalActivitySnapshot(
+                        activity = activityName(activity.type),
+                        activityType = activity.type,
+                        confidence = activity.confidence,
+                        receivedEpochMs = System.currentTimeMillis(),
+                    )
+                )
                 ActivityRecognitionRuntimeBridge.emit(
                     RuntimeEvent(
                         typeId = "android.event.activity_recognition",
