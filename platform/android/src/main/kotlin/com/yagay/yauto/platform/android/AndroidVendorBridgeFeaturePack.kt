@@ -244,7 +244,7 @@ class AndroidVendorBridgeFeaturePack(context: Context) : FeaturePack {
         val state = FeatureDescriptor(
             FeatureId("android.state.pebble_connected"),
             FeatureKind.STATE,
-            "Pebble connected",
+            "Pebble connection state",
             "Check legacy Pebble companion connection state",
             FeatureCategory.COMPATIBILITY,
             fields = listOf(FieldSchema.Toggle("value", "Connected")),
