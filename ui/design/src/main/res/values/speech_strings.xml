@@ -24,4 +24,6 @@
 
     <string name="feature_android_assistant_open_title">Open digital assistant</string>
     <string name="feature_android_assistant_open_description">Open the current Android assistant using the standard assist intent</string>
+    <string name="runtime_feature_voice_input_open_failed">Could not open speech recognition</string>
+    <string name="runtime_feature_voice_input_no_result">No speech result was returned</string>
 </resources>
