@@ -47,12 +47,17 @@ class YAutoAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
+        val eventPackage = event.packageName?.toString().orEmpty()
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
             event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
             event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
         ) {
-            AccessibilityRuntimeBridge.update(event.packageName?.toString(), event.className?.toString())
+            AccessibilityRuntimeBridge.update(eventPackage, event.className?.toString())
         }
+
+        // Never feed YAuto's own UI back into its automation runtime. This prevents scrolling and
+        // recomposition from becoming an Accessibility -> Runtime -> Workspace -> Trace feedback loop.
+        if (eventPackage == packageName) return
 
         val kind = when (event.eventType) {
             AccessibilityEvent.TYPE_VIEW_CLICKED -> "click"
@@ -64,6 +69,7 @@ class YAutoAccessibilityService : AccessibilityService() {
             AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> "toast"
             else -> null
         } ?: return
+        if (!AccessibilityRuntimeBridge.shouldDispatchUiEvent(kind)) return
 
         val source = event.source
         val eventText = event.text.orEmpty().joinToString(" ") { it?.toString().orEmpty() }.trim()
@@ -72,7 +78,7 @@ class YAutoAccessibilityService : AccessibilityService() {
         val description = source?.contentDescription?.toString().orEmpty().take(MAX_EVENT_TEXT)
         val viewId = source?.viewIdResourceName.orEmpty().take(MAX_VIEW_ID)
         val bounds = Rect().also { rect -> source?.getBoundsInScreen(rect) }
-        val screenText = if (kind == "content_changed") {
+        val screenText = if (kind == "content_changed" && AccessibilityRuntimeBridge.shouldCaptureScreenText()) {
             screenText(includeDescriptions = true, unique = true, limit = EVENT_SCREEN_TEXT_NODE_LIMIT)
                 .take(MAX_SCREEN_TEXT)
         } else {
@@ -81,7 +87,7 @@ class YAutoAccessibilityService : AccessibilityService() {
         AccessibilityRuntimeBridge.dispatchUiEvent(
             AccessibilityUiEventSnapshot(
                 event = kind,
-                packageName = event.packageName?.toString().orEmpty(),
+                packageName = eventPackage,
                 className = event.className?.toString(),
                 text = text,
                 contentDescription = description,
