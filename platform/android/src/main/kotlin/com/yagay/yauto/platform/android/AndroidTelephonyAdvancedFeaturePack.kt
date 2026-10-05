@@ -63,6 +63,8 @@ class AndroidTelephonyAdvancedFeaturePack(context: Context) : FeaturePack {
                             "mcc" to ConfigValue.StringValue(info.mccString.orEmpty()),
                             "mnc" to ConfigValue.StringValue(info.mncString.orEmpty()),
                             "embedded" to ConfigValue.BooleanValue(info.isEmbedded),
+                            "opportunistic" to ConfigValue.BooleanValue(info.isOpportunistic),
+                            "cardId" to ConfigValue.NumberValue(info.cardId.toDouble()),
                             "roaming" to ConfigValue.BooleanValue(info.dataRoaming == SubscriptionManager.DATA_ROAMING_ENABLE),
                         )
                     )
