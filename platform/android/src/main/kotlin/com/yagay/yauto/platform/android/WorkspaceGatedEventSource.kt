@@ -74,5 +74,8 @@ class WorkspaceGatedEventSource(
         if (!delegateStarted) return
         runCatching { delegate?.stop() }
         delegateStarted = false
+        // Configured sources generally cancel their internal scope on stop and are intentionally
+        // not restartable. Drop the instance so a future subscription gets a fresh source.
+        delegate = null
     }
 }
