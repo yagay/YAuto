@@ -65,7 +65,7 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals("compat.source.action", importAction("OpenUrl", message(field(1, "https://example.com"), field(2, "com.example.browser"))).typeId)
 
         val shell = importAction("ShellCommand", message(field(1, "id"), varintField(2, 1)))
-        assertEquals("system.shell.execute", shell.typeId)
+        assertEquals("android.shell.execute", shell.typeId)
         assertEquals(ConfigValue.StringValue("id"), shell.config["command"])
 
         val key = importAction("InjectKeyCode", message(varintField(1, 85), varintField(2, 1), varintField(3, 0)))

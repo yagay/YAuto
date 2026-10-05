@@ -31,7 +31,7 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.http.request", ShortXFeatureSuggestions.target("HttpRequest", path))
         assertEquals("android.app.launch", ShortXFeatureSuggestions.target("LaunchAppByPkg", path))
         assertEquals("android.app.force_stop", ShortXFeatureSuggestions.target("StopAppByPkg", path))
-        assertEquals("system.shell.execute", ShortXFeatureSuggestions.target("ShellCommand", path))
+        assertEquals("android.shell.execute", ShortXFeatureSuggestions.target("ShellCommand", path))
         assertEquals("accessibility.gesture.tap", ShortXFeatureSuggestions.target("InputTap", path))
         assertEquals("accessibility.gesture.swipe", ShortXFeatureSuggestions.target("InputSwipe", path))
         assertEquals("accessibility.input_text", ShortXFeatureSuggestions.target("InputText", path))
