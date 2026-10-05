@@ -152,9 +152,10 @@ class WorkspaceReconcilerTest {
         val updated = initial.copy(runtimeEnabled = false)
         repository.save(updated)
 
-        assertSame(updated, repository.load())
+        val cachedAfterSave = repository.snapshotOrNull()
+        assertEquals(updated, cachedAfterSave)
+        assertSame(cachedAfterSave, repository.load())
         assertEquals(1, delegate.loadCount)
-        assertEquals(updated, repository.snapshotOrNull())
         assertTrue(observed.contains(updated))
         subscription.close()
     }
