@@ -124,13 +124,13 @@ class AndroidContentUtilityFeaturePack(context: Context) : FeaturePack {
             }.getOrDefault(false)
             if (!launched) {
                 PickerRuntimeBridge.cancel(token)
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Unable to open Android picker"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.picker_open_failed"))
             }
             val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 120_000.0).toLong().coerceIn(1_000L, 600_000L)
             val uris = withTimeoutOrNull(timeout) { pending.await() }
             PickerRuntimeBridge.cancel(token)
             if (uris.isNullOrEmpty()) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "No item selected"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.picker_no_selection"))
             }
             val output = ConfigValue.ObjectValue(
                 mapOf(
