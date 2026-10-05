@@ -353,10 +353,10 @@ internal object ShortXProtoReader {
         val fromRuleSets = top
             .filter { it.number == 1 && it.wire == 2 }
             .flatMap { setField ->
-                val setFields = Wire(setField.bytes.orEmpty()).fields()
+                val setFields = Wire(setField.bytes ?: byteArrayOf()).fields()
                 setFields
                     .filter { it.number == 7 && it.wire == 2 }
-                    .flatMap { decodeRuleList(it.bytes.orEmpty()) }
+                    .flatMap { decodeRuleList(it.bytes ?: byteArrayOf()) }
             }
         if (fromRuleSets.isNotEmpty()) return fromRuleSets
 
@@ -377,10 +377,10 @@ internal object ShortXProtoReader {
         val fromSets = top
             .filter { it.number == 1 && it.wire == 2 }
             .flatMap { setField ->
-                val setFields = Wire(setField.bytes.orEmpty()).fields()
+                val setFields = Wire(setField.bytes ?: byteArrayOf()).fields()
                 setFields
                     .filter { it.number == 7 && it.wire == 2 }
-                    .flatMap { decodeDirectActionList(it.bytes.orEmpty()) }
+                    .flatMap { decodeDirectActionList(it.bytes ?: byteArrayOf()) }
             }
         if (fromSets.isNotEmpty()) return fromSets
 
@@ -390,7 +390,7 @@ internal object ShortXProtoReader {
     private fun decodeRuleList(bytes: ByteArray): List<RuleStub> =
         Wire(bytes).fields()
             .filter { it.number == 1 && it.wire == 2 }
-            .mapNotNull { decodeRule(it.bytes.orEmpty()) }
+            .mapNotNull { decodeRule(it.bytes ?: byteArrayOf()) }
             .filter { it.id.isNotBlank() && it.title.isNotBlank() }
 
     private fun decodeRule(bytes: ByteArray): RuleStub? = runCatching {
@@ -400,7 +400,7 @@ internal object ShortXProtoReader {
             fields.firstOrNull { it.number == number && it.wire == 0 }?.varint?.let { it != 0L } ?: default
         fun anys(number: Int) =
             fields.filter { it.number == number && it.wire == 2 }
-                .mapNotNull { decodeAnyOrNull(it.bytes.orEmpty()) }
+                .mapNotNull { decodeAnyOrNull(it.bytes ?: byteArrayOf()) }
 
         val id = text(4)
         val title = text(9)
@@ -419,7 +419,7 @@ internal object ShortXProtoReader {
     private fun decodeFunctionList(bytes: ByteArray): List<FunctionStub> =
         Wire(bytes).fields()
             .filter { it.number == 1 && it.wire == 2 }
-            .mapNotNull { decodeFunction(it.bytes.orEmpty()) }
+            .mapNotNull { decodeFunction(it.bytes ?: byteArrayOf()) }
             .filter { it.id.isNotBlank() && it.name.isNotBlank() }
 
     private fun decodeFunction(bytes: ByteArray): FunctionStub? = runCatching {
@@ -429,10 +429,10 @@ internal object ShortXProtoReader {
         if (!looksLikeId(id) || !looksLikeText(name)) return@runCatching null
         val parameters = fields
             .filter { it.number == 4 && it.wire == 2 }
-            .mapNotNull { decodeParameter(it.bytes.orEmpty()) }
+            .mapNotNull { decodeParameter(it.bytes ?: byteArrayOf()) }
         val actions = fields
             .filter { it.number == 5 && it.wire == 2 }
-            .mapNotNull { decodeAnyOrNull(it.bytes.orEmpty()) }
+            .mapNotNull { decodeAnyOrNull(it.bytes ?: byteArrayOf()) }
         FunctionStub(
             id = id,
             name = name,
@@ -446,7 +446,7 @@ internal object ShortXProtoReader {
     private fun decodeDirectActionList(bytes: ByteArray): List<DirectActionStub> =
         Wire(bytes).fields()
             .filter { it.number == 1 && it.wire == 2 }
-            .mapNotNull { decodeDirectAction(it.bytes.orEmpty()) }
+            .mapNotNull { decodeDirectAction(it.bytes ?: byteArrayOf()) }
             .filter { it.id.isNotBlank() && it.title.isNotBlank() }
 
     private fun decodeDirectAction(bytes: ByteArray): DirectActionStub? = runCatching {
@@ -460,10 +460,10 @@ internal object ShortXProtoReader {
             description = textField(fields, 7).ifBlank { null },
             parameters = fields
                 .filter { it.number == 12 && it.wire == 2 }
-                .mapNotNull { decodeParameter(it.bytes.orEmpty()) },
+                .mapNotNull { decodeParameter(it.bytes ?: byteArrayOf()) },
             actions = fields
                 .filter { it.number == 1 && it.wire == 2 }
-                .mapNotNull { decodeAnyOrNull(it.bytes.orEmpty()) },
+                .mapNotNull { decodeAnyOrNull(it.bytes ?: byteArrayOf()) },
         )
     }.getOrNull()
 

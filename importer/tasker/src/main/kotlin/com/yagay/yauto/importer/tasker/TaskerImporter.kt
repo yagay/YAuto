@@ -5,6 +5,7 @@ import com.yagay.yauto.core.model.*
 import org.w3c.dom.Element
 import java.io.ByteArrayInputStream
 import java.util.UUID
+import java.util.Locale
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.OutputKeys
@@ -436,14 +437,14 @@ class TaskerImporter : AutomationImporter {
     private fun taskerConditionList(list: Element): PredicateNode? {
         val conditions = list.elementChildren().filter { it.tagName == "Condition" }
         if (conditions.isEmpty()) return null
-        val nodes = conditions.map { condition ->
+        val nodes: MutableList<PredicateNode> = conditions.map { condition ->
             val lhs = condition.childText("lhs").orEmpty()
             val op = condition.childText("op")?.toIntOrNull() ?: return null
             val rhs = condition.childText("rhs").orEmpty()
             PredicateNode.Condition(
                 FeatureRef(
                     "tasker.condition.compare",
-                    mapOf(
+                    config = mapOf(
                         "lhs" to ConfigValue.StringValue(lhs),
                         "operator" to ConfigValue.NumberValue(op.toDouble()),
                         "rhs" to ConfigValue.StringValue(rhs),
