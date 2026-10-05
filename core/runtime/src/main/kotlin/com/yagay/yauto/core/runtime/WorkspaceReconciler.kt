@@ -9,6 +9,7 @@ import com.yagay.yauto.core.model.PredicateNode
 import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.storage.WorkspaceData
+import com.yagay.yauto.core.storage.ObservableWorkspaceRepository
 import com.yagay.yauto.core.storage.WorkspaceRepository
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.sync.Mutex
@@ -102,7 +103,7 @@ class WorkspaceReconciler(
 class ReconcilingWorkspaceRepository(
     private val delegate: WorkspaceRepository,
     registry: FeatureRegistry,
-) : WorkspaceRepository {
+) : ObservableWorkspaceRepository {
     private val reconciler = WorkspaceReconciler(registry)
     private val cacheLock = Mutex()
     private val listeners = CopyOnWriteArrayList<(WorkspaceData) -> Unit>()
@@ -127,9 +128,9 @@ class ReconcilingWorkspaceRepository(
         notifyListeners(reconciled)
     }
 
-    fun snapshotOrNull(): WorkspaceData? = cached
+    override fun snapshotOrNull(): WorkspaceData? = cached
 
-    fun addListener(listener: (WorkspaceData) -> Unit): AutoCloseable {
+    override fun addListener(listener: (WorkspaceData) -> Unit): AutoCloseable {
         listeners += listener
         cached?.let(listener)
         return AutoCloseable { listeners -= listener }
