@@ -30,4 +30,6 @@
     <string name="runtime_feature_wallpaper_target_invalid">Unknown wallpaper target</string>
     <string name="runtime_feature_wallpaper_set_failed">Could not set wallpaper from the selected image</string>
     <string name="runtime_feature_wallpaper_clear_failed">Could not clear wallpaper</string>
+    <string name="runtime_feature_picker_open_failed">Could not open the Android picker</string>
+    <string name="runtime_feature_picker_no_selection">No item was selected</string>
 </resources>
