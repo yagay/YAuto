@@ -33,7 +33,9 @@ class WorkspaceGatedEventSource(
     override fun start(emitter: RuntimeEventEmitter) {
         if (!started.compareAndSet(false, true)) return
         this.emitter = emitter
-        subscription = workspace.addListener(::applyWorkspace)
+        subscription = workspace.addListener { data ->
+            scope.launch { applyWorkspace(data) }
+        }
         if (workspace.snapshotOrNull() == null) {
             scope.launch {
                 runCatching { workspace.load() }.onSuccess(::applyWorkspace)
