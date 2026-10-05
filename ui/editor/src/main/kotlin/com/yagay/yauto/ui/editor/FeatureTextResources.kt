@@ -11,51 +11,78 @@ import com.yagay.yauto.core.registry.FieldSchema
 import com.yagay.yauto.ui.design.R as TextR
 import java.util.Locale
 
+internal data class FeatureDisplayText(
+    val descriptor: FeatureDescriptor,
+    val title: String,
+    val description: String,
+)
+
 internal class FeatureTextResolver(private val context: Context) {
     private val locale: Locale
         get() = context.resources.configuration.locales[0] ?: Locale.getDefault()
 
+    private val resourceIdCache = HashMap<String, Int>()
+    private val titleCache = HashMap<String, String>()
+    private val descriptionCache = HashMap<String, String>()
+    private val fieldLabelCache = HashMap<String, String>()
+    private val choiceOptionCache = HashMap<String, String>()
+    private val searchTextCache = HashMap<String, String>()
+
     fun title(descriptor: FeatureDescriptor): String =
-        sourceAlignedFeatureTitle(descriptor.id.value)?.let(context::getString)
-            ?: resource("feature_${resourceKey(descriptor.id.value)}_title")
-            ?: phrase(descriptor.title)
-            ?: descriptor.title.takeIf { it.isNotBlank() }
-            ?: genericTitle(descriptor)
+        titleCache.getOrPut(descriptor.id.value) {
+            sourceAlignedFeatureTitle(descriptor.id.value)?.let(context::getString)
+                ?: resource("feature_${resourceKey(descriptor.id.value)}_title")
+                ?: phrase(descriptor.title)
+                ?: descriptor.title.takeIf { it.isNotBlank() }
+                ?: genericTitle(descriptor)
+        }
 
     fun description(descriptor: FeatureDescriptor): String =
-        resource("feature_${resourceKey(descriptor.id.value)}_description")
-            ?: phrase(descriptor.description)
-            ?: descriptor.description.takeIf { it.isNotBlank() }
-            ?: context.getString(TextR.string.feature_generic_description_format, title(descriptor))
+        descriptionCache.getOrPut(descriptor.id.value) {
+            resource("feature_${resourceKey(descriptor.id.value)}_description")
+                ?: phrase(descriptor.description)
+                ?: descriptor.description.takeIf { it.isNotBlank() }
+                ?: context.getString(TextR.string.feature_generic_description_format, title(descriptor))
+        }
+
+    fun displayText(descriptor: FeatureDescriptor): FeatureDisplayText =
+        FeatureDisplayText(descriptor, title(descriptor), description(descriptor))
 
     fun fieldLabel(descriptorId: String, field: FieldSchema): String =
-        resource("feature_${resourceKey(descriptorId)}_field_${resourceKey(field.key)}")
-            ?: phrase(field.label)
-            ?: field.label.takeIf { it.isNotBlank() }
-            ?: context.getString(TextR.string.feature_generic_parameter)
+        fieldLabelCache.getOrPut("$descriptorId|${field.key}") {
+            resource("feature_${resourceKey(descriptorId)}_field_${resourceKey(field.key)}")
+                ?: phrase(field.label)
+                ?: field.label.takeIf { it.isNotBlank() }
+                ?: context.getString(TextR.string.feature_generic_parameter)
+        }
 
     fun choiceOption(descriptorId: String, fieldKey: String, option: String): String =
-        resource("feature_${resourceKey(descriptorId)}_field_${resourceKey(fieldKey)}_option_${resourceKey(option)}")
-            ?: phrase(option)
-            ?: option.takeIf { it.isNotBlank() }
-            ?: context.getString(TextR.string.feature_generic_option)
+        choiceOptionCache.getOrPut("$descriptorId|$fieldKey|$option") {
+            resource("feature_${resourceKey(descriptorId)}_field_${resourceKey(fieldKey)}_option_${resourceKey(option)}")
+                ?: phrase(option)
+                ?: option.takeIf { it.isNotBlank() }
+                ?: context.getString(TextR.string.feature_generic_option)
+        }
 
     fun matches(descriptor: FeatureDescriptor, query: String): Boolean {
         if (query.isBlank()) return true
-        return buildList {
-            add(title(descriptor))
-            add(description(descriptor))
-            add(descriptor.title)
-            add(descriptor.description)
-            add(descriptor.id.value)
-            addAll(descriptor.keywords)
-            descriptor.fields.forEach { field ->
-                add(fieldLabel(descriptor.id.value, field))
-                if (field is FieldSchema.Choice) {
-                    field.options.forEach { add(choiceOption(descriptor.id.value, field.key, it)) }
+        val searchable = searchTextCache.getOrPut(descriptor.id.value) {
+            buildList {
+                add(title(descriptor))
+                add(description(descriptor))
+                add(descriptor.title)
+                add(descriptor.description)
+                add(descriptor.id.value)
+                addAll(descriptor.keywords)
+                descriptor.fields.forEach { field ->
+                    add(fieldLabel(descriptor.id.value, field))
+                    if (field is FieldSchema.Choice) {
+                        field.options.forEach { add(choiceOption(descriptor.id.value, field.key, it)) }
+                    }
                 }
-            }
-        }.any { it.contains(query, ignoreCase = true) }
+            }.joinToString("\n")
+        }
+        return searchable.contains(query, ignoreCase = true)
     }
 
     private fun phrase(text: String): String? =
@@ -82,7 +109,9 @@ internal class FeatureTextResolver(private val context: Context) {
     }
 
     private fun resource(name: String): String? {
-        val id = context.resources.getIdentifier(name, "string", context.packageName)
+        val id = resourceIdCache.getOrPut(name) {
+            context.resources.getIdentifier(name, "string", context.packageName)
+        }
         return if (id != 0) context.getString(id) else null
     }
 }
