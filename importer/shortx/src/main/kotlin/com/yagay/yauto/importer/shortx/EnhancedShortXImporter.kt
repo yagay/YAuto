@@ -279,7 +279,7 @@ internal object ShortXFeatureSuggestions {
         "ProximitySensorStateChanged" -> "android.event.sensor_value"
         "UsbDeviceAttached", "UsbDeviceDetached" -> "android.event.usb_device_changed"
         "IncomingShare" -> "android.event.share_text_received"
-        else -> null
+        else -> ShortXMappings.suggestedEventFeature(name)
     }
 
     private fun condition(name: String): String? = when (name) {
@@ -331,6 +331,6 @@ internal object ShortXFeatureSuggestions {
         "EvaluateScreenOnTime" -> "android.condition.screen_on_time"
         "True" -> "core.boolean"
         "False" -> "core.boolean"
-        else -> null
+        else -> ShortXMappings.suggestedConditionFeature(name)
     }
 }
