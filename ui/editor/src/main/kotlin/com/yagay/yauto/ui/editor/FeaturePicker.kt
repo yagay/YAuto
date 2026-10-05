@@ -81,9 +81,7 @@ fun MacroFeaturePickerDialog(
     }
 
     Dialog(
-        onDismissRequest = {
-            if (page == PickerPage.Categories) onDismiss() else navigateBack()
-        },
+        onDismissRequest = onDismiss,
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             dismissOnBackPress = false,
