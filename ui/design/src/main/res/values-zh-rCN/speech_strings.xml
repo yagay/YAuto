@@ -24,4 +24,6 @@
 
     <string name="feature_android_assistant_open_title">打开数字助理</string>
     <string name="feature_android_assistant_open_description">通过标准 Assist Intent 打开当前 Android 助理</string>
+    <string name="runtime_feature_voice_input_open_failed">无法打开语音识别</string>
+    <string name="runtime_feature_voice_input_no_result">没有返回语音识别结果</string>
 </resources>
