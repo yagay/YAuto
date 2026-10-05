@@ -121,13 +121,13 @@ class AndroidSpeechFeaturePack(context: Context) : FeaturePack {
             }.getOrDefault(false)
             if (!launched) {
                 VoiceInputRuntimeBridge.cancel(token)
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Unable to open speech recognition"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.voice_input_open_failed"))
             }
             val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 60_000.0).toLong().coerceIn(1_000L, 180_000L)
             val text = withTimeoutOrNull(timeout) { pending.await() }
             VoiceInputRuntimeBridge.cancel(token)
             if (text.isNullOrBlank()) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "No speech result"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.voice_input_no_result"))
             }
             val output = ConfigValue.StringValue(text)
             feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
