@@ -25,9 +25,10 @@ import java.util.Locale
 /**
  * Feature picker shell.
  *
- * Catalog browsing lives in FeaturePickerCatalog.kt and descriptor-driven configuration lives in
- * GenericFeatureConfigEditor.kt. Keeping this file navigation-only prevents the picker from growing
- * every time YAuto gains a new field type or feature domain.
+ * Navigation and catalog preparation are intentionally separate from rendering:
+ * - [FeaturePickerNavState] owns the internal back stack.
+ * - [FeaturePickerCatalogModel] is built once per descriptor/locale set.
+ * - catalog screens only render lightweight immutable UI items.
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -43,11 +44,15 @@ fun MacroFeaturePickerDialog(
     val editable = remember(descriptors, kind) {
         descriptors.filter { it.kind == kind && it.category != FeatureCategory.COMPATIBILITY }
     }
-    val initialDescriptor = initial?.let { ref -> editable.firstOrNull { it.id.value == ref.typeId } }
-    var page by remember(initial?.typeId) {
-        mutableStateOf<PickerPage>(
-            initialDescriptor?.let { PickerPage.Configure(it, null) } ?: PickerPage.Categories
-        )
+    val textResolver = rememberFeatureTextResolver()
+    val locale = currentEditorLocale()
+    val titleComparator = remember(locale) { localizedStringComparator(locale) }
+    val catalog = remember(editable, textResolver, titleComparator) {
+        buildFeaturePickerCatalog(editable, textResolver, titleComparator)
+    }
+    val initialDescriptor = initial?.let { ref -> catalog.item(ref.typeId)?.descriptor }
+    var navigation by remember(initial?.typeId, catalog) {
+        mutableStateOf(FeaturePickerNavState.initial(initialDescriptor))
     }
     var query by remember { mutableStateOf("") }
     var favorites by remember(kind) {
@@ -57,17 +62,21 @@ fun MacroFeaturePickerDialog(
         mutableStateOf(loadIds(prefs.getString(recentKey(kind), "")))
     }
     val accent = kindAccent(kind)
+    val page = navigation.current
+
+    fun push(destination: PickerPage) {
+        navigation = navigation.push(destination)
+        query = ""
+    }
 
     fun navigateBack() {
-        page = when (val current = page) {
-            PickerPage.Categories -> {
-                onDismiss()
-                PickerPage.Categories
-            }
-            is PickerPage.Features -> PickerPage.Categories
-            is PickerPage.Configure -> current.fromCategory ?: PickerPage.Categories
+        val previous = navigation.pop()
+        if (previous == null) {
+            onDismiss()
+        } else {
+            navigation = previous
+            query = ""
         }
-        query = ""
     }
 
     fun toggleFavorite(id: String) {
@@ -87,7 +96,7 @@ fun MacroFeaturePickerDialog(
             dismissOnBackPress = false,
         ),
     ) {
-        BackHandler { navigateBack() }
+        BackHandler(onBack = ::navigateBack)
 
         Scaffold(
             topBar = {
@@ -99,9 +108,11 @@ fun MacroFeaturePickerDialog(
                     title = {
                         Text(
                             when (val current = page) {
-                                PickerPage.Categories -> stringResource(TextR.string.editor_select_kind_format, kindLabel(kind))
+                                PickerPage.Categories ->
+                                    stringResource(TextR.string.editor_select_kind_format, kindLabel(kind))
                                 is PickerPage.Features -> categoryTitle(current)
-                                is PickerPage.Configure -> localizedFeatureTitle(current.descriptor)
+                                is PickerPage.Configure ->
+                                    catalog.item(current.descriptor.id.value)?.title ?: current.descriptor.title
                             }
                         )
                     },
@@ -125,28 +136,25 @@ fun MacroFeaturePickerDialog(
                 PickerPage.Categories -> FeatureCategoryPage(
                     modifier = Modifier.padding(padding),
                     kind = kind,
-                    descriptors = editable,
+                    catalog = catalog,
                     query = query,
                     favorites = favorites,
                     recent = recent,
                     onQuery = { query = it },
-                    onCategory = {
-                        page = it
-                        query = ""
-                    },
-                    onFeature = { page = PickerPage.Configure(it, null) },
+                    onCategory = { push(it) },
+                    onFeature = { push(PickerPage.Configure(it)) },
                     onFavorite = ::toggleFavorite,
                 )
                 is PickerPage.Features -> FeatureListPage(
                     modifier = Modifier.padding(padding),
                     kind = kind,
                     categoryPage = current,
-                    descriptors = editable,
+                    catalog = catalog,
                     query = query,
                     favorites = favorites,
                     recent = recent,
                     onQuery = { query = it },
-                    onFeature = { page = PickerPage.Configure(it, current) },
+                    onFeature = { push(PickerPage.Configure(it)) },
                     onFavorite = ::toggleFavorite,
                 )
                 is PickerPage.Configure -> GenericFeatureConfigEditor(
