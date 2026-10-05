@@ -2,20 +2,24 @@ package com.yagay.yauto.ui.editor
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.registry.FeatureCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
-import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.R as TextR
 import java.util.Locale
@@ -62,8 +66,7 @@ internal fun FeatureCategoryPage(
 
     LazyColumn(
         modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     ) {
         item {
             OutlinedTextField(
@@ -131,18 +134,14 @@ internal fun FeatureCategoryPage(
                 contentType = { "feature_search_result" },
             ) { item ->
                 val descriptor = item.descriptor
-                MacroItemRow(
+                FeaturePickerRow(
                     title = if (descriptor.id.value in favorites) {
                         stringResource(TextR.string.editor_favorite_prefix, item.title)
                     } else item.title,
-                    subtitle = stringResource(
-                        TextR.string.editor_feature_search_subtitle_format,
-                        stringResource(catalogCategory(descriptor.category).titleRes),
-                        item.description,
-                    ),
+                    subtitle = stringResource(catalogCategory(descriptor.category).titleRes),
                     accent = kindAccent(kind),
                     onClick = { onFeature(descriptor) },
-                    onMenu = { onFavorite(descriptor.id.value) },
+                    onFavorite = { onFavorite(descriptor.id.value) },
                 )
             }
         }
@@ -187,8 +186,7 @@ internal fun FeatureListPage(
 
     LazyColumn(
         modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     ) {
         item {
             OutlinedTextField(
@@ -216,16 +214,72 @@ internal fun FeatureListPage(
             contentType = { "feature" },
         ) { item ->
             val descriptor = item.descriptor
-            MacroItemRow(
+            FeaturePickerRow(
                 title = if (descriptor.id.value in favorites) {
                     stringResource(TextR.string.editor_favorite_prefix, item.title)
                 } else item.title,
-                subtitle = item.description,
+                subtitle = null,
                 accent = kindAccent(kind),
                 onClick = { onFeature(descriptor) },
-                onMenu = { onFavorite(descriptor.id.value) },
+                onFavorite = { onFavorite(descriptor.id.value) },
             )
         }
+    }
+}
+
+@Composable
+private fun FeaturePickerRow(
+    title: String,
+    subtitle: String?,
+    accent: Color,
+    onClick: () -> Unit,
+    onFavorite: () -> Unit,
+) {
+    val divider = MaterialTheme.colorScheme.outlineVariant
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .drawBehind {
+                val accentWidth = 4.dp.toPx()
+                drawRect(accent, size = androidx.compose.ui.geometry.Size(accentWidth, size.height))
+                drawLine(
+                    color = divider,
+                    start = androidx.compose.ui.geometry.Offset(accentWidth, size.height),
+                    end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                    strokeWidth = 1.dp.toPx(),
+                )
+            }
+            .clickable(onClick = onClick)
+            .padding(start = 14.dp, top = 9.dp, bottom = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            subtitle?.takeIf { it.isNotBlank() }?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        Icon(
+            painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_more),
+            contentDescription = stringResource(TextR.string.icon_more_options),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .size(40.dp)
+                .clickable(onClick = onFavorite)
+                .padding(10.dp),
+        )
     }
 }
 
