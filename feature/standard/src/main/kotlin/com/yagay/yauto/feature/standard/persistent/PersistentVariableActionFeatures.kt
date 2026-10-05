@@ -143,7 +143,7 @@ internal fun persistentVariableActions(control: PersistentVariableControl): List
             index = index,
         ) ?: return@actionFeature ActionExecutionResult(
             false,
-            message = userText("feature.operation_failed", "Unsupported variable mutation"),
+            message = userText("feature.persistent_variable_mutation_unsupported"),
         )
         val change = control.set(name, updated)
         if (change.success) {
