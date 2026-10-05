@@ -2,7 +2,6 @@ package com.yagay.yauto.platform.android
 
 import android.content.ContentValues
 import android.content.Context
-import android.content.Intent
 import android.os.Environment
 import android.provider.MediaStore
 import com.yagay.yauto.core.capability.CapabilityIds
@@ -20,7 +19,6 @@ import java.security.SecureRandom
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Base64
-import java.util.UUID
 import javax.crypto.Cipher
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
@@ -36,7 +34,6 @@ class AndroidMacroDroidParityFeaturePack(context: Context) : FeaturePack {
         registerLogExport(registry)
         registerCrypto(registry)
         registerCollectionRemove(registry)
-        registerVoiceInput(registry)
     }
 
     private fun registerLogWrite(registry: FeatureRegistry) {
@@ -231,47 +228,6 @@ class AndroidMacroDroidParityFeaturePack(context: Context) : FeaturePack {
                 else -> return@registerAction ActionExecutionResult(false)
             }
             ctx.variables.set(name, output)
-            ActionExecutionResult(true, output)
-        }
-    }
-
-    private fun registerVoiceInput(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.voice_input.capture"), FeatureKind.ACTION,
-                "Voice input",
-                "Open Android speech recognition and wait for a spoken-text result",
-                FeatureCategory.APP,
-                fields = listOf(
-                    FieldSchema.Text("prompt", "Prompt"),
-                    FieldSchema.Text("language", "Language tag"),
-                    FieldSchema.Duration("timeoutMs", "Timeout"),
-                    FieldSchema.Variable("resultVariable", "Store recognized text", true),
-                ),
-                keywords = setOf("voice input", "speech recognition", "dictation", "macrodroid", "tasker"),
-                ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            val token = UUID.randomUUID().toString()
-            val deferred = VoiceInputRuntimeBridge.register(token)
-            val intent = Intent()
-                .setClassName(context.packageName, "com.yagay.yauto.VoiceInputActivity")
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                .putExtra("token", token)
-                .putExtra("prompt", feature.config.string("prompt").resolveVariables(ctx.variables))
-                .putExtra("language", feature.config.string("language").resolveVariables(ctx.variables))
-            val launched = runCatching { context.startActivity(intent); true }.getOrDefault(false)
-            if (!launched) {
-                VoiceInputRuntimeBridge.cancel(token)
-                return@registerAction ActionExecutionResult(false)
-            }
-            val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 60_000.0)
-                .toLong().coerceIn(1_000L, 300_000L)
-            val text = kotlinx.coroutines.withTimeoutOrNull(timeout) { deferred.await() }
-            VoiceInputRuntimeBridge.cancel(token)
-            if (text.isNullOrBlank()) return@registerAction ActionExecutionResult(false)
-            val output = ConfigValue.StringValue(text)
-            ctx.variables.set(feature.config.string("resultVariable"), output)
             ActionExecutionResult(true, output)
         }
     }
