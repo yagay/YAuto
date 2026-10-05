@@ -42,7 +42,7 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
             FeatureDescriptor(
                 FeatureId("script.tasker.beanshell.execute"),
                 FeatureKind.ACTION,
-                "Run Java / BeanShell",
+                "Run Tasker BeanShell",
                 "Execute Tasker/MacroDroid-style Java code with Android context and YAuto variables",
                 FeatureCategory.SCRIPT,
                 fields = listOf(
