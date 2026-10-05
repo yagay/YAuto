@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_vibrate_cancel_title">停止振动</string>
+    <string name="feature_android_vibrate_cancel_description">取消通过 Android 振动服务启动的当前振动</string>
+
+    <string name="feature_android_file_to_content_uri_title">文件路径转内容 URI</string>
+    <string name="feature_android_file_to_content_uri_description">把 YAuto FileProvider 覆盖的文件路径转换为可分享的内容 URI</string>
+    <string name="feature_android_file_to_content_uri_field_resultvariable">保存内容 URI</string>
+
+    <string name="feature_android_device_name_get_title">获取设备名称</string>
+    <string name="feature_android_device_name_get_description">读取 Android 用户可见设备名称，并在缺失时使用机型名称</string>
+    <string name="feature_android_device_name_get_field_resultvariable">保存设备名称</string>
+
+    <string name="feature_android_event_websocket_title">WebSocket 事件</string>
+    <string name="feature_android_event_websocket_description">在 WebSocket 打开、收到消息、关闭或失败时运行，并可筛选连接、URL 或消息文本</string>
+    <string name="feature_android_event_websocket_field_connectionid">连接 ID</string>
+    <string name="feature_android_event_websocket_field_url">WebSocket URL 包含</string>
+    <string name="feature_android_event_websocket_field_event">事件</string>
+    <string name="feature_android_event_websocket_field_textcontains">消息或错误文本包含</string>
+    <string name="feature_android_event_websocket_field_event_option_open">打开</string>
+    <string name="feature_android_event_websocket_field_event_option_closed">关闭</string>
+</resources>
