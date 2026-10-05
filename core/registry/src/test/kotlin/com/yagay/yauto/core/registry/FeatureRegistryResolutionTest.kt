@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -140,6 +141,23 @@ class FeatureRegistryResolutionTest {
         assertTrue(registry.resolve("android.pack.legacy") is FeatureResolution.Missing)
         assertNull(registry.actionExecutor("android.pack.legacy"))
         assertFalse(registry.allDescriptors().any { it.ownerPackId == pack.id })
+    }
+
+    @Test
+    fun `descriptor snapshot is reused until registry changes`() {
+        val registry = FeatureRegistry()
+        registry.registerDescriptor(descriptor("android.first"))
+
+        val first = registry.allDescriptors()
+        val second = registry.allDescriptors()
+        assertSame(first, second)
+
+        registry.registerDescriptor(descriptor("android.second"))
+        val third = registry.allDescriptors()
+
+        assertEquals(2, third.size)
+        assertFalse(first === third)
+        assertSame(third, registry.allDescriptors())
     }
 
     private fun descriptor(
