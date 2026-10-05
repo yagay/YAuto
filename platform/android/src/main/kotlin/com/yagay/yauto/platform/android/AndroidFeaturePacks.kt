@@ -122,6 +122,7 @@ object AndroidFeaturePacks {
         AndroidCustomRecentsFeaturePack(context, overlaySurfaces),
         AndroidTaskerSceneFeaturePack(overlaySurfaces),
         AndroidTaskerAdvancedFeaturePack(context),
+        AndroidTaskerUtilityFeaturePack(context),
         AndroidSurfaceFeaturePack(overlaySurfaces),
         AndroidExternalCommandFeaturePack(context),
     )
