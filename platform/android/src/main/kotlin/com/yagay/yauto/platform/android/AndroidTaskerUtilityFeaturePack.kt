@@ -1,10 +1,8 @@
 package com.yagay.yauto.platform.android
 
-import android.Manifest
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
 import android.location.provider.ProviderProperties
@@ -13,8 +11,6 @@ import android.os.Build
 import android.os.SystemClock
 import android.os.storage.StorageManager
 import android.provider.Settings
-import android.telephony.SubscriptionManager
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.numberOrNull
@@ -46,7 +42,6 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
     private val usage = this.context.getSystemService(UsageStatsManager::class.java)
     private val audio = this.context.getSystemService(AudioManager::class.java)
     private val storage = this.context.getSystemService(StorageManager::class.java)
-    private val subscriptions = this.context.getSystemService(SubscriptionManager::class.java)
 
     override fun install(registry: FeatureRegistry) {
         registerUuid(registry)
@@ -54,7 +49,6 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
         registerForegroundApp(registry)
         registerAudioStreamLimits(registry)
         registerStorageVolumes(registry)
-        registerSubscriptions(registry)
         registerLocationDistance(registry)
         registerMockLocation(registry)
         registerVibrationCancel(registry)
@@ -240,49 +234,6 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
                     )
                 }
             )
-            store(feature.config.string("resultVariable"), output, ctx)
-            ActionExecutionResult(true, output)
-        }
-    }
-
-    private fun registerSubscriptions(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.sim.subscriptions.query"),
-                FeatureKind.ACTION,
-                "Get SIM subscriptions",
-                "Read active Android SIM/eSIM subscription metadata",
-                FeatureCategory.NETWORK,
-                fields = listOf(FieldSchema.Variable("resultVariable", "Store subscription list", true)),
-                accessRequirements = setOf(AccessRequirement.PHONE),
-                keywords = setOf("sim", "esim", "subscription", "slot", "tasker"),
-                ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.phone_permission_required"))
-            }
-            val values = runCatching {
-                subscriptions.activeSubscriptionInfoList.orEmpty().map { info ->
-                    ConfigValue.ObjectValue(
-                        mapOf(
-                            "subscriptionId" to ConfigValue.NumberValue(info.subscriptionId.toDouble()),
-                            "slotIndex" to ConfigValue.NumberValue(info.simSlotIndex.toDouble()),
-                            "displayName" to ConfigValue.StringValue(info.displayName?.toString().orEmpty()),
-                            "carrierName" to ConfigValue.StringValue(info.carrierName?.toString().orEmpty()),
-                            "countryIso" to ConfigValue.StringValue(info.countryIso.orEmpty()),
-                            "mcc" to ConfigValue.StringValue(info.mccString.orEmpty()),
-                            "mnc" to ConfigValue.StringValue(info.mncString.orEmpty()),
-                            "embedded" to ConfigValue.BooleanValue(info.isEmbedded),
-                            "opportunistic" to ConfigValue.BooleanValue(info.isOpportunistic),
-                            "cardId" to ConfigValue.NumberValue(info.cardId.toDouble()),
-                        )
-                    )
-                }
-            }.getOrElse {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName))
-            }
-            val output = ConfigValue.ListValue(values)
             store(feature.config.string("resultVariable"), output, ctx)
             ActionExecutionResult(true, output)
         }
