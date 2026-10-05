@@ -45,7 +45,9 @@ class AutomationRuntimeService : Service() {
             .onFailure { StartupFailureRecorder.record(this, "runtime:graph", it) }.getOrNull()
         if (appGraph == null) { stopSelf(); return }
         graph = appGraph
-        workspaceSubscription = appGraph.workspace.addListener(::configureAccessibilitySubscriptions)
+        workspaceSubscription = appGraph.workspace.addListener { data ->
+            scope.launch { configureAccessibilitySubscriptions(data) }
+        }
         scope.launch {
             runCatching { appGraph.workspace.load() }
                 .onSuccess(::configureAccessibilitySubscriptions)
