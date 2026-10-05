@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variable_global_mutate_title">Modify persistent variable</string>
+    <string name="feature_variable_global_mutate_description">Apply numeric, boolean, text or list mutations to a persistent variable</string>
+    <string name="feature_variable_global_mutate_field_name">Variable name</string>
+    <string name="feature_variable_global_mutate_field_operation">Operation</string>
+    <string name="feature_variable_global_mutate_field_sourcevariable">Source runtime variable</string>
+    <string name="feature_variable_global_mutate_field_valuetype">Value type</string>
+    <string name="feature_variable_global_mutate_field_value">Value</string>
+    <string name="feature_variable_global_mutate_field_index">List or text index</string>
+    <string name="feature_variable_global_mutate_field_operation_option_override">Replace</string>
+    <string name="feature_variable_global_mutate_field_operation_option_plus_one">Add one</string>
+    <string name="feature_variable_global_mutate_field_operation_option_minus_one">Subtract one</string>
+    <string name="feature_variable_global_mutate_field_operation_option_plus_delta">Add value</string>
+    <string name="feature_variable_global_mutate_field_operation_option_minus_delta">Subtract value</string>
+    <string name="feature_variable_global_mutate_field_operation_option_invert">Invert</string>
+    <string name="feature_variable_global_mutate_field_operation_option_append_first">Prepend</string>
+    <string name="feature_variable_global_mutate_field_operation_option_append_last">Append</string>
+    <string name="feature_variable_global_mutate_field_operation_option_delete_value">Delete value</string>
+    <string name="feature_variable_global_mutate_field_operation_option_delete_first">Delete first item</string>
+    <string name="feature_variable_global_mutate_field_operation_option_delete_last">Delete last item</string>
+    <string name="feature_variable_global_mutate_field_operation_option_remove_at_index">Remove at index</string>
+    <string name="feature_variable_global_mutate_field_operation_option_reverse">Reverse</string>
+    <string name="feature_variable_global_mutate_field_operation_option_shuffle">Shuffle</string>
+    <string name="feature_variable_global_mutate_field_operation_option_clear">Clear</string>
+    <string name="feature_variable_global_mutate_field_valuetype_option_text">Text</string>
+    <string name="feature_variable_global_mutate_field_valuetype_option_number">Number</string>
+    <string name="feature_variable_global_mutate_field_valuetype_option_boolean">Boolean</string>
+    <string name="feature_variable_global_mutate_field_valuetype_option_null">Null</string>
+
+    <string name="feature_file_pick_title">Pick file</string>
+    <string name="feature_file_pick_description">Open Android's document picker and wait for selected content URIs</string>
+    <string name="feature_file_pick_field_mimetype">MIME type</string>
+    <string name="feature_file_pick_field_multiple">Allow multiple selections</string>
+    <string name="feature_file_pick_field_timeoutms">Picker timeout</string>
+    <string name="feature_file_pick_field_resultvariable">Store picker result object</string>
+
+    <string name="feature_android_photo_pick_title">Pick photos</string>
+    <string name="feature_android_photo_pick_description">Open Android's image picker and wait for selected image URIs</string>
+    <string name="feature_android_photo_pick_field_multiple">Allow multiple selections</string>
+    <string name="feature_android_photo_pick_field_timeoutms">Picker timeout</string>
+    <string name="feature_android_photo_pick_field_resultvariable">Store picker result object</string>
+
+    <string name="feature_android_app_previous_launch_title">Launch previous app</string>
+    <string name="feature_android_app_previous_launch_description">Launch the most recently used launchable app other than YAuto</string>
+    <string name="feature_android_app_previous_launch_field_lookbackhours">Look-back hours</string>
+    <string name="feature_android_app_next_launch_title">Launch next recent app</string>
+    <string name="feature_android_app_next_launch_description">Launch the next older launchable app from recent usage history</string>
+    <string name="feature_android_app_next_launch_field_lookbackhours">Look-back hours</string>
+
+    <string name="feature_ai_image_generate_title">Generate AI image</string>
+    <string name="feature_ai_image_generate_description">Generate an image through an OpenAI-compatible Images endpoint and optionally save it to a file</string>
+    <string name="feature_ai_image_generate_field_endpoint">Images endpoint</string>
+    <string name="feature_ai_image_generate_field_apikey">API key</string>
+    <string name="feature_ai_image_generate_field_model">Model</string>
+    <string name="feature_ai_image_generate_field_prompt">Prompt</string>
+    <string name="feature_ai_image_generate_field_size">Image size</string>
+    <string name="feature_ai_image_generate_field_quality">Quality</string>
+    <string name="feature_ai_image_generate_field_responseformat">Response format</string>
+    <string name="feature_ai_image_generate_field_timeoutms">Request timeout</string>
+    <string name="feature_ai_image_generate_field_outputpath">Optional output image path</string>
+    <string name="feature_ai_image_generate_field_resultvariable">Store generated-image object</string>
+    <string name="feature_ai_image_generate_field_size_option_256x256">256x256</string>
+    <string name="feature_ai_image_generate_field_size_option_512x512">512x512</string>
+    <string name="feature_ai_image_generate_field_size_option_1024x1024">1024x1024</string>
+    <string name="feature_ai_image_generate_field_size_option_1024x1792">1024x1792</string>
+    <string name="feature_ai_image_generate_field_size_option_1792x1024">1792x1024</string>
+    <string name="feature_ai_image_generate_field_quality_option_default">Default</string>
+    <string name="feature_ai_image_generate_field_quality_option_standard">Standard</string>
+    <string name="feature_ai_image_generate_field_quality_option_hd">HD</string>
+    <string name="feature_ai_image_generate_field_responseformat_option_url">URL</string>
+    <string name="feature_ai_image_generate_field_responseformat_option_b64_json">Base64 JSON</string>
+
+    <string name="feature_android_event_call_screened_title">Call screened</string>
+    <string name="feature_android_event_call_screened_description">Run when YAuto receives a call through Android's Call Screening role</string>
+    <string name="feature_android_event_call_screened_field_direction">Direction</string>
+    <string name="feature_android_event_call_screened_field_numbercontains">Phone number contains</string>
+    <string name="feature_android_event_call_screened_field_namecontains">Contact name contains</string>
+    <string name="feature_android_event_call_screened_field_direction_option_any">Any</string>
+    <string name="feature_android_event_call_screened_field_direction_option_incoming">Incoming</string>
+    <string name="feature_android_event_call_screened_field_direction_option_outgoing">Outgoing</string>
+
+    <string name="feature_android_alarm_next_query_title">Get next alarm</string>
+    <string name="feature_android_alarm_next_query_description">Read Android's next scheduled alarm-clock trigger and source package</string>
+    <string name="feature_android_alarm_next_query_field_resultvariable">Store next-alarm object</string>
+
+    <string name="feature_android_material_colors_get_title">Get Material You colors</string>
+    <string name="feature_android_material_colors_get_description">Read Android system dynamic accent and neutral palette colors</string>
+    <string name="feature_android_material_colors_get_field_resultvariable">Store color palette object</string>
+
+    <string name="feature_file_properties_title">Get file properties</string>
+    <string name="feature_file_properties_description">Read filesystem metadata for an accessible file or directory</string>
+    <string name="feature_file_properties_field_path">Path</string>
+    <string name="feature_file_properties_field_resultvariable">Store properties object</string>
+
+    <string name="feature_android_state_physical_activity_title">Physical activity</string>
+    <string name="feature_android_state_physical_activity_description">Check the latest Google Activity Recognition sample</string>
+    <string name="feature_android_state_physical_activity_field_activity">Activity</string>
+    <string name="feature_android_state_physical_activity_field_minconfidence">Minimum confidence %</string>
+    <string name="feature_android_state_physical_activity_field_maxagems">Maximum sample age</string>
+    <string name="feature_android_condition_physical_activity_title">Physical activity</string>
+    <string name="feature_android_condition_physical_activity_description">Check the latest Google Activity Recognition sample</string>
+    <string name="feature_android_condition_physical_activity_field_activity">Activity</string>
+    <string name="feature_android_condition_physical_activity_field_minconfidence">Minimum confidence %</string>
+    <string name="feature_android_condition_physical_activity_field_maxagems">Maximum sample age</string>
+    <string name="feature_android_state_physical_activity_field_activity_option_any">Any</string>
+    <string name="feature_android_state_physical_activity_field_activity_option_in_vehicle">In vehicle</string>
+    <string name="feature_android_state_physical_activity_field_activity_option_on_bicycle">On bicycle</string>
+    <string name="feature_android_state_physical_activity_field_activity_option_on_foot">On foot</string>
+    <string name="feature_android_state_physical_activity_field_activity_option_running">Running</string>
+    <string name="feature_android_state_physical_activity_field_activity_option_still">Still</string>
+    <string name="feature_android_state_physical_activity_field_activity_option_tilting">Tilting</string>
+    <string name="feature_android_state_physical_activity_field_activity_option_walking">Walking</string>
+    <string name="feature_android_state_physical_activity_field_activity_option_unknown">Unknown</string>
+    <string name="feature_android_condition_physical_activity_field_activity_option_any">Any</string>
+    <string name="feature_android_condition_physical_activity_field_activity_option_in_vehicle">In vehicle</string>
+    <string name="feature_android_condition_physical_activity_field_activity_option_on_bicycle">On bicycle</string>
+    <string name="feature_android_condition_physical_activity_field_activity_option_on_foot">On foot</string>
+    <string name="feature_android_condition_physical_activity_field_activity_option_running">Running</string>
+    <string name="feature_android_condition_physical_activity_field_activity_option_still">Still</string>
+    <string name="feature_android_condition_physical_activity_field_activity_option_tilting">Tilting</string>
+    <string name="feature_android_condition_physical_activity_field_activity_option_walking">Walking</string>
+    <string name="feature_android_condition_physical_activity_field_activity_option_unknown">Unknown</string>
+
+    <string name="feature_android_event_sleep_classification_title">Sleep classification</string>
+    <string name="feature_android_event_sleep_classification_description">Run when Google Sleep API reports current sleep confidence, light and motion values</string>
+    <string name="feature_android_event_sleep_classification_field_minconfidence">Minimum sleep confidence %</string>
+    <string name="feature_android_event_sleep_classification_field_maxmotion">Maximum motion score</string>
+    <string name="feature_android_event_sleep_classification_field_maxlight">Maximum light score</string>
+
+    <string name="feature_android_state_sleeping_title">Sleeping</string>
+    <string name="feature_android_state_sleeping_description">Check the latest Google Sleep API classification using confidence, motion and light thresholds</string>
+    <string name="feature_android_state_sleeping_field_minconfidence">Minimum sleep confidence %</string>
+    <string name="feature_android_state_sleeping_field_maxmotion">Maximum motion score</string>
+    <string name="feature_android_state_sleeping_field_maxlight">Maximum light score</string>
+    <string name="feature_android_state_sleeping_field_maxagems">Maximum classification age</string>
+    <string name="feature_android_state_sleeping_field_value">Sleeping</string>
+    <string name="feature_android_condition_sleeping_title">Sleeping</string>
+    <string name="feature_android_condition_sleeping_description">Check the latest Google Sleep API classification using confidence, motion and light thresholds</string>
+    <string name="feature_android_condition_sleeping_field_minconfidence">Minimum sleep confidence %</string>
+    <string name="feature_android_condition_sleeping_field_maxmotion">Maximum motion score</string>
+    <string name="feature_android_condition_sleeping_field_maxlight">Maximum light score</string>
+    <string name="feature_android_condition_sleeping_field_maxagems">Maximum classification age</string>
+    <string name="feature_android_condition_sleeping_field_value">Sleeping</string>
+
+    <string name="feature_android_calendar_event_add_title">Add calendar event</string>
+    <string name="feature_android_calendar_event_add_description">Insert an event directly into Android CalendarProvider</string>
+    <string name="feature_android_calendar_event_add_field_calendarid">Calendar ID</string>
+    <string name="feature_android_calendar_event_add_field_title">Title</string>
+    <string name="feature_android_calendar_event_add_field_description">Description</string>
+    <string name="feature_android_calendar_event_add_field_location">Location</string>
+    <string name="feature_android_calendar_event_add_field_startepochms">Start epoch ms</string>
+    <string name="feature_android_calendar_event_add_field_endepochms">End epoch ms</string>
+    <string name="feature_android_calendar_event_add_field_allday">All-day event</string>
+    <string name="feature_android_calendar_event_add_field_timezone">Time zone ID</string>
+    <string name="feature_android_calendar_event_add_field_resultvariable">Store event ID</string>
+
+    <string name="feature_android_calendar_event_update_title">Update calendar event</string>
+    <string name="feature_android_calendar_event_update_description">Replace editable fields of an existing Android calendar event</string>
+    <string name="feature_android_calendar_event_update_field_eventid">Event ID</string>
+    <string name="feature_android_calendar_event_update_field_calendarid">Calendar ID</string>
+    <string name="feature_android_calendar_event_update_field_title">Title</string>
+    <string name="feature_android_calendar_event_update_field_description">Description</string>
+    <string name="feature_android_calendar_event_update_field_location">Location</string>
+    <string name="feature_android_calendar_event_update_field_startepochms">Start epoch ms</string>
+    <string name="feature_android_calendar_event_update_field_endepochms">End epoch ms</string>
+    <string name="feature_android_calendar_event_update_field_allday">All-day event</string>
+    <string name="feature_android_calendar_event_update_field_timezone">Time zone ID</string>
+
+    <string name="feature_android_calendar_attendees_query_title">Query calendar attendees</string>
+    <string name="feature_android_calendar_attendees_query_description">Read attendees for an Android calendar event</string>
+    <string name="feature_android_calendar_attendees_query_field_eventid">Event ID</string>
+    <string name="feature_android_calendar_attendees_query_field_resultvariable">Store attendee list</string>
+
+    <string name="feature_android_calendar_attendee_set_title">Add or update calendar attendee</string>
+    <string name="feature_android_calendar_attendee_set_description">Insert a calendar attendee or update an existing attendee row by ID</string>
+    <string name="feature_android_calendar_attendee_set_field_eventid">Event ID</string>
+    <string name="feature_android_calendar_attendee_set_field_attendeeid">Existing attendee ID (0 = add)</string>
+    <string name="feature_android_calendar_attendee_set_field_name">Name</string>
+    <string name="feature_android_calendar_attendee_set_field_email">Email</string>
+    <string name="feature_android_calendar_attendee_set_field_relationshipcode">Relationship code</string>
+    <string name="feature_android_calendar_attendee_set_field_typecode">Type code</string>
+    <string name="feature_android_calendar_attendee_set_field_statuscode">Status code</string>
+    <string name="feature_android_calendar_attendee_set_field_resultvariable">Store attendee ID</string>
+
+    <string name="feature_android_calendar_reminders_query_title">Query calendar reminders</string>
+    <string name="feature_android_calendar_reminders_query_description">Read reminders for an Android calendar event</string>
+    <string name="feature_android_calendar_reminders_query_field_eventid">Event ID</string>
+    <string name="feature_android_calendar_reminders_query_field_resultvariable">Store reminder list</string>
+
+    <string name="feature_android_calendar_reminder_set_title">Add or update calendar reminder</string>
+    <string name="feature_android_calendar_reminder_set_description">Insert a calendar reminder or update an existing reminder row by ID</string>
+    <string name="feature_android_calendar_reminder_set_field_eventid">Event ID</string>
+    <string name="feature_android_calendar_reminder_set_field_reminderid">Existing reminder ID (0 = add)</string>
+    <string name="feature_android_calendar_reminder_set_field_minutesprior">Minutes before event</string>
+    <string name="feature_android_calendar_reminder_set_field_methodcode">Reminder method code</string>
+    <string name="feature_android_calendar_reminder_set_field_resultvariable">Store reminder ID</string>
+
+    <string name="feature_android_event_significant_motion_title">Significant motion</string>
+    <string name="feature_android_event_significant_motion_description">Run when Android's one-shot significant-motion sensor detects device movement</string>
+
+    <string name="feature_android_voice_input_capture_title">Capture voice input</string>
+    <string name="feature_android_voice_input_capture_description">Open Android speech recognition, wait for one spoken result and store it in a variable</string>
+    <string name="feature_android_voice_input_capture_field_prompt">Prompt</string>
+    <string name="feature_android_voice_input_capture_field_languagetag">Language tag</string>
+    <string name="feature_android_voice_input_capture_field_timeoutms">Recognition timeout</string>
+    <string name="feature_android_voice_input_capture_field_resultvariable">Store recognized text</string>
+
+    <string name="feature_data_uuid_generate_title">Generate UUID</string>
+    <string name="feature_data_uuid_generate_description">Generate a random RFC 4122 UUID</string>
+    <string name="feature_data_uuid_generate_field_resultvariable">Store UUID</string>
+
+    <string name="feature_data_arrays_compare_title">Compare arrays</string>
+    <string name="feature_data_arrays_compare_description">Compare two runtime list variables and return common, distinct and match results</string>
+    <string name="feature_data_arrays_compare_field_first">First list variable</string>
+    <string name="feature_data_arrays_compare_field_second">Second list variable</string>
+    <string name="feature_data_arrays_compare_field_resultvariable">Store comparison object</string>
+
+    <string name="feature_android_app_foreground_query_title">Get foreground app and activity</string>
+    <string name="feature_android_app_foreground_query_description">Read the latest foreground package and activity from Android usage events</string>
+    <string name="feature_android_app_foreground_query_field_lookbackms">Look-back window</string>
+    <string name="feature_android_app_foreground_query_field_resultvariable">Store foreground app object</string>
+
+    <string name="feature_android_audio_stream_limits_query_title">Get maximum audio volumes</string>
+    <string name="feature_android_audio_stream_limits_query_description">Read Android maximum volume indexes for common audio streams</string>
+    <string name="feature_android_audio_stream_limits_query_field_resultvariable">Store stream limits object</string>
+
+    <string name="feature_android_storage_volumes_query_title">List storage volumes</string>
+    <string name="feature_android_storage_volumes_query_description">Read Android StorageManager volume metadata</string>
+    <string name="feature_android_storage_volumes_query_field_resultvariable">Store volume list</string>
+
+    <string name="feature_android_sim_subscriptions_query_title">Get SIM subscriptions</string>
+    <string name="feature_android_sim_subscriptions_query_description">Read active Android SIM/eSIM subscription metadata</string>
+    <string name="feature_android_sim_subscriptions_query_field_resultvariable">Store subscription list</string>
+
+    <string name="feature_android_location_distance_title">Calculate location distance</string>
+    <string name="feature_android_location_distance_description">Calculate geodesic distance and initial/final bearings between two coordinates</string>
+    <string name="feature_android_location_distance_field_lat1">Latitude 1</string>
+    <string name="feature_android_location_distance_field_lon1">Longitude 1</string>
+    <string name="feature_android_location_distance_field_lat2">Latitude 2</string>
+    <string name="feature_android_location_distance_field_lon2">Longitude 2</string>
+    <string name="feature_android_location_distance_field_resultvariable">Store distance object</string>
+
+    <string name="feature_android_location_mock_set_title">Set mock location</string>
+    <string name="feature_android_location_mock_set_description">Inject or clear an Android test-provider location</string>
+    <string name="feature_android_location_mock_set_field_operation">Operation</string>
+    <string name="feature_android_location_mock_set_field_provider">Provider name</string>
+    <string name="feature_android_location_mock_set_field_latitude">Latitude</string>
+    <string name="feature_android_location_mock_set_field_longitude">Longitude</string>
+    <string name="feature_android_location_mock_set_field_altitudemeters">Altitude meters</string>
+    <string name="feature_android_location_mock_set_field_accuracymeters">Accuracy meters</string>
+    <string name="feature_android_location_mock_set_field_operation_option_set">Set</string>
+    <string name="feature_android_location_mock_set_field_operation_option_clear">Clear</string>
+
+    <string name="feature_android_vibrate_cancel_title">Stop vibration</string>
+    <string name="feature_android_vibrate_cancel_description">Cancel active vibration started through Android's vibrator service</string>
+
+    <string name="feature_android_file_to_content_uri_title">File path to content URI</string>
+    <string name="feature_android_file_to_content_uri_description">Convert a file path covered by YAuto's FileProvider into a shareable content URI</string>
+    <string name="feature_android_file_to_content_uri_field_path">File path</string>
+    <string name="feature_android_file_to_content_uri_field_resultvariable">Store content URI</string>
+
+    <string name="feature_android_device_name_get_title">Get device name</string>
+    <string name="feature_android_device_name_get_description">Read the Android user-visible device name with model fallback</string>
+    <string name="feature_android_device_name_get_field_resultvariable">Store device name</string>
+
+    <string name="feature_android_event_websocket_title">WebSocket event</string>
+    <string name="feature_android_event_websocket_description">Run on WebSocket open, message, close or failure and optionally filter connection, URL or message text</string>
+    <string name="feature_android_event_websocket_field_connectionid">Connection ID</string>
+    <string name="feature_android_event_websocket_field_url">WebSocket URL contains</string>
+    <string name="feature_android_event_websocket_field_event">Event</string>
+    <string name="feature_android_event_websocket_field_textcontains">Message or error text contains</string>
+    <string name="feature_android_event_websocket_field_event_option_any">Any</string>
+    <string name="feature_android_event_websocket_field_event_option_open">Open</string>
+    <string name="feature_android_event_websocket_field_event_option_message">Message</string>
+    <string name="feature_android_event_websocket_field_event_option_closed">Closed</string>
+    <string name="feature_android_event_websocket_field_event_option_failure">Failure</string>
+</resources>
