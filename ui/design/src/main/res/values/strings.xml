@@ -148,7 +148,7 @@
     <string name="backend_shizuku_return_hint">Return here after granting YAuto access in Shizuku.</string>
     <string name="backend_lsposed_title">LSPosed / system_server</string>
     <string name="backend_lsposed_scope_title">LSPosed recommended scopes</string>
-    <string name="backend_lsposed_scope_detail">YAuto keeps the fixed system_server scope and adds target apps actually used by LSPosed features in this workspace.</string>
+    <string name="backend_lsposed_scope_detail">YAuto keeps the fixed system_server and System UI scopes, then adds target apps actually used by LSPosed features in this workspace.</string>
     <string name="backend_lsposed_scope_connected">Framework connected</string>
     <string name="backend_lsposed_scope_disconnected">Framework service not connected</string>
     <string name="backend_lsposed_scope_current_format">Current: %1$s</string>
