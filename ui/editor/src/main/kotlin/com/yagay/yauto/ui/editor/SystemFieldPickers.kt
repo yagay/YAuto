@@ -307,6 +307,7 @@ private fun SystemValuePickerDialog(
     }
 }
 
+@Composable
 internal fun InstalledAppField(
     descriptorId: String,
     field: FieldSchema.AppPicker,
