@@ -1,5 +1,8 @@
 package com.yagay.yauto
 
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,22 +19,44 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.yagay.yauto.core.registry.AccessRequirement
 import com.yagay.yauto.ui.design.MacroPalette
-import com.yagay.yauto.ui.design.localizedList
 import com.yagay.yauto.ui.design.R as TextR
+import org.json.JSONArray
+import org.json.JSONObject
 
 @Composable
 internal fun FeatureHealthScreen(
     modifier: Modifier,
     scanner: FeatureHealthScanner,
 ) {
+    val context = LocalContext.current
     val snapshot by scanner.snapshot.collectAsState()
     val scanning by scanner.scanning.collectAsState()
     val autoScan by scanner.autoScanEnabled.collectAsState()
+    var exportStatus by remember { mutableStateOf<String?>(null) }
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        val current = snapshot
+        if (uri != null && current != null) {
+            exportStatus = runCatching {
+                context.contentResolver.openOutputStream(uri, "wt")
+                    ?.bufferedWriter()
+                    ?.use { it.write(featureHealthDiagnosticJson(context, current)) }
+                    ?: error("Unable to open output stream")
+                context.getString(TextR.string.feature_health_export_saved)
+            }.getOrElse { error ->
+                context.getString(
+                    TextR.string.feature_health_export_failed_format,
+                    error.message ?: error.javaClass.simpleName,
+                )
+            }
+        }
+    }
     var query by remember { mutableStateOf("") }
     val normalized = query.trim().lowercase()
     val visible = remember(snapshot, normalized) {
@@ -62,6 +87,7 @@ internal fun FeatureHealthScreen(
                                 snapshot!!.items.size,
                                 snapshot!!.readyCount,
                                 snapshot!!.blockedCount,
+                                snapshot!!.brokenCount,
                                 snapshot!!.unsupportedCount,
                             )
                             else -> stringResource(TextR.string.feature_health_not_scanned)
@@ -105,6 +131,22 @@ internal fun FeatureHealthScreen(
                             )
                         )
                     }
+                    OutlinedButton(
+                        onClick = {
+                            exportLauncher.launch("YAuto-feature-health-" + System.currentTimeMillis() + ".json")
+                        },
+                        enabled = snapshot != null && !scanning,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(TextR.string.feature_health_export_log))
+                    }
+                    exportStatus?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
@@ -132,16 +174,19 @@ private fun FeatureHealthRow(item: FeatureHealthItem) {
     val statusText = when (item.status) {
         FeatureHealthStatus.READY -> stringResource(TextR.string.feature_health_ready)
         FeatureHealthStatus.BLOCKED -> stringResource(TextR.string.feature_health_blocked)
+        FeatureHealthStatus.BROKEN -> stringResource(TextR.string.feature_health_broken)
         FeatureHealthStatus.UNSUPPORTED -> stringResource(TextR.string.feature_health_unsupported)
     }
     val statusColor = when (item.status) {
         FeatureHealthStatus.READY -> MacroPalette.Constraint
         FeatureHealthStatus.BLOCKED -> MacroPalette.Trigger
+        FeatureHealthStatus.BROKEN -> MaterialTheme.colorScheme.error
         FeatureHealthStatus.UNSUPPORTED -> MacroPalette.Utility
     }
-    val missing = localizedList(
-        item.missingRequirements.map { healthRequirementLabel(it) }
-    )
+    val context = LocalContext.current
+    val missing = item.missingRequirements.joinToString(", ") { healthRequirementLabel(context, it) }
+    val reason = featureHealthReason(context, item)
+    val resolution = featureHealthResolution(context, item)
 
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -167,34 +212,62 @@ private fun FeatureHealthRow(item: FeatureHealthItem) {
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
+            Text(
+                stringResource(TextR.string.feature_health_reason_format, reason),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            resolution?.let {
+                Text(
+                    stringResource(TextR.string.feature_health_solution_format, it),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
 
-@Composable
-private fun healthRequirementLabel(value: AccessRequirement): String = stringResource(
-    when (value) {
-        AccessRequirement.ROOT -> TextR.string.access_root
-        AccessRequirement.SHIZUKU -> TextR.string.access_shizuku
-        AccessRequirement.LSPOSED -> TextR.string.access_lsposed
-        AccessRequirement.ZYGISK -> TextR.string.access_zygisk
-        AccessRequirement.ACCESSIBILITY -> TextR.string.access_accessibility
-        AccessRequirement.USAGE_STATS -> TextR.string.access_usage_stats
-        AccessRequirement.NOTIFICATION_LISTENER -> TextR.string.access_notification_listener
-        AccessRequirement.POST_NOTIFICATIONS -> TextR.string.access_post_notifications
-        AccessRequirement.OVERLAY -> TextR.string.access_overlay
-        AccessRequirement.WRITE_SETTINGS -> TextR.string.access_write_settings
-        AccessRequirement.CAMERA -> TextR.string.access_camera
-        AccessRequirement.LOCATION -> TextR.string.access_location
-        AccessRequirement.BLUETOOTH_CONNECT -> TextR.string.access_bluetooth
-        AccessRequirement.DND_POLICY -> TextR.string.access_dnd_policy
-        AccessRequirement.DEVICE_ADMIN -> TextR.string.access_device_admin
-        AccessRequirement.CALENDAR -> TextR.string.access_calendar
-        AccessRequirement.CONTACTS -> TextR.string.access_contacts
-        AccessRequirement.CALL_LOG -> TextR.string.access_call_log
-        AccessRequirement.SMS -> TextR.string.access_sms
-        AccessRequirement.PHONE -> TextR.string.access_phone
-        AccessRequirement.RECORD_AUDIO -> TextR.string.access_record_audio
-        AccessRequirement.ACTIVITY_RECOGNITION -> TextR.string.access_activity_recognition
+private fun featureHealthDiagnosticJson(
+    context: android.content.Context,
+    snapshot: FeatureHealthSnapshot,
+): String {
+    val items = JSONArray()
+    snapshot.items.forEach { item ->
+        items.put(
+            JSONObject()
+                .put("featureId", item.featureId)
+                .put("title", item.title)
+                .put("kind", item.kind.name)
+                .put("status", item.status.name)
+                .put("backendId", item.backendId)
+                .put("missingRequirements", JSONArray(item.missingRequirements.map { it.id }))
+                .put("detail", item.detail)
+                .put("reason", featureHealthReason(context, item))
+                .put("solution", featureHealthResolution(context, item))
+        )
     }
-)
+    return JSONObject()
+        .put("schemaVersion", 1)
+        .put("startedAtEpochMs", snapshot.startedAtEpochMs)
+        .put("finishedAtEpochMs", snapshot.finishedAtEpochMs)
+        .put(
+            "device",
+            JSONObject()
+                .put("manufacturer", Build.MANUFACTURER)
+                .put("brand", Build.BRAND)
+                .put("model", Build.MODEL)
+                .put("sdkInt", Build.VERSION.SDK_INT)
+                .put("release", Build.VERSION.RELEASE),
+        )
+        .put(
+            "summary",
+            JSONObject()
+                .put("total", snapshot.items.size)
+                .put("ready", snapshot.readyCount)
+                .put("blocked", snapshot.blockedCount)
+                .put("broken", snapshot.brokenCount)
+                .put("unsupported", snapshot.unsupportedCount),
+        )
+        .put("items", items)
+        .toString(2)
+}
