@@ -28,6 +28,7 @@ import com.yagay.yauto.platform.accessibility.YAutoAccessibilityService
 import com.yagay.yauto.platform.android.isUsageStatsAccessGranted
 import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
+import com.yagay.yauto.ui.design.localizedList
 import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.launch
 
@@ -42,6 +43,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     val checking = stringResource(TextR.string.common_checking)
     var refresh by remember { mutableIntStateOf(0) }
     var backendMessage by remember(notChecked) { mutableStateOf(notChecked) }
+    var lsposedScopeMessage by remember { mutableStateOf<String?>(null) }
     var page by remember { mutableStateOf(RuntimeSettingsPage.OVERVIEW) }
     val scope = rememberCoroutineScope()
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refresh++ }
@@ -50,6 +52,13 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) refresh++ }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
+    }
+
+    DisposableEffect(graph.workspace) {
+        val subscription = graph.workspace.addListener {
+            scope.launch { refresh++ }
+        }
+        onDispose { subscription.close() }
     }
 
     val notificationAccess = remember(refresh) {
@@ -369,6 +378,44 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         }
                     }
                 }
+                item {
+                    val scopeState by graph.lsposedScopes.state.collectAsState()
+                    val workspaceSnapshot = graph.workspace.snapshotOrNull()
+                    val recommendedScopes = remember(refresh, workspaceSnapshot) {
+                        workspaceSnapshot?.let { recommendedLsposedScopes(it, graph.features) }
+                            ?: listOf(LsposedScopeManager.SYSTEM_SCOPE)
+                    }
+                    val missingScopes = remember(scopeState.currentScope, recommendedScopes) {
+                        recommendedScopes.filterNot(scopeState.currentScope.toSet()::contains)
+                    }
+                    val requestedMessage = stringResource(TextR.string.backend_lsposed_scope_requested)
+                    LsposedScopeCard(
+                        state = scopeState,
+                        recommended = recommendedScopes,
+                        missing = missingScopes,
+                        message = lsposedScopeMessage,
+                        onRefresh = {
+                            graph.lsposedScopes.refresh()
+                            refresh++
+                        },
+                        onRequest = {
+                            graph.lsposedScopes.requestScopes(recommendedScopes) { result ->
+                                scope.launch {
+                                    lsposedScopeMessage = result.fold(
+                                        onSuccess = { requestedMessage },
+                                        onFailure = { error ->
+                                            context.getString(
+                                                TextR.string.backend_lsposed_scope_request_failed_format,
+                                                error.message ?: error.javaClass.simpleName,
+                                            )
+                                        },
+                                    )
+                                    refresh++
+                                }
+                            }
+                        },
+                    )
+                }
             }
 
             RuntimeSettingsPage.ENGINE -> LazyColumn(
@@ -462,6 +509,95 @@ private fun BackendCard(
                         if (authorize) TextR.string.backend_authorize_refresh else TextR.string.backend_check_status
                     )
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LsposedScopeCard(
+    state: LsposedScopeState,
+    recommended: List<String>,
+    missing: List<String>,
+    message: String?,
+    onRefresh: () -> Unit,
+    onRequest: () -> Unit,
+) {
+    val notChecked = stringResource(TextR.string.common_not_checked)
+    val currentText = localizedList(state.currentScope).ifBlank { notChecked }
+    val recommendedText = localizedList(recommended).ifBlank { notChecked }
+    val missingText = localizedList(missing)
+
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                stringResource(TextR.string.backend_lsposed_scope_title),
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                stringResource(TextR.string.backend_lsposed_scope_detail),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                stringResource(
+                    if (state.connected) {
+                        TextR.string.backend_lsposed_scope_connected
+                    } else {
+                        TextR.string.backend_lsposed_scope_disconnected
+                    }
+                ),
+                style = MaterialTheme.typography.labelMedium,
+                color = if (state.connected) MacroPalette.Constraint else MacroPalette.Trigger,
+            )
+            Text(
+                stringResource(TextR.string.backend_lsposed_scope_current_format, currentText),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                stringResource(TextR.string.backend_lsposed_scope_recommended_format, recommendedText),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                if (missing.isEmpty()) {
+                    stringResource(TextR.string.backend_lsposed_scope_complete)
+                } else {
+                    stringResource(TextR.string.backend_lsposed_scope_missing_format, missingText)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = if (missing.isEmpty()) MacroPalette.Constraint else MacroPalette.Trigger,
+            )
+            state.frameworkName?.let { framework ->
+                val version = state.frameworkVersion.orEmpty()
+                Text(
+                    stringResource(TextR.string.common_status_format, localizedList(listOf(framework, version).filter { it.isNotBlank() })),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            message?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = onRefresh,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(TextR.string.backend_lsposed_scope_refresh))
+                }
+                Button(
+                    onClick = onRequest,
+                    enabled = state.connected && missing.isNotEmpty(),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(TextR.string.backend_lsposed_scope_request))
+                }
             }
         }
     }
