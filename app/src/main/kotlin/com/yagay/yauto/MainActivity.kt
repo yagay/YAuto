@@ -21,6 +21,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        graph.featureHealth.requestScan()
+        if (FeatureHealthScanner.autoScanEnabled(this)) {
+            graph.featureHealth.requestScan()
+        }
     }
 }
