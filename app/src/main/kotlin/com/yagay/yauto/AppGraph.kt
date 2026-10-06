@@ -61,6 +61,16 @@ class AppGraph(context: Context) {
     })
     val diagnostics = DiagnosticCoordinator(diagnosticRegistry)
     val runtime = AutomationRuntime(workspace, features, capabilities, tracer)
+    val featureHealth by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        FeatureHealthScanner(
+            context = appContext,
+            descriptors = features::allDescriptors,
+            rootShell = rootShell,
+            shizuku = shizuku,
+            xposed = xposed,
+            accessibility = accessibility,
+        )
+    }
 
     init {
         safelyUnit("importers:compatibility") {
