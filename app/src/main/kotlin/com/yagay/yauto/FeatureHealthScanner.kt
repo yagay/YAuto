@@ -72,6 +72,7 @@ class FeatureHealthScanner(
 ) {
     private val context = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
     private val scanLock = Mutex()
     private val lastRequestAt = AtomicLong(0)
     private var scanJob: Job? = null
@@ -79,12 +80,31 @@ class FeatureHealthScanner(
     private val _snapshot = MutableStateFlow<FeatureHealthSnapshot?>(null)
     val snapshot: StateFlow<FeatureHealthSnapshot?> = _snapshot.asStateFlow()
 
+    private val _scanning = MutableStateFlow(false)
+    val scanning: StateFlow<Boolean> = _scanning.asStateFlow()
+
+    private val _autoScanEnabled = MutableStateFlow(preferences.getBoolean(KEY_AUTO_SCAN, false))
+    val autoScanEnabled: StateFlow<Boolean> = _autoScanEnabled.asStateFlow()
+
+    fun setAutoScanEnabled(enabled: Boolean) {
+        if (_autoScanEnabled.value == enabled) return
+        _autoScanEnabled.value = enabled
+        preferences.edit().putBoolean(KEY_AUTO_SCAN, enabled).apply()
+    }
+
     fun requestScan(force: Boolean = false) {
         val now = System.currentTimeMillis()
         if (!force && now - lastRequestAt.get() < MIN_RESCAN_INTERVAL_MS) return
         lastRequestAt.set(now)
         if (scanJob?.isActive == true) return
-        scanJob = scope.launch { scan() }
+        scanJob = scope.launch {
+            _scanning.value = true
+            try {
+                scan()
+            } finally {
+                _scanning.value = false
+            }
+        }
     }
 
     suspend fun scan(): FeatureHealthSnapshot = scanLock.withLock {
@@ -242,7 +262,14 @@ class FeatureHealthScanner(
     private fun granted(permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
-    private companion object {
-        const val MIN_RESCAN_INTERVAL_MS = 2_000L
+    companion object {
+        private const val PREFERENCES_NAME = "feature_health"
+        private const val KEY_AUTO_SCAN = "auto_scan"
+        private const val MIN_RESCAN_INTERVAL_MS = 2_000L
+
+        fun autoScanEnabled(context: Context): Boolean =
+            context.applicationContext
+                .getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+                .getBoolean(KEY_AUTO_SCAN, false)
     }
 }
