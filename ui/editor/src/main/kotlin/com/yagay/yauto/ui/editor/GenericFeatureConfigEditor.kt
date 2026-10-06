@@ -303,7 +303,15 @@ private fun FieldEditor(
 ) {
     val descriptorId = descriptor.id.value
     val label = localizedFieldLabelShared(descriptorId, field)
-    val picker = behavior.picker ?: inferredPickerSource(descriptor, field)
+    val variableNames = LocalEditorVariableNames.current
+    val variablePicker = if (field is FieldSchema.Variable && variableNames.isNotEmpty()) {
+        FieldPickerSource.Options(
+            variableNames.sorted().map { FieldPickerOption(it) }
+        )
+    } else {
+        null
+    }
+    val picker = behavior.picker ?: variablePicker ?: inferredPickerSource(descriptor, field)
     when {
         field is FieldSchema.Toggle -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
