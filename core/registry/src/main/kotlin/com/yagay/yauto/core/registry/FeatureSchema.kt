@@ -11,6 +11,7 @@ import com.yagay.yauto.core.model.FeatureRef
  * future features gain defaults, conditional UI and variable support without custom Compose code.
  */
 enum class ComponentPickerKind { ACTIVITY, SERVICE, RECEIVER, PROVIDER, QUICK_SETTINGS_TILE }
+enum class ComponentPickerValueMode { FLATTENED, CLASS_NAME }
 
 data class FieldPickerOption(
     val value: String,
@@ -23,6 +24,7 @@ sealed interface FieldPickerSource {
     data class Component(
         val packageFieldKey: String? = null,
         val kinds: Set<ComponentPickerKind> = ComponentPickerKind.entries.toSet(),
+        val valueMode: ComponentPickerValueMode = ComponentPickerValueMode.FLATTENED,
     ) : FieldPickerSource
 
     data class Permission(val packageFieldKey: String = "package") : FieldPickerSource
@@ -37,6 +39,10 @@ sealed interface FieldPickerSource {
     data object WifiSsid : FieldPickerSource
     data object BluetoothDevice : FieldPickerSource
     data object LocationProvider : FieldPickerSource
+    data object AppOperation : FieldPickerSource
+    data object IntentAction : FieldPickerSource
+    data object IntentCategory : FieldPickerSource
+    data object NotificationCategory : FieldPickerSource
     data class Options(val options: List<FieldPickerOption>) : FieldPickerSource
 }
 
