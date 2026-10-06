@@ -27,8 +27,8 @@ class WorkspaceGatedEventSource(
     private var subscription: AutoCloseable? = null
     @Volatile private var emitter: RuntimeEventEmitter? = null
 
-    override val id: String
-        get() = delegate?.id ?: "workspace-gated:" + requiredEventTypeIds.sorted().joinToString(",")
+    override val id: String =
+        "workspace-gated:" + requiredEventTypeIds.sorted().joinToString(",")
 
     override fun start(emitter: RuntimeEventEmitter) {
         if (!started.compareAndSet(false, true)) return
