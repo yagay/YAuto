@@ -160,6 +160,7 @@ internal fun PickerBackedField(
     enabled: Boolean,
     allowManualInput: Boolean,
     onValue: (String) -> Unit,
+    onHardwareKeyCaptured: (HardwareKeyCaptureResult) -> Unit = {},
 ) {
     val label = localizedFieldLabelShared(descriptorId, field)
     val context = LocalContext.current
@@ -220,6 +221,7 @@ internal fun PickerBackedField(
                                 Toast.LENGTH_LONG,
                             ).show()
                         } else {
+                            onHardwareKeyCaptured(captured)
                             Toast.makeText(
                                 context,
                                 context.getString(
