@@ -43,6 +43,7 @@ class AppGraph(context: Context) {
     val rootShell by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { RootShell() }
     val shizuku by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { ShizukuBackend(appContext) }
     val xposed by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { XposedBackend(appContext) }
+    val lsposedScopes = LsposedScopeManager()
     val accessibility by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AccessibilityBackend() }
     private val usageForeground by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { SystemUsageStatsForegroundReader(appContext) }
     private val workspaceStorage = JsonWorkspaceRepository(appContext)
@@ -85,6 +86,7 @@ class AppGraph(context: Context) {
     }
 
     init {
+        safelyUnit("lsposed:service") { lsposedScopes.start() }
         safelyUnit("importers:compatibility") {
             CompatibilityImporterCatalog.registerInto(importers)
         }
