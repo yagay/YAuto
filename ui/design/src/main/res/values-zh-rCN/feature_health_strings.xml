@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_settings_title_health">功能健康</string>
+    <string name="runtime_settings_feature_health">功能健康扫描</string>
+    <string name="runtime_settings_feature_health_subtitle">后台检查每个已注册功能的权限、依赖和后端可用性</string>
+    <string name="feature_health_scanning">正在扫描功能可用性…</string>
+    <string name="feature_health_not_scanned">尚未生成扫描结果</string>
+    <string name="feature_health_summary_format">共 %1$d 项 · 就绪 %2$d · 受阻 %3$d · 不支持 %4$d</string>
+    <string name="feature_health_search">搜索功能名称或 ID</string>
+    <string name="feature_health_recheck">重新扫描</string>
+    <string name="feature_health_ready">就绪</string>
+    <string name="feature_health_blocked">受阻</string>
+    <string name="feature_health_unsupported">不支持</string>
+    <string name="feature_health_missing_format">缺少：%1$s</string>
+    <string name="feature_health_backend_format">后端：%1$s</string>
+    <string name="feature_health_safe_note">后台扫描只检查 Android 版本、权限和后端连通性，不会真正执行会改变系统状态的动作。</string>
+    <string name="access_usage_stats">使用情况访问</string>
+    <string name="access_device_admin">设备管理器</string>
+</resources>
