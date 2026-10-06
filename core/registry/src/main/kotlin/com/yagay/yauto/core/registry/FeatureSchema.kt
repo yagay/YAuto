@@ -24,6 +24,13 @@ data class HardwareKeyPickerCatalog(
     val scanCodes: List<FieldPickerOption> = emptyList(),
 )
 
+data class HardwareKeyCaptureResult(
+    val keyCode: Int,
+    val scanCode: Int,
+    val deviceId: Int,
+    val action: Int,
+)
+
 sealed interface FieldPickerSource {
     data object InstalledApp : FieldPickerSource
 
