@@ -3,6 +3,7 @@ package com.yagay.yauto.ui.editor
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -28,6 +29,7 @@ internal fun FeatureCategoryPage(
     kind: FeatureKind,
     catalog: FeaturePickerCatalogModel,
     query: String,
+    listState: LazyListState,
     favorites: Set<String>,
     recent: List<String>,
     onQuery: (String) -> Unit,
@@ -43,7 +45,8 @@ internal fun FeatureCategoryPage(
     val favoriteCount = favorites.count(catalog::contains)
 
     LazyColumn(
-        modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     ) {
         item(contentType = "search") {
@@ -131,6 +134,7 @@ internal fun FeatureListPage(
     categoryPage: PickerPage.Features,
     catalog: FeaturePickerCatalogModel,
     query: String,
+    listState: LazyListState,
     favorites: Set<String>,
     recent: List<String>,
     onQuery: (String) -> Unit,
@@ -145,7 +149,8 @@ internal fun FeatureListPage(
     val subtitle = categorySubtitle(categoryPage)
 
     LazyColumn(
-        modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     ) {
         item(contentType = "search") {
