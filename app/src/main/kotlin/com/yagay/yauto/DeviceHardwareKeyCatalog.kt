@@ -110,9 +110,12 @@ class DeviceHardwareKeyCatalog(
 
     private fun parseKeyLayouts(raw: String): List<KeyLayoutMapping> =
         raw.lineSequence().mapNotNull { line ->
-            val parts = line.split('\t')
-            if (parts.size < 3) return@mapNotNull null
-            val source = parts[0].trim()
+            val separator = line.indexOf(':')
+            if (separator <= 0) return@mapNotNull null
+            val source = line.substring(0, separator).trim()
+            val body = line.substring(separator + 1).trim()
+            val parts = body.split(Regex("\\s+"))
+            if (parts.size < 3 || parts[0] != "key") return@mapNotNull null
             val scanCode = parseScanCode(parts[1]) ?: return@mapNotNull null
             val label = parts[2].trim().uppercase()
             if (label.isBlank()) return@mapNotNull null
@@ -184,14 +187,10 @@ class DeviceHardwareKeyCatalog(
         private val KEY_SECTION = Regex("KEY\\s*\\(0001\\)", RegexOption.IGNORE_CASE)
         private val EVENT_SECTION = Regex("[A-Z_]+\\s*\\([0-9a-fA-F]{4}\\)")
 
-        private val KEY_LAYOUT_COMMAND = buildString {
-            append("for d in /system/usr/keylayout /vendor/usr/keylayout /product/usr/keylayout /odm/usr/keylayout /system_ext/usr/keylayout; do\n")
-            append("  [ -d \"\\$d\" ] || continue\n")
-            append("  for f in \"\\$d\"/*.kl; do\n")
-            append("    [ -r \"\\$f\" ] || continue\n")
-            append("    awk -v file=\"\\$f\" '/^[[:space:]]*key[[:space:]]+/ { print file \"\\t\" \\$2 \"\\t\" \\$3 }' \"\\$f\"\n")
-            append("  done\n")
-            append("done")
-        }
+        private const val KEY_LAYOUT_COMMAND =
+            "grep -H -E '^[[:space:]]*key[[:space:]]+' " +
+                "/system/usr/keylayout/*.kl /vendor/usr/keylayout/*.kl " +
+                "/product/usr/keylayout/*.kl /odm/usr/keylayout/*.kl " +
+                "/system_ext/usr/keylayout/*.kl 2>/dev/null"
     }
 }
