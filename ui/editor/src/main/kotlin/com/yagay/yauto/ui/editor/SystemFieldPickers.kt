@@ -1,8 +1,11 @@
 package com.yagay.yauto.ui.editor
 
+import android.app.AppOpsManager
+import android.app.Notification
 import android.bluetooth.BluetoothManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
@@ -86,6 +89,35 @@ internal fun inferredPickerSource(
         "minute" -> FieldPickerSource.Options(
             (0..59).map { FieldPickerOption(it.toString()) }
         )
+        "operation" -> if (descriptor.id.value.contains("appop", ignoreCase = true)) {
+            FieldPickerSource.AppOperation
+        } else {
+            null
+        }
+        "action" -> if (descriptor.id.value.contains("intent", ignoreCase = true)) {
+            FieldPickerSource.IntentAction
+        } else {
+            null
+        }
+        "category" -> when {
+            descriptor.id.value.contains("notification", ignoreCase = true) ->
+                FieldPickerSource.NotificationCategory
+            descriptor.id.value.contains("intent", ignoreCase = true) ->
+                FieldPickerSource.IntentCategory
+            else -> null
+        }
+        "class", "className", "receiverClass" -> {
+            val packageKey = descriptor.fields.firstOrNull { it.key == "package" }?.key
+            if (packageKey != null) {
+                FieldPickerSource.Component(
+                    packageFieldKey = packageKey,
+                    kinds = inferredComponentKinds(descriptor.id.value),
+                    valueMode = ComponentPickerValueMode.CLASS_NAME,
+                )
+            } else {
+                null
+            }
+        }
         "mimeType" -> FieldPickerSource.Options(
             listOf(
                 "text/plain",
@@ -420,11 +452,62 @@ private fun loadSystemPickerOptions(
                 .sortedWith(comparator)
                 .map { SystemPickerOption(it, it) }
         }
+        FieldPickerSource.AppOperation -> {
+            AppOpsManager::class.java.fields
+                .asSequence()
+                .filter { it.name.startsWith("OPSTR_") && it.type == String::class.java }
+                .mapNotNull { field ->
+                    runCatching {
+                        val value = field.get(null)?.toString().orEmpty()
+                        value.takeIf { it.isNotBlank() }?.let {
+                            SystemPickerOption(it, field.name.removePrefix("OPSTR_"), it)
+                        }
+                    }.getOrNull()
+                }
+                .distinctBy { it.value }
+                .sortedWith { left, right -> comparator.compare(left.label, right.label) }
+                .toList()
+        }
+        FieldPickerSource.IntentAction -> androidConstantOptions(
+            owner = Intent::class.java,
+            prefix = "ACTION_",
+            comparator = comparator,
+        )
+        FieldPickerSource.IntentCategory -> androidConstantOptions(
+            owner = Intent::class.java,
+            prefix = "CATEGORY_",
+            comparator = comparator,
+        )
+        FieldPickerSource.NotificationCategory -> androidConstantOptions(
+            owner = Notification::class.java,
+            prefix = "CATEGORY_",
+            comparator = comparator,
+        )
         is FieldPickerSource.Options -> picker.options.map {
             SystemPickerOption(it.value, it.label, it.value.takeIf { value -> value != it.label })
         }
     }
 }.getOrDefault(emptyList())
+
+private fun androidConstantOptions(
+    owner: Class<*>,
+    prefix: String,
+    comparator: Comparator<String>,
+): List<SystemPickerOption> =
+    owner.fields
+        .asSequence()
+        .filter { it.name.startsWith(prefix) && it.type == String::class.java }
+        .mapNotNull { field ->
+            runCatching {
+                val value = field.get(null)?.toString().orEmpty()
+                value.takeIf { it.isNotBlank() }?.let {
+                    SystemPickerOption(it, field.name.removePrefix(prefix), it)
+                }
+            }.getOrNull()
+        }
+        .distinctBy { it.value }
+        .sortedWith { left, right -> comparator.compare(left.label, right.label) }
+        .toList()
 
 private fun userHandleIdentifier(handle: android.os.UserHandle): Int =
     runCatching {
@@ -461,7 +544,7 @@ private fun loadComponentOptions(
         val info = runCatching { pm.getPackageInfo(pkg, flags) }.getOrNull() ?: return@forEach
         if (ComponentPickerKind.ACTIVITY in picker.kinds) {
             info.activities.orEmpty().forEach { item ->
-                val value = ComponentName(item.packageName, item.name).flattenToString()
+                val value = componentPickerValue(picker, item.packageName, item.name)
                 output += SystemPickerOption(value, item.name, item.packageName)
             }
         }
@@ -475,19 +558,19 @@ private fun loadComponentOptions(
                     ComponentPickerKind.SERVICE !in picker.kinds &&
                     item.permission != "android.permission.BIND_QUICK_SETTINGS_TILE"
                 ) return@forEach
-                val value = ComponentName(item.packageName, item.name).flattenToString()
+                val value = componentPickerValue(picker, item.packageName, item.name)
                 output += SystemPickerOption(value, item.name, item.packageName)
             }
         }
         if (ComponentPickerKind.RECEIVER in picker.kinds) {
             info.receivers.orEmpty().forEach { item ->
-                val value = ComponentName(item.packageName, item.name).flattenToString()
+                val value = componentPickerValue(picker, item.packageName, item.name)
                 output += SystemPickerOption(value, item.name, item.packageName)
             }
         }
         if (ComponentPickerKind.PROVIDER in picker.kinds) {
             info.providers.orEmpty().forEach { item ->
-                val value = ComponentName(item.packageName, item.name).flattenToString()
+                val value = componentPickerValue(picker, item.packageName, item.name)
                 output += SystemPickerOption(value, item.name, item.packageName)
             }
         }
@@ -499,6 +582,15 @@ private fun loadComponentOptions(
             val label = comparator.compare(left.label, right.label)
             if (label != 0) label else comparator.compare(left.value, right.value)
         }
+}
+
+private fun componentPickerValue(
+    picker: FieldPickerSource.Component,
+    packageName: String,
+    className: String,
+): String = when (picker.valueMode) {
+    ComponentPickerValueMode.FLATTENED -> ComponentName(packageName, className).flattenToString()
+    ComponentPickerValueMode.CLASS_NAME -> className
 }
 
 @Composable
