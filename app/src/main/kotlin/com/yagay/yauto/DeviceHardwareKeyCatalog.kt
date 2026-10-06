@@ -186,10 +186,31 @@ class DeviceHardwareKeyCatalog(
 
         private val KEY_LAYOUT_COMMAND = """
             for d in /system/usr/keylayout /vendor/usr/keylayout /product/usr/keylayout /odm/usr/keylayout /system_ext/usr/keylayout; do
-              [ -d "$d" ] || continue
-              for f in "$d"/*.kl; do
-                [ -r "$f" ] || continue
-                awk -v file="$f" '/^[[:space:]]*key[[:space:]]+/ { print file "\t" $2 "\t" $3 }' "$f"
+              [ -d "${'
+    }
+}
+}d" ] || continue
+              for f in "${'
+    }
+}
+}d"/*.kl; do
+                [ -r "${'
+    }
+}
+}f" ] || continue
+                awk -v file="${'
+    }
+}
+}f" '/^[[:space:]]*key[[:space:]]+/ { print file "\t" ${'
+    }
+}
+}2 "\t" ${'
+    }
+}
+}3 }' "${'
+    }
+}
+}f"
               done
             done
         """.trimIndent()
