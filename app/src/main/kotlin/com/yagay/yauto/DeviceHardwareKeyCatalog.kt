@@ -3,6 +3,7 @@ package com.yagay.yauto
 import android.view.KeyEvent
 import com.yagay.yauto.core.registry.FieldPickerOption
 import com.yagay.yauto.core.registry.HardwareKeyPickerCatalog
+import com.yagay.yauto.core.registry.HardwareKeyCaptureResult
 import com.yagay.yauto.platform.root.RootShell
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -24,6 +25,32 @@ class DeviceHardwareKeyCatalog(
             }
             discovered
         }
+    }
+
+
+    suspend fun captureRawKey(timeoutMs: Long): HardwareKeyCaptureResult? {
+        if (!rootShell.isAvailable()) return null
+        val boundedTimeout = timeoutMs.coerceIn(1_000L, 60_000L)
+        val output = rootShell.run(RAW_KEY_CAPTURE_COMMAND, boundedTimeout + 1_000L)
+        val line = output.stdout.lineSequence()
+            .firstOrNull { RAW_KEY_EVENT.containsMatchIn(it) }
+            ?: return null
+        val match = RAW_KEY_EVENT.find(line) ?: return null
+        val scanCode = match.groupValues[1].toIntOrNull(16) ?: return null
+        val keyCode = resolveAndroidKeyCode(scanCode)
+        return HardwareKeyCaptureResult(
+            keyCode = keyCode,
+            scanCode = scanCode,
+            deviceId = -1,
+            action = KeyEvent.ACTION_DOWN,
+        )
+    }
+
+    private suspend fun resolveAndroidKeyCode(scanCode: Int): Int {
+        val mappings = parseKeyLayouts(rootShell.run(KEY_LAYOUT_COMMAND, 3_000L).stdout)
+            .filter { it.scanCode == scanCode }
+        val preferred = mappings.minByOrNull(::mappingPriority) ?: return KeyEvent.KEYCODE_UNKNOWN
+        return androidKeyCodesByLabel()[preferred.label] ?: KeyEvent.KEYCODE_UNKNOWN
     }
 
     private suspend fun discover(): HardwareKeyPickerCatalog {
@@ -186,6 +213,16 @@ class DeviceHardwareKeyCatalog(
         private val HEX_CODE = Regex("(?i)(?<![0-9a-f])[0-9a-f]{4}(?![0-9a-f])")
         private val KEY_SECTION = Regex("KEY\\s*\\(0001\\)", RegexOption.IGNORE_CASE)
         private val EVENT_SECTION = Regex("[A-Z_]+\\s*\\([0-9a-fA-F]{4}\\)")
+        private val RAW_KEY_EVENT = Regex(":\\s+0001\\s+([0-9a-fA-F]{4})\\s+00000001(?:\\s*$)")
+        private const val RAW_KEY_CAPTURE_COMMAND =
+            "getevent -t 2>/dev/null | grep -m 1 -E ': 0001 [0-9a-fA-F]{4} 00000001
+            "grep -H -E '^[[:space:]]*key[[:space:]]+' " +
+                "/system/usr/keylayout/*.kl /vendor/usr/keylayout/*.kl " +
+                "/product/usr/keylayout/*.kl /odm/usr/keylayout/*.kl " +
+                "/system_ext/usr/keylayout/*.kl 2>/dev/null"
+    }
+}
+"
 
         private const val KEY_LAYOUT_COMMAND =
             "grep -H -E '^[[:space:]]*key[[:space:]]+' " +
