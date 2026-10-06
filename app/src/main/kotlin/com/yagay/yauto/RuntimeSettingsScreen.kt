@@ -97,6 +97,12 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     ).count { it }
     val currentLanguageTag = remember(refresh) { AppLanguageManager.currentTag(context) }
 
+    LaunchedEffect(page) {
+        if (page == RuntimeSettingsPage.BACKENDS) {
+            runCatching { graph.lsposedScopes.start() }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
