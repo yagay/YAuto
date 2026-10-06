@@ -53,4 +53,9 @@
     <string name="implementation_lsposed_title">LSPosed</string>
     <string name="implementation_accessibility_title">Accessibility</string>
     <string name="editor_required_field_format">%1$s (required)</string>
+    <string name="feature_picker_select_value">Select from available values</string>
+    <string name="feature_picker_choose_value">Choose value</string>
+    <string name="feature_picker_search_value">Search values</string>
+    <string name="feature_picker_no_values">No selectable values are available. You can still enter a value manually when supported.</string>
+    <string name="feature_picker_select_or_enter_hint">Choose from detected values, or enter a value manually.</string>
 </resources>
