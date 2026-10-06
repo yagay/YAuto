@@ -513,18 +513,40 @@ private suspend fun captureHardwareKey(
         }
     }
 
-    val xposedArmed = runCatching { graph.xposed.beginHardwareKeyCapture(timeoutMs) }.getOrDefault(false)
-    if (!xposedArmed) {
-        xposed.cancel()
-        return@coroutineScope accessibility.await()
+    val rootAvailable = runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)
+    val root = if (rootAvailable) {
+        async(start = CoroutineStart.UNDISPATCHED) {
+            graph.hardwareKeys.captureRawKey(timeoutMs)
+        }
+    } else {
+        null
     }
 
-    val captured = select<HardwareKeyCaptureResult?> {
-        accessibility.onAwait { it }
-        xposed.onAwait { it }
+    val xposedArmed = runCatching {
+        graph.xposed.beginHardwareKeyCapture(timeoutMs)
+    }.getOrDefault(false)
+    if (!xposedArmed) xposed.cancel()
+
+    val captured = when {
+        xposedArmed && root != null -> select<HardwareKeyCaptureResult?> {
+            accessibility.onAwait { it }
+            xposed.onAwait { it }
+            root.onAwait { it }
+        }
+        xposedArmed -> select<HardwareKeyCaptureResult?> {
+            accessibility.onAwait { it }
+            xposed.onAwait { it }
+        }
+        root != null -> select<HardwareKeyCaptureResult?> {
+            accessibility.onAwait { it }
+            root.onAwait { it }
+        }
+        else -> accessibility.await()
     }
+
     accessibility.cancel()
     xposed.cancel()
+    root?.cancel()
     captured
 }
 
