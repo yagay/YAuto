@@ -87,7 +87,6 @@ class AppGraph(context: Context) {
     }
 
     init {
-        safelyUnit("lsposed:service") { lsposedScopes.start() }
         safelyUnit("importers:compatibility") {
             CompatibilityImporterCatalog.registerInto(importers)
         }
