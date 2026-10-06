@@ -10,6 +10,29 @@ import com.yagay.yauto.core.model.FeatureRef
  * present it. Keeping those concerns separate lets existing features remain source-compatible while
  * future features gain defaults, conditional UI and variable support without custom Compose code.
  */
+enum class ComponentPickerKind { ACTIVITY, SERVICE, RECEIVER, PROVIDER, QUICK_SETTINGS_TILE }
+
+data class FieldPickerOption(
+    val value: String,
+    val label: String = value,
+)
+
+sealed interface FieldPickerSource {
+    data class Component(
+        val packageFieldKey: String? = null,
+        val kinds: Set<ComponentPickerKind> = ComponentPickerKind.entries.toSet(),
+    ) : FieldPickerSource
+
+    data class Permission(val packageFieldKey: String = "package") : FieldPickerSource
+    data object Subscription : FieldPickerSource
+    data object Camera : FieldPickerSource
+    data object AndroidUser : FieldPickerSource
+    data object TimeZone : FieldPickerSource
+    data object Locale : FieldPickerSource
+    data object Calendar : FieldPickerSource
+    data class Options(val options: List<FieldPickerOption>) : FieldPickerSource
+}
+
 data class FieldBehavior(
     val defaultValue: ConfigValue? = null,
     val visibleWhen: FieldRule? = null,
@@ -17,6 +40,8 @@ data class FieldBehavior(
     val advanced: Boolean = false,
     val supportsVariables: Boolean = false,
     val help: String? = null,
+    val picker: FieldPickerSource? = null,
+    val allowManualInput: Boolean = true,
 )
 
 sealed interface FieldRule {
