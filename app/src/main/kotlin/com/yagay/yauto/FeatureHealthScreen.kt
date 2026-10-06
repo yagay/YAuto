@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.registry.AccessRequirement
 import com.yagay.yauto.ui.design.MacroPalette
+import com.yagay.yauto.ui.design.localizedList
 import com.yagay.yauto.ui.design.R as TextR
 
 @Composable
@@ -145,9 +146,9 @@ private fun FeatureHealthRow(item: FeatureHealthItem) {
         FeatureHealthStatus.BLOCKED -> MacroPalette.Trigger
         FeatureHealthStatus.UNSUPPORTED -> MacroPalette.Utility
     }
-    val missing = item.missingRequirements
-        .map { healthRequirementLabel(it) }
-        .joinToString(" · ")
+    val missing = localizedList(
+        item.missingRequirements.map { healthRequirementLabel(it) }
+    )
 
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
