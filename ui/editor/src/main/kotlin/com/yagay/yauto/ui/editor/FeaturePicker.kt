@@ -3,6 +3,7 @@ package com.yagay.yauto.ui.editor
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,7 +55,8 @@ fun MacroFeaturePickerDialog(
     var navigation by remember(initial?.typeId, catalog) {
         mutableStateOf(FeaturePickerNavState.initial(initialDescriptor))
     }
-    var query by remember { mutableStateOf("") }
+    val pageQueries = remember(kind) { mutableStateMapOf<String, String>() }
+    val pageListStates = remember(kind) { mutableStateMapOf<String, LazyListState>() }
     var favorites by remember(kind) {
         mutableStateOf(loadIds(prefs.getString(favoriteKey(kind), "")).toSet())
     }
@@ -63,10 +65,16 @@ fun MacroFeaturePickerDialog(
     }
     val accent = kindAccent(kind)
     val page = navigation.current
+    val pageKey = pickerPageStateKey(page)
+    val query = pageQueries[pageKey].orEmpty()
+    val listState = pageListStates.getOrPut(pageKey) { LazyListState() }
+
+    fun updateQuery(value: String) {
+        pageQueries[pageKey] = value
+    }
 
     fun push(destination: PickerPage) {
         navigation = navigation.push(destination)
-        query = ""
     }
 
     fun navigateBack() {
@@ -75,7 +83,6 @@ fun MacroFeaturePickerDialog(
             onDismiss()
         } else {
             navigation = previous
-            query = ""
         }
     }
 
@@ -138,9 +145,10 @@ fun MacroFeaturePickerDialog(
                     kind = kind,
                     catalog = catalog,
                     query = query,
+                    listState = listState,
                     favorites = favorites,
                     recent = recent,
-                    onQuery = { query = it },
+                    onQuery = ::updateQuery,
                     onCategory = { push(it) },
                     onFeature = { push(PickerPage.Configure(it)) },
                     onFavorite = ::toggleFavorite,
@@ -151,9 +159,10 @@ fun MacroFeaturePickerDialog(
                     categoryPage = current,
                     catalog = catalog,
                     query = query,
+                    listState = listState,
                     favorites = favorites,
                     recent = recent,
-                    onQuery = { query = it },
+                    onQuery = ::updateQuery,
                     onFeature = { push(PickerPage.Configure(it)) },
                     onFavorite = ::toggleFavorite,
                 )
@@ -171,6 +180,19 @@ fun MacroFeaturePickerDialog(
     }
 }
 
+
+private fun pickerPageStateKey(page: PickerPage): String = when (page) {
+    PickerPage.Categories -> "categories"
+    is PickerPage.Features -> buildString {
+        append("features:")
+        append(page.category.id)
+        page.special?.let {
+            append(':')
+            append(it)
+        }
+    }
+    is PickerPage.Configure -> "configure:" + page.descriptor.id.value
+}
 private fun loadIds(raw: String?): List<String> = raw.orEmpty().lineSequence()
     .map { it.trim() }
     .filter { it.isNotEmpty() }
