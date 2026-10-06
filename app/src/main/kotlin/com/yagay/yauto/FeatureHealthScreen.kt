@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.Switch
@@ -267,6 +268,14 @@ private fun featureHealthDiagnosticJson(
                 .put("blocked", snapshot.blockedCount)
                 .put("broken", snapshot.brokenCount)
                 .put("unsupported", snapshot.unsupportedCount),
+        )
+        .put(
+            "accessState",
+            JSONObject().apply {
+                snapshot.accessState.toSortedMap(compareBy { it.id }).forEach { (requirement, available) ->
+                    put(requirement.id, available)
+                }
+            },
         )
         .put("items", items)
         .toString(2)
