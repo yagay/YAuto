@@ -49,11 +49,16 @@ import com.yagay.yauto.ui.editor.LocalEditorVariableNames
 import com.yagay.yauto.ui.editor.LocalHardwareKeyCatalogLoader
 import com.yagay.yauto.ui.editor.LocalHardwareKeyCapture
 import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
+import com.yagay.yauto.platform.xposed.XposedSystemEventRuntimeBridge
 import com.yagay.yauto.core.registry.HardwareKeyCaptureResult
 import com.yagay.yauto.ui.home.HomeScreen
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -316,16 +321,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
             LocalFeatureAvailability provides featureAvailability,
             LocalEditorVariableNames provides (workspace.globalVariables.keys + workspace.persistentVariables.keys),
             LocalHardwareKeyCatalogLoader provides { graph.hardwareKeys.load() },
-            LocalHardwareKeyCapture provides { timeoutMs ->
-                AccessibilityRuntimeBridge.awaitNextKey(timeoutMs)?.let { key ->
-                    HardwareKeyCaptureResult(
-                        keyCode = key.keyCode,
-                        scanCode = key.scanCode,
-                        deviceId = key.deviceId,
-                        action = key.action,
-                    )
-                }
-            },
+            LocalHardwareKeyCapture provides { timeoutMs -> captureHardwareKey(graph, timeoutMs) },
         ) {
             AutomationEditorScreen(
             flows = workspace.flows,
@@ -353,16 +349,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
             LocalFeatureAvailability provides featureAvailability,
             LocalEditorVariableNames provides (workspace.globalVariables.keys + workspace.persistentVariables.keys),
             LocalHardwareKeyCatalogLoader provides { graph.hardwareKeys.load() },
-            LocalHardwareKeyCapture provides { timeoutMs ->
-                AccessibilityRuntimeBridge.awaitNextKey(timeoutMs)?.let { key ->
-                    HardwareKeyCaptureResult(
-                        keyCode = key.keyCode,
-                        scanCode = key.scanCode,
-                        deviceId = key.deviceId,
-                        action = key.action,
-                    )
-                }
-            },
+            LocalHardwareKeyCapture provides { timeoutMs -> captureHardwareKey(graph, timeoutMs) },
         ) {
             FlowEditorScreen(
             initial = editingFlow,
@@ -498,6 +485,47 @@ internal fun YAutoAppScreen(graph: AppGraph) {
             },
         )
     }
+}
+
+
+private suspend fun captureHardwareKey(
+    graph: AppGraph,
+    timeoutMs: Long,
+): HardwareKeyCaptureResult? = coroutineScope {
+    val accessibility = async(start = CoroutineStart.UNDISPATCHED) {
+        AccessibilityRuntimeBridge.awaitNextKey(timeoutMs)?.let { key ->
+            HardwareKeyCaptureResult(
+                keyCode = key.keyCode,
+                scanCode = key.scanCode,
+                deviceId = key.deviceId,
+                action = key.action,
+            )
+        }
+    }
+    val xposed = async(start = CoroutineStart.UNDISPATCHED) {
+        XposedSystemEventRuntimeBridge.awaitNextHardwareKey(timeoutMs)?.let { key ->
+            HardwareKeyCaptureResult(
+                keyCode = key.keyCode,
+                scanCode = key.scanCode,
+                deviceId = key.deviceId,
+                action = key.action,
+            )
+        }
+    }
+
+    val xposedArmed = runCatching { graph.xposed.beginHardwareKeyCapture(timeoutMs) }.getOrDefault(false)
+    if (!xposedArmed) {
+        xposed.cancel()
+        return@coroutineScope accessibility.await()
+    }
+
+    val captured = select<HardwareKeyCaptureResult?> {
+        accessibility.onAwait { it }
+        xposed.onAwait { it }
+    }
+    accessibility.cancel()
+    xposed.cancel()
+    captured
 }
 
 private const val MAX_WORKSPACE_FILE_BYTES = 20 * 1024 * 1024
