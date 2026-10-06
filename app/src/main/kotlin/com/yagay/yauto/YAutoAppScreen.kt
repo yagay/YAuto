@@ -12,7 +12,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +42,9 @@ import com.yagay.yauto.ui.diagnostics.DiagnosticsScreen
 import com.yagay.yauto.ui.editor.AutomationEditorScreen
 import com.yagay.yauto.ui.editor.FlowEditorScreen
 import com.yagay.yauto.ui.editor.GlobalVariablesScreen
+import com.yagay.yauto.ui.editor.FeatureAvailabilityTone
+import com.yagay.yauto.ui.editor.FeatureAvailabilityUi
+import com.yagay.yauto.ui.editor.LocalFeatureAvailability
 import com.yagay.yauto.ui.home.HomeScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -77,6 +82,21 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     val scope = rememberCoroutineScope()
     val saveLock = remember { Mutex() }
     val featureDescriptors = remember(graph) { graph.features.allDescriptors() }
+    val featureHealthSnapshot by graph.featureHealth.snapshot.collectAsState()
+    val featureAvailability = remember(featureHealthSnapshot, context) {
+        featureHealthSnapshot?.items.orEmpty().associate { item ->
+            item.featureId to FeatureAvailabilityUi(
+                statusLabel = featureHealthStatusLabel(context, item.status),
+                summary = featureHealthListSummary(context, item),
+                tone = when (item.status) {
+                    FeatureHealthStatus.READY -> FeatureAvailabilityTone.READY
+                    FeatureHealthStatus.BLOCKED -> FeatureAvailabilityTone.BLOCKED
+                    FeatureHealthStatus.BROKEN -> FeatureAvailabilityTone.BROKEN
+                    FeatureHealthStatus.UNSUPPORTED -> FeatureAvailabilityTone.UNSUPPORTED
+                },
+            )
+        }
+    }
 
     BackHandler(enabled = page != AppPage.HOME) {
         when (page) {
@@ -287,7 +307,10 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     }
 
     when (page) {
-        AppPage.AUTOMATION -> AutomationEditorScreen(
+        AppPage.AUTOMATION -> CompositionLocalProvider(
+            LocalFeatureAvailability provides featureAvailability
+        ) {
+            AutomationEditorScreen(
             flows = workspace.flows,
             descriptors = featureDescriptors,
             initial = editingAutomation,
@@ -306,9 +329,13 @@ internal fun YAutoAppScreen(graph: AppGraph) {
                 editingAutomation = null
                 page = AppPage.HOME
             },
-        )
+            )
+        }
 
-        AppPage.FLOW -> FlowEditorScreen(
+        AppPage.FLOW -> CompositionLocalProvider(
+            LocalFeatureAvailability provides featureAvailability
+        ) {
+            FlowEditorScreen(
             initial = editingFlow,
             descriptors = featureDescriptors,
             flows = workspace.flows,
@@ -323,7 +350,8 @@ internal fun YAutoAppScreen(graph: AppGraph) {
                 editingFlow = null
                 page = AppPage.HOME
             },
-        )
+            )
+        }
 
         AppPage.VARIABLES -> GlobalVariablesScreen(
             workspace.globalVariables,
