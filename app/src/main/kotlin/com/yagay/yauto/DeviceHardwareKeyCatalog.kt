@@ -1,0 +1,197 @@
+package com.yagay.yauto
+
+import android.view.KeyEvent
+import com.yagay.yauto.core.registry.FieldPickerOption
+import com.yagay.yauto.core.registry.HardwareKeyPickerCatalog
+import com.yagay.yauto.platform.root.RootShell
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.io.File
+
+class DeviceHardwareKeyCatalog(
+    private val rootShell: RootShell,
+) {
+    private val mutex = Mutex()
+    @Volatile private var cached: HardwareKeyPickerCatalog? = null
+
+    suspend fun load(force: Boolean = false): HardwareKeyPickerCatalog {
+        if (!force) cached?.let { return it }
+        return mutex.withLock {
+            if (!force) cached?.let { return@withLock it }
+            val discovered = discover()
+            if (discovered.keyCodes.isNotEmpty() || discovered.scanCodes.isNotEmpty()) {
+                cached = discovered
+            }
+            discovered
+        }
+    }
+
+    private suspend fun discover(): HardwareKeyPickerCatalog {
+        if (!rootShell.isAvailable()) return HardwareKeyPickerCatalog()
+
+        val layoutOutput = rootShell.run(KEY_LAYOUT_COMMAND, 8_000)
+        val mappings = if (layoutOutput.exitCode == 0) parseKeyLayouts(layoutOutput.stdout) else emptyList()
+        if (mappings.isEmpty()) return HardwareKeyPickerCatalog()
+
+        val getevent = rootShell.run("getevent -lp 2>/dev/null", 8_000)
+        val devicesByScan = if (getevent.exitCode == 0) parseGeteventKeys(getevent.stdout) else emptyMap()
+        val activeScans = devicesByScan.keys
+        val deviceMappings = if (activeScans.isNotEmpty()) {
+            mappings.filter { it.scanCode in activeScans }
+        } else {
+            mappings
+        }
+
+        val keyCodeByLabel = androidKeyCodesByLabel()
+        val preferredByScan = deviceMappings
+            .groupBy { it.scanCode }
+            .mapValues { (_, values) -> values.minByOrNull(::mappingPriority) ?: values.first() }
+
+        val scanOptions = preferredByScan.values
+            .map { mapping ->
+                val androidCode = keyCodeByLabel[mapping.label]
+                val deviceNames = devicesByScan[mapping.scanCode].orEmpty().sorted()
+                val detail = buildList {
+                    add("ScanCode ${mapping.scanCode}")
+                    androidCode?.let { add("KeyCode $it") }
+                    if (deviceNames.isNotEmpty()) add(deviceNames.joinToString(", "))
+                    add(File(mapping.source).name)
+                }.joinToString(" · ")
+                FieldPickerOption(
+                    value = mapping.scanCode.toString(),
+                    label = mapping.label,
+                    detail = detail,
+                )
+            }
+            .distinctBy { it.value }
+            .sortedWith(compareBy<FieldPickerOption>({ it.label }, { it.value.toIntOrNull() ?: Int.MAX_VALUE }))
+
+        val keyCodeOptions = preferredByScan.values
+            .mapNotNull { mapping ->
+                val keyCode = keyCodeByLabel[mapping.label] ?: return@mapNotNull null
+                val deviceNames = devicesByScan[mapping.scanCode].orEmpty().sorted()
+                val detail = buildList {
+                    add("KeyCode $keyCode")
+                    add("scan ${mapping.scanCode}")
+                    if (deviceNames.isNotEmpty()) add(deviceNames.joinToString(", "))
+                    add(File(mapping.source).name)
+                }.joinToString(" · ")
+                FieldPickerOption(
+                    value = keyCode.toString(),
+                    label = mapping.label,
+                    detail = detail,
+                )
+            }
+            .distinctBy { it.value }
+            .sortedWith(compareBy<FieldPickerOption>({ it.label }, { it.value.toIntOrNull() ?: Int.MAX_VALUE }))
+
+        return HardwareKeyPickerCatalog(
+            keyCodes = keyCodeOptions,
+            scanCodes = scanOptions,
+        )
+    }
+
+    private fun androidKeyCodesByLabel(): Map<String, Int> =
+        KeyEvent::class.java.fields
+            .asSequence()
+            .filter { it.name.startsWith("KEYCODE_") && it.type == Int::class.javaPrimitiveType }
+            .mapNotNull { field ->
+                runCatching {
+                    field.name.removePrefix("KEYCODE_") to field.getInt(null)
+                }.getOrNull()
+            }
+            .toMap()
+
+    private data class KeyLayoutMapping(
+        val scanCode: Int,
+        val label: String,
+        val source: String,
+    )
+
+    private fun parseKeyLayouts(raw: String): List<KeyLayoutMapping> =
+        raw.lineSequence().mapNotNull { line ->
+            val parts = line.split('\\t')
+            if (parts.size < 3) return@mapNotNull null
+            val source = parts[0].trim()
+            val scanCode = parseScanCode(parts[1]) ?: return@mapNotNull null
+            val label = parts[2].trim().uppercase()
+            if (label.isBlank()) return@mapNotNull null
+            KeyLayoutMapping(scanCode, label, source)
+        }.distinctBy { Triple(it.scanCode, it.label, it.source) }.toList()
+
+    private fun parseScanCode(raw: String): Int? {
+        val value = raw.trim()
+        return when {
+            value.startsWith("0x", ignoreCase = true) -> value.substring(2).toIntOrNull(16)
+            else -> value.toIntOrNull()
+        }
+    }
+
+    private fun mappingPriority(mapping: KeyLayoutMapping): Int {
+        val path = mapping.source.lowercase()
+        return when {
+            "/vendor/" in path || "/odm/" in path -> 0
+            "/product/" in path || "/system_ext/" in path -> 1
+            File(path).name.equals("generic.kl", ignoreCase = true) -> 3
+            else -> 2
+        }
+    }
+
+    private fun parseGeteventKeys(raw: String): Map<Int, Set<String>> {
+        val output = linkedMapOf<Int, MutableSet<String>>()
+        var device = ""
+        var keySection = false
+
+        raw.lineSequence().forEach { line ->
+            val trimmed = line.trim()
+            when {
+                trimmed.startsWith("add device ") -> {
+                    device = ""
+                    keySection = false
+                }
+                trimmed.startsWith("name:") -> {
+                    device = trimmed.substringAfter(':').trim().trim('"')
+                }
+                KEY_SECTION.matches(trimmed.substringBefore(':')) -> {
+                    keySection = true
+                    collectHexCodes(trimmed.substringAfter(':', ""), device, output)
+                }
+                keySection && EVENT_SECTION.matches(trimmed.substringBefore(':')) -> {
+                    keySection = false
+                }
+                keySection -> collectHexCodes(trimmed, device, output)
+            }
+        }
+
+        return output.mapValues { it.value.toSet() }
+    }
+
+    private fun collectHexCodes(
+        text: String,
+        device: String,
+        output: MutableMap<Int, MutableSet<String>>,
+    ) {
+        HEX_CODE.findAll(text).forEach { match ->
+            val scan = match.value.toIntOrNull(16) ?: return@forEach
+            output.getOrPut(scan) { linkedSetOf() }.apply {
+                if (device.isNotBlank()) add(device)
+            }
+        }
+    }
+
+    companion object {
+        private val HEX_CODE = Regex("(?i)(?<![0-9a-f])[0-9a-f]{4}(?![0-9a-f])")
+        private val KEY_SECTION = Regex("KEY\\s*\\(0001\\)", RegexOption.IGNORE_CASE)
+        private val EVENT_SECTION = Regex("[A-Z_]+\\s*\\([0-9a-fA-F]{4}\\)")
+
+        private val KEY_LAYOUT_COMMAND = """
+            for d in /system/usr/keylayout /vendor/usr/keylayout /product/usr/keylayout /odm/usr/keylayout /system_ext/usr/keylayout; do
+              [ -d "$d" ] || continue
+              for f in "$d"/*.kl; do
+                [ -r "$f" ] || continue
+                awk -v file="$f" '/^[ \\t]*key[ \\t]+/ { print file "\\t" $2 "\\t" $3 }' "$f"
+              done
+            done
+        """.trimIndent()
+    }
+}
