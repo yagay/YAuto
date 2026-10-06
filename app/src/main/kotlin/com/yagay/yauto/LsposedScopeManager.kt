@@ -124,6 +124,8 @@ class LsposedScopeManager : XposedServiceHelper.OnServiceListener {
 
     companion object {
         const val SYSTEM_SCOPE = "system"
+        const val SYSTEM_UI_SCOPE = "com.android.systemui"
+        val FIXED_SCOPES = listOf(SYSTEM_SCOPE, SYSTEM_UI_SCOPE)
         private val PACKAGE_NAME = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
     }
 }
@@ -132,7 +134,7 @@ fun recommendedLsposedScopes(
     workspace: WorkspaceData,
     registry: FeatureRegistry,
 ): List<String> = buildSet {
-    add(LsposedScopeManager.SYSTEM_SCOPE)
+    addAll(LsposedScopeManager.FIXED_SCOPES)
 
     workspaceFeatureRefs(workspace).forEach { feature ->
         val descriptor = registry.descriptor(feature.typeId) ?: return@forEach
@@ -162,7 +164,15 @@ fun recommendedLsposedScopes(
                 if (PACKAGE_NAME.matches(packageName)) add(packageName)
             }
     }
-}.sortedWith(compareBy<String> { it != LsposedScopeManager.SYSTEM_SCOPE }.thenBy { it })
+}.sortedWith(
+    compareBy<String> {
+        when (it) {
+            LsposedScopeManager.SYSTEM_SCOPE -> 0
+            LsposedScopeManager.SYSTEM_UI_SCOPE -> 1
+            else -> 2
+        }
+    }.thenBy { it }
+)
 
 private val PACKAGE_NAME = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
 
