@@ -68,6 +68,10 @@ fun MacroAutomationEditorScreen(
     val unnamedAutomation = stringResource(TextR.string.automation_unnamed)
     val locale = currentEditorLocale()
     val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
+    val inheritedVariableNames = LocalEditorVariableNames.current
+    val editorVariableNames = remember(inheritedVariableNames, variables) {
+        inheritedVariableNames + variables.keys
+    }
 
     fun save() {
         val simple = conditions.map { PredicateNode.Condition(it) }
@@ -344,8 +348,9 @@ fun MacroAutomationEditorScreen(
         }
     }
 
-    request?.let { edit ->
-        MacroFeaturePickerDialog(
+    CompositionLocalProvider(LocalEditorVariableNames provides editorVariableNames) {
+        request?.let { edit ->
+            MacroFeaturePickerDialog(
             kind = edit.kind,
             descriptors = descriptors,
             initial = edit.initial,
@@ -363,7 +368,8 @@ fun MacroAutomationEditorScreen(
                 }
                 request = null
             },
-        )
+            )
+        }
     }
 
     menu?.let { (section, index) ->
@@ -445,8 +451,9 @@ fun MacroAutomationEditorScreen(
         )
     }
 
-    treePhase?.let { phase ->
-        val nodes = when (phase) {
+    CompositionLocalProvider(LocalEditorVariableNames provides editorVariableNames) {
+        treePhase?.let { phase ->
+            val nodes = when (phase) {
             MacroActionPhase.EVENT -> onEvent
             MacroActionPhase.ENTER -> onEnter
             MacroActionPhase.EXIT -> onExit
@@ -471,7 +478,8 @@ fun MacroAutomationEditorScreen(
                 }
                 treePhase = null
             },
-        )
+            )
+        }
     }
 
     variableEdit?.let { (oldName, oldValue) ->
