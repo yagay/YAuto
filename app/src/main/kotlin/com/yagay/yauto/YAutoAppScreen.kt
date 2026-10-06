@@ -45,6 +45,7 @@ import com.yagay.yauto.ui.editor.GlobalVariablesScreen
 import com.yagay.yauto.ui.editor.FeatureAvailabilityTone
 import com.yagay.yauto.ui.editor.FeatureAvailabilityUi
 import com.yagay.yauto.ui.editor.LocalFeatureAvailability
+import com.yagay.yauto.ui.editor.LocalEditorVariableNames
 import com.yagay.yauto.ui.home.HomeScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -308,7 +309,8 @@ internal fun YAutoAppScreen(graph: AppGraph) {
 
     when (page) {
         AppPage.AUTOMATION -> CompositionLocalProvider(
-            LocalFeatureAvailability provides featureAvailability
+            LocalFeatureAvailability provides featureAvailability,
+            LocalEditorVariableNames provides (workspace.globalVariables.keys + workspace.persistentVariables.keys),
         ) {
             AutomationEditorScreen(
             flows = workspace.flows,
@@ -333,7 +335,8 @@ internal fun YAutoAppScreen(graph: AppGraph) {
         }
 
         AppPage.FLOW -> CompositionLocalProvider(
-            LocalFeatureAvailability provides featureAvailability
+            LocalFeatureAvailability provides featureAvailability,
+            LocalEditorVariableNames provides (workspace.globalVariables.keys + workspace.persistentVariables.keys),
         ) {
             FlowEditorScreen(
             initial = editingFlow,
