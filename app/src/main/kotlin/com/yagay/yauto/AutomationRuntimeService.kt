@@ -62,6 +62,7 @@ class AutomationRuntimeService : Service() {
         registerSource("clipboard") { ClipboardEventSource(this) }
         registerSource("device-setting") { DeviceSettingEventSource(this) }
         registerSource("reference-runtime-signals") { ReferenceRuntimeSignalEventSource(this) }
+        registerSource("root-hardware-key") { RootHardwareKeyEventSource(appGraph.workspace) }
         registerSource("audio-device") { AudioDeviceEventSource(this) }
         registerSource("audio-focus") { AudioFocusEventSource() }
         registerSource("bluetooth-device") { BluetoothDeviceEventSource(this) }
