@@ -69,6 +69,18 @@ class AppGraph(context: Context) {
             shizuku = shizuku,
             xposed = xposed,
             accessibility = accessibility,
+            implementationAvailable = { descriptor ->
+                when (descriptor.kind) {
+                    com.yagay.yauto.core.registry.FeatureKind.ACTION ->
+                        features.actionExecutor(descriptor.id.value) != null
+                    com.yagay.yauto.core.registry.FeatureKind.CONDITION ->
+                        features.conditionEvaluator(descriptor.id.value) != null
+                    com.yagay.yauto.core.registry.FeatureKind.EVENT ->
+                        features.eventMatcher(descriptor.id.value) != null
+                    com.yagay.yauto.core.registry.FeatureKind.STATE ->
+                        features.stateEvaluator(descriptor.id.value) != null
+                }
+            },
         )
     }
 
