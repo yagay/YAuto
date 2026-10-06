@@ -49,6 +49,7 @@ data class FeatureHealthSnapshot(
     val startedAtEpochMs: Long,
     val finishedAtEpochMs: Long,
     val items: List<FeatureHealthItem>,
+    val accessState: Map<AccessRequirement, Boolean> = emptyMap(),
 ) {
     val readyCount: Int get() = items.count { it.status == FeatureHealthStatus.READY }
     val blockedCount: Int get() = items.count { it.status == FeatureHealthStatus.BLOCKED }
@@ -92,6 +93,7 @@ class FeatureHealthScanner(
         if (_autoScanEnabled.value == enabled) return
         _autoScanEnabled.value = enabled
         preferences.edit().putBoolean(KEY_AUTO_SCAN, enabled).apply()
+        if (enabled) requestScan(force = true)
     }
 
     fun requestScan(force: Boolean = false) {
@@ -132,7 +134,7 @@ class FeatureHealthScanner(
                     }
                 }.thenBy { it.title.lowercase() }.thenBy { it.featureId }
             )
-        return FeatureHealthSnapshot(started, System.currentTimeMillis(), items).also { _snapshot.value = it }
+        return FeatureHealthSnapshot(started, System.currentTimeMillis(), items, access).also { _snapshot.value = it }
     }
 
     private suspend fun probeAccess(needed: Set<AccessRequirement>): Map<AccessRequirement, Boolean> {
