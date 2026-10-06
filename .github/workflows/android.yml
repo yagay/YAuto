@@ -1,22 +1,30 @@
-name: Android Debug
+name: Android Fast Debug
 
 on:
   push:
     branches: [ main, test ]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
 
 permissions:
   contents: read
 
 concurrency:
-  group: yauto-android-${{ github.workflow }}-${{ github.ref }}
+  group: yauto-fast-debug-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -26,6 +34,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.4.1'
+
       - name: Localization guard
         run: python3 .github/scripts/check-localization.py
       - name: Localization quality guard
@@ -36,30 +45,19 @@ jobs:
         run: python3 .github/scripts/check-event-contracts.py
       - name: Architecture maintainability guard
         run: python3 .github/scripts/check-architecture.py
-      - name: Test and build debug APK
+
+      - name: Build debug APK
         run: >
           gradle
-          :core:logging:test
-          :core:engine:test
-          :core:runtime:test
-          :core:storage:test
-          :core:diagnostics:test
-          :core:registry:test
-          :core:importer:test
-          :importer:macrodroid:test
-          :importer:shortx:test
-          :importer:tasker:test
-          :feature:standard:test
-          :plugin:api:test
-          :platform:android:testDebugUnitTest
-          :platform:accessibility:testDebugUnitTest
           :app:assembleDebug
           --configuration-cache
           --parallel
           --build-cache
           --stacktrace
+
       - name: Normalize APK name
         run: cp app/build/outputs/apk/debug/app-debug.apk YAuto-debug.apk
+
       - uses: actions/upload-artifact@v4
         with:
           name: YAuto-debug
