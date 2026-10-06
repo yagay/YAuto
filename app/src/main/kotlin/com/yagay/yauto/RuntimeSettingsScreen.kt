@@ -383,7 +383,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                     val workspaceSnapshot = graph.workspace.snapshotOrNull()
                     val recommendedScopes = remember(refresh, workspaceSnapshot) {
                         workspaceSnapshot?.let { recommendedLsposedScopes(it, graph.features) }
-                            ?: listOf(LsposedScopeManager.SYSTEM_SCOPE)
+                            ?: LsposedScopeManager.FIXED_SCOPES
                     }
                     val missingScopes = remember(scopeState.currentScope, recommendedScopes) {
                         recommendedScopes.filterNot(scopeState.currentScope.toSet()::contains)
