@@ -15,6 +15,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,6 +36,8 @@ internal fun FeatureHealthScreen(
     scanner: FeatureHealthScanner,
 ) {
     val snapshot by scanner.snapshot.collectAsState()
+    val scanning by scanner.scanning.collectAsState()
+    val autoScan by scanner.autoScanEnabled.collectAsState()
     var query by remember { mutableStateOf("") }
     val normalized = query.trim().lowercase()
     val visible = remember(snapshot, normalized) {
@@ -58,15 +61,17 @@ internal fun FeatureHealthScreen(
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        snapshot?.let {
-                            stringResource(
+                        when {
+                            scanning -> stringResource(TextR.string.feature_health_scanning)
+                            snapshot != null -> stringResource(
                                 TextR.string.feature_health_summary_format,
-                                it.items.size,
-                                it.readyCount,
-                                it.blockedCount,
-                                it.unsupportedCount,
+                                snapshot!!.items.size,
+                                snapshot!!.readyCount,
+                                snapshot!!.blockedCount,
+                                snapshot!!.unsupportedCount,
                             )
-                        } ?: stringResource(TextR.string.feature_health_scanning),
+                            else -> stringResource(TextR.string.feature_health_not_scanned)
+                        },
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
@@ -74,11 +79,37 @@ internal fun FeatureHealthScreen(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                stringResource(TextR.string.feature_health_auto_scan),
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Text(
+                                stringResource(TextR.string.feature_health_auto_scan_detail),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = autoScan,
+                            onCheckedChange = scanner::setAutoScanEnabled,
+                        )
+                    }
                     Button(
                         onClick = { scanner.requestScan(force = true) },
+                        enabled = !scanning,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(stringResource(TextR.string.feature_health_recheck))
+                        Text(
+                            stringResource(
+                                if (scanning) TextR.string.feature_health_scanning
+                                else TextR.string.feature_health_scan_now
+                            )
+                        )
                     }
                 }
             }
