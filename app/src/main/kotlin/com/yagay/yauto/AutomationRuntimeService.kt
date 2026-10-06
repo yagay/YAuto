@@ -191,7 +191,20 @@ class AutomationRuntimeService : Service() {
         }
         AccessibilityRuntimeBridge.setKeyListener { key ->
             val action = when (key.action) { KeyEvent.ACTION_DOWN -> "down"; KeyEvent.ACTION_UP -> "up"; else -> "other" }
-            dispatcher.dispatch(RuntimeEvent("android.event.hardware_key", mapOf("keyCode" to ConfigValue.NumberValue(key.keyCode.toDouble()), "action" to ConfigValue.StringValue(action), "repeatCount" to ConfigValue.NumberValue(key.repeatCount.toDouble()), "metaState" to ConfigValue.NumberValue(key.metaState.toDouble()), "deviceId" to ConfigValue.NumberValue(key.deviceId.toDouble())), source = "accessibility.key"))
+            dispatcher.dispatch(
+                RuntimeEvent(
+                    "android.event.hardware_key",
+                    mapOf(
+                        "keyCode" to ConfigValue.NumberValue(key.keyCode.toDouble()),
+                        "scanCode" to ConfigValue.NumberValue(key.scanCode.toDouble()),
+                        "action" to ConfigValue.StringValue(action),
+                        "repeatCount" to ConfigValue.NumberValue(key.repeatCount.toDouble()),
+                        "metaState" to ConfigValue.NumberValue(key.metaState.toDouble()),
+                        "deviceId" to ConfigValue.NumberValue(key.deviceId.toDouble()),
+                    ),
+                    source = "accessibility.key",
+                )
+            )
         }
         AccessibilityRuntimeBridge.setUiEventListener { event ->
             val typeId = when (event.event) {
