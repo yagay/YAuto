@@ -91,7 +91,16 @@ class AutomationRuntimeService : Service() {
         registerSource("locale-plugin-events") { WorkspaceGatedEventSource(appGraph.workspace, setOf("android.event.plugin_locale")) { ConfiguredLocalePluginEventSource(this, appGraph.workspace) } }
         registerSource("macrodroid-residual") { MacroDroidResidualEventSource(this) }
         registerSource("hinge-angle") { HingeAngleEventSource(this) }
-        registerSource("activity-recognition") { ActivityRecognitionEventSource(this) }
+        registerSource("activity-recognition") {
+            WorkspaceGatedEventSource(
+                appGraph.workspace,
+                setOf(
+                    "android.event.activity_recognition",
+                    "android.event.sleep_classification",
+                    "android.event.sleep_transition",
+                ),
+            ) { ActivityRecognitionEventSource(this) }
+        }
         registerSource("usage-foreground") {
             WorkspaceGatedEventSource(
                 appGraph.workspace,
