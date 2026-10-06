@@ -184,35 +184,14 @@ class DeviceHardwareKeyCatalog(
         private val KEY_SECTION = Regex("KEY\\s*\\(0001\\)", RegexOption.IGNORE_CASE)
         private val EVENT_SECTION = Regex("[A-Z_]+\\s*\\([0-9a-fA-F]{4}\\)")
 
-        private val KEY_LAYOUT_COMMAND = """
-            for d in /system/usr/keylayout /vendor/usr/keylayout /product/usr/keylayout /odm/usr/keylayout /system_ext/usr/keylayout; do
-              [ -d "${'
-    }
-}
-}d" ] || continue
-              for f in "${'
-    }
-}
-}d"/*.kl; do
-                [ -r "${'
-    }
-}
-}f" ] || continue
-                awk -v file="${'
-    }
-}
-}f" '/^[[:space:]]*key[[:space:]]+/ { print file "\t" ${'
-    }
-}
-}2 "\t" ${'
-    }
-}
-}3 }' "${'
-    }
-}
-}f"
-              done
-            done
-        """.trimIndent()
+        private val KEY_LAYOUT_COMMAND = buildString {
+            append("for d in /system/usr/keylayout /vendor/usr/keylayout /product/usr/keylayout /odm/usr/keylayout /system_ext/usr/keylayout; do\n")
+            append("  [ -d \"\\$d\" ] || continue\n")
+            append("  for f in \"\\$d\"/*.kl; do\n")
+            append("    [ -r \"\\$f\" ] || continue\n")
+            append("    awk -v file=\"\\$f\" '/^[[:space:]]*key[[:space:]]+/ { print file \"\\t\" \\$2 \"\\t\" \\$3 }' \"\\$f\"\n")
+            append("  done\n")
+            append("done")
+        }
     }
 }
