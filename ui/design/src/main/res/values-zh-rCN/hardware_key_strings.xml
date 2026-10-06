@@ -13,5 +13,5 @@
     <string name="hardware_key_capture_waiting_button">等待按键…</string>
     <string name="hardware_key_capture_waiting">请在 10 秒内按一次实体按键</string>
     <string name="hardware_key_capture_result">KeyCode %1$d，ScanCode %2$d，设备 %3$d</string>
-    <string name="hardware_key_capture_timeout">没有捕获到实体按键事件。请确认无障碍已启用；部分厂商按键可能需要 LSPosed 捕获。</string>
+    <string name="hardware_key_capture_timeout">没有捕获到实体按键事件。YAuto 已尝试无障碍、LSPosed 和 Root 原始输入捕获。</string>
 </resources>
