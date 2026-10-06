@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_settings_title_health">Feature health</string>
+    <string name="runtime_settings_feature_health">Feature health scan</string>
+    <string name="runtime_settings_feature_health_subtitle">Background readiness checks for every registered feature</string>
+    <string name="feature_health_scanning">Scanning feature readiness…</string>
+    <string name="feature_health_not_scanned">No scan result yet</string>
+    <string name="feature_health_summary_format">%1$d total · %2$d ready · %3$d blocked · %4$d unsupported</string>
+    <string name="feature_health_search">Search feature name or ID</string>
+    <string name="feature_health_recheck">Scan again</string>
+    <string name="feature_health_ready">Ready</string>
+    <string name="feature_health_blocked">Blocked</string>
+    <string name="feature_health_unsupported">Unsupported</string>
+    <string name="feature_health_missing_format">Missing: %1$s</string>
+    <string name="feature_health_backend_format">Backend: %1$s</string>
+    <string name="feature_health_safe_note">Background scan checks SDK, permissions and backend connectivity only. It never executes side-effect actions.</string>
+    <string name="access_usage_stats">Usage access</string>
+    <string name="access_device_admin">Device admin</string>
+</resources>
