@@ -63,4 +63,3 @@ jobs:
           name: YAuto-debug
           path: YAuto-debug.apk
           if-no-files-found: error
-          compression-level: 0
