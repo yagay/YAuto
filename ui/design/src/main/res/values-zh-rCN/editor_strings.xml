@@ -53,4 +53,9 @@
     <string name="implementation_lsposed_title">LSPosed</string>
     <string name="implementation_accessibility_title">Accessibility</string>
     <string name="editor_required_field_format">%1$s（必填）</string>
+    <string name="feature_picker_select_value">从可用选项中选择</string>
+    <string name="feature_picker_choose_value">选择值</string>
+    <string name="feature_picker_search_value">搜索选项</string>
+    <string name="feature_picker_no_values">当前没有检测到可选择的值；支持时仍可手动输入。</string>
+    <string name="feature_picker_select_or_enter_hint">优先从检测到的选项中选择，也可手动输入。</string>
 </resources>
