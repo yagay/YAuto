@@ -39,7 +39,7 @@ private data class SystemPickerOption(
     val detail: String? = null,
 )
 
-private fun inferredPickerSource(
+internal fun inferredPickerSource(
     descriptor: FeatureDescriptor,
     field: FieldSchema,
 ): FieldPickerSource? {
@@ -281,7 +281,7 @@ private fun loadSystemPickerOptions(
         }
         FieldPickerSource.AndroidUser -> {
             context.getSystemService(UserManager::class.java).userProfiles
-                .map { it.identifier.toString() }
+                .map { userHandleIdentifier(it).toString() }
                 .distinct()
                 .sorted()
                 .map { SystemPickerOption(it, it) }
@@ -328,6 +328,13 @@ private fun loadSystemPickerOptions(
         }
     }
 }.getOrDefault(emptyList())
+
+private fun userHandleIdentifier(handle: android.os.UserHandle): Int =
+    runCatching {
+        val method = handle.javaClass.getDeclaredMethod("getIdentifier")
+        method.isAccessible = true
+        (method.invoke(handle) as Number).toInt()
+    }.getOrElse { handle.hashCode() }
 
 @Suppress("DEPRECATION")
 private fun loadComponentOptions(
