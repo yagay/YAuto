@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_android_event_hardware_key_title">Hardware key</string>
-    <string name="feature_android_event_hardware_key_description">Run when Accessibility reports a hardware key down or up event</string>
+    <string name="feature_android_event_hardware_key_description">Run when Accessibility, LSPosed or Root raw input reports a hardware key event</string>
     <string name="feature_android_event_hardware_key_field_keycode">Android key code</string>
     <string name="feature_android_event_hardware_key_field_scancode">Linux scan code</string>
     <string name="feature_android_event_hardware_key_field_action">Key action</string>
