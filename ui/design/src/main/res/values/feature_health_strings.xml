@@ -14,6 +14,4 @@
     <string name="feature_health_missing_format">Missing: %1$s</string>
     <string name="feature_health_backend_format">Backend: %1$s</string>
     <string name="feature_health_safe_note">Background scan checks SDK, permissions and backend connectivity only. It never executes side-effect actions.</string>
-    <string name="access_usage_stats">Usage access</string>
-    <string name="access_device_admin">Device admin</string>
 </resources>
