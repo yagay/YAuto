@@ -1,8 +1,14 @@
 package com.yagay.yauto.ui.editor
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraManager
+import android.os.UserHandle
+import android.os.UserManager
+import android.provider.CalendarContract
+import android.telephony.SubscriptionManager
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,6 +34,9 @@ import com.yagay.yauto.ui.design.CapabilityBadge
 import com.yagay.yauto.ui.design.R as TextR
 import com.yagay.yauto.ui.design.localizedList
 import java.util.Locale
+import java.util.TimeZone
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private data class InstalledApp(val label: String, val packageName: String, val system: Boolean)
 
@@ -116,9 +125,10 @@ internal fun GenericFeatureConfigEditor(
                 )
             } else {
                 FieldEditor(
-                    descriptorId = descriptor.id.value,
+                    descriptor = descriptor,
                     field = field,
                     behavior = behavior,
+                    allValues = values,
                     value = values[field.key].orEmpty(),
                     enabled = enabled,
                     onValue = { values = values + (field.key to it) },
@@ -285,16 +295,19 @@ private fun BackendChoiceEditor(
 
 @Composable
 private fun FieldEditor(
-    descriptorId: String,
+    descriptor: FeatureDescriptor,
     field: FieldSchema,
     behavior: FieldBehavior,
+    allValues: Map<String, String>,
     value: String,
     enabled: Boolean,
     onValue: (String) -> Unit,
 ) {
+    val descriptorId = descriptor.id.value
     val label = localizedFieldLabelShared(descriptorId, field)
-    when (field) {
-        is FieldSchema.Toggle -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    val picker = behavior.picker ?: inferredPickerSource(descriptor, field)
+    when {
+        field is FieldSchema.Toggle -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(label)
                 if (field.required) {
@@ -307,7 +320,7 @@ private fun FieldEditor(
                 enabled = enabled,
             )
         }
-        is FieldSchema.Choice -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        field is FieldSchema.Choice -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(label, fontWeight = FontWeight.Medium)
             field.options.forEach { option ->
                 Row(
@@ -319,7 +332,17 @@ private fun FieldEditor(
                 }
             }
         }
-        is FieldSchema.AppPicker -> InstalledAppField(descriptorId, field, value, enabled, onValue)
+        field is FieldSchema.AppPicker -> InstalledAppField(descriptorId, field, value, enabled, onValue)
+        picker != null -> PickerBackedField(
+            descriptorId = descriptorId,
+            field = field,
+            picker = picker,
+            allValues = allValues,
+            value = value,
+            enabled = enabled,
+            allowManualInput = behavior.allowManualInput,
+            onValue = onValue,
+        )
         else -> {
             val numeric = field is FieldSchema.Number || field is FieldSchema.Duration
             OutlinedTextField(
