@@ -120,6 +120,7 @@ internal fun GenericFeatureConfigEditor(
                     value = values[field.key].orEmpty(),
                     enabled = enabled,
                     onValue = { values = values + (field.key to it) },
+                    onRelatedValue = { key, value -> values = values + (key to value) },
                 )
             } else {
                 FieldEditor(
@@ -272,6 +273,7 @@ private fun BackendChoiceEditor(
     value: String,
     enabled: Boolean,
     onValue: (String) -> Unit,
+    onRelatedValue: (String, String) -> Unit,
 ) {
     val selected = value.ifBlank { "auto" }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -348,6 +350,14 @@ private fun FieldEditor(
             enabled = enabled,
             allowManualInput = behavior.allowManualInput,
             onValue = onValue,
+            onHardwareKeyCaptured = { captured ->
+                if (descriptor.fields.any { it.key == "keyCode" }) {
+                    onRelatedValue("keyCode", captured.keyCode.toString())
+                }
+                if (captured.scanCode > 0 && descriptor.fields.any { it.key == "scanCode" }) {
+                    onRelatedValue("scanCode", captured.scanCode.toString())
+                }
+            },
         )
         else -> {
             val numeric = field is FieldSchema.Number || field is FieldSchema.Duration
