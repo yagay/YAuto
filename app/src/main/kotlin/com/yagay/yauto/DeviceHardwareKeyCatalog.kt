@@ -218,7 +218,7 @@ class DeviceHardwareKeyCatalog(
             "getevent -t 2>/dev/null | grep -m 1 -E ': 0001 [0-9a-fA-F]{4} 00000001'"
 
         private const val KEY_LAYOUT_COMMAND =
-            "grep -H -E '^[[:space:]]*key[[ :space:]]+' " +
+            "grep -H -E '^[[:space:]]*key[[:space:]]+' " +
                 "/system/usr/keylayout/*.kl /vendor/usr/keylayout/*.kl " +
                 "/product/usr/keylayout/*.kl /odm/usr/keylayout/*.kl " +
                 "/system_ext/usr/keylayout/*.kl 2>/dev/null"
