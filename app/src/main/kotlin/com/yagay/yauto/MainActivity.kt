@@ -6,14 +6,21 @@ import androidx.activity.compose.setContent
 import com.yagay.yauto.ui.design.YAutoTheme
 
 class MainActivity : ComponentActivity() {
+    private val graph: AppGraph
+        get() = (application as YAutoApplication).graph
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AutomationRuntimeService.start(this)
-        val graph = (application as YAutoApplication).graph
         setContent {
             YAutoTheme {
                 YAutoAppScreen(graph)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        graph.featureHealth.requestScan()
     }
 }
