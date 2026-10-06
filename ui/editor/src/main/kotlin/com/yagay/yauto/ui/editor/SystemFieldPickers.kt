@@ -16,6 +16,7 @@ import android.provider.CalendarContract
 import android.telephony.SubscriptionManager
 import android.view.KeyEvent
 import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,6 +38,7 @@ import com.yagay.yauto.ui.design.R as TextR
 import java.util.Locale
 import java.util.TimeZone
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 internal data class InstalledApp(val label: String, val packageName: String, val system: Boolean)
@@ -160,8 +162,13 @@ internal fun PickerBackedField(
     onValue: (String) -> Unit,
 ) {
     val label = localizedFieldLabelShared(descriptorId, field)
+    val context = LocalContext.current
+    val captureHardwareKey = LocalHardwareKeyCapture.current
+    val scope = rememberCoroutineScope()
     var showPicker by remember(picker) { mutableStateOf(false) }
+    var capturingKey by remember(picker) { mutableStateOf(false) }
     val numeric = field is FieldSchema.Number || field is FieldSchema.Duration
+    val hardwareKeyField = picker == FieldPickerSource.KeyCode || picker == FieldPickerSource.ScanCode
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         OutlinedTextField(
             value = value,
@@ -189,10 +196,61 @@ internal fun PickerBackedField(
         )
         OutlinedButton(
             onClick = { showPicker = true },
-            enabled = enabled,
+            enabled = enabled && !capturingKey,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(TextR.string.feature_picker_select_value))
+        }
+        if (hardwareKeyField) {
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        capturingKey = true
+                        Toast.makeText(
+                            context,
+                            context.getString(TextR.string.hardware_key_capture_waiting),
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                        val captured = runCatching { captureHardwareKey(10_000L) }.getOrNull()
+                        capturingKey = false
+                        if (captured == null) {
+                            Toast.makeText(
+                                context,
+                                context.getString(TextR.string.hardware_key_capture_timeout),
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        } else {
+                            Toast.makeText(
+                                context,
+                                context.getString(
+                                    TextR.string.hardware_key_capture_result,
+                                    captured.keyCode,
+                                    captured.scanCode,
+                                    captured.deviceId,
+                                ),
+                                Toast.LENGTH_LONG,
+                            ).show()
+                            val selected = when (picker) {
+                                FieldPickerSource.KeyCode -> captured.keyCode
+                                FieldPickerSource.ScanCode -> captured.scanCode
+                                else -> 0
+                            }
+                            if (selected > 0 || picker == FieldPickerSource.KeyCode && captured.keyCode == KeyEvent.KEYCODE_UNKNOWN) {
+                                onValue(selected.toString())
+                            }
+                        }
+                    }
+                },
+                enabled = enabled && !capturingKey,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    stringResource(
+                        if (capturingKey) TextR.string.hardware_key_capture_waiting_button
+                        else TextR.string.hardware_key_capture_button
+                    )
+                )
+            }
         }
     }
     if (showPicker) {
