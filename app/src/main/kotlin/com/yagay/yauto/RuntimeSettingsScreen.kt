@@ -31,7 +31,7 @@ import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.launch
 
-private enum class RuntimeSettingsPage { OVERVIEW, PERMISSIONS, BACKENDS, ENGINE }
+private enum class RuntimeSettingsPage { OVERVIEW, PERMISSIONS, BACKENDS, ENGINE, HEALTH }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,6 +98,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                             RuntimeSettingsPage.PERMISSIONS -> stringResource(TextR.string.runtime_settings_title_permissions)
                             RuntimeSettingsPage.BACKENDS -> stringResource(TextR.string.runtime_settings_title_backends)
                             RuntimeSettingsPage.ENGINE -> stringResource(TextR.string.runtime_settings_title_engine)
+                            RuntimeSettingsPage.HEALTH -> stringResource(TextR.string.runtime_settings_title_health)
                         }
                     )
                 },
@@ -156,6 +157,27 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.runtime_settings_engine_subtitle),
                         MacroPalette.Action,
                         onClick = { page = RuntimeSettingsPage.ENGINE },
+                    )
+                }
+                item {
+                    val snapshot by graph.featureHealth.snapshot.collectAsState()
+                    val subtitle = snapshot?.let {
+                        stringResource(
+                            TextR.string.feature_health_summary_format,
+                            it.items.size,
+                            it.readyCount,
+                            it.blockedCount,
+                            it.unsupportedCount,
+                        )
+                    } ?: stringResource(TextR.string.feature_health_scanning)
+                    MacroItemRow(
+                        stringResource(TextR.string.runtime_settings_feature_health),
+                        subtitle,
+                        MacroPalette.Diagnostics,
+                        onClick = {
+                            graph.featureHealth.requestScan()
+                            page = RuntimeSettingsPage.HEALTH
+                        },
                     )
                 }
             }
@@ -312,6 +334,11 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 item { EngineCard(stringResource(TextR.string.engine_execution_safety_title), stringResource(TextR.string.engine_execution_safety_detail)) }
                 item { EngineCard(stringResource(TextR.string.engine_execution_trace_title), stringResource(TextR.string.engine_execution_trace_detail)) }
             }
+
+            RuntimeSettingsPage.HEALTH -> FeatureHealthScreen(
+                modifier = Modifier.padding(padding),
+                scanner = graph.featureHealth,
+            )
         }
     }
 }
