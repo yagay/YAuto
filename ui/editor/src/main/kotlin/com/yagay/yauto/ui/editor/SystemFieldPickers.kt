@@ -69,6 +69,7 @@ internal fun inferredPickerSource(
         "calendarId" -> FieldPickerSource.Calendar
         "imeId" -> FieldPickerSource.InputMethod
         "keyCode" -> FieldPickerSource.KeyCode
+        "scanCode" -> FieldPickerSource.ScanCode
         "ssid" -> FieldPickerSource.WifiSsid
         "provider" -> if (descriptor.id.value.contains("location", ignoreCase = true)) {
             FieldPickerSource.LocationProvider
@@ -219,14 +220,22 @@ private fun SystemValuePickerDialog(
 ) {
     val context = LocalContext.current
     val locale = currentEditorLocale()
+    val hardwareKeyCatalogLoader = LocalHardwareKeyCatalogLoader.current
     var query by remember { mutableStateOf("") }
     var loading by remember(picker, allValues) { mutableStateOf(true) }
     var options by remember(picker, allValues) { mutableStateOf(emptyList<SystemPickerOption>()) }
 
-    LaunchedEffect(picker, allValues, locale) {
+    LaunchedEffect(picker, allValues, locale, hardwareKeyCatalogLoader) {
         loading = true
+        val hardwareKeys = if (
+            picker == FieldPickerSource.KeyCode || picker == FieldPickerSource.ScanCode
+        ) {
+            runCatching { hardwareKeyCatalogLoader() }.getOrDefault(HardwareKeyPickerCatalog())
+        } else {
+            HardwareKeyPickerCatalog()
+        }
         options = withContext(Dispatchers.IO) {
-            loadSystemPickerOptions(context, picker, allValues, locale)
+            loadSystemPickerOptions(context, picker, allValues, locale, hardwareKeys)
         }
         loading = false
     }
