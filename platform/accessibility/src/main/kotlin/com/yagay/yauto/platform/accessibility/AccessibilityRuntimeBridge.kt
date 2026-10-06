@@ -66,6 +66,7 @@ object AccessibilityRuntimeBridge {
     @Volatile private var fingerprintGestureListener: ((AccessibilityFingerprintGestureSnapshot) -> Unit)? = null
     @Volatile private var fingerprintGestureAvailable: Boolean = false
     private val nextClick = AtomicReference<CompletableDeferred<AccessibilityUiEventSnapshot>?>(null)
+    private val nextKey = AtomicReference<CompletableDeferred<AccessibilityKeySnapshot>?>(null)
     private val subscribedUiRuntimeEvents = AtomicReference<Set<String>>(emptySet())
 
     fun currentWindow(): AccessibilityWindowSnapshot? = current.get()
@@ -77,6 +78,16 @@ object AccessibilityRuntimeBridge {
             withTimeoutOrNull(timeoutMs.coerceIn(1_000L, 300_000L)) { deferred.await() }
         } finally {
             nextClick.compareAndSet(deferred, null)
+        }
+    }
+
+    suspend fun awaitNextKey(timeoutMs: Long): AccessibilityKeySnapshot? {
+        val deferred = CompletableDeferred<AccessibilityKeySnapshot>()
+        nextKey.getAndSet(deferred)?.cancel()
+        return try {
+            withTimeoutOrNull(timeoutMs.coerceIn(1_000L, 60_000L)) { deferred.await() }
+        } finally {
+            nextKey.compareAndSet(deferred, null)
         }
     }
 
@@ -161,16 +172,16 @@ object AccessibilityRuntimeBridge {
         deviceId: Int,
         scanCode: Int = 0,
     ) {
-        keyListener?.invoke(
-            AccessibilityKeySnapshot(
-                keyCode = keyCode,
-                action = action,
-                repeatCount = repeatCount,
-                metaState = metaState,
-                deviceId = deviceId,
-                scanCode = scanCode,
-            )
+        val snapshot = AccessibilityKeySnapshot(
+            keyCode = keyCode,
+            action = action,
+            repeatCount = repeatCount,
+            metaState = metaState,
+            deviceId = deviceId,
+            scanCode = scanCode,
         )
+        nextKey.getAndSet(null)?.complete(snapshot)
+        keyListener?.invoke(snapshot)
     }
 
     internal fun dispatchUiEvent(snapshot: AccessibilityUiEventSnapshot) {
@@ -184,5 +195,6 @@ object AccessibilityRuntimeBridge {
         current.set(null)
         fingerprintGestureAvailable = false
         nextClick.getAndSet(null)?.cancel()
+        nextKey.getAndSet(null)?.cancel()
     }
 }
