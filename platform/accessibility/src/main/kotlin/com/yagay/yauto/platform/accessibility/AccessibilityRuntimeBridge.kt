@@ -117,6 +117,20 @@ object AccessibilityRuntimeBridge {
     internal fun shouldCaptureScreenText(): Boolean =
         "android.event.screen_content_changed" in subscribedUiRuntimeEvents.get()
 
+    private fun isRuntimeUiEventSubscribed(kind: String): Boolean {
+        val typeId = when (kind) {
+            "click" -> "android.event.ui_click"
+            "long_click" -> "android.event.ui_long_click"
+            "text_changed" -> "android.event.ui_text_changed"
+            "focused" -> "android.event.ui_focused"
+            "scrolled" -> "android.event.ui_scrolled"
+            "content_changed" -> "android.event.screen_content_changed"
+            "toast" -> "android.event.toast_shown"
+            else -> return false
+        }
+        return typeId in subscribedUiRuntimeEvents.get()
+    }
+
     fun isFingerprintGestureAvailable(): Boolean = fingerprintGestureAvailable
 
     suspend fun captureScreenshot(): Bitmap? = YAutoAccessibilityService.current?.captureScreenshotBitmap()
@@ -144,7 +158,9 @@ object AccessibilityRuntimeBridge {
 
     internal fun dispatchUiEvent(snapshot: AccessibilityUiEventSnapshot) {
         if (snapshot.event == "click") nextClick.getAndSet(null)?.complete(snapshot)
-        uiEventListener?.invoke(snapshot)
+        if (isRuntimeUiEventSubscribed(snapshot.event)) {
+            uiEventListener?.invoke(snapshot)
+        }
     }
 
     internal fun clearIfServiceStops() {
