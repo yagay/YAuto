@@ -306,8 +306,6 @@ private fun componentPickerValue(
     ComponentPickerValueMode.CLASS_NAME -> className
 }
 
-@Composable
-
 @Suppress("DEPRECATION")
 internal fun installedApps(context: Context, locale: Locale): List<InstalledApp> = runCatching {
     val pm = context.packageManager
