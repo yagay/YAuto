@@ -304,6 +304,38 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
                 fieldBehaviors = mapOf(
                     "name" to FieldBehavior(supportsVariables = true),
                     "email" to FieldBehavior(supportsVariables = true),
+                    "relationshipCode" to FieldBehavior(
+                        picker = FieldPickerSource.Options(
+                            listOf(
+                                FieldPickerOption(CalendarContract.Attendees.RELATIONSHIP_NONE.toString(), "None"),
+                                FieldPickerOption(CalendarContract.Attendees.RELATIONSHIP_ATTENDEE.toString(), "Attendee"),
+                                FieldPickerOption(CalendarContract.Attendees.RELATIONSHIP_ORGANIZER.toString(), "Organizer"),
+                                FieldPickerOption(CalendarContract.Attendees.RELATIONSHIP_PERFORMER.toString(), "Performer"),
+                                FieldPickerOption(CalendarContract.Attendees.RELATIONSHIP_SPEAKER.toString(), "Speaker"),
+                            )
+                        )
+                    ),
+                    "typeCode" to FieldBehavior(
+                        picker = FieldPickerSource.Options(
+                            listOf(
+                                FieldPickerOption(CalendarContract.Attendees.TYPE_NONE.toString(), "None"),
+                                FieldPickerOption(CalendarContract.Attendees.TYPE_REQUIRED.toString(), "Required"),
+                                FieldPickerOption(CalendarContract.Attendees.TYPE_OPTIONAL.toString(), "Optional"),
+                                FieldPickerOption(CalendarContract.Attendees.TYPE_RESOURCE.toString(), "Resource"),
+                            )
+                        )
+                    ),
+                    "statusCode" to FieldBehavior(
+                        picker = FieldPickerSource.Options(
+                            listOf(
+                                FieldPickerOption(CalendarContract.Attendees.ATTENDEE_STATUS_NONE.toString(), "None"),
+                                FieldPickerOption(CalendarContract.Attendees.ATTENDEE_STATUS_ACCEPTED.toString(), "Accepted"),
+                                FieldPickerOption(CalendarContract.Attendees.ATTENDEE_STATUS_DECLINED.toString(), "Declined"),
+                                FieldPickerOption(CalendarContract.Attendees.ATTENDEE_STATUS_INVITED.toString(), "Invited"),
+                                FieldPickerOption(CalendarContract.Attendees.ATTENDEE_STATUS_TENTATIVE.toString(), "Tentative"),
+                            )
+                        )
+                    ),
                 ),
                 accessRequirements = setOf(AccessRequirement.CALENDAR),
                 keywords = setOf("calendar", "attendee", "participant", "edit", "tasker"),
@@ -402,6 +434,19 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
                     FieldSchema.Number("minutesPrior", "Minutes before event", true, min = 0.0, max = 525600.0),
                     FieldSchema.Number("methodCode", "Reminder method code", min = 0.0),
                     FieldSchema.Variable("resultVariable", "Store reminder ID"),
+                ),
+                fieldBehaviors = mapOf(
+                    "methodCode" to FieldBehavior(
+                        picker = FieldPickerSource.Options(
+                            listOf(
+                                FieldPickerOption(CalendarContract.Reminders.METHOD_DEFAULT.toString(), "Default"),
+                                FieldPickerOption(CalendarContract.Reminders.METHOD_ALERT.toString(), "Alert"),
+                                FieldPickerOption(CalendarContract.Reminders.METHOD_EMAIL.toString(), "Email"),
+                                FieldPickerOption(CalendarContract.Reminders.METHOD_SMS.toString(), "SMS"),
+                                FieldPickerOption(CalendarContract.Reminders.METHOD_ALARM.toString(), "Alarm"),
+                            )
+                        )
+                    )
                 ),
                 accessRequirements = setOf(AccessRequirement.CALENDAR),
                 keywords = setOf("calendar", "reminder", "alarm", "edit", "tasker"),
