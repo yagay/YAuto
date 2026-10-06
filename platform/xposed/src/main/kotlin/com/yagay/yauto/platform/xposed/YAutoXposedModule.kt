@@ -76,6 +76,7 @@ class YAutoXposedModule : XposedModule() {
                     when (intent.getStringExtra("operation")) {
                         SystemBridgeProtocol.PING -> Unit
                         SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_START -> {
+                            installHardwareKeyCaptureHooks(context, classLoader)
                             val timeoutMs = intent.getLongExtra("timeoutMs", 10_000L)
                                 .coerceIn(1_000L, 60_000L)
                             val until = SystemClock.elapsedRealtime() + timeoutMs
@@ -186,7 +187,6 @@ class YAutoXposedModule : XposedModule() {
         installTaskRemovedHooks(context, classLoader)
         installBackNavigationHooks(context, classLoader)
         installAssistantHooks(context, classLoader)
-        installHardwareKeyCaptureHooks(context, classLoader)
     }
 
     private fun installProcessDeathHooks(context: Context, classLoader: ClassLoader) {
