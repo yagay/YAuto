@@ -11,7 +11,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        AutomationRuntimeService.start(this)
         setContent {
             YAutoTheme {
                 YAutoAppScreen(graph)
