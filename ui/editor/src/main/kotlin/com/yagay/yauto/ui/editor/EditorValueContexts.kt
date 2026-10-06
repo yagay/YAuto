@@ -8,4 +8,4 @@ import androidx.compose.runtime.staticCompositionLocalOf
  * The app layer contributes workspace globals/persistent variables while automation and flow
  * editors extend the set with their local variables/parameters.
  */
-internal val LocalEditorVariableNames = staticCompositionLocalOf<Set<String>> { emptySet() }
+val LocalEditorVariableNames = staticCompositionLocalOf<Set<String>> { emptySet() }
