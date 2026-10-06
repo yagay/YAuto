@@ -302,6 +302,7 @@ private fun FieldEditor(
     value: String,
     enabled: Boolean,
     onValue: (String) -> Unit,
+    onRelatedValue: (String, String) -> Unit,
 ) {
     val descriptorId = descriptor.id.value
     val label = localizedFieldLabelShared(descriptorId, field)
