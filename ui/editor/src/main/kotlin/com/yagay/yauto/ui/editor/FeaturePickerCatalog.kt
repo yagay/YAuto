@@ -19,6 +19,7 @@ import com.yagay.yauto.core.registry.FeatureCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.ui.design.MacroPalette
+import com.yagay.yauto.ui.design.localizedList
 import com.yagay.yauto.ui.design.R as TextR
 
 @Composable
@@ -230,10 +231,12 @@ private fun FeaturePickerRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            val supporting = listOfNotNull(
-                subtitle?.takeIf { it.isNotBlank() },
-                availability?.summary?.takeIf { it.isNotBlank() },
-            ).joinToString(" · ")
+            val supporting = localizedList(
+                listOfNotNull(
+                    subtitle?.takeIf { it.isNotBlank() },
+                    availability?.summary?.takeIf { it.isNotBlank() },
+                )
+            )
             if (supporting.isNotBlank()) {
                 Text(
                     text = supporting,
