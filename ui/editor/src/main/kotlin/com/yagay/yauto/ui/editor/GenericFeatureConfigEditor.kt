@@ -120,7 +120,6 @@ internal fun GenericFeatureConfigEditor(
                     value = values[field.key].orEmpty(),
                     enabled = enabled,
                     onValue = { values = values + (field.key to it) },
-                    onRelatedValue = { key, value -> values = values + (key to value) },
                 )
             } else {
                 FieldEditor(
@@ -131,6 +130,7 @@ internal fun GenericFeatureConfigEditor(
                     value = values[field.key].orEmpty(),
                     enabled = enabled,
                     onValue = { values = values + (field.key to it) },
+                    onRelatedValue = { key, value -> values = values + (key to value) },
                 )
             }
         }
