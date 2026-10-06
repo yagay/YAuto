@@ -34,6 +34,7 @@ internal fun FeatureCategoryPage(
     onFeature: (FeatureDescriptor) -> Unit,
     onFavorite: (String) -> Unit,
 ) {
+    val availability = LocalFeatureAvailability.current
     val search = remember(catalog, query) {
         if (query.isBlank()) emptyList() else catalog.search(query)
     }
@@ -114,7 +115,8 @@ internal fun FeatureCategoryPage(
                     accent = kindAccent(kind),
                     onClick = { onFeature(item.descriptor) },
                     onFavorite = { onFavorite(item.descriptor.id.value) },
-                    height = 64.dp,
+                    height = 72.dp,
+                    availability = availability[item.descriptor.id.value],
                 )
             }
         }
@@ -134,6 +136,7 @@ internal fun FeatureListPage(
     onFeature: (FeatureDescriptor) -> Unit,
     onFavorite: (String) -> Unit,
 ) {
+    val availability = LocalFeatureAvailability.current
     val features = remember(catalog, categoryPage, query, favorites, recent) {
         catalog.items(categoryPage, favorites, recent, query)
     }
@@ -175,7 +178,8 @@ internal fun FeatureListPage(
                 accent = kindAccent(kind),
                 onClick = { onFeature(item.descriptor) },
                 onFavorite = { onFavorite(item.descriptor.id.value) },
-                height = 52.dp,
+                height = 68.dp,
+                availability = availability[item.descriptor.id.value],
             )
         }
     }
@@ -197,6 +201,7 @@ private fun FeaturePickerRow(
     onClick: () -> Unit,
     onFavorite: () -> Unit,
     height: androidx.compose.ui.unit.Dp,
+    availability: FeatureAvailabilityUi? = null,
 ) {
     val divider = MaterialTheme.colorScheme.outlineVariant
     Row(
@@ -225,15 +230,33 @@ private fun FeaturePickerRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            subtitle?.takeIf { it.isNotBlank() }?.let {
+            val supporting = listOfNotNull(
+                subtitle?.takeIf { it.isNotBlank() },
+                availability?.summary?.takeIf { it.isNotBlank() },
+            ).joinToString(" · ")
+            if (supporting.isNotBlank()) {
                 Text(
-                    text = it,
+                    text = supporting,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+        }
+        availability?.let {
+            Text(
+                text = it.statusLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = when (it.tone) {
+                    FeatureAvailabilityTone.READY -> MacroPalette.Constraint
+                    FeatureAvailabilityTone.BLOCKED -> MacroPalette.Trigger
+                    FeatureAvailabilityTone.BROKEN -> MaterialTheme.colorScheme.error
+                    FeatureAvailabilityTone.UNSUPPORTED -> MacroPalette.Utility
+                },
+                modifier = Modifier.padding(horizontal = 6.dp),
+                maxLines = 1,
+            )
         }
         Icon(
             painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_more),
