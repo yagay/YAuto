@@ -14,7 +14,7 @@
     <string name="feature_health_unsupported">不支持</string>
     <string name="feature_health_missing_format">缺少：%1$s</string>
     <string name="feature_health_backend_format">后端：%1$s</string>
-    <string name="feature_health_safe_note">后台扫描只检查 Android 版本、权限和后端连通性，不会真正执行会改变系统状态的动作。</string>
+    <string name="feature_health_safe_note">后台扫描会检查功能实现是否存在、Android 版本、权限和后端连通性，但不会真正执行会改变系统状态的动作。</string>
     <string name="feature_health_scan_now">一键扫描</string>
     <string name="feature_health_auto_scan">自动扫描</string>
     <string name="feature_health_auto_scan_detail">开启后，YAuto 每次回到前台时在后台刷新功能状态；默认关闭。</string>
