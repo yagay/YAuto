@@ -18,6 +18,8 @@ data class FieldPickerOption(
 )
 
 sealed interface FieldPickerSource {
+    data object InstalledApp : FieldPickerSource
+
     data class Component(
         val packageFieldKey: String? = null,
         val kinds: Set<ComponentPickerKind> = ComponentPickerKind.entries.toSet(),
