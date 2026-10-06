@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.os.SystemClock
 import android.util.Log
+import android.view.KeyEvent
 import com.yagay.yauto.core.capability.SystemOperations
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
@@ -17,12 +18,14 @@ import io.github.libxposed.api.XposedModuleInterface.SystemServerStartingParam
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 class YAutoXposedModule : XposedModule() {
     private val systemRegistered = AtomicBoolean(false)
     private val appReceivers = ConcurrentHashMap.newKeySet<String>()
     private val installedHooks = ConcurrentHashMap.newKeySet<String>()
     private val systemEventDedup = ConcurrentHashMap<String, Long>()
+    private val hardwareKeyCaptureUntilElapsed = AtomicLong(0L)
 
     override fun onSystemServerStarting(param: SystemServerStartingParam) {
         try {
@@ -72,6 +75,13 @@ class YAutoXposedModule : XposedModule() {
                     require(intent.getIntExtra("version", -1) == SystemBridgeProtocol.VERSION) { "Protocol mismatch" }
                     when (intent.getStringExtra("operation")) {
                         SystemBridgeProtocol.PING -> Unit
+                        SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_START -> {
+                            val timeoutMs = intent.getLongExtra("timeoutMs", 10_000L)
+                                .coerceIn(1_000L, 60_000L)
+                            val until = SystemClock.elapsedRealtime() + timeoutMs
+                            hardwareKeyCaptureUntilElapsed.set(until)
+                            response.putLong("captureUntilElapsedMs", until)
+                        }
                         SystemOperations.SLEEP -> {
                             val power = context.getSystemService(PowerManager::class.java)
                             power.javaClass.getMethod("goToSleep", Long::class.javaPrimitiveType)
@@ -176,6 +186,7 @@ class YAutoXposedModule : XposedModule() {
         installTaskRemovedHooks(context, classLoader)
         installBackNavigationHooks(context, classLoader)
         installAssistantHooks(context, classLoader)
+        installHardwareKeyCaptureHooks(context, classLoader)
     }
 
     private fun installProcessDeathHooks(context: Context, classLoader: ClassLoader) {
@@ -309,6 +320,67 @@ class YAutoXposedModule : XposedModule() {
             }
     }
 
+
+    private fun installHardwareKeyCaptureHooks(context: Context, classLoader: ClassLoader) {
+        val candidates = listOf(
+            "com.android.server.wm.InputManagerCallback" to setOf("interceptKeyBeforeQueueing"),
+            "com.android.server.policy.PhoneWindowManager" to setOf(
+                "interceptKeyBeforeQueueing",
+                "interceptKeyBeforeDispatching",
+            ),
+        )
+
+        candidates.forEach { (className, methodNames) ->
+            val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
+            val methods = clazz.declaredMethods.filter { method ->
+                method.name in methodNames &&
+                    method.parameterTypes.any { KeyEvent::class.java.isAssignableFrom(it) }
+            }
+            if (methods.isEmpty()) return@forEach
+
+            methods.forEach { method ->
+                val key = "system-hardware-key-capture|" + method.toGenericString()
+                if (!installedHooks.add(key)) return@forEach
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    val event = chain.args.filterIsInstance<KeyEvent>().firstOrNull()
+                    if (event != null) emitHardwareKeyCapture(context, event, method.name)
+                    chain.proceed()
+                }
+            }
+            log(Log.INFO, "YAuto", "Hardware key capture hook ready: $className")
+            return
+        }
+    }
+
+    private fun emitHardwareKeyCapture(
+        context: Context,
+        event: KeyEvent,
+        methodName: String,
+    ) {
+        if (event.action != KeyEvent.ACTION_DOWN || event.repeatCount != 0) return
+        val until = hardwareKeyCaptureUntilElapsed.get()
+        val nowElapsed = SystemClock.elapsedRealtime()
+        if (until <= 0L || nowElapsed > until) {
+            hardwareKeyCaptureUntilElapsed.compareAndSet(until, 0L)
+            return
+        }
+        if (!hardwareKeyCaptureUntilElapsed.compareAndSet(until, 0L)) return
+
+        runCatching {
+            context.sendBroadcast(
+                Intent(SystemBridgeProtocol.SYSTEM_EVENT_ACTION)
+                    .setPackage(YAUTO_PACKAGE)
+                    .putExtra("type", SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_TYPE)
+                    .putExtra("keyCode", event.keyCode)
+                    .putExtra("scanCode", event.scanCode)
+                    .putExtra("deviceId", event.deviceId)
+                    .putExtra("action", event.action)
+                    .putExtra("method", methodName)
+                    .putExtra("timestampEpochMs", System.currentTimeMillis())
+            )
+        }
+    }
 
     private fun installAssistantHooks(context: Context, classLoader: ClassLoader) {
         val classNames = listOf(
