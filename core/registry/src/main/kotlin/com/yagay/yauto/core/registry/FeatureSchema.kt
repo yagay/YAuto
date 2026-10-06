@@ -16,6 +16,12 @@ enum class ComponentPickerValueMode { FLATTENED, CLASS_NAME }
 data class FieldPickerOption(
     val value: String,
     val label: String = value,
+    val detail: String? = null,
+)
+
+data class HardwareKeyPickerCatalog(
+    val keyCodes: List<FieldPickerOption> = emptyList(),
+    val scanCodes: List<FieldPickerOption> = emptyList(),
 )
 
 sealed interface FieldPickerSource {
@@ -36,6 +42,7 @@ sealed interface FieldPickerSource {
     data object Calendar : FieldPickerSource
     data object InputMethod : FieldPickerSource
     data object KeyCode : FieldPickerSource
+    data object ScanCode : FieldPickerSource
     data object WifiSsid : FieldPickerSource
     data object BluetoothDevice : FieldPickerSource
     data object LocationProvider : FieldPickerSource
