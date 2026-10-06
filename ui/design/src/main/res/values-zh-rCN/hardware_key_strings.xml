@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_android_event_hardware_key_title">实体按键</string>
-    <string name="feature_android_event_hardware_key_description">当无障碍服务报告实体按键按下或抬起事件时运行</string>
+    <string name="feature_android_event_hardware_key_description">当无障碍、LSPosed 或 Root 原始输入捕获到实体按键事件时运行</string>
     <string name="feature_android_event_hardware_key_field_keycode">Android 按键码</string>
     <string name="feature_android_event_hardware_key_field_scancode">Linux 扫描码</string>
     <string name="feature_android_event_hardware_key_field_action">按键动作</string>
