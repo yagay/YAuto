@@ -9,4 +9,9 @@
     <string name="feature_android_event_hardware_key_field_action_option_down">按下</string>
     <string name="feature_android_event_hardware_key_field_action_option_up">抬起</string>
     <string name="feature_android_event_hardware_key_field_initialonly">忽略长按产生的重复按下事件</string>
+    <string name="hardware_key_capture_button">捕获实体按键</string>
+    <string name="hardware_key_capture_waiting_button">等待按键…</string>
+    <string name="hardware_key_capture_waiting">请在 10 秒内按一次实体按键</string>
+    <string name="hardware_key_capture_result">KeyCode %1$d，ScanCode %2$d，设备 %3$d</string>
+    <string name="hardware_key_capture_timeout">没有捕获到实体按键事件。请确认无障碍已启用；部分厂商按键可能需要 LSPosed 捕获。</string>
 </resources>
