@@ -370,6 +370,371 @@ private fun FieldEditor(
     }
 }
 
+
+private data class SystemPickerOption(
+    val value: String,
+    val label: String,
+    val detail: String? = null,
+)
+
+private fun inferredPickerSource(
+    descriptor: FeatureDescriptor,
+    field: FieldSchema,
+): FieldPickerSource? {
+    if (field !is FieldSchema.Text && field !is FieldSchema.Number) return null
+    return when (field.key) {
+        "package" -> FieldPickerSource.InstalledApp
+        "component" -> FieldPickerSource.Component(
+            packageFieldKey = descriptor.fields.firstOrNull { it.key == "package" }?.key,
+            kinds = inferredComponentKinds(descriptor.id.value),
+        )
+        "permission" -> descriptor.fields.firstOrNull { it.key == "package" }?.let {
+            FieldPickerSource.Permission(it.key)
+        }
+        "subscriptionId" -> FieldPickerSource.Subscription
+        "cameraId" -> FieldPickerSource.Camera
+        "userId", "parentUserId" -> FieldPickerSource.AndroidUser
+        "timeZone" -> FieldPickerSource.TimeZone
+        "languageTags" -> FieldPickerSource.Locale
+        "calendarId" -> FieldPickerSource.Calendar
+        else -> null
+    }
+}
+
+private fun inferredComponentKinds(descriptorId: String): Set<ComponentPickerKind> = when {
+    descriptorId.contains("qs_tile", ignoreCase = true) ->
+        setOf(ComponentPickerKind.QUICK_SETTINGS_TILE)
+    descriptorId.contains("service", ignoreCase = true) ->
+        setOf(ComponentPickerKind.SERVICE)
+    descriptorId.contains("activity", ignoreCase = true) ||
+        descriptorId.contains("launcher", ignoreCase = true) ->
+        setOf(ComponentPickerKind.ACTIVITY)
+    else -> ComponentPickerKind.entries.toSet()
+}
+
+@Composable
+private fun PickerBackedField(
+    descriptorId: String,
+    field: FieldSchema,
+    picker: FieldPickerSource,
+    allValues: Map<String, String>,
+    value: String,
+    enabled: Boolean,
+    allowManualInput: Boolean,
+    onValue: (String) -> Unit,
+) {
+    val label = localizedFieldLabelShared(descriptorId, field)
+    var showPicker by remember(picker) { mutableStateOf(false) }
+    val numeric = field is FieldSchema.Number || field is FieldSchema.Duration
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValue,
+            readOnly = !allowManualInput,
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+            label = {
+                Text(
+                    if (field.required) stringResource(TextR.string.editor_required_field_format, label)
+                    else label
+                )
+            },
+            singleLine = true,
+            keyboardOptions = if (numeric) {
+                KeyboardOptions(keyboardType = KeyboardType.Decimal)
+            } else {
+                KeyboardOptions.Default
+            },
+            supportingText = if (allowManualInput) {
+                { Text(stringResource(TextR.string.feature_picker_select_or_enter_hint)) }
+            } else {
+                null
+            },
+        )
+        OutlinedButton(
+            onClick = { showPicker = true },
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(TextR.string.feature_picker_select_value))
+        }
+    }
+    if (showPicker) {
+        SystemValuePickerDialog(
+            picker = picker,
+            allValues = allValues,
+            current = value,
+            onDismiss = { showPicker = false },
+            onPick = {
+                onValue(it)
+                showPicker = false
+            },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SystemValuePickerDialog(
+    picker: FieldPickerSource,
+    allValues: Map<String, String>,
+    current: String,
+    onDismiss: () -> Unit,
+    onPick: (String) -> Unit,
+) {
+    val context = LocalContext.current
+    val locale = currentEditorLocale()
+    var query by remember { mutableStateOf("") }
+    var loading by remember(picker, allValues) { mutableStateOf(true) }
+    var options by remember(picker, allValues) { mutableStateOf(emptyList<SystemPickerOption>()) }
+
+    LaunchedEffect(picker, allValues, locale) {
+        loading = true
+        options = withContext(Dispatchers.IO) {
+            loadSystemPickerOptions(context, picker, allValues, locale)
+        }
+        loading = false
+    }
+
+    val filtered = remember(options, query) {
+        options.filter { option ->
+            query.isBlank() ||
+                option.label.contains(query, ignoreCase = true) ||
+                option.value.contains(query, ignoreCase = true) ||
+                option.detail.orEmpty().contains(query, ignoreCase = true)
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(stringResource(TextR.string.feature_picker_choose_value)) },
+                    navigationIcon = {
+                        TextButton(onClick = onDismiss) { Text(stringResource(TextR.string.common_close)) }
+                    },
+                )
+            },
+        ) { padding ->
+            LazyColumn(
+                Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                item {
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(TextR.string.feature_picker_search_value)) },
+                        singleLine = true,
+                    )
+                }
+                if (loading) {
+                    item {
+                        Box(
+                            Modifier.fillMaxWidth().padding(24.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                } else if (filtered.isEmpty()) {
+                    item {
+                        Text(
+                            stringResource(TextR.string.feature_picker_no_values),
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                } else {
+                    items(filtered, key = { it.value + "\u0000" + it.label }) { option ->
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    option.label,
+                                    fontWeight = if (option.value == current) FontWeight.Bold else FontWeight.Normal,
+                                )
+                            },
+                            supportingContent = {
+                                val detail = option.detail
+                                    ?.takeIf { it.isNotBlank() }
+                                    ?: option.value.takeIf { it != option.label }
+                                if (detail != null) Text(detail)
+                            },
+                            modifier = Modifier.clickable { onPick(option.value) },
+                        )
+                        HorizontalDivider()
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Suppress("DEPRECATION")
+private fun loadSystemPickerOptions(
+    context: Context,
+    picker: FieldPickerSource,
+    values: Map<String, String>,
+    locale: Locale,
+): List<SystemPickerOption> = runCatching {
+    val comparator = localizedStringComparator(locale)
+    when (picker) {
+        FieldPickerSource.InstalledApp -> installedApps(context, locale).map {
+            SystemPickerOption(it.packageName, it.label, it.packageName)
+        }
+        is FieldPickerSource.Permission -> {
+            val pkg = values[picker.packageFieldKey].orEmpty().trim()
+            if (pkg.isBlank()) {
+                emptyList()
+            } else {
+                val info = context.packageManager.getPackageInfo(pkg, PackageManager.GET_PERMISSIONS)
+                info.requestedPermissions.orEmpty()
+                    .distinct()
+                    .sortedWith(comparator)
+                    .map { SystemPickerOption(it, it) }
+            }
+        }
+        is FieldPickerSource.Component -> loadComponentOptions(context, picker, values, comparator)
+        FieldPickerSource.Subscription -> {
+            val manager = context.getSystemService(SubscriptionManager::class.java)
+            manager.activeSubscriptionInfoList.orEmpty()
+                .sortedBy { it.simSlotIndex }
+                .map { info ->
+                    val label = info.displayName?.toString().orEmpty().ifBlank {
+                        info.carrierName?.toString().orEmpty().ifBlank { info.subscriptionId.toString() }
+                    }
+                    SystemPickerOption(
+                        value = info.subscriptionId.toString(),
+                        label = label,
+                        detail = info.subscriptionId.toString(),
+                    )
+                }
+        }
+        FieldPickerSource.Camera -> {
+            context.getSystemService(CameraManager::class.java).cameraIdList
+                .sortedWith(comparator)
+                .map { SystemPickerOption(it, it) }
+        }
+        FieldPickerSource.AndroidUser -> {
+            context.getSystemService(UserManager::class.java).userProfiles
+                .map { it.identifier.toString() }
+                .distinct()
+                .sorted()
+                .map { SystemPickerOption(it, it) }
+        }
+        FieldPickerSource.TimeZone -> TimeZone.getAvailableIDs()
+            .distinct()
+            .sortedWith(comparator)
+            .map { SystemPickerOption(it, it) }
+        FieldPickerSource.Locale -> Locale.getAvailableLocales()
+            .mapNotNull { available ->
+                available.toLanguageTag().takeIf { it.isNotBlank() }?.let { tag ->
+                    SystemPickerOption(tag, available.getDisplayName(locale).ifBlank { tag }, tag)
+                }
+            }
+            .distinctBy { it.value }
+            .sortedWith { left, right -> comparator.compare(left.label, right.label) }
+        FieldPickerSource.Calendar -> {
+            val projection = arrayOf(
+                CalendarContract.Calendars._ID,
+                CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
+                CalendarContract.Calendars.ACCOUNT_NAME,
+            )
+            val output = mutableListOf<SystemPickerOption>()
+            context.contentResolver.query(
+                CalendarContract.Calendars.CONTENT_URI,
+                projection,
+                null,
+                null,
+                CalendarContract.Calendars.CALENDAR_DISPLAY_NAME + " COLLATE NOCASE ASC",
+            )?.use { cursor ->
+                val idIndex = cursor.getColumnIndexOrThrow(CalendarContract.Calendars._ID)
+                val nameIndex = cursor.getColumnIndexOrThrow(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME)
+                val accountIndex = cursor.getColumnIndexOrThrow(CalendarContract.Calendars.ACCOUNT_NAME)
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(idIndex).toString()
+                    val name = cursor.getString(nameIndex).orEmpty().ifBlank { id }
+                    output += SystemPickerOption(id, name, cursor.getString(accountIndex))
+                }
+            }
+            output
+        }
+        is FieldPickerSource.Options -> picker.options.map {
+            SystemPickerOption(it.value, it.label, it.value.takeIf { value -> value != it.label })
+        }
+    }
+}.getOrDefault(emptyList())
+
+@Suppress("DEPRECATION")
+private fun loadComponentOptions(
+    context: Context,
+    picker: FieldPickerSource.Component,
+    values: Map<String, String>,
+    comparator: Comparator<String>,
+): List<SystemPickerOption> {
+    val pm = context.packageManager
+    val explicitPackage = picker.packageFieldKey?.let { values[it].orEmpty().trim() }.orEmpty()
+    val packages = if (explicitPackage.isNotBlank()) {
+        listOf(explicitPackage)
+    } else {
+        pm.getInstalledApplications(PackageManager.GET_META_DATA).map { it.packageName }
+    }
+    val flags =
+        (if (ComponentPickerKind.ACTIVITY in picker.kinds) PackageManager.GET_ACTIVITIES else 0) or
+            (if (
+                ComponentPickerKind.SERVICE in picker.kinds ||
+                ComponentPickerKind.QUICK_SETTINGS_TILE in picker.kinds
+            ) PackageManager.GET_SERVICES else 0) or
+            (if (ComponentPickerKind.RECEIVER in picker.kinds) PackageManager.GET_RECEIVERS else 0) or
+            (if (ComponentPickerKind.PROVIDER in picker.kinds) PackageManager.GET_PROVIDERS else 0)
+    val output = mutableListOf<SystemPickerOption>()
+
+    packages.forEach { pkg ->
+        val info = runCatching { pm.getPackageInfo(pkg, flags) }.getOrNull() ?: return@forEach
+        if (ComponentPickerKind.ACTIVITY in picker.kinds) {
+            info.activities.orEmpty().forEach { item ->
+                val value = ComponentName(item.packageName, item.name).flattenToString()
+                output += SystemPickerOption(value, item.name, item.packageName)
+            }
+        }
+        if (
+            ComponentPickerKind.SERVICE in picker.kinds ||
+            ComponentPickerKind.QUICK_SETTINGS_TILE in picker.kinds
+        ) {
+            info.services.orEmpty().forEach { item ->
+                if (
+                    ComponentPickerKind.QUICK_SETTINGS_TILE in picker.kinds &&
+                    ComponentPickerKind.SERVICE !in picker.kinds &&
+                    item.permission != "android.permission.BIND_QUICK_SETTINGS_TILE"
+                ) return@forEach
+                val value = ComponentName(item.packageName, item.name).flattenToString()
+                output += SystemPickerOption(value, item.name, item.packageName)
+            }
+        }
+        if (ComponentPickerKind.RECEIVER in picker.kinds) {
+            info.receivers.orEmpty().forEach { item ->
+                val value = ComponentName(item.packageName, item.name).flattenToString()
+                output += SystemPickerOption(value, item.name, item.packageName)
+            }
+        }
+        if (ComponentPickerKind.PROVIDER in picker.kinds) {
+            info.providers.orEmpty().forEach { item ->
+                val value = ComponentName(item.packageName, item.name).flattenToString()
+                output += SystemPickerOption(value, item.name, item.packageName)
+            }
+        }
+    }
+
+    return output
+        .distinctBy { it.value }
+        .sortedWith { left, right ->
+            val label = comparator.compare(left.label, right.label)
+            if (label != 0) label else comparator.compare(left.value, right.value)
+        }
+}
+
 @Composable
 private fun InstalledAppField(
     descriptorId: String,
