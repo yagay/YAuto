@@ -1,13 +1,18 @@
 package com.yagay.yauto.ui.editor
 
+import android.bluetooth.BluetoothManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
+import android.location.LocationManager
+import android.net.wifi.WifiManager
 import android.os.UserManager
 import android.provider.CalendarContract
 import android.telephony.SubscriptionManager
+import android.view.KeyEvent
+import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -57,8 +62,44 @@ internal fun inferredPickerSource(
         "cameraId" -> FieldPickerSource.Camera
         "userId", "parentUserId" -> FieldPickerSource.AndroidUser
         "timeZone" -> FieldPickerSource.TimeZone
-        "languageTags" -> FieldPickerSource.Locale
+        "languageTag", "languageTags", "locales" -> FieldPickerSource.Locale
         "calendarId" -> FieldPickerSource.Calendar
+        "imeId" -> FieldPickerSource.InputMethod
+        "keyCode" -> FieldPickerSource.KeyCode
+        "ssid" -> FieldPickerSource.WifiSsid
+        "provider" -> if (descriptor.id.value.contains("location", ignoreCase = true)) {
+            FieldPickerSource.LocationProvider
+        } else {
+            null
+        }
+        "address" -> if (
+            descriptor.id.value.contains("bluetooth", ignoreCase = true) ||
+            descriptor.id.value.contains(".ble", ignoreCase = true)
+        ) {
+            FieldPickerSource.BluetoothDevice
+        } else {
+            null
+        }
+        "hour" -> FieldPickerSource.Options(
+            (0..23).map { FieldPickerOption(it.toString()) }
+        )
+        "minute" -> FieldPickerSource.Options(
+            (0..59).map { FieldPickerOption(it.toString()) }
+        )
+        "mimeType" -> FieldPickerSource.Options(
+            listOf(
+                "text/plain",
+                "text/html",
+                "application/json",
+                "application/xml",
+                "application/pdf",
+                "image/*",
+                "audio/*",
+                "video/*",
+                "application/octet-stream",
+                "*/*",
+            ).map { FieldPickerOption(it) }
+        )
         else -> null
     }
 }
@@ -322,6 +363,62 @@ private fun loadSystemPickerOptions(
                 }
             }
             output
+        }
+        FieldPickerSource.InputMethod -> {
+            context.getSystemService(InputMethodManager::class.java).inputMethodList
+                .map { method ->
+                    val label = runCatching {
+                        method.loadLabel(context.packageManager).toString()
+                    }.getOrDefault(method.id)
+                    SystemPickerOption(method.id, label, method.id)
+                }
+                .distinctBy { it.value }
+                .sortedWith { left, right -> comparator.compare(left.label, right.label) }
+        }
+        FieldPickerSource.KeyCode -> {
+            KeyEvent::class.java.fields
+                .asSequence()
+                .filter { it.name.startsWith("KEYCODE_") && it.type == Int::class.javaPrimitiveType }
+                .mapNotNull { field ->
+                    runCatching {
+                        val value = field.getInt(null).toString()
+                        SystemPickerOption(value, field.name.removePrefix("KEYCODE_"), value)
+                    }.getOrNull()
+                }
+                .distinctBy { it.value }
+                .sortedWith { left, right -> comparator.compare(left.label, right.label) }
+                .toList()
+        }
+        FieldPickerSource.WifiSsid -> {
+            val manager = context.applicationContext.getSystemService(WifiManager::class.java)
+            buildList {
+                manager.connectionInfo?.ssid
+                    ?.trim('"')
+                    ?.takeIf { it.isNotBlank() && it != "<unknown ssid>" }
+                    ?.let { add(SystemPickerOption(it, it)) }
+                manager.scanResults.orEmpty().forEach { result ->
+                    val ssid = result.SSID.orEmpty().trim()
+                    if (ssid.isNotBlank()) add(SystemPickerOption(ssid, ssid, result.BSSID))
+                }
+            }.distinctBy { it.value }
+                .sortedWith { left, right -> comparator.compare(left.label, right.label) }
+        }
+        FieldPickerSource.BluetoothDevice -> {
+            val adapter = context.getSystemService(BluetoothManager::class.java).adapter
+            adapter?.bondedDevices.orEmpty()
+                .map { device ->
+                    val address = device.address.orEmpty()
+                    val label = device.name.orEmpty().ifBlank { address }
+                    SystemPickerOption(address, label, address)
+                }
+                .distinctBy { it.value }
+                .sortedWith { left, right -> comparator.compare(left.label, right.label) }
+        }
+        FieldPickerSource.LocationProvider -> {
+            context.getSystemService(LocationManager::class.java).allProviders.orEmpty()
+                .distinct()
+                .sortedWith(comparator)
+                .map { SystemPickerOption(it, it) }
         }
         is FieldPickerSource.Options -> picker.options.map {
             SystemPickerOption(it.value, it.label, it.value.takeIf { value -> value != it.label })
