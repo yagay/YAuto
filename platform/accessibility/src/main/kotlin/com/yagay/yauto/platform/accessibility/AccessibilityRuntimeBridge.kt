@@ -17,6 +17,7 @@ data class AccessibilityKeySnapshot(
     val repeatCount: Int,
     val metaState: Int,
     val deviceId: Int,
+    val scanCode: Int = 0,
     val timestampEpochMs: Long = System.currentTimeMillis(),
 )
 
@@ -152,8 +153,24 @@ object AccessibilityRuntimeBridge {
         listener?.invoke(previous, next)
     }
 
-    internal fun dispatchKey(keyCode: Int, action: Int, repeatCount: Int, metaState: Int, deviceId: Int) {
-        keyListener?.invoke(AccessibilityKeySnapshot(keyCode, action, repeatCount, metaState, deviceId))
+    internal fun dispatchKey(
+        keyCode: Int,
+        action: Int,
+        repeatCount: Int,
+        metaState: Int,
+        deviceId: Int,
+        scanCode: Int = 0,
+    ) {
+        keyListener?.invoke(
+            AccessibilityKeySnapshot(
+                keyCode = keyCode,
+                action = action,
+                repeatCount = repeatCount,
+                metaState = metaState,
+                deviceId = deviceId,
+                scanCode = scanCode,
+            )
+        )
     }
 
     internal fun dispatchUiEvent(snapshot: AccessibilityUiEventSnapshot) {
