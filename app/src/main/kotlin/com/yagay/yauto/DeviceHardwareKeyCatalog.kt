@@ -110,7 +110,7 @@ class DeviceHardwareKeyCatalog(
 
     private fun parseKeyLayouts(raw: String): List<KeyLayoutMapping> =
         raw.lineSequence().mapNotNull { line ->
-            val parts = line.split('\\t')
+            val parts = line.split('\t')
             if (parts.size < 3) return@mapNotNull null
             val source = parts[0].trim()
             val scanCode = parseScanCode(parts[1]) ?: return@mapNotNull null
@@ -189,7 +189,7 @@ class DeviceHardwareKeyCatalog(
               [ -d "$d" ] || continue
               for f in "$d"/*.kl; do
                 [ -r "$f" ] || continue
-                awk -v file="$f" '/^[ \\t]*key[ \\t]+/ { print file "\\t" $2 "\\t" $3 }' "$f"
+                awk -v file="$f" '/^[[:space:]]*key[[:space:]]+/ { print file "\t" $2 "\t" $3 }' "$f"
               done
             done
         """.trimIndent()
