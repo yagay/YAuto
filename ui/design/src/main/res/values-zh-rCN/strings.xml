@@ -148,7 +148,7 @@
     <string name="backend_shizuku_return_hint">请在 Shizuku 授权后返回此页。</string>
     <string name="backend_lsposed_title">LSPosed / system_server</string>
     <string name="backend_lsposed_scope_title">LSPosed 推荐作用域</string>
-    <string name="backend_lsposed_scope_detail">YAuto 固定保留 system_server 作用域，并根据当前工作区实际使用 LSPosed 的功能自动补充目标 App。</string>
+    <string name="backend_lsposed_scope_detail">YAuto 固定保留 system_server 和 System UI 作用域，并根据当前工作区实际使用 LSPosed 的功能自动补充目标 App。</string>
     <string name="backend_lsposed_scope_connected">框架服务已连接</string>
     <string name="backend_lsposed_scope_disconnected">框架服务未连接</string>
     <string name="backend_lsposed_scope_current_format">当前：%1$s</string>
