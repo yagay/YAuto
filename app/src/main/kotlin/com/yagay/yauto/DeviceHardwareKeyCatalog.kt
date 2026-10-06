@@ -56,7 +56,7 @@ class DeviceHardwareKeyCatalog(
                     androidCode?.let { add("KeyCode $it") }
                     if (deviceNames.isNotEmpty()) add(deviceNames.joinToString(", "))
                     add(File(mapping.source).name)
-                }.joinToString(" · ")
+                }.joinToString(", ")
                 FieldPickerOption(
                     value = mapping.scanCode.toString(),
                     label = mapping.label,
@@ -75,7 +75,7 @@ class DeviceHardwareKeyCatalog(
                     add("scan ${mapping.scanCode}")
                     if (deviceNames.isNotEmpty()) add(deviceNames.joinToString(", "))
                     add(File(mapping.source).name)
-                }.joinToString(" · ")
+                }.joinToString(", ")
                 FieldPickerOption(
                     value = keyCode.toString(),
                     label = mapping.label,
