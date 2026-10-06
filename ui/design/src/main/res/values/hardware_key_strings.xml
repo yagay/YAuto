@@ -13,5 +13,5 @@
     <string name="hardware_key_capture_waiting_button">Waiting for key…</string>
     <string name="hardware_key_capture_waiting">Press a physical key within 10 seconds</string>
     <string name="hardware_key_capture_result">KeyCode %1$d, ScanCode %2$d, Device %3$d</string>
-    <string name="hardware_key_capture_timeout">No hardware key event was captured. Make sure Accessibility is enabled; some OEM keys may require the LSPosed capture path.</string>
+    <string name="hardware_key_capture_timeout">No hardware key event was captured. YAuto tried Accessibility, LSPosed and Root raw input capture.</string>
 </resources>
