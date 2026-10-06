@@ -56,7 +56,7 @@ fun MacroFeaturePickerDialog(
         mutableStateOf(FeaturePickerNavState.initial(initialDescriptor))
     }
     val pageQueries = remember(kind) { mutableStateMapOf<String, String>() }
-    val pageListStates = remember(kind) { mutableStateMapOf<String, LazyListState>() }
+    val pageListStates = remember(kind) { mutableMapOf<String, LazyListState>() }
     var favorites by remember(kind) {
         mutableStateOf(loadIds(prefs.getString(favoriteKey(kind), "")).toSet())
     }
