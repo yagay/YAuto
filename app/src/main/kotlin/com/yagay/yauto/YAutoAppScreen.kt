@@ -47,6 +47,9 @@ import com.yagay.yauto.ui.editor.FeatureAvailabilityUi
 import com.yagay.yauto.ui.editor.LocalFeatureAvailability
 import com.yagay.yauto.ui.editor.LocalEditorVariableNames
 import com.yagay.yauto.ui.editor.LocalHardwareKeyCatalogLoader
+import com.yagay.yauto.ui.editor.LocalHardwareKeyCapture
+import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
+import com.yagay.yauto.core.registry.HardwareKeyCaptureResult
 import com.yagay.yauto.ui.home.HomeScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -313,6 +316,16 @@ internal fun YAutoAppScreen(graph: AppGraph) {
             LocalFeatureAvailability provides featureAvailability,
             LocalEditorVariableNames provides (workspace.globalVariables.keys + workspace.persistentVariables.keys),
             LocalHardwareKeyCatalogLoader provides { graph.hardwareKeys.load() },
+            LocalHardwareKeyCapture provides { timeoutMs ->
+                AccessibilityRuntimeBridge.awaitNextKey(timeoutMs)?.let { key ->
+                    HardwareKeyCaptureResult(
+                        keyCode = key.keyCode,
+                        scanCode = key.scanCode,
+                        deviceId = key.deviceId,
+                        action = key.action,
+                    )
+                }
+            },
         ) {
             AutomationEditorScreen(
             flows = workspace.flows,
@@ -340,6 +353,16 @@ internal fun YAutoAppScreen(graph: AppGraph) {
             LocalFeatureAvailability provides featureAvailability,
             LocalEditorVariableNames provides (workspace.globalVariables.keys + workspace.persistentVariables.keys),
             LocalHardwareKeyCatalogLoader provides { graph.hardwareKeys.load() },
+            LocalHardwareKeyCapture provides { timeoutMs ->
+                AccessibilityRuntimeBridge.awaitNextKey(timeoutMs)?.let { key ->
+                    HardwareKeyCaptureResult(
+                        keyCode = key.keyCode,
+                        scanCode = key.scanCode,
+                        deviceId = key.deviceId,
+                        action = key.action,
+                    )
+                }
+            },
         ) {
             FlowEditorScreen(
             initial = editingFlow,
