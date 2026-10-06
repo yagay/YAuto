@@ -160,6 +160,51 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                     )
                 }
                 item {
+                    val scanning by graph.featureHealth.scanning.collectAsState()
+                    val autoScan by graph.featureHealth.autoScanEnabled.collectAsState()
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(
+                            Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Text(
+                                stringResource(TextR.string.feature_health_quick_title),
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                stringResource(TextR.string.feature_health_auto_scan_detail),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Text(
+                                    stringResource(TextR.string.feature_health_auto_scan),
+                                    Modifier.weight(1f),
+                                )
+                                Switch(
+                                    checked = autoScan,
+                                    onCheckedChange = graph.featureHealth::setAutoScanEnabled,
+                                )
+                            }
+                            Button(
+                                onClick = { graph.featureHealth.requestScan(force = true) },
+                                enabled = !scanning,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(
+                                    stringResource(
+                                        if (scanning) TextR.string.feature_health_scanning
+                                        else TextR.string.feature_health_scan_now
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+                item {
                     val snapshot by graph.featureHealth.snapshot.collectAsState()
                     val scanning by graph.featureHealth.scanning.collectAsState()
                     val autoScan by graph.featureHealth.autoScanEnabled.collectAsState()
@@ -170,6 +215,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                             snapshot!!.items.size,
                             snapshot!!.readyCount,
                             snapshot!!.blockedCount,
+                            snapshot!!.brokenCount,
                             snapshot!!.unsupportedCount,
                         )
                         autoScan -> stringResource(TextR.string.feature_health_auto_on_not_scanned)
