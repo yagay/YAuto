@@ -41,6 +41,7 @@ class AppGraph(context: Context) {
     val tracer: ExecutionTracer = SequencedExecutionTracer(CompositeExecutionTracer(listOf(traceStore, persistentTracer)))
 
     val rootShell by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { RootShell() }
+    val hardwareKeys by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { DeviceHardwareKeyCatalog(rootShell) }
     val shizuku by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { ShizukuBackend(appContext) }
     val xposed by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { XposedBackend(appContext) }
     val lsposedScopes = LsposedScopeManager()
