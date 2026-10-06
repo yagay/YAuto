@@ -118,6 +118,7 @@ class YAutoAccessibilityService : AccessibilityService() {
             repeatCount = event.repeatCount,
             metaState = event.metaState,
             deviceId = event.deviceId,
+            scanCode = event.scanCode,
         )
         return false
     }
