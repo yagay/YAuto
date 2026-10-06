@@ -161,23 +161,25 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 }
                 item {
                     val snapshot by graph.featureHealth.snapshot.collectAsState()
-                    val subtitle = snapshot?.let {
-                        stringResource(
+                    val scanning by graph.featureHealth.scanning.collectAsState()
+                    val autoScan by graph.featureHealth.autoScanEnabled.collectAsState()
+                    val subtitle = when {
+                        scanning -> stringResource(TextR.string.feature_health_scanning)
+                        snapshot != null -> stringResource(
                             TextR.string.feature_health_summary_format,
-                            it.items.size,
-                            it.readyCount,
-                            it.blockedCount,
-                            it.unsupportedCount,
+                            snapshot!!.items.size,
+                            snapshot!!.readyCount,
+                            snapshot!!.blockedCount,
+                            snapshot!!.unsupportedCount,
                         )
-                    } ?: stringResource(TextR.string.feature_health_scanning)
+                        autoScan -> stringResource(TextR.string.feature_health_auto_on_not_scanned)
+                        else -> stringResource(TextR.string.feature_health_not_scanned)
+                    }
                     MacroItemRow(
                         stringResource(TextR.string.runtime_settings_feature_health),
                         subtitle,
                         MacroPalette.Diagnostics,
-                        onClick = {
-                            graph.featureHealth.requestScan()
-                            page = RuntimeSettingsPage.HEALTH
-                        },
+                        onClick = { page = RuntimeSettingsPage.HEALTH },
                     )
                 }
             }
