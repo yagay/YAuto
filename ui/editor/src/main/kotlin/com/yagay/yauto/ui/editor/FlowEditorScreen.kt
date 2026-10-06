@@ -36,6 +36,10 @@ fun MacroFlowEditorScreen(
     var paramEdit by remember { mutableStateOf<Triple<FlowParamSide, Int?, FlowParameter?>?>(null) }
     var actionMenu by remember { mutableStateOf<Int?>(null) }
     val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
+    val inheritedVariableNames = LocalEditorVariableNames.current
+    val editorVariableNames = remember(inheritedVariableNames, inputs, outputs) {
+        inheritedVariableNames + inputs.map { it.name } + outputs.map { it.name }
+    }
 
     Scaffold(
         topBar = {
@@ -179,8 +183,9 @@ fun MacroFlowEditorScreen(
         }
     }
 
-    picker?.let { (index, feature) ->
-        MacroFeaturePickerDialog(
+    CompositionLocalProvider(LocalEditorVariableNames provides editorVariableNames) {
+        picker?.let { (index, feature) ->
+            MacroFeaturePickerDialog(
             kind = FeatureKind.ACTION,
             descriptors = descriptors,
             initial = feature,
@@ -195,10 +200,12 @@ fun MacroFlowEditorScreen(
                 }
                 picker = null
             },
-        )
+            )
+        }
     }
 
-    if (tree) {
+    CompositionLocalProvider(LocalEditorVariableNames provides editorVariableNames) {
+        if (tree) {
         ActionTreeDialog(
             title = stringResource(TextR.string.flow_action_tree_title),
             initial = actions,
@@ -209,7 +216,8 @@ fun MacroFlowEditorScreen(
                 actions = it
                 tree = false
             },
-        )
+            )
+        }
     }
 
     paramEdit?.let { (side, index, initialParam) ->
