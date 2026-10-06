@@ -32,6 +32,11 @@ sealed interface FieldPickerSource {
     data object TimeZone : FieldPickerSource
     data object Locale : FieldPickerSource
     data object Calendar : FieldPickerSource
+    data object InputMethod : FieldPickerSource
+    data object KeyCode : FieldPickerSource
+    data object WifiSsid : FieldPickerSource
+    data object BluetoothDevice : FieldPickerSource
+    data object LocationProvider : FieldPickerSource
     data class Options(val options: List<FieldPickerOption>) : FieldPickerSource
 }
 
