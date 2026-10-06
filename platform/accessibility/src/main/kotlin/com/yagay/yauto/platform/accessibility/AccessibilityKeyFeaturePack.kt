@@ -20,6 +20,7 @@ class AccessibilityKeyFeaturePack : FeaturePack {
                 capabilities = setOf(CapabilityIds.ACCESSIBILITY),
                 fields = listOf(
                     FieldSchema.Number("keyCode", "Android key code", min = 0.0, max = 1000.0),
+                    FieldSchema.Number("scanCode", "Linux scan code", min = 0.0, max = 65535.0),
                     FieldSchema.Choice("action", "Key action", options = listOf("any", "down", "up")),
                     FieldSchema.Toggle("initialOnly", "Ignore repeated key-down events"),
                 ),
@@ -34,8 +35,12 @@ class AccessibilityKeyFeaturePack : FeaturePack {
 
 internal fun matchesHardwareKey(config: ConfigMap, payload: ConfigMap): Boolean {
     val expectedKeyCode = config["keyCode"].numberOrNull()?.toInt()
-    val actualKeyCode = payload["keyCode"].numberOrNull()?.toInt() ?: return false
+    val expectedScanCode = config["scanCode"].numberOrNull()?.toInt()
+    val actualKeyCode = payload["keyCode"].numberOrNull()?.toInt()
+    val actualScanCode = payload["scanCode"].numberOrNull()?.toInt()
     if (expectedKeyCode != null && expectedKeyCode != actualKeyCode) return false
+    if (expectedScanCode != null && expectedScanCode != actualScanCode) return false
+    if (expectedKeyCode == null && expectedScanCode == null && actualKeyCode == null) return false
     val expectedAction = config.string("action", "any")
     if (expectedAction != "any" && payload.string("action") != expectedAction) return false
     if (config.boolean("initialOnly") && (payload["repeatCount"].numberOrNull()?.toInt() ?: 0) > 0) return false
