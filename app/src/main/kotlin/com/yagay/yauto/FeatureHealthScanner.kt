@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-enum class FeatureHealthStatus { READY, BLOCKED, UNSUPPORTED }
+enum class FeatureHealthStatus { READY, BLOCKED, BROKEN, UNSUPPORTED }
 
 data class FeatureHealthItem(
     val featureId: String,
@@ -52,6 +52,7 @@ data class FeatureHealthSnapshot(
 ) {
     val readyCount: Int get() = items.count { it.status == FeatureHealthStatus.READY }
     val blockedCount: Int get() = items.count { it.status == FeatureHealthStatus.BLOCKED }
+    val brokenCount: Int get() = items.count { it.status == FeatureHealthStatus.BROKEN }
     val unsupportedCount: Int get() = items.count { it.status == FeatureHealthStatus.UNSUPPORTED }
 }
 
@@ -69,6 +70,7 @@ class FeatureHealthScanner(
     private val shizuku: ShizukuBackend,
     private val xposed: XposedBackend,
     private val accessibility: AccessibilityBackend,
+    private val implementationAvailable: (FeatureDescriptor) -> Boolean,
 ) {
     private val context = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -123,9 +125,10 @@ class FeatureHealthScanner(
             .sortedWith(
                 compareBy<FeatureHealthItem> {
                     when (it.status) {
-                        FeatureHealthStatus.BLOCKED -> 0
-                        FeatureHealthStatus.UNSUPPORTED -> 1
-                        FeatureHealthStatus.READY -> 2
+                        FeatureHealthStatus.BROKEN -> 0
+                        FeatureHealthStatus.BLOCKED -> 1
+                        FeatureHealthStatus.UNSUPPORTED -> 2
+                        FeatureHealthStatus.READY -> 3
                     }
                 }.thenBy { it.title.lowercase() }.thenBy { it.featureId }
             )
@@ -194,6 +197,16 @@ class FeatureHealthScanner(
         descriptor: FeatureDescriptor,
         access: Map<AccessRequirement, Boolean>,
     ): FeatureHealthItem {
+        if (!runCatching { implementationAvailable(descriptor) }.getOrDefault(false)) {
+            return FeatureHealthItem(
+                descriptor.id.value,
+                descriptor.title,
+                descriptor.kind,
+                FeatureHealthStatus.BROKEN,
+                detail = "Feature is registered but no executable implementation is installed for its kind",
+            )
+        }
+
         if (Build.VERSION.SDK_INT < descriptor.minSdk) {
             return FeatureHealthItem(
                 descriptor.id.value,
@@ -228,7 +241,7 @@ class FeatureHealthScanner(
                     descriptor.kind,
                     FeatureHealthStatus.READY,
                     backendId = readyOption.backendId,
-                    detail = "Backend and access checks passed",
+                    detail = "Implementation, backend and access checks passed",
                 )
             }
             val missing = options.flatMap { it.requirements }.filterNot { access[it] == true }.toSet()
@@ -252,7 +265,7 @@ class FeatureHealthScanner(
             if (resolvedMissing.isEmpty()) FeatureHealthStatus.READY else FeatureHealthStatus.BLOCKED,
             missingRequirements = resolvedMissing,
             detail = if (resolvedMissing.isEmpty()) {
-                "Environment checks passed; feature behavior is not executed during background scan"
+                "Implementation and environment checks passed; side-effect behavior is not executed during background scan"
             } else {
                 "Required access is not available"
             },
