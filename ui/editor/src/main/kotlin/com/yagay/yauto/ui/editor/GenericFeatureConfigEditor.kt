@@ -273,7 +273,6 @@ private fun BackendChoiceEditor(
     value: String,
     enabled: Boolean,
     onValue: (String) -> Unit,
-    onRelatedValue: (String, String) -> Unit,
 ) {
     val selected = value.ifBlank { "auto" }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
