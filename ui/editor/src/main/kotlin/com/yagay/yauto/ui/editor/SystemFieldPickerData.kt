@@ -26,6 +26,7 @@ internal fun loadSystemPickerOptions(
     picker: FieldPickerSource,
     values: Map<String, String>,
     locale: Locale,
+    hardwareKeys: HardwareKeyPickerCatalog = HardwareKeyPickerCatalog(),
 ): List<SystemPickerOption> = runCatching {
     val comparator = localizedStringComparator(locale)
     when (picker) {
@@ -121,19 +122,32 @@ internal fun loadSystemPickerOptions(
                 .sortedWith { left, right -> comparator.compare(left.label, right.label) }
         }
         FieldPickerSource.KeyCode -> {
-            KeyEvent::class.java.fields
+            val device = hardwareKeys.keyCodes.map {
+                SystemPickerOption(it.value, it.label, it.detail)
+            }
+            val standard = KeyEvent::class.java.fields
                 .asSequence()
                 .filter { it.name.startsWith("KEYCODE_") && it.type == Int::class.javaPrimitiveType }
                 .mapNotNull { field ->
                     runCatching {
                         val value = field.getInt(null).toString()
-                        SystemPickerOption(value, field.name.removePrefix("KEYCODE_"), value)
+                        SystemPickerOption(value, field.name.removePrefix("KEYCODE_"), "Android KeyCode $value")
                     }.getOrNull()
                 }
-                .distinctBy { it.value }
-                .sortedWith { left, right -> comparator.compare(left.label, right.label) }
                 .toList()
+            (device + standard)
+                .distinctBy { it.value }
+                .sortedWith { left, right ->
+                    val deviceRankLeft = if (left.detail.orEmpty().contains("scan", ignoreCase = true)) 0 else 1
+                    val deviceRankRight = if (right.detail.orEmpty().contains("scan", ignoreCase = true)) 0 else 1
+                    if (deviceRankLeft != deviceRankRight) deviceRankLeft - deviceRankRight
+                    else comparator.compare(left.label, right.label)
+                }
         }
+        FieldPickerSource.ScanCode -> hardwareKeys.scanCodes
+            .map { SystemPickerOption(it.value, it.label, it.detail) }
+            .distinctBy { it.value }
+            .sortedWith { left, right -> comparator.compare(left.label, right.label) }
         FieldPickerSource.WifiSsid -> {
             val manager = context.applicationContext.getSystemService(WifiManager::class.java)
             buildList {
@@ -197,7 +211,11 @@ internal fun loadSystemPickerOptions(
             comparator = comparator,
         )
         is FieldPickerSource.Options -> picker.options.map {
-            SystemPickerOption(it.value, it.label, it.value.takeIf { value -> value != it.label })
+            SystemPickerOption(
+                it.value,
+                it.label,
+                it.detail ?: it.value.takeIf { value -> value != it.label },
+            )
         }
     }
 }.getOrDefault(emptyList())
