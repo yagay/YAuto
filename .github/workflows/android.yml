@@ -9,10 +9,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: yauto-android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -32,23 +36,33 @@ jobs:
         run: python3 .github/scripts/check-event-contracts.py
       - name: Architecture maintainability guard
         run: python3 .github/scripts/check-architecture.py
-      - name: Unit tests
-        run: gradle :core:logging:test :core:engine:test :core:runtime:test :core:storage:test :core:diagnostics:test :core:registry:test :core:importer:test :importer:macrodroid:test :importer:shortx:test :importer:tasker:test :feature:standard:test :plugin:api:test :platform:android:testDebugUnitTest :platform:accessibility:testDebugUnitTest --stacktrace
-      - name: Build debug APK
-        run: gradle :app:assembleDebug --stacktrace
+      - name: Test and build debug APK
+        run: >
+          gradle
+          :core:logging:test
+          :core:engine:test
+          :core:runtime:test
+          :core:storage:test
+          :core:diagnostics:test
+          :core:registry:test
+          :core:importer:test
+          :importer:macrodroid:test
+          :importer:shortx:test
+          :importer:tasker:test
+          :feature:standard:test
+          :plugin:api:test
+          :platform:android:testDebugUnitTest
+          :platform:accessibility:testDebugUnitTest
+          :app:assembleDebug
+          --configuration-cache
+          --parallel
+          --build-cache
+          --stacktrace
       - name: Normalize APK name
         run: cp app/build/outputs/apk/debug/app-debug.apk YAuto-debug.apk
-      - name: Build profile APK
-        run: gradle :app:assembleProfile --stacktrace
-      - name: Normalize profile APK name
-        run: cp app/build/outputs/apk/profile/app-profile.apk YAuto-profile.apk
       - uses: actions/upload-artifact@v4
         with:
           name: YAuto-debug
           path: YAuto-debug.apk
           if-no-files-found: error
-      - uses: actions/upload-artifact@v4
-        with:
-          name: YAuto-profile
-          path: YAuto-profile.apk
-          if-no-files-found: error
+          compression-level: 0
