@@ -30,11 +30,11 @@ class DeviceHardwareKeyCatalog(
         if (!rootShell.isAvailable()) return HardwareKeyPickerCatalog()
 
         val layoutOutput = rootShell.run(KEY_LAYOUT_COMMAND, 8_000)
-        val mappings = if (layoutOutput.exitCode == 0) parseKeyLayouts(layoutOutput.stdout) else emptyList()
+        val mappings = parseKeyLayouts(layoutOutput.stdout)
         if (mappings.isEmpty()) return HardwareKeyPickerCatalog()
 
         val getevent = rootShell.run("getevent -lp 2>/dev/null", 8_000)
-        val devicesByScan = if (getevent.exitCode == 0) parseGeteventKeys(getevent.stdout) else emptyMap()
+        val devicesByScan = parseGeteventKeys(getevent.stdout)
         val activeScans = devicesByScan.keys
         val deviceMappings = if (activeScans.isNotEmpty()) {
             mappings.filter { it.scanCode in activeScans }
