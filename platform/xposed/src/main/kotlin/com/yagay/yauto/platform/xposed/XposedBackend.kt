@@ -43,6 +43,17 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
     override suspend fun isAvailable(environment: RuntimeEnvironment): Boolean =
         requestSystem(SystemBridgeProtocol.PING)?.getBoolean("success") == true
 
+    suspend fun beginHardwareKeyCapture(timeoutMs: Long): Boolean {
+        val result = orderedRequest(
+            Intent(SystemBridgeProtocol.ACTION)
+                .setPackage("android")
+                .putExtra("version", protocolVersion)
+                .putExtra("operation", SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_START)
+                .putExtra("timeoutMs", timeoutMs.coerceIn(1_000L, 60_000L))
+        ).also { connected = it != null }
+        return result?.getBoolean("success") == true
+    }
+
     override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment): Boolean =
         (request.capability == CapabilityIds.SYSTEM_UI && request.operationId in supportedOperations()) ||
             (request.capability == CapabilityIds.LSPOSED_HOOK && request.operationId == SystemBridgeProtocol.HOOK_INSTALL_SESSION)
