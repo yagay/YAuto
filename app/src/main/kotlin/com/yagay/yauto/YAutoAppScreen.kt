@@ -56,12 +56,15 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 
 private enum class AppPage {
@@ -492,62 +495,107 @@ private suspend fun captureHardwareKey(
     graph: AppGraph,
     timeoutMs: Long,
 ): HardwareKeyCaptureResult? = coroutineScope {
-    val accessibility = async(start = CoroutineStart.UNDISPATCHED) {
+    val channel = Channel<HardwareKeyCaptureResult>(capacity = 3)
+    val jobs = mutableListOf<kotlinx.coroutines.Job>()
+
+    fun launchCapture(block: suspend () -> HardwareKeyCaptureResult?) {
+        jobs += launch(start = CoroutineStart.UNDISPATCHED) {
+            block()?.let { channel.trySend(it) }
+        }
+    }
+
+    launchCapture {
         AccessibilityRuntimeBridge.awaitNextKey(timeoutMs)?.let { key ->
             HardwareKeyCaptureResult(
                 keyCode = key.keyCode,
                 scanCode = key.scanCode,
                 deviceId = key.deviceId,
                 action = key.action,
+                deviceName = key.deviceName,
+                deviceDescriptor = key.deviceDescriptor,
+                vendorId = key.vendorId,
+                productId = key.productId,
+                sources = setOf("accessibility"),
             )
         }
-    }
-    val xposed = async(start = CoroutineStart.UNDISPATCHED) {
-        XposedSystemEventRuntimeBridge.awaitNextHardwareKey(timeoutMs)?.let { key ->
-            HardwareKeyCaptureResult(
-                keyCode = key.keyCode,
-                scanCode = key.scanCode,
-                deviceId = key.deviceId,
-                action = key.action,
-            )
-        }
-    }
-
-    val rootAvailable = runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)
-    val root = if (rootAvailable) {
-        async(start = CoroutineStart.UNDISPATCHED) {
-            graph.hardwareKeys.captureRawKey(timeoutMs)
-        }
-    } else {
-        null
     }
 
     val xposedArmed = runCatching {
         graph.xposed.beginHardwareKeyCapture(timeoutMs)
     }.getOrDefault(false)
-    if (!xposedArmed) xposed.cancel()
-
-    val captured = when {
-        xposedArmed && root != null -> select<HardwareKeyCaptureResult?> {
-            accessibility.onAwait { it }
-            xposed.onAwait { it }
-            root.onAwait { it }
+    if (xposedArmed) {
+        launchCapture {
+            XposedSystemEventRuntimeBridge.awaitNextHardwareKey(timeoutMs)?.let { key ->
+                HardwareKeyCaptureResult(
+                    keyCode = key.keyCode,
+                    scanCode = key.scanCode,
+                    deviceId = key.deviceId,
+                    action = key.action,
+                    deviceName = key.deviceName,
+                    deviceDescriptor = key.deviceDescriptor,
+                    vendorId = key.vendorId,
+                    productId = key.productId,
+                    sources = setOf("lsposed"),
+                )
+            }
         }
-        xposedArmed -> select<HardwareKeyCaptureResult?> {
-            accessibility.onAwait { it }
-            xposed.onAwait { it }
-        }
-        root != null -> select<HardwareKeyCaptureResult?> {
-            accessibility.onAwait { it }
-            root.onAwait { it }
-        }
-        else -> accessibility.await()
     }
 
-    accessibility.cancel()
-    xposed.cancel()
-    root?.cancel()
-    captured
+    if (runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)) {
+        launchCapture { graph.hardwareKeys.captureRawKey(timeoutMs) }
+    }
+
+    val first = withTimeoutOrNull(timeoutMs.coerceIn(1_000L, 60_000L)) {
+        channel.receive()
+    } ?: run {
+        jobs.forEach { it.cancel() }
+        channel.close()
+        return@coroutineScope null
+    }
+
+    // Give the Android and raw-input paths a brief chance to report the same physical press.
+    // This prevents a faster EV_KEY result from hiding the Android KeyCode reported by LSPosed.
+    delay(220L)
+    val captured = mutableListOf(first)
+    while (true) {
+        val next = channel.tryReceive().getOrNull() ?: break
+        captured += next
+    }
+
+    jobs.forEach { it.cancel() }
+    channel.close()
+    mergeHardwareKeyCapture(captured)
+}
+
+private fun mergeHardwareKeyCapture(
+    captures: List<HardwareKeyCaptureResult>,
+): HardwareKeyCaptureResult? {
+    if (captures.isEmpty()) return null
+    val android = captures
+        .filter { it.keyCode > 0 || it.scanCode > 0 }
+        .maxByOrNull {
+            when {
+                "lsposed" in it.sources -> 30
+                "accessibility" in it.sources -> 20
+                else -> 10
+            } + if (it.keyCode > 0) 2 else 0 + if (it.scanCode > 0) 1 else 0
+        }
+    val raw = captures.firstOrNull { it.linuxEvKey > 0 || it.mscScan != 0L }
+    val device = android ?: raw ?: captures.first()
+
+    return HardwareKeyCaptureResult(
+        keyCode = android?.keyCode ?: 0,
+        scanCode = android?.scanCode ?: 0,
+        deviceId = device.deviceId,
+        action = android?.action ?: raw?.action ?: device.action,
+        linuxEvKey = raw?.linuxEvKey ?: 0,
+        mscScan = raw?.mscScan ?: 0L,
+        deviceName = android?.deviceName.orEmpty().ifBlank { raw?.deviceName.orEmpty() },
+        deviceDescriptor = android?.deviceDescriptor.orEmpty().ifBlank { raw?.deviceDescriptor.orEmpty() },
+        vendorId = android?.vendorId?.takeIf { it > 0 } ?: raw?.vendorId ?: 0,
+        productId = android?.productId?.takeIf { it > 0 } ?: raw?.productId ?: 0,
+        sources = captures.flatMapTo(linkedSetOf()) { it.sources },
+    )
 }
 
 private const val MAX_WORKSPACE_FILE_BYTES = 20 * 1024 * 1024
