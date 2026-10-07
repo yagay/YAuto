@@ -41,21 +41,6 @@ class AndroidCommunicationFeaturePack(context: Context) : FeaturePack {
             }
             Intent(Intent.ACTION_VIEW, Uri.parse(uri))
         }
-        intentAction(registry, "android.settings.open", "Open Android settings", "Open a common Android settings page", FeatureCategory.SYSTEM,
-            listOf(FieldSchema.Choice("page", "Settings page", true, listOf("main", "wifi", "bluetooth", "display", "sound", "location", "apps", "accessibility", "notification_listener"))), setOf("settings", "wifi settings")) { feature, _ ->
-            val action = when (feature.config.string("page", "main")) {
-                "wifi" -> android.provider.Settings.ACTION_WIFI_SETTINGS
-                "bluetooth" -> android.provider.Settings.ACTION_BLUETOOTH_SETTINGS
-                "display" -> android.provider.Settings.ACTION_DISPLAY_SETTINGS
-                "sound" -> android.provider.Settings.ACTION_SOUND_SETTINGS
-                "location" -> android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS
-                "apps" -> android.provider.Settings.ACTION_APPLICATION_SETTINGS
-                "accessibility" -> android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS
-                "notification_listener" -> android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS
-                else -> android.provider.Settings.ACTION_SETTINGS
-            }
-            Intent(action)
-        }
     }
 
     private fun intentAction(
