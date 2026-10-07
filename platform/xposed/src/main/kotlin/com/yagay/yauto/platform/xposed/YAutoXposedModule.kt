@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.os.SystemClock
 import android.util.Log
+import android.view.InputEvent
 import android.view.KeyEvent
 import com.yagay.yauto.core.capability.SystemOperations
 import io.github.libxposed.api.XposedModule
@@ -25,6 +26,7 @@ class YAutoXposedModule : XposedModule() {
     private val appReceivers = ConcurrentHashMap.newKeySet<String>()
     private val installedHooks = ConcurrentHashMap.newKeySet<String>()
     private val systemEventDedup = ConcurrentHashMap<String, Long>()
+    private val hardwareKeyEventDedup = ConcurrentHashMap<String, Long>()
     private val hardwareKeyCaptureUntilElapsed = AtomicLong(0L)
 
     override fun onSystemServerStarting(param: SystemServerStartingParam) {
@@ -76,7 +78,7 @@ class YAutoXposedModule : XposedModule() {
                     when (intent.getStringExtra("operation")) {
                         SystemBridgeProtocol.PING -> Unit
                         SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_START -> {
-                            installHardwareKeyCaptureHooks(context, classLoader)
+                            installShortXInputHooks(context, classLoader)
                             val timeoutMs = intent.getLongExtra("timeoutMs", 10_000L)
                                 .coerceIn(1_000L, 60_000L)
                             val until = SystemClock.elapsedRealtime() + timeoutMs
@@ -187,6 +189,7 @@ class YAutoXposedModule : XposedModule() {
         installTaskRemovedHooks(context, classLoader)
         installBackNavigationHooks(context, classLoader)
         installAssistantHooks(context, classLoader)
+        installShortXInputHooks(context, classLoader)
     }
 
     private fun installProcessDeathHooks(context: Context, classLoader: ClassLoader) {
@@ -321,36 +324,140 @@ class YAutoXposedModule : XposedModule() {
     }
 
 
-    private fun installHardwareKeyCaptureHooks(context: Context, classLoader: ClassLoader) {
-        val candidates = listOf(
-            "com.android.server.wm.InputManagerCallback" to setOf("interceptKeyBeforeQueueing"),
-            "com.android.server.policy.PhoneWindowManager" to setOf(
-                "interceptKeyBeforeQueueing",
-                "interceptKeyBeforeDispatching",
+    /**
+     * Clean-room equivalent of ShortX's InputManagerHook.
+     *
+     * Observe the input chain at several Android framework layers because OEM ROMs move
+     * interceptKeyBeforeQueueing/interceptKeyBeforeDispatching between policy callback classes.
+     * We never change the return value here; YAuto only observes and forwards KeyEvent metadata.
+     */
+    private fun installShortXInputHooks(context: Context, classLoader: ClassLoader) {
+        val targets = listOf(
+            InputHookTarget(
+                "com.android.server.input.InputManagerService",
+                setOf("filterInputEvent"),
+            ),
+            InputHookTarget(
+                "com.android.server.wm.InputManagerCallback",
+                setOf("interceptKeyBeforeQueueing", "interceptKeyBeforeDispatching"),
+            ),
+            InputHookTarget(
+                "com.android.server.policy.PhoneWindowManager",
+                setOf("interceptKeyBeforeQueueing", "interceptKeyBeforeDispatching"),
             ),
         )
 
-        candidates.forEach { (className, methodNames) ->
-            val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
-            val methods = clazz.declaredMethods.filter { method ->
-                method.name in methodNames &&
-                    method.parameterTypes.any { KeyEvent::class.java.isAssignableFrom(it) }
-            }
-            if (methods.isEmpty()) return@forEach
+        targets.forEach { target ->
+            val clazz = runCatching { classLoader.loadClass(target.className) }.getOrNull() ?: return@forEach
+            clazz.declaredMethods
+                .filter { method ->
+                    method.name in target.methodNames &&
+                        method.parameterTypes.any {
+                            KeyEvent::class.java.isAssignableFrom(it) ||
+                                InputEvent::class.java.isAssignableFrom(it)
+                        }
+                }
+                .forEach { method ->
+                    val key = "shortx-input|" + method.toGenericString()
+                    if (!installedHooks.add(key)) return@forEach
+                    method.isAccessible = true
+                    hook(method).intercept { chain ->
+                        val event = chain.args.firstOrNull { it is KeyEvent } as? KeyEvent
+                        if (event != null) {
+                            handleSystemKeyEvent(context, event, target.className, method.name)
+                        }
+                        chain.proceed()
+                    }
+                }
+        }
 
-            methods.forEach { method ->
-                val key = "system-hardware-key-capture|" + method.toGenericString()
+        installInputFilterStateHook(context, classLoader)
+        log(Log.INFO, "YAuto", "ShortX-compatible input hooks installed")
+    }
+
+    private fun installInputFilterStateHook(context: Context, classLoader: ClassLoader) {
+        val clazz = runCatching {
+            classLoader.loadClass("com.android.server.input.NativeInputManagerService\$NativeImpl")
+        }.getOrNull() ?: return
+        clazz.declaredMethods
+            .filter { method ->
+                method.name == "setInputFilterEnabled" &&
+                    method.parameterTypes.any {
+                        it == Boolean::class.javaPrimitiveType || it == java.lang.Boolean::class.java
+                    }
+            }
+            .forEach { method ->
+                val key = "shortx-input-filter-state|" + method.toGenericString()
                 if (!installedHooks.add(key)) return@forEach
                 method.isAccessible = true
                 hook(method).intercept { chain ->
-                    val event = chain.args.filterIsInstance<KeyEvent>().firstOrNull()
-                    if (event != null) emitHardwareKeyCapture(context, event, method.name)
+                    val enabled = chain.args.firstOrNull { it is Boolean } as? Boolean
+                    emitSystemRuntimeEvent(
+                        context = context,
+                        type = "android.event.input_filter_state_changed",
+                        dedupKey = "input-filter:" + enabled,
+                        extras = mapOf(
+                            "enabled" to (enabled ?: false),
+                            "method" to method.name,
+                        ),
+                        dedupWindowMs = 100L,
+                    )
                     chain.proceed()
                 }
             }
-            log(Log.INFO, "YAuto", "Hardware key capture hook ready: $className")
-            return
+    }
+
+    private fun handleSystemKeyEvent(
+        context: Context,
+        event: KeyEvent,
+        className: String,
+        methodName: String,
+    ) {
+        emitHardwareKeyCapture(context, event, className + "#" + methodName)
+
+        val identity = buildString {
+            append(event.deviceId)
+            append(':')
+            append(event.keyCode)
+            append(':')
+            append(event.scanCode)
+            append(':')
+            append(event.action)
+            append(':')
+            append(event.eventTime)
         }
+        val now = SystemClock.elapsedRealtime()
+        val previous = hardwareKeyEventDedup.put(identity, now)
+        if (previous != null && now - previous < 250L) return
+        if (hardwareKeyEventDedup.size > 128) {
+            hardwareKeyEventDedup.entries.removeIf { now - it.value > 5_000L }
+        }
+
+        val action = when (event.action) {
+            KeyEvent.ACTION_DOWN -> "down"
+            KeyEvent.ACTION_UP -> "up"
+            else -> "other"
+        }
+        emitSystemRuntimeEvent(
+            context = context,
+            type = "android.event.hardware_key",
+            dedupKey = "hardware-key:" + identity,
+            extras = mapOf(
+                "keyCode" to event.keyCode,
+                "scanCode" to event.scanCode,
+                "deviceId" to event.deviceId,
+                "action" to action,
+                "repeatCount" to event.repeatCount,
+                "metaState" to event.metaState,
+                "flags" to event.flags,
+                "source" to event.source,
+                "downTime" to event.downTime,
+                "eventTime" to event.eventTime,
+                "hookClass" to className,
+                "hookMethod" to methodName,
+            ),
+            dedupWindowMs = 250L,
+        )
     }
 
     private fun emitHardwareKeyCapture(
@@ -358,7 +465,8 @@ class YAutoXposedModule : XposedModule() {
         event: KeyEvent,
         methodName: String,
     ) {
-        if (event.action != KeyEvent.ACTION_DOWN || event.repeatCount != 0) return
+        // Match ShortX's prompt behavior: publish the learned key on ACTION_UP.
+        if (event.action != KeyEvent.ACTION_UP) return
         val until = hardwareKeyCaptureUntilElapsed.get()
         val nowElapsed = SystemClock.elapsedRealtime()
         if (until <= 0L || nowElapsed > until) {
@@ -381,6 +489,11 @@ class YAutoXposedModule : XposedModule() {
             )
         }
     }
+
+    private data class InputHookTarget(
+        val className: String,
+        val methodNames: Set<String>,
+    )
 
     private fun installAssistantHooks(context: Context, classLoader: ClassLoader) {
         val classNames = listOf(
