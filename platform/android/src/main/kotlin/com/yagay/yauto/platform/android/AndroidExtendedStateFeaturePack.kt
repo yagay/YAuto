@@ -182,14 +182,6 @@ class AndroidExtendedStateFeaturePack(private val reader: AndroidExtendedStateRe
             listOf("none", "ac", "usb", "wireless", "dock"),
             reader::batteryPlugged,
         )
-        choicePair(
-            registry,
-            "battery_health",
-            "Battery health status",
-            FeatureCategory.DEVICE,
-            listOf("good", "overheat", "dead", "over_voltage", "failure", "cold", "unknown"),
-            reader::batteryHealth,
-        )
     }
 
     private fun booleanPair(
