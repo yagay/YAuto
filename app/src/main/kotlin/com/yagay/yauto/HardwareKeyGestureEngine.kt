@@ -126,6 +126,7 @@ internal class HardwareKeyGestureEngine(
             payload = mapOf(
                 "keyCode" to ConfigValue.NumberValue(identity.keyCode.toDouble()),
                 "scanCode" to ConfigValue.NumberValue(identity.scanCode.toDouble()),
+                "linuxEvKey" to ConfigValue.NumberValue(identity.linuxEvKey.toDouble()),
                 "deviceId" to ConfigValue.NumberValue(identity.deviceId.toDouble()),
                 "pressCount" to ConfigValue.NumberValue(state.pressCount.toDouble()),
                 "maxHoldMs" to ConfigValue.NumberValue(state.maxHoldMs.toDouble()),
@@ -141,8 +142,10 @@ internal class HardwareKeyGestureEngine(
             payload = mapOf(
                 "keyCode1" to ConfigValue.NumberValue(pair.first.keyCode.toDouble()),
                 "scanCode1" to ConfigValue.NumberValue(pair.first.scanCode.toDouble()),
+                "linuxEvKey1" to ConfigValue.NumberValue(pair.first.linuxEvKey.toDouble()),
                 "keyCode2" to ConfigValue.NumberValue(pair.second.keyCode.toDouble()),
                 "scanCode2" to ConfigValue.NumberValue(pair.second.scanCode.toDouble()),
+                "linuxEvKey2" to ConfigValue.NumberValue(pair.second.linuxEvKey.toDouble()),
                 "deviceId" to ConfigValue.NumberValue(
                     if (pair.first.deviceId == pair.second.deviceId) pair.first.deviceId.toDouble() else -1.0
                 ),
@@ -153,9 +156,10 @@ internal class HardwareKeyGestureEngine(
     private fun RuntimeEvent.identity(): KeyIdentity? {
         val keyCode = payload["keyCode"].numberOrNull()?.toInt() ?: 0
         val scanCode = payload["scanCode"].numberOrNull()?.toInt() ?: 0
+        val linuxEvKey = payload["linuxEvKey"].numberOrNull()?.toInt() ?: 0
         val deviceId = payload["deviceId"].numberOrNull()?.toInt() ?: -1
-        if (keyCode <= 0 && scanCode <= 0) return null
-        return KeyIdentity(keyCode, scanCode, deviceId)
+        if (keyCode <= 0 && scanCode <= 0 && linuxEvKey <= 0) return null
+        return KeyIdentity(keyCode, scanCode, linuxEvKey, deviceId)
     }
 
     private fun compatibleDevices(first: Int, second: Int): Boolean =
@@ -164,10 +168,11 @@ internal class HardwareKeyGestureEngine(
     private data class KeyIdentity(
         val keyCode: Int,
         val scanCode: Int,
+        val linuxEvKey: Int,
         val deviceId: Int,
     ) {
         val sortKey: String
-            get() = "%08d:%08d:%08d".format(deviceId, keyCode, scanCode)
+            get() = "%08d:%08d:%08d:%08d".format(deviceId, keyCode, scanCode, linuxEvKey)
     }
 
     private data class KeyPair(
