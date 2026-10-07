@@ -18,6 +18,10 @@ data class AccessibilityKeySnapshot(
     val metaState: Int,
     val deviceId: Int,
     val scanCode: Int = 0,
+    val deviceName: String = "",
+    val deviceDescriptor: String = "",
+    val vendorId: Int = 0,
+    val productId: Int = 0,
     val timestampEpochMs: Long = System.currentTimeMillis(),
 )
 
@@ -171,6 +175,10 @@ object AccessibilityRuntimeBridge {
         metaState: Int,
         deviceId: Int,
         scanCode: Int = 0,
+        deviceName: String = "",
+        deviceDescriptor: String = "",
+        vendorId: Int = 0,
+        productId: Int = 0,
     ) {
         val snapshot = AccessibilityKeySnapshot(
             keyCode = keyCode,
@@ -179,6 +187,10 @@ object AccessibilityRuntimeBridge {
             metaState = metaState,
             deviceId = deviceId,
             scanCode = scanCode,
+            deviceName = deviceName,
+            deviceDescriptor = deviceDescriptor,
+            vendorId = vendorId,
+            productId = productId,
         )
         nextKey.getAndSet(null)?.complete(snapshot)
         keyListener?.invoke(snapshot)
