@@ -26,6 +26,7 @@ class RootHardwareKeyEventSource(
     @Volatile private var process: Process? = null
     @Volatile private var readerThread: Thread? = null
     @Volatile private var listening = false
+    @Volatile private var learnedMappings: Map<Int, LearnedAndroidKey> = emptyMap()
 
     override fun start(emitter: RuntimeEventEmitter) {
         if (!started.compareAndSet(false, true)) return
@@ -43,34 +44,48 @@ class RootHardwareKeyEventSource(
     }
 
     private fun applyWorkspace(data: WorkspaceData) {
-        val needed = data.automations.any { automation ->
-            automation.enabled && automation.activation.events.any { event ->
+        val mappings = linkedMapOf<Int, LearnedAndroidKey>()
+        data.automations.asSequence()
+            .filter { it.enabled }
+            .flatMap { it.activation.events.asSequence() }
+            .forEach { event ->
                 when (event.typeId) {
                     HARDWARE_KEY_EVENT,
-                    HARDWARE_KEY_GESTURE_EVENT -> event.config.hasRawFallback()
+                    HARDWARE_KEY_GESTURE_EVENT -> event.config.rawMapping()?.let { mappings.putIfAbsent(it.first, it.second) }
 
-                    HARDWARE_KEY_COMBO_EVENT ->
-                        event.config.hasRawFallback("1") || event.config.hasRawFallback("2")
-
-                    else -> false
+                    HARDWARE_KEY_COMBO_EVENT -> {
+                        event.config.rawMapping("1")?.let { mappings.putIfAbsent(it.first, it.second) }
+                        event.config.rawMapping("2")?.let { mappings.putIfAbsent(it.first, it.second) }
+                    }
                 }
             }
-        }
+        learnedMappings = mappings
+
         synchronized(lock) {
             if (!started.get()) return
-            if (needed) startListenerLocked() else stopListenerLocked()
+            if (mappings.isNotEmpty()) startListenerLocked() else stopListenerLocked()
         }
     }
 
-    private fun Map<String, ConfigValue>.hasRawFallback(suffix: String = ""): Boolean {
+    private fun Map<String, ConfigValue>.rawMapping(
+        suffix: String = "",
+    ): Pair<Int, LearnedAndroidKey>? {
         val hidden = (this["hardwareIdentity$suffix"] as? ConfigValue.ObjectValue)?.value.orEmpty()
-        val learnedEvKey = (hidden["linuxEvKey"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
-        if (learnedEvKey > 0) return true
+        val evKey = (hidden["linuxEvKey"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
+        if (evKey > 0) {
+            val learnedKeyCode = (hidden["androidKeyCode"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
+            val learnedScanCode = (hidden["androidScanCode"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
+            return evKey to LearnedAndroidKey(learnedKeyCode, learnedScanCode)
+        }
 
-        // Compatibility with rules learned before EV_KEY and Android scanCode were separated.
-        val keyCode = (this["keyCode$suffix"] as? ConfigValue.NumberValue)?.value?.toInt()
-        val legacyScan = (this["scanCode$suffix"] as? ConfigValue.NumberValue)?.value?.toInt()
-        return keyCode == 0 && legacyScan != null && legacyScan > 0
+        // Compatibility for rules created before EV_KEY and Android scanCode were separated.
+        val keyCode = (this["keyCode$suffix"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
+        val legacyRaw = (this["scanCode$suffix"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
+        return if (keyCode == 0 && legacyRaw > 0) {
+            legacyRaw to LearnedAndroidKey(0, 0)
+        } else {
+            null
+        }
     }
 
     private fun startListenerLocked() {
@@ -110,6 +125,7 @@ class RootHardwareKeyEventSource(
     }
 
     private fun emit(event: RawKeyEvent) {
+        val mapped = learnedMappings[event.evKey]
         val action = when (event.value) {
             0 -> "up"
             1, 2 -> "down"
@@ -119,8 +135,8 @@ class RootHardwareKeyEventSource(
             RuntimeEvent(
                 typeId = HARDWARE_KEY_EVENT,
                 payload = buildMap {
-                    put("keyCode", ConfigValue.NumberValue(0.0))
-                    put("scanCode", ConfigValue.NumberValue(0.0))
+                    put("keyCode", ConfigValue.NumberValue((mapped?.keyCode ?: 0).toDouble()))
+                    put("scanCode", ConfigValue.NumberValue((mapped?.scanCode ?: 0).toDouble()))
                     put("linuxEvKey", ConfigValue.NumberValue(event.evKey.toDouble()))
                     put("action", ConfigValue.StringValue(action))
                     put("repeatCount", ConfigValue.NumberValue(if (event.value == 2) 1.0 else 0.0))
@@ -148,6 +164,11 @@ class RootHardwareKeyEventSource(
         val evKey: Int,
         val value: Int,
         val devicePath: String,
+    )
+
+    private data class LearnedAndroidKey(
+        val keyCode: Int,
+        val scanCode: Int,
     )
 
     private companion object {
