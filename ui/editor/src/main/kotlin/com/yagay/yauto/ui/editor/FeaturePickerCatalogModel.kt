@@ -1,8 +1,8 @@
 package com.yagay.yauto.ui.editor
 
 import androidx.annotation.StringRes
-import com.yagay.yauto.core.registry.FeatureDomain
 import com.yagay.yauto.core.registry.FeatureDescriptor
+import com.yagay.yauto.core.registry.FeaturePickerCategory
 import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.ui.design.R as TextR
 import java.util.Locale
@@ -114,38 +114,64 @@ internal fun buildFeaturePickerCatalog(
             descriptor = descriptor,
             title = textResolver.title(descriptor),
             description = textResolver.description(descriptor),
-            category = catalogCategory(descriptor.domain, descriptor.kind),
+            category = catalogCategory(descriptor.pickerCategory),
             searchIndex = textResolver.searchText(descriptor).lowercase(Locale.ROOT),
         )
     },
     titleComparator = titleComparator,
 )
 
-internal fun catalogCategory(domain: FeatureDomain, kind: FeatureKind): CatalogCategory = when (domain) {
-    FeatureDomain.APPLICATIONS -> CatalogCategory("applications", TextR.string.category_applications, TextR.string.category_applications_subtitle, 10)
-    FeatureDomain.POWER -> CatalogCategory("power", TextR.string.category_power, TextR.string.category_power_subtitle, 20)
-    FeatureDomain.COMMUNICATION -> CatalogCategory("communication", TextR.string.category_communication, TextR.string.category_communication_subtitle, 30)
-    FeatureDomain.CONNECTIVITY -> CatalogCategory("connectivity", TextR.string.category_connectivity, TextR.string.category_connectivity_subtitle, 40)
-    FeatureDomain.DATE_TIME -> CatalogCategory("date_time", TextR.string.category_date_time, TextR.string.category_date_time_subtitle, 50)
-    FeatureDomain.DEVICE -> when (kind) {
-        FeatureKind.ACTION -> CatalogCategory("device", TextR.string.category_device_actions, TextR.string.category_device_actions_subtitle, 60)
-        FeatureKind.EVENT -> CatalogCategory("device", TextR.string.category_device_events, TextR.string.category_device_events_subtitle, 60)
-        FeatureKind.STATE, FeatureKind.CONDITION -> CatalogCategory("device", TextR.string.category_device_state, TextR.string.category_device_state_subtitle, 60)
-    }
-    FeatureDomain.DISPLAY -> CatalogCategory("display", TextR.string.category_display, TextR.string.category_display_subtitle, 70)
-    FeatureDomain.AUDIO_MEDIA -> CatalogCategory("audio_media", TextR.string.category_audio_media, TextR.string.category_audio_media_subtitle, 80)
-    FeatureDomain.NOTIFICATIONS -> CatalogCategory("notifications", TextR.string.category_notifications, TextR.string.category_notifications_subtitle, 90)
-    FeatureDomain.LOCATION -> CatalogCategory("location", TextR.string.category_location, TextR.string.category_location_subtitle, 100)
-    FeatureDomain.SENSORS -> CatalogCategory("sensors", TextR.string.category_sensors, TextR.string.category_sensors_subtitle, 110)
-    FeatureDomain.USER_INPUT -> CatalogCategory("user_input", TextR.string.category_user_input, TextR.string.category_user_input_subtitle, 120)
-    FeatureDomain.CAPTURE -> CatalogCategory("capture", TextR.string.category_capture, TextR.string.category_capture_subtitle, 130)
-    FeatureDomain.FILES_STORAGE -> CatalogCategory("files_storage", TextR.string.category_files_storage, TextR.string.category_files_storage_subtitle, 140)
-    FeatureDomain.DATA -> CatalogCategory("data", TextR.string.category_data, TextR.string.category_data_subtitle, 150)
-    FeatureDomain.FLOW_LOGIC -> CatalogCategory("flow_logic", TextR.string.category_flow_logic, TextR.string.category_flow_logic_subtitle, 160)
-    FeatureDomain.WEB_NETWORK -> CatalogCategory("web_network", TextR.string.category_web_network, TextR.string.category_web_network_subtitle, 170)
-    FeatureDomain.AI -> CatalogCategory("ai", TextR.string.category_ai, TextR.string.category_ai_subtitle, 180)
-    FeatureDomain.SCRIPT_COMMANDS -> CatalogCategory("script_commands", TextR.string.category_script_commands, TextR.string.category_script_commands_subtitle, 190)
-    FeatureDomain.YAUTO -> CatalogCategory("yauto", TextR.string.category_yauto, TextR.string.category_yauto_subtitle, 200)
+internal fun catalogCategory(category: FeaturePickerCategory): CatalogCategory = when (category) {
+    FeaturePickerCategory.AI ->
+        CatalogCategory("ai", TextR.string.macro_category_ai, TextR.string.macro_category_ai_subtitle, 10)
+    FeaturePickerCategory.APPLICATIONS ->
+        CatalogCategory("applications", TextR.string.macro_category_applications, TextR.string.macro_category_applications_subtitle, 20)
+    FeaturePickerCategory.BATTERY_POWER ->
+        CatalogCategory("battery_power", TextR.string.macro_category_battery_power, TextR.string.macro_category_battery_power_subtitle, 30)
+    FeaturePickerCategory.CALL_SMS ->
+        CatalogCategory("call_sms", TextR.string.macro_category_call_sms, TextR.string.macro_category_call_sms_subtitle, 40)
+    FeaturePickerCategory.CAMERA_PHOTO ->
+        CatalogCategory("camera_photo", TextR.string.macro_category_camera_photo, TextR.string.macro_category_camera_photo_subtitle, 50)
+    FeaturePickerCategory.CONNECTIVITY ->
+        CatalogCategory("connectivity", TextR.string.macro_category_connectivity, TextR.string.macro_category_connectivity_subtitle, 60)
+    FeaturePickerCategory.DATE_TIME ->
+        CatalogCategory("date_time", TextR.string.macro_category_date_time, TextR.string.macro_category_date_time_subtitle, 70)
+    FeaturePickerCategory.DEVICE_ACTIONS ->
+        CatalogCategory("device_actions", TextR.string.macro_category_device_actions, TextR.string.macro_category_device_actions_subtitle, 80)
+    FeaturePickerCategory.DEVICE_EVENTS ->
+        CatalogCategory("device_events", TextR.string.macro_category_device_events, TextR.string.macro_category_device_events_subtitle, 90)
+    FeaturePickerCategory.DEVICE_SETTINGS ->
+        CatalogCategory("device_settings", TextR.string.macro_category_device_settings, TextR.string.macro_category_device_settings_subtitle, 100)
+    FeaturePickerCategory.DEVICE_STATE ->
+        CatalogCategory("device_state", TextR.string.macro_category_device_state, TextR.string.macro_category_device_state_subtitle, 110)
+    FeaturePickerCategory.FILES ->
+        CatalogCategory("files", TextR.string.macro_category_files, TextR.string.macro_category_files_subtitle, 120)
+    FeaturePickerCategory.LOCATION ->
+        CatalogCategory("location", TextR.string.macro_category_location, TextR.string.macro_category_location_subtitle, 130)
+    FeaturePickerCategory.LOGGING ->
+        CatalogCategory("logging", TextR.string.macro_category_logging, TextR.string.macro_category_logging_subtitle, 140)
+    FeaturePickerCategory.CONDITIONS_LOOPS ->
+        CatalogCategory("conditions_loops", TextR.string.macro_category_conditions_loops, TextR.string.macro_category_conditions_loops_subtitle, 150)
+    FeaturePickerCategory.YAUTO_SPECIFIC ->
+        CatalogCategory("yauto_specific", TextR.string.macro_category_yauto_specific, TextR.string.macro_category_yauto_specific_subtitle, 160)
+    FeaturePickerCategory.MEDIA ->
+        CatalogCategory("media", TextR.string.macro_category_media, TextR.string.macro_category_media_subtitle, 170)
+    FeaturePickerCategory.MESSAGING ->
+        CatalogCategory("messaging", TextR.string.macro_category_messaging, TextR.string.macro_category_messaging_subtitle, 180)
+    FeaturePickerCategory.NOTIFICATIONS ->
+        CatalogCategory("notifications", TextR.string.macro_category_notifications, TextR.string.macro_category_notifications_subtitle, 190)
+    FeaturePickerCategory.PHONE ->
+        CatalogCategory("phone", TextR.string.macro_category_phone, TextR.string.macro_category_phone_subtitle, 200)
+    FeaturePickerCategory.SCREEN ->
+        CatalogCategory("screen", TextR.string.macro_category_screen, TextR.string.macro_category_screen_subtitle, 210)
+    FeaturePickerCategory.SENSORS ->
+        CatalogCategory("sensors", TextR.string.macro_category_sensors, TextR.string.macro_category_sensors_subtitle, 220)
+    FeaturePickerCategory.USER_INPUT ->
+        CatalogCategory("user_input", TextR.string.macro_category_user_input, TextR.string.macro_category_user_input_subtitle, 230)
+    FeaturePickerCategory.VOLUME ->
+        CatalogCategory("volume", TextR.string.macro_category_volume, TextR.string.macro_category_volume_subtitle, 240)
+    FeaturePickerCategory.WEB_INTERACTIONS ->
+        CatalogCategory("web_interactions", TextR.string.macro_category_web_interactions, TextR.string.macro_category_web_interactions_subtitle, 250)
 }
 
 private fun normalizeQuery(value: String): String = value.trim().lowercase(Locale.ROOT)
