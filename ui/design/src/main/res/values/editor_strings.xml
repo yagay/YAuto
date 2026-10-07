@@ -166,8 +166,8 @@
     <string name="feature_family_network_tools_subtitle">DNS, local addresses, UDP send and TCP wait</string>
     <string name="feature_family_system_info">System information</string>
     <string name="feature_family_system_info_subtitle">Memory, uptime, thermal status and locale information</string>
-    <string name="feature_family_communication_actions">Communication</string>
-    <string name="feature_family_communication_actions_subtitle">Dial a number, compose SMS or compose email</string>
+    <string name="feature_family_communication_actions">Messaging</string>
+    <string name="feature_family_communication_actions_subtitle">Compose SMS or email messages</string>
     <string name="feature_family_bluetooth_devices">Bluetooth devices</string>
     <string name="feature_family_bluetooth_devices_subtitle">Discover devices, stop discovery or inspect paired devices</string>
     <string name="feature_family_audio_focus">Audio focus</string>
@@ -214,7 +214,9 @@
     <string name="unified_connectivity_checks">Connectivity devices</string>
     <string name="unified_connectivity_checks_subtitle">Bluetooth, USB, NFC and cellular-service checks</string>
     <string name="unified_audio_checks">Audio state</string>
-    <string name="unified_audio_checks_subtitle">Volume, playback, audio mode, headset, microphone and speakerphone checks</string>
+    <string name="unified_audio_checks_subtitle">Playback, audio mode, headset, microphone and speakerphone checks</string>
+    <string name="unified_volume_checks">Volume state</string>
+    <string name="unified_volume_checks_subtitle">Media volume and ringer-mode checks</string>
     <string name="unified_display_checks">Display state</string>
     <string name="unified_display_checks_subtitle">Screen, brightness, orientation, rotation, timeout and display-mode checks</string>
     <string name="unified_app_checks">App state</string>
