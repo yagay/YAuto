@@ -93,6 +93,8 @@
     <string name="category_yauto_subtitle">Manual triggers, automation control, logging and YAuto-specific features</string>
 
     <string name="feature_picker_family_count_format">%1$s · %2$d options</string>
+    <string name="feature_family_operation">Operation</string>
+    <string name="feature_family_operation_hint">Choose what this feature should do. Only settings for the selected operation are shown.</string>
     <string name="feature_family_stopwatch">Stopwatch</string>
     <string name="feature_family_stopwatch_subtitle">Start, pause, resume, reset or stop a stopwatch</string>
     <string name="feature_family_volume">Volume</string>
