@@ -210,7 +210,9 @@ class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.vibration.cancel"), FeatureKind.ACTION,
                 "Cancel vibration", "Cancel vibration currently controlled by YAuto or another app using the default vibrator",
                 FeatureCategory.DEVICE,
-                keywords = setOf("vibrate", "cancel", "stop", "haptic"), ownerPackId = id,
+                keywords = setOf("vibrate", "cancel", "stop", "haptic"),
+                aliases = setOf("android.vibrate.cancel"),
+                ownerPackId = id,
             )
         ) { _, _ ->
             runCatching { vibrator.cancel(); ActionExecutionResult(true) }
@@ -225,13 +227,17 @@ class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.state.audio.music_active"), FeatureKind.STATE,
                 "Media audio active", "Check whether Android reports active music/media playback",
                 FeatureCategory.AUDIO,
-                fields = listOf(FieldSchema.Toggle("value", "Active")), ownerPackId = id,
+                fields = listOf(FieldSchema.Toggle("value", "Active")),
+                aliases = setOf("android.state.music_active"),
+                ownerPackId = id,
             ),
             FeatureDescriptor(
                 FeatureId("android.condition.audio.music_active"), FeatureKind.CONDITION,
                 "Media audio active", "Check whether Android reports active music/media playback",
                 FeatureCategory.AUDIO,
-                fields = listOf(FieldSchema.Toggle("value", "Active")), ownerPackId = id,
+                fields = listOf(FieldSchema.Toggle("value", "Active")),
+                aliases = setOf("android.condition.music_active"),
+                ownerPackId = id,
             ),
         ) { feature, _ -> audio.isMusicActive == feature.config.boolean("value", true) }
 
@@ -277,12 +283,18 @@ class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
             FeatureDescriptor(
                 FeatureId("android.state.data_saver"), FeatureKind.STATE,
                 "Data saver status", "Match Android background-data restriction status",
-                FeatureCategory.NETWORK, fields = dataSaverFields, ownerPackId = id,
+                FeatureCategory.NETWORK,
+                fields = dataSaverFields,
+                aliases = setOf("android.state.data_saver_status"),
+                ownerPackId = id,
             ),
             FeatureDescriptor(
                 FeatureId("android.condition.data_saver"), FeatureKind.CONDITION,
                 "Data saver status", "Match Android background-data restriction status",
-                FeatureCategory.NETWORK, fields = dataSaverFields, ownerPackId = id,
+                FeatureCategory.NETWORK,
+                fields = dataSaverFields,
+                aliases = setOf("android.condition.data_saver_status"),
+                ownerPackId = id,
             ),
         ) { feature, _ -> dataSaverStatus(connectivity.restrictBackgroundStatus) == feature.config.string("status", "disabled") }
 
