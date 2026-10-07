@@ -351,14 +351,21 @@ private fun FieldEditor(
             allowManualInput = behavior.allowManualInput,
             onValue = onValue,
             onHardwareKeyCaptured = { captured ->
-                if (descriptor.fields.any { it.key == "keyCode" }) {
+                val suffix = when {
+                    field.key.startsWith("keyCode") -> field.key.removePrefix("keyCode")
+                    field.key.startsWith("scanCode") -> field.key.removePrefix("scanCode")
+                    else -> ""
+                }
+                val keyField = "keyCode$suffix"
+                val scanField = "scanCode$suffix"
+                if (descriptor.fields.any { it.key == keyField }) {
                     onRelatedValue(
-                        "keyCode",
+                        keyField,
                         captured.keyCode.takeIf { it > 0 }?.toString().orEmpty(),
                     )
                 }
-                if (captured.scanCode > 0 && descriptor.fields.any { it.key == "scanCode" }) {
-                    onRelatedValue("scanCode", captured.scanCode.toString())
+                if (captured.scanCode > 0 && descriptor.fields.any { it.key == scanField }) {
+                    onRelatedValue(scanField, captured.scanCode.toString())
                 }
             },
         )
