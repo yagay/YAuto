@@ -36,6 +36,32 @@ class FeaturePickerNavigatorTest {
     }
 
     @Test
+    fun `back walks configure through family and category`() {
+        val family = FeaturePickerFamily(
+            spec = FeatureFamilySpec(
+                id = "volume",
+                titleRes = 1,
+                subtitleRes = 2,
+                memberIds = listOf(descriptor.id.value),
+            ),
+            members = emptyList(),
+        )
+        var state = FeaturePickerNavState.initial(null)
+        state = state.push(PickerPage.Features(category))
+        state = state.push(PickerPage.Family(family))
+        state = state.push(PickerPage.Configure(descriptor))
+
+        state = state.pop()!!
+        assertEquals(PickerPage.Family(family), state.current)
+
+        state = state.pop()!!
+        assertEquals(PickerPage.Features(category), state.current)
+
+        state = state.pop()!!
+        assertEquals(PickerPage.Categories, state.current)
+    }
+
+    @Test
     fun `editing existing feature starts above categories root`() {
         val state = FeaturePickerNavState.initial(descriptor)
 
