@@ -168,25 +168,11 @@ class AndroidExtendedStateFeaturePack(private val reader: AndroidExtendedStateRe
     override val id: String = "android.state.extended"
 
     override fun install(registry: FeatureRegistry) {
-        booleanPair(registry, "keyguard_locked", "Keyguard locked", FeatureCategory.DEVICE, reader::keyguardLocked)
-        booleanPair(registry, "music_active", "Music playback active", FeatureCategory.AUDIO, reader::musicActive)
-        booleanPair(registry, "microphone_muted", "Microphone muted", FeatureCategory.AUDIO, reader::microphoneMuted)
-        booleanPair(registry, "speakerphone_on", "Speakerphone enabled", FeatureCategory.AUDIO, reader::speakerphoneOn)
-        booleanPair(registry, "clock_24_hour", "24-hour clock enabled", FeatureCategory.SYSTEM, reader::uses24HourClock)
         booleanPair(registry, "next_alarm_set", "Next alarm is set", FeatureCategory.SYSTEM, reader::nextAlarmSet)
         booleanPair(registry, "network_validated", "Network validated", FeatureCategory.NETWORK, reader::networkValidated)
-        booleanPair(registry, "network_metered", "Metered network", FeatureCategory.NETWORK, reader::networkMetered)
         booleanPair(registry, "network_internet", "Network has internet capability", FeatureCategory.NETWORK, reader::networkInternet)
         booleanPair(registry, "network_restricted", "Restricted network", FeatureCategory.NETWORK, reader::networkRestricted)
         booleanPair(registry, "network_suspended", "Suspended network", FeatureCategory.NETWORK, reader::networkSuspended)
-        choicePair(
-            registry,
-            "ringer_mode",
-            "Ringer mode",
-            FeatureCategory.AUDIO,
-            listOf("normal", "vibrate", "silent", "unknown"),
-            reader::ringerMode,
-        )
         booleanPair(registry, "battery_present", "Battery present", FeatureCategory.DEVICE, reader::batteryPresent)
         choicePair(
             registry,
