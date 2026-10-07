@@ -120,4 +120,10 @@
     <string name="feature_android_event_sms_provider_ready_description">Run after the telephony SMS provider initializes</string>
     <string name="feature_android_event_rendernode_crash_suppressed_title">RenderNode crash suppressed</string>
     <string name="feature_android_event_rendernode_crash_suppressed_description">Run when the ShortX-compatible RenderNode guard suppresses an animator crash</string>
+    <string name="feature_android_condition_ime_visible_title">Input method visible</string>
+    <string name="feature_android_condition_ime_visible_description">Check whether Android currently reports the software input method as shown or requested</string>
+    <string name="feature_android_condition_ime_visible_field_value">Visible</string>
+    <string name="feature_android_state_ime_visible_title">Input method visible</string>
+    <string name="feature_android_state_ime_visible_description">Check whether Android currently reports the software input method as shown or requested</string>
+    <string name="feature_android_state_ime_visible_field_value">Visible</string>
 </resources>
