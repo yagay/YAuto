@@ -108,7 +108,10 @@ class AndroidResourceStateFeaturePack(context: Context) : FeaturePack {
         ) { feature ->
             val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)) ?: return@pair false
             val actual = batteryHealthName(intent.getIntExtra(BatteryManager.EXTRA_HEALTH, BatteryManager.BATTERY_HEALTH_UNKNOWN))
-            actual == feature.config.string("health", "good")
+            val expected = feature.config.string("health", "").ifBlank {
+                feature.config.string("value", "good")
+            }
+            actual == expected
         }
     }
 
