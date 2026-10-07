@@ -43,8 +43,8 @@ class FeaturePickerCatalogModelTest {
         val entries = model.entries(page, favorites = emptySet(), recent = emptyList(), query = "")
 
         assertEquals(1, entries.size)
-        assertTrue(entries.single() is FeaturePickerListEntry.Family)
-        val family = (entries.single() as FeaturePickerListEntry.Family).family
+        assertTrue(entries.single() is FeaturePickerListEntry.Unified)
+        val family = (entries.single() as FeaturePickerListEntry.Unified).group
         assertEquals("volume", family.spec.id)
         assertEquals(
             listOf("android.audio.volume.set", "android.audio.volume.adjust"),
@@ -53,7 +53,7 @@ class FeaturePickerCatalogModelTest {
         assertEquals(1, model.categoryCount("app"))
         assertEquals(
             "volume",
-            model.familyForMember("android.audio.volume.adjust")?.spec?.id,
+            model.groupForMember("android.audio.volume.adjust")?.spec?.id,
         )
 
         val searchEntries = model.entries(page, favorites = emptySet(), recent = emptyList(), query = "adjust")
@@ -84,7 +84,7 @@ class FeaturePickerCatalogModelTest {
         )
 
         assertEquals(1, entries.size)
-        val family = (entries.single() as FeaturePickerListEntry.Family).family
+        val family = (entries.single() as FeaturePickerListEntry.Unified).group
         assertEquals("app_state_control", family.spec.id)
         assertEquals(
             setOf(
@@ -127,8 +127,8 @@ class FeaturePickerCatalogModelTest {
             recent = emptyList(),
             query = "",
         )
-        val families = entries.filterIsInstance<FeaturePickerListEntry.Family>()
-            .associateBy { it.family.spec.id }
+        val families = entries.filterIsInstance<FeaturePickerListEntry.Unified>()
+            .associateBy { it.group.spec.id }
 
         assertEquals(
             setOf("audio_playback", "wifi_tools", "bluetooth_devices", "audio_focus", "input_method"),
@@ -142,12 +142,12 @@ class FeaturePickerCatalogModelTest {
                 "android.audio.stop",
                 "android.audio.seek",
             ),
-            families.getValue("audio_playback").family.members
+            families.getValue("audio_playback").group.members
                 .map { it.descriptor.id.value }
                 .toSet(),
         )
         assertTrue(
-            families.getValue("wifi_tools").family.members
+            families.getValue("wifi_tools").group.members
                 .map { it.descriptor.id.value }
                 .containsAll(listOf("android.wifi.network.connect", "android.wifi.network.disconnect"))
         )
@@ -157,8 +157,8 @@ class FeaturePickerCatalogModelTest {
     fun `family operation restoration prefers existing concrete id then requested operation`() {
         val first = item("android.audio.volume.set", "Set volume", app, "set volume")
         val second = item("android.audio.volume.adjust", "Adjust volume", app, "adjust volume")
-        val family = FeaturePickerFamily(
-            spec = FeatureFamilySpec(
+        val family = UnifiedFeatureGroup(
+            spec = UnifiedFeatureSpec(
                 id = "volume",
                 titleRes = 1,
                 subtitleRes = 2,
@@ -169,7 +169,7 @@ class FeaturePickerCatalogModelTest {
 
         assertEquals(
             "android.audio.volume.adjust",
-            resolveFamilyMemberId(
+            resolveUnifiedMemberId(
                 family,
                 initialTypeId = "android.audio.volume.adjust",
                 requestedMemberId = "android.audio.volume.set",
@@ -177,7 +177,7 @@ class FeaturePickerCatalogModelTest {
         )
         assertEquals(
             "android.audio.volume.adjust",
-            resolveFamilyMemberId(
+            resolveUnifiedMemberId(
                 family,
                 initialTypeId = null,
                 requestedMemberId = "android.audio.volume.adjust",
@@ -185,12 +185,60 @@ class FeaturePickerCatalogModelTest {
         )
         assertEquals(
             "android.audio.volume.set",
-            resolveFamilyMemberId(
+            resolveUnifiedMemberId(
                 family,
                 initialTypeId = null,
                 requestedMemberId = "missing",
             ),
         )
+    }
+
+    @Test
+    fun `event concepts collapse hardware key trigger variants into one entry`() {
+        val model = FeaturePickerCatalogModel.create(
+            listOf(
+                item("android.event.hardware_key", "Hardware key", app, "hardware key", FeatureKind.EVENT),
+                item("android.event.hardware_key_gesture", "Hardware key gesture", app, "hardware key gesture", FeatureKind.EVENT),
+                item("android.event.hardware_key_combo", "Hardware key combo", app, "hardware key combo", FeatureKind.EVENT),
+            ),
+            Comparator.naturalOrder(),
+        )
+
+        val entries = model.entries(
+            PickerPage.Features(app),
+            favorites = emptySet(),
+            recent = emptyList(),
+            query = "",
+        )
+
+        assertEquals(1, entries.size)
+        val group = (entries.single() as FeaturePickerListEntry.Unified).group
+        assertEquals("hardware_key_triggers", group.spec.id)
+        assertEquals(FeatureKind.EVENT, group.members.single().descriptor.kind.takeIf { group.members.all { member -> member.descriptor.kind == it } })
+    }
+
+    @Test
+    fun `condition concepts collapse battery checks without mixing state kind`() {
+        val model = FeaturePickerCatalogModel.create(
+            listOf(
+                item("android.condition.charging", "Charging", app, "charging", FeatureKind.CONDITION),
+                item("android.condition.battery_level", "Battery level", app, "battery level", FeatureKind.CONDITION),
+                item("android.condition.battery_health", "Battery health", app, "battery health", FeatureKind.CONDITION),
+            ),
+            Comparator.naturalOrder(),
+        )
+
+        val entries = model.entries(
+            PickerPage.Features(app),
+            favorites = emptySet(),
+            recent = emptyList(),
+            query = "",
+        )
+
+        assertEquals(1, entries.size)
+        val group = (entries.single() as FeaturePickerListEntry.Unified).group
+        assertEquals("battery_checks", group.spec.id)
+        assertTrue(group.members.all { it.descriptor.kind == FeatureKind.CONDITION })
     }
 
     @Test
@@ -225,10 +273,11 @@ class FeaturePickerCatalogModelTest {
         title: String,
         category: CatalogCategory,
         searchIndex: String,
+        kind: FeatureKind = FeatureKind.ACTION,
     ): FeaturePickerCatalogItem {
         val descriptor = FeatureDescriptor(
             id = FeatureId(id),
-            kind = FeatureKind.ACTION,
+            kind = kind,
             title = title,
             description = title,
             category = if (category.id == "core") FeatureCategory.CORE else FeatureCategory.APP,
