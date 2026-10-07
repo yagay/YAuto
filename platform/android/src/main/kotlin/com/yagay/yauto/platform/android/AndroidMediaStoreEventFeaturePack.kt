@@ -17,51 +17,74 @@ class AndroidMediaStoreEventFeaturePack : FeaturePack {
     override val id: String = "android.media_store_events"
 
     override fun install(registry: FeatureRegistry) {
-        register(registry, "android.event.media_store_inserted", "Media inserted", "Run when MediaStore reports a newly inserted media item")
-        register(registry, "android.event.media_store_updated", "Media updated", "Run when MediaStore reports an updated media item")
-        register(registry, "android.event.media_store_deleted", "Media deleted", "Run when MediaStore reports a deleted media item")
-        register(registry, "android.event.media_store_changed", "MediaStore changed", "Run on any MediaStore content change")
-        convenienceInsert(registry, "android.event.photo_taken", "Photo created", "images")
-        convenienceInsert(registry, "android.event.video_created", "Video created", "video")
-        convenienceInsert(registry, "android.event.audio_created", "Audio created", "audio")
-    }
-
-    private fun convenienceInsert(registry: FeatureRegistry, typeId: String, title: String, collection: String) {
         registry.registerEvent(
             FeatureDescriptor(
-                FeatureId(typeId), FeatureKind.EVENT, title,
-                "Run when MediaStore reports a new $collection item",
-                FeatureCategory.FILE,
-                fields = listOf(FieldSchema.Text("uriContains", "URI contains")),
-                keywords = setOf("media", "photo", "video", "created", "camera"),
-                ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            ctx.event.typeId == "android.event.media_store_inserted" &&
-                ctx.event.payload.string("collection") == collection &&
-                (feature.config.string("uriContains").isBlank() ||
-                    ctx.event.payload.string("uri").contains(feature.config.string("uriContains"), ignoreCase = true))
-        }
-    }
-
-    private fun register(registry: FeatureRegistry, typeId: String, title: String, description: String) {
-        registry.registerEvent(
-            FeatureDescriptor(
-                FeatureId(typeId), FeatureKind.EVENT, title, description,
+                FeatureId("android.event.media_store_changed"),
+                FeatureKind.EVENT,
+                "MediaStore changed",
+                "Run when MediaStore content is inserted, updated, deleted or otherwise changed",
                 FeatureCategory.FILE,
                 fields = listOf(
-                    FieldSchema.Choice("collection", "Collection", true, listOf("any", "images", "video", "audio", "files")),
+                    FieldSchema.Choice(
+                        "changeType",
+                        "Change type",
+                        true,
+                        listOf("any", "inserted", "updated", "deleted", "changed"),
+                    ),
+                    FieldSchema.Choice(
+                        "collection",
+                        "Collection",
+                        true,
+                        listOf("any", "images", "video", "audio", "files"),
+                    ),
                     FieldSchema.Text("uriContains", "URI contains"),
                 ),
-                keywords = setOf("mediastore", "photo", "video", "audio", "insert", "delete", "gallery"),
+                keywords = setOf("mediastore", "photo", "video", "audio", "insert", "update", "delete", "gallery"),
                 ownerPackId = id,
+                aliases = setOf(
+                    "android.event.media_store_inserted",
+                    "android.event.media_store_updated",
+                    "android.event.media_store_deleted",
+                    "android.event.photo_taken",
+                    "android.event.video_created",
+                    "android.event.audio_created",
+                ),
+                aliasConfigDefaults = mapOf(
+                    "android.event.media_store_inserted" to mapOf(
+                        "changeType" to ConfigValue.StringValue("inserted"),
+                    ),
+                    "android.event.media_store_updated" to mapOf(
+                        "changeType" to ConfigValue.StringValue("updated"),
+                    ),
+                    "android.event.media_store_deleted" to mapOf(
+                        "changeType" to ConfigValue.StringValue("deleted"),
+                    ),
+                    "android.event.photo_taken" to mapOf(
+                        "changeType" to ConfigValue.StringValue("inserted"),
+                        "collection" to ConfigValue.StringValue("images"),
+                    ),
+                    "android.event.video_created" to mapOf(
+                        "changeType" to ConfigValue.StringValue("inserted"),
+                        "collection" to ConfigValue.StringValue("video"),
+                    ),
+                    "android.event.audio_created" to mapOf(
+                        "changeType" to ConfigValue.StringValue("inserted"),
+                        "collection" to ConfigValue.StringValue("audio"),
+                    ),
+                ),
             )
         ) { feature, ctx ->
-            if (ctx.event.typeId != typeId) return@registerEvent false
+            if (ctx.event.typeId != "android.event.media_store_changed") return@registerEvent false
+            val wantedType = feature.config.string("changeType", "any")
+            val actualType = ctx.event.payload.string("changeType", "changed")
+            if (wantedType != "any" && wantedType != actualType) return@registerEvent false
+
             val collection = feature.config.string("collection", "any")
             if (collection != "any" && ctx.event.payload.string("collection") != collection) return@registerEvent false
+
             val uriContains = feature.config.string("uriContains")
-            uriContains.isBlank() || ctx.event.payload.string("uri").contains(uriContains, ignoreCase = true)
+            uriContains.isBlank() ||
+                ctx.event.payload.string("uri").contains(uriContains, ignoreCase = true)
         }
     }
 }
@@ -102,10 +125,17 @@ class MediaStoreEventSource(context: Context) : AndroidEventSource {
             flags and ContentResolver.NOTIFY_UPDATE != 0 -> "android.event.media_store_updated"
             else -> "android.event.media_store_changed"
         }
+        val changeType = when (typeId) {
+            "android.event.media_store_inserted" -> "inserted"
+            "android.event.media_store_updated" -> "updated"
+            "android.event.media_store_deleted" -> "deleted"
+            else -> "changed"
+        }
         val payload = mapOf(
             "uri" to ConfigValue.StringValue(uri.toString()),
             "collection" to ConfigValue.StringValue(collection),
             "flags" to ConfigValue.NumberValue(flags.toDouble()),
+            "changeType" to ConfigValue.StringValue(changeType),
         )
         emitter?.emit(RuntimeEvent(typeId = typeId, payload = payload, source = id))
         if (typeId != "android.event.media_store_changed") {
