@@ -46,11 +46,17 @@ class AutomationRuntimeService : Service() {
         if (appGraph == null) { stopSelf(); return }
         graph = appGraph
         workspaceSubscription = appGraph.workspace.addListener { data ->
-            scope.launch { configureAccessibilitySubscriptions(data) }
+            scope.launch {
+                configureAccessibilitySubscriptions(data)
+                configureLsposedSubscriptions(appGraph, data)
+            }
         }
         scope.launch {
             runCatching { appGraph.workspace.load() }
-                .onSuccess(::configureAccessibilitySubscriptions)
+                .onSuccess { data ->
+                    configureAccessibilitySubscriptions(data)
+                    configureLsposedSubscriptions(appGraph, data)
+                }
         }
         val dispatcher = RuntimeEventDispatcher(appGraph, scope)
         registerSource("system-broadcast") { SystemBroadcastEventSource(this) }
@@ -299,6 +305,12 @@ class AutomationRuntimeService : Service() {
     }
 
     override fun onDestroy() { workspaceSubscription?.close(); workspaceSubscription = null; AccessibilityRuntimeBridge.configureUiRuntimeEvents(emptySet()); AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); AccessibilityRuntimeBridge.setFingerprintGestureListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); ModeRuntimeBridge.attach(null); WearRuntimeBridge.attach(null); VendorBridgeRuntime.attach(null); XposedHookRuntimeBridge.attach(null); XposedSystemEventRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
+    private suspend fun configureLsposedSubscriptions(appGraph: AppGraph, workspace: WorkspaceData) {
+        runCatching {
+            appGraph.xposed.setSystemEventSubscriptions(workspace.runtimeEventFeatureIds())
+        }
+    }
+
     private fun configureAccessibilitySubscriptions(workspace: WorkspaceData) {
         val subscribed = buildSet {
             workspace.runtimeEventFeatureIds().forEach { typeId ->
