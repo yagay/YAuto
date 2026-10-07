@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="feature_android_event_hardware_key_title">Hardware key</string>
-    <string name="feature_android_event_hardware_key_description">Run when Accessibility, LSPosed or Root raw input reports a hardware key event</string>
+    <string name="feature_android_event_hardware_key_description">Run when Android reports a physical key event through Accessibility or LSPosed</string>
     <string name="feature_android_event_hardware_key_field_keycode">Android key code</string>
-    <string name="feature_android_event_hardware_key_field_scancode">Linux scan code</string>
     <string name="feature_android_event_hardware_key_field_action">Key action</string>
     <string name="feature_android_event_hardware_key_field_action_option_any">Any</string>
     <string name="feature_android_event_hardware_key_field_action_option_down">Key down</string>
@@ -12,12 +11,11 @@
     <string name="hardware_key_capture_button">Capture physical key</string>
     <string name="hardware_key_capture_waiting_button">Waiting for key…</string>
     <string name="hardware_key_capture_waiting">Press a physical key within 10 seconds</string>
-    <string name="hardware_key_capture_result">KeyCode %1$d, ScanCode %2$d, Device %3$d</string>
-    <string name="hardware_key_capture_timeout">No hardware key event was captured. YAuto tried Accessibility, LSPosed and Root raw input capture.</string>
+    <string name="hardware_key_capture_result">Android KeyCode %1$d</string>
+    <string name="hardware_key_capture_timeout">No Android hardware key event was captured. Make sure Accessibility is enabled or LSPosed system scope is active.</string>
     <string name="feature_android_event_hardware_key_gesture_title">Hardware key gesture</string>
-    <string name="feature_android_event_hardware_key_gesture_description">Run on a single, double, triple or long press derived from the raw hardware-key stream</string>
+    <string name="feature_android_event_hardware_key_gesture_description">Run on a single, double, triple or long press of an Android hardware key</string>
     <string name="feature_android_event_hardware_key_gesture_field_keycode">Android key code</string>
-    <string name="feature_android_event_hardware_key_gesture_field_scancode">Linux scan code</string>
     <string name="feature_android_event_hardware_key_gesture_field_gesture">Key gesture</string>
     <string name="feature_android_event_hardware_key_gesture_field_gesture_option_single_press">Single press</string>
     <string name="feature_android_event_hardware_key_gesture_field_gesture_option_double_press">Double press</string>
@@ -25,9 +23,7 @@
     <string name="feature_android_event_hardware_key_gesture_field_gesture_option_long_press">Long press</string>
     <string name="feature_android_event_hardware_key_gesture_field_longpressms">Long-press threshold</string>
     <string name="feature_android_event_hardware_key_combo_title">Hardware key combination</string>
-    <string name="feature_android_event_hardware_key_combo_description">Run when two physical keys are held together</string>
+    <string name="feature_android_event_hardware_key_combo_description">Run when two Android hardware keys are held together</string>
     <string name="feature_android_event_hardware_key_combo_field_keycode1">First Android key code</string>
-    <string name="feature_android_event_hardware_key_combo_field_scancode1">First Linux scan code</string>
     <string name="feature_android_event_hardware_key_combo_field_keycode2">Second Android key code</string>
-    <string name="feature_android_event_hardware_key_combo_field_scancode2">Second Linux scan code</string>
 </resources>
