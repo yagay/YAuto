@@ -458,13 +458,13 @@ class YAutoXposedModule : XposedModule() {
         val identity = buildString {
             append(spec.id)
             append(':')
-            append(extras["package"].orEmpty())
+            append(extras["package"]?.toString().orEmpty())
             append(':')
-            append(extras["activity"].orEmpty())
+            append(extras["activity"]?.toString().orEmpty())
             append(':')
-            append(extras["processName"].orEmpty())
+            append(extras["processName"]?.toString().orEmpty())
             append(':')
-            append(extras["state"].orEmpty())
+            append(extras["state"]?.toString().orEmpty())
         }
         emitSystemRuntimeEvent(
             context = context,
