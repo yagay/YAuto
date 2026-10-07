@@ -33,6 +33,7 @@ class YAutoXposedModule : XposedModule() {
     private val hardwareKeyCaptureUntilElapsed = AtomicLong(0L)
     private val subscribedSystemEvents = AtomicReference<Set<String>>(emptySet())
     private val enabledShortXBehaviors = AtomicReference<Set<String>>(emptySet())
+    private val enabledPackageBehaviors = AtomicReference<Set<String>>(emptySet())
     private val yAutoUid = AtomicLong(-1L)
 
     override fun onSystemServerStarting(param: SystemServerStartingParam) {
@@ -1403,7 +1404,22 @@ class YAutoXposedModule : XposedModule() {
                 val response = Bundle().apply { putInt("version", SystemBridgeProtocol.VERSION) }
                 try {
                     require(intent.getIntExtra("version", -1) == SystemBridgeProtocol.VERSION) { "Protocol mismatch" }
-                    require(intent.getStringExtra("operation") == SystemBridgeProtocol.HOOK_INSTALL_SESSION) { "Unsupported hook operation" }
+                    val operation = intent.getStringExtra("operation").orEmpty()
+                    if (operation == SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_SET) {
+                        val behavior = intent.getStringExtra("behavior").orEmpty()
+                        require(
+                            behavior == SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_RENDERNODE_GUARD
+                        ) { "Unsupported package behavior" }
+                        installShortXRenderNodeGuard(classLoader)
+                        val enabled = intent.getBooleanExtra("enabled", false)
+                        enabledPackageBehaviors.updateAndGet { current ->
+                            if (enabled) current + behavior else current - behavior
+                        }
+                        response.putBoolean("success", true)
+                        response.putString("behavior", behavior)
+                        response.putBoolean("enabled", enabled)
+                    } else {
+                    require(operation == SystemBridgeProtocol.HOOK_INSTALL_SESSION) { "Unsupported hook operation" }
                     val sessionId = intent.getStringExtra("sessionId").orEmpty().trim()
                     val eventToken = intent.getStringExtra("eventToken").orEmpty()
                     val className = intent.getStringExtra("className").orEmpty().trim()
@@ -1446,6 +1462,7 @@ class YAutoXposedModule : XposedModule() {
                     }
                     response.putBoolean("success", true)
                     response.putInt("hookedCount", hookedCount)
+                    }
                 } catch (error: Exception) {
                     response.putBoolean("success", false)
                     response.putString("error", error.cause?.message ?: error.message)
@@ -1467,6 +1484,37 @@ class YAutoXposedModule : XposedModule() {
             appReceivers.remove(receiverKey)
             log(Log.ERROR, "YAuto", "App hook bridge registration failed for $receiverKey", error)
         }
+    }
+
+    private fun installShortXRenderNodeGuard(classLoader: ClassLoader) {
+        val clazz = runCatching { classLoader.loadClass("android.graphics.RenderNode") }.getOrNull() ?: return
+        clazz.declaredMethods
+            .filter { it.name == "addAnimator" && it.returnType == Void.TYPE }
+            .forEach { method ->
+                val key = "shortx-rendernode-guard|" + method.toGenericString()
+                if (!installedHooks.add(key)) return@forEach
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    if (
+                        SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_RENDERNODE_GUARD !in
+                        enabledPackageBehaviors.get()
+                    ) {
+                        chain.proceed()
+                    } else {
+                        try {
+                            chain.proceed()
+                        } catch (error: RuntimeException) {
+                            log(
+                                Log.WARN,
+                                "YAuto",
+                                "ShortX-compatible RenderNode.addAnimator crash suppressed",
+                                error,
+                            )
+                            null
+                        }
+                    }
+                }
+            }
     }
 
     private fun installMethodHook(
