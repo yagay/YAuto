@@ -112,4 +112,12 @@
     <string name="feature_android_event_accessibility_windows_queried_description">无障碍服务连接请求窗口列表时触发</string>
     <string name="feature_android_event_accessibility_ui_automation_checked_title">无障碍 UI 自动化检查</string>
     <string name="feature_android_event_accessibility_ui_automation_checked_description">UiAutomationManager 检查交互窗口访问或服务抑制状态时触发</string>
+    <string name="feature_android_event_accessibility_user_state_created_title">无障碍用户状态创建</string>
+    <string name="feature_android_event_accessibility_user_state_created_description">Android 创建 AccessibilityUserState 实例时触发</string>
+    <string name="feature_android_event_media_provider_ready_title">媒体 Provider 就绪</string>
+    <string name="feature_android_event_media_provider_ready_description">MediaProvider 初始化完成后触发</string>
+    <string name="feature_android_event_sms_provider_ready_title">短信 Provider 就绪</string>
+    <string name="feature_android_event_sms_provider_ready_description">短信 Provider 初始化完成后触发</string>
+    <string name="feature_android_event_rendernode_crash_suppressed_title">RenderNode 崩溃已拦截</string>
+    <string name="feature_android_event_rendernode_crash_suppressed_description">ShortX 兼容 RenderNode 防崩 Hook 拦截动画器崩溃时触发</string>
 </resources>
