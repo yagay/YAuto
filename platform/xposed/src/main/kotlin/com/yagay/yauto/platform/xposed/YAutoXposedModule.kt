@@ -1471,7 +1471,7 @@ class YAutoXposedModule : XposedModule() {
                         require(
                             behavior == SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_RENDERNODE_GUARD
                         ) { "Unsupported package behavior" }
-                        installShortXRenderNodeGuard(classLoader)
+                        installShortXRenderNodeGuard(context, packageName, classLoader)
                         val enabled = intent.getBooleanExtra("enabled", false)
                         enabledPackageBehaviors.updateAndGet { current ->
                             if (enabled) current + behavior else current - behavior
@@ -1547,7 +1547,11 @@ class YAutoXposedModule : XposedModule() {
         }
     }
 
-    private fun installShortXRenderNodeGuard(classLoader: ClassLoader) {
+    private fun installShortXRenderNodeGuard(
+        context: Context,
+        packageName: String,
+        classLoader: ClassLoader,
+    ) {
         val clazz = runCatching { classLoader.loadClass("android.graphics.RenderNode") }.getOrNull() ?: return
         clazz.declaredMethods
             .filter { it.name == "addAnimator" && it.returnType == Void.TYPE }
@@ -1570,6 +1574,16 @@ class YAutoXposedModule : XposedModule() {
                                 "YAuto",
                                 "ShortX-compatible RenderNode.addAnimator crash suppressed",
                                 error,
+                            )
+                            emitPackageRuntimeEvent(
+                                context,
+                                "android.event.rendernode_crash_suppressed",
+                                mapOf(
+                                    "package" to packageName,
+                                    "exceptionClass" to error.javaClass.name,
+                                    "message" to error.message.orEmpty().take(1024),
+                                    "method" to method.name,
+                                ),
                             )
                             null
                         }
