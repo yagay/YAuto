@@ -43,6 +43,24 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
     override suspend fun isAvailable(environment: RuntimeEnvironment): Boolean =
         requestSystem(SystemBridgeProtocol.PING)?.getBoolean("success") == true
 
+    suspend fun setSystemEventSubscriptions(eventTypes: Set<String>): Boolean {
+        val safe = eventTypes
+            .asSequence()
+            .map(String::trim)
+            .filter { it.startsWith("android.event.") }
+            .distinct()
+            .take(256)
+            .toCollection(ArrayList())
+        val result = orderedRequest(
+            Intent(SystemBridgeProtocol.ACTION)
+                .setPackage("android")
+                .putExtra("version", protocolVersion)
+                .putExtra("operation", SystemBridgeProtocol.SYSTEM_EVENT_SUBSCRIPTIONS_SET)
+                .putStringArrayListExtra("eventTypes", safe)
+        ).also { connected = it != null }
+        return result?.getBoolean("success") == true
+    }
+
     suspend fun beginHardwareKeyCapture(timeoutMs: Long): Boolean {
         val result = orderedRequest(
             Intent(SystemBridgeProtocol.ACTION)
