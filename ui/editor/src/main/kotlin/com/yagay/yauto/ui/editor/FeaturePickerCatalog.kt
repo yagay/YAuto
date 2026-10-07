@@ -141,7 +141,7 @@ internal fun FeatureListPage(
     recent: List<String>,
     onQuery: (String) -> Unit,
     onFeature: (FeatureDescriptor) -> Unit,
-    onFamily: (FeaturePickerFamily) -> Unit,
+    onUnified: (UnifiedFeatureGroup) -> Unit,
     onFavorite: (String) -> Unit,
 ) {
     val availability = LocalFeatureAvailability.current
@@ -181,13 +181,13 @@ internal fun FeatureListPage(
             key = {
                 when (it) {
                     is FeaturePickerListEntry.Feature -> "feature:" + it.item.descriptor.id.value
-                    is FeaturePickerListEntry.Family -> "family:" + it.family.spec.id
+                    is FeaturePickerListEntry.Unified -> "unified:" + it.group.spec.id
                 }
             },
             contentType = {
                 when (it) {
                     is FeaturePickerListEntry.Feature -> "feature"
-                    is FeaturePickerListEntry.Family -> "family"
+                    is FeaturePickerListEntry.Unified -> "unified"
                 }
             },
         ) { entry ->
@@ -205,9 +205,9 @@ internal fun FeatureListPage(
                         accessTags = featureAccessTags(item.descriptor),
                     )
                 }
-                is FeaturePickerListEntry.Family -> FeatureFamilyRow(
-                    family = entry.family,
-                    onClick = { onFamily(entry.family) },
+                is FeaturePickerListEntry.Unified -> UnifiedFeatureRow(
+                    group = entry.group,
+                    onClick = { onUnified(entry.group) },
                 )
             }
         }
@@ -215,14 +215,14 @@ internal fun FeatureListPage(
 }
 
 @Composable
-private fun FeatureFamilyRow(
-    family: FeaturePickerFamily,
+private fun UnifiedFeatureRow(
+    group: UnifiedFeatureGroup,
     onClick: () -> Unit,
 ) {
     ListItem(
         headlineContent = {
             Text(
-                text = stringResource(family.spec.titleRes),
+                text = stringResource(group.spec.titleRes),
                 fontWeight = FontWeight.Medium,
             )
         },
@@ -230,8 +230,8 @@ private fun FeatureFamilyRow(
             Text(
                 stringResource(
                     TextR.string.feature_picker_family_count_format,
-                    stringResource(family.spec.subtitleRes),
-                    family.members.size,
+                    stringResource(group.spec.subtitleRes),
+                    group.members.size,
                 )
             )
         },
