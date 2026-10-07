@@ -91,12 +91,6 @@ private val FEATURE_FAMILY_SPECS = listOf(
         listOf("android.alarm.set", "android.timer.set"),
     ),
     FeatureFamilySpec(
-        "android_settings",
-        TextR.string.feature_family_android_settings,
-        TextR.string.feature_family_android_settings_subtitle,
-        listOf("android.settings.open", "android.settings.page.open"),
-    ),
-    FeatureFamilySpec(
         "matter",
         TextR.string.feature_family_matter,
         TextR.string.feature_family_matter_subtitle,
@@ -129,7 +123,6 @@ private val FEATURE_FAMILY_SPECS = listOf(
         listOf(
             "android.clipboard.read",
             "android.clipboard.write",
-            "android.clipboard.get",
             "android.clipboard.clear",
         ),
     ),
@@ -141,7 +134,6 @@ private val FEATURE_FAMILY_SPECS = listOf(
             "android.vibration.vibrate",
             "android.vibration.pattern",
             "android.vibration.cancel",
-            "android.vibrate.cancel",
         ),
     ),
     FeatureFamilySpec(
@@ -164,6 +156,8 @@ private val FEATURE_FAMILY_SPECS = listOf(
             "android.wifi.connection.info",
             "android.wifi.scan.start",
             "android.wifi.scan.results",
+            "android.wifi.network.connect",
+            "android.wifi.network.disconnect",
         ),
     ),
     FeatureFamilySpec(
@@ -177,11 +171,24 @@ private val FEATURE_FAMILY_SPECS = listOf(
         ),
     ),
     FeatureFamilySpec(
+        "bluetooth_devices",
+        TextR.string.feature_family_bluetooth_devices,
+        TextR.string.feature_family_bluetooth_devices_subtitle,
+        listOf(
+            "android.bluetooth.discovery.start",
+            "android.bluetooth.discovery.stop",
+            "android.bluetooth.paired.query",
+        ),
+    ),
+    FeatureFamilySpec(
         "audio_playback",
         TextR.string.feature_family_audio_playback,
         TextR.string.feature_family_audio_playback_subtitle,
         listOf(
             "android.audio.play",
+            "android.audio.pause",
+            "android.audio.resume",
+            "android.audio.stop",
             "android.audio.seek",
             "android.audio.playback_volume.set",
             "android.audio.playback_info",
@@ -195,6 +202,15 @@ private val FEATURE_FAMILY_SPECS = listOf(
             "android.audio.ringer_mode.set",
             "android.audio.microphone_mute.set",
             "android.audio.speakerphone.set",
+        ),
+    ),
+    FeatureFamilySpec(
+        "audio_focus",
+        TextR.string.feature_family_audio_focus,
+        TextR.string.feature_family_audio_focus_subtitle,
+        listOf(
+            "android.audio.focus.request",
+            "android.audio.focus.abandon",
         ),
     ),
     FeatureFamilySpec(
@@ -237,6 +253,44 @@ private val FEATURE_FAMILY_SPECS = listOf(
             "android.app.details.open",
             "android.app.package_info",
             "android.app.installed.list",
+        ),
+    ),
+    FeatureFamilySpec(
+        "app_maintenance",
+        TextR.string.feature_family_app_maintenance,
+        TextR.string.feature_family_app_maintenance_subtitle,
+        listOf(
+            "android.app.data.clear",
+            "android.app.permission.set",
+        ),
+    ),
+    FeatureFamilySpec(
+        "input_method",
+        TextR.string.feature_family_input_method,
+        TextR.string.feature_family_input_method_subtitle,
+        listOf(
+            "android.ime.picker.show",
+            "android.ime.default.set",
+            "android.ime.settings.open",
+        ),
+    ),
+    FeatureFamilySpec(
+        "screen_saver",
+        TextR.string.feature_family_screen_saver,
+        TextR.string.feature_family_screen_saver_subtitle,
+        listOf(
+            "android.display.dream.start",
+            "android.display.dream.stop",
+        ),
+    ),
+    FeatureFamilySpec(
+        "display_system_controls",
+        TextR.string.feature_family_display_system_controls,
+        TextR.string.feature_family_display_system_controls_subtitle,
+        listOf(
+            "android.display.immersive.set",
+            "android.display.color_inversion.set",
+            "android.display.ambient_display.set",
         ),
     ),
     FeatureFamilySpec(
