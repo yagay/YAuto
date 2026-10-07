@@ -555,9 +555,6 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         listOf(
             "android.event.wifi_changed",
             "android.event.wifi_scan_results",
-            "android.event.wifi_state_changed",
-            "android.event.wifi_network_state_changed",
-            "android.event.wifi_rssi_changed",
             "android.event.wifi_supplicant_state_changed",
             "android.event.wifi_supplicant_connection_changed",
         ),
@@ -568,12 +565,6 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         TextR.string.unified_battery_triggers_subtitle,
         listOf(
             "android.event.battery_changed",
-            "android.event.battery_power_source_filtered",
-            "android.event.battery_status_filtered",
-            "android.event.battery_health_filtered",
-            "android.event.battery_present_filtered",
-            "android.event.battery_voltage_filtered",
-            "android.event.battery_profile_filtered",
             "android.event.power_connected",
             "android.event.power_disconnected",
             "android.event.battery_low",
