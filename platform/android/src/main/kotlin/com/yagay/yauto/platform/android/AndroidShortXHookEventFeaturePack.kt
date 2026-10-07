@@ -40,6 +40,8 @@ class AndroidShortXHookEventFeaturePack : FeaturePack {
         event(registry, "android.event.systemui_status_bar_ready", "SystemUI status bar ready", "Run when the status-bar view finishes inflation", FeatureCategory.SYSTEM)
         event(registry, "android.event.input_text_committed", "Input text committed", "Run when a hooked input connection commits text", FeatureCategory.UI_AUTOMATION)
         event(registry, "android.event.sms_provider_changed", "SMS provider changed", "Run when the telephony SMS provider inserts, updates or deletes rows", FeatureCategory.COMMUNICATION)
+        event(registry, "android.event.nfc_tag_system", "NFC tag from system service", "Run when the NFC service dispatches a tag endpoint before app routing", FeatureCategory.DEVICE)
+        event(registry, "android.event.media_provider_changed", "Media provider changed", "Run when the MediaProvider inserts, updates or deletes content", FeatureCategory.FILE)
     }
 
     private fun event(
