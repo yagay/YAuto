@@ -5,9 +5,11 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Binder
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.content.pm.PackageManager
 import android.os.SystemClock
 import android.util.Log
 import android.view.InputEvent
@@ -30,6 +32,8 @@ class YAutoXposedModule : XposedModule() {
     private val hardwareKeyEventDedup = ConcurrentHashMap<String, Long>()
     private val hardwareKeyCaptureUntilElapsed = AtomicLong(0L)
     private val subscribedSystemEvents = AtomicReference<Set<String>>(emptySet())
+    private val enabledShortXBehaviors = AtomicReference<Set<String>>(emptySet())
+    private val yAutoUid = AtomicLong(-1L)
 
     override fun onSystemServerStarting(param: SystemServerStartingParam) {
         try {
@@ -80,6 +84,20 @@ class YAutoXposedModule : XposedModule() {
                     require(intent.getIntExtra("version", -1) == SystemBridgeProtocol.VERSION) { "Protocol mismatch" }
                     when (intent.getStringExtra("operation")) {
                         SystemBridgeProtocol.PING -> Unit
+                        SystemBridgeProtocol.SHORTX_BEHAVIOR_SET -> {
+                            val behavior = intent.getStringExtra("behavior").orEmpty()
+                            require(behavior in setOf(
+                                SystemBridgeProtocol.SHORTX_BEHAVIOR_ACCESSIBILITY,
+                                SystemBridgeProtocol.SHORTX_BEHAVIOR_CLIPBOARD,
+                                SystemBridgeProtocol.SHORTX_BEHAVIOR_PERMISSION,
+                            )) { "Unsupported ShortX behavior" }
+                            val enabled = intent.getBooleanExtra("enabled", false)
+                            enabledShortXBehaviors.updateAndGet { current ->
+                                if (enabled) current + behavior else current - behavior
+                            }
+                            response.putString("behavior", behavior)
+                            response.putBoolean("enabled", enabled)
+                        }
                         SystemBridgeProtocol.SYSTEM_EVENT_SUBSCRIPTIONS_SET -> {
                             val values = intent.getStringArrayListExtra("eventTypes").orEmpty()
                                 .asSequence()
@@ -205,6 +223,7 @@ class YAutoXposedModule : XposedModule() {
         installAssistantHooks(context, classLoader)
         installShortXInputHooks(context, classLoader)
         installShortXObserverHooks(context, classLoader)
+        installShortXBehaviorHooks(context, classLoader)
     }
 
     private fun installProcessDeathHooks(context: Context, classLoader: ClassLoader) {
@@ -338,6 +357,124 @@ class YAutoXposedModule : XposedModule() {
             }
     }
 
+
+    private fun installShortXBehaviorHooks(context: Context, classLoader: ClassLoader) {
+        installShortXAccessibilityBehaviorHooks(context, classLoader)
+        installShortXClipboardBehaviorHooks(context, classLoader)
+        installShortXPermissionBehaviorHook(context, classLoader)
+    }
+
+    private fun installShortXAccessibilityBehaviorHooks(context: Context, classLoader: ClassLoader) {
+        val targets = listOf(
+            Triple(
+                "com.android.server.accessibility.AccessibilitySecurityPolicy",
+                setOf("checkAccessibilityAccess", "canRetrieveWindowsLocked"),
+                true,
+            ),
+            Triple(
+                "com.android.server.accessibility.UiAutomationManager",
+                setOf("canRetrieveInteractiveWindowsLocked"),
+                true,
+            ),
+            Triple(
+                "com.android.server.accessibility.AccessibilityUserState",
+                setOf("suppressingAccessibilityServicesLocked"),
+                false,
+            ),
+        )
+        targets.forEach { (className, methodNames, replacement) ->
+            val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
+            clazz.declaredMethods
+                .filter { method ->
+                    method.name in methodNames &&
+                        (method.returnType == Boolean::class.javaPrimitiveType ||
+                            method.returnType == java.lang.Boolean::class.java)
+                }
+                .forEach { method ->
+                    val key = "shortx-behavior-accessibility|" + method.toGenericString()
+                    if (!installedHooks.add(key)) return@forEach
+                    method.isAccessible = true
+                    hook(method).intercept { chain ->
+                        if (
+                            SystemBridgeProtocol.SHORTX_BEHAVIOR_ACCESSIBILITY in enabledShortXBehaviors.get() &&
+                            isYAutoCaller(context)
+                        ) {
+                            replacement
+                        } else {
+                            chain.proceed()
+                        }
+                    }
+                }
+        }
+    }
+
+    private fun installShortXClipboardBehaviorHooks(context: Context, classLoader: ClassLoader) {
+        val clazz = runCatching {
+            classLoader.loadClass("com.android.server.clipboard.ClipboardService")
+        }.getOrNull() ?: return
+        clazz.declaredMethods
+            .filter { method ->
+                method.name == "clipboardAccessAllowed" &&
+                    (method.returnType == Boolean::class.javaPrimitiveType ||
+                        method.returnType == java.lang.Boolean::class.java)
+            }
+            .forEach { method ->
+                val key = "shortx-behavior-clipboard|" + method.toGenericString()
+                if (!installedHooks.add(key)) return@forEach
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    if (
+                        SystemBridgeProtocol.SHORTX_BEHAVIOR_CLIPBOARD in enabledShortXBehaviors.get() &&
+                        isYAutoCaller(context)
+                    ) {
+                        true
+                    } else {
+                        chain.proceed()
+                    }
+                }
+            }
+    }
+
+    private fun installShortXPermissionBehaviorHook(context: Context, classLoader: ClassLoader) {
+        val clazz = runCatching { classLoader.loadClass("android.app.ContextImpl") }.getOrNull() ?: return
+        clazz.declaredMethods
+            .filter { method ->
+                method.name == "checkCallingPermission" &&
+                    method.returnType == Int::class.javaPrimitiveType &&
+                    method.parameterTypes.firstOrNull() == String::class.java
+            }
+            .forEach { method ->
+                val key = "shortx-behavior-permission|" + method.toGenericString()
+                if (!installedHooks.add(key)) return@forEach
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    val permission = chain.args.firstOrNull() as? String
+                    if (
+                        SystemBridgeProtocol.SHORTX_BEHAVIOR_PERMISSION in enabledShortXBehaviors.get() &&
+                        isYAutoCaller(context) &&
+                        permission in SHORTX_PERMISSION_ALLOWLIST
+                    ) {
+                        PackageManager.PERMISSION_GRANTED
+                    } else {
+                        chain.proceed()
+                    }
+                }
+            }
+    }
+
+    private fun isYAutoCaller(context: Context): Boolean {
+        val cached = yAutoUid.get()
+        val uid = if (cached >= 0L) {
+            cached.toInt()
+        } else {
+            val resolved = runCatching {
+                context.packageManager.getApplicationInfo(YAUTO_PACKAGE, 0).uid
+            }.getOrDefault(-1)
+            if (resolved >= 0) yAutoUid.compareAndSet(-1L, resolved.toLong())
+            resolved
+        }
+        return uid >= 0 && Binder.getCallingUid() == uid
+    }
 
     private fun installShortXObserverHooks(context: Context, classLoader: ClassLoader) {
         ShortXCompatHookCatalog.systemServerObservers.forEach { spec ->
@@ -1252,5 +1389,11 @@ class YAutoXposedModule : XposedModule() {
         const val YAUTO_PACKAGE = "com.yagay.yauto"
         val CLASS_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]*(?:\\.[A-Za-z_$][A-Za-z0-9_$]*)+")
         val METHOD_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]{0,127}")
+        val SHORTX_PERMISSION_ALLOWLIST = setOf(
+            "android.permission.MANAGE_MEDIA_PROJECTION",
+            "android.permission.CAPTURE_VOICE_COMMUNICATION_OUTPUT",
+            "android.permission.WRITE_SECURE_SETTINGS",
+            "android.permission.READ_CLIPBOARD_IN_BACKGROUND",
+        )
     }
 }
