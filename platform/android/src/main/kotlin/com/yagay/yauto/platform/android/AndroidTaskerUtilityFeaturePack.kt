@@ -51,7 +51,6 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
         registerStorageVolumes(registry)
         registerLocationDistance(registry)
         registerMockLocation(registry)
-        registerVibrationCancel(registry)
         registerFileToContentUri(registry)
         registerDeviceName(registry)
     }
@@ -333,28 +332,6 @@ class AndroidTaskerUtilityFeaturePack(context: Context) : FeaturePack {
                 )
             }
             ActionExecutionResult(result, ConfigValue.BooleanValue(result))
-        }
-    }
-
-    private fun registerVibrationCancel(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.vibrate.cancel"),
-                FeatureKind.ACTION,
-                "Stop vibration",
-                "Cancel active vibration started through Android's vibrator service",
-                FeatureCategory.DEVICE,
-                keywords = setOf("stop vibrate", "cancel vibration", "tasker"),
-                ownerPackId = id,
-            )
-        ) { _, _ ->
-            runCatching {
-                val manager = context.getSystemService(android.os.VibratorManager::class.java)
-                manager.cancel()
-                ActionExecutionResult(true)
-            }.getOrElse {
-                ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName))
-            }
         }
     }
 
