@@ -31,18 +31,27 @@ class DeviceHardwareKeyCatalog(
     suspend fun captureRawKey(timeoutMs: Long): HardwareKeyCaptureResult? {
         if (!rootShell.isAvailable()) return null
         val boundedTimeout = timeoutMs.coerceIn(1_000L, 60_000L)
-        val output = rootShell.run(RAW_KEY_CAPTURE_COMMAND, boundedTimeout + 1_000L)
-        val line = output.stdout.lineSequence()
-            .firstOrNull { RAW_KEY_EVENT.containsMatchIn(it) }
-            ?: return null
-        val match = RAW_KEY_EVENT.find(line) ?: return null
-        val scanCode = match.groupValues[1].toIntOrNull(16) ?: return null
-        val keyCode = resolveAndroidKeyCode(scanCode)
+        val output = rootShell.run(RAW_KEY_CAPTURE_COMMAND, boundedTimeout + 1_500L)
+        val lines = output.stdout.lineSequence().toList()
+        val keyLine = lines.lastOrNull { RAW_KEY_EVENT.containsMatchIn(it) } ?: return null
+        val keyMatch = RAW_KEY_EVENT.find(keyLine) ?: return null
+        val linuxEvKey = keyMatch.groupValues[1].toIntOrNull(16) ?: return null
+        val mscScan = lines
+            .asReversed()
+            .asSequence()
+            .mapNotNull { RAW_MSC_SCAN.find(it)?.groupValues?.getOrNull(1)?.toLongOrNull(16) }
+            .firstOrNull() ?: 0L
+        val devicePath = RAW_DEVICE_PATH.find(keyLine)?.groupValues?.getOrNull(1).orEmpty()
+        val keyCode = resolveAndroidKeyCode(linuxEvKey)
         return HardwareKeyCaptureResult(
             keyCode = keyCode,
-            scanCode = scanCode,
+            scanCode = 0,
             deviceId = -1,
             action = KeyEvent.ACTION_DOWN,
+            linuxEvKey = linuxEvKey,
+            mscScan = mscScan,
+            deviceDescriptor = devicePath,
+            sources = setOf("root.input"),
         )
     }
 
@@ -214,8 +223,10 @@ class DeviceHardwareKeyCatalog(
         private val KEY_SECTION = Regex("KEY\\s*\\(0001\\)", RegexOption.IGNORE_CASE)
         private val EVENT_SECTION = Regex("[A-Z_]+\\s*\\([0-9a-fA-F]{4}\\)")
         private val RAW_KEY_EVENT = Regex(":\\s+0001\\s+([0-9a-fA-F]{4})\\s+00000001")
+        private val RAW_MSC_SCAN = Regex(":\\s+0004\\s+0004\\s+([0-9a-fA-F]{8})")
+        private val RAW_DEVICE_PATH = Regex("(/dev/input/event\\d+):")
         private const val RAW_KEY_CAPTURE_COMMAND =
-            "getevent -t 2>/dev/null | grep -m 1 -E ': 0001 [0-9a-fA-F]{4} 00000001'"
+            "getevent -t 2>/dev/null | grep -m 1 -B 3 -E ': 0001 [0-9a-fA-F]{4} 00000001'"
 
         private const val KEY_LAYOUT_COMMAND =
             "grep -H -E '^[[:space:]]*key[[:space:]]+' " +
