@@ -39,6 +39,7 @@ class AndroidShortXHookEventFeaturePack : FeaturePack {
         event(registry, "android.event.systemui_tile_discovered", "SystemUI tile discovered", "Run when the Quick Settings customizer discovers a tile", FeatureCategory.SYSTEM)
         event(registry, "android.event.systemui_status_bar_ready", "SystemUI status bar ready", "Run when the status-bar view finishes inflation", FeatureCategory.SYSTEM)
         event(registry, "android.event.input_text_committed", "Input text committed", "Run when a hooked input connection commits text", FeatureCategory.UI_AUTOMATION)
+        event(registry, "android.event.sms_provider_changed", "SMS provider changed", "Run when the telephony SMS provider inserts, updates or deletes rows", FeatureCategory.COMMUNICATION)
     }
 
     private fun event(
