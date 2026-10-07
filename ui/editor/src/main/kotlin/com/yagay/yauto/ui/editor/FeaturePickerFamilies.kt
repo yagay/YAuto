@@ -374,6 +374,14 @@ internal data class FeatureFamilyIndex(
 )
 
 internal fun buildFeatureFamilyIndex(items: List<FeaturePickerCatalogItem>): FeatureFamilyIndex {
+    val duplicateMemberIds = FEATURE_FAMILY_SPECS
+        .flatMap { spec -> spec.memberIds.map { memberId -> memberId to spec.id } }
+        .groupBy({ it.first }, { it.second })
+        .filterValues { familyIds -> familyIds.distinct().size > 1 }
+    check(duplicateMemberIds.isEmpty()) {
+        "Feature picker family member belongs to multiple families: $duplicateMemberIds"
+    }
+
     val byFeatureId = items.associateBy { it.descriptor.id.value }
     val families = FEATURE_FAMILY_SPECS.mapNotNull { spec ->
         val members = spec.memberIds.mapNotNull(byFeatureId::get)
