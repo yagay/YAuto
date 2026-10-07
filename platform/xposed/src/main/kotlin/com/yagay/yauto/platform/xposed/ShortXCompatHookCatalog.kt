@@ -34,6 +34,16 @@ internal data class ShortXObserverHookSpec(
 internal object ShortXCompatHookCatalog {
     val systemServerObservers: List<ShortXObserverHookSpec> = listOf(
         ShortXObserverHookSpec(
+            id = "ams-start",
+            classNames = listOf(
+                "com.android.server.am.ActivityManagerService",
+                "com.android.server.am.ActivityManagerService\$Lifecycle",
+            ),
+            methodNames = setOf("start", "onStart"),
+            eventType = "android.event.activity_manager_started",
+            after = true,
+        ),
+        ShortXObserverHookSpec(
             id = "ams-system-ready",
             classNames = listOf("com.android.server.am.ActivityManagerService"),
             methodNames = setOf("systemReady"),
@@ -77,6 +87,17 @@ internal object ShortXCompatHookCatalog {
             ),
             methodNames = setOf("activityResumedLocked", "activityResumed"),
             eventType = "android.event.activity_resumed",
+            payloadKind = ShortXHookPayloadKind.ACTIVITY,
+            after = true,
+        ),
+        ShortXObserverHookSpec(
+            id = "activity-state",
+            classNames = listOf(
+                "com.android.server.wm.ActivityRecord",
+                "com.android.server.am.ActivityRecord",
+            ),
+            methodNames = setOf("setState"),
+            eventType = "android.event.activity_state_changed",
             payloadKind = ShortXHookPayloadKind.ACTIVITY,
             after = true,
         ),
@@ -205,6 +226,17 @@ internal object ShortXCompatHookCatalog {
             after = true,
         ),
         ShortXObserverHookSpec(
+            id = "shortcut-query",
+            classNames = listOf(
+                "com.android.server.pm.ShortcutService",
+                "com.android.server.pm.LauncherAppsService\$LauncherAppsImpl",
+            ),
+            methodNames = setOf("getShortcuts"),
+            eventType = "android.event.shortcut_query",
+            payloadKind = ShortXHookPayloadKind.SHORTCUT,
+            after = true,
+        ),
+        ShortXObserverHookSpec(
             id = "shortcut-pin",
             classNames = listOf("com.android.server.pm.ShortcutService"),
             methodNames = setOf("requestPinItem"),
@@ -220,6 +252,23 @@ internal object ShortXCompatHookCatalog {
             methodNames = setOf("startShortcut"),
             eventType = "android.event.shortcut_started",
             payloadKind = ShortXHookPayloadKind.SHORTCUT,
+        ),
+        ShortXObserverHookSpec(
+            id = "task-back-pressed",
+            classNames = listOf(
+                "com.android.server.wm.TaskOrganizerController",
+                "com.android.server.wm.ActivityClientController",
+            ),
+            methodNames = setOf("handleInterceptBackPressedOnTaskRoot", "onBackPressed"),
+            eventType = "android.event.back_pressed_system",
+            payloadKind = ShortXHookPayloadKind.BACK_PRESS,
+        ),
+        ShortXObserverHookSpec(
+            id = "package-query",
+            classNames = listOf("com.android.server.pm.ComputerEngine"),
+            methodNames = setOf("getServiceInfo", "queryIntentActivities", "queryIntentActivitiesInternal"),
+            eventType = "android.event.package_query_system",
+            after = true,
         ),
         ShortXObserverHookSpec(
             id = "statusbar-icon",
