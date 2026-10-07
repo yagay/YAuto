@@ -247,6 +247,25 @@
     <string name="unified_default_sound">默认声音</string>
     <string name="unified_default_sound_subtitle">读取或修改默认铃声、通知声或闹钟声</string>
 
+    <string name="unified_shortx_input_hooks">输入系统 Hook</string>
+    <string name="unified_shortx_input_hooks_subtitle">输入过滤、输入管理器与文本提交系统 Hook</string>
+    <string name="unified_shortx_accessibility_hooks">无障碍系统 Hook</string>
+    <string name="unified_shortx_accessibility_hooks_subtitle">无障碍用户、显示、窗口与 UI 自动化 Hook</string>
+    <string name="unified_shortx_activity_hooks">Activity 系统 Hook</string>
+    <string name="unified_shortx_activity_hooks_subtitle">ActivityManager 启动与 Activity 生命周期 Hook</string>
+    <string name="unified_shortx_shortcut_hooks">快捷方式与包 Hook</string>
+    <string name="unified_shortx_shortcut_hooks_subtitle">小部件宿主、快捷方式与包查询系统 Hook</string>
+    <string name="unified_shortx_ime_window_hooks">输入法与窗口 Hook</string>
+    <string name="unified_shortx_ime_window_hooks_subtitle">输入法显示、窗口焦点/新增与系统返回 Hook</string>
+    <string name="unified_shortx_systemui_hooks">SystemUI Hook</string>
+    <string name="unified_shortx_systemui_hooks_subtitle">快捷设置、状态栏、图标与 SystemUI 生命周期 Hook</string>
+    <string name="unified_shortx_process_hooks">系统进程 Hook</string>
+    <string name="unified_shortx_process_hooks_subtitle">任务清理、进程异常与 RenderNode 保护 Hook</string>
+    <string name="unified_shortx_sms_provider_hooks">短信 Provider Hook</string>
+    <string name="unified_shortx_sms_provider_hooks_subtitle">短信 Provider 就绪与数据库变化 Hook</string>
+    <string name="unified_shortx_media_provider_hooks">媒体 Provider Hook</string>
+    <string name="unified_shortx_media_provider_hooks_subtitle">媒体 Provider 就绪与内容变化 Hook</string>
+
     <string name="implementation_auto_title">自动</string>
     <string name="implementation_root_title">Root</string>
     <string name="implementation_shizuku_title">Shizuku</string>
