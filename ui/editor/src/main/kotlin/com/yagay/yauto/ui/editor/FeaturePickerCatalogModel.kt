@@ -27,6 +27,7 @@ internal class FeaturePickerCatalogModel private constructor(
     val categories: List<CatalogCategory>,
     private val byId: Map<String, FeaturePickerCatalogItem>,
     private val byCategory: Map<String, List<FeaturePickerCatalogItem>>,
+    private val familyIndex: FeatureFamilyIndex,
     private val categoryCounts: Map<String, Int>,
 ) {
     fun item(id: String): FeaturePickerCatalogItem? = byId[id]
@@ -35,10 +36,26 @@ internal class FeaturePickerCatalogModel private constructor(
 
     fun categoryCount(categoryId: String): Int = categoryCounts[categoryId] ?: 0
 
+    fun family(id: String): FeaturePickerFamily? = familyIndex.byId[id]
+
     fun search(query: String): List<FeaturePickerCatalogItem> {
         val needle = normalizeQuery(query)
         if (needle.isEmpty()) return emptyList()
         return allItems.filter { needle in it.searchIndex }
+    }
+
+    fun entries(
+        page: PickerPage.Features,
+        favorites: Set<String>,
+        recent: List<String>,
+        query: String,
+    ): List<FeaturePickerListEntry> {
+        val items = items(page, favorites, recent, query)
+        return if (page.special != null || normalizeQuery(query).isNotEmpty()) {
+            items.map(FeaturePickerListEntry::Feature)
+        } else {
+            collapseFeaturePickerItems(items, familyIndex)
+        }
     }
 
     fun items(
@@ -68,12 +85,17 @@ internal class FeaturePickerCatalogModel private constructor(
                 .map { it.category }
                 .distinctBy { it.id }
                 .sortedBy { it.order }
+            val byCategory = sorted.groupBy { it.category.id }
+            val familyIndex = buildFeatureFamilyIndex(sorted)
             return FeaturePickerCatalogModel(
                 allItems = sorted,
                 categories = categories,
                 byId = sorted.associateBy { it.descriptor.id.value },
-                byCategory = sorted.groupBy { it.category.id },
-                categoryCounts = sorted.groupingBy { it.category.id }.eachCount(),
+                byCategory = byCategory,
+                familyIndex = familyIndex,
+                categoryCounts = byCategory.mapValues { (_, categoryItems) ->
+                    collapseFeaturePickerItems(categoryItems, familyIndex).size
+                },
             )
         }
     }
