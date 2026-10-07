@@ -61,12 +61,6 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
         booleanPair(registry, "data_roaming_setting", "Data roaming setting", "Check Android's global data-roaming setting", FeatureCategory.NETWORK) {
             dataRoamingEnabled()
         }
-        booleanPair(registry, "developer_options", "Developer options", "Check whether Android developer options are enabled", FeatureCategory.SYSTEM) {
-            Settings.Global.getInt(context.contentResolver, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1
-        }
-        booleanPair(registry, "adb_enabled", "ADB enabled", "Check whether Android debugging is enabled", FeatureCategory.SYSTEM) {
-            Settings.Global.getInt(context.contentResolver, Settings.Global.ADB_ENABLED, 0) == 1
-        }
         booleanPair(registry, "audio_focus_held", "Audio focus held by YAuto", "Check whether YAuto's most recent audio-focus request currently has focus", FeatureCategory.AUDIO) {
             audioFocus.hasFocus
         }
