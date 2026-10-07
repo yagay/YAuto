@@ -89,6 +89,7 @@ class YAutoXposedModule : XposedModule() {
                     when (intent.getStringExtra("operation")) {
                         SystemBridgeProtocol.PING -> Unit
                         SystemBridgeProtocol.SHORTX_BEHAVIOR_SET -> {
+                            installShortXBehaviorHooks(context, classLoader)
                             val behavior = intent.getStringExtra("behavior").orEmpty()
                             require(behavior in setOf(
                                 SystemBridgeProtocol.SHORTX_BEHAVIOR_ACCESSIBILITY,
@@ -111,6 +112,7 @@ class YAutoXposedModule : XposedModule() {
                                 .take(256)
                                 .toSet()
                             subscribedSystemEvents.set(values)
+                            installShortXHooksForSubscriptions(context, classLoader, values)
                             response.putInt("subscriptionCount", values.size)
                         }
                         SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_START -> {
@@ -230,9 +232,6 @@ class YAutoXposedModule : XposedModule() {
         installTaskRemovedHooks(context, classLoader)
         installBackNavigationHooks(context, classLoader)
         installAssistantHooks(context, classLoader)
-        installShortXInputHooks(context, classLoader)
-        installShortXObserverHooks(context, classLoader)
-        installShortXBehaviorHooks(context, classLoader)
     }
 
     private fun installProcessDeathHooks(context: Context, classLoader: ClassLoader) {
@@ -366,6 +365,26 @@ class YAutoXposedModule : XposedModule() {
             }
     }
 
+
+    private fun installShortXHooksForSubscriptions(
+        context: Context,
+        classLoader: ClassLoader,
+        eventTypes: Set<String>,
+    ) {
+        if (
+            "android.event.hardware_key" in eventTypes ||
+            "android.event.input_filter_state_changed" in eventTypes
+        ) {
+            installShortXInputHooks(context, classLoader)
+        }
+        val observerTypes = ShortXCompatHookCatalog.systemServerObservers
+            .asSequence()
+            .map { it.eventType }
+            .toSet()
+        if (eventTypes.any { it in observerTypes }) {
+            installShortXObserverHooks(context, classLoader)
+        }
+    }
 
     private fun installShortXBehaviorHooks(context: Context, classLoader: ClassLoader) {
         installShortXAccessibilityBehaviorHooks(context, classLoader)
