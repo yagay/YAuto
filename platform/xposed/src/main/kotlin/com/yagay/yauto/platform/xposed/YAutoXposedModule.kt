@@ -538,6 +538,9 @@ class YAutoXposedModule : XposedModule() {
             "className" to className,
             "method" to methodName,
         )
+        if (spec.id == "clipboard-read") {
+            extras["callingUid"] = Binder.getCallingUid()
+        }
         args.take(8).forEachIndexed { index, value ->
             when (value) {
                 is String -> extras["arg$index"] = value.take(512)
@@ -560,6 +563,14 @@ class YAutoXposedModule : XposedModule() {
             ShortXHookPayloadKind.ACTIVITY -> {
                 val target = args.firstOrNull { it?.javaClass?.name?.contains("ActivityRecord") == true } ?: thisObject
                 val snapshot = activitySnapshot(target)
+                extras["package"] = snapshot.packageName
+                extras["activity"] = snapshot.activityName
+                extras["taskId"] = snapshot.taskId
+            }
+            ShortXHookPayloadKind.TASK -> {
+                val target = args.firstOrNull { it?.javaClass?.name == "com.android.server.wm.Task" }
+                    ?: args.firstOrNull { it?.javaClass?.name?.contains("Task") == true }
+                val snapshot = taskSnapshot(target)
                 extras["package"] = snapshot.packageName
                 extras["activity"] = snapshot.activityName
                 extras["taskId"] = snapshot.taskId
