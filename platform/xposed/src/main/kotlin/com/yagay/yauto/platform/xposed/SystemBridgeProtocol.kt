@@ -11,6 +11,8 @@ object SystemBridgeProtocol {
     const val SHORTX_BEHAVIOR_ACCESSIBILITY = "accessibility_access"
     const val SHORTX_BEHAVIOR_CLIPBOARD = "clipboard_access"
     const val SHORTX_BEHAVIOR_PERMISSION = "permission_bridge"
+    const val SHORTX_PACKAGE_BEHAVIOR_SET = "shortx.package_behavior.set"
+    const val SHORTX_PACKAGE_BEHAVIOR_RENDERNODE_GUARD = "rendernode_guard"
     const val HARDWARE_KEY_CAPTURE_TYPE = "yauto.capture.hardware_key"
     const val HOOK_ACTION = "com.yagay.yauto.LSPOSED_HOOK"
     const val HOOK_EVENT_ACTION = "com.yagay.yauto.LSPOSED_HOOK_EVENT"
