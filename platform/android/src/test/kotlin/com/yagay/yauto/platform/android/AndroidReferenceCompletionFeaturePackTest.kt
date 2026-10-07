@@ -6,18 +6,25 @@ import org.junit.Test
 
 class AndroidReferenceCompletionFeaturePackTest {
     @Test
-    fun `reference completion keeps managed-profile runtime broadcasts as aliases`() {
-        val managedProfileAliasTypes = setOf(
+    fun `reference completion keeps canonicalized runtime broadcasts out of descriptor list`() {
+        val canonicalizedRuntimeTypes = setOf(
             "android.event.managed_profile_available",
             "android.event.managed_profile_unavailable",
             "android.event.managed_profile_unlocked",
+            "android.event.bluetooth_state_changed",
+            "android.event.bluetooth_bond_state_changed",
+            "android.event.bluetooth_acl_connected",
+            "android.event.bluetooth_acl_disconnected",
+            "android.event.wifi_state_changed",
+            "android.event.wifi_network_state_changed",
+            "android.event.wifi_rssi_changed",
         )
-        assertEquals(47, REFERENCE_COMPLETION_EVENT_SPECS.size)
-        assertEquals(47, REFERENCE_COMPLETION_EVENT_SPECS.map { it.typeId }.distinct().size)
+        assertEquals(40, REFERENCE_COMPLETION_EVENT_SPECS.size)
+        assertEquals(40, REFERENCE_COMPLETION_EVENT_SPECS.map { it.typeId }.distinct().size)
         assertEquals(50, REFERENCE_BROADCAST_EVENT_TYPES.size)
         assertEquals(
             REFERENCE_COMPLETION_EVENT_SPECS.map { it.typeId }.toSet(),
-            REFERENCE_BROADCAST_EVENT_TYPES.values.toSet() - managedProfileAliasTypes,
+            REFERENCE_BROADCAST_EVENT_TYPES.values.toSet() - canonicalizedRuntimeTypes,
         )
     }
 
