@@ -427,12 +427,13 @@ internal fun carModeCommand(enabled: Boolean): String = "cmd uimode car ${if (en
 internal fun colorInversionCommand(enabled: Boolean): String =
     "settings put secure accessibility_display_inversion_enabled ${if (enabled) 1 else 0}"
 internal fun ambientDisplayCommand(setting: String, enabled: Boolean): String? {
-    val key = when (setting) {
-        "wake_for_notifications" -> "doze_enabled"
-        "always_on" -> "doze_always_on"
-        else -> return null
+    val value = if (enabled) 1 else 0
+    return when (setting) {
+        "wake_for_notifications" -> "settings put secure doze_enabled $value"
+        "always_on" -> "settings put secure doze_always_on $value"
+        "both" -> "settings put secure doze_enabled $value; settings put secure doze_always_on $value"
+        else -> null
     }
-    return "settings put secure $key ${if (enabled) 1 else 0}"
 }
 internal fun headsUpCommand(enabled: Boolean): String =
     "settings put global heads_up_notifications_enabled ${if (enabled) 1 else 0}"
