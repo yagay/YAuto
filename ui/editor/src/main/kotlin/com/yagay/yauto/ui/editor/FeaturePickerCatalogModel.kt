@@ -1,8 +1,9 @@
 package com.yagay.yauto.ui.editor
 
 import androidx.annotation.StringRes
-import com.yagay.yauto.core.registry.FeatureCategory
+import com.yagay.yauto.core.registry.FeatureDomain
 import com.yagay.yauto.core.registry.FeatureDescriptor
+import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.ui.design.R as TextR
 import java.util.Locale
 
@@ -88,29 +89,37 @@ internal fun buildFeaturePickerCatalog(
             descriptor = descriptor,
             title = textResolver.title(descriptor),
             description = textResolver.description(descriptor),
-            category = catalogCategory(descriptor.category),
+            category = catalogCategory(descriptor.domain, descriptor.kind),
             searchIndex = textResolver.searchText(descriptor).lowercase(Locale.ROOT),
         )
     },
     titleComparator = titleComparator,
 )
 
-internal fun catalogCategory(category: FeatureCategory): CatalogCategory = when (category) {
-    FeatureCategory.CORE -> CatalogCategory("core", TextR.string.category_core, TextR.string.category_core_subtitle, 10)
-    FeatureCategory.APP -> CatalogCategory("app", TextR.string.category_app, TextR.string.category_app_subtitle, 20)
-    FeatureCategory.DEVICE -> CatalogCategory("device", TextR.string.category_device, TextR.string.category_device_subtitle, 30)
-    FeatureCategory.NETWORK -> CatalogCategory("network", TextR.string.category_network, TextR.string.category_network_subtitle, 40)
-    FeatureCategory.DISPLAY -> CatalogCategory("display", TextR.string.category_display, TextR.string.category_display_subtitle, 50)
-    FeatureCategory.AUDIO -> CatalogCategory("audio", TextR.string.category_audio, TextR.string.category_audio_subtitle, 60)
-    FeatureCategory.NOTIFICATION -> CatalogCategory("notification", TextR.string.category_notification, TextR.string.category_notification_subtitle, 70)
-    FeatureCategory.FILE -> CatalogCategory("file", TextR.string.category_file, TextR.string.category_file_subtitle, 80)
-    FeatureCategory.VARIABLE -> CatalogCategory("variable", TextR.string.category_variable, TextR.string.category_variable_subtitle, 90)
-    FeatureCategory.FLOW -> CatalogCategory("flow", TextR.string.category_flow, TextR.string.category_flow_subtitle, 100)
-    FeatureCategory.UI_AUTOMATION -> CatalogCategory("ui_automation", TextR.string.category_ui_automation, TextR.string.category_ui_automation_subtitle, 110)
-    FeatureCategory.SYSTEM -> CatalogCategory("system", TextR.string.category_system, TextR.string.category_system_subtitle, 120)
-    FeatureCategory.SCRIPT -> CatalogCategory("script", TextR.string.category_script, TextR.string.category_script_subtitle, 130)
-    FeatureCategory.ADVANCED -> CatalogCategory("advanced", TextR.string.category_advanced, TextR.string.category_advanced_subtitle, 140)
-    FeatureCategory.COMPATIBILITY -> CatalogCategory("advanced", TextR.string.category_advanced, TextR.string.category_advanced_subtitle, 150)
+internal fun catalogCategory(domain: FeatureDomain, kind: FeatureKind): CatalogCategory = when (domain) {
+    FeatureDomain.APPLICATIONS -> CatalogCategory("applications", TextR.string.category_applications, TextR.string.category_applications_subtitle, 10)
+    FeatureDomain.POWER -> CatalogCategory("power", TextR.string.category_power, TextR.string.category_power_subtitle, 20)
+    FeatureDomain.COMMUNICATION -> CatalogCategory("communication", TextR.string.category_communication, TextR.string.category_communication_subtitle, 30)
+    FeatureDomain.CONNECTIVITY -> CatalogCategory("connectivity", TextR.string.category_connectivity, TextR.string.category_connectivity_subtitle, 40)
+    FeatureDomain.DATE_TIME -> CatalogCategory("date_time", TextR.string.category_date_time, TextR.string.category_date_time_subtitle, 50)
+    FeatureDomain.DEVICE -> when (kind) {
+        FeatureKind.ACTION -> CatalogCategory("device", TextR.string.category_device_actions, TextR.string.category_device_actions_subtitle, 60)
+        FeatureKind.EVENT -> CatalogCategory("device", TextR.string.category_device_events, TextR.string.category_device_events_subtitle, 60)
+        FeatureKind.STATE, FeatureKind.CONDITION -> CatalogCategory("device", TextR.string.category_device_state, TextR.string.category_device_state_subtitle, 60)
+    }
+    FeatureDomain.DISPLAY -> CatalogCategory("display", TextR.string.category_display, TextR.string.category_display_subtitle, 70)
+    FeatureDomain.AUDIO_MEDIA -> CatalogCategory("audio_media", TextR.string.category_audio_media, TextR.string.category_audio_media_subtitle, 80)
+    FeatureDomain.NOTIFICATIONS -> CatalogCategory("notifications", TextR.string.category_notifications, TextR.string.category_notifications_subtitle, 90)
+    FeatureDomain.LOCATION -> CatalogCategory("location", TextR.string.category_location, TextR.string.category_location_subtitle, 100)
+    FeatureDomain.SENSORS -> CatalogCategory("sensors", TextR.string.category_sensors, TextR.string.category_sensors_subtitle, 110)
+    FeatureDomain.USER_INPUT -> CatalogCategory("user_input", TextR.string.category_user_input, TextR.string.category_user_input_subtitle, 120)
+    FeatureDomain.CAPTURE -> CatalogCategory("capture", TextR.string.category_capture, TextR.string.category_capture_subtitle, 130)
+    FeatureDomain.FILES_STORAGE -> CatalogCategory("files_storage", TextR.string.category_files_storage, TextR.string.category_files_storage_subtitle, 140)
+    FeatureDomain.DATA -> CatalogCategory("data", TextR.string.category_data, TextR.string.category_data_subtitle, 150)
+    FeatureDomain.FLOW_LOGIC -> CatalogCategory("flow_logic", TextR.string.category_flow_logic, TextR.string.category_flow_logic_subtitle, 160)
+    FeatureDomain.WEB_NETWORK -> CatalogCategory("web_network", TextR.string.category_web_network, TextR.string.category_web_network_subtitle, 170)
+    FeatureDomain.SCRIPT_COMMANDS -> CatalogCategory("script_commands", TextR.string.category_script_commands, TextR.string.category_script_commands_subtitle, 180)
+    FeatureDomain.YAUTO -> CatalogCategory("yauto", TextR.string.category_yauto, TextR.string.category_yauto_subtitle, 190)
 }
 
 private fun normalizeQuery(value: String): String = value.trim().lowercase(Locale.ROOT)

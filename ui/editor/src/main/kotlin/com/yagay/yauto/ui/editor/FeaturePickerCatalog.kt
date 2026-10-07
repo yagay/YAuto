@@ -16,7 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.yagay.yauto.core.registry.FeatureCategory
+import com.yagay.yauto.core.registry.AccessRequirement
+import com.yagay.yauto.core.registry.FeatureDomain
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.ui.design.MacroPalette
@@ -73,7 +74,7 @@ internal fun FeatureCategoryPage(
                         stringResource(TextR.string.feature_picker_recent),
                         stringResource(TextR.string.feature_picker_recent_subtitle_format, recentCount),
                     ) {
-                        onCategory(PickerPage.Features(catalogCategory(FeatureCategory.CORE), special = "recent"))
+                        onCategory(PickerPage.Features(catalogCategory(FeatureDomain.YAUTO, kind), special = "recent"))
                     }
                 }
             }
@@ -83,7 +84,7 @@ internal fun FeatureCategoryPage(
                         stringResource(TextR.string.feature_picker_favorites),
                         stringResource(TextR.string.feature_picker_favorites_subtitle_format, favoriteCount),
                     ) {
-                        onCategory(PickerPage.Features(catalogCategory(FeatureCategory.CORE), special = "favorites"))
+                        onCategory(PickerPage.Features(catalogCategory(FeatureDomain.YAUTO, kind), special = "favorites"))
                     }
                 }
             }
@@ -121,6 +122,7 @@ internal fun FeatureCategoryPage(
                     onFavorite = { onFavorite(item.descriptor.id.value) },
                     height = 72.dp,
                     availability = availability[item.descriptor.id.value],
+                    accessTags = featureAccessTags(item.descriptor),
                 )
             }
         }
@@ -186,6 +188,7 @@ internal fun FeatureListPage(
                 onFavorite = { onFavorite(item.descriptor.id.value) },
                 height = 68.dp,
                 availability = availability[item.descriptor.id.value],
+                accessTags = featureAccessTags(item.descriptor),
             )
         }
     }
@@ -208,6 +211,7 @@ private fun FeaturePickerRow(
     onFavorite: () -> Unit,
     height: androidx.compose.ui.unit.Dp,
     availability: FeatureAvailabilityUi? = null,
+    accessTags: String = "",
 ) {
     val divider = MaterialTheme.colorScheme.outlineVariant
     Row(
@@ -239,6 +243,7 @@ private fun FeaturePickerRow(
             val supporting = localizedList(
                 listOfNotNull(
                     subtitle?.takeIf { it.isNotBlank() },
+                    accessTags.takeIf { it.isNotBlank() },
                     availability?.summary?.takeIf { it.isNotBlank() },
                 )
             )
@@ -276,6 +281,25 @@ private fun FeaturePickerRow(
                 .padding(11.dp),
         )
     }
+}
+
+@Composable
+private fun featureAccessTags(descriptor: FeatureDescriptor): String {
+    val requirements = remember(descriptor) {
+        buildSet {
+            addAll(descriptor.accessRequirements)
+            descriptor.implementationOptions.forEach { addAll(it.requirements) }
+        }
+    }
+    return localizedList(
+        buildList {
+            if (AccessRequirement.ROOT in requirements) add(stringResource(TextR.string.access_root))
+            if (AccessRequirement.SHIZUKU in requirements) add(stringResource(TextR.string.access_shizuku))
+            if (AccessRequirement.LSPOSED in requirements) add(stringResource(TextR.string.access_lsposed))
+            if (AccessRequirement.ZYGISK in requirements) add(stringResource(TextR.string.access_zygisk))
+            if (AccessRequirement.ACCESSIBILITY in requirements) add(stringResource(TextR.string.access_accessibility))
+        }
+    )
 }
 
 @Composable
