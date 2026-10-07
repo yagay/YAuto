@@ -21,7 +21,6 @@ data class FieldPickerOption(
 
 data class HardwareKeyPickerCatalog(
     val keyCodes: List<FieldPickerOption> = emptyList(),
-    val scanCodes: List<FieldPickerOption> = emptyList(),
 )
 
 data class HardwareKeyIdentity(
@@ -82,7 +81,6 @@ sealed interface FieldPickerSource {
     data object Calendar : FieldPickerSource
     data object InputMethod : FieldPickerSource
     data object KeyCode : FieldPickerSource
-    data object ScanCode : FieldPickerSource
     data object WifiSsid : FieldPickerSource
     data object BluetoothDevice : FieldPickerSource
     data object LocationProvider : FieldPickerSource
