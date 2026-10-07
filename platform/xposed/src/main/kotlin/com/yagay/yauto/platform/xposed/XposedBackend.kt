@@ -74,11 +74,15 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
 
     override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment): Boolean =
         (request.capability == CapabilityIds.SYSTEM_UI && request.operationId in supportedOperations()) ||
-            (request.capability == CapabilityIds.LSPOSED_HOOK && request.operationId == SystemBridgeProtocol.HOOK_INSTALL_SESSION)
+            (request.capability == CapabilityIds.LSPOSED &&
+                request.operationId == SystemBridgeProtocol.SHORTX_BEHAVIOR_SET) ||
+            (request.capability == CapabilityIds.LSPOSED_HOOK &&
+                request.operationId == SystemBridgeProtocol.HOOK_INSTALL_SESSION)
 
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
         val result = when (request.capability) {
             CapabilityIds.LSPOSED_HOOK -> requestHook(request)
+            CapabilityIds.LSPOSED -> requestSystem(request.operationId, request.payload)
             else -> requestSystem(request.operationId)
         }
         val success = result?.getBoolean("success") == true
@@ -102,13 +106,21 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
         )
     }
 
-    private suspend fun requestSystem(operation: String): Bundle? =
-        orderedRequest(
-            Intent(SystemBridgeProtocol.ACTION)
-                .setPackage("android")
-                .putExtra("version", protocolVersion)
-                .putExtra("operation", operation)
-        ).also { connected = it != null }
+    private suspend fun requestSystem(operation: String, payload: Map<String, ConfigValue> = emptyMap()): Bundle? {
+        val intent = Intent(SystemBridgeProtocol.ACTION)
+            .setPackage("android")
+            .putExtra("version", protocolVersion)
+            .putExtra("operation", operation)
+        payload.forEach { (key, value) ->
+            when (value) {
+                is ConfigValue.StringValue -> intent.putExtra(key, value.value)
+                is ConfigValue.BooleanValue -> intent.putExtra(key, value.value)
+                is ConfigValue.NumberValue -> intent.putExtra(key, value.value)
+                else -> Unit
+            }
+        }
+        return orderedRequest(intent).also { connected = it != null }
+    }
 
     private suspend fun requestHook(request: CapabilityRequest): Bundle? {
         val targetPackage = request.payload.string("package").trim()
