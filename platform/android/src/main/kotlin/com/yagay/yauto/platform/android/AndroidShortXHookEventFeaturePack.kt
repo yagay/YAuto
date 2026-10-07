@@ -1,0 +1,82 @@
+package com.yagay.yauto.platform.android
+
+import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.registry.*
+
+/**
+ * User-facing events backed by the ShortX-compatible LSPosed observer layer.
+ * A shared filter schema keeps the catalog maintainable while preserving stable event IDs.
+ */
+class AndroidShortXHookEventFeaturePack : FeaturePack {
+    override val id: String = "android.shortx_hook_events"
+
+    override fun install(registry: FeatureRegistry) {
+        event(registry, "android.event.input_filter_state_changed", "Input filter state changed", "Run when Android changes the native input-filter state", FeatureCategory.UI_AUTOMATION)
+        event(registry, "android.event.activity_manager_ready", "Activity manager ready", "Run when ActivityManagerService finishes systemReady", FeatureCategory.SYSTEM)
+        event(registry, "android.event.activity_started", "Activity started by system", "Run when ActivityTaskSupervisor starts an Activity", FeatureCategory.APP)
+        event(registry, "android.event.activity_resumed", "Activity resumed by system", "Run when system_server reports an Activity resumed", FeatureCategory.APP)
+        event(registry, "android.event.activity_stopped", "Activity stopped by system", "Run when system_server reports an Activity stopped", FeatureCategory.APP)
+        event(registry, "android.event.activity_start_requested", "Activity start requested", "Run when ActivityStarter receives a start request", FeatureCategory.APP)
+        event(registry, "android.event.activity_launched", "Activity launch observed", "Run when ActivityMetricsLogger reports an Activity launch", FeatureCategory.APP)
+        event(registry, "android.event.notification_posted_system", "System notification posted", "Run when NotificationUsageStats records a posted notification", FeatureCategory.NOTIFICATION)
+        event(registry, "android.event.notification_updated_system", "System notification updated", "Run when NotificationUsageStats records an updated notification", FeatureCategory.NOTIFICATION)
+        event(registry, "android.event.notification_removed_system", "System notification removed", "Run when NotificationUsageStats records a removed notification", FeatureCategory.NOTIFICATION)
+        event(registry, "android.event.notification_dismissed_system", "System notification dismissed", "Run when NotificationUsageStats records a user-dismissed notification", FeatureCategory.NOTIFICATION)
+        event(registry, "android.event.vpn_state_changed", "VPN state changed by system", "Run when the system VPN implementation changes state", FeatureCategory.NETWORK)
+        event(registry, "android.event.ime_shown", "IME shown by system", "Run when InputMethodManagerService shows the current input method", FeatureCategory.UI_AUTOMATION)
+        event(registry, "android.event.ime_hidden", "IME hidden by system", "Run when InputMethodManagerService hides the current input method", FeatureCategory.UI_AUTOMATION)
+        event(registry, "android.event.ime_input_started", "IME input started", "Run when InputMethodManagerService starts input or gains a focused window", FeatureCategory.UI_AUTOMATION)
+        event(registry, "android.event.window_focus_changed", "Window focus changed by system", "Run when WindowManager reports a focus change", FeatureCategory.UI_AUTOMATION)
+        event(registry, "android.event.window_added", "Window added by display policy", "Run when DisplayPolicy adds a window", FeatureCategory.UI_AUTOMATION)
+        event(registry, "android.event.rotation_proposed", "Display rotation proposed", "Run when Android proposes a new display rotation", FeatureCategory.DISPLAY)
+        event(registry, "android.event.widget_host_listening", "Widget host started listening", "Run when AppWidgetService starts a host listening session", FeatureCategory.APP)
+        event(registry, "android.event.shortcut_pin_requested", "Shortcut pin requested", "Run when ShortcutService receives a pin request", FeatureCategory.APP)
+        event(registry, "android.event.shortcut_started", "Shortcut started by system", "Run when Android starts an app shortcut", FeatureCategory.APP)
+        event(registry, "android.event.status_bar_icon_changed", "Status bar icon changed", "Run when StatusBarManagerService updates an icon", FeatureCategory.SYSTEM)
+        event(registry, "android.event.service_screen_state_changed", "Service screen state changed", "Run when ActiveServices receives a screen-state update", FeatureCategory.SYSTEM)
+        event(registry, "android.event.systemui_qs_tile_clicked", "SystemUI tile clicked", "Run when SystemUI handles a Quick Settings tile click", FeatureCategory.SYSTEM)
+        event(registry, "android.event.systemui_icon_dark_changed", "SystemUI icon darkness changed", "Run when SystemUI changes light or dark status-bar icons", FeatureCategory.SYSTEM)
+        event(registry, "android.event.systemui_tile_discovered", "SystemUI tile discovered", "Run when the Quick Settings customizer discovers a tile", FeatureCategory.SYSTEM)
+        event(registry, "android.event.systemui_status_bar_ready", "SystemUI status bar ready", "Run when the status-bar view finishes inflation", FeatureCategory.SYSTEM)
+        event(registry, "android.event.input_text_committed", "Input text committed", "Run when a hooked input connection commits text", FeatureCategory.UI_AUTOMATION)
+    }
+
+    private fun event(
+        registry: FeatureRegistry,
+        typeId: String,
+        title: String,
+        description: String,
+        category: FeatureCategory,
+    ) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                id = FeatureId(typeId),
+                kind = FeatureKind.EVENT,
+                title = title,
+                description = description,
+                category = category,
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "App / package"),
+                    FieldSchema.Text("classContains", "Class contains"),
+                    FieldSchema.Text("methodContains", "Hook method contains"),
+                    FieldSchema.Text("detailContains", "Detail contains"),
+                ),
+                accessRequirements = setOf(AccessRequirement.LSPOSED),
+                keywords = setOf("shortx", "lsposed", "system hook", "system_server"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != typeId) return@registerEvent false
+            val packageName = feature.config.string("package").trim()
+            val classContains = feature.config.string("classContains").trim()
+            val methodContains = feature.config.string("methodContains").trim()
+            val detailContains = feature.config.string("detailContains").trim()
+            (packageName.isBlank() || ctx.event.payload.string("package") == packageName) &&
+                (classContains.isBlank() || ctx.event.payload.string("className").contains(classContains, true)) &&
+                (methodContains.isBlank() || ctx.event.payload.string("method").contains(methodContains, true)) &&
+                (detailContains.isBlank() || ctx.event.payload.values.any { value ->
+                    value.toString().contains(detailContains, true)
+                })
+        }
+    }
+}
