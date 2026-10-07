@@ -47,7 +47,7 @@ class DeviceHardwareKeyCatalog(
             keyCode = keyCode,
             scanCode = 0,
             deviceId = -1,
-            action = KeyEvent.ACTION_DOWN,
+            action = KeyEvent.ACTION_UP,
             linuxEvKey = linuxEvKey,
             mscScan = mscScan,
             deviceDescriptor = devicePath,
@@ -222,11 +222,11 @@ class DeviceHardwareKeyCatalog(
         private val HEX_CODE = Regex("(?i)(?<![0-9a-f])[0-9a-f]{4}(?![0-9a-f])")
         private val KEY_SECTION = Regex("KEY\\s*\\(0001\\)", RegexOption.IGNORE_CASE)
         private val EVENT_SECTION = Regex("[A-Z_]+\\s*\\([0-9a-fA-F]{4}\\)")
-        private val RAW_KEY_EVENT = Regex(":\\s+0001\\s+([0-9a-fA-F]{4})\\s+00000001")
+        private val RAW_KEY_EVENT = Regex(":\\s+0001\\s+([0-9a-fA-F]{4})\\s+00000000")
         private val RAW_MSC_SCAN = Regex(":\\s+0004\\s+0004\\s+([0-9a-fA-F]{8})")
         private val RAW_DEVICE_PATH = Regex("(/dev/input/event\\d+):")
         private const val RAW_KEY_CAPTURE_COMMAND =
-            "getevent -t 2>/dev/null | grep -m 1 -B 3 -E ': 0001 [0-9a-fA-F]{4} 00000001'"
+            "getevent -t 2>/dev/null | grep -m 1 -B 3 -E ': 0001 [0-9a-fA-F]{4} 00000000'"
 
         private const val KEY_LAYOUT_COMMAND =
             "grep -H -E '^[[:space:]]*key[[:space:]]+' " +
