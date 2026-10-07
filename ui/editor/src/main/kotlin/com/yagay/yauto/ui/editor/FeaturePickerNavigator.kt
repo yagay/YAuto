@@ -42,5 +42,13 @@ internal data class FeaturePickerNavState private constructor(
                     initialDescriptor?.let { add(PickerPage.Configure(it)) }
                 }
             )
+
+        fun initialFamily(family: FeaturePickerFamily): FeaturePickerNavState =
+            FeaturePickerNavState(
+                listOf(
+                    PickerPage.Categories,
+                    PickerPage.Family(family),
+                )
+            )
     }
 }
