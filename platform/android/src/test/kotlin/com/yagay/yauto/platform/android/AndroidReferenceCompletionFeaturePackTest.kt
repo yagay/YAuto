@@ -6,13 +6,18 @@ import org.junit.Test
 
 class AndroidReferenceCompletionFeaturePackTest {
     @Test
-    fun `reference completion exposes exactly fifty broadcast triggers`() {
-        assertEquals(50, REFERENCE_COMPLETION_EVENT_SPECS.size)
-        assertEquals(50, REFERENCE_COMPLETION_EVENT_SPECS.map { it.typeId }.distinct().size)
+    fun `reference completion keeps managed-profile runtime broadcasts as aliases`() {
+        val managedProfileAliasTypes = setOf(
+            "android.event.managed_profile_available",
+            "android.event.managed_profile_unavailable",
+            "android.event.managed_profile_unlocked",
+        )
+        assertEquals(47, REFERENCE_COMPLETION_EVENT_SPECS.size)
+        assertEquals(47, REFERENCE_COMPLETION_EVENT_SPECS.map { it.typeId }.distinct().size)
         assertEquals(50, REFERENCE_BROADCAST_EVENT_TYPES.size)
         assertEquals(
             REFERENCE_COMPLETION_EVENT_SPECS.map { it.typeId }.toSet(),
-            REFERENCE_BROADCAST_EVENT_TYPES.values.toSet(),
+            REFERENCE_BROADCAST_EVENT_TYPES.values.toSet() - managedProfileAliasTypes,
         )
     }
 
