@@ -51,6 +51,10 @@ class FeaturePickerCatalogModelTest {
             family.members.map { it.descriptor.id.value },
         )
         assertEquals(1, model.categoryCount("app"))
+        assertEquals(
+            "volume",
+            model.familyForMember("android.audio.volume.adjust")?.spec?.id,
+        )
 
         val searchEntries = model.entries(page, favorites = emptySet(), recent = emptyList(), query = "adjust")
         assertEquals(1, searchEntries.size)
@@ -146,6 +150,46 @@ class FeaturePickerCatalogModelTest {
             families.getValue("wifi_tools").family.members
                 .map { it.descriptor.id.value }
                 .containsAll(listOf("android.wifi.network.connect", "android.wifi.network.disconnect"))
+        )
+    }
+
+    @Test
+    fun `family operation restoration prefers existing concrete id then requested operation`() {
+        val first = item("android.audio.volume.set", "Set volume", app, "set volume")
+        val second = item("android.audio.volume.adjust", "Adjust volume", app, "adjust volume")
+        val family = FeaturePickerFamily(
+            spec = FeatureFamilySpec(
+                id = "volume",
+                titleRes = 1,
+                subtitleRes = 2,
+                memberIds = listOf(first.descriptor.id.value, second.descriptor.id.value),
+            ),
+            members = listOf(first, second),
+        )
+
+        assertEquals(
+            "android.audio.volume.adjust",
+            resolveFamilyMemberId(
+                family,
+                initialTypeId = "android.audio.volume.adjust",
+                requestedMemberId = "android.audio.volume.set",
+            ),
+        )
+        assertEquals(
+            "android.audio.volume.adjust",
+            resolveFamilyMemberId(
+                family,
+                initialTypeId = null,
+                requestedMemberId = "android.audio.volume.adjust",
+            ),
+        )
+        assertEquals(
+            "android.audio.volume.set",
+            resolveFamilyMemberId(
+                family,
+                initialTypeId = null,
+                requestedMemberId = "missing",
+            ),
         )
     }
 
