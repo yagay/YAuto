@@ -118,7 +118,16 @@ class AndroidBluetoothDeviceFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.NETWORK,
                 fields = commonEventFields() + FieldSchema.Choice("state", "Connection", true, listOf("any", "connected", "disconnected")),
                 accessRequirements = setOf(AccessRequirement.BLUETOOTH_CONNECT),
-                keywords = setOf("bluetooth", "connect", "disconnect", "device"), ownerPackId = id,
+                keywords = setOf("bluetooth", "connect", "disconnect", "device"),
+                ownerPackId = id,
+                aliases = setOf(
+                    "android.event.bluetooth_acl_connected",
+                    "android.event.bluetooth_acl_disconnected",
+                ),
+                aliasConfigDefaults = mapOf(
+                    "android.event.bluetooth_acl_connected" to mapOf("state" to ConfigValue.StringValue("connected")),
+                    "android.event.bluetooth_acl_disconnected" to mapOf("state" to ConfigValue.StringValue("disconnected")),
+                ),
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.bluetooth_device_connection") return@registerEvent false
@@ -154,7 +163,9 @@ class AndroidBluetoothDeviceFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.NETWORK,
                 fields = commonEventFields() + FieldSchema.Choice("bondState", "Bond state", true, listOf("any", "none", "bonding", "bonded")),
                 accessRequirements = setOf(AccessRequirement.BLUETOOTH_CONNECT),
-                keywords = setOf("bluetooth", "pair", "bond", "device"), ownerPackId = id,
+                keywords = setOf("bluetooth", "pair", "bond", "device"),
+                ownerPackId = id,
+                aliases = setOf("android.event.bluetooth_bond_state_changed"),
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.bluetooth_bond_changed") return@registerEvent false
