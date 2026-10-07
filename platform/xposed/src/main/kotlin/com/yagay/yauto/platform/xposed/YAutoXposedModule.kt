@@ -638,6 +638,16 @@ class YAutoXposedModule : XposedModule() {
                 "com.android.server.policy.PhoneWindowManager",
                 setOf("interceptKeyBeforeQueueing", "interceptKeyBeforeDispatching"),
             ),
+            InputHookTarget(
+                "com.android.server.policy.SingleKeyGestureDetector",
+                emptySet(),
+                matchAnyKeyEventMethod = true,
+            ),
+            InputHookTarget(
+                "com.android.server.policy.KeyCombinationManager",
+                emptySet(),
+                matchAnyKeyEventMethod = true,
+            ),
         )
 
         targets.forEach { target ->
@@ -788,6 +798,7 @@ class YAutoXposedModule : XposedModule() {
     private data class InputHookTarget(
         val className: String,
         val methodNames: Set<String>,
+        val matchAnyKeyEventMethod: Boolean = false,
     )
 
     private fun installAssistantHooks(context: Context, classLoader: ClassLoader) {
