@@ -129,11 +129,11 @@
     <string name="feature_family_app_roles_subtitle">Request or manage Android default-app roles</string>
 
     <string name="feature_family_wifi_tools">Wi-Fi tools</string>
-    <string name="feature_family_wifi_tools_subtitle">Connection info, scan start and scan results</string>
+    <string name="feature_family_wifi_tools_subtitle">Connection info, scans, connect and disconnect</string>
     <string name="feature_family_bluetooth_events">Bluetooth device events</string>
     <string name="feature_family_bluetooth_events_subtitle">Connection, discovery and bond-state triggers</string>
     <string name="feature_family_audio_playback">Audio playback</string>
-    <string name="feature_family_audio_playback_subtitle">Play, seek, change playback volume or inspect playback</string>
+    <string name="feature_family_audio_playback_subtitle">Play, pause, resume, stop, seek, adjust volume or inspect playback</string>
     <string name="feature_family_audio_modes">Audio modes</string>
     <string name="feature_family_audio_modes_subtitle">Ringer mode, microphone mute and speakerphone</string>
     <string name="feature_family_notification_actions">Notification actions</string>
@@ -166,6 +166,18 @@
     <string name="feature_family_system_info_subtitle">Memory, uptime, thermal status and locale information</string>
     <string name="feature_family_communication_actions">Communication</string>
     <string name="feature_family_communication_actions_subtitle">Dial a number, compose SMS or compose email</string>
+    <string name="feature_family_bluetooth_devices">Bluetooth devices</string>
+    <string name="feature_family_bluetooth_devices_subtitle">Discover devices, stop discovery or inspect paired devices</string>
+    <string name="feature_family_audio_focus">Audio focus</string>
+    <string name="feature_family_audio_focus_subtitle">Request or release Android audio focus</string>
+    <string name="feature_family_app_maintenance">App maintenance</string>
+    <string name="feature_family_app_maintenance_subtitle">Clear app data or grant and revoke app permissions</string>
+    <string name="feature_family_input_method">Input method</string>
+    <string name="feature_family_input_method_subtitle">Open the picker, set the default IME or open input-method settings</string>
+    <string name="feature_family_screen_saver">Screen saver</string>
+    <string name="feature_family_screen_saver_subtitle">Start or stop the Android screen saver</string>
+    <string name="feature_family_display_system_controls">Display system controls</string>
+    <string name="feature_family_display_system_controls_subtitle">Immersive mode, color inversion and ambient display</string>
 
     <string name="implementation_auto_title">Auto</string>
     <string name="implementation_root_title">Root</string>
