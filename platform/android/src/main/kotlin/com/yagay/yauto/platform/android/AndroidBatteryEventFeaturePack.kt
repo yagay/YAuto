@@ -12,120 +12,20 @@ import com.yagay.yauto.core.registry.FeaturePack
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.registry.FieldSchema
 
-/** Detailed battery triggers derived from the existing ACTION_BATTERY_CHANGED runtime event. */
+/**
+ * Canonical battery trigger. Historical detailed battery triggers are aliases whose old config
+ * keys are migrated into this single filter schema.
+ */
 class AndroidBatteryEventFeaturePack : FeaturePack {
     override val id: String = "android.events.battery.detail"
 
     override fun install(registry: FeatureRegistry) {
-        choiceEvent(
-            registry,
-            "android.event.battery_power_source_filtered",
-            "Battery power source changed",
-            "Trigger when the battery update reports the selected power source",
-            "plugged",
-            listOf("none", "ac", "usb", "wireless", "dock"),
-            setOf("battery", "power", "charger", "usb", "wireless"),
-        )
-        choiceEvent(
-            registry,
-            "android.event.battery_status_filtered",
-            "Battery charging status changed",
-            "Trigger when the battery update reports the selected charging status",
-            "status",
-            listOf("charging", "discharging", "full", "not_charging", "unknown"),
-            setOf("battery", "charging", "discharging", "full"),
-        )
-        choiceEvent(
-            registry,
-            "android.event.battery_health_filtered",
-            "Battery health changed",
-            "Trigger when the battery update reports the selected health state",
-            "health",
-            listOf("good", "overheat", "dead", "over_voltage", "failure", "cold", "unknown"),
-            setOf("battery", "health", "temperature", "overheat", "cold"),
-        )
-        presentEvent(registry)
-        voltageEvent(registry)
-        profileEvent(registry)
-    }
-
-    private fun choiceEvent(
-        registry: FeatureRegistry,
-        featureId: String,
-        title: String,
-        description: String,
-        payloadKey: String,
-        options: List<String>,
-        keywords: Set<String>,
-    ) {
         registry.registerEvent(
             FeatureDescriptor(
-                id = FeatureId(featureId),
+                id = FeatureId("android.event.battery_changed"),
                 kind = FeatureKind.EVENT,
-                title = title,
-                description = description,
-                category = FeatureCategory.DEVICE,
-                fields = listOf(FieldSchema.Choice("value", "Value", true, options)),
-                keywords = keywords,
-                ownerPackId = id,
-            )
-        ) { feature, context ->
-            context.event.typeId == "android.event.battery_changed" &&
-                context.event.payload.string(payloadKey) == feature.config.string("value", options.first())
-        }
-    }
-
-    private fun presentEvent(registry: FeatureRegistry) {
-        val featureId = "android.event.battery_present_filtered"
-        registry.registerEvent(
-            FeatureDescriptor(
-                id = FeatureId(featureId),
-                kind = FeatureKind.EVENT,
-                title = "Battery presence changed",
-                description = "Trigger on battery updates that match whether a physical battery is present",
-                category = FeatureCategory.DEVICE,
-                fields = listOf(FieldSchema.Choice("value", "Battery present", true, listOf("yes", "no"))),
-                keywords = setOf("battery", "present", "hardware"),
-                ownerPackId = id,
-            )
-        ) { feature, context ->
-            if (context.event.typeId != "android.event.battery_changed") return@registerEvent false
-            val expected = feature.config.string("value", "yes") == "yes"
-            context.event.payload.boolean("present") == expected
-        }
-    }
-
-    private fun voltageEvent(registry: FeatureRegistry) {
-        val featureId = "android.event.battery_voltage_filtered"
-        registry.registerEvent(
-            FeatureDescriptor(
-                id = FeatureId(featureId),
-                kind = FeatureKind.EVENT,
-                title = "Battery voltage range",
-                description = "Trigger when the reported battery voltage falls inside the configured millivolt range",
-                category = FeatureCategory.DEVICE,
-                fields = listOf(
-                    FieldSchema.Number("minMv", "Minimum millivolts", min = 0.0, max = 20_000.0),
-                    FieldSchema.Number("maxMv", "Maximum millivolts", min = 0.0, max = 20_000.0),
-                ),
-                keywords = setOf("battery", "voltage", "millivolt"),
-                ownerPackId = id,
-            )
-        ) { feature, context ->
-            if (context.event.typeId != "android.event.battery_changed") return@registerEvent false
-            val actual = context.event.payload["voltageMv"].numberOrNull() ?: return@registerEvent false
-            inRange(actual, feature.config, "minMv", "maxMv", 0.0, 20_000.0)
-        }
-    }
-
-    private fun profileEvent(registry: FeatureRegistry) {
-        val featureId = "android.event.battery_profile_filtered"
-        registry.registerEvent(
-            FeatureDescriptor(
-                id = FeatureId(featureId),
-                kind = FeatureKind.EVENT,
-                title = "Filtered battery profile update",
-                description = "Trigger on a battery update after combining charge, temperature, voltage, power-source, status, health and presence filters",
+                title = "Battery changed",
+                description = "Run when Android reports a battery update and optionally filter level, temperature, voltage, power source, charging status, health or presence",
                 category = FeatureCategory.DEVICE,
                 fields = listOf(
                     FieldSchema.Number("minPercent", "Minimum percent", min = 0.0, max = 100.0),
@@ -139,67 +39,76 @@ class AndroidBatteryEventFeaturePack : FeaturePack {
                     FieldSchema.Choice("health", "Battery health", options = listOf("any", "good", "overheat", "dead", "over_voltage", "failure", "cold", "unknown")),
                     FieldSchema.Choice("present", "Battery present", options = listOf("any", "yes", "no")),
                 ),
-                keywords = setOf("battery", "profile", "charging", "temperature", "voltage", "health"),
+                keywords = setOf("battery", "profile", "level", "charging", "temperature", "voltage", "health", "power"),
                 ownerPackId = id,
+                aliases = setOf(
+                    "android.event.battery_power_source_filtered",
+                    "android.event.battery_status_filtered",
+                    "android.event.battery_health_filtered",
+                    "android.event.battery_present_filtered",
+                    "android.event.battery_voltage_filtered",
+                    "android.event.battery_profile_filtered",
+                ),
+                aliasConfigKeyRenames = mapOf(
+                    "android.event.battery_power_source_filtered" to mapOf("value" to "powerSource"),
+                    "android.event.battery_status_filtered" to mapOf("value" to "status"),
+                    "android.event.battery_health_filtered" to mapOf("value" to "health"),
+                    "android.event.battery_present_filtered" to mapOf("value" to "present"),
+                    "android.event.battery_voltage_filtered" to mapOf(
+                        "minMv" to "minVoltageMv",
+                        "maxMv" to "maxVoltageMv",
+                    ),
+                ),
             )
         ) { feature, context ->
-            if (context.event.typeId != "android.event.battery_changed") return@registerEvent false
-            val payload = context.event.payload
-
-            val percent = payload["percent"].numberOrNull()
-            if (!optionalRangeMatches(percent, feature.config, "minPercent", "maxPercent", 0.0, 100.0)) {
-                return@registerEvent false
-            }
-            val temperature = payload["temperatureC"].numberOrNull()
-            if (!optionalRangeMatches(temperature, feature.config, "minTemperatureC", "maxTemperatureC", -50.0, 150.0)) {
-                return@registerEvent false
-            }
-            val voltage = payload["voltageMv"].numberOrNull()
-            if (!optionalRangeMatches(voltage, feature.config, "minVoltageMv", "maxVoltageMv", 0.0, 20_000.0)) {
-                return@registerEvent false
-            }
-
-            choiceMatches(feature.config.string("powerSource", "any"), payload.string("plugged")) &&
-                choiceMatches(feature.config.string("status", "any"), payload.string("status")) &&
-                choiceMatches(feature.config.string("health", "any"), payload.string("health")) &&
-                triStateMatches(feature.config.string("present", "any"), payload.boolean("present"))
+            context.event.typeId == "android.event.battery_changed" &&
+                batteryProfileMatches(feature.config, context.event.payload)
         }
     }
+}
 
-    private fun optionalRangeMatches(
-        actual: Double?,
-        config: ConfigMap,
-        minKey: String,
-        maxKey: String,
-        floor: Double,
-        ceiling: Double,
-    ): Boolean {
-        val hasMin = config[minKey].numberOrNull() != null
-        val hasMax = config[maxKey].numberOrNull() != null
-        if (!hasMin && !hasMax) return true
-        return actual != null && inRange(actual, config, minKey, maxKey, floor, ceiling)
-    }
+internal fun batteryProfileMatches(config: ConfigMap, payload: ConfigMap): Boolean {
+    val percent = payload["percent"].numberOrNull()
+    if (!optionalBatteryRangeMatches(percent, config, "minPercent", "maxPercent", 0.0, 100.0)) return false
 
-    private fun inRange(
-        actual: Double,
-        config: ConfigMap,
-        minKey: String,
-        maxKey: String,
-        floor: Double,
-        ceiling: Double,
-    ): Boolean {
-        val min = config[minKey].numberOrNull() ?: floor
-        val max = config[maxKey].numberOrNull() ?: ceiling
-        return min.isFinite() && max.isFinite() && min in floor..ceiling && max in floor..ceiling && min <= max && actual in min..max
-    }
+    val temperature = payload["temperatureC"].numberOrNull()
+    if (!optionalBatteryRangeMatches(temperature, config, "minTemperatureC", "maxTemperatureC", -50.0, 150.0)) return false
 
-    private fun choiceMatches(expected: String, actual: String): Boolean = expected == "any" || expected == actual
+    val voltage = payload["voltageMv"].numberOrNull()
+    if (!optionalBatteryRangeMatches(voltage, config, "minVoltageMv", "maxVoltageMv", 0.0, 20_000.0)) return false
 
-    private fun triStateMatches(mode: String, actual: Boolean): Boolean = when (mode) {
-        "yes" -> actual
-        "no" -> !actual
-        else -> true
-    }
+    return batteryChoiceMatches(config.string("powerSource", "any"), payload.string("plugged")) &&
+        batteryChoiceMatches(config.string("status", "any"), payload.string("status")) &&
+        batteryChoiceMatches(config.string("health", "any"), payload.string("health")) &&
+        batteryTriStateMatches(config.string("present", "any"), payload.boolean("present"))
+}
+
+private fun optionalBatteryRangeMatches(
+    actual: Double?,
+    config: ConfigMap,
+    minKey: String,
+    maxKey: String,
+    floor: Double,
+    ceiling: Double,
+): Boolean {
+    val hasMin = config[minKey].numberOrNull() != null
+    val hasMax = config[maxKey].numberOrNull() != null
+    if (!hasMin && !hasMax) return true
+    if (actual == null) return false
+    val min = config[minKey].numberOrNull() ?: floor
+    val max = config[maxKey].numberOrNull() ?: ceiling
+    return min.isFinite() && max.isFinite() &&
+        min in floor..ceiling && max in floor..ceiling &&
+        min <= max && actual in min..max
+}
+
+private fun batteryChoiceMatches(expected: String, actual: String): Boolean =
+    expected == "any" || expected == actual
+
+private fun batteryTriStateMatches(mode: String, actual: Boolean): Boolean = when (mode) {
+    "yes" -> actual
+    "no" -> !actual
+    else -> true
 }
 
 /** Compatibility name for the event payload; the mapping itself is owned by AndroidDeviceUtilityFeaturePack. */
