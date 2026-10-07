@@ -11,6 +11,7 @@ import com.yagay.yauto.core.registry.FeatureDescriptor
 internal sealed interface PickerPage {
     data object Categories : PickerPage
     data class Features(val category: CatalogCategory, val special: String? = null) : PickerPage
+    data class Family(val family: FeaturePickerFamily) : PickerPage
     data class Configure(val descriptor: FeatureDescriptor) : PickerPage
 }
 
