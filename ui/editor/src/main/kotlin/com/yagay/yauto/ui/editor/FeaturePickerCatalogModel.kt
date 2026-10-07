@@ -38,6 +38,9 @@ internal class FeaturePickerCatalogModel private constructor(
 
     fun family(id: String): FeaturePickerFamily? = familyIndex.byId[id]
 
+    fun familyForMember(memberId: String): FeaturePickerFamily? =
+        familyIndex.byMemberId[memberId]?.let(familyIndex.byId::get)
+
     fun search(query: String): List<FeaturePickerCatalogItem> {
         val needle = normalizeQuery(query)
         if (needle.isEmpty()) return emptyList()
