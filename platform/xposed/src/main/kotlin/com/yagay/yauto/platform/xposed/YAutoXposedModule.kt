@@ -1025,6 +1025,7 @@ class YAutoXposedModule : XposedModule() {
         packageName: String,
         classLoader: ClassLoader,
     ) {
+        installShortXRuntimeInitHook(context, packageName, classLoader)
         val infrastructurePackage = when {
             packageName == "com.android.systemui" -> {
                 installShortXSystemUiHooks(context, classLoader)
@@ -1049,7 +1050,69 @@ class YAutoXposedModule : XposedModule() {
         }
     }
 
+    private fun installShortXRuntimeInitHook(
+        context: Context,
+        packageName: String,
+        classLoader: ClassLoader,
+    ) {
+        val clazz = runCatching {
+            classLoader.loadClass("com.android.internal.os.RuntimeInit\$LoggingHandler")
+        }.getOrNull() ?: return
+        clazz.declaredMethods
+            .filter { method ->
+                method.name == "uncaughtException" &&
+                    method.parameterTypes.any { Throwable::class.java.isAssignableFrom(it) }
+            }
+            .forEach { method ->
+                val key = "shortx-runtime-init|" + packageName + "|" + method.toGenericString()
+                if (!installedHooks.add(key)) return@forEach
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    val thread = chain.args.firstOrNull { it is Thread } as? Thread
+                    val error = chain.args.firstOrNull { it is Throwable } as? Throwable
+                    emitPackageRuntimeEvent(
+                        context,
+                        "android.event.process_uncaught_exception",
+                        mapOf(
+                            "package" to packageName,
+                            "thread" to thread?.name.orEmpty(),
+                            "exceptionClass" to error?.javaClass?.name.orEmpty(),
+                            "message" to error?.message.orEmpty().take(1024),
+                            "method" to method.name,
+                        ),
+                    )
+                    chain.proceed()
+                }
+            }
+    }
+
     private fun installShortXSystemUiHooks(context: Context, classLoader: ClassLoader) {
+        fun observeConstructors(
+            classNames: List<String>,
+            eventType: String,
+        ) {
+            classNames.forEach { className ->
+                val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
+                clazz.declaredConstructors.forEach { constructor ->
+                    val key = "shortx-systemui-constructor|" + eventType + "|" + constructor.toGenericString()
+                    if (!installedHooks.add(key)) return@forEach
+                    constructor.isAccessible = true
+                    hook(constructor).intercept { chain ->
+                        val result = chain.proceed()
+                        emitPackageRuntimeEvent(
+                            context,
+                            eventType,
+                            mapOf(
+                                "className" to className,
+                                "method" to "<init>",
+                            ),
+                        )
+                        result
+                    }
+                }
+            }
+        }
+
         fun observe(
             classNames: List<String>,
             methodNames: Set<String>,
@@ -1081,6 +1144,46 @@ class YAutoXposedModule : XposedModule() {
             }
         }
 
+        observe(
+            classNames = listOf(
+                "com.android.systemui.SystemUIApplication",
+                "com.android.systemui.application.impl.SystemUIApplicationImpl",
+            ),
+            methodNames = setOf("onCreate"),
+            eventType = "android.event.systemui_app_ready",
+            after = true,
+            extras = { target, _, method ->
+                mapOf(
+                    "className" to target?.javaClass?.name.orEmpty(),
+                    "method" to method,
+                )
+            },
+        )
+        observeConstructors(
+            classNames = listOf(
+                "com.android.systemui.qs.QSTileHost",
+                "com.android.systemui.qs.QSHostAdapter",
+                "com.android.systemui.qs.pipeline.domain.adapter.MiuiQSHostAdapter",
+            ),
+            eventType = "android.event.systemui_qs_host_ready",
+        )
+        observeConstructors(
+            classNames = listOf("com.android.systemui.statusbar.phone.AutoHideControllerImpl"),
+            eventType = "android.event.systemui_auto_hide_ready",
+        )
+        observe(
+            classNames = listOf("com.android.systemui.qs.external.CustomTile"),
+            methodNames = setOf("getTileLabel"),
+            eventType = "android.event.systemui_tile_label_queried",
+            extras = { target, _, method ->
+                val component = reflectedValue(target, "mComponent", "component") as? android.content.ComponentName
+                mapOf(
+                    "package" to component?.packageName.orEmpty(),
+                    "component" to component?.flattenToString().orEmpty(),
+                    "method" to method,
+                )
+            },
+        )
         observe(
             classNames = listOf("com.android.systemui.qs.external.CustomTile"),
             methodNames = setOf("handleClick"),
