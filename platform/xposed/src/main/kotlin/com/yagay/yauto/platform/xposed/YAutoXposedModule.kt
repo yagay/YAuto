@@ -385,6 +385,34 @@ class YAutoXposedModule : XposedModule() {
         if (eventTypes.any { it in observerTypes }) {
             installShortXObserverHooks(context, classLoader)
         }
+        if ("android.event.accessibility_user_state_created" in eventTypes) {
+            installShortXAccessibilityUserStateConstructorHook(context, classLoader)
+        }
+    }
+
+    private fun installShortXAccessibilityUserStateConstructorHook(
+        context: Context,
+        classLoader: ClassLoader,
+    ) {
+        val clazz = runCatching {
+            classLoader.loadClass("com.android.server.accessibility.AccessibilityUserState")
+        }.getOrNull() ?: return
+        clazz.declaredConstructors.forEach { constructor ->
+            val key = "shortx-accessibility-user-state|" + constructor.toGenericString()
+            if (!installedHooks.add(key)) return@forEach
+            constructor.isAccessible = true
+            hook(constructor).intercept { chain ->
+                val result = chain.proceed()
+                emitSystemRuntimeEvent(
+                    context = context,
+                    type = "android.event.accessibility_user_state_created",
+                    dedupKey = "accessibility-user-state:" + System.identityHashCode(chain.thisObject),
+                    extras = mapOf("className" to clazz.name),
+                    dedupWindowMs = 100L,
+                )
+                result
+            }
+        }
     }
 
     private fun installShortXBehaviorHooks(context: Context, classLoader: ClassLoader) {
