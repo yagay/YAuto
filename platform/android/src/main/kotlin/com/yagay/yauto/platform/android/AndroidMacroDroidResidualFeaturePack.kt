@@ -32,7 +32,6 @@ class AndroidMacroDroidResidualFeaturePack(
 
     override fun install(registry: FeatureRegistry) {
         registerNotificationLed(registry)
-        registerAmbientDisplay(registry)
         registerChart(registry)
         registerPinUnlock(registry)
         registerLauncherEntry(registry)
@@ -89,58 +88,6 @@ class AndroidMacroDroidResidualFeaturePack(
         registry.registerState(state, evaluator)
         registry.registerCondition(
             state.copy(id = FeatureId("android.condition.notification_led"), kind = FeatureKind.CONDITION),
-            evaluator,
-        )
-    }
-
-    private fun registerAmbientDisplay(registry: FeatureRegistry) {
-        val evaluator = ConditionEvaluator { feature, ctx ->
-            val result = shellResult(ctx, "settings get secure doze_always_on")
-            val enabled = stdout(result).trim() == "1"
-            enabled == feature.config.boolean("value", true)
-        }
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.ambient_display.set"),
-                FeatureKind.ACTION,
-                "Set Ambient Display",
-                "Enable, disable, or toggle Android Always-On/Ambient Display settings",
-                FeatureCategory.DISPLAY,
-                fields = listOf(FieldSchema.Choice("mode", "Mode", true, listOf("enable", "disable", "toggle"))),
-                capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
-                implementationOptions = privilegedOptions(),
-                keywords = setOf("ambient display", "always on display", "aod", "doze", "macrodroid"),
-                ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            val currentResult = shellResult(ctx, "settings get secure doze_always_on")
-            val current = stdout(currentResult).trim() == "1"
-            val enabled = when (feature.config.string("mode", "toggle")) {
-                "enable" -> true
-                "disable" -> false
-                else -> !current
-            }
-            val value = if (enabled) 1 else 0
-            val result = shellResult(
-                ctx,
-                "settings put secure doze_enabled $value; settings put secure doze_always_on $value",
-            )
-            ActionExecutionResult(result.success, ConfigValue.BooleanValue(enabled), result.message)
-        }
-        val state = FeatureDescriptor(
-            FeatureId("android.state.ambient_display"),
-            FeatureKind.STATE,
-            "Ambient Display enabled",
-            "Check Android Always-On/Ambient Display state",
-            FeatureCategory.DISPLAY,
-            fields = listOf(FieldSchema.Toggle("value", "Enabled")),
-            capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
-            implementationOptions = privilegedOptions(),
-            ownerPackId = id,
-        )
-        registry.registerState(state, evaluator)
-        registry.registerCondition(
-            state.copy(id = FeatureId("android.condition.ambient_display"), kind = FeatureKind.CONDITION),
             evaluator,
         )
     }
