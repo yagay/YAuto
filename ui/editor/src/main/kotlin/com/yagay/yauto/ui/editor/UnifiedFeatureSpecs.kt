@@ -34,7 +34,10 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         "volume",
         TextR.string.feature_family_volume,
         TextR.string.feature_family_volume_subtitle,
-        listOf("android.audio.volume.set", "android.audio.volume.adjust"),
+        listOf(
+            "android.audio.volume.set",
+            "android.audio.volume.adjust",
+        ),
     ),
     UnifiedFeatureSpec(
         "websocket",
@@ -408,11 +411,10 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         ),
     ),
     UnifiedFeatureSpec(
-        "communication_actions",
+        "messaging_actions",
         TextR.string.feature_family_communication_actions,
         TextR.string.feature_family_communication_actions_subtitle,
         listOf(
-            "android.phone.dial",
             "android.sms.compose",
             "android.email.compose",
         ),
@@ -432,6 +434,7 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         TextR.string.unified_phone_control,
         TextR.string.unified_phone_control_subtitle,
         listOf(
+            "android.phone.dial",
             "android.phone.call",
             "android.phone.answer",
             "android.phone.end",
@@ -732,14 +735,10 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         TextR.string.unified_audio_checks,
         TextR.string.unified_audio_checks_subtitle,
         listOf(
-            "android.state.media_volume",
-            "android.condition.media_volume",
             "android.state.audio.music_active",
             "android.condition.audio.music_active",
             "android.state.audio.mode",
             "android.condition.audio.mode",
-            "android.state.audio.ringer_mode",
-            "android.condition.audio.ringer_mode",
             "android.state.audio.microphone_muted",
             "android.condition.audio.microphone_muted",
             "android.state.audio.speakerphone",
@@ -748,6 +747,17 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
             "android.condition.headset_connected",
             "android.state.tts_speaking",
             "android.condition.tts_speaking",
+        ),
+    ),
+    UnifiedFeatureSpec(
+        "volume_checks",
+        TextR.string.unified_volume_checks,
+        TextR.string.unified_volume_checks_subtitle,
+        listOf(
+            "android.state.media_volume",
+            "android.condition.media_volume",
+            "android.state.audio.ringer_mode",
+            "android.condition.audio.ringer_mode",
         ),
     ),
     UnifiedFeatureSpec(
