@@ -797,6 +797,7 @@ class YAutoXposedModule : XposedModule() {
             hardwareKeyEventDedup.entries.removeIf { now - it.value > 5_000L }
         }
 
+        val inputDevice = event.device
         val action = when (event.action) {
             KeyEvent.ACTION_DOWN -> "down"
             KeyEvent.ACTION_UP -> "up"
@@ -810,6 +811,10 @@ class YAutoXposedModule : XposedModule() {
                 "keyCode" to event.keyCode,
                 "scanCode" to event.scanCode,
                 "deviceId" to event.deviceId,
+                "deviceName" to inputDevice?.name.orEmpty(),
+                "deviceDescriptor" to inputDevice?.descriptor.orEmpty(),
+                "vendorId" to (inputDevice?.vendorId ?: 0),
+                "productId" to (inputDevice?.productId ?: 0),
                 "action" to action,
                 "repeatCount" to event.repeatCount,
                 "metaState" to event.metaState,
@@ -839,6 +844,7 @@ class YAutoXposedModule : XposedModule() {
         }
         if (!hardwareKeyCaptureUntilElapsed.compareAndSet(until, 0L)) return
 
+        val inputDevice = event.device
         runCatching {
             context.sendBroadcast(
                 Intent(SystemBridgeProtocol.SYSTEM_EVENT_ACTION)
@@ -847,6 +853,10 @@ class YAutoXposedModule : XposedModule() {
                     .putExtra("keyCode", event.keyCode)
                     .putExtra("scanCode", event.scanCode)
                     .putExtra("deviceId", event.deviceId)
+                    .putExtra("deviceName", inputDevice?.name.orEmpty())
+                    .putExtra("deviceDescriptor", inputDevice?.descriptor.orEmpty())
+                    .putExtra("vendorId", inputDevice?.vendorId ?: 0)
+                    .putExtra("productId", inputDevice?.productId ?: 0)
                     .putExtra("action", event.action)
                     .putExtra("method", methodName)
                     .putExtra("timestampEpochMs", System.currentTimeMillis())
