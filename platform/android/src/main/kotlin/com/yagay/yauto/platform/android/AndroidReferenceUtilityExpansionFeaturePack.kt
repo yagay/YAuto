@@ -46,7 +46,6 @@ class AndroidReferenceUtilityExpansionFeaturePack(context: Context) : FeaturePac
         registerDefaultSoundGet(registry)
         registerDefaultSoundSet(registry)
         registerScreenOnTimePair(registry)
-        registerRingerModePair(registry)
     }
 
     private fun registerStatusBar(registry: FeatureRegistry) {
@@ -286,35 +285,6 @@ class AndroidReferenceUtilityExpansionFeaturePack(context: Context) : FeaturePac
         )
     }
 
-    private fun registerRingerModePair(registry: FeatureRegistry) {
-        val fields = listOf(
-            FieldSchema.Choice("mode", "Ringer mode", true, listOf("normal", "vibrate", "silent")),
-        )
-        val evaluator = ConditionEvaluator { feature, _ ->
-            currentRingerMode() == feature.config.string("mode", "normal")
-        }
-        val state = FeatureDescriptor(
-            FeatureId("android.state.ringer_mode"),
-            FeatureKind.STATE,
-            "Ringer mode",
-            "Match the current Android ringer mode",
-            FeatureCategory.AUDIO,
-            fields = fields,
-            keywords = setOf("ringer", "silent", "vibrate", "sound mode"),
-            ownerPackId = id,
-        )
-        registry.registerState(state, evaluator)
-        registry.registerCondition(
-            state.copy(id = FeatureId("android.condition.ringer_mode"), kind = FeatureKind.CONDITION),
-            evaluator,
-        )
-    }
-
-    private fun currentRingerMode(): String = when (audio.ringerMode) {
-        AudioManager.RINGER_MODE_SILENT -> "silent"
-        AudioManager.RINGER_MODE_VIBRATE -> "vibrate"
-        else -> "normal"
-    }
 
     private fun activeNetworkObject(): ConfigValue.ObjectValue {
         val network = connectivity.activeNetwork
