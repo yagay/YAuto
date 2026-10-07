@@ -56,13 +56,25 @@ class AndroidBatteryEventFeaturePackTest {
     )
 
     @Test
-    fun `battery detail pack installs six concrete event matchers`() {
+    fun `battery detail pack exposes one canonical trigger and resolves legacy aliases`() {
         val registry = FeatureRegistry().apply { AndroidBatteryEventFeaturePack().install(this) }
         val descriptors = registry.allDescriptors()
-        assertEquals(6, descriptors.size)
-        assertTrue(descriptors.all { it.kind == FeatureKind.EVENT })
-        descriptors.forEach { descriptor ->
-            assertNotNull(registry.eventMatcher(descriptor.id.value))
+        assertEquals(1, descriptors.size)
+        assertEquals("android.event.battery_changed", descriptors.single().id.value)
+        assertEquals(FeatureKind.EVENT, descriptors.single().kind)
+        assertNotNull(registry.eventMatcher("android.event.battery_changed"))
+
+        val aliases = listOf(
+            "android.event.battery_power_source_filtered",
+            "android.event.battery_status_filtered",
+            "android.event.battery_health_filtered",
+            "android.event.battery_present_filtered",
+            "android.event.battery_voltage_filtered",
+            "android.event.battery_profile_filtered",
+        )
+        aliases.forEach { alias ->
+            assertEquals("android.event.battery_changed", registry.canonicalId(alias, FeatureKind.EVENT))
+            assertNotNull(registry.eventMatcher(alias))
         }
     }
 
