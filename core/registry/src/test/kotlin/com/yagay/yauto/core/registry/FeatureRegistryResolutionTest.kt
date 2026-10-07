@@ -76,6 +76,40 @@ class FeatureRegistryResolutionTest {
     }
 
     @Test
+    fun `legacy alias can rename config keys and canonical keys win collisions`() {
+        val registry = FeatureRegistry()
+        registry.registerAction(
+            descriptor(
+                id = "android.test.action",
+                aliases = setOf("android.legacy.action"),
+                aliasConfigKeyRenames = mapOf(
+                    "android.legacy.action" to mapOf(
+                        "value" to "operation",
+                        "oldTarget" to "target",
+                    )
+                ),
+            )
+        ) { _, _ -> ActionExecutionResult(success = true) }
+
+        val migrated = registry.canonicalRef(
+            FeatureRef(
+                typeId = "android.legacy.action",
+                config = mapOf(
+                    "value" to ConfigValue.StringValue("legacy"),
+                    "oldTarget" to ConfigValue.StringValue("old"),
+                    "target" to ConfigValue.StringValue("canonical"),
+                ),
+            )
+        )
+
+        assertEquals("android.test.action", migrated.typeId)
+        assertEquals(ConfigValue.StringValue("legacy"), migrated.config["operation"])
+        assertEquals(ConfigValue.StringValue("canonical"), migrated.config["target"])
+        assertFalse("value" in migrated.config)
+        assertFalse("oldTarget" in migrated.config)
+    }
+
+    @Test
     fun `alias defaults must belong to declared aliases`() {
         val registry = FeatureRegistry()
 
@@ -212,6 +246,7 @@ class FeatureRegistryResolutionTest {
         id: String,
         aliases: Set<String> = emptySet(),
         aliasConfigDefaults: Map<String, Map<String, ConfigValue>> = emptyMap(),
+        aliasConfigKeyRenames: Map<String, Map<String, String>> = emptyMap(),
         ownerPackId: String = "test",
         kind: FeatureKind = FeatureKind.ACTION,
     ) = FeatureDescriptor(
@@ -223,6 +258,7 @@ class FeatureRegistryResolutionTest {
         ownerPackId = ownerPackId,
         aliases = aliases,
         aliasConfigDefaults = aliasConfigDefaults,
+        aliasConfigKeyRenames = aliasConfigKeyRenames,
     )
 
     private fun assertFails(block: () -> Unit) {
