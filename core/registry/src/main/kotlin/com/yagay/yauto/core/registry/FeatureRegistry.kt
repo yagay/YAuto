@@ -100,6 +100,12 @@ data class FeatureDescriptor(
      * A direct canonical key already present in saved config wins over its renamed legacy key.
      */
     val aliasConfigKeyRenames: Map<String, Map<String, String>> = emptyMap(),
+    /**
+     * User-facing MacroDroid-style picker category. Kept separate from [category]/[domain] so
+     * execution buckets and compatibility metadata are not coupled to navigation.
+     */
+    val pickerCategory: FeaturePickerCategory =
+        inferFeaturePickerCategory(id.value, kind, category),
 )
 
 sealed interface FeatureResolution {
