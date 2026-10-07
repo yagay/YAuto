@@ -20,7 +20,7 @@ class DeviceHardwareKeyCatalog(
         return mutex.withLock {
             if (!force) cached?.let { return@withLock it }
             val discovered = discover()
-            if (discovered.keyCodes.isNotEmpty() || discovered.scanCodes.isNotEmpty()) {
+            if (discovered.keyCodes.isNotEmpty()) {
                 cached = discovered
             }
             discovered
@@ -83,24 +83,6 @@ class DeviceHardwareKeyCatalog(
             .groupBy { it.scanCode }
             .mapValues { (_, values) -> values.minByOrNull(::mappingPriority) ?: values.first() }
 
-        val scanOptions = preferredByScan.values
-            .map { mapping ->
-                val androidCode = keyCodeByLabel[mapping.label]
-                val deviceNames = devicesByScan[mapping.scanCode].orEmpty().sorted()
-                val detail = buildList {
-                    add("ScanCode ${mapping.scanCode}")
-                    androidCode?.let { add("KeyCode $it") }
-                    if (deviceNames.isNotEmpty()) add(deviceNames.joinToString(", "))
-                    add(File(mapping.source).name)
-                }.joinToString(", ")
-                FieldPickerOption(
-                    value = mapping.scanCode.toString(),
-                    label = mapping.label,
-                    detail = detail,
-                )
-            }
-            .distinctBy { it.value }
-            .sortedWith(compareBy<FieldPickerOption>({ it.label }, { it.value.toIntOrNull() ?: Int.MAX_VALUE }))
 
         val keyCodeOptions = preferredByScan.values
             .mapNotNull { mapping ->
@@ -108,7 +90,6 @@ class DeviceHardwareKeyCatalog(
                 val deviceNames = devicesByScan[mapping.scanCode].orEmpty().sorted()
                 val detail = buildList {
                     add("KeyCode $keyCode")
-                    add("scan ${mapping.scanCode}")
                     if (deviceNames.isNotEmpty()) add(deviceNames.joinToString(", "))
                     add(File(mapping.source).name)
                 }.joinToString(", ")
@@ -121,10 +102,7 @@ class DeviceHardwareKeyCatalog(
             .distinctBy { it.value }
             .sortedWith(compareBy<FieldPickerOption>({ it.label }, { it.value.toIntOrNull() ?: Int.MAX_VALUE }))
 
-        return HardwareKeyPickerCatalog(
-            keyCodes = keyCodeOptions,
-            scanCodes = scanOptions,
-        )
+        return HardwareKeyPickerCatalog(keyCodes = keyCodeOptions)
     }
 
     private fun androidKeyCodesByLabel(): Map<String, Int> =
