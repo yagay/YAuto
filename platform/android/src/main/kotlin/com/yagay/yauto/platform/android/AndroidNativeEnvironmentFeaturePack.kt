@@ -38,7 +38,14 @@ class AndroidNativeEnvironmentFeaturePack(context: Context) : FeaturePack {
         numberPair(registry, "battery_current", "Battery current", "Compare Android battery current-now in microamps", FeatureCategory.DEVICE, -20_000_000.0, 20_000_000.0) { battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW).takeUnless { it == Int.MIN_VALUE }?.toDouble() }
         numberPair(registry, "battery_charge_counter", "Battery charge counter", "Compare Android remaining battery charge in microamp-hours", FeatureCategory.DEVICE, 0.0, 100_000_000.0) { battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER).takeUnless { it == Int.MIN_VALUE }?.toDouble() }
         numberPair(registry, "battery_energy_counter", "Battery energy counter", "Compare Android remaining battery energy in nanowatt-hours", FeatureCategory.DEVICE, 0.0, 1.0e12) { battery.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER).takeUnless { it == Long.MIN_VALUE }?.toDouble() }
-        booleanPair(registry, "clock_24h", "24-hour clock", "Check whether Android currently uses 24-hour time", FeatureCategory.SYSTEM) { DateFormat.is24HourFormat(context) }
+        booleanPair(
+            registry,
+            "clock_24h",
+            "24-hour clock",
+            "Check whether Android currently uses 24-hour time",
+            FeatureCategory.SYSTEM,
+            legacyKeys = setOf("clock_24_hour"),
+        ) { DateFormat.is24HourFormat(context) }
         textPair(registry, "timezone", "Time zone", "Match the current Android time-zone ID", FeatureCategory.SYSTEM, "zoneContains", "Time-zone ID contains") { TimeZone.getDefault().id }
         textPair(registry, "locale", "System locale", "Match any configured Android language tag", FeatureCategory.SYSTEM, "languageTagContains", "Language tag contains") {
             val locales = context.resources.configuration.locales
@@ -103,11 +110,57 @@ class AndroidNativeEnvironmentFeaturePack(context: Context) : FeaturePack {
     }
 
     private fun batteryIntent(): Intent? = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-    private fun booleanPair(registry: FeatureRegistry, key: String, title: String, description: String, category: FeatureCategory, query: () -> Boolean) = pair(registry, key, title, description, category, listOf(FieldSchema.Toggle("value", "Enabled / true"))) { feature, _ -> query() == feature.config.boolean("value", true) }
+    private fun booleanPair(
+        registry: FeatureRegistry,
+        key: String,
+        title: String,
+        description: String,
+        category: FeatureCategory,
+        legacyKeys: Set<String> = emptySet(),
+        query: () -> Boolean,
+    ) = pair(
+        registry,
+        key,
+        title,
+        description,
+        category,
+        listOf(FieldSchema.Toggle("value", "Enabled / true")),
+        legacyKeys,
+    ) { feature, _ -> query() == feature.config.boolean("value", true) }
     private fun textPair(registry: FeatureRegistry, key: String, title: String, description: String, category: FeatureCategory, fieldKey: String, fieldLabel: String, query: () -> String) = pair(registry, key, title, description, category, listOf(FieldSchema.Text(fieldKey, fieldLabel, true))) { feature, ctx -> val expected = feature.config.string(fieldKey).resolveVariables(ctx.variables).trim(); expected.isNotEmpty() && query().contains(expected, ignoreCase = true) }
     private fun choicePair(registry: FeatureRegistry, key: String, title: String, description: String, category: FeatureCategory, fieldKey: String, fieldLabel: String, options: List<String>, query: () -> String) = pair(registry, key, title, description, category, listOf(FieldSchema.Choice(fieldKey, fieldLabel, true, options))) { feature, _ -> query() == feature.config.string(fieldKey, options.first()) }
     private fun numberPair(registry: FeatureRegistry, key: String, title: String, description: String, category: FeatureCategory, allowedMin: Double, allowedMax: Double, query: () -> Double?) = pair(registry, key, title, description, category, listOf(FieldSchema.Number("min", "Minimum", min = allowedMin, max = allowedMax), FieldSchema.Number("max", "Maximum", min = allowedMin, max = allowedMax))) { feature, _ -> val value = query() ?: return@pair false; matchesBoundedNumber(value, feature.config["min"].numberOrNull(), feature.config["max"].numberOrNull(), allowedMin, allowedMax) }
-    private fun pair(registry: FeatureRegistry, key: String, title: String, description: String, category: FeatureCategory, fields: List<FieldSchema>, evaluate: suspend (com.yagay.yauto.core.model.FeatureRef, FeatureExecutionContext) -> Boolean) { val evaluator = ConditionEvaluator { feature, ctx -> runCatching { evaluate(feature, ctx) }.getOrDefault(false) }; val state = FeatureDescriptor(FeatureId("android.state.$key"), FeatureKind.STATE, title, description, category, fields = fields, ownerPackId = id); registry.registerState(state, evaluator); registry.registerCondition(state.copy(id = FeatureId("android.condition.$key"), kind = FeatureKind.CONDITION), evaluator) }
+    private fun pair(
+        registry: FeatureRegistry,
+        key: String,
+        title: String,
+        description: String,
+        category: FeatureCategory,
+        fields: List<FieldSchema>,
+        legacyKeys: Set<String> = emptySet(),
+        evaluate: suspend (com.yagay.yauto.core.model.FeatureRef, FeatureExecutionContext) -> Boolean,
+    ) {
+        val evaluator = ConditionEvaluator { feature, ctx -> runCatching { evaluate(feature, ctx) }.getOrDefault(false) }
+        val state = FeatureDescriptor(
+            FeatureId("android.state.$key"),
+            FeatureKind.STATE,
+            title,
+            description,
+            category,
+            fields = fields,
+            aliases = legacyKeys.mapTo(linkedSetOf()) { "android.state.$it" },
+            ownerPackId = id,
+        )
+        registry.registerState(state, evaluator)
+        registry.registerCondition(
+            state.copy(
+                id = FeatureId("android.condition.$key"),
+                kind = FeatureKind.CONDITION,
+                aliases = legacyKeys.mapTo(linkedSetOf()) { "android.condition.$it" },
+            ),
+            evaluator,
+        )
+    }
 }
 
 internal fun matchesBoundedNumber(value: Double, min: Double?, max: Double?, allowedMin: Double, allowedMax: Double): Boolean { if (!value.isFinite() || value !in allowedMin..allowedMax) return false; val safeMin = min ?: allowedMin; val safeMax = max ?: allowedMax; if (!safeMin.isFinite() || !safeMax.isFinite() || safeMin !in allowedMin..allowedMax || safeMax !in allowedMin..allowedMax || safeMax < safeMin) return false; return value in safeMin..safeMax }
