@@ -77,12 +77,18 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
             (request.capability == CapabilityIds.LSPOSED &&
                 request.operationId == SystemBridgeProtocol.SHORTX_BEHAVIOR_SET) ||
             (request.capability == CapabilityIds.LSPOSED_HOOK &&
-                request.operationId == SystemBridgeProtocol.HOOK_INSTALL_SESSION)
+                request.operationId in setOf(
+                    SystemBridgeProtocol.HOOK_INSTALL_SESSION,
+                    SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_SET,
+                ))
 
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
-        val result = when (request.capability) {
-            CapabilityIds.LSPOSED_HOOK -> requestHook(request)
-            CapabilityIds.LSPOSED -> requestSystem(request.operationId, request.payload)
+        val result = when {
+            request.capability == CapabilityIds.LSPOSED_HOOK &&
+                request.operationId == SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_SET ->
+                requestPackageBehavior(request)
+            request.capability == CapabilityIds.LSPOSED_HOOK -> requestHook(request)
+            request.capability == CapabilityIds.LSPOSED -> requestSystem(request.operationId, request.payload)
             else -> requestSystem(request.operationId)
         }
         val success = result?.getBoolean("success") == true
@@ -119,6 +125,23 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                 else -> Unit
             }
         }
+        return orderedRequest(intent).also { connected = it != null }
+    }
+
+    private suspend fun requestPackageBehavior(request: CapabilityRequest): Bundle? {
+        val targetPackage = request.payload.string("package").trim()
+        if (!PACKAGE_NAME.matches(targetPackage)) return Bundle().apply {
+            putInt("version", protocolVersion)
+            putBoolean("success", false)
+            putString("error", "Invalid target package")
+        }
+        val intent = Intent(SystemBridgeProtocol.HOOK_ACTION)
+            .setPackage(targetPackage)
+            .putExtra("version", protocolVersion)
+            .putExtra("operation", SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_SET)
+            .putExtra("behavior", request.payload.string("behavior"))
+            .putExtra("enabled", request.payload["enabled"] is ConfigValue.BooleanValue &&
+                (request.payload["enabled"] as ConfigValue.BooleanValue).value)
         return orderedRequest(intent).also { connected = it != null }
     }
 
