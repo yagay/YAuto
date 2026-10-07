@@ -62,6 +62,37 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test
+    fun `second batch app controls collapse without changing concrete ids`() {
+        val model = FeaturePickerCatalogModel.create(
+            listOf(
+                item("android.app.enabled.set", "Set app enabled", app, "app enabled"),
+                item("android.app.background.kill", "Kill background app", app, "app background kill"),
+                item("android.app.suspended.set", "Set app suspended", app, "app suspended"),
+            ),
+            Comparator.naturalOrder(),
+        )
+
+        val entries = model.entries(
+            PickerPage.Features(app),
+            favorites = emptySet(),
+            recent = emptyList(),
+            query = "",
+        )
+
+        assertEquals(1, entries.size)
+        val family = (entries.single() as FeaturePickerListEntry.Family).family
+        assertEquals("app_state_control", family.spec.id)
+        assertEquals(
+            setOf(
+                "android.app.enabled.set",
+                "android.app.background.kill",
+                "android.app.suspended.set",
+            ),
+            family.members.map { it.descriptor.id.value }.toSet(),
+        )
+    }
+
+    @Test
     fun `search favorites and recent use prebuilt indexes without reordering recent`() {
         val alpha = item("a", "Alpha", app, "alpha launch browser")
         val beta = item("b", "Beta", app, "beta network wifi")
