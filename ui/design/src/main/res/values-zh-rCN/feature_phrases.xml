@@ -350,4 +350,7 @@
     <string name="feature_phrase_y">Y</string>
     <string name="feature_phrase_yauto_shortcut">YAuto 快捷方式</string>
     <string name="feature_phrase_z">Z</string>
+    <string name="feature_phrase_class_contains">类名包含</string>
+    <string name="feature_phrase_hook_method_contains">Hook 方法包含</string>
+    <string name="feature_phrase_detail_contains">详细信息包含</string>
 </resources>
