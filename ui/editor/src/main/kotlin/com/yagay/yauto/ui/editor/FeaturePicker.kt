@@ -118,6 +118,7 @@ fun MacroFeaturePickerDialog(
                                 PickerPage.Categories ->
                                     stringResource(TextR.string.editor_select_kind_format, kindLabel(kind))
                                 is PickerPage.Features -> categoryTitle(current)
+                                is PickerPage.Family -> stringResource(current.family.spec.titleRes)
                                 is PickerPage.Configure ->
                                     catalog.item(current.descriptor.id.value)?.title ?: current.descriptor.title
                             }
@@ -164,6 +165,15 @@ fun MacroFeaturePickerDialog(
                     recent = recent,
                     onQuery = ::updateQuery,
                     onFeature = { push(PickerPage.Configure(it)) },
+                    onFamily = { push(PickerPage.Family(it)) },
+                    onFavorite = ::toggleFavorite,
+                )
+                is PickerPage.Family -> FeatureFamilyPage(
+                    modifier = Modifier.padding(padding),
+                    kind = kind,
+                    family = current.family,
+                    favorites = favorites,
+                    onFeature = { push(PickerPage.Configure(it)) },
                     onFavorite = ::toggleFavorite,
                 )
                 is PickerPage.Configure -> GenericFeatureConfigEditor(
@@ -191,6 +201,7 @@ private fun pickerPageStateKey(page: PickerPage): String = when (page) {
             append(it)
         }
     }
+    is PickerPage.Family -> "family:" + page.family.spec.id
     is PickerPage.Configure -> "configure:" + page.descriptor.id.value
 }
 private fun loadIds(raw: String?): List<String> = raw.orEmpty().lineSequence()
