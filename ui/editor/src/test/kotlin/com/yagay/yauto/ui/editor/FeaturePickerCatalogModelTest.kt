@@ -53,7 +53,7 @@ class FeaturePickerCatalogModelTest {
         assertEquals(1, model.categoryCount("app"))
         assertEquals(
             "volume",
-            model.groupForMember("android.audio.volume.adjust")?.spec?.id,
+            model.unifiedGroupForMember("android.audio.volume.adjust")?.spec?.id,
         )
 
         val searchEntries = model.entries(page, favorites = emptySet(), recent = emptyList(), query = "adjust")
@@ -154,10 +154,10 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test
-    fun `family operation restoration prefers existing concrete id then requested operation`() {
+    fun `unified operation restoration prefers existing concrete id then requested operation`() {
         val first = item("android.audio.volume.set", "Set volume", app, "set volume")
         val second = item("android.audio.volume.adjust", "Adjust volume", app, "adjust volume")
-        val family = UnifiedFeatureGroup(
+        val group = UnifiedFeatureGroup(
             spec = UnifiedFeatureSpec(
                 id = "volume",
                 titleRes = 1,
@@ -170,7 +170,7 @@ class FeaturePickerCatalogModelTest {
         assertEquals(
             "android.audio.volume.adjust",
             resolveUnifiedMemberId(
-                family,
+                group,
                 initialTypeId = "android.audio.volume.adjust",
                 requestedMemberId = "android.audio.volume.set",
             ),
@@ -178,7 +178,7 @@ class FeaturePickerCatalogModelTest {
         assertEquals(
             "android.audio.volume.adjust",
             resolveUnifiedMemberId(
-                family,
+                group,
                 initialTypeId = null,
                 requestedMemberId = "android.audio.volume.adjust",
             ),
@@ -186,7 +186,7 @@ class FeaturePickerCatalogModelTest {
         assertEquals(
             "android.audio.volume.set",
             resolveUnifiedMemberId(
-                family,
+                group,
                 initialTypeId = null,
                 requestedMemberId = "missing",
             ),
@@ -214,7 +214,7 @@ class FeaturePickerCatalogModelTest {
         assertEquals(1, entries.size)
         val group = (entries.single() as FeaturePickerListEntry.Unified).group
         assertEquals("hardware_key_triggers", group.spec.id)
-        assertEquals(FeatureKind.EVENT, group.members.single().descriptor.kind.takeIf { group.members.all { member -> member.descriptor.kind == it } })
+        assertTrue(group.members.all { it.descriptor.kind == FeatureKind.EVENT })
     }
 
     @Test
