@@ -77,6 +77,7 @@ class AndroidWorkProfileFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.SYSTEM,
                 keywords = setOf("work profile", "managed profile", "profile", "macrodroid"),
                 ownerPackId = id,
+                aliases = setOf(sourceTypeId),
             )
         ) { _, context -> context.event.typeId == sourceTypeId }
     }
