@@ -51,6 +51,26 @@ internal object ShortXCompatHookCatalog {
             after = true,
         ),
         ShortXObserverHookSpec(
+            id = "ams-shell-command",
+            classNames = listOf("com.android.server.am.ActivityManagerShellCommand"),
+            methodNames = setOf("onCommand"),
+            eventType = "android.event.activity_manager_shell_command",
+        ),
+        ShortXObserverHookSpec(
+            id = "input-manager-start",
+            classNames = listOf("com.android.server.input.InputManagerService"),
+            methodNames = setOf("start"),
+            eventType = "android.event.input_manager_started",
+            after = true,
+        ),
+        ShortXObserverHookSpec(
+            id = "window-manager-ready",
+            classNames = listOf("com.android.server.wm.WindowManagerService"),
+            methodNames = setOf("systemReady"),
+            eventType = "android.event.window_manager_ready",
+            after = true,
+        ),
+        ShortXObserverHookSpec(
             id = "process-list-start",
             classNames = listOf("com.android.server.am.ProcessList"),
             methodNames = setOf("handleProcessStartedLocked"),
