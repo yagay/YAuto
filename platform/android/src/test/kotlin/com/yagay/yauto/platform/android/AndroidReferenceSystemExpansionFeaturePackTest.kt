@@ -19,6 +19,14 @@ class AndroidReferenceSystemExpansionFeaturePackTest {
         assertEquals("settings put secure doze_always_on 1", ambientDisplayCommand("always_on", true))
         assertEquals("settings put secure doze_always_on 0", ambientDisplayCommand("always_on", false))
         assertEquals("settings put secure doze_enabled 1", ambientDisplayCommand("wake_for_notifications", true))
+        assertEquals(
+            "settings put secure doze_enabled 1; settings put secure doze_always_on 1",
+            ambientDisplayCommand("both", true),
+        )
+        assertEquals(
+            "settings put secure doze_enabled 0; settings put secure doze_always_on 0",
+            ambientDisplayCommand("both", false),
+        )
         assertEquals(null, ambientDisplayCommand("unknown", true))
         assertEquals("settings put global heads_up_notifications_enabled 1", headsUpCommand(true))
         assertEquals("settings put global heads_up_notifications_enabled 0", headsUpCommand(false))
