@@ -15,16 +15,19 @@ class AccessibilityKeyFeaturePack : FeaturePack {
         registry.registerEvent(
             FeatureDescriptor(
                 FeatureId("android.event.hardware_key"), FeatureKind.EVENT,
-                "Hardware key", "Run when Accessibility reports a hardware key down or up event",
+                "Hardware key", "Run when Accessibility or LSPosed reports a hardware key down or up event",
                 FeatureCategory.UI_AUTOMATION,
-                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                implementationOptions = listOf(
+                    FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+                    FeatureImplementationOption("lsposed", setOf(AccessRequirement.LSPOSED), restartRequired = true),
+                ),
                 fields = listOf(
                     FieldSchema.Number("keyCode", "Android key code", min = 0.0, max = 1000.0),
                     FieldSchema.Number("scanCode", "Linux scan code", min = 0.0, max = 65535.0),
                     FieldSchema.Choice("action", "Key action", options = listOf("any", "down", "up")),
                     FieldSchema.Toggle("initialOnly", "Ignore repeated key-down events"),
                 ),
-                keywords = setOf("hardware key", "button", "volume key", "media key", "keycode", "accessibility"),
+                keywords = setOf("hardware key", "button", "volume key", "media key", "keycode", "scancode", "accessibility", "lsposed", "shortx"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->
