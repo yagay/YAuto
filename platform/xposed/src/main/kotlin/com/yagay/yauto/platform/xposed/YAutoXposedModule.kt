@@ -511,7 +511,7 @@ class YAutoXposedModule : XposedModule() {
         className: String,
         methodName: String,
         thisObject: Any?,
-        args: Array<out Any?>,
+        args: List<Any?>,
     ) {
         if (spec.eventType !in subscribedSystemEvents.get()) return
         val extras = linkedMapOf<String, Any?>(
@@ -1014,7 +1014,7 @@ class YAutoXposedModule : XposedModule() {
             methodNames: Set<String>,
             eventType: String,
             after: Boolean = false,
-            extras: (Any?, Array<out Any?>, String) -> Map<String, Any?> = { _, _, _ -> emptyMap() },
+            extras: (Any?, List<Any?>, String) -> Map<String, Any?> = { _, _, _ -> emptyMap() },
         ) {
             classNames.forEach { className ->
                 val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
@@ -1113,7 +1113,7 @@ class YAutoXposedModule : XposedModule() {
                     }.getOrNull()
                 val payload = mapOf(
                     "kind" to "tag",
-                    "uidHex" to uid.orEmpty().joinToString("") { byte -> "%02X".format(byte) },
+                    "uidHex" to (uid?.joinToString("") { byte -> "%02X".format(byte) } ?: ""),
                     "method" to method.name,
                 )
                 emitPackageRuntimeEvent(context, "android.event.nfc_tag_system", payload)
