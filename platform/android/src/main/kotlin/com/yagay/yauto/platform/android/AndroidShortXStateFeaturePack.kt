@@ -13,6 +13,7 @@ class AndroidShortXStateFeaturePack : FeaturePack {
     override fun install(registry: FeatureRegistry) {
         registerTaskPresent(registry)
         registerNotificationPanelExpanded(registry)
+        registerImeVisible(registry)
         registerBluetoothConnected(registry)
     }
 
@@ -75,6 +76,37 @@ class AndroidShortXStateFeaturePack : FeaturePack {
         registry.registerCondition(descriptor, evaluator)
         registry.registerState(
             descriptor.copy(id = FeatureId("android.state.notification_panel_expanded"), kind = FeatureKind.STATE),
+            evaluator,
+        )
+    }
+
+    private fun registerImeVisible(registry: FeatureRegistry) {
+        val descriptor = FeatureDescriptor(
+            FeatureId("android.condition.ime_visible"), FeatureKind.CONDITION,
+            "Input method visible",
+            "Check whether Android currently reports the software input method as shown or requested",
+            FeatureCategory.UI_AUTOMATION,
+            fields = listOf(FieldSchema.Toggle("value", "Visible")),
+            capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
+            implementationOptions = privilegedOptions(),
+            keywords = setOf("ime", "keyboard", "input method", "visible", "shortx"),
+            ownerPackId = id,
+        )
+        val evaluator = ConditionEvaluator { feature, ctx ->
+            val result = shell(ctx, "dumpsys input_method")
+            val text = stdout(result)
+            val visible = result.success && listOf(
+                "mInputShown=true",
+                "mShowRequested=true",
+                "isInputViewShown=true",
+                "mWindowVisible=true",
+                "inputShown=true",
+            ).any { text.contains(it, ignoreCase = true) }
+            visible == feature.config.boolean("value", true)
+        }
+        registry.registerCondition(descriptor, evaluator)
+        registry.registerState(
+            descriptor.copy(id = FeatureId("android.state.ime_visible"), kind = FeatureKind.STATE),
             evaluator,
         )
     }
