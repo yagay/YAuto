@@ -244,6 +244,28 @@ internal object ShortXMappings {
                     else -> null
                 }
             }
+            "RequireIMEVisibility" -> {
+                if (!fields.onlyBusinessFields(1)) null
+                else fields.varint(1)?.let { value ->
+                    binaryFeature(
+                        any,
+                        importerId,
+                        "android.condition.ime_visible",
+                        mapOf("value" to ConfigValue.BooleanValue(value != 0L)),
+                    )
+                }
+            }
+            "RequireNotificationPanelExpanded" -> {
+                if (!fields.onlyBusinessFields(1)) null
+                else fields.varint(1)?.let { value ->
+                    binaryFeature(
+                        any,
+                        importerId,
+                        "android.condition.notification_panel_expanded",
+                        mapOf("value" to ConfigValue.BooleanValue(value != 0L)),
+                    )
+                }
+            }
             else -> null
         }
     }
@@ -517,6 +539,24 @@ internal object ShortXMappings {
                 val mode = jsonRingerMode(obj["mode"] as? JsonPrimitive)
                 val name = when (mode) { 0 -> "silent"; 1 -> "vibrate"; 2 -> "normal"; else -> null }
                 name?.let { sourceFeature("android.condition.ringer_mode", importerId, any.typeUrl, raw, extra = mapOf("mode" to ConfigValue.StringValue(it))) }
+            }
+            "RequireIMEVisibility" -> (obj["isShown"] as? JsonPrimitive)?.booleanOrNull?.let {
+                sourceFeature(
+                    "android.condition.ime_visible",
+                    importerId,
+                    any.typeUrl,
+                    raw,
+                    extra = mapOf("value" to ConfigValue.BooleanValue(it)),
+                )
+            }
+            "RequireNotificationPanelExpanded" -> (obj["isExpand"] as? JsonPrimitive)?.booleanOrNull?.let {
+                sourceFeature(
+                    "android.condition.notification_panel_expanded",
+                    importerId,
+                    any.typeUrl,
+                    raw,
+                    extra = mapOf("value" to ConfigValue.BooleanValue(it)),
+                )
             }
             else -> null
         }
