@@ -112,4 +112,12 @@
     <string name="feature_android_event_accessibility_windows_queried_description">Run when an accessibility service connection requests windows</string>
     <string name="feature_android_event_accessibility_ui_automation_checked_title">Accessibility UI automation checked</string>
     <string name="feature_android_event_accessibility_ui_automation_checked_description">Run when UiAutomationManager checks interactive-window access or suppression state</string>
+    <string name="feature_android_event_accessibility_user_state_created_title">Accessibility user state created</string>
+    <string name="feature_android_event_accessibility_user_state_created_description">Run when Android creates an AccessibilityUserState instance</string>
+    <string name="feature_android_event_media_provider_ready_title">Media provider ready</string>
+    <string name="feature_android_event_media_provider_ready_description">Run after the MediaProvider initializes</string>
+    <string name="feature_android_event_sms_provider_ready_title">SMS provider ready</string>
+    <string name="feature_android_event_sms_provider_ready_description">Run after the telephony SMS provider initializes</string>
+    <string name="feature_android_event_rendernode_crash_suppressed_title">RenderNode crash suppressed</string>
+    <string name="feature_android_event_rendernode_crash_suppressed_description">Run when the ShortX-compatible RenderNode guard suppresses an animator crash</string>
 </resources>
