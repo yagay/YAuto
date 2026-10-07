@@ -248,6 +248,25 @@
     <string name="unified_default_sound">Default sound</string>
     <string name="unified_default_sound_subtitle">Read or change the default ringtone, notification or alarm sound</string>
 
+    <string name="unified_shortx_input_hooks">Input system hooks</string>
+    <string name="unified_shortx_input_hooks_subtitle">Input filter, input manager and committed-text system hooks</string>
+    <string name="unified_shortx_accessibility_hooks">Accessibility system hooks</string>
+    <string name="unified_shortx_accessibility_hooks_subtitle">Accessibility user, display, window and UI-automation hooks</string>
+    <string name="unified_shortx_activity_hooks">Activity system hooks</string>
+    <string name="unified_shortx_activity_hooks_subtitle">ActivityManager startup and activity lifecycle hooks</string>
+    <string name="unified_shortx_shortcut_hooks">Shortcut &amp; package hooks</string>
+    <string name="unified_shortx_shortcut_hooks_subtitle">Widget-host, shortcut and package-query system hooks</string>
+    <string name="unified_shortx_ime_window_hooks">IME &amp; window hooks</string>
+    <string name="unified_shortx_ime_window_hooks_subtitle">IME visibility, window focus/addition and system back hooks</string>
+    <string name="unified_shortx_systemui_hooks">SystemUI hooks</string>
+    <string name="unified_shortx_systemui_hooks_subtitle">Quick Settings, status bar, icon and SystemUI lifecycle hooks</string>
+    <string name="unified_shortx_process_hooks">System process hooks</string>
+    <string name="unified_shortx_process_hooks_subtitle">Task cleanup, process exception and RenderNode guard hooks</string>
+    <string name="unified_shortx_sms_provider_hooks">SMS provider hooks</string>
+    <string name="unified_shortx_sms_provider_hooks_subtitle">SMS provider ready and database-change hooks</string>
+    <string name="unified_shortx_media_provider_hooks">Media provider hooks</string>
+    <string name="unified_shortx_media_provider_hooks_subtitle">Media provider ready and content-change hooks</string>
+
     <string name="implementation_auto_title">Auto</string>
     <string name="implementation_root_title">Root</string>
     <string name="implementation_shizuku_title">Shizuku</string>
