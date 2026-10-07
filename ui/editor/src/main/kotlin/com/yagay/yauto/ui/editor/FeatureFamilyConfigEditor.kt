@@ -41,13 +41,11 @@ internal fun FeatureFamilyConfigEditor(
     onSave: (FeatureRef) -> Unit,
 ) {
     val initialSelection = remember(family.spec.id, initial?.typeId, initialMemberId) {
-        when {
-            initial != null && family.members.any { it.descriptor.id.value == initial.typeId } ->
-                initial.typeId
-            initialMemberId != null && family.members.any { it.descriptor.id.value == initialMemberId } ->
-                initialMemberId
-            else -> family.members.first().descriptor.id.value
-        }
+        resolveFamilyMemberId(
+            family = family,
+            initialTypeId = initial?.typeId,
+            requestedMemberId = initialMemberId,
+        )
     }
     var selectedMemberId by remember(family.spec.id, initialSelection) {
         mutableStateOf(initialSelection)
@@ -142,5 +140,21 @@ private fun FamilyOperationSelector(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+
+internal fun resolveFamilyMemberId(
+    family: FeaturePickerFamily,
+    initialTypeId: String?,
+    requestedMemberId: String?,
+): String {
+    fun contains(id: String?): Boolean =
+        id != null && family.members.any { it.descriptor.id.value == id }
+
+    return when {
+        contains(initialTypeId) -> initialTypeId!!
+        contains(requestedMemberId) -> requestedMemberId!!
+        else -> family.members.first().descriptor.id.value
     }
 }
