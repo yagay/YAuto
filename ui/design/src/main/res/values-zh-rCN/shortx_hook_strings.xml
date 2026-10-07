@@ -70,4 +70,14 @@
     <string name="feature_android_event_nfc_tag_system_description">NFC 服务在分发到应用前处理标签端点时触发</string>
     <string name="feature_android_event_media_provider_changed_title">媒体 Provider 变化</string>
     <string name="feature_android_event_media_provider_changed_description">MediaProvider 插入、更新或删除内容时触发</string>
+    <string name="feature_android_event_activity_manager_started_title">Activity 管理器启动</string>
+    <string name="feature_android_event_activity_manager_started_description">ActivityManagerService 启动时触发</string>
+    <string name="feature_android_event_activity_state_changed_title">Activity 状态变化</string>
+    <string name="feature_android_event_activity_state_changed_description">ActivityRecord 改变生命周期状态时触发</string>
+    <string name="feature_android_event_shortcut_query_title">快捷方式查询</string>
+    <string name="feature_android_event_shortcut_query_description">Android 查询应用快捷方式时触发</string>
+    <string name="feature_android_event_back_pressed_system_title">系统返回键事件</string>
+    <string name="feature_android_event_back_pressed_system_description">system_server 处理任务或 Activity 返回键时触发</string>
+    <string name="feature_android_event_package_query_system_title">系统包查询</string>
+    <string name="feature_android_event_package_query_system_description">PackageManager 查询服务或 Activity 时触发</string>
 </resources>
