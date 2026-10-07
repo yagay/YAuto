@@ -137,17 +137,8 @@ internal fun loadSystemPickerOptions(
                 .toList()
             (device + standard)
                 .distinctBy { it.value }
-                .sortedWith { left, right ->
-                    val deviceRankLeft = if (left.detail.orEmpty().contains("scan", ignoreCase = true)) 0 else 1
-                    val deviceRankRight = if (right.detail.orEmpty().contains("scan", ignoreCase = true)) 0 else 1
-                    if (deviceRankLeft != deviceRankRight) deviceRankLeft - deviceRankRight
-                    else comparator.compare(left.label, right.label)
-                }
+                .sortedWith { left, right -> comparator.compare(left.label, right.label) }
         }
-        FieldPickerSource.ScanCode -> hardwareKeys.scanCodes
-            .map { SystemPickerOption(it.value, it.label, it.detail) }
-            .distinctBy { it.value }
-            .sortedWith { left, right -> comparator.compare(left.label, right.label) }
         FieldPickerSource.WifiSsid -> {
             val manager = context.applicationContext.getSystemService(WifiManager::class.java)
             buildList {
