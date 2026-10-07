@@ -89,6 +89,50 @@ internal object ShortXMappings {
                 "APMStatusChanged" -> jsonOnOffAny(obj["ooa"] as? JsonPrimitive)?.let {
                     sourceFeature("android.event.airplane_mode_changed", importerId, any.typeUrl, raw, extra = mapOf("state" to ConfigValue.StringValue(it)))
                 }
+                "KeyEvent" -> (obj["keyCode"] as? JsonPrimitive)?.intOrNull?.takeIf { it in 0..1000 }?.let { keyCode ->
+                    sourceFeature(
+                        "android.event.hardware_key",
+                        importerId,
+                        any.typeUrl,
+                        raw,
+                        extra = mapOf(
+                            "keyCode" to ConfigValue.NumberValue(keyCode.toDouble()),
+                            "action" to ConfigValue.StringValue("up"),
+                            "initialOnly" to ConfigValue.BooleanValue(true),
+                        ),
+                    )
+                }
+                "AdvancedKeyEvent" -> {
+                    val intercept = (obj["isInterceptMode"] as? JsonPrimitive)?.booleanOrNull ?: false
+                    val keyCode = (obj["keyCode"] as? JsonPrimitive)?.intOrNull
+                    val gesture = (obj["gesture"] as? JsonPrimitive)?.intOrNull?.let(::shortXKeyGesture)
+                    if (intercept || keyCode == null || keyCode !in 0..1000 || gesture == null) null
+                    else sourceFeature(
+                        "android.event.hardware_key_gesture",
+                        importerId,
+                        any.typeUrl,
+                        raw,
+                        extra = mapOf(
+                            "keyCode" to ConfigValue.NumberValue(keyCode.toDouble()),
+                            "gesture" to ConfigValue.StringValue(gesture),
+                        ),
+                    )
+                }
+                "CombineKeyEvent" -> {
+                    val keyCode1 = (obj["keyCode1"] as? JsonPrimitive)?.intOrNull
+                    val keyCode2 = (obj["keyCode2"] as? JsonPrimitive)?.intOrNull
+                    if (keyCode1 == null || keyCode2 == null || keyCode1 !in 0..1000 || keyCode2 !in 0..1000) null
+                    else sourceFeature(
+                        "android.event.hardware_key_combo",
+                        importerId,
+                        any.typeUrl,
+                        raw,
+                        extra = mapOf(
+                            "keyCode1" to ConfigValue.NumberValue(keyCode1.toDouble()),
+                            "keyCode2" to ConfigValue.NumberValue(keyCode2.toDouble()),
+                        ),
+                    )
+                }
                 "HeadsetPlug" -> (obj["isPlug"] as? JsonPrimitive)?.booleanOrNull?.let {
                     sourceFeature(
                         "android.event.headset_changed", importerId, any.typeUrl, raw,
@@ -134,6 +178,55 @@ internal object ShortXMappings {
             "LocationStatusChanged" -> onOffAnyFact(any, importerId, fields, "android.event.location_mode_changed")
             "DarkModeStatusChanged" -> onOffAnyFact(any, importerId, fields, "android.event.dark_mode_changed")
             "APMStatusChanged" -> onOffAnyFact(any, importerId, fields, "android.event.airplane_mode_changed")
+            "KeyEvent" -> {
+                if (!fields.onlyBusinessFields(1)) null
+                else fields.varint(1)?.toInt()?.takeIf { it in 0..1000 }?.let { keyCode ->
+                    binaryFeature(
+                        any,
+                        importerId,
+                        "android.event.hardware_key",
+                        mapOf(
+                            "keyCode" to ConfigValue.NumberValue(keyCode.toDouble()),
+                            "action" to ConfigValue.StringValue("up"),
+                            "initialOnly" to ConfigValue.BooleanValue(true),
+                        ),
+                    )
+                }
+            }
+            "AdvancedKeyEvent" -> {
+                if (!fields.onlyBusinessFields(1, 2, 3) || (fields.varint(3) ?: 0L) != 0L) null
+                else {
+                    val keyCode = fields.varint(1)?.toInt()
+                    val gesture = fields.varint(2)?.toInt()?.let(::shortXKeyGesture)
+                    if (keyCode == null || keyCode !in 0..1000 || gesture == null) null
+                    else binaryFeature(
+                        any,
+                        importerId,
+                        "android.event.hardware_key_gesture",
+                        mapOf(
+                            "keyCode" to ConfigValue.NumberValue(keyCode.toDouble()),
+                            "gesture" to ConfigValue.StringValue(gesture),
+                        ),
+                    )
+                }
+            }
+            "CombineKeyEvent" -> {
+                if (!fields.onlyBusinessFields(1, 2)) null
+                else {
+                    val keyCode1 = fields.varint(1)?.toInt()
+                    val keyCode2 = fields.varint(2)?.toInt()
+                    if (keyCode1 == null || keyCode2 == null || keyCode1 !in 0..1000 || keyCode2 !in 0..1000) null
+                    else binaryFeature(
+                        any,
+                        importerId,
+                        "android.event.hardware_key_combo",
+                        mapOf(
+                            "keyCode1" to ConfigValue.NumberValue(keyCode1.toDouble()),
+                            "keyCode2" to ConfigValue.NumberValue(keyCode2.toDouble()),
+                        ),
+                    )
+                }
+            }
             "HeadsetPlug" -> {
                 if (!fields.onlyBusinessFields(1)) null
                 else fields.varint(1)?.let {
@@ -613,6 +706,9 @@ internal object ShortXMappings {
         "ClipboardContentChanged" -> "android.event.clipboard_changed"
         "HeadsetPlug" -> "android.event.headset_changed"
         "NFCTagDiscover" -> "android.event.nfc_tag"
+        "KeyEvent" -> "android.event.hardware_key"
+        "AdvancedKeyEvent" -> "android.event.hardware_key_gesture"
+        "CombineKeyEvent" -> "android.event.hardware_key_combo"
         "UsbDeviceAttached", "UsbDeviceDetached" -> "android.event.usb_device_changed"
         "ShakeDevice" -> "android.event.shake"
         "LightSensor", "ProximitySensor", "AccelerometerSensor" -> "android.event.sensor_value"
@@ -1049,6 +1145,14 @@ internal object ShortXMappings {
             "D" -> 4L
             else -> null
         }
+    }
+
+    private fun shortXKeyGesture(value: Int): String? = when (value) {
+        0 -> "single_press"
+        1 -> "double_press"
+        2 -> "triple_press"
+        3 -> "long_press"
+        else -> null
     }
 
     private fun shortName(typeUrl: String): String = typeUrl
