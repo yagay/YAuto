@@ -356,17 +356,17 @@ private fun FieldEditor(
                     field.key.startsWith("scanCode") -> field.key.removePrefix("scanCode")
                     else -> ""
                 }
-                val keyField = "keyCode$suffix"
-                val scanField = "scanCode$suffix"
-                if (descriptor.fields.any { it.key == keyField }) {
-                    onRelatedValue(
-                        keyField,
-                        captured.keyCode.takeIf { it > 0 }?.toString().orEmpty(),
-                    )
+                fun setIfPresent(key: String, raw: String) {
+                    if (descriptor.fields.any { it.key == key }) onRelatedValue(key, raw)
                 }
-                if (captured.scanCode > 0 && descriptor.fields.any { it.key == scanField }) {
-                    onRelatedValue(scanField, captured.scanCode.toString())
-                }
+                setIfPresent("keyCode$suffix", captured.keyCode.takeIf { it > 0 }?.toString().orEmpty())
+                setIfPresent("scanCode$suffix", captured.scanCode.takeIf { it > 0 }?.toString().orEmpty())
+                setIfPresent("linuxEvKey$suffix", captured.linuxEvKey.takeIf { it > 0 }?.toString().orEmpty())
+                setIfPresent("mscScan$suffix", captured.mscScan.takeIf { it != 0L }?.toString().orEmpty())
+                setIfPresent("deviceDescriptor$suffix", captured.deviceDescriptor)
+                setIfPresent("deviceName$suffix", captured.deviceName)
+                setIfPresent("vendorId$suffix", captured.vendorId.takeIf { it > 0 }?.toString().orEmpty())
+                setIfPresent("productId$suffix", captured.productId.takeIf { it > 0 }?.toString().orEmpty())
             },
         )
         else -> {
