@@ -6,7 +6,6 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
-import com.yagay.yauto.platform.xposed.SystemBridgeProtocol
 
 class AndroidShortXBehaviorFeaturePack : FeaturePack {
     override val id: String = "android.shortx_behaviors"
@@ -44,7 +43,7 @@ class AndroidShortXBehaviorFeaturePack : FeaturePack {
             val result = ctx.capabilities.execute(
                 CapabilityRequest(
                     capability = CapabilityIds.LSPOSED,
-                    operationId = SystemBridgeProtocol.SHORTX_BEHAVIOR_SET,
+                    operationId = SHORTX_BEHAVIOR_SET,
                     payload = mapOf(
                         "behavior" to ConfigValue.StringValue(behavior),
                         "enabled" to ConfigValue.BooleanValue(feature.config.boolean("enabled")),
@@ -58,10 +57,15 @@ class AndroidShortXBehaviorFeaturePack : FeaturePack {
     }
 
     private companion object {
+        const val SHORTX_BEHAVIOR_SET = "shortx.behavior.set"
+        const val SHORTX_BEHAVIOR_ACCESSIBILITY = "accessibility_access"
+        const val SHORTX_BEHAVIOR_CLIPBOARD = "clipboard_access"
+        const val SHORTX_BEHAVIOR_PERMISSION = "permission_bridge"
+
         val ALLOWED_BEHAVIORS = setOf(
-            SystemBridgeProtocol.SHORTX_BEHAVIOR_ACCESSIBILITY,
-            SystemBridgeProtocol.SHORTX_BEHAVIOR_CLIPBOARD,
-            SystemBridgeProtocol.SHORTX_BEHAVIOR_PERMISSION,
+            SHORTX_BEHAVIOR_ACCESSIBILITY,
+            SHORTX_BEHAVIOR_CLIPBOARD,
+            SHORTX_BEHAVIOR_PERMISSION,
         )
     }
 }
