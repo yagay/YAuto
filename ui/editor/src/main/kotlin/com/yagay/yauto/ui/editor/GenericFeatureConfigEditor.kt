@@ -352,7 +352,10 @@ private fun FieldEditor(
             onValue = onValue,
             onHardwareKeyCaptured = { captured ->
                 if (descriptor.fields.any { it.key == "keyCode" }) {
-                    onRelatedValue("keyCode", captured.keyCode.toString())
+                    onRelatedValue(
+                        "keyCode",
+                        captured.keyCode.takeIf { it > 0 }?.toString().orEmpty(),
+                    )
                 }
                 if (captured.scanCode > 0 && descriptor.fields.any { it.key == "scanCode" }) {
                     onRelatedValue("scanCode", captured.scanCode.toString())
