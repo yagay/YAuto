@@ -57,6 +57,9 @@ internal fun GenericFeatureConfigEditor(
         }
     }
     var values by remember(descriptor.id.value, initial, locale) { mutableStateOf(initialTexts) }
+    var hiddenHardwareIdentity by remember(descriptor.id.value, initial) {
+        mutableStateOf<Map<String, ConfigValue>>(emptyMap())
+    }
     var showAdvanced by remember(descriptor.id.value) { mutableStateOf(false) }
 
     val typedValues = remember(descriptor, values, locale) {
@@ -131,6 +134,11 @@ internal fun GenericFeatureConfigEditor(
                     enabled = enabled,
                     onValue = { values = values + (field.key to it) },
                     onRelatedValue = { key, value -> values = values + (key to value) },
+                    onHardwareIdentity = { suffix, captured ->
+                        hiddenHardwareIdentity = hiddenHardwareIdentity + (
+                            "hardwareIdentity$suffix" to captured.toHiddenHardwareIdentity()
+                        )
+                    },
                 )
             }
         }
@@ -153,6 +161,7 @@ internal fun GenericFeatureConfigEditor(
                             parseFieldValue(field, raw, locale)?.let { parsed -> config[field.key] = parsed }
                         }
                     }
+                    config.putAll(hiddenHardwareIdentity)
                     onSave(FeatureRef(descriptor.id.value, descriptor.schemaVersion, config))
                 },
                 enabled = valid,
@@ -302,6 +311,7 @@ private fun FieldEditor(
     enabled: Boolean,
     onValue: (String) -> Unit,
     onRelatedValue: (String, String) -> Unit,
+    onHardwareIdentity: (String, HardwareKeyCaptureResult) -> Unit,
 ) {
     val descriptorId = descriptor.id.value
     val label = localizedFieldLabelShared(descriptorId, field)
@@ -361,12 +371,7 @@ private fun FieldEditor(
                 }
                 setIfPresent("keyCode$suffix", captured.keyCode.takeIf { it > 0 }?.toString().orEmpty())
                 setIfPresent("scanCode$suffix", captured.scanCode.takeIf { it > 0 }?.toString().orEmpty())
-                setIfPresent("linuxEvKey$suffix", captured.linuxEvKey.takeIf { it > 0 }?.toString().orEmpty())
-                setIfPresent("mscScan$suffix", captured.mscScan.takeIf { it != 0L }?.toString().orEmpty())
-                setIfPresent("deviceDescriptor$suffix", captured.deviceDescriptor)
-                setIfPresent("deviceName$suffix", captured.deviceName)
-                setIfPresent("vendorId$suffix", captured.vendorId.takeIf { it > 0 }?.toString().orEmpty())
-                setIfPresent("productId$suffix", captured.productId.takeIf { it > 0 }?.toString().orEmpty())
+                onHardwareIdentity(suffix, captured)
             },
         )
         else -> {
@@ -546,3 +551,22 @@ private fun implementationCons(backendId: String): List<String> = when (backendI
     )
     else -> emptyList()
 }
+
+
+private fun HardwareKeyCaptureResult.toHiddenHardwareIdentity(): ConfigValue.ObjectValue =
+    ConfigValue.ObjectValue(
+        buildMap {
+            if (keyCode > 0) put("androidKeyCode", ConfigValue.NumberValue(keyCode.toDouble()))
+            if (scanCode > 0) put("androidScanCode", ConfigValue.NumberValue(scanCode.toDouble()))
+            if (linuxEvKey > 0) put("linuxEvKey", ConfigValue.NumberValue(linuxEvKey.toDouble()))
+            if (mscScan != 0L) put("mscScan", ConfigValue.NumberValue(mscScan.toDouble()))
+            if (deviceId >= 0) put("deviceId", ConfigValue.NumberValue(deviceId.toDouble()))
+            if (deviceName.isNotBlank()) put("deviceName", ConfigValue.StringValue(deviceName))
+            if (deviceDescriptor.isNotBlank()) put("deviceDescriptor", ConfigValue.StringValue(deviceDescriptor))
+            if (vendorId > 0) put("vendorId", ConfigValue.NumberValue(vendorId.toDouble()))
+            if (productId > 0) put("productId", ConfigValue.NumberValue(productId.toDouble()))
+            if (sources.isNotEmpty()) {
+                put("sources", ConfigValue.ListValue(sources.sorted().map(ConfigValue::StringValue)))
+            }
+        }
+    )
