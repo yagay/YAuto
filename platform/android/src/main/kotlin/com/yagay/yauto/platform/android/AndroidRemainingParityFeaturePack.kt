@@ -447,104 +447,7 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
             )
         }
 
-        registerBooleanPair(
-            registry,
-            "android.state.battery_optimization_ignored",
-            "android.condition.battery_optimization_ignored",
-            "Battery optimization ignored",
-            FeatureCategory.APP,
-            emptySet(),
-            extraFields = listOf(FieldSchema.AppPicker("package", "App / package", true)),
-        ) { feature ->
-            val pkg = feature.config.string("package").trim()
-            context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(pkg)
-        }
-
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.battery_optimization.settings.open"), FeatureKind.ACTION,
-                "Open battery optimization settings", "Open Android battery optimization management",
-                FeatureCategory.APP,
-                keywords = setOf("battery optimization", "doze", "background", "settings"),
-                ownerPackId = id,
-            )
-        ) { _, _ ->
-            runCatching {
-                context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
-        }
-    }
-
-    private fun registerAudioAndTorch(registry: FeatureRegistry) {
-        resultAction(registry, "android.audio.devices.query", "Query audio devices", "Return current input and output audio devices", FeatureCategory.AUDIO) {
-            ConfigValue.ListValue(audio.getDevices(AudioManager.GET_DEVICES_ALL).map { device ->
-                ConfigValue.ObjectValue(
-                    mapOf(
-                        "id" to ConfigValue.NumberValue(device.id.toDouble()),
-                        "type" to ConfigValue.NumberValue(device.type.toDouble()),
-                        "productName" to ConfigValue.StringValue(device.productName?.toString().orEmpty()),
-                        "source" to ConfigValue.BooleanValue(device.isSource),
-                        "sink" to ConfigValue.BooleanValue(device.isSink),
-                        "sampleRates" to ConfigValue.ListValue(device.sampleRates.map { ConfigValue.NumberValue(it.toDouble()) }),
-                        "channelCounts" to ConfigValue.ListValue(device.channelCounts.map { ConfigValue.NumberValue(it.toDouble()) }),
-                    )
-                )
-            })
-        }
-
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.torch.state.query"), FeatureKind.ACTION,
-                "Query torch state", "Return observed torch state for all camera flash units",
-                FeatureCategory.DEVICE,
-                fields = listOf(FieldSchema.Variable("resultVariable", "Store torch map", true)),
-                keywords = setOf("torch", "flashlight", "state", "shortx"),
-                ownerPackId = id,
-            )
-        ) { feature, ctx -> store(feature, ctx, torch.value()) }
-
-        val evaluator = ConditionEvaluator { feature, _ ->
-            val cameraId = feature.config.string("cameraId").trim()
-            val actual = if (cameraId.isBlank()) torch.anyEnabled() else torch.enabled(cameraId)
-            actual == feature.config.boolean("value", true)
-        }
-        val state = FeatureDescriptor(
-            FeatureId("android.state.torch_on"), FeatureKind.STATE,
-            "Torch enabled", "Check observed flashlight/torch state",
-            FeatureCategory.DEVICE,
-            fields = listOf(FieldSchema.Text("cameraId", "Camera ID"), FieldSchema.Toggle("value", "Torch on")),
-            keywords = setOf("torch", "flashlight", "state", "shortx"),
-            ownerPackId = id,
-        )
-        registry.registerState(state, evaluator)
-        registry.registerCondition(state.copy(id = FeatureId("android.condition.torch_on"), kind = FeatureKind.CONDITION), evaluator)
-    }
-
-    private fun registerSoundLevel(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.audio.sound_level.measure"), FeatureKind.ACTION,
-                "Measure sound level", "Sample the microphone and return RMS, peak and relative dBFS level",
-                FeatureCategory.AUDIO,
-                fields = listOf(
-                    FieldSchema.Duration("durationMs", "Measurement duration"),
-                    FieldSchema.Choice("sampleRate", "Sample rate", options = listOf("8000", "16000", "44100")),
-                    FieldSchema.Variable("resultVariable", "Store level object", true),
-                ),
-                accessRequirements = setOf(AccessRequirement.RECORD_AUDIO),
-                keywords = setOf("sound level", "noise", "microphone", "db", "macrodroid"),
-                ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.microphone_permission_required"))
-            }
-            val durationMs = (feature.config["durationMs"].numberOrNull() ?: 1_000.0).toLong().coerceIn(100L, 10_000L)
-            val sampleRate = feature.config.string("sampleRate", "16000").toIntOrNull()?.takeIf { it in setOf(8000, 16000, 44100) } ?: 16000
-            val output = withContext(Dispatchers.IO) {
-                runCatching { measureSoundLevel(sampleRate, durationMs) }.getOrNull()
-            } ?: return@registerAction ActionExecutionResult(false, message = userText("feature.audio_measurement_failed"))
+?: return@registerAction ActionExecutionResult(false, message = userText("feature.audio_measurement_failed"))
             store(feature, ctx, output)
         }
     }
@@ -881,28 +784,6 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
             }
         }
 
-        val mobileEvaluator = ConditionEvaluator { feature, _ ->
-            if (!runtimePermissionGranted(context, "phone")) return@ConditionEvaluator false
-            val actual = runCatching {
-                @Suppress("MissingPermission")
-                telephony.isDataEnabled
-            }.getOrDefault(false)
-            actual == feature.config.boolean("value", true)
-        }
-        val mobileState = FeatureDescriptor(
-            FeatureId("android.state.mobile_data_enabled"), FeatureKind.STATE,
-            "Mobile data enabled", "Check whether mobile data is enabled for the default telephony subscription",
-            FeatureCategory.NETWORK,
-            fields = listOf(FieldSchema.Toggle("value", "Enabled")),
-            accessRequirements = setOf(AccessRequirement.PHONE),
-            keywords = setOf("mobile data", "cellular data", "enabled", "shortx"),
-            ownerPackId = id,
-        )
-        registry.registerState(mobileState, mobileEvaluator)
-        registry.registerCondition(
-            mobileState.copy(id = FeatureId("android.condition.mobile_data_enabled"), kind = FeatureKind.CONDITION),
-            mobileEvaluator,
-        )
 
         val serviceFields = listOf(
             FieldSchema.AppPicker("package", "App / package", true),
