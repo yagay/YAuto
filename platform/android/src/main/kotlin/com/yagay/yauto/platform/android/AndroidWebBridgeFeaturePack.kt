@@ -187,34 +187,7 @@ class AndroidWebBridgeFeaturePack : FeaturePack {
         registry.registerState(state, evaluator)
         registry.registerCondition(state.copy(id = FeatureId("android.condition.websocket_connected"), kind = FeatureKind.CONDITION), evaluator)
 
-        registerSocketEvent(registry, "android.event.websocket_open", "WebSocket opened", false)
-        registerSocketEvent(registry, "android.event.websocket.message", "WebSocket message", true)
-        registerSocketEvent(registry, "android.event.websocket.closed", "WebSocket closed", false)
-        registerSocketEvent(registry, "android.event.websocket.failure", "WebSocket failure", true)
         registerAnySocketEvent(registry)
-    }
-
-    private fun registerSocketEvent(registry: FeatureRegistry, typeId: String, title: String, textFilter: Boolean) {
-        registry.registerEvent(
-            FeatureDescriptor(
-                FeatureId(typeId), FeatureKind.EVENT, title, "Run when a named YAuto WebSocket changes or receives data",
-                FeatureCategory.NETWORK,
-                fields = buildList {
-                    add(FieldSchema.Text("connectionId", "Connection ID"))
-                    if (textFilter) add(FieldSchema.Text("textContains", "Text contains"))
-                },
-                keywords = setOf("websocket", "event", "message", "network"), ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            if (ctx.event.typeId != typeId) return@registerEvent false
-            val wantedId = feature.config.string("connectionId").resolveVariables(ctx.variables).trim()
-            if (wantedId.isNotBlank() && ctx.event.payload.string("connectionId") != wantedId) return@registerEvent false
-            if (textFilter) {
-                val wantedText = feature.config.string("textContains").resolveVariables(ctx.variables)
-                if (wantedText.isNotBlank() && !ctx.event.payload.string("text").contains(wantedText, ignoreCase = true)) return@registerEvent false
-            }
-            true
-        }
     }
 
     private fun registerAnySocketEvent(registry: FeatureRegistry) {
@@ -233,6 +206,18 @@ class AndroidWebBridgeFeaturePack : FeaturePack {
                 ),
                 keywords = setOf("websocket", "open", "message", "closed", "failure", "shortx"),
                 ownerPackId = id,
+                aliases = setOf(
+                    "android.event.websocket_open",
+                    "android.event.websocket.message",
+                    "android.event.websocket.closed",
+                    "android.event.websocket.failure",
+                ),
+                aliasConfigDefaults = mapOf(
+                    "android.event.websocket_open" to mapOf("event" to ConfigValue.StringValue("open")),
+                    "android.event.websocket.message" to mapOf("event" to ConfigValue.StringValue("message")),
+                    "android.event.websocket.closed" to mapOf("event" to ConfigValue.StringValue("closed")),
+                    "android.event.websocket.failure" to mapOf("event" to ConfigValue.StringValue("failure")),
+                ),
             )
         ) { feature, ctx ->
             val eventName = when (ctx.event.typeId) {
