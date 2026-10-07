@@ -126,7 +126,18 @@ class LsposedScopeManager : XposedServiceHelper.OnServiceListener {
         const val SYSTEM_SCOPE = "system"
         const val SYSTEM_UI_SCOPE = "com.android.systemui"
         val FIXED_SCOPES = listOf(SYSTEM_SCOPE, SYSTEM_UI_SCOPE)
-        private val PACKAGE_NAME = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
+        
+private fun shortXRequiredScopes(featureId: String): Set<String> = when (featureId) {
+    "android.event.nfc_tag_system" -> setOf("com.android.nfc")
+    "android.event.media_provider_changed" -> setOf(
+        "com.android.providers.media.module",
+        "com.google.android.providers.media.module",
+    )
+    "android.event.sms_provider_changed" -> setOf("com.android.providers.telephony")
+    else -> emptySet()
+}
+
+private val PACKAGE_NAME = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
     }
 }
 
@@ -153,6 +164,8 @@ fun recommendedLsposedScopes(
         if (!usesLsposed || (preferredBackend != null && preferredBackend != "lsposed" && !explicitlyLsposed)) {
             return@forEach
         }
+
+        addAll(shortXRequiredScopes(feature.typeId))
 
         descriptor.fields
             .filterIsInstance<FieldSchema.AppPicker>()
