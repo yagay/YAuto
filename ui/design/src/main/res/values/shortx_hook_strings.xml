@@ -70,4 +70,14 @@
     <string name="feature_android_event_nfc_tag_system_description">Run when the NFC service dispatches a tag endpoint before app routing</string>
     <string name="feature_android_event_media_provider_changed_title">Media provider changed</string>
     <string name="feature_android_event_media_provider_changed_description">Run when the MediaProvider inserts, updates or deletes content</string>
+    <string name="feature_android_event_activity_manager_started_title">Activity manager started</string>
+    <string name="feature_android_event_activity_manager_started_description">Run when ActivityManagerService starts</string>
+    <string name="feature_android_event_activity_state_changed_title">Activity state changed</string>
+    <string name="feature_android_event_activity_state_changed_description">Run when ActivityRecord changes lifecycle state</string>
+    <string name="feature_android_event_shortcut_query_title">Shortcut query observed</string>
+    <string name="feature_android_event_shortcut_query_description">Run when Android queries application shortcuts</string>
+    <string name="feature_android_event_back_pressed_system_title">System back press observed</string>
+    <string name="feature_android_event_back_pressed_system_description">Run when system_server handles a task or activity back press</string>
+    <string name="feature_android_event_package_query_system_title">System package query</string>
+    <string name="feature_android_event_package_query_system_description">Run when PackageManager computer queries services or activities</string>
 </resources>
