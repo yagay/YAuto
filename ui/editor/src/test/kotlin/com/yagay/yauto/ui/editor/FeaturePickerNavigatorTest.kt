@@ -37,8 +37,8 @@ class FeaturePickerNavigatorTest {
 
     @Test
     fun `back walks unified family editor to category without a sub-feature page`() {
-        val family = FeaturePickerFamily(
-            spec = FeatureFamilySpec(
+        val family = UnifiedFeatureGroup(
+            spec = UnifiedFeatureSpec(
                 id = "volume",
                 titleRes = 1,
                 subtitleRes = 2,
@@ -48,7 +48,7 @@ class FeaturePickerNavigatorTest {
         )
         var state = FeaturePickerNavState.initial(null)
         state = state.push(PickerPage.Features(category))
-        state = state.push(PickerPage.Family(family, descriptor.id.value))
+        state = state.push(PickerPage.Unified(family, descriptor.id.value))
 
         state = state.pop()!!
         assertEquals(PickerPage.Features(category), state.current)
@@ -59,8 +59,8 @@ class FeaturePickerNavigatorTest {
 
     @Test
     fun `editing existing family member opens unified editor with operation selected`() {
-        val family = FeaturePickerFamily(
-            spec = FeatureFamilySpec(
+        val family = UnifiedFeatureGroup(
+            spec = UnifiedFeatureSpec(
                 id = "volume",
                 titleRes = 1,
                 subtitleRes = 2,
@@ -77,9 +77,9 @@ class FeaturePickerNavigatorTest {
             ),
         )
 
-        val state = FeaturePickerNavState.initialFamily(family, descriptor.id.value)
+        val state = FeaturePickerNavState.initialUnified(family, descriptor.id.value)
 
-        assertEquals(PickerPage.Family(family, descriptor.id.value), state.current)
+        assertEquals(PickerPage.Unified(family, descriptor.id.value), state.current)
         assertEquals(PickerPage.Categories, state.pop()!!.current)
     }
 
