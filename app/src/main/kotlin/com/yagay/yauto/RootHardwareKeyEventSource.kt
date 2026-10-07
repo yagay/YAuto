@@ -46,10 +46,23 @@ class RootHardwareKeyEventSource(
     private fun applyWorkspace(data: WorkspaceData) {
         val needed = data.automations.any { automation ->
             automation.enabled && automation.activation.events.any { event ->
-                if (event.typeId != HARDWARE_KEY_EVENT) return@any false
-                val keyCode = (event.config["keyCode"] as? ConfigValue.NumberValue)?.value?.toInt()
-                val scanCode = (event.config["scanCode"] as? ConfigValue.NumberValue)?.value?.toInt()
-                keyCode == 0 && scanCode != null && scanCode > 0
+                when (event.typeId) {
+                    HARDWARE_KEY_EVENT,
+                    HARDWARE_KEY_GESTURE_EVENT -> {
+                        val keyCode = (event.config["keyCode"] as? ConfigValue.NumberValue)?.value?.toInt()
+                        val scanCode = (event.config["scanCode"] as? ConfigValue.NumberValue)?.value?.toInt()
+                        keyCode == 0 && scanCode != null && scanCode > 0
+                    }
+                    HARDWARE_KEY_COMBO_EVENT -> {
+                        val keyCode1 = (event.config["keyCode1"] as? ConfigValue.NumberValue)?.value?.toInt()
+                        val scanCode1 = (event.config["scanCode1"] as? ConfigValue.NumberValue)?.value?.toInt()
+                        val keyCode2 = (event.config["keyCode2"] as? ConfigValue.NumberValue)?.value?.toInt()
+                        val scanCode2 = (event.config["scanCode2"] as? ConfigValue.NumberValue)?.value?.toInt()
+                        (keyCode1 == 0 && scanCode1 != null && scanCode1 > 0) ||
+                            (keyCode2 == 0 && scanCode2 != null && scanCode2 > 0)
+                    }
+                    else -> false
+                }
             }
         }
         synchronized(lock) {
@@ -132,6 +145,8 @@ class RootHardwareKeyEventSource(
 
     private companion object {
         const val HARDWARE_KEY_EVENT = "android.event.hardware_key"
+        const val HARDWARE_KEY_GESTURE_EVENT = "android.event.hardware_key_gesture"
+        const val HARDWARE_KEY_COMBO_EVENT = "android.event.hardware_key_combo"
         val RAW_KEY_EVENT = Regex(":\\s+0001\\s+([0-9a-fA-F]{4})\\s+([0-9a-fA-F]{8})")
     }
 }
