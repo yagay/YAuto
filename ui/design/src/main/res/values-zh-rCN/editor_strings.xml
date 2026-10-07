@@ -84,6 +84,8 @@
     <string name="category_flow_logic_subtitle">延时、等待、条件、分支、循环与执行流程</string>
     <string name="category_web_network">Web 与网络请求</string>
     <string name="category_web_network_subtitle">HTTP、Webhook、WebSocket 与远程服务交互</string>
+    <string name="category_ai">AI</string>
+    <string name="category_ai_subtitle">AI 文本、图像与模型辅助自动化</string>
     <string name="category_script_commands">脚本与命令</string>
     <string name="category_script_commands_subtitle">Shell、脚本与可编程命令执行</string>
     <string name="category_yauto">YAuto</string>

@@ -47,6 +47,7 @@ enum class FeatureDomain {
     DATA,
     FLOW_LOGIC,
     WEB_NETWORK,
+    AI,
     SCRIPT_COMMANDS,
     YAUTO,
 }
@@ -56,13 +57,15 @@ fun inferFeatureDomain(id: String, legacyCategory: FeatureCategory): FeatureDoma
     fun has(vararg tokens: String): Boolean = tokens.any { token -> key.contains(token) }
 
     return when {
-        has("screen_record", "screenshot", ".camera", ".photo", ".ocr", "image_match", ".capture") ->
+        key.startsWith("ai.") || has(".ai.") ->
+            FeatureDomain.AI
+        has("screen_record", "screenshot", ".camera", ".photo", ".ocr", ".qr", "image_match", ".image.", ".capture") ->
             FeatureDomain.CAPTURE
-        has(".location", ".geofence", ".gps", ".maps.", "latitude", "longitude") ->
+        has(".location", ".geofence", ".gps", ".maps.", ".cell_tower", "latitude", "longitude") ->
             FeatureDomain.LOCATION
         has(".sensor", "activity_recognition", ".pedometer", ".proximity", ".accelerometer", ".gyroscope", "light_sensor") ->
             FeatureDomain.SENSORS
-        has(".wifi", ".bluetooth", ".mobile_data", ".airplane", ".hotspot", ".tether", ".nfc", ".usb", ".connectivity", ".network_profile") ->
+        has(".wifi", ".bluetooth", ".ble", ".mobile_data", ".airplane", ".hotspot", ".tether", ".nfc", ".usb", ".connectivity", ".network_profile", ".data_usage", ".matter", ".wear", ".wireguard", ".private_dns", ".data_saver") ->
             FeatureDomain.CONNECTIVITY
         has(".notification", ".toast") ->
             FeatureDomain.NOTIFICATIONS
@@ -74,23 +77,23 @@ fun inferFeatureDomain(id: String, legacyCategory: FeatureCategory): FeatureDoma
             FeatureDomain.POWER
         has(".phone", ".call", ".sms", ".email", ".contact", ".message") ->
             FeatureDomain.COMMUNICATION
-        has(".time", ".date", ".interval", ".alarm", ".calendar", ".timezone") ->
+        has(".time", ".date", ".interval", ".alarm", ".timer", ".calendar", ".timezone", ".solar", ".stopwatch") ->
             FeatureDomain.DATE_TIME
-        has(".key", ".keyboard", ".gesture", ".accessibility", ".ui.", ".overlay", ".surface", ".tap", ".click", ".swipe", ".input") ->
+        has(".key", ".keyboard", ".gesture", ".accessibility", ".ui.", ".overlay", ".surface", ".tap", ".click", ".swipe", ".input", ".biometric", ".qs_tile", ".quick_settings", ".menu_action", ".back_navigation") ->
             FeatureDomain.USER_INPUT
         has(".file", ".directory", ".archive", ".zip", ".storage", ".download") ->
             FeatureDomain.FILES_STORAGE
         has(".http", ".webhook", ".websocket", ".webdav", ".url.") ->
             FeatureDomain.WEB_NETWORK
-        has(".shell", ".script", ".command", ".exec") ->
+        key.startsWith("script.") || has(".shell", ".script", ".command", ".exec", ".logcat", ".dumpsys", ".adb_wifi") ->
             FeatureDomain.SCRIPT_COMMANDS
-        has(".variable", ".json", ".regex", ".hash", ".encode", ".decode", ".math", ".random", ".list", ".object", ".text.", ".clipboard") ->
+        key.startsWith("data.") || key.startsWith("variable.") || has(".variable", ".json", ".regex", ".hash", ".encode", ".decode", ".math", ".random", ".list", ".object", ".text.", ".clipboard", ".chart") ->
             FeatureDomain.DATA
         has(".flow", ".delay", ".wait", ".loop", ".branch", ".boolean", ".condition", ".parallel", "try_catch") ->
             FeatureDomain.FLOW_LOGIC
-        has(".app", ".package", ".activity", ".component", ".foreground", ".shortcut") ->
+        has(".app", ".package", ".activity", ".component", ".foreground", ".shortcut", ".launcher", ".widget", ".work_profile", ".account_sync", ".sync.account", ".role.") ->
             FeatureDomain.APPLICATIONS
-        has("manual", ".automation", ".macro", ".workspace", ".log") ->
+        has("manual", ".automation", ".macro", ".workspace", ".yauto", ".access.status", ".log.write", ".log.export") ->
             FeatureDomain.YAUTO
         else -> legacyCategory.defaultDomain()
     }

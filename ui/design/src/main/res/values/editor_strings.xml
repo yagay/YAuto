@@ -85,6 +85,8 @@
     <string name="category_flow_logic_subtitle">Delay, wait, conditions, branches, loops and execution flow</string>
     <string name="category_web_network">Web &amp; network requests</string>
     <string name="category_web_network_subtitle">HTTP, webhooks, WebSocket and remote service interactions</string>
+    <string name="category_ai">AI</string>
+    <string name="category_ai_subtitle">AI text, image and model-assisted automation</string>
     <string name="category_script_commands">Scripts &amp; commands</string>
     <string name="category_script_commands_subtitle">Shell, scripts and programmable command execution</string>
     <string name="category_yauto">YAuto</string>

@@ -82,6 +82,26 @@ class FeatureDefinitionTest {
             ).domain,
         )
         assertEquals(
+            FeatureDomain.AI,
+            FeatureDescriptor(
+                id = FeatureId("ai.llm.query"),
+                kind = FeatureKind.ACTION,
+                title = "LLM query",
+                description = "LLM query",
+                category = FeatureCategory.ADVANCED,
+            ).domain,
+        )
+        assertEquals(
+            FeatureDomain.USER_INPUT,
+            FeatureDescriptor(
+                id = FeatureId("android.qs_tile.click"),
+                kind = FeatureKind.ACTION,
+                title = "Quick Settings tile",
+                description = "Quick Settings tile",
+                category = FeatureCategory.ADVANCED,
+            ).domain,
+        )
+        assertEquals(
             FeatureDomain.COMMUNICATION,
             FeatureDescriptor(
                 id = FeatureId("android.sms.compose"),

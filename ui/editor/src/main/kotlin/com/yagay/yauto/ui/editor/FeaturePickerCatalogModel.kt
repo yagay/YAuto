@@ -118,8 +118,9 @@ internal fun catalogCategory(domain: FeatureDomain, kind: FeatureKind): CatalogC
     FeatureDomain.DATA -> CatalogCategory("data", TextR.string.category_data, TextR.string.category_data_subtitle, 150)
     FeatureDomain.FLOW_LOGIC -> CatalogCategory("flow_logic", TextR.string.category_flow_logic, TextR.string.category_flow_logic_subtitle, 160)
     FeatureDomain.WEB_NETWORK -> CatalogCategory("web_network", TextR.string.category_web_network, TextR.string.category_web_network_subtitle, 170)
-    FeatureDomain.SCRIPT_COMMANDS -> CatalogCategory("script_commands", TextR.string.category_script_commands, TextR.string.category_script_commands_subtitle, 180)
-    FeatureDomain.YAUTO -> CatalogCategory("yauto", TextR.string.category_yauto, TextR.string.category_yauto_subtitle, 190)
+    FeatureDomain.AI -> CatalogCategory("ai", TextR.string.category_ai, TextR.string.category_ai_subtitle, 180)
+    FeatureDomain.SCRIPT_COMMANDS -> CatalogCategory("script_commands", TextR.string.category_script_commands, TextR.string.category_script_commands_subtitle, 190)
+    FeatureDomain.YAUTO -> CatalogCategory("yauto", TextR.string.category_yauto, TextR.string.category_yauto_subtitle, 200)
 }
 
 private fun normalizeQuery(value: String): String = value.trim().lowercase(Locale.ROOT)
