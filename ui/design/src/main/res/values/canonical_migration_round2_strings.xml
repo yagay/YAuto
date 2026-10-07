@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_wifi_changed_field_changetype">Change type</string>
+    <string name="feature_android_event_wifi_changed_field_changetype_option_any">Any</string>
+    <string name="feature_android_event_wifi_changed_field_changetype_option_state">Wi-Fi state</string>
+    <string name="feature_android_event_wifi_changed_field_changetype_option_network">Network state</string>
+    <string name="feature_android_event_wifi_changed_field_changetype_option_rssi">Signal strength</string>
+
+    <string name="feature_android_event_media_store_changed_field_changetype">Change type</string>
+    <string name="feature_android_event_media_store_changed_field_changetype_option_any">Any</string>
+    <string name="feature_android_event_media_store_changed_field_changetype_option_inserted">Inserted</string>
+    <string name="feature_android_event_media_store_changed_field_changetype_option_updated">Updated</string>
+    <string name="feature_android_event_media_store_changed_field_changetype_option_deleted">Deleted</string>
+    <string name="feature_android_event_media_store_changed_field_changetype_option_changed">Other change</string>
+</resources>
