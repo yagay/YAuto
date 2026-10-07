@@ -1,6 +1,7 @@
 package com.yagay.yauto.platform.accessibility
 
 import com.yagay.yauto.core.model.ConfigMap
+import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
@@ -106,10 +107,7 @@ class AccessibilityKeyFeaturePack : FeaturePack {
 }
 
 internal fun matchesHardwareKey(config: ConfigMap, payload: ConfigMap): Boolean {
-    val expected = configuredKeyCode(config, "keyCode") ?: return false
-    val actual = configuredKeyCode(payload, "keyCode") ?: return false
-    if (expected != actual) return false
-
+    if (!matchesConfiguredKey(config.keyIdentity(), payload.keyIdentity())) return false
     val expectedAction = config.string("action", "any")
     if (expectedAction != "any" && payload.string("action") != expectedAction) return false
     if (config.boolean("initialOnly") && (payload["repeatCount"].numberOrNull()?.toInt() ?: 0) > 0) return false
@@ -117,10 +115,7 @@ internal fun matchesHardwareKey(config: ConfigMap, payload: ConfigMap): Boolean 
 }
 
 internal fun matchesHardwareKeyGesture(config: ConfigMap, payload: ConfigMap): Boolean {
-    val expected = configuredKeyCode(config, "keyCode") ?: return false
-    val actual = configuredKeyCode(payload, "keyCode") ?: return false
-    if (expected != actual) return false
-
+    if (!matchesConfiguredKey(config.keyIdentity(), payload.keyIdentity())) return false
     val pressCount = payload["pressCount"].numberOrNull()?.toInt() ?: return false
     val maxHoldMs = payload["maxHoldMs"].numberOrNull() ?: 0.0
     val thresholdMs = (config["longPressMs"].numberOrNull() ?: 500.0).coerceAtLeast(1.0)
@@ -134,13 +129,62 @@ internal fun matchesHardwareKeyGesture(config: ConfigMap, payload: ConfigMap): B
 }
 
 internal fun matchesHardwareKeyCombo(config: ConfigMap, payload: ConfigMap): Boolean {
-    val expected1 = configuredKeyCode(config, "keyCode1") ?: return false
-    val expected2 = configuredKeyCode(config, "keyCode2") ?: return false
-    val actual1 = configuredKeyCode(payload, "keyCode1") ?: return false
-    val actual2 = configuredKeyCode(payload, "keyCode2") ?: return false
-    return (expected1 == actual1 && expected2 == actual2) ||
-        (expected1 == actual2 && expected2 == actual1)
+    val expected1 = config.keyIdentity("1")
+    val expected2 = config.keyIdentity("2")
+    if (!expected1.configured || !expected2.configured) return false
+    val actual1 = payload.keyIdentity("1")
+    val actual2 = payload.keyIdentity("2")
+    return (
+        matchesConfiguredKey(expected1, actual1) &&
+            matchesConfiguredKey(expected2, actual2)
+        ) || (
+        matchesConfiguredKey(expected1, actual2) &&
+            matchesConfiguredKey(expected2, actual1)
+        )
 }
 
-private fun configuredKeyCode(values: ConfigMap, key: String): Int? =
-    values[key].numberOrNull()?.toInt()?.takeIf { it > 0 }
+private fun ConfigMap.keyIdentity(suffix: String = ""): ConfiguredKey {
+    val hidden = (this["hardwareIdentity$suffix"] as? ConfigValue.ObjectValue)?.value.orEmpty()
+    val directKeyCode = this["keyCode$suffix"].numberOrNull()?.toInt()?.takeIf { it > 0 }
+    val learnedKeyCode = hidden["androidKeyCode"].numberOrNull()?.toInt()?.takeIf { it > 0 }
+    val learnedMatchesVisible =
+        directKeyCode == null || learnedKeyCode == null || directKeyCode == learnedKeyCode
+
+    return ConfiguredKey(
+        keyCode = directKeyCode ?: learnedKeyCode,
+        scanCode = hidden["androidScanCode"].numberOrNull()?.toInt()?.takeIf { it > 0 }
+            ?: this["scanCode$suffix"].numberOrNull()?.toInt()?.takeIf { it > 0 },
+        linuxEvKey = if (learnedMatchesVisible) {
+            hidden["linuxEvKey"].numberOrNull()?.toInt()?.takeIf { it > 0 }
+                ?: this["linuxEvKey$suffix"].numberOrNull()?.toInt()?.takeIf { it > 0 }
+        } else {
+            null
+        },
+        mscScan = if (learnedMatchesVisible) {
+            hidden["mscScan"].numberOrNull()?.toLong()?.takeIf { it != 0L }
+                ?: this["mscScan$suffix"].numberOrNull()?.toLong()?.takeIf { it != 0L }
+        } else {
+            null
+        },
+    )
+}
+
+private fun matchesConfiguredKey(expected: ConfiguredKey, actual: ConfiguredKey): Boolean {
+    if (!expected.configured || !actual.configured) return false
+    if (expected.keyCode != null && actual.keyCode != null) return expected.keyCode == actual.keyCode
+    if (expected.scanCode != null && actual.scanCode != null) return expected.scanCode == actual.scanCode
+    if (expected.linuxEvKey != null && actual.linuxEvKey != null) return expected.linuxEvKey == actual.linuxEvKey
+    if (expected.mscScan != null && actual.mscScan != null) return expected.mscScan == actual.mscScan
+    return false
+}
+
+private data class ConfiguredKey(
+    val keyCode: Int?,
+    val scanCode: Int?,
+    val linuxEvKey: Int?,
+    val mscScan: Long?,
+) {
+    val configured: Boolean
+        get() = keyCode != null || scanCode != null || linuxEvKey != null || mscScan != null
+}
+

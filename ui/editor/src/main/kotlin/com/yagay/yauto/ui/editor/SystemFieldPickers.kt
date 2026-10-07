@@ -219,18 +219,22 @@ internal fun PickerBackedField(
                                 Toast.LENGTH_LONG,
                             ).show()
                         } else {
-                            onHardwareKeyCaptured(captured)
-                            Toast.makeText(
-                                context,
-                                context.getString(
-                                    TextR.string.hardware_key_capture_result,
-                                    captured.keyCode,
-                                ),
-                                Toast.LENGTH_LONG,
-                            ).show()
                             if (captured.keyCode > 0) {
                                 onValue(captured.keyCode.toString())
                             }
+                            onHardwareKeyCaptured(captured)
+                            Toast.makeText(
+                                context,
+                                if (captured.keyCode > 0) {
+                                    context.getString(
+                                        TextR.string.hardware_key_capture_result,
+                                        captured.keyCode,
+                                    )
+                                } else {
+                                    context.getString(TextR.string.hardware_key_capture_result_oem)
+                                },
+                                Toast.LENGTH_LONG,
+                            ).show()
                         }
                     }
                 },

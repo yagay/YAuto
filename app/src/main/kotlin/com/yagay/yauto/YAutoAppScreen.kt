@@ -493,11 +493,33 @@ private suspend fun captureHardwareKey(
     graph: AppGraph,
     timeoutMs: Long,
 ): HardwareKeyCaptureResult? = coroutineScope {
-    val channel = Channel<HardwareKeyCaptureResult>(capacity = 2)
+    val channel = Channel<HardwareKeyCaptureResult>(capacity = 3)
     val jobs = mutableListOf<kotlinx.coroutines.Job>()
 
-    jobs += launch(start = CoroutineStart.UNDISPATCHED) {
+    fun launchCapture(block: suspend () -> HardwareKeyCaptureResult?) {
+        jobs += launch(start = CoroutineStart.UNDISPATCHED) {
+            block()?.let { channel.trySend(it) }
+        }
+    }
+
+    launchCapture {
         AccessibilityRuntimeBridge.awaitNextKey(timeoutMs)?.let { key ->
+            HardwareKeyCaptureResult(
+                keyCode = key.keyCode,
+                scanCode = key.scanCode,
+                deviceId = key.deviceId,
+                action = key.action,
+                deviceName = key.deviceName,
+                deviceDescriptor = key.deviceDescriptor,
+                vendorId = key.vendorId,
+                productId = key.productId,
+                sources = setOf("accessibility"),
+            )
+        }
+    }
+
+    val xposedWaiter = launch(start = CoroutineStart.UNDISPATCHED) {
+        XposedSystemEventRuntimeBridge.awaitNextHardwareKey(timeoutMs)?.let { key ->
             channel.trySend(
                 HardwareKeyCaptureResult(
                     keyCode = key.keyCode,
@@ -508,33 +530,20 @@ private suspend fun captureHardwareKey(
                     deviceDescriptor = key.deviceDescriptor,
                     vendorId = key.vendorId,
                     productId = key.productId,
-                    sources = setOf("accessibility"),
+                    sources = setOf("lsposed"),
                 )
             )
         }
     }
+    jobs += xposedWaiter
 
     val xposedArmed = runCatching {
         graph.xposed.beginHardwareKeyCapture(timeoutMs)
     }.getOrDefault(false)
-    if (xposedArmed) {
-        jobs += launch(start = CoroutineStart.UNDISPATCHED) {
-            XposedSystemEventRuntimeBridge.awaitNextHardwareKey(timeoutMs)?.let { key ->
-                channel.trySend(
-                    HardwareKeyCaptureResult(
-                        keyCode = key.keyCode,
-                        scanCode = key.scanCode,
-                        deviceId = key.deviceId,
-                        action = key.action,
-                        deviceName = key.deviceName,
-                        deviceDescriptor = key.deviceDescriptor,
-                        vendorId = key.vendorId,
-                        productId = key.productId,
-                        sources = setOf("lsposed"),
-                    )
-                )
-            }
-        }
+    if (!xposedArmed) xposedWaiter.cancel()
+
+    if (runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)) {
+        launchCapture { graph.hardwareKeys.captureRawKey(timeoutMs) }
     }
 
     val first = withTimeoutOrNull(timeoutMs.coerceIn(1_000L, 60_000L)) {
@@ -545,9 +554,8 @@ private suspend fun captureHardwareKey(
         return@coroutineScope null
     }
 
-    // Allow both Android paths to report the same physical press, then prefer the
-    // system_server KeyEvent because it sees OEM keys earlier than Accessibility.
-    if (xposedArmed) delay(180L)
+    // Merge reports from the same press. Android KeyCode remains primary; raw OEM identity stays hidden.
+    delay(240L)
     val candidates = buildList {
         add(first)
         while (true) {
@@ -558,15 +566,39 @@ private suspend fun captureHardwareKey(
 
     jobs.forEach { it.cancel() }
     channel.close()
-
-    candidates
-        .filter { it.keyCode > 0 }
-        .maxByOrNull {
-            when {
-                "lsposed" in it.sources -> 20
-                "accessibility" in it.sources -> 10
-                else -> 0
-            }
-        }
+    mergeHardwareKeyCaptures(candidates)
 }
+
+private fun mergeHardwareKeyCaptures(
+    captures: List<HardwareKeyCaptureResult>,
+): HardwareKeyCaptureResult? {
+    if (captures.isEmpty()) return null
+    val android = captures
+        .filter { it.keyCode > 0 || it.scanCode > 0 }
+        .maxByOrNull { capture ->
+            val sourceRank = when {
+                "lsposed" in capture.sources -> 30
+                "accessibility" in capture.sources -> 20
+                else -> 10
+            }
+            sourceRank + (if (capture.keyCode > 0) 2 else 0) + (if (capture.scanCode > 0) 1 else 0)
+        }
+    val raw = captures.firstOrNull { it.linuxEvKey > 0 || it.mscScan != 0L }
+    val primary = android ?: raw ?: captures.first()
+
+    return HardwareKeyCaptureResult(
+        keyCode = android?.keyCode ?: primary.keyCode,
+        scanCode = android?.scanCode ?: primary.scanCode,
+        deviceId = android?.deviceId ?: primary.deviceId,
+        action = android?.action ?: primary.action,
+        linuxEvKey = raw?.linuxEvKey ?: primary.linuxEvKey,
+        mscScan = raw?.mscScan ?: primary.mscScan,
+        deviceName = android?.deviceName.orEmpty().ifBlank { primary.deviceName },
+        deviceDescriptor = android?.deviceDescriptor.orEmpty().ifBlank { primary.deviceDescriptor },
+        vendorId = android?.vendorId?.takeIf { it > 0 } ?: primary.vendorId,
+        productId = android?.productId?.takeIf { it > 0 } ?: primary.productId,
+        sources = captures.flatMapTo(linkedSetOf()) { it.sources },
+    )
+}
+
 private const val MAX_WORKSPACE_FILE_BYTES = 20 * 1024 * 1024

@@ -57,6 +57,11 @@ internal fun GenericFeatureConfigEditor(
         }
     }
     var values by remember(descriptor.id.value, initial, locale) { mutableStateOf(initialTexts) }
+    var hardwareIdentityConfig by remember(descriptor.id.value, initial) {
+        mutableStateOf(
+            initial?.config.orEmpty().filterKeys { it.startsWith("hardwareIdentity") }
+        )
+    }
     var showAdvanced by remember(descriptor.id.value) { mutableStateOf(false) }
 
     val typedValues = remember(descriptor, values, locale) {
@@ -129,8 +134,19 @@ internal fun GenericFeatureConfigEditor(
                     allValues = values,
                     value = values[field.key].orEmpty(),
                     enabled = enabled,
-                    onValue = { values = values + (field.key to it) },
+                    onValue = { next ->
+                        values = values + (field.key to next)
+                        if (field.key.startsWith("keyCode")) {
+                            val suffix = field.key.removePrefix("keyCode")
+                            hardwareIdentityConfig = hardwareIdentityConfig - "hardwareIdentity$suffix"
+                        }
+                    },
                     onRelatedValue = { key, value -> values = values + (key to value) },
+                    onHardwareIdentity = { suffix, captured ->
+                        hardwareIdentityConfig = hardwareIdentityConfig + (
+                            "hardwareIdentity$suffix" to captured.toHiddenHardwareIdentity()
+                        )
+                    },
                 )
             }
         }
@@ -153,6 +169,8 @@ internal fun GenericFeatureConfigEditor(
                             parseFieldValue(field, raw, locale)?.let { parsed -> config[field.key] = parsed }
                         }
                     }
+                    config.keys.filter { it.startsWith("hardwareIdentity") }.forEach(config::remove)
+                    config.putAll(hardwareIdentityConfig)
                     onSave(FeatureRef(descriptor.id.value, descriptor.schemaVersion, config))
                 },
                 enabled = valid,
@@ -302,6 +320,7 @@ private fun FieldEditor(
     enabled: Boolean,
     onValue: (String) -> Unit,
     onRelatedValue: (String, String) -> Unit,
+    onHardwareIdentity: (String, HardwareKeyCaptureResult) -> Unit,
 ) {
     val descriptorId = descriptor.id.value
     val label = localizedFieldLabelShared(descriptorId, field)
@@ -351,8 +370,9 @@ private fun FieldEditor(
             allowManualInput = behavior.allowManualInput,
             onValue = onValue,
             onHardwareKeyCaptured = { captured ->
-                if (field.key.startsWith("keyCode") && captured.keyCode > 0) {
-                    onRelatedValue(field.key, captured.keyCode.toString())
+                if (field.key.startsWith("keyCode")) {
+                    val suffix = field.key.removePrefix("keyCode")
+                    onHardwareIdentity(suffix, captured)
                 }
             },
         )
@@ -535,3 +555,22 @@ private fun implementationCons(backendId: String): List<String> = when (backendI
 }
 
 
+
+
+private fun HardwareKeyCaptureResult.toHiddenHardwareIdentity(): ConfigValue.ObjectValue =
+    ConfigValue.ObjectValue(
+        buildMap {
+            if (keyCode > 0) put("androidKeyCode", ConfigValue.NumberValue(keyCode.toDouble()))
+            if (scanCode > 0) put("androidScanCode", ConfigValue.NumberValue(scanCode.toDouble()))
+            if (linuxEvKey > 0) put("linuxEvKey", ConfigValue.NumberValue(linuxEvKey.toDouble()))
+            if (mscScan != 0L) put("mscScan", ConfigValue.NumberValue(mscScan.toDouble()))
+            if (deviceId >= 0) put("deviceId", ConfigValue.NumberValue(deviceId.toDouble()))
+            if (deviceName.isNotBlank()) put("deviceName", ConfigValue.StringValue(deviceName))
+            if (deviceDescriptor.isNotBlank()) put("deviceDescriptor", ConfigValue.StringValue(deviceDescriptor))
+            if (vendorId > 0) put("vendorId", ConfigValue.NumberValue(vendorId.toDouble()))
+            if (productId > 0) put("productId", ConfigValue.NumberValue(productId.toDouble()))
+            if (sources.isNotEmpty()) {
+                put("sources", ConfigValue.ListValue(sources.sorted().map(ConfigValue::StringValue)))
+            }
+        }
+    )

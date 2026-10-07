@@ -12,7 +12,8 @@
     <string name="hardware_key_capture_waiting_button">等待按键…</string>
     <string name="hardware_key_capture_waiting">请在 10 秒内按一次实体按键</string>
     <string name="hardware_key_capture_result">Android KeyCode %1$d</string>
-    <string name="hardware_key_capture_timeout">没有捕获到 Android 实体按键事件。请确认无障碍已启用或 LSPosed system 作用域已生效。</string>
+    <string name="hardware_key_capture_result_oem">已识别厂商实体键，YAuto 已自动保存兼容映射。</string>
+    <string name="hardware_key_capture_timeout">没有捕获到实体按键事件。YAuto 已尝试 Android 输入、LSPosed 和 Root 厂商键兼容通道。</string>
     <string name="feature_android_event_hardware_key_gesture_title">实体按键手势</string>
     <string name="feature_android_event_hardware_key_gesture_description">识别 Android 实体按键的单击、双击、三击或长按后触发</string>
     <string name="feature_android_event_hardware_key_gesture_field_keycode">Android 按键码</string>
