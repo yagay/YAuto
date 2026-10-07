@@ -54,21 +54,27 @@ fun inferFeaturePickerCategory(
 
     return when {
         starts("ai.") || has(".ai.") ->
-            FeaturePickerCategory.AI
+            if (kind == FeatureKind.ACTION) FeaturePickerCategory.AI
+            else FeaturePickerCategory.YAUTO_SPECIFIC
 
         // MacroDroid exposes web/network requests separately from connectivity controls.
         has(
             ".http", ".webhook", ".websocket", ".webdav", ".url.",
             "http_server", "rest_api", ".mqtt",
-        ) ->
-            FeaturePickerCategory.WEB_INTERACTIONS
+        ) -> when (kind) {
+            FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.CONNECTIVITY
+            FeatureKind.ACTION, FeatureKind.EVENT -> FeaturePickerCategory.WEB_INTERACTIONS
+        }
 
         // Logging is a first-class MacroDroid category rather than a script/command subtype.
         has(
             ".logcat", ".dumpsys", ".log.write", ".log.export", ".system_log",
             ".execution_log", ".diagnostic", ".trace.", ".logger",
-        ) ->
-            FeaturePickerCategory.LOGGING
+        ) -> when (kind) {
+            FeatureKind.ACTION -> FeaturePickerCategory.LOGGING
+            FeatureKind.EVENT -> FeaturePickerCategory.DEVICE_EVENTS
+            FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
+        }
 
         // Conditions/loops is an Action-only MacroDroid category.
         kind == FeatureKind.ACTION && (
@@ -84,8 +90,11 @@ fun inferFeaturePickerCategory(
         has(
             ".camera", ".photo", "screen_record", "screenshot", ".ocr", ".qr",
             "image_match", ".image.", ".capture", ".torch", ".flashlight",
-        ) ->
-            FeaturePickerCategory.CAMERA_PHOTO
+        ) -> when (kind) {
+            FeatureKind.ACTION -> FeaturePickerCategory.CAMERA_PHOTO
+            FeatureKind.EVENT -> FeaturePickerCategory.DEVICE_EVENTS
+            FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
+        }
 
         has(
             ".location", ".geofence", ".gps", ".maps.", ".cell_tower",
@@ -98,7 +107,8 @@ fun inferFeaturePickerCategory(
             ".accelerometer", ".gyroscope", "light_sensor", "significant_motion",
             "sound_level",
         ) ->
-            FeaturePickerCategory.SENSORS
+            if (kind == FeatureKind.ACTION) FeaturePickerCategory.DEVICE_ACTIONS
+            else FeaturePickerCategory.SENSORS
 
         has(
             ".wifi", ".bluetooth", ".ble", ".mobile_data", ".airplane", ".hotspot",
@@ -137,8 +147,14 @@ fun inferFeaturePickerCategory(
             ".battery", ".charging", "power_save", ".wake_lock", ".wakelock",
             ".doze", "device_idle", "low_power", "power_connected",
             "power_disconnected", "battery_optimization",
-        ) ->
-            FeaturePickerCategory.BATTERY_POWER
+        ) -> when (kind) {
+            FeatureKind.ACTION ->
+                if (has("power_save", "battery_optimization", "stay_awake_while_charging"))
+                    FeaturePickerCategory.DEVICE_SETTINGS
+                else FeaturePickerCategory.DEVICE_ACTIONS
+            FeatureKind.EVENT, FeatureKind.STATE, FeatureKind.CONDITION ->
+                FeaturePickerCategory.BATTERY_POWER
+        }
 
         has(
             ".time", ".date", ".interval", ".alarm", ".timer", ".calendar",
@@ -150,29 +166,37 @@ fun inferFeaturePickerCategory(
         has(
             ".file", ".directory", ".archive", ".zip", ".storage", ".download",
             "media_store", "document_tree",
-        ) ->
-            FeaturePickerCategory.FILES
+        ) -> when (kind) {
+            FeatureKind.ACTION -> FeaturePickerCategory.FILES
+            FeatureKind.EVENT -> FeaturePickerCategory.DEVICE_EVENTS
+            FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
+        }
 
         has(
             "hardware_key", ".keyevent", ".keyboard", ".gesture", ".accessibility",
             ".ui.", ".overlay", ".surface", ".tap", ".click", ".swipe", ".input",
             ".biometric", ".qs_tile", ".quick_settings", ".menu_action",
             ".back_navigation", ".ime", ".window_", "systemui_", "status_bar_",
-        ) ->
-            FeaturePickerCategory.USER_INPUT
+        ) -> when (kind) {
+            FeatureKind.ACTION -> FeaturePickerCategory.DEVICE_ACTIONS
+            FeatureKind.EVENT -> FeaturePickerCategory.USER_INPUT
+            FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
+        }
 
         // MacroDroid uses Call/SMS chiefly for trigger/state style communication.
         kind != FeatureKind.ACTION && has(
             ".call", ".sms", "phone_state", "call_log", "incoming_call",
             "outgoing_call",
         ) ->
-            FeaturePickerCategory.CALL_SMS
+            if (kind == FeatureKind.EVENT) FeaturePickerCategory.CALL_SMS
+            else FeaturePickerCategory.PHONE
 
         has(
             ".sms", ".email", ".message", ".messaging", ".share.text",
             "compose_sms", "compose_email",
         ) ->
-            FeaturePickerCategory.MESSAGING
+            if (kind == FeatureKind.ACTION) FeaturePickerCategory.MESSAGING
+            else FeaturePickerCategory.CALL_SMS
 
         has(
             ".phone", ".call", "call_log", ".contact", ".telephony", ".dial",
@@ -185,8 +209,10 @@ fun inferFeaturePickerCategory(
             ".shortcut", ".launcher", ".widget", ".work_profile", ".role.",
             ".process", ".service", ".task", ".intent", ".apk.", ".install",
             ".uninstall",
-        ) ->
-            FeaturePickerCategory.APPLICATIONS
+        ) -> when (kind) {
+            FeatureKind.ACTION, FeatureKind.EVENT -> FeaturePickerCategory.APPLICATIONS
+            FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
+        }
 
         // System/settings actions belong in Device Settings only after semantic categories above.
         kind == FeatureKind.ACTION && has(
