@@ -76,28 +76,21 @@ class AndroidExtendedAutomationCoverageTest {
     private val capabilities = CapabilityClient { CapabilityResult(false, message = "unused") }
 
     @Test
-    fun `extended state pack installs fifteen unique state condition pairs`() {
+    fun `extended state pack installs only states not owned by canonical packs`() {
         val registry = FeatureRegistry()
         AndroidExtendedStateFeaturePack(Reader()).install(registry)
 
         val descriptors = registry.allDescriptors()
-        assertEquals(30, descriptors.size)
-        assertEquals(15, descriptors.count { it.kind == FeatureKind.STATE })
-        assertEquals(15, descriptors.count { it.kind == FeatureKind.CONDITION })
+        assertEquals(16, descriptors.size)
+        assertEquals(8, descriptors.count { it.kind == FeatureKind.STATE })
+        assertEquals(8, descriptors.count { it.kind == FeatureKind.CONDITION })
 
         val keys = listOf(
-            "keyguard_locked",
-            "music_active",
-            "microphone_muted",
-            "speakerphone_on",
-            "clock_24_hour",
             "next_alarm_set",
             "network_validated",
-            "network_metered",
             "network_internet",
             "network_restricted",
             "network_suspended",
-            "ringer_mode",
             "battery_present",
             "battery_plugged",
             "battery_health",
@@ -110,6 +103,13 @@ class AndroidExtendedAutomationCoverageTest {
         val ownedByEstablishedPacks = listOf(
             "device_idle",
             "device_secure",
+            "keyguard_locked",
+            "music_active",
+            "microphone_muted",
+            "speakerphone_on",
+            "clock_24_hour",
+            "network_metered",
+            "ringer_mode",
             "network_roaming",
             "orientation",
             "battery_status",
@@ -139,17 +139,13 @@ class AndroidExtendedAutomationCoverageTest {
                 context,
             )
 
-        assertTrue(matches("keyguard_locked"))
-        reader.locked = false
-        assertTrue(matches("keyguard_locked", mapOf("value" to ConfigValue.BooleanValue(false))))
-
         assertTrue(matches("network_validated"))
         reader.validated = false
         assertFalse(matches("network_validated"))
 
-        assertTrue(matches("ringer_mode", mapOf("value" to ConfigValue.StringValue("normal"))))
-        reader.currentRingerMode = "vibrate"
-        assertTrue(matches("ringer_mode", mapOf("value" to ConfigValue.StringValue("vibrate"))))
+        assertTrue(matches("network_internet"))
+        reader.internet = false
+        assertFalse(matches("network_internet"))
 
         assertTrue(matches("battery_plugged", mapOf("value" to ConfigValue.StringValue("usb"))))
         assertTrue(matches("battery_health", mapOf("value" to ConfigValue.StringValue("good"))))
