@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.yagay.yauto.core.model.ConfigValue
-import com.yagay.yauto.core.registry.FeatureCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FieldSchema
 import com.yagay.yauto.ui.design.R as TextR
@@ -72,6 +71,9 @@ internal class FeatureTextResolver(private val context: Context) {
                 add(descriptor.title)
                 add(descriptor.description)
                 add(descriptor.id.value)
+                val semanticCategory = catalogCategory(descriptor.domain, descriptor.kind)
+                add(context.getString(semanticCategory.titleRes))
+                add(context.getString(semanticCategory.subtitleRes))
                 addAll(descriptor.keywords)
                 descriptor.fields.forEach { field ->
                     add(fieldLabel(descriptor.id.value, field))
@@ -89,23 +91,11 @@ internal class FeatureTextResolver(private val context: Context) {
         resource("feature_phrase_${resourceKey(text)}")
 
     private fun genericTitle(descriptor: FeatureDescriptor): String {
-        val category = when (descriptor.category) {
-            FeatureCategory.CORE -> context.getString(TextR.string.category_core)
-            FeatureCategory.APP -> context.getString(TextR.string.category_app)
-            FeatureCategory.DEVICE -> context.getString(TextR.string.category_device)
-            FeatureCategory.NETWORK -> context.getString(TextR.string.category_network)
-            FeatureCategory.DISPLAY -> context.getString(TextR.string.category_display)
-            FeatureCategory.AUDIO -> context.getString(TextR.string.category_audio)
-            FeatureCategory.NOTIFICATION -> context.getString(TextR.string.category_notification)
-            FeatureCategory.FILE -> context.getString(TextR.string.category_file)
-            FeatureCategory.VARIABLE -> context.getString(TextR.string.category_variable)
-            FeatureCategory.FLOW -> context.getString(TextR.string.category_flow)
-            FeatureCategory.UI_AUTOMATION -> context.getString(TextR.string.category_ui_automation)
-            FeatureCategory.SYSTEM -> context.getString(TextR.string.category_system)
-            FeatureCategory.SCRIPT -> context.getString(TextR.string.category_script)
-            FeatureCategory.ADVANCED, FeatureCategory.COMPATIBILITY -> context.getString(TextR.string.category_advanced)
-        }
-        return context.getString(TextR.string.feature_generic_title_format, category)
+        val semanticCategory = catalogCategory(descriptor.domain, descriptor.kind)
+        return context.getString(
+            TextR.string.feature_generic_title_format,
+            context.getString(semanticCategory.titleRes),
+        )
     }
 
     private fun resource(name: String): String? {
