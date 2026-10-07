@@ -27,9 +27,6 @@ class AndroidSystemConvenienceFeaturePack(context: Context) : FeaturePack {
         booleanPair(registry, "device_locked", "Device locked", "Check whether Android currently considers the device locked", FeatureCategory.DEVICE) {
             context.getSystemService(KeyguardManager::class.java).isDeviceLocked
         }
-        booleanPair(registry, "network_metered", "Active network metered", "Check whether Android marks the active network as metered", FeatureCategory.NETWORK) {
-            context.getSystemService(ConnectivityManager::class.java).isActiveNetworkMetered
-        }
         registerDndState(registry, FeatureKind.STATE, "android.state.dnd_filter")
         registerDndState(registry, FeatureKind.CONDITION, "android.condition.dnd_filter")
         registerLaunchHome(registry)
