@@ -14,7 +14,6 @@ import android.net.wifi.WifiManager
 import android.os.UserManager
 import android.provider.CalendarContract
 import android.telephony.SubscriptionManager
-import android.view.KeyEvent
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -71,7 +70,6 @@ internal fun inferredPickerSource(
         "calendarId" -> FieldPickerSource.Calendar
         "imeId" -> FieldPickerSource.InputMethod
         "keyCode", "keyCode1", "keyCode2" -> FieldPickerSource.KeyCode
-        "scanCode", "scanCode1", "scanCode2" -> FieldPickerSource.ScanCode
         "ssid" -> FieldPickerSource.WifiSsid
         "provider" -> if (descriptor.id.value.contains("location", ignoreCase = true)) {
             FieldPickerSource.LocationProvider
@@ -169,7 +167,7 @@ internal fun PickerBackedField(
     var showPicker by remember(picker) { mutableStateOf(false) }
     var capturingKey by remember(picker) { mutableStateOf(false) }
     val numeric = field is FieldSchema.Number || field is FieldSchema.Duration
-    val hardwareKeyField = picker == FieldPickerSource.KeyCode || picker == FieldPickerSource.ScanCode
+    val hardwareKeyField = picker == FieldPickerSource.KeyCode
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         OutlinedTextField(
             value = value,
@@ -227,24 +225,11 @@ internal fun PickerBackedField(
                                 context.getString(
                                     TextR.string.hardware_key_capture_result,
                                     captured.keyCode,
-                                    captured.scanCode,
-                                    captured.deviceId,
                                 ),
                                 Toast.LENGTH_LONG,
                             ).show()
-                            val selected = when (picker) {
-                                FieldPickerSource.KeyCode -> captured.keyCode
-                                FieldPickerSource.ScanCode -> captured.scanCode
-                                else -> 0
-                            }
-                            if (selected > 0) {
-                                onValue(selected.toString())
-                            } else if (
-                                picker == FieldPickerSource.KeyCode &&
-                                captured.keyCode == KeyEvent.KEYCODE_UNKNOWN &&
-                                captured.scanCode > 0
-                            ) {
-                                onValue("")
+                            if (captured.keyCode > 0) {
+                                onValue(captured.keyCode.toString())
                             }
                         }
                     }
@@ -293,9 +278,7 @@ private fun SystemValuePickerDialog(
 
     LaunchedEffect(picker, allValues, locale, hardwareKeyCatalogLoader) {
         loading = true
-        val hardwareKeys = if (
-            picker == FieldPickerSource.KeyCode || picker == FieldPickerSource.ScanCode
-        ) {
+        val hardwareKeys = if (picker == FieldPickerSource.KeyCode) {
             runCatching { hardwareKeyCatalogLoader() }.getOrDefault(HardwareKeyPickerCatalog())
         } else {
             HardwareKeyPickerCatalog()
