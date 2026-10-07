@@ -14,4 +14,20 @@
     <string name="hardware_key_capture_waiting">请在 10 秒内按一次实体按键</string>
     <string name="hardware_key_capture_result">KeyCode %1$d，ScanCode %2$d，设备 %3$d</string>
     <string name="hardware_key_capture_timeout">没有捕获到实体按键事件。YAuto 已尝试无障碍、LSPosed 和 Root 原始输入捕获。</string>
+    <string name="feature_android_event_hardware_key_gesture_title">实体按键手势</string>
+    <string name="feature_android_event_hardware_key_gesture_description">从原始实体按键流识别单击、双击、三击或长按后触发</string>
+    <string name="feature_android_event_hardware_key_gesture_field_keycode">Android 按键码</string>
+    <string name="feature_android_event_hardware_key_gesture_field_scancode">Linux 扫描码</string>
+    <string name="feature_android_event_hardware_key_gesture_field_gesture">按键手势</string>
+    <string name="feature_android_event_hardware_key_gesture_field_gesture_option_single_press">单击</string>
+    <string name="feature_android_event_hardware_key_gesture_field_gesture_option_double_press">双击</string>
+    <string name="feature_android_event_hardware_key_gesture_field_gesture_option_triple_press">三击</string>
+    <string name="feature_android_event_hardware_key_gesture_field_gesture_option_long_press">长按</string>
+    <string name="feature_android_event_hardware_key_gesture_field_longpressms">长按判定时间</string>
+    <string name="feature_android_event_hardware_key_combo_title">实体组合按键</string>
+    <string name="feature_android_event_hardware_key_combo_description">两个实体按键同时按住时触发</string>
+    <string name="feature_android_event_hardware_key_combo_field_keycode1">第一个 Android 按键码</string>
+    <string name="feature_android_event_hardware_key_combo_field_scancode1">第一个 Linux 扫描码</string>
+    <string name="feature_android_event_hardware_key_combo_field_keycode2">第二个 Android 按键码</string>
+    <string name="feature_android_event_hardware_key_combo_field_scancode2">第二个 Linux 扫描码</string>
 </resources>
