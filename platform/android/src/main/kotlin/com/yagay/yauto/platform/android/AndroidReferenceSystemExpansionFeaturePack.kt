@@ -86,18 +86,13 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
                     "android.event.audio_focus_gain",
                     "android.event.audio_focus_lost",
                 ),
-                aliasConfigDefaults = mapOf(
-                    "android.event.audio_focus_gain" to mapOf("change" to ConfigValue.StringValue("gain")),
-                    "android.event.audio_focus_lost" to mapOf("change" to ConfigValue.StringValue("loss_any")),
-                ),
+                aliasConfigDefaults = AUDIO_FOCUS_ALIAS_CONFIG_DEFAULTS,
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.audio_focus_changed") return@registerEvent false
             val wanted = feature.config.string("change", "any")
             val actual = ctx.event.payload.string("change")
-            wanted == "any" ||
-                (wanted == "loss_any" && actual in setOf("loss", "loss_transient", "loss_can_duck")) ||
-                actual == wanted
+            audioFocusChangeMatches(wanted, actual)
         }
 
     private fun registerOpenCallLog(registry: FeatureRegistry) {
@@ -459,3 +454,14 @@ class AudioFocusEventSource : AndroidEventSource {
     override fun start(emitter: RuntimeEventEmitter) { AudioFocusRuntimeBridge.attach(emitter) }
     override fun stop() { AudioFocusRuntimeBridge.attach(null) }
 }
+
+
+internal val AUDIO_FOCUS_ALIAS_CONFIG_DEFAULTS = mapOf(
+    "android.event.audio_focus_gain" to mapOf("change" to ConfigValue.StringValue("gain")),
+    "android.event.audio_focus_lost" to mapOf("change" to ConfigValue.StringValue("loss_any")),
+)
+
+internal fun audioFocusChangeMatches(wanted: String, actual: String): Boolean =
+    wanted == "any" ||
+        (wanted == "loss_any" && actual in setOf("loss", "loss_transient", "loss_can_duck")) ||
+        actual == wanted
