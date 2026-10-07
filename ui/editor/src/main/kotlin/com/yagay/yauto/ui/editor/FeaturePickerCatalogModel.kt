@@ -52,7 +52,7 @@ internal class FeaturePickerCatalogModel private constructor(
     ): List<FeaturePickerListEntry> {
         val items = items(page, favorites, recent, query)
         return if (page.special != null || normalizeQuery(query).isNotEmpty()) {
-            items.map(FeaturePickerListEntry::Feature)
+            items.map { FeaturePickerListEntry.Feature(it) }
         } else {
             collapseFeaturePickerItems(items, familyIndex)
         }
