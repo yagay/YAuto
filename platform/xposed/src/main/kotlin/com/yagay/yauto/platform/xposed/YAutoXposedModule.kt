@@ -20,6 +20,7 @@ import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 class YAutoXposedModule : XposedModule() {
     private val systemRegistered = AtomicBoolean(false)
@@ -28,6 +29,7 @@ class YAutoXposedModule : XposedModule() {
     private val systemEventDedup = ConcurrentHashMap<String, Long>()
     private val hardwareKeyEventDedup = ConcurrentHashMap<String, Long>()
     private val hardwareKeyCaptureUntilElapsed = AtomicLong(0L)
+    private val subscribedSystemEvents = AtomicReference<Set<String>>(emptySet())
 
     override fun onSystemServerStarting(param: SystemServerStartingParam) {
         try {
@@ -77,6 +79,17 @@ class YAutoXposedModule : XposedModule() {
                     require(intent.getIntExtra("version", -1) == SystemBridgeProtocol.VERSION) { "Protocol mismatch" }
                     when (intent.getStringExtra("operation")) {
                         SystemBridgeProtocol.PING -> Unit
+                        SystemBridgeProtocol.SYSTEM_EVENT_SUBSCRIPTIONS_SET -> {
+                            val values = intent.getStringArrayListExtra("eventTypes").orEmpty()
+                                .asSequence()
+                                .map(String::trim)
+                                .filter { it.startsWith("android.event.") }
+                                .distinct()
+                                .take(256)
+                                .toSet()
+                            subscribedSystemEvents.set(values)
+                            response.putInt("subscriptionCount", values.size)
+                        }
                         SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_START -> {
                             installShortXInputHooks(context, classLoader)
                             val timeoutMs = intent.getLongExtra("timeoutMs", 10_000L)
@@ -190,6 +203,7 @@ class YAutoXposedModule : XposedModule() {
         installBackNavigationHooks(context, classLoader)
         installAssistantHooks(context, classLoader)
         installShortXInputHooks(context, classLoader)
+        installShortXObserverHooks(context, classLoader)
     }
 
     private fun installProcessDeathHooks(context: Context, classLoader: ClassLoader) {
@@ -323,6 +337,143 @@ class YAutoXposedModule : XposedModule() {
             }
     }
 
+
+    private fun installShortXObserverHooks(context: Context, classLoader: ClassLoader) {
+        ShortXCompatHookCatalog.systemServerObservers.forEach { spec ->
+            spec.classNames.forEach { className ->
+                val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
+                clazz.declaredMethods
+                    .filter { it.name in spec.methodNames }
+                    .forEach { method ->
+                        val key = "shortx-observer|" + spec.id + "|" + method.toGenericString()
+                        if (!installedHooks.add(key)) return@forEach
+                        method.isAccessible = true
+                        hook(method).intercept { chain ->
+                            if (spec.after) {
+                                val result = chain.proceed()
+                                emitShortXObserverEvent(context, spec, className, method.name, chain.thisObject, chain.args)
+                                result
+                            } else {
+                                emitShortXObserverEvent(context, spec, className, method.name, chain.thisObject, chain.args)
+                                chain.proceed()
+                            }
+                        }
+                    }
+            }
+        }
+    }
+
+    private fun emitShortXObserverEvent(
+        context: Context,
+        spec: ShortXObserverHookSpec,
+        className: String,
+        methodName: String,
+        thisObject: Any?,
+        args: Array<out Any?>,
+    ) {
+        if (spec.eventType !in subscribedSystemEvents.get()) return
+        val extras = linkedMapOf<String, Any?>(
+            "hookId" to spec.id,
+            "className" to className,
+            "method" to methodName,
+        )
+        args.take(8).forEachIndexed { index, value ->
+            when (value) {
+                is String -> extras["arg$index"] = value.take(512)
+                is Int -> extras["arg$index"] = value
+                is Long -> extras["arg$index"] = value
+                is Boolean -> extras["arg$index"] = value
+                is Enum<*> -> extras["arg$index"] = value.name
+            }
+        }
+
+        when (spec.payloadKind) {
+            ShortXHookPayloadKind.PROCESS -> {
+                val target = args.firstOrNull { it?.javaClass?.name?.contains("ProcessRecord") == true } ?: thisObject
+                val snapshot = processSnapshot(target)
+                extras["package"] = snapshot.packageName
+                extras["processName"] = snapshot.processName
+                extras["uid"] = snapshot.uid
+                extras["pid"] = snapshot.pid
+            }
+            ShortXHookPayloadKind.ACTIVITY -> {
+                val target = args.firstOrNull { it?.javaClass?.name?.contains("ActivityRecord") == true } ?: thisObject
+                val snapshot = activitySnapshot(target)
+                extras["package"] = snapshot.packageName
+                extras["activity"] = snapshot.activityName
+                extras["taskId"] = snapshot.taskId
+            }
+            ShortXHookPayloadKind.NOTIFICATION -> {
+                val target = args.firstOrNull { it?.javaClass?.name?.contains("NotificationRecord") == true } ?: thisObject
+                val snapshot = notificationSnapshot(target)
+                extras["package"] = snapshot.packageName
+                extras["notificationKey"] = snapshot.key
+                extras["notificationId"] = snapshot.id
+                extras["channel"] = snapshot.channelId
+            }
+            ShortXHookPayloadKind.VPN -> {
+                extras["state"] = args.firstOrNull { it is Enum<*> || it is String }?.toString().orEmpty()
+                extras["reason"] = args.drop(1).firstOrNull { it is String }?.toString().orEmpty()
+            }
+            ShortXHookPayloadKind.IME -> {
+                val editor = args.firstOrNull { it?.javaClass?.name == "android.view.inputmethod.EditorInfo" }
+                extras["package"] = reflectedString(editor, "packageName")
+                extras["fieldId"] = reflectedInt(editor, "fieldId")
+            }
+            ShortXHookPayloadKind.WINDOW -> {
+                val target = args.firstOrNull { it?.javaClass?.name?.contains("WindowState") == true } ?: thisObject
+                extras["package"] = reflectedString(target, "mOwningPackage", "owningPackage")
+                val attrs = reflectedValue(target, "mAttrs", "attrs")
+                extras["title"] = reflectedValue(attrs, "title")?.toString().orEmpty()
+            }
+            ShortXHookPayloadKind.ROTATION -> {
+                extras["rotation"] = args.firstOrNull { it is Int } as? Int ?: -1
+            }
+            ShortXHookPayloadKind.WIDGET -> {
+                extras["package"] = args.firstOrNull { it is String }?.toString().orEmpty()
+                extras["hostId"] = args.firstOrNull { it is Int } as? Int ?: -1
+            }
+            ShortXHookPayloadKind.SHORTCUT -> {
+                val strings = args.filterIsInstance<String>()
+                extras["package"] = strings.firstOrNull().orEmpty()
+                extras["shortcutId"] = strings.getOrNull(1).orEmpty()
+            }
+            ShortXHookPayloadKind.STATUS_BAR_ICON -> {
+                extras["slot"] = args.firstOrNull { it is String }?.toString().orEmpty()
+            }
+            ShortXHookPayloadKind.INTENT_START -> {
+                val intent = args.firstOrNull { it is Intent } as? Intent
+                    ?: args.asSequence().mapNotNull { reflectedValue(it, "intent", "mIntent") as? Intent }.firstOrNull()
+                extras["package"] = intent?.component?.packageName.orEmpty()
+                extras["activity"] = intent?.component?.className.orEmpty()
+                extras["action"] = intent?.action.orEmpty()
+            }
+            ShortXHookPayloadKind.SCREEN_STATE -> {
+                extras["screenOn"] = args.firstOrNull { it is Boolean } as? Boolean ?: false
+            }
+            ShortXHookPayloadKind.BACK_PRESS,
+            ShortXHookPayloadKind.NONE -> Unit
+        }
+
+        val identity = buildString {
+            append(spec.id)
+            append(':')
+            append(extras["package"].orEmpty())
+            append(':')
+            append(extras["activity"].orEmpty())
+            append(':')
+            append(extras["processName"].orEmpty())
+            append(':')
+            append(extras["state"].orEmpty())
+        }
+        emitSystemRuntimeEvent(
+            context = context,
+            type = spec.eventType,
+            dedupKey = identity,
+            extras = extras,
+            dedupWindowMs = 150L,
+        )
+    }
 
     /**
      * Clean-room equivalent of ShortX's InputManagerHook.
@@ -550,6 +701,7 @@ class YAutoXposedModule : XposedModule() {
         extras: Map<String, Any?>,
         dedupWindowMs: Long = 1_000L,
     ) {
+        if (type !in subscribedSystemEvents.get()) return
         val now = System.currentTimeMillis()
         val previous = systemEventDedup.put(dedupKey, now)
         if (previous != null && now - previous < dedupWindowMs) return
@@ -627,6 +779,48 @@ class YAutoXposedModule : XposedModule() {
         }
         return null
     }
+
+    private fun activitySnapshot(target: Any?): ActivitySnapshot {
+        if (target == null) return ActivitySnapshot()
+        val component = reflectedValue(target, "mActivityComponent", "realActivity") as? android.content.ComponentName
+            ?: (reflectedValue(target, "intent", "mIntent") as? Intent)?.component
+        val info = reflectedValue(target, "info", "mActivityInfo")
+        return ActivitySnapshot(
+            packageName = component?.packageName
+                ?: reflectedString(target, "packageName", "mPackageName")
+                    .ifBlank { reflectedString(info, "packageName") },
+            activityName = component?.className
+                ?: reflectedString(info, "name"),
+            taskId = reflectedInt(reflectedValue(target, "task", "mTask"), "mTaskId", "taskId"),
+        )
+    }
+
+    private fun notificationSnapshot(target: Any?): NotificationSnapshot {
+        if (target == null) return NotificationSnapshot()
+        val sbn = reflectedValue(target, "sbn", "mSbn") ?: runCatching {
+            target.javaClass.methods.firstOrNull { it.name == "getSbn" && it.parameterCount == 0 }?.invoke(target)
+        }.getOrNull()
+        val notification = reflectedValue(sbn, "notification", "mNotification")
+        return NotificationSnapshot(
+            packageName = reflectedString(sbn, "pkg", "packageName", "mPackageName"),
+            key = reflectedString(sbn, "key", "mKey"),
+            id = reflectedInt(sbn, "id", "mId"),
+            channelId = reflectedString(notification, "mChannelId", "channelId"),
+        )
+    }
+
+    private data class ActivitySnapshot(
+        val packageName: String = "",
+        val activityName: String = "",
+        val taskId: Int = -1,
+    )
+
+    private data class NotificationSnapshot(
+        val packageName: String = "",
+        val key: String = "",
+        val id: Int = -1,
+        val channelId: String = "",
+    )
 
     private data class ProcessSnapshot(
         val packageName: String = "",
