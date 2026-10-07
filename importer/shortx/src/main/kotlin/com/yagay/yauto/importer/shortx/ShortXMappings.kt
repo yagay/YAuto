@@ -541,8 +541,8 @@ internal object ShortXMappings {
         "IsHeadsetPlug" -> "android.condition.headset_connected"
         "RequireAPMMode" -> "android.condition.airplane_mode"
         "RequireRingerMode" -> "android.condition.ringer_mode"
-        "RequireIMEVisibility" -> null
-        "RequireNotificationPanelExpanded" -> null
+        "RequireIMEVisibility" -> "android.condition.ime_visible"
+        "RequireNotificationPanelExpanded" -> "android.condition.notification_panel_expanded"
         else -> null
     }
 
