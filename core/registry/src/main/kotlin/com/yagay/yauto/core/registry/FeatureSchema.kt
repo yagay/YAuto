@@ -24,12 +24,45 @@ data class HardwareKeyPickerCatalog(
     val scanCodes: List<FieldPickerOption> = emptyList(),
 )
 
+data class HardwareKeyIdentity(
+    val androidKeyCode: Int? = null,
+    val androidScanCode: Int? = null,
+    val linuxEvKey: Int? = null,
+    val mscScan: Long? = null,
+    val deviceId: Int? = null,
+    val deviceName: String? = null,
+    val deviceDescriptor: String? = null,
+    val vendorId: Int? = null,
+    val productId: Int? = null,
+    val sources: Set<String> = emptySet(),
+)
+
 data class HardwareKeyCaptureResult(
     val keyCode: Int,
     val scanCode: Int,
     val deviceId: Int,
     val action: Int,
-)
+    val linuxEvKey: Int = 0,
+    val mscScan: Long = 0L,
+    val deviceName: String = "",
+    val deviceDescriptor: String = "",
+    val vendorId: Int = 0,
+    val productId: Int = 0,
+    val sources: Set<String> = emptySet(),
+) {
+    fun identity(): HardwareKeyIdentity = HardwareKeyIdentity(
+        androidKeyCode = keyCode.takeIf { it > 0 },
+        androidScanCode = scanCode.takeIf { it > 0 },
+        linuxEvKey = linuxEvKey.takeIf { it > 0 },
+        mscScan = mscScan.takeIf { it != 0L },
+        deviceId = deviceId.takeIf { it >= 0 },
+        deviceName = deviceName.takeIf(String::isNotBlank),
+        deviceDescriptor = deviceDescriptor.takeIf(String::isNotBlank),
+        vendorId = vendorId.takeIf { it > 0 },
+        productId = productId.takeIf { it > 0 },
+        sources = sources,
+    )
+}
 
 sealed interface FieldPickerSource {
     data object InstalledApp : FieldPickerSource
