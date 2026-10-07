@@ -204,6 +204,27 @@ internal object ShortXCompatHookCatalog {
             after = true,
         ),
         ShortXObserverHookSpec(
+            id = "accessibility-display-list",
+            classNames = listOf("com.android.server.accessibility.AccessibilityWindowManager"),
+            methodNames = setOf("getDisplayListLocked"),
+            eventType = "android.event.accessibility_display_list_queried",
+            after = true,
+        ),
+        ShortXObserverHookSpec(
+            id = "accessibility-windows",
+            classNames = listOf("com.android.server.accessibility.AbstractAccessibilityServiceConnection"),
+            methodNames = setOf("getWindows", "getWindowsByDisplayLocked"),
+            eventType = "android.event.accessibility_windows_queried",
+            after = true,
+        ),
+        ShortXObserverHookSpec(
+            id = "accessibility-ui-automation-windows",
+            classNames = listOf("com.android.server.accessibility.UiAutomationManager"),
+            methodNames = setOf("canRetrieveInteractiveWindowsLocked", "suppressingAccessibilityServicesLocked"),
+            eventType = "android.event.accessibility_ui_automation_checked",
+            after = true,
+        ),
+        ShortXObserverHookSpec(
             id = "ime-show",
             classNames = listOf("com.android.server.inputmethod.InputMethodManagerService"),
             methodNames = setOf("showCurrentInputLocked"),
