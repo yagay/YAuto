@@ -81,9 +81,9 @@ class AndroidExtendedAutomationCoverageTest {
         AndroidExtendedStateFeaturePack(Reader()).install(registry)
 
         val descriptors = registry.allDescriptors()
-        assertEquals(16, descriptors.size)
-        assertEquals(8, descriptors.count { it.kind == FeatureKind.STATE })
-        assertEquals(8, descriptors.count { it.kind == FeatureKind.CONDITION })
+        assertEquals(14, descriptors.size)
+        assertEquals(7, descriptors.count { it.kind == FeatureKind.STATE })
+        assertEquals(7, descriptors.count { it.kind == FeatureKind.CONDITION })
 
         val keys = listOf(
             "next_alarm_set",
@@ -93,7 +93,6 @@ class AndroidExtendedAutomationCoverageTest {
             "network_suspended",
             "battery_present",
             "battery_plugged",
-            "battery_health",
         )
         keys.forEach { key ->
             assertNotNull(registry.stateEvaluator("android.state.$key"))
@@ -114,6 +113,7 @@ class AndroidExtendedAutomationCoverageTest {
             "orientation",
             "battery_status",
             "battery_voltage",
+            "battery_health",
         )
         ownedByEstablishedPacks.forEach { key ->
             assertNull("Extended pack must not reclaim android.state.$key", registry.stateEvaluator("android.state.$key"))
@@ -148,9 +148,6 @@ class AndroidExtendedAutomationCoverageTest {
         assertFalse(matches("network_internet"))
 
         assertTrue(matches("battery_plugged", mapOf("value" to ConfigValue.StringValue("usb"))))
-        assertTrue(matches("battery_health", mapOf("value" to ConfigValue.StringValue("good"))))
-        reader.health = "cold"
-        assertTrue(matches("battery_health", mapOf("value" to ConfigValue.StringValue("cold"))))
     }
 
     @Test
