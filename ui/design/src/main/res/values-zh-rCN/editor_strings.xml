@@ -92,6 +92,8 @@
     <string name="category_yauto_subtitle">手动触发、自动化控制、日志与 YAuto 专属功能</string>
 
     <string name="feature_picker_family_count_format">%1$s · %2$d 个操作</string>
+    <string name="feature_family_operation">操作</string>
+    <string name="feature_family_operation_hint">选择这个功能要执行的操作；下方只显示当前操作需要的设置。</string>
     <string name="feature_family_stopwatch">秒表</string>
     <string name="feature_family_stopwatch_subtitle">开始、暂停、继续、重置或停止秒表</string>
     <string name="feature_family_volume">音量</string>
