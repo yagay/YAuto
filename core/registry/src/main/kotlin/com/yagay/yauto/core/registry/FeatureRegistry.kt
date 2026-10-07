@@ -85,16 +85,16 @@ data class FeatureDescriptor(
     val implementationOptions: List<FeatureImplementationOption> = emptyList(),
     /** Historical IDs accepted when restoring older workspaces. New code must use [id]. */
     val aliases: Set<String> = emptySet(),
-    /**
-     * Declarative config defaults applied only when a historical alias is restored.
-     * Existing config wins over these values. This preserves legacy implied modes while the
-     * runtime executes the canonical feature ID.
-     */
-    val aliasConfigDefaults: Map<String, ConfigMap> = emptyMap(),
     /** Presentation and default-value metadata keyed by [FieldSchema.key]. */
     val fieldBehaviors: Map<String, FieldBehavior> = emptyMap(),
-    /** User-facing semantic domain; kept last to preserve positional constructor compatibility. */
+    /** User-facing semantic domain; kept near the end to preserve positional constructor compatibility. */
     val domain: FeatureDomain = inferFeatureDomain(id.value, category),
+    /**
+     * Declarative config defaults applied only when a historical alias is restored.
+     * Existing config wins over these values. This is appended to preserve all older positional
+     * constructor call sites.
+     */
+    val aliasConfigDefaults: Map<String, ConfigMap> = emptyMap(),
 )
 
 sealed interface FeatureResolution {
