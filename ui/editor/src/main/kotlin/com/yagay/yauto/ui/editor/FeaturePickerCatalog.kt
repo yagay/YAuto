@@ -291,15 +291,16 @@ private fun featureAccessTags(descriptor: FeatureDescriptor): String {
             descriptor.implementationOptions.forEach { addAll(it.requirements) }
         }
     }
-    return localizedList(
-        buildList {
-            if (AccessRequirement.ROOT in requirements) add(stringResource(TextR.string.access_root))
-            if (AccessRequirement.SHIZUKU in requirements) add(stringResource(TextR.string.access_shizuku))
-            if (AccessRequirement.LSPOSED in requirements) add(stringResource(TextR.string.access_lsposed))
-            if (AccessRequirement.ZYGISK in requirements) add(stringResource(TextR.string.access_zygisk))
-            if (AccessRequirement.ACCESSIBILITY in requirements) add(stringResource(TextR.string.access_accessibility))
-        }
-    )
+    val root = if (AccessRequirement.ROOT in requirements) stringResource(TextR.string.access_root) else null
+    val shizuku = if (AccessRequirement.SHIZUKU in requirements) stringResource(TextR.string.access_shizuku) else null
+    val lsposed = if (AccessRequirement.LSPOSED in requirements) stringResource(TextR.string.access_lsposed) else null
+    val zygisk = if (AccessRequirement.ZYGISK in requirements) stringResource(TextR.string.access_zygisk) else null
+    val accessibility = if (AccessRequirement.ACCESSIBILITY in requirements) {
+        stringResource(TextR.string.access_accessibility)
+    } else {
+        null
+    }
+    return localizedList(listOfNotNull(root, shizuku, lsposed, zygisk, accessibility))
 }
 
 @Composable
