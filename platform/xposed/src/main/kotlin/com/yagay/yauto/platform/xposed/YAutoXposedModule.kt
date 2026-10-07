@@ -64,7 +64,11 @@ class YAutoXposedModule : XposedModule() {
                 val result = chain.proceed()
                 val application = chain.thisObject as? Application
                 if (application != null) {
-                    installShortXPackageHooks(application, param.packageName, param.classLoader)
+                    runCatching {
+                        installShortXPackageHooks(application, param.packageName, param.classLoader)
+                    }.onFailure {
+                        log(Log.ERROR, "YAuto", "ShortX package hooks failed for ${param.packageName}", it)
+                    }
                     registerAppHookBridge(application, param.packageName, param.classLoader)
                 }
                 result
@@ -485,10 +489,14 @@ class YAutoXposedModule : XposedModule() {
                         hook(method).intercept { chain ->
                             if (spec.after) {
                                 val result = chain.proceed()
-                                emitShortXObserverEvent(context, spec, className, method.name, chain.thisObject, chain.args)
+                                runCatching {
+                                    emitShortXObserverEvent(context, spec, className, method.name, chain.thisObject, chain.args)
+                                }
                                 result
                             } else {
-                                emitShortXObserverEvent(context, spec, className, method.name, chain.thisObject, chain.args)
+                                runCatching {
+                                    emitShortXObserverEvent(context, spec, className, method.name, chain.thisObject, chain.args)
+                                }
                                 chain.proceed()
                             }
                         }
@@ -649,7 +657,9 @@ class YAutoXposedModule : XposedModule() {
                     hook(method).intercept { chain ->
                         val event = chain.args.firstOrNull { it is KeyEvent } as? KeyEvent
                         if (event != null) {
-                            handleSystemKeyEvent(context, event, target.className, method.name)
+                            runCatching {
+                                handleSystemKeyEvent(context, event, target.className, method.name)
+                            }
                         }
                         chain.proceed()
                     }
@@ -1000,10 +1010,14 @@ class YAutoXposedModule : XposedModule() {
                     hook(method).intercept { chain ->
                         if (after) {
                             val result = chain.proceed()
-                            emitPackageRuntimeEvent(context, eventType, extras(chain.thisObject, chain.args, method.name))
+                            runCatching {
+                                emitPackageRuntimeEvent(context, eventType, extras(chain.thisObject, chain.args, method.name))
+                            }
                             result
                         } else {
-                            emitPackageRuntimeEvent(context, eventType, extras(chain.thisObject, chain.args, method.name))
+                            runCatching {
+                                emitPackageRuntimeEvent(context, eventType, extras(chain.thisObject, chain.args, method.name))
+                            }
                             chain.proceed()
                         }
                     }
