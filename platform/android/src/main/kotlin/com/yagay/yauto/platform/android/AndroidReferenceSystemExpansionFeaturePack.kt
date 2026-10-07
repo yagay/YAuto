@@ -77,35 +77,28 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
                 fields = listOf(
                     FieldSchema.Choice(
                         "change", "Focus change", true,
-                        listOf("any", "gain", "loss", "loss_transient", "loss_can_duck")
+                        listOf("any", "gain", "loss_any", "loss", "loss_transient", "loss_can_duck")
                     )
                 ),
                 keywords = setOf("audio focus", "gain", "loss", "duck", "shortx"),
                 ownerPackId = id,
+                aliases = setOf(
+                    "android.event.audio_focus_gain",
+                    "android.event.audio_focus_lost",
+                ),
+                aliasConfigDefaults = mapOf(
+                    "android.event.audio_focus_gain" to mapOf("change" to ConfigValue.StringValue("gain")),
+                    "android.event.audio_focus_lost" to mapOf("change" to ConfigValue.StringValue("loss_any")),
+                ),
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.audio_focus_changed") return@registerEvent false
             val wanted = feature.config.string("change", "any")
-            wanted == "any" || ctx.event.payload.string("change") == wanted
+            val actual = ctx.event.payload.string("change")
+            wanted == "any" ||
+                (wanted == "loss_any" && actual in setOf("loss", "loss_transient", "loss_can_duck")) ||
+                actual == wanted
         }
-        registry.registerEvent(
-            FeatureDescriptor(
-                FeatureId("android.event.audio_focus_gain"), FeatureKind.EVENT,
-                "Audio focus gained", "Run when YAuto gains Android audio focus",
-                FeatureCategory.AUDIO, ownerPackId = id,
-            )
-        ) { _, ctx -> ctx.event.typeId == "android.event.audio_focus_changed" && ctx.event.payload.string("change") == "gain" }
-        registry.registerEvent(
-            FeatureDescriptor(
-                FeatureId("android.event.audio_focus_lost"), FeatureKind.EVENT,
-                "Audio focus lost", "Run when YAuto loses Android audio focus",
-                FeatureCategory.AUDIO, ownerPackId = id,
-            )
-        ) { _, ctx ->
-            ctx.event.typeId == "android.event.audio_focus_changed" &&
-                ctx.event.payload.string("change") in setOf("loss", "loss_transient", "loss_can_duck")
-        }
-    }
 
     private fun registerOpenCallLog(registry: FeatureRegistry) {
         publicAction(
