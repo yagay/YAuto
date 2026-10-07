@@ -1,5 +1,6 @@
 package com.yagay.yauto.core.registry
 
+import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.FeatureRef
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -44,6 +45,53 @@ class FeatureRegistryResolutionTest {
         assertEquals(7, canonical.schemaVersion)
         assertNotNull(registry.actionExecutor("android.legacy.action"))
         assertEquals("android.test.action", registry.descriptor("android.legacy.action")?.id?.value)
+    }
+
+    @Test
+    fun `legacy alias applies declarative config defaults without overriding saved config`() {
+        val registry = FeatureRegistry()
+        registry.registerAction(
+            descriptor(
+                id = "android.test.action",
+                aliases = setOf("android.legacy.open"),
+                aliasConfigDefaults = mapOf(
+                    "android.legacy.open" to mapOf(
+                        "operation" to ConfigValue.StringValue("open"),
+                        "target" to ConfigValue.StringValue("default"),
+                    )
+                ),
+            )
+        ) { _, _ -> ActionExecutionResult(success = true) }
+
+        val migrated = registry.canonicalRef(
+            FeatureRef(
+                typeId = "android.legacy.open",
+                config = mapOf("target" to ConfigValue.StringValue("saved")),
+            )
+        )
+
+        assertEquals("android.test.action", migrated.typeId)
+        assertEquals(ConfigValue.StringValue("open"), migrated.config["operation"])
+        assertEquals(ConfigValue.StringValue("saved"), migrated.config["target"])
+    }
+
+    @Test
+    fun `alias defaults must belong to declared aliases`() {
+        val registry = FeatureRegistry()
+
+        assertFails {
+            registry.registerDescriptor(
+                descriptor(
+                    id = "android.test.action",
+                    aliases = setOf("android.legacy.action"),
+                    aliasConfigDefaults = mapOf(
+                        "android.not_declared" to mapOf(
+                            "operation" to ConfigValue.StringValue("open"),
+                        )
+                    ),
+                )
+            )
+        }
     }
 
     @Test
@@ -163,6 +211,7 @@ class FeatureRegistryResolutionTest {
     private fun descriptor(
         id: String,
         aliases: Set<String> = emptySet(),
+        aliasConfigDefaults: Map<String, Map<String, ConfigValue>> = emptyMap(),
         ownerPackId: String = "test",
         kind: FeatureKind = FeatureKind.ACTION,
     ) = FeatureDescriptor(
@@ -173,6 +222,7 @@ class FeatureRegistryResolutionTest {
         category = FeatureCategory.CORE,
         ownerPackId = ownerPackId,
         aliases = aliases,
+        aliasConfigDefaults = aliasConfigDefaults,
     )
 
     private fun assertFails(block: () -> Unit) {
