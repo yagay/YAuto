@@ -39,6 +39,7 @@ class AutomationRuntimeService : Service() {
     private var graph: AppGraph? = null
     private var workspaceSubscription: AutoCloseable? = null
     private val hardwareKeyDedup = ConcurrentHashMap<String, Long>()
+    private var hardwareKeyGestureEngine: HardwareKeyGestureEngine? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -61,6 +62,9 @@ class AutomationRuntimeService : Service() {
                 }
         }
         val dispatcher = RuntimeEventDispatcher(appGraph, scope)
+        hardwareKeyGestureEngine = HardwareKeyGestureEngine(scope) { derived ->
+            dispatcher.dispatch(derived)
+        }
         registerSource("system-broadcast") { SystemBroadcastEventSource(this) }
         registerSource("reference-completion-broadcast") { ReferenceCompletionBroadcastEventSource(this) }
         registerSource("network") { NetworkEventSource(this) }
@@ -313,7 +317,7 @@ class AutomationRuntimeService : Service() {
         return START_STICKY
     }
 
-    override fun onDestroy() { workspaceSubscription?.close(); workspaceSubscription = null; AccessibilityRuntimeBridge.configureUiRuntimeEvents(emptySet()); AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); AccessibilityRuntimeBridge.setFingerprintGestureListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); ModeRuntimeBridge.attach(null); WearRuntimeBridge.attach(null); VendorBridgeRuntime.attach(null); XposedHookRuntimeBridge.attach(null); XposedSystemEventRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
+    override fun onDestroy() { workspaceSubscription?.close(); workspaceSubscription = null; hardwareKeyGestureEngine?.clear(); hardwareKeyGestureEngine = null; AccessibilityRuntimeBridge.configureUiRuntimeEvents(emptySet()); AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); AccessibilityRuntimeBridge.setFingerprintGestureListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); ModeRuntimeBridge.attach(null); WearRuntimeBridge.attach(null); VendorBridgeRuntime.attach(null); XposedHookRuntimeBridge.attach(null); XposedSystemEventRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
     private fun dispatchHardwareKeyEvent(
         dispatcher: RuntimeEventDispatcher,
         event: RuntimeEvent,
@@ -335,11 +339,19 @@ class AutomationRuntimeService : Service() {
             hardwareKeyDedup.entries.removeIf { now - it.value > 2_000L }
         }
         dispatcher.dispatch(event)
+        hardwareKeyGestureEngine?.accept(event)
     }
 
     private suspend fun configureLsposedSubscriptions(appGraph: AppGraph, workspace: WorkspaceData) {
         runCatching {
-            appGraph.xposed.setSystemEventSubscriptions(workspace.runtimeEventFeatureIds())
+            val eventTypes = workspace.runtimeEventFeatureIds().toMutableSet()
+            if (
+                "android.event.hardware_key_gesture" in eventTypes ||
+                "android.event.hardware_key_combo" in eventTypes
+            ) {
+                eventTypes += "android.event.hardware_key"
+            }
+            appGraph.xposed.setSystemEventSubscriptions(eventTypes)
         }
     }
 
