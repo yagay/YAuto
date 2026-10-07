@@ -56,7 +56,7 @@ fun MacroFeaturePickerDialog(
     var navigation by remember(initial?.typeId, catalog) {
         mutableStateOf(
             if (initialGroup != null && initialDescriptor != null) {
-                FeaturePickerNavState.initialGroup(initialGroup, initialDescriptor.id.value)
+                FeaturePickerNavState.initialUnified(initialGroup, initialDescriptor.id.value)
             } else {
                 FeaturePickerNavState.initial(initialDescriptor)
             }
