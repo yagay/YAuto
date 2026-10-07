@@ -124,7 +124,13 @@ class AutomationRuntimeService : Service() {
                 )
             }
         }
-        val emitter = RuntimeEventEmitter { dispatcher.dispatch(it) }
+        val emitter = RuntimeEventEmitter { event ->
+            if (event.typeId == "android.event.hardware_key") {
+                dispatchHardwareKeyEvent(dispatcher, event)
+            } else {
+                dispatcher.dispatch(event)
+            }
+        }
         SurfaceRuntimeBridge.attach(emitter)
         AdvancedParityRuntimeBridge.attach(emitter)
         ModeRuntimeBridge.attach(emitter)
@@ -220,6 +226,10 @@ class AutomationRuntimeService : Service() {
                         "repeatCount" to ConfigValue.NumberValue(key.repeatCount.toDouble()),
                         "metaState" to ConfigValue.NumberValue(key.metaState.toDouble()),
                         "deviceId" to ConfigValue.NumberValue(key.deviceId.toDouble()),
+                        "deviceName" to ConfigValue.StringValue(key.deviceName),
+                        "deviceDescriptor" to ConfigValue.StringValue(key.deviceDescriptor),
+                        "vendorId" to ConfigValue.NumberValue(key.vendorId.toDouble()),
+                        "productId" to ConfigValue.NumberValue(key.productId.toDouble()),
                     ),
                     source = "accessibility.key",
                 )
@@ -322,10 +332,17 @@ class AutomationRuntimeService : Service() {
         event: RuntimeEvent,
     ) {
         val payload = event.payload
+        val keyCode = (payload["keyCode"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
+        val scanCode = (payload["scanCode"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
+        val linuxEvKey = (payload["linuxEvKey"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
+        val identity = when {
+            keyCode > 0 -> "k:$keyCode"
+            scanCode > 0 -> "s:$scanCode"
+            linuxEvKey > 0 -> "e:$linuxEvKey"
+            else -> "unknown"
+        }
         val signature = buildString {
-            append(payload["keyCode"]?.toString().orEmpty())
-            append(':')
-            append(payload["scanCode"]?.toString().orEmpty())
+            append(identity)
             append(':')
             append(payload["action"]?.toString().orEmpty())
             append(':')
