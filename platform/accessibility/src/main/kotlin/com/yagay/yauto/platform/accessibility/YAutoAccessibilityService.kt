@@ -119,6 +119,10 @@ class YAutoAccessibilityService : AccessibilityService() {
             metaState = event.metaState,
             deviceId = event.deviceId,
             scanCode = event.scanCode,
+            deviceName = event.device?.name.orEmpty(),
+            deviceDescriptor = event.device?.descriptor.orEmpty(),
+            vendorId = event.device?.vendorId ?: 0,
+            productId = event.device?.productId ?: 0,
         )
         return false
     }
