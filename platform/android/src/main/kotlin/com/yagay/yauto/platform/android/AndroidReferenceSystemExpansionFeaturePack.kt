@@ -94,6 +94,7 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
             val actual = ctx.event.payload.string("change")
             audioFocusChangeMatches(wanted, actual)
         }
+    }
 
     private fun registerOpenCallLog(registry: FeatureRegistry) {
         publicAction(
