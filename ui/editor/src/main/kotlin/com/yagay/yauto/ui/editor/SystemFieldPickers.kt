@@ -70,8 +70,8 @@ internal fun inferredPickerSource(
         "languageTag", "languageTags", "locales" -> FieldPickerSource.Locale
         "calendarId" -> FieldPickerSource.Calendar
         "imeId" -> FieldPickerSource.InputMethod
-        "keyCode" -> FieldPickerSource.KeyCode
-        "scanCode" -> FieldPickerSource.ScanCode
+        "keyCode", "keyCode1", "keyCode2" -> FieldPickerSource.KeyCode
+        "scanCode", "scanCode1", "scanCode2" -> FieldPickerSource.ScanCode
         "ssid" -> FieldPickerSource.WifiSsid
         "provider" -> if (descriptor.id.value.contains("location", ignoreCase = true)) {
             FieldPickerSource.LocationProvider
