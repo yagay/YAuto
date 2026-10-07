@@ -237,8 +237,14 @@ internal fun PickerBackedField(
                                 FieldPickerSource.ScanCode -> captured.scanCode
                                 else -> 0
                             }
-                            if (selected > 0 || picker == FieldPickerSource.KeyCode && captured.keyCode == KeyEvent.KEYCODE_UNKNOWN) {
+                            if (selected > 0) {
                                 onValue(selected.toString())
+                            } else if (
+                                picker == FieldPickerSource.KeyCode &&
+                                captured.keyCode == KeyEvent.KEYCODE_UNKNOWN &&
+                                captured.scanCode > 0
+                            ) {
+                                onValue("")
                             }
                         }
                     }
