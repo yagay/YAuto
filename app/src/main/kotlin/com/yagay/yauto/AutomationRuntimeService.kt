@@ -31,12 +31,14 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class AutomationRuntimeService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val eventSources = AndroidEventSourceManager()
     private var graph: AppGraph? = null
     private var workspaceSubscription: AutoCloseable? = null
+    private val hardwareKeyDedup = ConcurrentHashMap<String, Long>()
 
     override fun onCreate() {
         super.onCreate()
@@ -125,7 +127,13 @@ class AutomationRuntimeService : Service() {
         ModeRuntimeBridge.attach(emitter)
         WearRuntimeBridge.attach(emitter)
         VendorBridgeRuntime.attach(emitter)
-        XposedSystemEventRuntimeBridge.attach { event -> dispatcher.dispatch(event) }
+        XposedSystemEventRuntimeBridge.attach { event ->
+            if (event.typeId == "android.event.hardware_key") {
+                dispatchHardwareKeyEvent(dispatcher, event)
+            } else {
+                dispatcher.dispatch(event)
+            }
+        }
         XposedHookRuntimeBridge.attach { event ->
             dispatcher.dispatch(XposedHookRuntimeBridge.toRuntimeEvent(event))
             val mapped = when {
@@ -198,7 +206,8 @@ class AutomationRuntimeService : Service() {
         }
         AccessibilityRuntimeBridge.setKeyListener { key ->
             val action = when (key.action) { KeyEvent.ACTION_DOWN -> "down"; KeyEvent.ACTION_UP -> "up"; else -> "other" }
-            dispatcher.dispatch(
+            dispatchHardwareKeyEvent(
+                dispatcher,
                 RuntimeEvent(
                     "android.event.hardware_key",
                     mapOf(
@@ -305,6 +314,29 @@ class AutomationRuntimeService : Service() {
     }
 
     override fun onDestroy() { workspaceSubscription?.close(); workspaceSubscription = null; AccessibilityRuntimeBridge.configureUiRuntimeEvents(emptySet()); AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); AccessibilityRuntimeBridge.setFingerprintGestureListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); ModeRuntimeBridge.attach(null); WearRuntimeBridge.attach(null); VendorBridgeRuntime.attach(null); XposedHookRuntimeBridge.attach(null); XposedSystemEventRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
+    private fun dispatchHardwareKeyEvent(
+        dispatcher: RuntimeEventDispatcher,
+        event: RuntimeEvent,
+    ) {
+        val payload = event.payload
+        val signature = buildString {
+            append(payload["keyCode"]?.toString().orEmpty())
+            append(':')
+            append(payload["scanCode"]?.toString().orEmpty())
+            append(':')
+            append(payload["action"]?.toString().orEmpty())
+            append(':')
+            append(payload["repeatCount"]?.toString().orEmpty())
+        }
+        val now = android.os.SystemClock.elapsedRealtime()
+        val previous = hardwareKeyDedup.put(signature, now)
+        if (previous != null && now - previous < 180L) return
+        if (hardwareKeyDedup.size > 64) {
+            hardwareKeyDedup.entries.removeIf { now - it.value > 2_000L }
+        }
+        dispatcher.dispatch(event)
+    }
+
     private suspend fun configureLsposedSubscriptions(appGraph: AppGraph, workspace: WorkspaceData) {
         runCatching {
             appGraph.xposed.setSystemEventSubscriptions(workspace.runtimeEventFeatureIds())
