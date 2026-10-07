@@ -30,6 +30,7 @@ class AndroidShortXHookEventFeaturePack : FeaturePack {
         event(registry, "android.event.notification_dismissed_system", "System notification dismissed", "Run when NotificationUsageStats records a user-dismissed notification", FeatureCategory.NOTIFICATION)
         event(registry, "android.event.clipboard_read_system", "Clipboard read by system client", "Run when ClipboardService serves a primary-clip request", FeatureCategory.SYSTEM)
         event(registry, "android.event.vpn_state_changed", "VPN state changed by system", "Run when the system VPN implementation changes state", FeatureCategory.NETWORK)
+        event(registry, "android.event.accessibility_user_state_created", "Accessibility user state created", "Run when Android creates an AccessibilityUserState instance", FeatureCategory.UI_AUTOMATION)
         event(registry, "android.event.accessibility_display_list_queried", "Accessibility display list queried", "Run when AccessibilityWindowManager reads the accessible display list", FeatureCategory.UI_AUTOMATION)
         event(registry, "android.event.accessibility_windows_queried", "Accessibility windows queried", "Run when an accessibility service connection requests windows", FeatureCategory.UI_AUTOMATION)
         event(registry, "android.event.accessibility_ui_automation_checked", "Accessibility UI automation checked", "Run when UiAutomationManager checks interactive-window access or suppression state", FeatureCategory.UI_AUTOMATION)
@@ -56,9 +57,12 @@ class AndroidShortXHookEventFeaturePack : FeaturePack {
         event(registry, "android.event.systemui_tile_discovered", "SystemUI tile discovered", "Run when the Quick Settings customizer discovers a tile", FeatureCategory.SYSTEM)
         event(registry, "android.event.systemui_status_bar_ready", "SystemUI status bar ready", "Run when the status-bar view finishes inflation", FeatureCategory.SYSTEM)
         event(registry, "android.event.process_uncaught_exception", "Process uncaught exception", "Run when RuntimeInit handles an uncaught exception in a scoped process", FeatureCategory.APP)
+        event(registry, "android.event.rendernode_crash_suppressed", "RenderNode crash suppressed", "Run when the ShortX-compatible RenderNode guard suppresses an animator crash", FeatureCategory.APP)
         event(registry, "android.event.input_text_committed", "Input text committed", "Run when a hooked input connection commits text", FeatureCategory.UI_AUTOMATION)
+        event(registry, "android.event.sms_provider_ready", "SMS provider ready", "Run after the telephony SMS provider initializes", FeatureCategory.APP)
         event(registry, "android.event.sms_provider_changed", "SMS provider changed", "Run when the telephony SMS provider inserts, updates or deletes rows", FeatureCategory.APP)
         event(registry, "android.event.nfc_tag_system", "NFC tag from system service", "Run when the NFC service dispatches a tag endpoint before app routing", FeatureCategory.DEVICE)
+        event(registry, "android.event.media_provider_ready", "Media provider ready", "Run after the MediaProvider initializes", FeatureCategory.FILE)
         event(registry, "android.event.media_provider_changed", "Media provider changed", "Run when the MediaProvider inserts, updates or deletes content", FeatureCategory.FILE)
     }
 
