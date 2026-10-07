@@ -60,6 +60,7 @@ class YAutoXposedModule : XposedModule() {
                 val result = chain.proceed()
                 val application = chain.thisObject as? Application
                 if (application != null) {
+                    installShortXPackageHooks(application, param.packageName, param.classLoader)
                     registerAppHookBridge(application, param.packageName, param.classLoader)
                 }
                 result
@@ -834,6 +835,258 @@ class YAutoXposedModule : XposedModule() {
         val packageName: String = "",
         val activityName: String = "",
     )
+
+    private fun installShortXPackageHooks(
+        context: Context,
+        packageName: String,
+        classLoader: ClassLoader,
+    ) {
+        when {
+            packageName == "com.android.systemui" -> installShortXSystemUiHooks(context, classLoader)
+            packageName == "com.android.nfc" -> installShortXNfcHooks(context, classLoader)
+            packageName.contains("providers.media") -> installShortXMediaProviderHooks(context, classLoader)
+            packageName == "com.android.providers.telephony" -> installShortXTelephonyProviderHooks(context, classLoader)
+        }
+        installShortXInputConnectionHook(context, packageName, classLoader)
+    }
+
+    private fun installShortXSystemUiHooks(context: Context, classLoader: ClassLoader) {
+        fun observe(
+            classNames: List<String>,
+            methodNames: Set<String>,
+            eventType: String,
+            after: Boolean = false,
+            extras: (Any?, Array<out Any?>, String) -> Map<String, Any?> = { _, _, _ -> emptyMap() },
+        ) {
+            classNames.forEach { className ->
+                val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
+                clazz.declaredMethods.filter { it.name in methodNames }.forEach { method ->
+                    val key = "shortx-systemui|" + eventType + "|" + method.toGenericString()
+                    if (!installedHooks.add(key)) return@forEach
+                    method.isAccessible = true
+                    hook(method).intercept { chain ->
+                        if (after) {
+                            val result = chain.proceed()
+                            emitPackageRuntimeEvent(context, eventType, extras(chain.thisObject, chain.args, method.name))
+                            result
+                        } else {
+                            emitPackageRuntimeEvent(context, eventType, extras(chain.thisObject, chain.args, method.name))
+                            chain.proceed()
+                        }
+                    }
+                }
+            }
+        }
+
+        observe(
+            classNames = listOf("com.android.systemui.qs.external.CustomTile"),
+            methodNames = setOf("handleClick"),
+            eventType = "android.event.systemui_qs_tile_clicked",
+            extras = { target, _, method ->
+                val component = reflectedValue(target, "mComponent", "component") as? android.content.ComponentName
+                mapOf(
+                    "package" to component?.packageName.orEmpty(),
+                    "component" to component?.flattenToString().orEmpty(),
+                    "method" to method,
+                )
+            },
+        )
+        observe(
+            classNames = listOf("com.android.systemui.statusbar.phone.LightBarTransitionsController"),
+            methodNames = setOf("setIconsDark"),
+            eventType = "android.event.systemui_icon_dark_changed",
+            extras = { _, args, method ->
+                mapOf(
+                    "dark" to (args.firstOrNull { it is Boolean } as? Boolean ?: false),
+                    "method" to method,
+                )
+            },
+        )
+        observe(
+            classNames = listOf("com.android.systemui.qs.customize.TileQueryHelper"),
+            methodNames = setOf("addTile"),
+            eventType = "android.event.systemui_tile_discovered",
+            after = true,
+            extras = { _, args, method ->
+                mapOf(
+                    "detail" to args.firstOrNull()?.toString().orEmpty().take(512),
+                    "method" to method,
+                )
+            },
+        )
+        observe(
+            classNames = listOf(
+                "com.android.systemui.statusbar.phone.PhoneStatusBarView",
+                "com.android.systemui.statusbar.phone.MiuiPhoneStatusBarView",
+            ),
+            methodNames = setOf("onFinishInflate"),
+            eventType = "android.event.systemui_status_bar_ready",
+            after = true,
+            extras = { target, _, method ->
+                mapOf(
+                    "className" to target?.javaClass?.name.orEmpty(),
+                    "method" to method,
+                )
+            },
+        )
+    }
+
+    private fun installShortXNfcHooks(context: Context, classLoader: ClassLoader) {
+        val clazz = runCatching {
+            classLoader.loadClass("com.android.nfc.NfcService\$NfcServiceHandler")
+        }.getOrNull() ?: return
+        clazz.declaredMethods.filter { it.name == "dispatchTagEndpoint" }.forEach { method ->
+            val key = "shortx-nfc|" + method.toGenericString()
+            if (!installedHooks.add(key)) return@forEach
+            method.isAccessible = true
+            hook(method).intercept { chain ->
+                val endpoint = chain.args.firstOrNull {
+                    it?.javaClass?.name?.contains("TagEndpoint") == true
+                }
+                val uid = reflectedValue(endpoint, "uid", "mUid") as? ByteArray
+                    ?: runCatching {
+                        endpoint?.javaClass?.methods?.firstOrNull {
+                            it.name == "getUid" && it.parameterCount == 0
+                        }?.invoke(endpoint) as? ByteArray
+                    }.getOrNull()
+                emitPackageRuntimeEvent(
+                    context,
+                    "android.event.nfc_tag",
+                    mapOf(
+                        "kind" to "tag",
+                        "uidHex" to uid.orEmpty().joinToString("") { byte -> "%02X".format(byte) },
+                        "method" to method.name,
+                    ),
+                )
+                chain.proceed()
+            }
+        }
+    }
+
+    private fun installShortXMediaProviderHooks(context: Context, classLoader: ClassLoader) {
+        val classNames = listOf(
+            "com.android.providers.media.MediaProvider",
+            "com.android.providers.media.MediaDocumentsProvider",
+        )
+        classNames.forEach { className ->
+            val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
+            clazz.declaredMethods
+                .filter { it.name in setOf("insert", "delete", "update") }
+                .forEach { method ->
+                    val eventType = when (method.name) {
+                        "insert" -> "android.event.media_store_inserted"
+                        "delete" -> "android.event.media_store_deleted"
+                        "update" -> "android.event.media_store_updated"
+                        else -> "android.event.media_store_changed"
+                    }
+                    val key = "shortx-media-provider|" + method.toGenericString()
+                    if (!installedHooks.add(key)) return@forEach
+                    method.isAccessible = true
+                    hook(method).intercept { chain ->
+                        val uri = chain.args.firstOrNull { it is android.net.Uri } as? android.net.Uri
+                        val result = chain.proceed()
+                        emitPackageRuntimeEvent(
+                            context,
+                            eventType,
+                            mapOf(
+                                "uri" to uri?.toString().orEmpty(),
+                                "collection" to mediaCollection(uri),
+                                "method" to method.name,
+                            ),
+                        )
+                        emitPackageRuntimeEvent(
+                            context,
+                            "android.event.media_store_changed",
+                            mapOf(
+                                "uri" to uri?.toString().orEmpty(),
+                                "collection" to mediaCollection(uri),
+                                "method" to method.name,
+                            ),
+                        )
+                        result
+                    }
+                }
+        }
+    }
+
+    private fun installShortXTelephonyProviderHooks(context: Context, classLoader: ClassLoader) {
+        val clazz = runCatching { classLoader.loadClass("com.android.providers.telephony.SmsProvider") }.getOrNull()
+            ?: return
+        clazz.declaredMethods
+            .filter { it.name in setOf("insert", "delete", "update") }
+            .forEach { method ->
+                val key = "shortx-sms-provider|" + method.toGenericString()
+                if (!installedHooks.add(key)) return@forEach
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    val uri = chain.args.firstOrNull { it is android.net.Uri } as? android.net.Uri
+                    val result = chain.proceed()
+                    emitPackageRuntimeEvent(
+                        context,
+                        "android.event.sms_provider_changed",
+                        mapOf(
+                            "operation" to method.name,
+                            "uri" to uri?.toString().orEmpty(),
+                            "method" to method.name,
+                        ),
+                    )
+                    result
+                }
+            }
+    }
+
+    private fun installShortXInputConnectionHook(context: Context, packageName: String, classLoader: ClassLoader) {
+        val clazz = runCatching { classLoader.loadClass("android.view.inputmethod.RemoteInputConnectionImpl") }.getOrNull()
+            ?: return
+        clazz.declaredMethods.filter { it.name == "commitText" }.forEach { method ->
+            val key = "shortx-input-connection|" + packageName + "|" + method.toGenericString()
+            if (!installedHooks.add(key)) return@forEach
+            method.isAccessible = true
+            hook(method).intercept { chain ->
+                val text = chain.args.firstOrNull { it is CharSequence }?.toString().orEmpty()
+                emitPackageRuntimeEvent(
+                    context,
+                    "android.event.input_text_committed",
+                    mapOf(
+                        "package" to packageName,
+                        "text" to text.take(2048),
+                        "method" to method.name,
+                    ),
+                )
+                chain.proceed()
+            }
+        }
+    }
+
+    private fun mediaCollection(uri: android.net.Uri?): String {
+        val text = uri?.toString().orEmpty().lowercase()
+        return when {
+            "/images/" in text || text.endsWith("/images") -> "images"
+            "/video/" in text || text.endsWith("/video") -> "video"
+            "/audio/" in text || text.endsWith("/audio") -> "audio"
+            else -> "files"
+        }
+    }
+
+    private fun emitPackageRuntimeEvent(
+        context: Context,
+        type: String,
+        extras: Map<String, Any?>,
+    ) {
+        val intent = Intent(SystemBridgeProtocol.SYSTEM_EVENT_ACTION)
+            .setPackage(YAUTO_PACKAGE)
+            .putExtra("type", type)
+            .putExtra("timestampEpochMs", System.currentTimeMillis())
+        extras.forEach { (key, value) ->
+            when (value) {
+                is String -> intent.putExtra(key, value)
+                is Int -> intent.putExtra(key, value)
+                is Long -> intent.putExtra(key, value)
+                is Boolean -> intent.putExtra(key, value)
+            }
+        }
+        runCatching { context.sendBroadcast(intent) }
+    }
 
     private fun registerAppHookBridge(context: Context, packageName: String, classLoader: ClassLoader) {
         val processName = runCatching { Application.getProcessName() }.getOrDefault(packageName)
