@@ -71,7 +71,7 @@ internal class FeatureTextResolver(private val context: Context) {
                 add(descriptor.title)
                 add(descriptor.description)
                 add(descriptor.id.value)
-                val semanticCategory = catalogCategory(descriptor.domain, descriptor.kind)
+                val semanticCategory = catalogCategory(descriptor.pickerCategory)
                 add(context.getString(semanticCategory.titleRes))
                 add(context.getString(semanticCategory.subtitleRes))
                 addAll(descriptor.keywords)
@@ -91,7 +91,7 @@ internal class FeatureTextResolver(private val context: Context) {
         resource("feature_phrase_${resourceKey(text)}")
 
     private fun genericTitle(descriptor: FeatureDescriptor): String {
-        val semanticCategory = catalogCategory(descriptor.domain, descriptor.kind)
+        val semanticCategory = catalogCategory(descriptor.pickerCategory)
         return context.getString(
             TextR.string.feature_generic_title_format,
             context.getString(semanticCategory.titleRes),
