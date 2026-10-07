@@ -1,26 +1,13 @@
 package com.yagay.yauto.platform.accessibility
 
 import com.yagay.yauto.core.model.ConfigMap
+import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
-import com.yagay.yauto.core.registry.AccessRequirement
-import com.yagay.yauto.core.registry.FeatureCategory
-import com.yagay.yauto.core.registry.FeatureDescriptor
-import com.yagay.yauto.core.registry.FeatureId
-import com.yagay.yauto.core.registry.FeatureImplementationOption
-import com.yagay.yauto.core.registry.FeatureKind
-import com.yagay.yauto.core.registry.FeaturePack
-import com.yagay.yauto.core.registry.FeatureRegistry
-import com.yagay.yauto.core.registry.FieldSchema
+import com.yagay.yauto.core.registry.*
 
-/**
- * Android-facing hardware-key triggers.
- *
- * Rules intentionally use Android KeyCode only. Lower input-layer identifiers such as scanCode,
- * EV_KEY and MSC_SCAN may still be collected internally for diagnostics/mapping but are never
- * exposed as rule parameters.
- */
+/** Android-facing hardware-key triggers with hidden OEM raw-input fallback identity. */
 class AccessibilityKeyFeaturePack : FeaturePack {
     override val id: String = "accessibility.keys"
 
@@ -30,18 +17,17 @@ class AccessibilityKeyFeaturePack : FeaturePack {
                 FeatureId("android.event.hardware_key"),
                 FeatureKind.EVENT,
                 "Hardware key",
-                "Run when Android reports a physical key down or up event",
+                "Run when Android reports a physical key event",
                 FeatureCategory.UI_AUTOMATION,
-                schemaVersion = 3,
+                schemaVersion = 2,
                 implementationOptions = hardwareKeyImplementations(),
-                fields = listOf(
-                    FieldSchema.Number("keyCode", "Android key code", min = 0.0, max = 4096.0),
+                fields = keyFields() + listOf(
                     FieldSchema.Choice("action", "Key action", options = listOf("any", "down", "up")),
                     FieldSchema.Toggle("initialOnly", "Ignore repeated key-down events"),
                 ),
                 keywords = setOf(
-                    "hardware key", "button", "volume key", "media key", "keycode",
-                    "android", "accessibility", "lsposed", "shortx",
+                    "hardware key", "button", "volume key", "media key", "keycode", "scancode",
+                    "accessibility", "lsposed", "root", "shortx", "oem key",
                 ),
                 ownerPackId = id,
             )
@@ -55,12 +41,11 @@ class AccessibilityKeyFeaturePack : FeaturePack {
                 FeatureId("android.event.hardware_key_gesture"),
                 FeatureKind.EVENT,
                 "Hardware key gesture",
-                "Run on a single, double, triple or long press of an Android hardware key",
+                "Run on a single, double, triple or long press of a physical Android key",
                 FeatureCategory.UI_AUTOMATION,
-                schemaVersion = 3,
+                schemaVersion = 2,
                 implementationOptions = hardwareKeyImplementations(),
-                fields = listOf(
-                    FieldSchema.Number("keyCode", "Android key code", min = 0.0, max = 4096.0),
+                fields = keyFields() + listOf(
                     FieldSchema.Choice(
                         "gesture",
                         "Key gesture",
@@ -71,7 +56,7 @@ class AccessibilityKeyFeaturePack : FeaturePack {
                 ),
                 keywords = setOf(
                     "hardware key", "button", "gesture", "double press", "triple press",
-                    "long press", "shortx", "lsposed", "keycode", "android",
+                    "long press", "shortx", "lsposed", "root", "keycode", "scancode", "oem key",
                 ),
                 ownerPackId = id,
             )
@@ -85,17 +70,14 @@ class AccessibilityKeyFeaturePack : FeaturePack {
                 FeatureId("android.event.hardware_key_combo"),
                 FeatureKind.EVENT,
                 "Hardware key combination",
-                "Run when two Android hardware keys are held together",
+                "Run when two physical Android keys are held together",
                 FeatureCategory.UI_AUTOMATION,
-                schemaVersion = 3,
+                schemaVersion = 2,
                 implementationOptions = hardwareKeyImplementations(),
-                fields = listOf(
-                    FieldSchema.Number("keyCode1", "First Android key code", min = 0.0, max = 4096.0),
-                    FieldSchema.Number("keyCode2", "Second Android key code", min = 0.0, max = 4096.0),
-                ),
+                fields = keyFields("1", "First") + keyFields("2", "Second"),
                 keywords = setOf(
                     "hardware key", "button", "combination", "combo", "two keys",
-                    "shortx", "lsposed", "keycode", "android",
+                    "shortx", "lsposed", "root", "keycode", "scancode", "oem key",
                 ),
                 ownerPackId = id,
             )
@@ -108,14 +90,20 @@ class AccessibilityKeyFeaturePack : FeaturePack {
     private fun hardwareKeyImplementations() = listOf(
         FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
         FeatureImplementationOption("lsposed", setOf(AccessRequirement.LSPOSED), restartRequired = true),
+        FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
     )
+
+    private fun keyFields(suffix: String = "", ordinal: String = ""): List<FieldSchema> {
+        val prefix = if (ordinal.isBlank()) "" else "$ordinal "
+        return listOf(
+            FieldSchema.Number("keyCode$suffix", "${prefix}Android key code", min = 0.0, max = 4096.0),
+            FieldSchema.Number("scanCode$suffix", "${prefix}Android scan code", min = 0.0, max = 65535.0),
+        )
+    }
 }
 
 internal fun matchesHardwareKey(config: ConfigMap, payload: ConfigMap): Boolean {
-    val expected = configuredKeyCode(config, "keyCode") ?: return false
-    val actual = configuredKeyCode(payload, "keyCode") ?: return false
-    if (expected != actual) return false
-
+    if (!matchesConfiguredKey(config.keyIdentity(), payload.keyIdentity())) return false
     val expectedAction = config.string("action", "any")
     if (expectedAction != "any" && payload.string("action") != expectedAction) return false
     if (config.boolean("initialOnly") && (payload["repeatCount"].numberOrNull()?.toInt() ?: 0) > 0) return false
@@ -123,10 +111,7 @@ internal fun matchesHardwareKey(config: ConfigMap, payload: ConfigMap): Boolean 
 }
 
 internal fun matchesHardwareKeyGesture(config: ConfigMap, payload: ConfigMap): Boolean {
-    val expected = configuredKeyCode(config, "keyCode") ?: return false
-    val actual = configuredKeyCode(payload, "keyCode") ?: return false
-    if (expected != actual) return false
-
+    if (!matchesConfiguredKey(config.keyIdentity(), payload.keyIdentity())) return false
     val pressCount = payload["pressCount"].numberOrNull()?.toInt() ?: return false
     val maxHoldMs = payload["maxHoldMs"].numberOrNull() ?: 0.0
     val thresholdMs = (config["longPressMs"].numberOrNull() ?: 500.0).coerceAtLeast(1.0)
@@ -140,13 +125,73 @@ internal fun matchesHardwareKeyGesture(config: ConfigMap, payload: ConfigMap): B
 }
 
 internal fun matchesHardwareKeyCombo(config: ConfigMap, payload: ConfigMap): Boolean {
-    val expected1 = configuredKeyCode(config, "keyCode1") ?: return false
-    val expected2 = configuredKeyCode(config, "keyCode2") ?: return false
-    val actual1 = configuredKeyCode(payload, "keyCode1") ?: return false
-    val actual2 = configuredKeyCode(payload, "keyCode2") ?: return false
-    return (expected1 == actual1 && expected2 == actual2) ||
-        (expected1 == actual2 && expected2 == actual1)
+    val expected1 = config.keyIdentity("1")
+    val expected2 = config.keyIdentity("2")
+    if (!expected1.configured || !expected2.configured) return false
+
+    val actual1 = payload.keyIdentity("1")
+    val actual2 = payload.keyIdentity("2")
+    return (
+        matchesConfiguredKey(expected1, actual1) &&
+            matchesConfiguredKey(expected2, actual2)
+        ) || (
+        matchesConfiguredKey(expected1, actual2) &&
+            matchesConfiguredKey(expected2, actual1)
+        )
 }
 
-private fun configuredKeyCode(values: ConfigMap, key: String): Int? =
-    values[key].numberOrNull()?.toInt()?.takeIf { it > 0 }
+/**
+ * User-facing Android codes are kept as normal fields. OEM raw values live in a hidden object and
+ * are used only when the current backend cannot provide an Android KeyEvent.
+ */
+private fun ConfigMap.keyIdentity(suffix: String = ""): ConfiguredKey {
+    val hidden = (this["hardwareIdentity$suffix"] as? ConfigValue.ObjectValue)?.value.orEmpty()
+    val directKeyCode = this["keyCode$suffix"].numberOrNull()?.toInt()?.takeIf { it > 0 }
+    val directScanCode = this["scanCode$suffix"].numberOrNull()?.toInt()?.takeIf { it > 0 }
+    val learnedKeyCode = hidden["androidKeyCode"].numberOrNull()?.toInt()?.takeIf { it > 0 }
+    val learnedScanCode = hidden["androidScanCode"].numberOrNull()?.toInt()?.takeIf { it > 0 }
+
+    val learnedStillMatchesVisible =
+        (directKeyCode == null || learnedKeyCode == null || directKeyCode == learnedKeyCode) &&
+            (directScanCode == null || learnedScanCode == null || directScanCode == learnedScanCode)
+
+    return ConfiguredKey(
+        keyCode = directKeyCode ?: learnedKeyCode,
+        scanCode = directScanCode ?: learnedScanCode,
+        linuxEvKey = if (learnedStillMatchesVisible) {
+            hidden["linuxEvKey"].numberOrNull()?.toInt()?.takeIf { it > 0 }
+                ?: this["linuxEvKey$suffix"].numberOrNull()?.toInt()?.takeIf { it > 0 }
+        } else {
+            null
+        },
+        mscScan = if (learnedStillMatchesVisible) {
+            hidden["mscScan"].numberOrNull()?.toLong()?.takeIf { it != 0L }
+                ?: this["mscScan$suffix"].numberOrNull()?.toLong()?.takeIf { it != 0L }
+        } else {
+            null
+        },
+    )
+}
+
+private fun matchesConfiguredKey(expected: ConfiguredKey, actual: ConfiguredKey): Boolean {
+    if (!expected.configured || !actual.configured) return false
+
+    // Prefer Android's logical key identity whenever both sides have it.
+    if (expected.keyCode != null && actual.keyCode != null) return expected.keyCode == actual.keyCode
+    if (expected.scanCode != null && actual.scanCode != null) return expected.scanCode == actual.scanCode
+
+    // Raw Linux values are Android OEM fallbacks only; they are never user-facing primary fields.
+    if (expected.linuxEvKey != null && actual.linuxEvKey != null) return expected.linuxEvKey == actual.linuxEvKey
+    if (expected.mscScan != null && actual.mscScan != null) return expected.mscScan == actual.mscScan
+    return false
+}
+
+private data class ConfiguredKey(
+    val keyCode: Int?,
+    val scanCode: Int?,
+    val linuxEvKey: Int?,
+    val mscScan: Long?,
+) {
+    val configured: Boolean
+        get() = keyCode != null || scanCode != null || linuxEvKey != null || mscScan != null
+}
