@@ -114,6 +114,46 @@ class FeatureDefinitionTest {
     }
 
     @Test
+    fun `connectivity and power family ids infer stable semantic domains`() {
+        val connectivityIds = listOf(
+            "android.state.wifi_network",
+            "android.state.wifi_scan_match",
+            "android.state.bluetooth_enabled",
+            "android.state.bluetooth_device_bonded",
+            "android.state.usb_device_connected",
+            "android.state.nfc_enabled",
+            "android.state.network",
+            "android.state.vpn_active",
+            "android.event.wifi_changed",
+            "android.event.usb_device_changed",
+            "android.event.nfc_tag",
+        )
+        connectivityIds.forEach { id ->
+            assertEquals(
+                id,
+                FeatureDomain.CONNECTIVITY,
+                inferFeatureDomain(id, FeatureCategory.DEVICE),
+            )
+        }
+
+        val powerIds = listOf(
+            "android.state.battery_level",
+            "android.state.battery_status",
+            "android.state.charging",
+            "android.state.power_save",
+            "android.state.low_power_standby",
+            "android.event.battery_changed",
+        )
+        powerIds.forEach { id ->
+            assertEquals(
+                id,
+                FeatureDomain.POWER,
+                inferFeatureDomain(id, FeatureCategory.DEVICE),
+            )
+        }
+    }
+
+    @Test
     fun `catalog validation rejects unknown conditional dependency`() {
         val descriptor = descriptor("test.rule").copy(
             fields = listOf(FieldSchema.Text("value", "Value")),
