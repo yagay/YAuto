@@ -30,7 +30,7 @@ import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.ui.design.R as TextR
 
 /**
- * MacroDroid-style unified editor for a logical feature family.
+ * MacroDroid-style unified editor for a logical unified feature concept.
  *
  * The user sees one feature entry and chooses the concrete operation as a setting. Runtime
  * compatibility stays intact because saving still emits the selected concrete Feature ID.
@@ -46,7 +46,7 @@ internal fun UnifiedFeatureConfigEditor(
 ) {
     val initialSelection = remember(group.spec.id, initial?.typeId, initialMemberId) {
         resolveUnifiedMemberId(
-            family = family,
+            group = group,
             initialTypeId = initial?.typeId,
             requestedMemberId = initialMemberId,
         )
@@ -66,7 +66,7 @@ internal fun UnifiedFeatureConfigEditor(
             accent = accent,
             leadingContent = {
                 UnifiedFeatureSelector(
-                    family = family,
+                    group = group,
                     selectedItem = selectedItem,
                     onSelect = { selectedMemberId = it.descriptor.id.value },
                 )
