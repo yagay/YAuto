@@ -15,7 +15,7 @@
     <string name="feature_android_condition_headset_connected_field_value">Connected</string>
 
     <string name="feature_android_event_battery_changed_title">Battery changed</string>
-    <string name="feature_android_event_battery_changed_description">Run when Android reports a battery update and optionally filter level or temperature</string>
+    <string name="feature_android_event_battery_changed_description">Run when Android reports a battery update and optionally filter level, temperature, voltage, power source, charging status, health or presence</string>
     <string name="feature_android_event_battery_changed_field_minpercent">Minimum percent</string>
     <string name="feature_android_event_battery_changed_field_maxpercent">Maximum percent</string>
     <string name="feature_android_event_battery_changed_field_mintemperaturec">Minimum temperature (°C)</string>
@@ -33,4 +33,34 @@
     <string name="feature_android_event_headset_changed_field_category_option_bluetooth">Bluetooth</string>
     <string name="feature_android_event_headset_changed_field_category_option_usb">USB</string>
     <string name="feature_android_event_headset_changed_field_namecontains">Device name contains</string>
+
+    <string name="feature_android_event_battery_changed_field_minvoltagemv">Minimum millivolts</string>
+    <string name="feature_android_event_battery_changed_field_maxvoltagemv">Maximum millivolts</string>
+    <string name="feature_android_event_battery_changed_field_powersource">Power source</string>
+    <string name="feature_android_event_battery_changed_field_powersource_option_any">Any</string>
+    <string name="feature_android_event_battery_changed_field_powersource_option_none">None</string>
+    <string name="feature_android_event_battery_changed_field_powersource_option_ac">AC</string>
+    <string name="feature_android_event_battery_changed_field_powersource_option_usb">USB</string>
+    <string name="feature_android_event_battery_changed_field_powersource_option_wireless">Wireless</string>
+    <string name="feature_android_event_battery_changed_field_powersource_option_dock">Dock</string>
+    <string name="feature_android_event_battery_changed_field_status">Charging status</string>
+    <string name="feature_android_event_battery_changed_field_status_option_any">Any</string>
+    <string name="feature_android_event_battery_changed_field_status_option_charging">Charging</string>
+    <string name="feature_android_event_battery_changed_field_status_option_discharging">Discharging</string>
+    <string name="feature_android_event_battery_changed_field_status_option_full">Full</string>
+    <string name="feature_android_event_battery_changed_field_status_option_not_charging">Not charging</string>
+    <string name="feature_android_event_battery_changed_field_status_option_unknown">Unknown</string>
+    <string name="feature_android_event_battery_changed_field_health">Battery health</string>
+    <string name="feature_android_event_battery_changed_field_health_option_any">Any</string>
+    <string name="feature_android_event_battery_changed_field_health_option_good">Good</string>
+    <string name="feature_android_event_battery_changed_field_health_option_overheat">Overheat</string>
+    <string name="feature_android_event_battery_changed_field_health_option_dead">Dead</string>
+    <string name="feature_android_event_battery_changed_field_health_option_over_voltage">Over voltage</string>
+    <string name="feature_android_event_battery_changed_field_health_option_failure">Failure</string>
+    <string name="feature_android_event_battery_changed_field_health_option_cold">Cold</string>
+    <string name="feature_android_event_battery_changed_field_health_option_unknown">Unknown</string>
+    <string name="feature_android_event_battery_changed_field_present">Battery present</string>
+    <string name="feature_android_event_battery_changed_field_present_option_any">Any</string>
+    <string name="feature_android_event_battery_changed_field_present_option_yes">Yes</string>
+    <string name="feature_android_event_battery_changed_field_present_option_no">No</string>
 </resources>
