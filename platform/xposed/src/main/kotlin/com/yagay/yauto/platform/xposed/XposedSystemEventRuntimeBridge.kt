@@ -14,6 +14,10 @@ data class XposedHardwareKeySnapshot(
     val scanCode: Int,
     val deviceId: Int,
     val action: Int,
+    val deviceName: String = "",
+    val deviceDescriptor: String = "",
+    val vendorId: Int = 0,
+    val productId: Int = 0,
 )
 
 object XposedSystemEventRuntimeBridge {
@@ -44,6 +48,10 @@ object XposedSystemEventRuntimeBridge {
                     scanCode = intent.getIntExtra("scanCode", 0),
                     deviceId = intent.getIntExtra("deviceId", -1),
                     action = intent.getIntExtra("action", -1),
+                    deviceName = intent.getStringExtra("deviceName").orEmpty(),
+                    deviceDescriptor = intent.getStringExtra("deviceDescriptor").orEmpty(),
+                    vendorId = intent.getIntExtra("vendorId", 0),
+                    productId = intent.getIntExtra("productId", 0),
                 )
             )
             return
