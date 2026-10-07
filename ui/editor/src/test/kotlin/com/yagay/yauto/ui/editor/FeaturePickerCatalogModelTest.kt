@@ -93,6 +93,63 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test
+    fun `third batch families include complete playback wifi and utility operations`() {
+        val model = FeaturePickerCatalogModel.create(
+            listOf(
+                item("android.audio.play", "Play", app, "play"),
+                item("android.audio.pause", "Pause", app, "pause"),
+                item("android.audio.resume", "Resume", app, "resume"),
+                item("android.audio.stop", "Stop", app, "stop"),
+                item("android.audio.seek", "Seek", app, "seek"),
+                item("android.wifi.connection.info", "Wi-Fi info", app, "wifi info"),
+                item("android.wifi.scan.start", "Start Wi-Fi scan", app, "wifi scan"),
+                item("android.wifi.network.connect", "Connect Wi-Fi", app, "wifi connect"),
+                item("android.wifi.network.disconnect", "Disconnect Wi-Fi", app, "wifi disconnect"),
+                item("android.bluetooth.discovery.start", "Start Bluetooth discovery", app, "bluetooth discover"),
+                item("android.bluetooth.discovery.stop", "Stop Bluetooth discovery", app, "bluetooth stop"),
+                item("android.bluetooth.paired.query", "Paired Bluetooth devices", app, "bluetooth paired"),
+                item("android.audio.focus.request", "Request audio focus", app, "audio focus request"),
+                item("android.audio.focus.abandon", "Abandon audio focus", app, "audio focus abandon"),
+                item("android.ime.picker.show", "IME picker", app, "ime picker"),
+                item("android.ime.default.set", "Set IME", app, "ime default"),
+                item("android.ime.settings.open", "IME settings", app, "ime settings"),
+            ),
+            Comparator.naturalOrder(),
+        )
+
+        val entries = model.entries(
+            PickerPage.Features(app),
+            favorites = emptySet(),
+            recent = emptyList(),
+            query = "",
+        )
+        val families = entries.filterIsInstance<FeaturePickerListEntry.Family>()
+            .associateBy { it.family.spec.id }
+
+        assertEquals(
+            setOf("audio_playback", "wifi_tools", "bluetooth_devices", "audio_focus", "input_method"),
+            families.keys,
+        )
+        assertEquals(
+            setOf(
+                "android.audio.play",
+                "android.audio.pause",
+                "android.audio.resume",
+                "android.audio.stop",
+                "android.audio.seek",
+            ),
+            families.getValue("audio_playback").family.members
+                .map { it.descriptor.id.value }
+                .toSet(),
+        )
+        assertTrue(
+            families.getValue("wifi_tools").family.members
+                .map { it.descriptor.id.value }
+                .containsAll(listOf("android.wifi.network.connect", "android.wifi.network.disconnect"))
+        )
+    }
+
+    @Test
     fun `search favorites and recent use prebuilt indexes without reordering recent`() {
         val alpha = item("a", "Alpha", app, "alpha launch browser")
         val beta = item("b", "Beta", app, "beta network wifi")
