@@ -12,9 +12,11 @@ class AndroidShortXHookEventFeaturePack : FeaturePack {
 
     override fun install(registry: FeatureRegistry) {
         event(registry, "android.event.input_filter_state_changed", "Input filter state changed", "Run when Android changes the native input-filter state", FeatureCategory.UI_AUTOMATION)
+        event(registry, "android.event.activity_manager_started", "Activity manager started", "Run when ActivityManagerService starts", FeatureCategory.SYSTEM)
         event(registry, "android.event.activity_manager_ready", "Activity manager ready", "Run when ActivityManagerService finishes systemReady", FeatureCategory.SYSTEM)
         event(registry, "android.event.activity_started", "Activity started by system", "Run when ActivityTaskSupervisor starts an Activity", FeatureCategory.APP)
         event(registry, "android.event.activity_resumed", "Activity resumed by system", "Run when system_server reports an Activity resumed", FeatureCategory.APP)
+        event(registry, "android.event.activity_state_changed", "Activity state changed", "Run when ActivityRecord changes lifecycle state", FeatureCategory.APP)
         event(registry, "android.event.activity_stopped", "Activity stopped by system", "Run when system_server reports an Activity stopped", FeatureCategory.APP)
         event(registry, "android.event.activity_start_requested", "Activity start requested", "Run when ActivityStarter receives a start request", FeatureCategory.APP)
         event(registry, "android.event.activity_launched", "Activity launch observed", "Run when ActivityMetricsLogger reports an Activity launch", FeatureCategory.APP)
@@ -30,8 +32,11 @@ class AndroidShortXHookEventFeaturePack : FeaturePack {
         event(registry, "android.event.window_added", "Window added by display policy", "Run when DisplayPolicy adds a window", FeatureCategory.UI_AUTOMATION)
         event(registry, "android.event.rotation_proposed", "Display rotation proposed", "Run when Android proposes a new display rotation", FeatureCategory.DISPLAY)
         event(registry, "android.event.widget_host_listening", "Widget host started listening", "Run when AppWidgetService starts a host listening session", FeatureCategory.APP)
+        event(registry, "android.event.shortcut_query", "Shortcut query observed", "Run when Android queries application shortcuts", FeatureCategory.APP)
         event(registry, "android.event.shortcut_pin_requested", "Shortcut pin requested", "Run when ShortcutService receives a pin request", FeatureCategory.APP)
         event(registry, "android.event.shortcut_started", "Shortcut started by system", "Run when Android starts an app shortcut", FeatureCategory.APP)
+        event(registry, "android.event.back_pressed_system", "System back press observed", "Run when system_server handles a task or activity back press", FeatureCategory.UI_AUTOMATION)
+        event(registry, "android.event.package_query_system", "System package query", "Run when PackageManager computer queries services or activities", FeatureCategory.APP)
         event(registry, "android.event.status_bar_icon_changed", "Status bar icon changed", "Run when StatusBarManagerService updates an icon", FeatureCategory.SYSTEM)
         event(registry, "android.event.service_screen_state_changed", "Service screen state changed", "Run when ActiveServices receives a screen-state update", FeatureCategory.SYSTEM)
         event(registry, "android.event.systemui_qs_tile_clicked", "SystemUI tile clicked", "Run when SystemUI handles a Quick Settings tile click", FeatureCategory.SYSTEM)
