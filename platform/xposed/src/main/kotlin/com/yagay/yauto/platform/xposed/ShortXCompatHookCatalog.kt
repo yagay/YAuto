@@ -9,6 +9,7 @@ internal enum class ShortXHookPayloadKind {
     NONE,
     PROCESS,
     ACTIVITY,
+    TASK,
     NOTIFICATION,
     VPN,
     IME,
@@ -98,6 +99,14 @@ internal object ShortXCompatHookCatalog {
             after = true,
         ),
         ShortXObserverHookSpec(
+            id = "task-cleanup",
+            classNames = listOf("com.android.server.wm.ActivityTaskSupervisor"),
+            methodNames = setOf("cleanUpRemovedTask", "cleanUpRemovedTaskLocked"),
+            eventType = "android.event.task_cleanup",
+            payloadKind = ShortXHookPayloadKind.TASK,
+            after = true,
+        ),
+        ShortXObserverHookSpec(
             id = "activity-resumed",
             classNames = listOf(
                 "com.android.server.wm.ActivityRecord",
@@ -177,6 +186,13 @@ internal object ShortXCompatHookCatalog {
             methodNames = setOf("registerDismissedByUser"),
             eventType = "android.event.notification_dismissed_system",
             payloadKind = ShortXHookPayloadKind.NOTIFICATION,
+            after = true,
+        ),
+        ShortXObserverHookSpec(
+            id = "clipboard-read",
+            classNames = listOf("com.android.server.clipboard.ClipboardService\$ClipboardImpl"),
+            methodNames = setOf("getPrimaryClip"),
+            eventType = "android.event.clipboard_read_system",
             after = true,
         ),
         ShortXObserverHookSpec(
