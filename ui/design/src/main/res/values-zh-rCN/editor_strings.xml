@@ -128,11 +128,11 @@
     <string name="feature_family_app_roles_subtitle">请求或管理 Android 默认应用角色</string>
 
     <string name="feature_family_wifi_tools">Wi-Fi 工具</string>
-    <string name="feature_family_wifi_tools_subtitle">连接信息、开始扫描与扫描结果</string>
+    <string name="feature_family_wifi_tools_subtitle">连接信息、扫描、连接与断开 Wi-Fi</string>
     <string name="feature_family_bluetooth_events">蓝牙设备事件</string>
     <string name="feature_family_bluetooth_events_subtitle">连接、发现设备与配对状态触发</string>
     <string name="feature_family_audio_playback">音频播放</string>
-    <string name="feature_family_audio_playback_subtitle">播放、跳转、调整播放音量或查看播放信息</string>
+    <string name="feature_family_audio_playback_subtitle">播放、暂停、继续、停止、跳转、调整音量或查看播放信息</string>
     <string name="feature_family_audio_modes">音频模式</string>
     <string name="feature_family_audio_modes_subtitle">铃声模式、麦克风静音与扬声器</string>
     <string name="feature_family_notification_actions">通知操作</string>
@@ -165,6 +165,18 @@
     <string name="feature_family_system_info_subtitle">内存、运行时间、温度状态与区域语言信息</string>
     <string name="feature_family_communication_actions">通信</string>
     <string name="feature_family_communication_actions_subtitle">拨号、编写短信或编写邮件</string>
+    <string name="feature_family_bluetooth_devices">蓝牙设备</string>
+    <string name="feature_family_bluetooth_devices_subtitle">发现设备、停止发现或查看已配对设备</string>
+    <string name="feature_family_audio_focus">音频焦点</string>
+    <string name="feature_family_audio_focus_subtitle">请求或释放 Android 音频焦点</string>
+    <string name="feature_family_app_maintenance">应用维护</string>
+    <string name="feature_family_app_maintenance_subtitle">清除应用数据或授予、撤销应用权限</string>
+    <string name="feature_family_input_method">输入法</string>
+    <string name="feature_family_input_method_subtitle">打开选择器、设置默认输入法或打开输入法设置</string>
+    <string name="feature_family_screen_saver">屏幕保护</string>
+    <string name="feature_family_screen_saver_subtitle">启动或停止 Android 屏幕保护</string>
+    <string name="feature_family_display_system_controls">显示系统控制</string>
+    <string name="feature_family_display_system_controls_subtitle">沉浸模式、颜色反转与环境显示</string>
 
     <string name="implementation_auto_title">自动</string>
     <string name="implementation_root_title">Root</string>
