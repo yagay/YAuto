@@ -141,11 +141,12 @@ internal fun FeatureListPage(
     recent: List<String>,
     onQuery: (String) -> Unit,
     onFeature: (FeatureDescriptor) -> Unit,
+    onFamily: (FeaturePickerFamily) -> Unit,
     onFavorite: (String) -> Unit,
 ) {
     val availability = LocalFeatureAvailability.current
-    val features = remember(catalog, categoryPage, query, favorites, recent) {
-        catalog.items(categoryPage, favorites, recent, query)
+    val entries = remember(catalog, categoryPage, query, favorites, recent) {
+        catalog.entries(categoryPage, favorites, recent, query)
     }
     val title = categoryTitle(categoryPage)
     val subtitle = categorySubtitle(categoryPage)
@@ -176,22 +177,114 @@ internal fun FeatureListPage(
             )
         }
         items(
-            items = features,
+            items = entries,
+            key = {
+                when (it) {
+                    is FeaturePickerListEntry.Feature -> "feature:" + it.item.descriptor.id.value
+                    is FeaturePickerListEntry.Family -> "family:" + it.family.spec.id
+                }
+            },
+            contentType = {
+                when (it) {
+                    is FeaturePickerListEntry.Feature -> "feature"
+                    is FeaturePickerListEntry.Family -> "family"
+                }
+            },
+        ) { entry ->
+            when (entry) {
+                is FeaturePickerListEntry.Feature -> {
+                    val item = entry.item
+                    FeaturePickerRow(
+                        title = favoriteTitle(item, favorites),
+                        subtitle = null,
+                        accent = kindAccent(kind),
+                        onClick = { onFeature(item.descriptor) },
+                        onFavorite = { onFavorite(item.descriptor.id.value) },
+                        height = 68.dp,
+                        availability = availability[item.descriptor.id.value],
+                        accessTags = featureAccessTags(item.descriptor),
+                    )
+                }
+                is FeaturePickerListEntry.Family -> FeatureFamilyRow(
+                    family = entry.family,
+                    onClick = { onFamily(entry.family) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun FeatureFamilyPage(
+    modifier: Modifier,
+    kind: FeatureKind,
+    family: FeaturePickerFamily,
+    favorites: Set<String>,
+    onFeature: (FeatureDescriptor) -> Unit,
+    onFavorite: (String) -> Unit,
+) {
+    val availability = LocalFeatureAvailability.current
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        item(contentType = "family_hint") {
+            Text(
+                text = stringResource(family.spec.subtitleRes),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
+        }
+        items(
+            items = family.members,
             key = { it.descriptor.id.value },
-            contentType = { "feature" },
+            contentType = { "family_feature" },
         ) { item ->
             FeaturePickerRow(
                 title = favoriteTitle(item, favorites),
-                subtitle = null,
+                subtitle = item.description,
                 accent = kindAccent(kind),
                 onClick = { onFeature(item.descriptor) },
                 onFavorite = { onFavorite(item.descriptor.id.value) },
-                height = 68.dp,
+                height = 76.dp,
                 availability = availability[item.descriptor.id.value],
                 accessTags = featureAccessTags(item.descriptor),
             )
         }
     }
+}
+
+@Composable
+private fun FeatureFamilyRow(
+    family: FeaturePickerFamily,
+    onClick: () -> Unit,
+) {
+    ListItem(
+        headlineContent = {
+            Text(
+                text = stringResource(family.spec.titleRes),
+                fontWeight = FontWeight.Medium,
+            )
+        },
+        supportingContent = {
+            Text(
+                stringResource(
+                    TextR.string.feature_picker_family_count_format,
+                    stringResource(family.spec.subtitleRes),
+                    family.members.size,
+                )
+            )
+        },
+        trailingContent = {
+            Icon(
+                painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_chevron_right),
+                contentDescription = stringResource(TextR.string.icon_open_details),
+            )
+        },
+        modifier = Modifier.clickable(onClick = onClick),
+    )
+    HorizontalDivider()
 }
 
 @Composable
