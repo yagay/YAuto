@@ -4,6 +4,7 @@ import com.yagay.yauto.core.capability.CapabilityClient
 import com.yagay.yauto.core.capability.CapabilityId
 import com.yagay.yauto.core.capability.preferBackend
 import com.yagay.yauto.core.logging.ExecutionTracer
+import com.yagay.yauto.core.model.ConfigMap
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.FeatureRef
@@ -84,6 +85,12 @@ data class FeatureDescriptor(
     val implementationOptions: List<FeatureImplementationOption> = emptyList(),
     /** Historical IDs accepted when restoring older workspaces. New code must use [id]. */
     val aliases: Set<String> = emptySet(),
+    /**
+     * Declarative config defaults applied only when a historical alias is restored.
+     * Existing config wins over these values. This preserves legacy implied modes while the
+     * runtime executes the canonical feature ID.
+     */
+    val aliasConfigDefaults: Map<String, ConfigMap> = emptyMap(),
     /** Presentation and default-value metadata keyed by [FieldSchema.key]. */
     val fieldBehaviors: Map<String, FieldBehavior> = emptyMap(),
     /** User-facing semantic domain; kept last to preserve positional constructor compatibility. */
@@ -215,6 +222,9 @@ class FeatureRegistry {
             "Feature ID collision: $id"
         }
 
+        require(decorated.aliasConfigDefaults.keys.all { it in decorated.aliases }) {
+            "Alias config defaults must target declared aliases for $id"
+        }
         decorated.aliases.forEach { alias ->
             require(descriptors[alias] == null) {
                 "Feature alias collides with canonical ID: $alias"
@@ -274,8 +284,18 @@ class FeatureRegistry {
     }
 
     fun canonicalRef(feature: FeatureRef, expectedKind: FeatureKind? = null): FeatureRef {
-        val canonicalId = canonicalId(feature.typeId, expectedKind) ?: return feature
-        return if (canonicalId == feature.typeId) feature else feature.copy(typeId = canonicalId)
+        return when (val resolution = resolve(feature.typeId, expectedKind)) {
+            is FeatureResolution.Available -> feature
+            is FeatureResolution.Aliased -> {
+                val defaults = resolution.descriptor.aliasConfigDefaults[feature.typeId].orEmpty()
+                feature.copy(
+                    typeId = resolution.canonicalId,
+                    config = if (defaults.isEmpty()) feature.config else defaults + feature.config,
+                )
+            }
+            is FeatureResolution.Missing,
+            is FeatureResolution.Incompatible -> feature
+        }
     }
 
     fun descriptor(id: String): FeatureDescriptor? = when (val resolution = resolve(id)) {
