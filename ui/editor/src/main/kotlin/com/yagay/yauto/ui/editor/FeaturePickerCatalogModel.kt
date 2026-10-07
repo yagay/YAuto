@@ -27,7 +27,7 @@ internal class FeaturePickerCatalogModel private constructor(
     val categories: List<CatalogCategory>,
     private val byId: Map<String, FeaturePickerCatalogItem>,
     private val byCategory: Map<String, List<FeaturePickerCatalogItem>>,
-    private val familyIndex: FeatureFamilyIndex,
+    private val unifiedIndex: UnifiedFeatureIndex,
     private val categoryCounts: Map<String, Int>,
 ) {
     fun item(id: String): FeaturePickerCatalogItem? = byId[id]
@@ -36,10 +36,10 @@ internal class FeaturePickerCatalogModel private constructor(
 
     fun categoryCount(categoryId: String): Int = categoryCounts[categoryId] ?: 0
 
-    fun family(id: String): FeaturePickerFamily? = familyIndex.byId[id]
+    fun unifiedGroup(id: String): UnifiedFeatureGroup? = unifiedIndex.byId[id]
 
-    fun familyForMember(memberId: String): FeaturePickerFamily? =
-        familyIndex.byMemberId[memberId]?.let(familyIndex.byId::get)
+    fun unifiedGroupForMember(memberId: String): UnifiedFeatureGroup? =
+        unifiedIndex.byMemberId[memberId]?.let(unifiedIndex.byId::get)
 
     fun search(query: String): List<FeaturePickerCatalogItem> {
         val needle = normalizeQuery(query)
@@ -57,7 +57,7 @@ internal class FeaturePickerCatalogModel private constructor(
         return if (page.special != null || normalizeQuery(query).isNotEmpty()) {
             items.map { FeaturePickerListEntry.Feature(it) }
         } else {
-            collapseFeaturePickerItems(items, familyIndex)
+            collapseUnifiedFeatureItems(items, unifiedIndex)
         }
     }
 
@@ -89,15 +89,15 @@ internal class FeaturePickerCatalogModel private constructor(
                 .distinctBy { it.id }
                 .sortedBy { it.order }
             val byCategory = sorted.groupBy { it.category.id }
-            val familyIndex = buildFeatureFamilyIndex(sorted)
+            val unifiedIndex = buildUnifiedFeatureIndex(sorted)
             return FeaturePickerCatalogModel(
                 allItems = sorted,
                 categories = categories,
                 byId = sorted.associateBy { it.descriptor.id.value },
                 byCategory = byCategory,
-                familyIndex = familyIndex,
+                unifiedIndex = unifiedIndex,
                 categoryCounts = byCategory.mapValues { (_, categoryItems) ->
-                    collapseFeaturePickerItems(categoryItems, familyIndex).size
+                    collapseUnifiedFeatureItems(categoryItems, unifiedIndex).size
                 },
             )
         }
