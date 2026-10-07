@@ -215,8 +215,9 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
             FieldSchema.Choice("mode", "Mode", true, listOf("enable", "disable", "toggle")),
         ),
         setOf("ambient display", "always on", "doze", "wake notifications", "MacroDroid"),
+        aliases = setOf("android.ambient_display.set"),
     ) { feature, ctx ->
-        val setting = feature.config.string("setting", "always_on")
+        val setting = feature.config.string("setting", "").ifBlank { "both" }
         val enabled = when (feature.config.string("mode", "enable")) {
             "enable" -> true
             "disable" -> false
@@ -235,12 +236,16 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
         Settings.Secure.getInt(context.contentResolver, "accessibility_display_inversion_enabled", 0) == 1
 
     private fun ambientDisplayEnabled(setting: String): Boolean {
-        val key = when (setting) {
-            "wake_for_notifications" -> "doze_enabled"
-            "always_on" -> "doze_always_on"
-            else -> return false
+        return when (setting) {
+            "wake_for_notifications" ->
+                Settings.Secure.getInt(context.contentResolver, "doze_enabled", 0) == 1
+            "always_on" ->
+                Settings.Secure.getInt(context.contentResolver, "doze_always_on", 0) == 1
+            "both" ->
+                Settings.Secure.getInt(context.contentResolver, "doze_enabled", 0) == 1 &&
+                    Settings.Secure.getInt(context.contentResolver, "doze_always_on", 0) == 1
+            else -> false
         }
-        return Settings.Secure.getInt(context.contentResolver, key, 0) == 1
     }
 
     private fun headsUpEnabled(): Boolean =
@@ -257,6 +262,7 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
         category: FeatureCategory,
         fields: List<FieldSchema>,
         keywords: Set<String>,
+        aliases: Set<String> = emptySet(),
         execute: suspend (com.yagay.yauto.core.model.FeatureRef, FeatureExecutionContext) -> ActionExecutionResult,
     ) {
         registry.registerAction(
@@ -269,6 +275,7 @@ class AndroidReferenceSystemExpansionFeaturePack(context: Context) : FeaturePack
                 fields = fields,
                 capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
                 keywords = keywords,
+                aliases = aliases,
                 ownerPackId = id,
             ),
             ActionExecutor(execute),
