@@ -52,11 +52,11 @@ fun MacroFeaturePickerDialog(
         buildFeaturePickerCatalog(editable, textResolver, titleComparator)
     }
     val initialDescriptor = initial?.let { ref -> catalog.item(ref.typeId)?.descriptor }
-    val initialFamily = initialDescriptor?.let { catalog.familyForMember(it.id.value) }
+    val initialGroup = initialDescriptor?.let { catalog.unifiedGroupForMember(it.id.value) }
     var navigation by remember(initial?.typeId, catalog) {
         mutableStateOf(
-            if (initialFamily != null && initialDescriptor != null) {
-                FeaturePickerNavState.initialFamily(initialFamily, initialDescriptor.id.value)
+            if (initialGroup != null && initialDescriptor != null) {
+                FeaturePickerNavState.initialGroup(initialGroup, initialDescriptor.id.value)
             } else {
                 FeaturePickerNavState.initial(initialDescriptor)
             }
@@ -85,10 +85,10 @@ fun MacroFeaturePickerDialog(
     }
 
     fun openFeature(descriptor: FeatureDescriptor) {
-        val family = catalog.familyForMember(descriptor.id.value)
+        val group = catalog.unifiedGroupForMember(descriptor.id.value)
         push(
-            if (family != null) {
-                PickerPage.Family(family, descriptor.id.value)
+            if (group != null) {
+                PickerPage.Unified(group, descriptor.id.value)
             } else {
                 PickerPage.Configure(descriptor)
             }
@@ -136,7 +136,7 @@ fun MacroFeaturePickerDialog(
                                 PickerPage.Categories ->
                                     stringResource(TextR.string.editor_select_kind_format, kindLabel(kind))
                                 is PickerPage.Features -> categoryTitle(current)
-                                is PickerPage.Family -> stringResource(current.family.spec.titleRes)
+                                is PickerPage.Unified -> stringResource(current.group.spec.titleRes)
                                 is PickerPage.Configure ->
                                     catalog.item(current.descriptor.id.value)?.title ?: current.descriptor.title
                             }
@@ -183,12 +183,12 @@ fun MacroFeaturePickerDialog(
                     recent = recent,
                     onQuery = ::updateQuery,
                     onFeature = ::openFeature,
-                    onFamily = { push(PickerPage.Family(it)) },
+                    onUnified = { push(PickerPage.Unified(it)) },
                     onFavorite = ::toggleFavorite,
                 )
-                is PickerPage.Family -> FeatureFamilyConfigEditor(
+                is PickerPage.Unified -> UnifiedFeatureConfigEditor(
                     modifier = Modifier.padding(padding),
-                    family = current.family,
+                    group = current.group,
                     initial = initial,
                     initialMemberId = current.selectedMemberId,
                     accent = accent,
@@ -221,7 +221,7 @@ private fun pickerPageStateKey(page: PickerPage): String = when (page) {
             append(it)
         }
     }
-    is PickerPage.Family -> "family:" + page.family.spec.id
+    is PickerPage.Unified -> "unified:" + page.group.spec.id
     is PickerPage.Configure -> "configure:" + page.descriptor.id.value
 }
 private fun loadIds(raw: String?): List<String> = raw.orEmpty().lineSequence()
