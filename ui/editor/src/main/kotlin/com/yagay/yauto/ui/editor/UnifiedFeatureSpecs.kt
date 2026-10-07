@@ -37,6 +37,8 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         listOf(
             "android.audio.volume.set",
             "android.audio.volume.adjust",
+            "android.audio.playback_volume.set",
+            "android.audio.ringer_mode.set",
         ),
     ),
     UnifiedFeatureSpec(
@@ -190,7 +192,6 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
             "android.audio.resume",
             "android.audio.stop",
             "android.audio.seek",
-            "android.audio.playback_volume.set",
             "android.audio.playback_info",
         ),
     ),
@@ -199,7 +200,6 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         TextR.string.feature_family_audio_modes,
         TextR.string.feature_family_audio_modes_subtitle,
         listOf(
-            "android.audio.ringer_mode.set",
             "android.audio.microphone_mute.set",
             "android.audio.speakerphone.set",
         ),
