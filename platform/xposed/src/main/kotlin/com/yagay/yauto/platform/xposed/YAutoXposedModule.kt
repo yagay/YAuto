@@ -1235,6 +1235,7 @@ class YAutoXposedModule : XposedModule() {
         val intent = Intent(SystemBridgeProtocol.SYSTEM_EVENT_ACTION)
             .setPackage(YAUTO_PACKAGE)
             .putExtra("type", type)
+            .putExtra("bridgeSource", "lsposed.package")
             .putExtra("timestampEpochMs", System.currentTimeMillis())
         extras.forEach { (key, value) ->
             when (value) {
