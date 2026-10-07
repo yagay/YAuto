@@ -150,6 +150,92 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test
+    fun `connectivity and power state families collapse only concrete same-kind entries`() {
+        val model = FeaturePickerCatalogModel.create(
+            listOf(
+                item("android.state.wifi_network", "Wi-Fi network", app, "wifi network"),
+                item("android.state.wifi_scan_match", "Wi-Fi scan match", app, "wifi scan"),
+                item("android.state.bluetooth_enabled", "Bluetooth enabled", app, "bluetooth enabled"),
+                item("android.state.bluetooth_device_bonded", "Bluetooth bonded", app, "bluetooth bonded"),
+                item("android.state.usb_device_connected", "USB connected", app, "usb connected"),
+                item("android.state.nfc_enabled", "NFC enabled", app, "nfc enabled"),
+                item("android.state.network", "Network type", app, "network type"),
+                item("android.state.vpn_active", "VPN active", app, "vpn active"),
+                item("android.state.battery_level", "Battery level", app, "battery level"),
+                item("android.state.battery_status", "Battery status", app, "battery status"),
+                item("android.state.charging", "Charging", app, "charging"),
+                item("android.state.power_save", "Power save", app, "power save"),
+            ),
+            Comparator.naturalOrder(),
+        )
+
+        val entries = model.entries(
+            PickerPage.Features(app),
+            favorites = emptySet(),
+            recent = emptyList(),
+            query = "",
+        )
+        val families = entries.filterIsInstance<FeaturePickerListEntry.Family>()
+            .associateBy { it.family.spec.id }
+
+        assertEquals(
+            setOf(
+                "wifi_states",
+                "bluetooth_states",
+                "usb_nfc_states",
+                "network_states",
+                "battery_states",
+                "power_states",
+            ),
+            families.keys,
+        )
+        assertEquals(
+            setOf("android.state.wifi_network", "android.state.wifi_scan_match"),
+            families.getValue("wifi_states").family.members
+                .map { it.descriptor.id.value }
+                .toSet(),
+        )
+        assertEquals(
+            setOf("android.state.usb_device_connected", "android.state.nfc_enabled"),
+            families.getValue("usb_nfc_states").family.members
+                .map { it.descriptor.id.value }
+                .toSet(),
+        )
+    }
+
+    @Test
+    fun `connectivity and battery event families collapse during event browsing`() {
+        val model = FeaturePickerCatalogModel.create(
+            listOf(
+                item("android.event.wifi_changed", "Wi-Fi changed", app, "wifi changed"),
+                item("android.event.wifi_scan_results", "Wi-Fi scan results", app, "wifi scan results"),
+                item("android.event.bluetooth_state", "Bluetooth state", app, "bluetooth state"),
+                item("android.event.bluetooth_device_found", "Bluetooth found", app, "bluetooth found"),
+                item("android.event.usb_device_changed", "USB changed", app, "usb changed"),
+                item("android.event.nfc_tag", "NFC tag", app, "nfc tag"),
+                item("android.event.battery_changed", "Battery changed", app, "battery changed"),
+                item("android.event.battery_status_filtered", "Battery status", app, "battery status"),
+            ),
+            Comparator.naturalOrder(),
+        )
+
+        val entries = model.entries(
+            PickerPage.Features(app),
+            favorites = emptySet(),
+            recent = emptyList(),
+            query = "",
+        )
+        val familyIds = entries.filterIsInstance<FeaturePickerListEntry.Family>()
+            .map { it.family.spec.id }
+            .toSet()
+
+        assertEquals(
+            setOf("wifi_events", "bluetooth_events", "usb_nfc_events", "battery_events"),
+            familyIds,
+        )
+    }
+
+    @Test
     fun `search favorites and recent use prebuilt indexes without reordering recent`() {
         val alpha = item("a", "Alpha", app, "alpha launch browser")
         val beta = item("b", "Beta", app, "beta network wifi")
