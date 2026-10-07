@@ -67,8 +67,32 @@ class AndroidNativeEnvironmentFeaturePack(context: Context) : FeaturePack {
     }
 
     private fun registerClipboardRead(registry: FeatureRegistry) {
-        registry.registerAction(FeatureDescriptor(FeatureId("android.clipboard.read"), FeatureKind.ACTION, "Read clipboard text", "Read current clipboard text into a YAuto variable when Android privacy rules allow it", FeatureCategory.SYSTEM, fields = listOf(FieldSchema.Variable("resultVariable", "Store clipboard text in variable", true)), keywords = setOf("clipboard", "copy", "paste", "text"), ownerPackId = id)) { feature, ctx ->
-            runCatching { val clip = clipboard.primaryClip; val text = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString().orEmpty(); val output = ConfigValue.StringValue(text); ctx.variables.set(feature.config.string("resultVariable"), output); ActionExecutionResult(true, output) }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.clipboard.read"),
+                FeatureKind.ACTION,
+                "Read clipboard text",
+                "Read current clipboard text into a YAuto variable when Android privacy rules allow it",
+                FeatureCategory.SYSTEM,
+                fields = listOf(FieldSchema.Variable("resultVariable", "Store clipboard text in variable", true)),
+                keywords = setOf("clipboard", "copy", "paste", "text"),
+                aliases = setOf("android.clipboard.get"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val variable = feature.config.string("resultVariable").trim()
+            if (variable.isBlank()) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.result_variable_empty"))
+            }
+            runCatching {
+                val clip = clipboard.primaryClip
+                val text = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString().orEmpty()
+                val output = ConfigValue.StringValue(text)
+                ctx.variables.set(variable, output)
+                ActionExecutionResult(true, output)
+            }.getOrElse {
+                ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName))
+            }
         }
     }
 
