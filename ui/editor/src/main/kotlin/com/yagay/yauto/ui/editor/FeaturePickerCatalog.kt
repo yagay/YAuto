@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.registry.AccessRequirement
-import com.yagay.yauto.core.registry.FeatureDomain
+import com.yagay.yauto.core.registry.FeaturePickerCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.ui.design.MacroPalette
@@ -74,7 +74,7 @@ internal fun FeatureCategoryPage(
                         stringResource(TextR.string.feature_picker_recent),
                         stringResource(TextR.string.feature_picker_recent_subtitle_format, recentCount),
                     ) {
-                        onCategory(PickerPage.Features(catalogCategory(FeatureDomain.YAUTO, kind), special = "recent"))
+                        onCategory(PickerPage.Features(catalogCategory(FeaturePickerCategory.YAUTO_SPECIFIC), special = "recent"))
                     }
                 }
             }
@@ -84,7 +84,7 @@ internal fun FeatureCategoryPage(
                         stringResource(TextR.string.feature_picker_favorites),
                         stringResource(TextR.string.feature_picker_favorites_subtitle_format, favoriteCount),
                     ) {
-                        onCategory(PickerPage.Features(catalogCategory(FeatureDomain.YAUTO, kind), special = "favorites"))
+                        onCategory(PickerPage.Features(catalogCategory(FeaturePickerCategory.YAUTO_SPECIFIC), special = "favorites"))
                     }
                 }
             }
