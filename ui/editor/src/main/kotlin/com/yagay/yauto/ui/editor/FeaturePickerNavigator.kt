@@ -11,7 +11,10 @@ import com.yagay.yauto.core.registry.FeatureDescriptor
 internal sealed interface PickerPage {
     data object Categories : PickerPage
     data class Features(val category: CatalogCategory, val special: String? = null) : PickerPage
-    data class Family(val family: FeaturePickerFamily) : PickerPage
+    data class Family(
+        val family: FeaturePickerFamily,
+        val selectedMemberId: String? = null,
+    ) : PickerPage
     data class Configure(val descriptor: FeatureDescriptor) : PickerPage
 }
 
@@ -43,11 +46,14 @@ internal data class FeaturePickerNavState private constructor(
                 }
             )
 
-        fun initialFamily(family: FeaturePickerFamily): FeaturePickerNavState =
+        fun initialFamily(
+            family: FeaturePickerFamily,
+            selectedMemberId: String? = null,
+        ): FeaturePickerNavState =
             FeaturePickerNavState(
                 listOf(
                     PickerPage.Categories,
-                    PickerPage.Family(family),
+                    PickerPage.Family(family, selectedMemberId),
                 )
             )
     }
