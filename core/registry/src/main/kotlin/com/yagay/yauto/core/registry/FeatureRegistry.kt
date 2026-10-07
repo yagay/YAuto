@@ -95,6 +95,11 @@ data class FeatureDescriptor(
      * constructor call sites.
      */
     val aliasConfigDefaults: Map<String, ConfigMap> = emptyMap(),
+    /**
+     * Optional historical config-key migrations keyed by alias ID.
+     * A direct canonical key already present in saved config wins over its renamed legacy key.
+     */
+    val aliasConfigKeyRenames: Map<String, Map<String, String>> = emptyMap(),
 )
 
 sealed interface FeatureResolution {
@@ -225,6 +230,9 @@ class FeatureRegistry {
         require(decorated.aliasConfigDefaults.keys.all { it in decorated.aliases }) {
             "Alias config defaults must target declared aliases for $id"
         }
+        require(decorated.aliasConfigKeyRenames.keys.all { it in decorated.aliases }) {
+            "Alias config key renames must target declared aliases for $id"
+        }
         decorated.aliases.forEach { alias ->
             require(descriptors[alias] == null) {
                 "Feature alias collides with canonical ID: $alias"
@@ -288,9 +296,16 @@ class FeatureRegistry {
             is FeatureResolution.Available -> feature
             is FeatureResolution.Aliased -> {
                 val defaults = resolution.descriptor.aliasConfigDefaults[feature.typeId].orEmpty()
+                val renames = resolution.descriptor.aliasConfigKeyRenames[feature.typeId].orEmpty()
+                val renamed = buildMap {
+                    feature.config.forEach { (key, value) ->
+                        renames[key]?.let { target -> put(target, value) }
+                    }
+                }
+                val direct = feature.config.filterKeys { it !in renames.keys }
                 feature.copy(
                     typeId = resolution.canonicalId,
-                    config = if (defaults.isEmpty()) feature.config else defaults + feature.config,
+                    config = defaults + renamed + direct,
                 )
             }
             is FeatureResolution.Missing,
