@@ -45,6 +45,7 @@ internal fun GenericFeatureConfigEditor(
     descriptor: FeatureDescriptor,
     initial: FeatureRef?,
     accent: Color,
+    leadingContent: (@Composable () -> Unit)? = null,
     onSave: (FeatureRef) -> Unit,
 ) {
     val locale = currentEditorLocale()
@@ -87,6 +88,10 @@ internal fun GenericFeatureConfigEditor(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        leadingContent?.let { content ->
+            item(key = "leading_content") { content() }
+        }
+
         item { FeatureSummaryCard(descriptor, accent) }
 
         if (descriptor.resolvedImplementationOptions().size > 1) {
