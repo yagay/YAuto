@@ -1297,6 +1297,25 @@ class YAutoXposedModule : XposedModule() {
     }
 
     private fun installShortXMediaProviderHooks(context: Context, classLoader: ClassLoader) {
+        runCatching { classLoader.loadClass("com.android.providers.media.MediaProvider") }
+            .getOrNull()
+            ?.declaredMethods
+            ?.filter { it.name == "onCreate" }
+            ?.forEach { method ->
+                val key = "shortx-media-provider-ready|" + method.toGenericString()
+                if (!installedHooks.add(key)) return@forEach
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    val result = chain.proceed()
+                    emitPackageRuntimeEvent(
+                        context,
+                        "android.event.media_provider_ready",
+                        mapOf("method" to method.name),
+                    )
+                    result
+                }
+            }
+
         val classNames = listOf(
             "com.android.providers.media.MediaProvider",
             "com.android.providers.media.MediaDocumentsProvider",
@@ -1344,6 +1363,20 @@ class YAutoXposedModule : XposedModule() {
     private fun installShortXTelephonyProviderHooks(context: Context, classLoader: ClassLoader) {
         val clazz = runCatching { classLoader.loadClass("com.android.providers.telephony.SmsProvider") }.getOrNull()
             ?: return
+        clazz.declaredMethods.filter { it.name == "onCreate" }.forEach { method ->
+            val key = "shortx-sms-provider-ready|" + method.toGenericString()
+            if (!installedHooks.add(key)) return@forEach
+            method.isAccessible = true
+            hook(method).intercept { chain ->
+                val result = chain.proceed()
+                emitPackageRuntimeEvent(
+                    context,
+                    "android.event.sms_provider_ready",
+                    mapOf("method" to method.name),
+                )
+                result
+            }
+        }
         clazz.declaredMethods
             .filter { it.name in setOf("insert", "delete", "update") }
             .forEach { method ->
