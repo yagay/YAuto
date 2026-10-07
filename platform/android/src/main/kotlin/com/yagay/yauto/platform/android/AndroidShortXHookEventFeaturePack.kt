@@ -89,6 +89,7 @@ class AndroidShortXHookEventFeaturePack : FeaturePack {
                 accessRequirements = setOf(AccessRequirement.LSPOSED),
                 keywords = setOf("shortx", "lsposed", "system hook", "system_server"),
                 ownerPackId = id,
+                domain = shortXHookDomain(typeId, category),
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != typeId) return@registerEvent false
@@ -103,5 +104,34 @@ class AndroidShortXHookEventFeaturePack : FeaturePack {
                     value.toString().contains(detailContains, true)
                 })
         }
+    }
+}
+
+
+internal fun shortXHookDomain(typeId: String, category: FeatureCategory): FeatureDomain {
+    val key = typeId.lowercase()
+    return when {
+        key.contains("notification_") -> FeatureDomain.NOTIFICATIONS
+        key.contains("sms_provider") -> FeatureDomain.COMMUNICATION
+        key.contains("media_provider") -> FeatureDomain.FILES_STORAGE
+        key.contains("nfc_tag") || key.contains("vpn_state") -> FeatureDomain.CONNECTIVITY
+        key.contains("rotation_") -> FeatureDomain.DISPLAY
+        key.contains("clipboard_") -> FeatureDomain.DATA
+        key.contains("accessibility_") ||
+            key.contains("input_") ||
+            key.contains("ime_") ||
+            key.contains("window_") ||
+            key.contains("back_pressed_system") ||
+            key.contains("systemui_") ||
+            key.contains("status_bar_") ||
+            key.contains("service_screen_state") -> FeatureDomain.USER_INPUT
+        key.contains("activity_") ||
+            key.contains("task_cleanup") ||
+            key.contains("process_uncaught") ||
+            key.contains("rendernode_") ||
+            key.contains("widget_host") ||
+            key.contains("shortcut_") ||
+            key.contains("package_query") -> FeatureDomain.APPLICATIONS
+        else -> inferFeatureDomain(typeId, category)
     }
 }
