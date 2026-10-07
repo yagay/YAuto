@@ -206,6 +206,11 @@ class YAutoXposedModule : XposedModule() {
                 @Suppress("DEPRECATION")
                 context.registerReceiver(receiver, IntentFilter(SystemBridgeProtocol.ACTION), SystemBridgeProtocol.PERMISSION, null)
             }
+            runCatching {
+                context.packageManager.getApplicationInfo(YAUTO_PACKAGE, 0).uid
+            }.onSuccess { uid ->
+                yAutoUid.set(uid.toLong())
+            }
             installSystemRuntimeHooks(context, classLoader)
             log(Log.INFO, "YAuto", "System bridge ready")
         } catch (error: Exception) {
@@ -463,16 +468,7 @@ class YAutoXposedModule : XposedModule() {
     }
 
     private fun isYAutoCaller(context: Context): Boolean {
-        val cached = yAutoUid.get()
-        val uid = if (cached >= 0L) {
-            cached.toInt()
-        } else {
-            val resolved = runCatching {
-                context.packageManager.getApplicationInfo(YAUTO_PACKAGE, 0).uid
-            }.getOrDefault(-1)
-            if (resolved >= 0) yAutoUid.compareAndSet(-1L, resolved.toLong())
-            resolved
-        }
+        val uid = yAutoUid.get().toInt()
         return uid >= 0 && Binder.getCallingUid() == uid
     }
 
