@@ -60,6 +60,7 @@ object AndroidFeaturePacks {
         AndroidTextProcessingFeaturePack(),
         AndroidRemainingSourceParityFeaturePack(context),
         AndroidShortXRuntimeEventFeaturePack(),
+        AndroidShortXHookEventFeaturePack(),
         AndroidShortXTimeFeaturePack(context),
         AndroidInvocationParityFeaturePack(context),
         AndroidLsposedSystemEventFeaturePack(),
