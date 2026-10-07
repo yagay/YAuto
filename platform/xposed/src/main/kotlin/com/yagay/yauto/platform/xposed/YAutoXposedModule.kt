@@ -949,15 +949,13 @@ class YAutoXposedModule : XposedModule() {
                             it.name == "getUid" && it.parameterCount == 0
                         }?.invoke(endpoint) as? ByteArray
                     }.getOrNull()
-                emitPackageRuntimeEvent(
-                    context,
-                    "android.event.nfc_tag",
-                    mapOf(
-                        "kind" to "tag",
-                        "uidHex" to uid.orEmpty().joinToString("") { byte -> "%02X".format(byte) },
-                        "method" to method.name,
-                    ),
+                val payload = mapOf(
+                    "kind" to "tag",
+                    "uidHex" to uid.orEmpty().joinToString("") { byte -> "%02X".format(byte) },
+                    "method" to method.name,
                 )
+                emitPackageRuntimeEvent(context, "android.event.nfc_tag_system", payload)
+                emitPackageRuntimeEvent(context, "android.event.nfc_tag", payload)
                 chain.proceed()
             }
         }
@@ -994,15 +992,14 @@ class YAutoXposedModule : XposedModule() {
                                 "method" to method.name,
                             ),
                         )
-                        emitPackageRuntimeEvent(
-                            context,
-                            "android.event.media_store_changed",
-                            mapOf(
-                                "uri" to uri?.toString().orEmpty(),
-                                "collection" to mediaCollection(uri),
-                                "method" to method.name,
-                            ),
+                        val genericPayload = mapOf(
+                            "uri" to uri?.toString().orEmpty(),
+                            "collection" to mediaCollection(uri),
+                            "operation" to method.name,
+                            "method" to method.name,
                         )
+                        emitPackageRuntimeEvent(context, "android.event.media_store_changed", genericPayload)
+                        emitPackageRuntimeEvent(context, "android.event.media_provider_changed", genericPayload)
                         result
                     }
                 }
