@@ -174,10 +174,12 @@ class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
                     FieldSchema.Number("durationMs", "Duration milliseconds", true, min = 1.0, max = 60_000.0),
                     FieldSchema.Number("amplitude", "Amplitude (1-255)", min = 1.0, max = 255.0),
                 ),
-                keywords = setOf("vibrate", "vibration", "haptic"), ownerPackId = id,
+                keywords = setOf("vibrate", "vibration", "haptic"),
+                aliases = setOf("android.vibrate"),
+                ownerPackId = id,
             )
         ) { feature, _ ->
-            val duration = feature.config["durationMs"].numberOrNull()?.toLong()
+            val duration = feature.config["durationMs"].numberOrNull()?.toLong() ?: 300L
             val amplitude = feature.config["amplitude"].numberOrNull()?.toInt() ?: VibrationEffect.DEFAULT_AMPLITUDE
             if (duration == null || duration !in 1L..60_000L || (amplitude != VibrationEffect.DEFAULT_AMPLITUDE && amplitude !in 1..255)) {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.vibration_pattern_invalid"))
