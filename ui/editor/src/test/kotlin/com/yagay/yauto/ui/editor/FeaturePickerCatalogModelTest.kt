@@ -5,6 +5,7 @@ import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureId
 import com.yagay.yauto.core.registry.FeatureKind
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FeaturePickerCatalogModelTest {
@@ -26,6 +27,38 @@ class FeaturePickerCatalogModelTest {
         assertEquals(listOf("core", "app"), model.categories.map { it.id })
         assertEquals(1, model.categoryCount("core"))
         assertEquals(2, model.categoryCount("app"))
+    }
+
+    @Test
+    fun `related actions collapse into one family during normal browsing`() {
+        val model = FeaturePickerCatalogModel.create(
+            listOf(
+                item("android.audio.volume.set", "Set volume", app, "set volume audio"),
+                item("android.audio.volume.adjust", "Adjust volume", app, "adjust volume audio"),
+            ),
+            Comparator.naturalOrder(),
+        )
+        val page = PickerPage.Features(app)
+
+        val entries = model.entries(page, favorites = emptySet(), recent = emptyList(), query = "")
+
+        assertEquals(1, entries.size)
+        assertTrue(entries.single() is FeaturePickerListEntry.Family)
+        val family = (entries.single() as FeaturePickerListEntry.Family).family
+        assertEquals("volume", family.spec.id)
+        assertEquals(
+            listOf("android.audio.volume.set", "android.audio.volume.adjust"),
+            family.members.map { it.descriptor.id.value },
+        )
+        assertEquals(1, model.categoryCount("app"))
+
+        val searchEntries = model.entries(page, favorites = emptySet(), recent = emptyList(), query = "adjust")
+        assertEquals(1, searchEntries.size)
+        assertTrue(searchEntries.single() is FeaturePickerListEntry.Feature)
+        assertEquals(
+            "android.audio.volume.adjust",
+            (searchEntries.single() as FeaturePickerListEntry.Feature).item.descriptor.id.value,
+        )
     }
 
     @Test
