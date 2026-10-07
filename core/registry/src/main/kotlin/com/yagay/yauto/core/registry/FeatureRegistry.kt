@@ -53,7 +53,7 @@ enum class FeatureDomain {
 
 fun inferFeatureDomain(id: String, legacyCategory: FeatureCategory): FeatureDomain {
     val key = id.lowercase(Locale.ROOT)
-    fun has(vararg tokens: String): Boolean = tokens.any(key::contains)
+    fun has(vararg tokens: String): Boolean = tokens.any { token -> key.contains(token) }
 
     return when {
         has("screen_record", "screenshot", ".camera", ".photo", ".ocr", "image_match", ".capture") ->
@@ -166,7 +166,6 @@ data class FeatureDescriptor(
     val title: String,
     val description: String,
     val category: FeatureCategory,
-    val domain: FeatureDomain = inferFeatureDomain(id.value, category),
     val schemaVersion: Int = 1,
     val minSdk: Int = 31,
     val capabilities: Set<CapabilityId> = emptySet(),
@@ -180,6 +179,8 @@ data class FeatureDescriptor(
     val aliases: Set<String> = emptySet(),
     /** Presentation and default-value metadata keyed by [FieldSchema.key]. */
     val fieldBehaviors: Map<String, FieldBehavior> = emptyMap(),
+    /** User-facing semantic domain; kept last to preserve positional constructor compatibility. */
+    val domain: FeatureDomain = inferFeatureDomain(id.value, category),
 )
 
 sealed interface FeatureResolution {
