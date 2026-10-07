@@ -52,8 +52,15 @@ fun MacroFeaturePickerDialog(
         buildFeaturePickerCatalog(editable, textResolver, titleComparator)
     }
     val initialDescriptor = initial?.let { ref -> catalog.item(ref.typeId)?.descriptor }
+    val initialFamily = initialDescriptor?.let { catalog.familyForMember(it.id.value) }
     var navigation by remember(initial?.typeId, catalog) {
-        mutableStateOf(FeaturePickerNavState.initial(initialDescriptor))
+        mutableStateOf(
+            if (initialFamily != null && initialDescriptor != null) {
+                FeaturePickerNavState.initialFamily(initialFamily, initialDescriptor.id.value)
+            } else {
+                FeaturePickerNavState.initial(initialDescriptor)
+            }
+        )
     }
     val pageQueries = remember(kind) { mutableStateMapOf<String, String>() }
     val pageListStates = remember(kind) { mutableMapOf<String, LazyListState>() }
@@ -75,6 +82,17 @@ fun MacroFeaturePickerDialog(
 
     fun push(destination: PickerPage) {
         navigation = navigation.push(destination)
+    }
+
+    fun openFeature(descriptor: FeatureDescriptor) {
+        val family = catalog.familyForMember(descriptor.id.value)
+        push(
+            if (family != null) {
+                PickerPage.Family(family, descriptor.id.value)
+            } else {
+                PickerPage.Configure(descriptor)
+            }
+        )
     }
 
     fun navigateBack() {
@@ -151,7 +169,7 @@ fun MacroFeaturePickerDialog(
                     recent = recent,
                     onQuery = ::updateQuery,
                     onCategory = { push(it) },
-                    onFeature = { push(PickerPage.Configure(it)) },
+                    onFeature = ::openFeature,
                     onFavorite = ::toggleFavorite,
                 )
                 is PickerPage.Features -> FeatureListPage(
@@ -164,18 +182,20 @@ fun MacroFeaturePickerDialog(
                     favorites = favorites,
                     recent = recent,
                     onQuery = ::updateQuery,
-                    onFeature = { push(PickerPage.Configure(it)) },
+                    onFeature = ::openFeature,
                     onFamily = { push(PickerPage.Family(it)) },
                     onFavorite = ::toggleFavorite,
                 )
-                is PickerPage.Family -> FeatureFamilyPage(
+                is PickerPage.Family -> FeatureFamilyConfigEditor(
                     modifier = Modifier.padding(padding),
-                    kind = kind,
                     family = current.family,
-                    favorites = favorites,
-                    onFeature = { push(PickerPage.Configure(it)) },
-                    onFavorite = ::toggleFavorite,
-                )
+                    initial = initial,
+                    initialMemberId = current.selectedMemberId,
+                    accent = accent,
+                ) { feature ->
+                    recordRecent(feature.typeId)
+                    onPick(feature)
+                }
                 is PickerPage.Configure -> GenericFeatureConfigEditor(
                     modifier = Modifier.padding(padding),
                     descriptor = current.descriptor,
