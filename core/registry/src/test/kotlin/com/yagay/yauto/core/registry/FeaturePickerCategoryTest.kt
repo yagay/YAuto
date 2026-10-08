@@ -85,6 +85,8 @@ class FeaturePickerCategoryTest {
             "android.event.random_in_period" to FeaturePickerCategory.DATE_TIME,
             "android.event.plugin_locale" to FeaturePickerCategory.APPLICATIONS,
             "android.event.ppn_action" to FeaturePickerCategory.USER_INPUT,
+            "android.event.user_foreground" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.user_background" to FeaturePickerCategory.DEVICE_EVENTS,
             "android.event.sms_received" to FeaturePickerCategory.CALL_SMS,
             "android.event.phone_state_changed" to FeaturePickerCategory.CALL_SMS,
             "android.event.broadcast" to FeaturePickerCategory.DEVICE_EVENTS,
@@ -275,6 +277,18 @@ class FeaturePickerCategoryTest {
             FeaturePickerCategory.CONNECTIVITY,
             classify("android.state.cellular_service_available", FeatureKind.STATE),
         )
+        listOf("mobile_country_code", "mobile_network_code").forEach { suffix ->
+            assertEquals(
+                suffix,
+                FeaturePickerCategory.CONNECTIVITY,
+                classify("android.state.reference.$suffix", FeatureKind.STATE),
+            )
+            assertEquals(
+                suffix,
+                FeaturePickerCategory.CONNECTIVITY,
+                classify("android.condition.reference.$suffix", FeatureKind.CONDITION),
+            )
+        }
         assertEquals(
             FeaturePickerCategory.CONNECTIVITY,
             classify("android.condition.cellular_service_available", FeatureKind.CONDITION),

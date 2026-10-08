@@ -366,6 +366,8 @@ private fun explicitMacroDroidFeatureCategory(
         "android.event.plugin_locale" -> FeaturePickerCategory.APPLICATIONS
         // A tap on a rich notification action is a user-initiated button trigger.
         "android.event.ppn_action" -> FeaturePickerCategory.USER_INPUT
+        "android.event.user_foreground", "android.event.user_background" ->
+            FeaturePickerCategory.DEVICE_EVENTS
         "android.event.location_mode_changed" -> FeaturePickerCategory.DEVICE_EVENTS
         // Android service starts/commands are system lifecycle events, not app launches.
         "android.event.activity_manager_started",
@@ -396,6 +398,12 @@ private fun explicitMacroDroidFeatureCategory(
         else -> null
     }
     FeatureKind.STATE, FeatureKind.CONDITION -> when (key) {
+        // Telephony operator identity is a cellular network attribute, not an app/process state.
+        "android.state.reference.mobile_country_code",
+        "android.condition.reference.mobile_country_code",
+        "android.state.reference.mobile_network_code",
+        "android.condition.reference.mobile_network_code" ->
+            FeaturePickerCategory.CONNECTIVITY
         "android.state.audio.speakerphone", "android.condition.audio.speakerphone",
         "android.state.speakerphone", "android.condition.speakerphone" ->
             FeaturePickerCategory.SCREEN
