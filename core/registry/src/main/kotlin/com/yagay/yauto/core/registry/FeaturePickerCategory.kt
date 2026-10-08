@@ -82,7 +82,7 @@ fun inferFeaturePickerCategory(
 
         // MacroDroid's Web Interactions includes JSON parsing and UDP commands.
         kind == FeatureKind.ACTION && (
-            starts("json.") || has(".json.", ".udp.send", ".tcp.send")
+            starts("json.") || has(".json.", ".udp.send", ".tcp.send", ".tcp.wait")
             ) -> FeaturePickerCategory.WEB_INTERACTIONS
 
         // Root-level time features and log writes otherwise fall through the legacy bucket.

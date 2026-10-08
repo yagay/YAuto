@@ -20,7 +20,7 @@ class StandardFeatureCatalogValidationTest {
             "core.trigger.set_enabled" to FeaturePickerCategory.MACROS,
             "core.delay" to FeaturePickerCategory.YAUTO_SPECIFIC,
             "core.log" to FeaturePickerCategory.LOGGING,
-            "data.list.append_all" to FeaturePickerCategory.VARIABLES,
+            "data.list.prepend" to FeaturePickerCategory.VARIABLES,
             "variable.decrement" to FeaturePickerCategory.VARIABLES,
             "time.condition.weekday" to FeaturePickerCategory.DATE_TIME,
         )
