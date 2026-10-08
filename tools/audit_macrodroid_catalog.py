@@ -93,16 +93,15 @@ def main():
     with (ROOT / "tools/macrodroid_verified_titles.csv").open(encoding="utf-8", newline="") as source_file:
         verified_titles = list(__import__("csv").DictReader(source_file))
     verified_pairs = {(r["yauto_resource_key"], r["macrodroid_resource_key"]) for r in verified_titles}
-    missing_verified_pairs = sorted(reviewed_pairs - verified_pairs) if "reviewed_pairs" in locals() else []
-    # Compute directly because rejected/false-friend checks are defined below.
     expected_pairs = {(r["yauto_resource_key"], r["macrodroid_resource_key"]) for r in reviewed}
     missing_verified_pairs = sorted(expected_pairs - verified_pairs)
     unreviewed_reference_pairs = sorted(verified_pairs - expected_pairs)
     mismatched_verified_labels = []
+    def normalized_android_label(value: str) -> str:
+        return value.replace("\\'", "'")
+
     for row in verified_titles:
         key = "macro_" + row["yauto_resource_key"]
-        def normalized_android_label(value):
-            return value.replace("\\\\'", "'")
         actual_en = normalized_android_label(en.get(key, ("", ""))[0])
         actual_zh = normalized_android_label(zh.get(key, ("", ""))[0])
         if actual_en != row["english"] or actual_zh != row["chinese"]:
