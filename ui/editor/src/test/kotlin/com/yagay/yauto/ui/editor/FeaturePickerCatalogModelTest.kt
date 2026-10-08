@@ -1,5 +1,6 @@
 package com.yagay.yauto.ui.editor
 
+import com.yagay.yauto.core.model.Stability
 import com.yagay.yauto.core.registry.FeatureCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureId
@@ -12,6 +13,20 @@ import org.junit.Test
 class FeaturePickerCatalogModelTest {
     private val core = CatalogCategory("core", 1, 2, 10)
     private val app = CatalogCategory("app", 3, 4, 20)
+
+    @Test
+    fun `selectable compatibility packs are not mistaken for deprecated placeholders`() {
+        val plugin = FeatureDescriptor(
+            id = FeatureId("android.plugin.locale.action"),
+            kind = FeatureKind.ACTION,
+            title = "Locale plugin",
+            description = "Installed and executable action",
+            category = FeatureCategory.COMPATIBILITY,
+        )
+        assertTrue(plugin.isPickerSelectable())
+        assertTrue(!plugin.copy(stability = Stability.DEPRECATED).isPickerSelectable())
+        assertTrue(plugin.copy(category = FeatureCategory.APP).isPickerSelectable())
+    }
 
     @Test
     fun `the picker uses a different category order for each feature kind`() {

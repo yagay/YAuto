@@ -89,10 +89,11 @@ fun inferFeaturePickerCategory(
         starts("time.") -> FeaturePickerCategory.DATE_TIME
         kind == FeatureKind.ACTION && key == "core.log" -> FeaturePickerCategory.LOGGING
 
-        // Calendar writes are filed with Logging/Calendar, not time triggers.
-        kind == FeatureKind.ACTION && (
-            has(".calendar.event.insert", ".calendar.event.update", ".calendar.event.delete")
-            ) -> FeaturePickerCategory.LOGGING
+        // Reading and writing calendar entries form one user-facing Calendar action family.
+        kind == FeatureKind.ACTION && has(
+            ".calendar.events.query", ".calendar.event.insert",
+            ".calendar.event.update", ".calendar.event.delete",
+        ) -> FeaturePickerCategory.LOGGING
 
         // Script/Tasker plugin actions are in MacroDroid's Applications category.
         kind == FeatureKind.ACTION && (
@@ -170,6 +171,17 @@ fun inferFeaturePickerCategory(
             if (kind == FeatureKind.ACTION) FeaturePickerCategory.DEVICE_ACTIONS
             else FeaturePickerCategory.SENSORS
 
+        // Legacy source buckets must not turn app-local modes into Android system control,
+        // or turn cellular status queries into phone-call operations.
+        kind == FeatureKind.ACTION && key == "android.mode.set" ->
+            FeaturePickerCategory.YAUTO_SPECIFIC
+        kind == FeatureKind.ACTION && key == "android.telephony.info" ->
+            FeaturePickerCategory.CONNECTIVITY
+        kind == FeatureKind.ACTION && key == "android.audio.sound_level.measure" ->
+            FeaturePickerCategory.MEDIA
+        kind == FeatureKind.ACTION && key.startsWith("android.plugin.locale.") ->
+            FeaturePickerCategory.APPLICATIONS
+
         // Device auto-sync is connectivity control even when there is no network token.
         kind == FeatureKind.ACTION && key == "android.sync.master.set" ->
             FeaturePickerCategory.CONNECTIVITY
@@ -182,7 +194,7 @@ fun inferFeaturePickerCategory(
         has(
             ".wifi", ".bluetooth", ".ble", ".mobile_data", ".airplane", ".hotspot",
             ".tether", ".nfc", ".usb", ".connectivity", ".network_profile",
-            ".data_usage", ".matter", ".wear", ".wireguard", ".vpn", ".network", ".private_dns",
+            ".data_usage", ".matter", ".wear", ".wireguard", ".vpn", ".network", ".cellular", ".private_dns",
             ".data_saver", ".ethernet", ".internet", "account_sync", ".sync.account",
         ) ->
             FeaturePickerCategory.CONNECTIVITY

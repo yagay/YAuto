@@ -230,6 +230,13 @@ class FeaturePickerCategoryTest {
             "android.contact_via_app.send" to FeaturePickerCategory.MESSAGING,
             "android.keyguard.set" to FeaturePickerCategory.SCREEN,
             "android.chart.create" to FeaturePickerCategory.FILES,
+            "android.mode.set" to FeaturePickerCategory.YAUTO_SPECIFIC,
+            "android.telephony.info" to FeaturePickerCategory.CONNECTIVITY,
+            "android.audio.sound_level.measure" to FeaturePickerCategory.MEDIA,
+            "android.plugin.locale.action" to FeaturePickerCategory.APPLICATIONS,
+            "android.plugin.locale.scan" to FeaturePickerCategory.APPLICATIONS,
+            "android.calendar.events.query" to FeaturePickerCategory.LOGGING,
+            "android.calendar.event.insert" to FeaturePickerCategory.LOGGING,
             "android.yauto.setting.set" to FeaturePickerCategory.YAUTO_SPECIFIC,
             "android.sensors_off.set" to FeaturePickerCategory.DEVICE_SETTINGS,
         )
@@ -245,6 +252,7 @@ class FeaturePickerCategoryTest {
             "android.event.email_received" to FeaturePickerCategory.APPLICATIONS,
             "android.event.window_focus_changed" to FeaturePickerCategory.APPLICATIONS,
             "android.event.sound_level" to FeaturePickerCategory.SENSORS,
+            "android.event.cellular_service_changed" to FeaturePickerCategory.CONNECTIVITY,
             "android.event.input_filter_state_changed" to FeaturePickerCategory.DEVICE_EVENTS,
             "android.event.accessibility_windows_queried" to FeaturePickerCategory.DEVICE_EVENTS,
             "android.event.window_added" to FeaturePickerCategory.DEVICE_EVENTS,
@@ -257,6 +265,14 @@ class FeaturePickerCategoryTest {
         eventCases.forEach { (id, expected) ->
             assertEquals(id, expected, classify(id, FeatureKind.EVENT))
         }
+        assertEquals(
+            FeaturePickerCategory.CONNECTIVITY,
+            classify("android.state.cellular_service_available", FeatureKind.STATE),
+        )
+        assertEquals(
+            FeaturePickerCategory.CONNECTIVITY,
+            classify("android.condition.cellular_service_available", FeatureKind.CONDITION),
+        )
         assertEquals(FeaturePickerCategory.SENSORS, classify("android.state.sleeping", FeatureKind.STATE))
         assertEquals(FeaturePickerCategory.SENSORS, classify("android.condition.sleeping", FeatureKind.CONDITION))
     }

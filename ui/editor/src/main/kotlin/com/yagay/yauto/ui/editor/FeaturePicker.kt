@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.yagay.yauto.core.model.FeatureRef
+import com.yagay.yauto.core.model.Stability
 import com.yagay.yauto.core.registry.FeatureCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
@@ -43,7 +44,7 @@ fun MacroFeaturePickerDialog(
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("yauto_feature_picker", Context.MODE_PRIVATE) }
     val editable = remember(descriptors, kind) {
-        descriptors.filter { it.kind == kind && it.category != FeatureCategory.COMPATIBILITY }
+        descriptors.filter { it.kind == kind && it.isPickerSelectable() }
     }
     val textResolver = rememberFeatureTextResolver()
     val locale = currentEditorLocale()
@@ -219,6 +220,12 @@ fun MacroFeaturePickerDialog(
     }
 }
 
+
+// COMPATIBILITY describes the source of an implementation, not whether it is executable.
+ // Only deprecated import placeholders should be hidden; stable Locale/Tasker integrations
+ // are fully implemented feature packs and must remain selectable.
+internal fun FeatureDescriptor.isPickerSelectable(): Boolean =
+    category != FeatureCategory.COMPATIBILITY || stability != Stability.DEPRECATED
 
 private fun pickerPageStateKey(page: PickerPage): String = when (page) {
     PickerPage.Categories -> "categories"
