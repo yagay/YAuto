@@ -228,7 +228,7 @@ fun inferFeaturePickerCategory(
         ) ->
             FeaturePickerCategory.DATE_TIME
 
-        has(
+        starts("file.", "directory.", "archive.", "storage.") || has(
             ".file", ".directory", ".archive", ".zip", ".storage", ".download",
             "media_store", "document_tree",
         ) -> when (kind) {
