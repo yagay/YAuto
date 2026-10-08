@@ -170,6 +170,10 @@ fun inferFeaturePickerCategory(
             if (kind == FeatureKind.ACTION) FeaturePickerCategory.DEVICE_ACTIONS
             else FeaturePickerCategory.SENSORS
 
+        // Device auto-sync is connectivity control even when there is no network token.
+        kind == FeatureKind.ACTION && key == "android.sync.master.set" ->
+            FeaturePickerCategory.CONNECTIVITY
+
         // NFC tags, airplane-mode and auto-sync changes are device events in MacroDroid.
         kind == FeatureKind.EVENT && has(
             ".nfc", ".airplane", "account_sync", ".sync.account",

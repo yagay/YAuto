@@ -56,6 +56,59 @@ class FeaturePickerCategoryTest {
     }
 
     @Test
+    fun `MacroDroid 5_67_8 importer targets map to correct picker categories`() {
+        val actions = mapOf(
+            "android.airplane_mode.set" to FeaturePickerCategory.CONNECTIVITY,
+            "android.bluetooth.set" to FeaturePickerCategory.CONNECTIVITY,
+            "android.mobile_data.set" to FeaturePickerCategory.CONNECTIVITY,
+            "android.wifi.set" to FeaturePickerCategory.CONNECTIVITY,
+            "android.torch.set" to FeaturePickerCategory.CAMERA_PHOTO,
+            "android.audio.microphone_mute.set" to FeaturePickerCategory.MEDIA,
+            "android.audio.speakerphone.set" to FeaturePickerCategory.MEDIA,
+            "android.vibrate" to FeaturePickerCategory.DEVICE_ACTIONS,
+            "android.audio.volume.adjust" to FeaturePickerCategory.VOLUME,
+            "android.audio.play" to FeaturePickerCategory.MEDIA,
+            "android.share.text" to FeaturePickerCategory.MESSAGING,
+            "android.shell.execute" to FeaturePickerCategory.APPLICATIONS,
+            "android.notification.dismiss_all" to FeaturePickerCategory.NOTIFICATIONS,
+            "android.http.request" to FeaturePickerCategory.WEB_INTERACTIONS,
+            "android.home.launch" to FeaturePickerCategory.APPLICATIONS,
+            "android.sync.master.set" to FeaturePickerCategory.CONNECTIVITY,
+        )
+        val events = mapOf(
+            "android.event.boot" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.airplane_mode_changed" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.clipboard_changed" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.user_present" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.location_mode_changed" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.sms_received" to FeaturePickerCategory.CALL_SMS,
+            "android.event.phone_state_changed" to FeaturePickerCategory.CALL_SMS,
+            "android.event.broadcast" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.nfc_tag" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.network_changed" to FeaturePickerCategory.CONNECTIVITY,
+            "android.event.sensor_value" to FeaturePickerCategory.SENSORS,
+            "android.event.shake" to FeaturePickerCategory.SENSORS,
+            "android.event.wifi_changed" to FeaturePickerCategory.CONNECTIVITY,
+        )
+        val conditions = mapOf(
+            "android.condition.airplane_mode" to FeaturePickerCategory.CONNECTIVITY,
+            "android.condition.brightness" to FeaturePickerCategory.SCREEN,
+            "time.condition.weekday" to FeaturePickerCategory.DATE_TIME,
+            "android.condition.charging_source" to FeaturePickerCategory.BATTERY_POWER,
+            "android.condition.phone_call_state" to FeaturePickerCategory.PHONE,
+            "android.condition.notification_active" to FeaturePickerCategory.NOTIFICATIONS,
+            "android.condition.audio.stream_volume" to FeaturePickerCategory.SCREEN,
+            "android.condition.screen" to FeaturePickerCategory.SCREEN,
+            "android.condition.audio.speakerphone" to FeaturePickerCategory.SCREEN,
+            "android.condition.network_profile" to FeaturePickerCategory.CONNECTIVITY,
+            "android.condition.wifi_network" to FeaturePickerCategory.CONNECTIVITY,
+        )
+        actions.forEach { (id, expected) -> assertEquals(id, expected, classify(id, FeatureKind.ACTION)) }
+        events.forEach { (id, expected) -> assertEquals(id, expected, classify(id, FeatureKind.EVENT)) }
+        conditions.forEach { (id, expected) -> assertEquals(id, expected, classify(id, FeatureKind.CONDITION)) }
+    }
+
+    @Test
     fun `action-only semantics do not leak trigger and constraint categories`() {
         assertEquals(
             FeaturePickerCategory.DEVICE_ACTIONS,

@@ -50,6 +50,8 @@ jobs:
         run: >
           gradle
           :core:registry:test
+          :feature:standard:test
+          :importer:macrodroid:test
           :ui:editor:testDebugUnitTest
           --configuration-cache
           --parallel
