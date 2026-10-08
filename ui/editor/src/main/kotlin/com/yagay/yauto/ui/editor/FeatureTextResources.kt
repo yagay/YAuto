@@ -19,6 +19,7 @@ internal class FeatureTextResolver(private val context: Context) {
         resource("macro_feature_${resourceKey(descriptor.id.value)}_title")
             ?: resource("feature_${resourceKey(descriptor.id.value)}_title")
             ?: phrase(descriptor.title)
+            ?: descriptor.title.takeIf { it.isNotBlank() }
             ?: genericTitle(descriptor)
 
     fun description(descriptor: FeatureDescriptor): String =
@@ -29,11 +30,13 @@ internal class FeatureTextResolver(private val context: Context) {
     fun fieldLabel(descriptorId: String, field: FieldSchema): String =
         resource("feature_${resourceKey(descriptorId)}_field_${resourceKey(field.key)}")
             ?: phrase(field.label)
+            ?: field.label.takeIf { it.isNotBlank() }
             ?: context.getString(TextR.string.feature_generic_parameter)
 
     fun choiceOption(descriptorId: String, fieldKey: String, option: String): String =
         resource("feature_${resourceKey(descriptorId)}_field_${resourceKey(fieldKey)}_option_${resourceKey(option)}")
             ?: phrase(option)
+            ?: option.takeIf { it.isNotBlank() }
             ?: context.getString(TextR.string.feature_generic_option)
 
     fun matches(descriptor: FeatureDescriptor, query: String): Boolean {
