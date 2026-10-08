@@ -4,7 +4,9 @@ import com.yagay.yauto.core.registry.FeatureCatalogIssueSeverity
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.core.registry.FeaturePickerCategory
+import com.yagay.yauto.core.registry.macroDroidCategoriesForKind
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import com.yagay.yauto.core.registry.catalogIssues
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -26,8 +28,22 @@ class StandardFeatureCatalogValidationTest {
         )
         expected.forEach { (id, category) ->
             val descriptor = registry.descriptor(id)
-            if (descriptor != null) assertEquals(id, category, descriptor.pickerCategory)
+            assertNotNull("Expected a registered standard feature: $id", descriptor)
+            assertEquals(id, category, descriptor!!.pickerCategory)
         }
+    }
+
+    @Test
+    fun `every registered standard feature belongs to its kind-specific picker taxonomy`() {
+        val registry = FeatureRegistry()
+        StandardFeaturePacks.all().forEach(registry::install)
+        val mismatches = registry.allDescriptors().filter { descriptor ->
+            descriptor.pickerCategory !in macroDroidCategoriesForKind(descriptor.kind)
+        }
+        assertTrue(
+            "Invalid picker categories: " + mismatches.joinToString { "${it.id.value}(${it.kind}): ${it.pickerCategory}" },
+            mismatches.isEmpty(),
+        )
     }
 
     @Test
