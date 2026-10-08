@@ -27,4 +27,14 @@
     <string name="shortx_feature_android_state_ime_visible_title">输入法可见性</string>
     <string name="shortx_feature_android_state_task_present_title">应用有最近任务</string>
     <string name="shortx_feature_android_tasks_remove_title">移除最近任务</string>
+    <string name="shortx_feature_android_clipboard_get_title">读取剪贴板</string>
+    <string name="shortx_feature_android_clipboard_read_title">读取剪贴板</string>
+    <string name="shortx_feature_accessibility_view_id_viewer_show_title">查看View详情</string>
+    <string name="shortx_feature_android_qs_tile_click_title">点击磁贴</string>
+    <string name="shortx_feature_android_event_phone_state_changed_title">电话状态改变</string>
+    <string name="shortx_feature_android_event_notification_updated_title">通知更新</string>
+    <string name="shortx_feature_android_condition_notification_panel_expanded_title">通知栏展开</string>
+    <string name="shortx_feature_android_state_notification_panel_expanded_title">通知栏展开</string>
+    <string name="shortx_feature_android_condition_memory_available_title">可用内存</string>
+    <string name="shortx_feature_android_condition_app_process_running_title">应用正在运行</string>
 </resources>

@@ -27,4 +27,14 @@
     <string name="shortx_feature_android_state_ime_visible_title">IME visibility</string>
     <string name="shortx_feature_android_state_task_present_title">App has recent task</string>
     <string name="shortx_feature_android_tasks_remove_title">Remove recent tasks</string>
+    <string name="shortx_feature_android_clipboard_get_title">Read clipboard</string>
+    <string name="shortx_feature_android_clipboard_read_title">Read clipboard</string>
+    <string name="shortx_feature_accessibility_view_id_viewer_show_title">View id lookup</string>
+    <string name="shortx_feature_android_qs_tile_click_title">Click QS tile</string>
+    <string name="shortx_feature_android_event_phone_state_changed_title">Call state changed</string>
+    <string name="shortx_feature_android_event_notification_updated_title">Notification updated</string>
+    <string name="shortx_feature_android_condition_notification_panel_expanded_title">Notification panel</string>
+    <string name="shortx_feature_android_state_notification_panel_expanded_title">Notification panel</string>
+    <string name="shortx_feature_android_condition_memory_available_title">Available memory</string>
+    <string name="shortx_feature_android_condition_app_process_running_title">App is running</string>
 </resources>

@@ -129,9 +129,6 @@ def main():
                        "action")
         if item["kind"] != actual_kind:
             shortx_issues.append(source_id + ": kind mismatch")
-        if item["shortx_resource_key"] not in ("" if item["kind"] == "action" else ""):
-            # Presence is audited below, not by guessing a key's English prefix.
-            pass
         if en.get(key, ("", ""))[0].replace("\\'", "'") != item["english"]:
             shortx_issues.append(source_id + ": English label differs from ShortX APK")
         if zh.get(key, ("", ""))[0].replace("\\'", "'") != item["chinese"]:
