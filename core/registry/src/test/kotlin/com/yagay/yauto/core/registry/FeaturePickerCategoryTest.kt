@@ -283,18 +283,21 @@ class FeaturePickerCategoryTest {
             .sortedBy { macroDroidCategoryOrder(FeatureKind.ACTION, it) }
         assertEquals(FeaturePickerCategory.APPLICATIONS, actions.first())
         assertEquals(FeaturePickerCategory.AI, actions.last())
-        assertEquals(FeaturePickerCategory.FILES, actions[2])
-        assertEquals(FeaturePickerCategory.MACROS, actions[3])
+        assertEquals(FeaturePickerCategory.CONNECTIVITY, actions[2])
+        assertEquals(FeaturePickerCategory.FILES, actions[7])
+        assertEquals(FeaturePickerCategory.MACROS, actions[11])
         assertEquals(FeaturePickerCategory.VARIABLES, actions[17])
         val events = macroDroidCategoriesForKind(FeatureKind.EVENT)
             .sortedBy { macroDroidCategoryOrder(FeatureKind.EVENT, it) }
         assertEquals(FeaturePickerCategory.APPLICATIONS, events.first())
-        assertEquals(FeaturePickerCategory.SENSORS, events[1])
+        assertEquals(FeaturePickerCategory.BATTERY_POWER, events[1])
+        assertEquals(FeaturePickerCategory.SENSORS, events[8])
         assertEquals(FeaturePickerCategory.DEVICE_EVENTS, events[5])
         val conditions = macroDroidCategoriesForKind(FeatureKind.CONDITION)
             .sortedBy { macroDroidCategoryOrder(FeatureKind.CONDITION, it) }
-        assertEquals(FeaturePickerCategory.SENSORS, conditions.first())
-        assertEquals(FeaturePickerCategory.SCREEN, conditions[4])
+        assertEquals(FeaturePickerCategory.BATTERY_POWER, conditions.first())
+        assertEquals(FeaturePickerCategory.SENSORS, conditions.last())
+        assertEquals(FeaturePickerCategory.SCREEN, conditions[9])
         assertEquals(conditions, macroDroidCategoriesForKind(FeatureKind.STATE)
             .sortedBy { macroDroidCategoryOrder(FeatureKind.STATE, it) })
         FeatureKind.entries.forEach { kind ->
