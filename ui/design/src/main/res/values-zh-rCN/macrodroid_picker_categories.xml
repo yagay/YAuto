@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="macro_category_ai">AI</string>
+    <string name="macro_category_ai_subtitle">AI 模型、提示词与智能自动化</string>
+    <string name="macro_category_applications">应用</string>
+    <string name="macro_category_applications_subtitle">应用、软件包、Activity、服务与快捷方式</string>
+    <string name="macro_category_battery_power">电池/电源</string>
+    <string name="macro_category_battery_power_subtitle">电池、充电、省电与唤醒控制</string>
+    <string name="macro_category_call_sms">通话/短信</string>
+    <string name="macro_category_call_sms_subtitle">通话与短信触发、事件及当前状态</string>
+    <string name="macro_category_camera_photo">相机/照片</string>
+    <string name="macro_category_camera_photo_subtitle">相机、照片、截图、录制与图像工具</string>
+    <string name="macro_category_device_actions">设备操作</string>
+    <string name="macro_category_device_actions_subtitle">设备操作、受保护命令与硬件控制</string>
+    <string name="macro_category_device_events">设备事件</string>
+    <string name="macro_category_device_events_subtitle">可启动自动化的 Android 与硬件事件</string>
+    <string name="macro_category_device_settings">设备设置</string>
+    <string name="macro_category_device_settings_subtitle">Android 设置、系统配置与偏好项</string>
+    <string name="macro_category_device_state">设备状态</string>
+    <string name="macro_category_device_state_subtitle">当前 Android、硬件与系统状态</string>
+    <string name="macro_category_files">文件</string>
+    <string name="macro_category_files_subtitle">文件、目录、存储、压缩包与下载</string>
+    <string name="macro_category_logging">日志</string>
+    <string name="macro_category_logging_subtitle">日志、诊断、跟踪、Logcat 与系统报告</string>
+    <string name="macro_category_conditions_loops">条件/循环</string>
+    <string name="macro_category_conditions_loops_subtitle">If、等待、延时、分支、循环与执行流程</string>
+    <string name="macro_category_yauto_specific">YAuto 专属</string>
+    <string name="macro_category_yauto_specific_subtitle">变量、数据、脚本、自动化控制与 YAuto 功能</string>
+    <string name="macro_category_notifications">通知</string>
+    <string name="macro_category_notifications_subtitle">通知事件、内容、渠道、回复与控制</string>
+    <string name="macro_category_user_input">用户输入</string>
+    <string name="macro_category_user_input_subtitle">按键、手势、无障碍、输入法与 UI 交互</string>
+    <string name="macro_category_volume">音量</string>
+    <string name="macro_category_volume_subtitle">音量级别、铃声模式与勿扰模式</string>
+    <string name="macro_category_web_interactions">Web 交互</string>
+    <string name="macro_category_web_interactions_subtitle">HTTP、Webhook、WebSocket、WebDAV 与远程 API</string>
+</resources>
