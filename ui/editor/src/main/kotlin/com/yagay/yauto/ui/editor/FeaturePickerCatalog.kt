@@ -349,22 +349,23 @@ private fun FeaturePickerRow(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+                availability?.let {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = it.statusLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = when (it.tone) {
+                            FeatureAvailabilityTone.READY -> MacroPalette.Constraint
+                            FeatureAvailabilityTone.BLOCKED -> MacroPalette.Trigger
+                            FeatureAvailabilityTone.BROKEN -> MaterialTheme.colorScheme.error
+                            FeatureAvailabilityTone.UNSUPPORTED -> MacroPalette.Utility
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
-            availability?.let {
-                Text(
-                    text = it.statusLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = when (it.tone) {
-                        FeatureAvailabilityTone.READY -> MacroPalette.Constraint
-                        FeatureAvailabilityTone.BLOCKED -> MacroPalette.Trigger
-                        FeatureAvailabilityTone.BROKEN -> MaterialTheme.colorScheme.error
-                        FeatureAvailabilityTone.UNSUPPORTED -> MacroPalette.Utility
-                    },
-                    modifier = Modifier.padding(horizontal = 6.dp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+
             Icon(
                 painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_more),
                 contentDescription = stringResource(TextR.string.icon_more_options),
@@ -403,20 +404,48 @@ private fun featureAccessTags(descriptor: FeatureDescriptor): String {
     return localizedList(listOfNotNull(root, shizuku, lsposed, zygisk, accessibility))
 }
 
+/** Matches the main-branch card rhythm without changing category IDs or navigation. */
 @Composable
 private fun CategoryRow(title: String, subtitle: String, onClick: () -> Unit) {
-    ListItem(
-        headlineContent = { Text(title, fontWeight = FontWeight.Medium) },
-        supportingContent = { Text(subtitle) },
-        trailingContent = {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(7.dp),
+        tonalElevation = 1.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 68.dp)
+                .padding(start = 14.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (subtitle.isNotBlank()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
             Icon(
                 painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_chevron_right),
                 contentDescription = stringResource(TextR.string.icon_open_details),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 8.dp),
             )
-        },
-        modifier = Modifier.clickable(onClick = onClick),
-    )
-    HorizontalDivider()
+        }
+    }
 }
 
 @Composable
