@@ -217,7 +217,7 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test
-    fun `cross category operations get one canonical category and remain editable`() {
+    fun `cross category operations keep original category and remain editable`() {
         val model = FeaturePickerCatalogModel.create(
             listOf(
                 item("android.qs_tile.click", "Tile click", app, "tile click"),
@@ -231,10 +231,40 @@ class FeaturePickerCatalogModelTest {
         )
         assertEquals(1, entries.size)
         assertEquals("quick_settings_tile", (entries.single() as FeaturePickerListEntry.Unified).group.spec.id)
-        assertEquals(3, model.unifiedGroupForMember("android.qs_tile.info")?.members?.size)
+        assertEquals("app", model.item("android.qs_tile.click")?.category?.id)
+        assertEquals("core", model.item("android.qs_tile.info")?.category?.id)
+        assertEquals(null, model.unifiedGroupForMember("android.qs_tile.info"))
         assertEquals(1, model.categoryCount("app"))
-        assertEquals(0, model.categoryCount("core"))
-        assertTrue(model.categories.none { it.id == "core" })
+        assertEquals(1, model.categoryCount("core"))
+        val coreEntries = model.entries(PickerPage.Features(core), emptySet(), emptyList(), "")
+        assertEquals(1, coreEntries.size)
+        assertTrue(coreEntries.single() is FeaturePickerListEntry.Feature)
+    }
+
+    @Test
+    fun `a family split across categories only merges members within each category`() {
+        val model = FeaturePickerCatalogModel.create(
+            listOf(
+                item("android.audio.volume.set", "Volume set", app, "volume set"),
+                item("android.audio.volume.adjust", "Volume adjust", app, "volume adjust"),
+                item("android.audio.playback_volume.set", "Playback volume", core, "playback volume"),
+                item("android.audio.ringer_mode.set", "Ringer mode", core, "ringer mode"),
+            ),
+            Comparator.naturalOrder(),
+        )
+        val first = model.entries(PickerPage.Features(app), emptySet(), emptyList(), "")
+            .single() as FeaturePickerListEntry.Unified
+        val second = model.entries(PickerPage.Features(core), emptySet(), emptyList(), "")
+            .single() as FeaturePickerListEntry.Unified
+        assertEquals("volume:action:app", first.group.spec.id)
+        assertEquals("volume:action:core", second.group.spec.id)
+        assertEquals(2, first.group.members.size)
+        assertEquals(2, second.group.members.size)
+        assertEquals(1, model.categoryCount("app"))
+        assertEquals(1, model.categoryCount("core"))
+        assertEquals(2, model.searchEntries("volume").size)
+        assertEquals("core", model.item("android.audio.playback_volume.set")?.category?.id)
+        assertEquals("app", model.item("android.audio.volume.adjust")?.category?.id)
     }
 
     @Test

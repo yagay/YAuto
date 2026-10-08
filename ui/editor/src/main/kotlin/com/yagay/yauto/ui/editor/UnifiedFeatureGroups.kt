@@ -29,14 +29,27 @@ internal fun buildUnifiedFeatureIndex(items: List<FeaturePickerCatalogItem>): Un
     }
 
     val byFeatureId = items.associateBy { it.descriptor.id.value }
-    val groups = UNIFIED_FEATURE_SPECS.mapNotNull { spec ->
-        val members = spec.memberIds.mapNotNull(byFeatureId::get)
-        if (members.size < 2) return@mapNotNull null
-        // Classification can vary across operations in the same feature family. The catalog
-        // chooses one browsing category without hiding the other valid runtime operations.
-        if (members.map { it.descriptor.kind }.distinct().size != 1) return@mapNotNull null
-        spec.id to UnifiedFeatureGroup(spec, members)
-    }.toMap()
+    val groups = buildMap {
+        UNIFIED_FEATURE_SPECS.forEach { spec ->
+            val members = spec.memberIds.mapNotNull(byFeatureId::get)
+            // Never make one picker entry span different semantic categories or feature kinds.
+            // A former majority-category merge silently moved correctly classified operations.
+            val partitions = members.groupBy { it.descriptor.kind to it.category.id }
+            partitions.forEach { (key, sameCategory) ->
+                if (sameCategory.size < 2) return@forEach
+                val groupId = if (partitions.size == 1) {
+                    spec.id
+                } else {
+                    "${spec.id}:${key.first.name.lowercase()}:${key.second}"
+                }
+                val subSpec = if (groupId == spec.id) spec else spec.copy(
+                    id = groupId,
+                    memberIds = sameCategory.map { it.descriptor.id.value },
+                )
+                put(groupId, UnifiedFeatureGroup(subSpec, sameCategory))
+            }
+        }
+    }
 
     return UnifiedFeatureIndex(
         byId = groups,

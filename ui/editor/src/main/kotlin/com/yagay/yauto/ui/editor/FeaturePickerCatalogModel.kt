@@ -93,30 +93,15 @@ internal class FeaturePickerCatalogModel private constructor(
             val sorted = items.sortedWith { left, right ->
                 titleComparator.compare(left.title, right.title)
             }
-            // A family has one category in the picker, even when its concrete operations
-            // were inferred into different legacy categories. Preserve the underlying IDs.
-            val families = buildUnifiedFeatureIndex(sorted)
-            val familyCategories = families.byId.mapValues { (_, group) ->
-                group.members.groupingBy { it.category }.eachCount().entries
-                    .sortedWith(
-                        compareByDescending<Map.Entry<CatalogCategory, Int>> { it.value }
-                            .thenBy { it.key.order }
-                            .thenBy { it.key.id }
-                    ).first().key
-            }
-            val normalized = sorted.map { item ->
-                val familyId = families.byMemberId[item.descriptor.id.value]
-                val canonical = familyId?.let(familyCategories::get)
-                if (canonical != null && item.category != canonical) item.copy(category = canonical)
-                else item
-            }
-            val unifiedIndex = buildUnifiedFeatureIndex(normalized)
-            val categories = normalized.map { it.category }.distinctBy { it.id }.sortedBy { it.order }
-            val byCategory = normalized.groupBy { it.category.id }
+            // Each descriptor keeps its own semantic category. Unified families may collapse
+            // compatible operations but must never rewrite their browsing categories.
+            val unifiedIndex = buildUnifiedFeatureIndex(sorted)
+            val categories = sorted.map { it.category }.distinctBy { it.id }.sortedBy { it.order }
+            val byCategory = sorted.groupBy { it.category.id }
             return FeaturePickerCatalogModel(
-                allItems = normalized,
+                allItems = sorted,
                 categories = categories,
-                byId = normalized.associateBy { it.descriptor.id.value },
+                byId = sorted.associateBy { it.descriptor.id.value },
                 byCategory = byCategory,
                 unifiedIndex = unifiedIndex,
                 categoryCounts = byCategory.mapValues { (_, categoryItems) ->
