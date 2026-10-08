@@ -113,10 +113,18 @@ fun inferFeaturePickerCategory(
         has(
             ".wifi", ".bluetooth", ".ble", ".mobile_data", ".airplane", ".hotspot",
             ".tether", ".nfc", ".usb", ".connectivity", ".network_profile",
-            ".data_usage", ".matter", ".wear", ".wireguard", ".vpn", ".private_dns",
+            ".data_usage", ".matter", ".wear", ".wireguard", ".vpn", ".network", ".private_dns",
             ".data_saver", ".ethernet", ".internet", "account_sync", ".sync.account",
         ) ->
             FeaturePickerCategory.CONNECTIVITY
+
+        // Clipboard is a device capability, not a variable/script feature. Keep actions and
+        // input events separate so identical names do not imply identical semantics.
+        has(".clipboard") -> when (kind) {
+            FeatureKind.ACTION -> FeaturePickerCategory.DEVICE_ACTIONS
+            FeatureKind.EVENT -> FeaturePickerCategory.USER_INPUT
+            FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
+        }
 
         has(".notification", ".toast", "heads_up") ->
             FeaturePickerCategory.NOTIFICATIONS
@@ -172,6 +180,13 @@ fun inferFeaturePickerCategory(
             FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
         }
 
+        // SystemUI lifecycle notifications are device events, not user gestures.
+        kind == FeatureKind.EVENT && starts(
+            "android.event.systemui_", "android.event.status_bar_",
+            "android.event.service_screen_state_",
+        ) && !has("_clicked", "_pressed") ->
+            FeaturePickerCategory.DEVICE_EVENTS
+
         has(
             "hardware_key", ".keyevent", ".keyboard", ".gesture", ".accessibility",
             ".ui.", ".overlay", ".surface", ".tap", ".click", ".swipe", ".input",
@@ -212,6 +227,11 @@ fun inferFeaturePickerCategory(
         ) -> when (kind) {
             FeatureKind.ACTION, FeatureKind.EVENT -> FeaturePickerCategory.APPLICATIONS
             FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
+        }
+
+        has(".wallpaper") -> when (kind) {
+            FeatureKind.ACTION -> FeaturePickerCategory.DEVICE_SETTINGS
+            FeatureKind.EVENT, FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.SCREEN
         }
 
         // System/settings actions belong in Device Settings only after semantic categories above.

@@ -154,6 +154,48 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test
+    fun `cross category operations get one canonical category and remain editable`() {
+        val model = FeaturePickerCatalogModel.create(
+            listOf(
+                item("android.qs_tile.click", "Tile click", app, "tile click"),
+                item("android.qs_tile.info", "Tile info", core, "tile info"),
+                item("android.qs_tile.configure", "Tile configure", app, "tile configure"),
+            ),
+            Comparator.naturalOrder(),
+        )
+        val entries = model.entries(
+            PickerPage.Features(app), emptySet(), emptyList(), "",
+        )
+        assertEquals(1, entries.size)
+        assertEquals("quick_settings_tile", (entries.single() as FeaturePickerListEntry.Unified).group.spec.id)
+        assertEquals(3, model.unifiedGroupForMember("android.qs_tile.info")?.members?.size)
+        assertEquals(1, model.categoryCount("app"))
+        assertEquals(0, model.categoryCount("core"))
+        assertTrue(model.categories.none { it.id == "core" })
+    }
+
+    @Test
+    fun `search favorites and recent keep the same unified entry`() {
+        val model = FeaturePickerCatalogModel.create(
+            listOf(
+                item("android.audio.volume.set", "Set volume", app, "volume set"),
+                item("android.audio.volume.adjust", "Adjust volume", app, "volume adjust"),
+            ),
+            Comparator.naturalOrder(),
+        )
+        assertEquals(1, model.searchEntries("volume").size)
+        assertTrue(model.searchEntries("volume").single() is FeaturePickerListEntry.Unified)
+        assertEquals(1, model.entries(
+            PickerPage.Features(app, special = "favorites"),
+            setOf("android.audio.volume.set", "android.audio.volume.adjust"), emptyList(), "",
+        ).size)
+        assertEquals(1, model.entries(
+            PickerPage.Features(app, special = "recent"),
+            emptySet(), listOf("android.audio.volume.set", "android.audio.volume.adjust"), "",
+        ).size)
+    }
+
+    @Test
     fun `unified operation restoration prefers existing concrete id then requested operation`() {
         val first = item("android.audio.volume.set", "Set volume", app, "set volume")
         val second = item("android.audio.volume.adjust", "Adjust volume", app, "adjust volume")

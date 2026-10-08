@@ -11,6 +11,9 @@ class FeaturePickerCategoryTest {
             "android.app.launch" to FeaturePickerCategory.APPLICATIONS,
             "android.screen.screenshot" to FeaturePickerCategory.CAMERA_PHOTO,
             "android.wifi.network.connect" to FeaturePickerCategory.CONNECTIVITY,
+            "android.network.udp.send" to FeaturePickerCategory.CONNECTIVITY,
+            "android.clipboard.write" to FeaturePickerCategory.DEVICE_ACTIONS,
+            "android.wallpaper.set" to FeaturePickerCategory.DEVICE_SETTINGS,
             "android.stopwatch.start" to FeaturePickerCategory.DATE_TIME,
             "android.device.reboot" to FeaturePickerCategory.DEVICE_ACTIONS,
             "android.settings.page.open" to FeaturePickerCategory.DEVICE_SETTINGS,
@@ -70,6 +73,9 @@ class FeaturePickerCategoryTest {
             "android.event.hardware_key" to FeaturePickerCategory.USER_INPUT,
             "android.event.webhook" to FeaturePickerCategory.WEB_INTERACTIONS,
             "android.event.boot" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.systemui_app_ready" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.status_bar_icon_changed" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.clipboard_changed" to FeaturePickerCategory.USER_INPUT,
         )
 
         cases.forEach { (id, expected) ->
@@ -98,6 +104,8 @@ class FeaturePickerCategoryTest {
         val cases = mapOf(
             "android.condition.battery_level" to FeaturePickerCategory.BATTERY_POWER,
             "android.condition.network" to FeaturePickerCategory.CONNECTIVITY,
+            "android.condition.network_roaming" to FeaturePickerCategory.CONNECTIVITY,
+            "android.condition.clipboard_present" to FeaturePickerCategory.DEVICE_STATE,
             "android.condition.day_of_week" to FeaturePickerCategory.DATE_TIME,
             "android.condition.location_available" to FeaturePickerCategory.LOCATION,
             "android.condition.audio.music_active" to FeaturePickerCategory.MEDIA,

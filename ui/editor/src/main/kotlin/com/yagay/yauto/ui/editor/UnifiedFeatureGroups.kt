@@ -28,7 +28,8 @@ internal fun buildUnifiedFeatureIndex(items: List<FeaturePickerCatalogItem>): Un
     val groups = UNIFIED_FEATURE_SPECS.mapNotNull { spec ->
         val members = spec.memberIds.mapNotNull(byFeatureId::get)
         if (members.size < 2) return@mapNotNull null
-        if (members.map { it.category.id }.distinct().size != 1) return@mapNotNull null
+        // Classification can vary across operations in the same feature family. The catalog
+        // chooses one browsing category without hiding the other valid runtime operations.
         if (members.map { it.descriptor.kind }.distinct().size != 1) return@mapNotNull null
         spec.id to UnifiedFeatureGroup(spec, members)
     }.toMap()

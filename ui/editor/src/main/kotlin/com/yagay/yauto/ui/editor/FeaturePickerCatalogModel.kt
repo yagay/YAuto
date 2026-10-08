@@ -47,6 +47,9 @@ internal class FeaturePickerCatalogModel private constructor(
         return allItems.filter { needle in it.searchIndex }
     }
 
+    fun searchEntries(query: String): List<FeaturePickerListEntry> =
+        collapseUnifiedFeatureItems(search(query), unifiedIndex)
+
     fun entries(
         page: PickerPage.Features,
         favorites: Set<String>,
@@ -54,11 +57,7 @@ internal class FeaturePickerCatalogModel private constructor(
         query: String,
     ): List<FeaturePickerListEntry> {
         val items = items(page, favorites, recent, query)
-        return if (page.special != null || normalizeQuery(query).isNotEmpty()) {
-            items.map { FeaturePickerListEntry.Feature(it) }
-        } else {
-            collapseUnifiedFeatureItems(items, unifiedIndex)
-        }
+        return collapseUnifiedFeatureItems(items, unifiedIndex)
     }
 
     fun items(
@@ -84,16 +83,30 @@ internal class FeaturePickerCatalogModel private constructor(
             val sorted = items.sortedWith { left, right ->
                 titleComparator.compare(left.title, right.title)
             }
-            val categories = sorted
-                .map { it.category }
-                .distinctBy { it.id }
-                .sortedBy { it.order }
-            val byCategory = sorted.groupBy { it.category.id }
-            val unifiedIndex = buildUnifiedFeatureIndex(sorted)
+            // A family has one category in the picker, even when its concrete operations
+            // were inferred into different legacy categories. Preserve the underlying IDs.
+            val families = buildUnifiedFeatureIndex(sorted)
+            val familyCategories = families.byId.mapValues { (_, group) ->
+                group.members.groupingBy { it.category }.eachCount().entries
+                    .sortedWith(
+                        compareByDescending<Map.Entry<CatalogCategory, Int>> { it.value }
+                            .thenBy { it.key.order }
+                            .thenBy { it.key.id }
+                    ).first().key
+            }
+            val normalized = sorted.map { item ->
+                val familyId = families.byMemberId[item.descriptor.id.value]
+                val canonical = familyId?.let(familyCategories::get)
+                if (canonical != null && item.category != canonical) item.copy(category = canonical)
+                else item
+            }
+            val unifiedIndex = buildUnifiedFeatureIndex(normalized)
+            val categories = normalized.map { it.category }.distinctBy { it.id }.sortedBy { it.order }
+            val byCategory = normalized.groupBy { it.category.id }
             return FeaturePickerCatalogModel(
-                allItems = sorted,
+                allItems = normalized,
                 categories = categories,
-                byId = sorted.associateBy { it.descriptor.id.value },
+                byId = normalized.associateBy { it.descriptor.id.value },
                 byCategory = byCategory,
                 unifiedIndex = unifiedIndex,
                 categoryCounts = byCategory.mapValues { (_, categoryItems) ->

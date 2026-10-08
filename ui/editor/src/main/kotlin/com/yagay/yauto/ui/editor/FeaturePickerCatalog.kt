@@ -36,11 +36,12 @@ internal fun FeatureCategoryPage(
     onQuery: (String) -> Unit,
     onCategory: (PickerPage.Features) -> Unit,
     onFeature: (FeatureDescriptor) -> Unit,
+    onUnified: (UnifiedFeatureGroup) -> Unit,
     onFavorite: (String) -> Unit,
 ) {
     val availability = LocalFeatureAvailability.current
     val search = remember(catalog, query) {
-        if (query.isBlank()) emptyList() else catalog.search(query)
+        if (query.isBlank()) emptyList() else catalog.searchEntries(query)
     }
     val recentCount = recent.count(catalog::contains)
     val favoriteCount = favorites.count(catalog::contains)
@@ -111,19 +112,38 @@ internal fun FeatureCategoryPage(
             }
             items(
                 items = search,
-                key = { it.descriptor.id.value },
-                contentType = { "feature_search_result" },
-            ) { item ->
-                FeaturePickerRow(
-                    title = favoriteTitle(item, favorites),
-                    subtitle = stringResource(item.category.titleRes),
-                    accent = kindAccent(kind),
-                    onClick = { onFeature(item.descriptor) },
-                    onFavorite = { onFavorite(item.descriptor.id.value) },
-                    height = 72.dp,
-                    availability = availability[item.descriptor.id.value],
-                    accessTags = featureAccessTags(item.descriptor),
-                )
+                key = {
+                    when (it) {
+                        is FeaturePickerListEntry.Feature -> "feature:" + it.item.descriptor.id.value
+                        is FeaturePickerListEntry.Unified -> "unified:" + it.group.spec.id
+                    }
+                },
+                contentType = {
+                    when (it) {
+                        is FeaturePickerListEntry.Feature -> "feature_search_result"
+                        is FeaturePickerListEntry.Unified -> "unified_search_result"
+                    }
+                },
+            ) { entry ->
+                when (entry) {
+                    is FeaturePickerListEntry.Feature -> {
+                        val item = entry.item
+                        FeaturePickerRow(
+                            title = favoriteTitle(item, favorites),
+                            subtitle = stringResource(item.category.titleRes),
+                            accent = kindAccent(kind),
+                            onClick = { onFeature(item.descriptor) },
+                            onFavorite = { onFavorite(item.descriptor.id.value) },
+                            height = 72.dp,
+                            availability = availability[item.descriptor.id.value],
+                            accessTags = featureAccessTags(item.descriptor),
+                        )
+                    }
+                    is FeaturePickerListEntry.Unified -> UnifiedFeatureRow(
+                        group = entry.group,
+                        onClick = { onUnified(entry.group) },
+                    )
+                }
             }
         }
     }

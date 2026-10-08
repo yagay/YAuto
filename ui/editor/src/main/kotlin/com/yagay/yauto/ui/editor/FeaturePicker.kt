@@ -170,6 +170,7 @@ fun MacroFeaturePickerDialog(
                     onQuery = ::updateQuery,
                     onCategory = { push(it) },
                     onFeature = ::openFeature,
+                    onUnified = { push(PickerPage.Unified(it)) },
                     onFavorite = ::toggleFavorite,
                 )
                 is PickerPage.Features -> FeatureListPage(
