@@ -291,6 +291,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
                             backup.workspace.automations,
                             backup.workspace.flows,
                             backup.workspace.globalVariables,
+                            backup.workspace.persistentVariables,
                         )
                     ) {
                         importSummary = context.getString(TextR.string.main_backup_restored)

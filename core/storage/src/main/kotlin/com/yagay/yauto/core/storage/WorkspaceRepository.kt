@@ -38,6 +38,7 @@ fun WorkspaceData.merge(
     automationsToImport: List<Automation>,
     flowsToImport: List<Flow>,
     variablesToImport: Map<String, String>,
+    persistentVariablesToImport: Map<String, ConfigValue> = emptyMap(),
 ): WorkspaceData {
     val incomingAutomations = automationsToImport.associateBy { it.id.value }
     val incomingFlows = flowsToImport.associateBy { it.id.value }
@@ -45,5 +46,6 @@ fun WorkspaceData.merge(
         automations = (automations.filterNot { it.id.value in incomingAutomations } + incomingAutomations.values).sortedBy { it.name.lowercase() },
         flows = (flows.filterNot { it.id.value in incomingFlows } + incomingFlows.values).sortedBy { it.name.lowercase() },
         globalVariables = globalVariables + variablesToImport,
+        persistentVariables = persistentVariables + persistentVariablesToImport,
     )
 }

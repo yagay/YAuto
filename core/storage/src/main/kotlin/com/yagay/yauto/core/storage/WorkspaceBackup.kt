@@ -49,6 +49,7 @@ fun WorkspaceData.featureIds(): Set<String> = buildSet {
             is PredicateNode.All -> node.children.forEach(::predicate)
             is PredicateNode.Any -> node.children.forEach(::predicate)
             is PredicateNode.None -> node.children.forEach(::predicate)
+            is PredicateNode.Xor -> node.children.forEach(::predicate)
             else -> Unit
         }
     }
