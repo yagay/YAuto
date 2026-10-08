@@ -2,7 +2,7 @@ name: Android Debug
 
 on:
   push:
-    branches: [ main, test ]
+    branches: [ main, test, refactor/macrodroid-names-20261008 ]
   pull_request:
     branches: [ main ]
 
@@ -22,6 +22,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.4.1'
+      - name: Full feature naming audit
+        run: python3 tools/audit_macrodroid_catalog.py
       - name: Localization guard
         run: python3 .github/scripts/check-localization.py
       - name: Localization quality guard
