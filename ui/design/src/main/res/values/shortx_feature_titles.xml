@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortx_feature_accessibility_universal_copy_show_title">Universal copy</string>
+    <string name="shortx_feature_android_activity_close_title">Close Activity</string>
+    <string name="shortx_feature_android_app_last_used_launch_title">Launch last app</string>
+    <string name="shortx_feature_android_condition_calendar_day_type_title">Calendar day type</string>
+    <string name="shortx_feature_android_condition_ime_visible_title">IME visibility</string>
+    <string name="shortx_feature_android_condition_service_running_title">Service is running</string>
+    <string name="shortx_feature_android_condition_task_present_title">App has recent task</string>
+    <string name="shortx_feature_android_event_activity_started_title">Activity Started</string>
+    <string name="shortx_feature_android_event_activity_stopped_title">Activity stopped</string>
+    <string name="shortx_feature_android_event_app_background_title">App Become Background</string>
+    <string name="shortx_feature_android_event_app_foreground_title">App Become Foreground</string>
+    <string name="shortx_feature_android_event_app_process_started_title">Process started</string>
+    <string name="shortx_feature_android_event_app_process_stopped_title">Process removed</string>
+    <string name="shortx_feature_android_event_audio_focus_changed_title">Audio focus changed</string>
+    <string name="shortx_feature_android_event_cpu_availability_title">CPU availability</string>
+    <string name="shortx_feature_android_event_fixed_in_period_title">In Period</string>
+    <string name="shortx_feature_android_event_random_in_period_title">Random time in period</string>
+    <string name="shortx_feature_android_event_screen_on_duration_title">Screen on time</string>
+    <string name="shortx_feature_android_event_task_removed_title">Task removed</string>
+    <string name="shortx_feature_android_event_user_present_first_after_boot_title">Screen unlock 1st time</string>
+    <string name="shortx_feature_android_intent_uri_launch_title">Start activity (Intent Uri)</string>
+    <string name="shortx_feature_android_location_current_query_title">Get current location info</string>
+    <string name="shortx_feature_android_location_reverse_geocode_title">Get current location address</string>
+    <string name="shortx_feature_android_service_stop_title">Stop service</string>
+    <string name="shortx_feature_android_state_ime_visible_title">IME visibility</string>
+    <string name="shortx_feature_android_state_task_present_title">App has recent task</string>
+    <string name="shortx_feature_android_tasks_remove_title">Remove recent tasks</string>
+</resources>

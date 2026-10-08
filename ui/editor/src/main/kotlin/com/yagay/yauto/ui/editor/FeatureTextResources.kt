@@ -31,6 +31,7 @@ internal class FeatureTextResolver(private val context: Context) {
     fun title(descriptor: FeatureDescriptor): String =
         titleCache.getOrPut(descriptor.id.value) {
             resource("macro_feature_${resourceKey(descriptor.id.value)}_title")
+                ?: resource("shortx_feature_${resourceKey(descriptor.id.value)}_title")
                 ?: sourceAlignedFeatureTitle(descriptor.id.value)?.let(context::getString)
                 ?: resource("feature_${resourceKey(descriptor.id.value)}_title")
                 ?: phrase(descriptor.title)

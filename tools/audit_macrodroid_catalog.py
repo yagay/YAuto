@@ -106,6 +106,42 @@ def main():
         actual_zh = normalized_android_label(zh.get(key, ("", ""))[0])
         if actual_en != row["english"] or actual_zh != row["chinese"]:
             mismatched_verified_labels.append(row["yauto_resource_key"])
+    # YAuto title policy: MacroDroid > ShortX > YAuto native/source fallback.
+    # Only behavior-verified ShortX equivalents belong in this table.
+    with (ROOT / "tools/shortx_verified_titles.csv").open(encoding="utf-8", newline="") as sx_file:
+        shortx_reviewed = list(__import__("csv").DictReader(sx_file))
+    shortx_expected = {"shortx_" + item["yauto_resource_key"] for item in shortx_reviewed}
+    shortx_xml_en = {k for k in en if k.startswith("shortx_feature_") and k.endswith("_title")}
+    shortx_xml_zh = {k for k in zh if k.startswith("shortx_feature_") and k.endswith("_title")}
+    shortx_issues = []
+    if len(shortx_reviewed) != len(shortx_expected):
+        shortx_issues.append("duplicate ShortX feature IDs")
+    if shortx_expected != shortx_xml_en or shortx_expected != shortx_xml_zh:
+        shortx_issues.append("missing or unmatched ShortX localized resources")
+    if {"macro_" + item["yauto_resource_key"] for item in shortx_reviewed} & macro_keys_en:
+        shortx_issues.append("ShortX override overlaps a higher priority MacroDroid override")
+    for item in shortx_reviewed:
+        key = "shortx_" + item["yauto_resource_key"]
+        source_id = item["yauto_resource_key"]
+        # A state is a condition-like picker feature; it must never map to an action or trigger.
+        actual_kind = ("constraint" if re.match(r"^feature_[a-z0-9]+_(?:condition|state)_", source_id) else
+                       "trigger" if re.match(r"^feature_[a-z0-9]+_event_", source_id) else
+                       "action")
+        if item["kind"] != actual_kind:
+            shortx_issues.append(source_id + ": kind mismatch")
+        if item["shortx_resource_key"] not in ("" if item["kind"] == "action" else ""):
+            # Presence is audited below, not by guessing a key's English prefix.
+            pass
+        if en.get(key, ("", ""))[0].replace("\\'", "'") != item["english"]:
+            shortx_issues.append(source_id + ": English label differs from ShortX APK")
+        if zh.get(key, ("", ""))[0].replace("\\'", "'") != item["chinese"]:
+            shortx_issues.append(source_id + ": Chinese label differs from ShortX APK")
+    resolver_path = ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FeatureTextResources.kt"
+    resolver_code = resolver_path.read_text(encoding="utf-8")
+    macro_title_line = 'resource("macro_feature_${resourceKey(descriptor.id.value)}_title")'
+    shortx_title_line = 'resource("shortx_feature_${resourceKey(descriptor.id.value)}_title")'
+    if macro_title_line not in resolver_code or shortx_title_line not in resolver_code or resolver_code.index(macro_title_line) > resolver_code.index(shortx_title_line):
+        shortx_issues.append("wrong MacroDroid/ShortX title precedence")
     # Explicitly block misleading machine-suggested matches that change behavior.
     with (ROOT / "tools/macrodroid_false_matches.csv").open(encoding="utf-8", newline="") as rejected_file:
         false_friends = list(__import__("csv").DictReader(rejected_file))
@@ -125,6 +161,8 @@ def main():
     report = {
         "macrodroid_aligned_feature_titles": len(macro_keys_en),
         "reviewed_mapping_count": len(reviewed),
+        "shortx_reviewed_mapping_count": len(shortx_reviewed),
+        "shortx_validation_issues": shortx_issues,
         "apk_reference_titles_checked": len(verified_titles),
         "missing_apk_reference_pairs": missing_verified_pairs,
         "unreviewed_apk_reference_pairs": unreviewed_reference_pairs,
@@ -169,6 +207,9 @@ def main():
     print(f"Detailed report: {target}")
     if missing_verified_pairs or unreviewed_reference_pairs or mismatched_verified_labels:
         print("ERROR: MacroDroid localized titles differ from the approved APK reference", file=sys.stderr)
+        return 1
+    if shortx_issues:
+        print("ERROR: ShortX title validation failed: " + "; ".join(shortx_issues), file=sys.stderr)
         return 1
     if forbidden_matches:
         print("ERROR: non-equivalent MacroDroid names must not replace YAuto feature names", file=sys.stderr)

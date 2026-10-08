@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortx_feature_accessibility_universal_copy_show_title">全局复制</string>
+    <string name="shortx_feature_android_activity_close_title">关闭Activity</string>
+    <string name="shortx_feature_android_app_last_used_launch_title">打开上一个应用</string>
+    <string name="shortx_feature_android_condition_calendar_day_type_title">日期类型</string>
+    <string name="shortx_feature_android_condition_ime_visible_title">输入法可见性</string>
+    <string name="shortx_feature_android_condition_service_running_title">服务正在运行</string>
+    <string name="shortx_feature_android_condition_task_present_title">应用有最近任务</string>
+    <string name="shortx_feature_android_event_activity_started_title">Activity启动</string>
+    <string name="shortx_feature_android_event_activity_stopped_title">Activity停止</string>
+    <string name="shortx_feature_android_event_app_background_title">应用回到后台</string>
+    <string name="shortx_feature_android_event_app_foreground_title">应用进入前台</string>
+    <string name="shortx_feature_android_event_app_process_started_title">进程启动</string>
+    <string name="shortx_feature_android_event_app_process_stopped_title">进程停止</string>
+    <string name="shortx_feature_android_event_audio_focus_changed_title">音频焦点发生变化</string>
+    <string name="shortx_feature_android_event_cpu_availability_title">CPU可用状态</string>
+    <string name="shortx_feature_android_event_fixed_in_period_title">时间段</string>
+    <string name="shortx_feature_android_event_random_in_period_title">随机时间</string>
+    <string name="shortx_feature_android_event_screen_on_duration_title">亮屏时间</string>
+    <string name="shortx_feature_android_event_task_removed_title">任务被移除</string>
+    <string name="shortx_feature_android_event_user_present_first_after_boot_title">启动后首次屏幕解锁</string>
+    <string name="shortx_feature_android_intent_uri_launch_title">启动活动（Intent Uri）</string>
+    <string name="shortx_feature_android_location_current_query_title">获取当前位置信息</string>
+    <string name="shortx_feature_android_location_reverse_geocode_title">获取当前位置地址描述</string>
+    <string name="shortx_feature_android_service_stop_title">停止服务</string>
+    <string name="shortx_feature_android_state_ime_visible_title">输入法可见性</string>
+    <string name="shortx_feature_android_state_task_present_title">应用有最近任务</string>
+    <string name="shortx_feature_android_tasks_remove_title">移除最近任务</string>
+</resources>
