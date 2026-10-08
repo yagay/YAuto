@@ -58,12 +58,12 @@ def main():
     # Validate the complete semantic category vocabulary against picker resources.
     category_source = (ROOT / "core/registry/src/main/kotlin/com/yagay/yauto/core/registry/FeaturePickerCategory.kt").read_text(encoding="utf-8")
     picker_source = (ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FeaturePickerCatalog.kt").read_text(encoding="utf-8")
-    enum_match = re.search(r"enum class FeaturePickerCategory\\s*\\{([^}]+)\\}", category_source)
+    enum_match = re.search(r"enum class FeaturePickerCategory\s*\{([^}]+)\}", category_source)
     if enum_match is None:
         raise RuntimeError("Cannot find FeaturePickerCategory enum")
     category_ids = {part.strip() for part in enum_match.group(1).split(",") if part.strip()}
-    category_mappings = set(re.findall(r"FeaturePickerCategory\\.([A-Z_]+)\\s*->", picker_source))
-    category_keys = set(re.findall(r"TextR\\.string\\.(macro_category_[a-z_]+)", picker_source))
+    category_mappings = set(re.findall(r"FeaturePickerCategory\.([A-Z_]+)\s*->", picker_source))
+    category_keys = set(re.findall(r"TextR\.string\.(macro_category_[a-z_]+)", picker_source))
     missing_category_mappings = sorted(category_ids - category_mappings)
     missing_category_en = sorted(category_keys - set(en))
     missing_category_zh = sorted(category_keys - set(zh))
