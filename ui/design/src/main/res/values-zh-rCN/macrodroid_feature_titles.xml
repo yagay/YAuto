@@ -78,7 +78,8 @@
     <string name="macro_feature_android_network_connectivity_check_title">检查连接</string>
     <string name="macro_feature_android_nfc_set_title">NFC 启用/禁用</string>
     <string name="macro_feature_android_notification_action_title_title">通知交互</string>
-    <string name="macro_feature_android_notification_dismiss_all_title">清除通知</string>
+
+
     <string name="macro_feature_android_notification_reply_title">通知回复</string>
     <string name="macro_feature_android_notification_show_title">显示通知</string>
     <string name="macro_feature_android_ocr_text_title">由图像提取文字（OCR）</string>
@@ -153,4 +154,12 @@
     <string name="macro_feature_accessibility_view_text_get_title">从视图 ID 获取文本</string>
     <string name="macro_feature_android_condition_data_usage_title">使用的数据</string>
     <string name="macro_feature_android_state_data_usage_title">使用的数据</string>
+    <string name="macro_feature_ai_image_describe_title">图片说明</string>
+    <string name="macro_feature_android_clipboard_write_title">填写剪贴板</string>
+    <string name="macro_feature_android_condition_audio_music_active_title">音乐活动</string>
+    <string name="macro_feature_android_state_audio_music_active_title">音乐活动</string>
+    <string name="macro_feature_android_media_transport_title">多媒体控制</string>
+    <string name="macro_feature_android_http_server_respond_title">HTTP 服务器响应</string>
+    <string name="macro_feature_android_event_ui_click_title">用户界面点击</string>
+    <string name="macro_feature_android_screenshot_capture_title">截屏</string>
 </resources>

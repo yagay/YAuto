@@ -134,6 +134,25 @@ class FeaturePickerCategoryTest {
         )
     }
 
+
+    @Test
+    fun `media database and scanner events are not playback controls`() {
+        val cases = listOf(
+            Triple("android.media_store.query", FeatureKind.ACTION, FeaturePickerCategory.FILES),
+            Triple("android.media_store.update", FeatureKind.ACTION, FeaturePickerCategory.FILES),
+            Triple("android.event.media_scanner_started", FeatureKind.EVENT, FeaturePickerCategory.DEVICE_EVENTS),
+            Triple("android.event.media_scanner_finished", FeatureKind.EVENT, FeaturePickerCategory.DEVICE_EVENTS),
+            Triple("android.condition.media_store_available", FeatureKind.CONDITION, FeaturePickerCategory.DEVICE_STATE),
+            Triple("android.media.transport", FeatureKind.ACTION, FeaturePickerCategory.MEDIA),
+            Triple("android.audio.volume.set", FeatureKind.ACTION, FeaturePickerCategory.VOLUME),
+            Triple("android.event.sms_received", FeatureKind.EVENT, FeaturePickerCategory.CALL_SMS),
+            Triple("android.event.wifi_state_changed", FeatureKind.EVENT, FeaturePickerCategory.CONNECTIVITY),
+        )
+        cases.forEach { (id, kind, expected) ->
+            assertEquals(id, expected, classify(id, kind))
+        }
+    }
+
     private fun classify(
         id: String,
         kind: FeatureKind,

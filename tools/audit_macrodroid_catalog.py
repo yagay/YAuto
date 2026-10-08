@@ -86,9 +86,20 @@ def main():
                        "constraint" if "_condition_" in name or "_state_" in name else "action")
         if row["kind"] != actual_kind or not row["macrodroid_resource_key"].startswith(actual_kind + "_"):
             mismatched_reviewed_kinds.append(name)
+    # Explicitly block misleading machine-suggested matches that change behavior.
+    with (ROOT / "tools/macrodroid_false_matches.csv").open(encoding="utf-8", newline="") as rejected_file:
+        false_friends = list(__import__("csv").DictReader(rejected_file))
+    reviewed_pairs = {(row["yauto_resource_key"], row["macrodroid_resource_key"]) for row in reviewed}
+    forbidden_matches = [
+        row["yauto_resource_key"] for row in false_friends
+        if (row["yauto_resource_key"], row["rejected_macro_resource_key"]) in reviewed_pairs
+    ]
     report = {
         "macrodroid_aligned_feature_titles": len(macro_keys_en),
         "reviewed_mapping_count": len(reviewed),
+        "rejected_unsafe_mapping_count": len(false_friends),
+        "forbidden_matches": forbidden_matches,
+        "unreviewed_feature_title_count": len(set(feature_keys) - set(reviewed_keys)),
         "duplicate_reviewed_keys": duplicate_reviewed_keys,
         "missing_reviewed_overrides": missing_reviewed_overrides,
         "unmapped_macro_overrides": unmapped_macro_overrides,
@@ -122,6 +133,9 @@ def main():
     print(f"Missing: zh={len(missing_zh)}, en={len(missing_en)}; "
           f"shared labels={len(duplicated_labels)}; event/state collisions={len(event_names)}")
     print(f"Detailed report: {target}")
+    if forbidden_matches:
+        print("ERROR: non-equivalent MacroDroid names must not replace YAuto feature names", file=sys.stderr)
+        return 1
     if duplicate_reviewed_keys or missing_reviewed_overrides or unmapped_macro_overrides or mismatched_reviewed_kinds:
         print("ERROR: reviewed MacroDroid mapping is inconsistent with localization overrides", file=sys.stderr)
         return 1

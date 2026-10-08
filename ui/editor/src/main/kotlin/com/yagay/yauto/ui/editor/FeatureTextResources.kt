@@ -25,6 +25,7 @@ internal class FeatureTextResolver(private val context: Context) {
     fun description(descriptor: FeatureDescriptor): String =
         resource("feature_${resourceKey(descriptor.id.value)}_description")
             ?: phrase(descriptor.description)
+            ?: descriptor.description.takeIf { it.isNotBlank() }
             ?: context.getString(TextR.string.feature_generic_description_format, title(descriptor))
 
     fun fieldLabel(descriptorId: String, field: FieldSchema): String =

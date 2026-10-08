@@ -110,6 +110,13 @@ fun inferFeaturePickerCategory(
             if (kind == FeatureKind.ACTION) FeaturePickerCategory.DEVICE_ACTIONS
             else FeaturePickerCategory.SENSORS
 
+        // Indexing and MediaStore access belong to files/device events, not playback.
+        has(".media_store", "media_scanner", "document_tree") -> when (kind) {
+            FeatureKind.ACTION -> FeaturePickerCategory.FILES
+            FeatureKind.EVENT -> FeaturePickerCategory.DEVICE_EVENTS
+            FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
+        }
+
         has(
             ".network", ".wifi", ".bluetooth", ".ble", ".mobile_data", ".airplane", ".hotspot",
             ".tether", ".nfc", ".usb", ".connectivity", ".network_profile",
