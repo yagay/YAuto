@@ -229,6 +229,9 @@ class FeaturePickerCategoryTest {
             "android.media.latest.open" to FeaturePickerCategory.CAMERA_PHOTO,
             "android.contact_via_app.send" to FeaturePickerCategory.MESSAGING,
             "android.keyguard.set" to FeaturePickerCategory.SCREEN,
+            "android.chart.create" to FeaturePickerCategory.FILES,
+            "android.yauto.setting.set" to FeaturePickerCategory.YAUTO_SPECIFIC,
+            "android.sensors_off.set" to FeaturePickerCategory.DEVICE_SETTINGS,
         )
         actionCases.forEach { (id, expected) ->
             assertEquals(id, expected, classify(id, FeatureKind.ACTION))
@@ -241,6 +244,10 @@ class FeaturePickerCategoryTest {
             "android.event.sim_subscription_changed" to FeaturePickerCategory.DEVICE_EVENTS,
             "android.event.email_received" to FeaturePickerCategory.APPLICATIONS,
             "android.event.window_focus_changed" to FeaturePickerCategory.APPLICATIONS,
+            "android.event.sound_level" to FeaturePickerCategory.SENSORS,
+            "android.event.input_filter_state_changed" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.accessibility_windows_queried" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.window_added" to FeaturePickerCategory.DEVICE_EVENTS,
         )
         eventCases.forEach { (id, expected) ->
             assertEquals(id, expected, classify(id, FeatureKind.EVENT))

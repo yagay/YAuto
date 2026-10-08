@@ -349,10 +349,23 @@ private fun explicitMacroDroidFeatureCategory(
         "android.media.latest.open" -> FeaturePickerCategory.CAMERA_PHOTO
         "android.contact_via_app.send" -> FeaturePickerCategory.MESSAGING
         "android.keyguard.set" -> FeaturePickerCategory.SCREEN
+        // Screenshot/PNG chart generation writes a file; YAuto settings are not Android settings.
+        "android.chart.create" -> FeaturePickerCategory.FILES
+        "android.yauto.setting.set" -> FeaturePickerCategory.YAUTO_SPECIFIC
+        "android.sensors_off.set" -> FeaturePickerCategory.DEVICE_SETTINGS
         else -> null
     }
     FeatureKind.EVENT -> when (key) {
         "android.event.location_mode_changed" -> FeaturePickerCategory.DEVICE_EVENTS
+        // System-server/LSPosed observers are lifecycle events, not physical user input.
+        "android.event.input_filter_state_changed",
+        "android.event.input_manager_started",
+        "android.event.accessibility_user_state_created",
+        "android.event.accessibility_display_list_queried",
+        "android.event.accessibility_windows_queried",
+        "android.event.accessibility_ui_automation_checked",
+        "android.event.window_added" -> FeaturePickerCategory.DEVICE_EVENTS
+        "android.event.sound_level" -> FeaturePickerCategory.SENSORS
         "android.event.sleep_transition", "android.event.sleep_classification" ->
             FeaturePickerCategory.SENSORS
         "android.event.assistant_activated" -> FeaturePickerCategory.USER_INPUT

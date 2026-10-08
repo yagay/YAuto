@@ -142,6 +142,9 @@ internal fun FeatureCategoryPage(
                     }
                     is FeaturePickerListEntry.Unified -> UnifiedFeatureRow(
                         group = entry.group,
+                        preferredTitle = entry.group.members.firstOrNull {
+                            it.descriptor.id.value == entry.preferredMemberId
+                        }?.title,
                         favorite = entry.group.members.any { it.descriptor.id.value in favorites },
                         onClick = { onUnified(entry.group, entry.preferredMemberId) },
                         onFavorite = { onUnifiedFavorite(entry.group) },
@@ -231,6 +234,11 @@ internal fun FeatureListPage(
                 }
                 is FeaturePickerListEntry.Unified -> UnifiedFeatureRow(
                     group = entry.group,
+                    preferredTitle = if (query.isNotBlank() || categoryPage.special != null) {
+                        entry.group.members.firstOrNull {
+                            it.descriptor.id.value == entry.preferredMemberId
+                        }?.title
+                    } else null,
                     favorite = entry.group.members.any { it.descriptor.id.value in favorites },
                     onClick = { onUnified(entry.group, entry.preferredMemberId) },
                     onFavorite = { onUnifiedFavorite(entry.group) },
@@ -243,6 +251,7 @@ internal fun FeatureListPage(
 @Composable
 private fun UnifiedFeatureRow(
     group: UnifiedFeatureGroup,
+    preferredTitle: String?,
     favorite: Boolean,
     onClick: () -> Unit,
     onFavorite: () -> Unit,
@@ -256,13 +265,12 @@ private fun UnifiedFeatureRow(
             )
         },
         supportingContent = {
-            Text(
-                stringResource(
-                    TextR.string.feature_picker_family_count_format,
-                    stringResource(group.spec.subtitleRes),
-                    group.members.size,
-                )
+            val details = stringResource(
+                TextR.string.feature_picker_family_count_format,
+                stringResource(group.spec.subtitleRes),
+                group.members.size,
             )
+            Text(if (preferredTitle.isNullOrBlank()) details else "$preferredTitle · $details")
         },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
