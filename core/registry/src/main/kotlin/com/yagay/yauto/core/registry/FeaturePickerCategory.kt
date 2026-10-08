@@ -89,11 +89,7 @@ fun inferFeaturePickerCategory(
         starts("time.") -> FeaturePickerCategory.DATE_TIME
         kind == FeatureKind.ACTION && key == "core.log" -> FeaturePickerCategory.LOGGING
 
-        // Reading and writing calendar entries form one user-facing Calendar action family.
-        kind == FeatureKind.ACTION && has(
-            ".calendar.events.query", ".calendar.event.insert",
-            ".calendar.event.update", ".calendar.event.delete",
-        ) -> FeaturePickerCategory.LOGGING
+        // Precise calendar operations are pinned by the semantic override table below.
 
         // Script/Tasker plugin actions are in MacroDroid's Applications category.
         kind == FeatureKind.ACTION && (
@@ -162,11 +158,6 @@ fun inferFeaturePickerCategory(
         ) ->
             FeaturePickerCategory.LOCATION
 
-        // Measuring microphone sound level is an audio action; sensor keywords below are
-        // for sensor triggers and state checks, not audio capture operations.
-        kind == FeatureKind.ACTION && key == "android.audio.sound_level.measure" ->
-            FeaturePickerCategory.MEDIA
-
         has(
             ".sensor", "activity_recognition", "physical_activity", ".shake", ".pedometer", ".proximity",
             ".light_level", ".motion_detected",
@@ -175,19 +166,6 @@ fun inferFeaturePickerCategory(
         ) ->
             if (kind == FeatureKind.ACTION) FeaturePickerCategory.DEVICE_ACTIONS
             else FeaturePickerCategory.SENSORS
-
-        // Legacy source buckets must not turn app-local modes into Android system control,
-        // or turn cellular status queries into phone-call operations.
-        kind == FeatureKind.ACTION && key == "android.mode.set" ->
-            FeaturePickerCategory.YAUTO_SPECIFIC
-        kind == FeatureKind.ACTION && key == "android.telephony.info" ->
-            FeaturePickerCategory.CONNECTIVITY
-        kind == FeatureKind.ACTION && key.startsWith("android.plugin.locale.") ->
-            FeaturePickerCategory.APPLICATIONS
-
-        // Device auto-sync is connectivity control even when there is no network token.
-        kind == FeatureKind.ACTION && key == "android.sync.master.set" ->
-            FeaturePickerCategory.CONNECTIVITY
 
         // NFC tags, airplane-mode and auto-sync changes are device events in MacroDroid.
         kind == FeatureKind.EVENT && has(
@@ -368,7 +346,15 @@ private fun explicitMacroDroidFeatureCategory(
         "android.chart.create" -> FeaturePickerCategory.FILES
         "android.yauto.setting.set" -> FeaturePickerCategory.YAUTO_SPECIFIC
         "android.sensors_off.set" -> FeaturePickerCategory.DEVICE_SETTINGS
-        else -> null
+        "android.mode.set" -> FeaturePickerCategory.YAUTO_SPECIFIC
+        "android.telephony.info", "android.sync.master.set" -> FeaturePickerCategory.CONNECTIVITY
+        "android.audio.sound_level.measure" -> FeaturePickerCategory.MEDIA
+        "android.calendar.events.query", "android.calendar.event.insert",
+        "android.calendar.event.update", "android.calendar.event.delete" ->
+            FeaturePickerCategory.LOGGING
+        else -> if (key.startsWith("android.plugin.locale.")) {
+            FeaturePickerCategory.APPLICATIONS
+        } else null
     }
     FeatureKind.EVENT -> when (key) {
         "android.event.location_mode_changed" -> FeaturePickerCategory.DEVICE_EVENTS
