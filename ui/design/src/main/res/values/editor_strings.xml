@@ -164,6 +164,10 @@
     <string name="feature_family_image_tools_subtitle">OCR, crop, inspect pixels, find colors or match images</string>
     <string name="feature_family_network_tools">Network tools</string>
     <string name="feature_family_network_tools_subtitle">DNS, local addresses, UDP send and TCP wait</string>
+    <string name="feature_family_network_information">Network information</string>
+    <string name="feature_family_network_information_subtitle">DNS lookups and local network addresses</string>
+    <string name="feature_family_network_transport">Network transport</string>
+    <string name="feature_family_network_transport_subtitle">UDP sending and TCP port waiting</string>
     <string name="feature_family_system_info">System information</string>
     <string name="feature_family_system_info_subtitle">Memory, uptime, thermal status and locale information</string>
     <string name="feature_family_communication_actions">Messaging</string>
@@ -214,7 +218,9 @@
     <string name="unified_connectivity_checks">Connectivity devices</string>
     <string name="unified_connectivity_checks_subtitle">Bluetooth, USB, NFC and cellular-service checks</string>
     <string name="unified_audio_checks">Audio state</string>
-    <string name="unified_audio_checks_subtitle">Playback, audio mode, headset, microphone and speakerphone checks</string>
+    <string name="unified_audio_checks_subtitle">Playback, audio mode, headset and microphone checks</string>
+    <string name="unified_speaker_checks">Speakerphone state</string>
+    <string name="unified_speaker_checks_subtitle">Check whether hands-free speakerphone is enabled</string>
     <string name="unified_volume_checks">Volume state</string>
     <string name="unified_volume_checks_subtitle">Media volume and ringer-mode checks</string>
     <string name="unified_display_checks">Display state</string>

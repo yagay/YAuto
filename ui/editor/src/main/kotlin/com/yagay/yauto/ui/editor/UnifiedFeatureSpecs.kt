@@ -388,16 +388,18 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
             "android.image.match",
         ),
     ),
+    // MacroDroid separates connectivity inspection from web/network interaction actions.
     UnifiedFeatureSpec(
-        "network_tools",
-        TextR.string.feature_family_network_tools,
-        TextR.string.feature_family_network_tools_subtitle,
-        listOf(
-            "android.network.dns.resolve",
-            "android.network.local_addresses",
-            "android.network.udp.send",
-            "android.network.tcp.wait",
-        ),
+        "network_information",
+        TextR.string.feature_family_network_information,
+        TextR.string.feature_family_network_information_subtitle,
+        listOf("android.network.dns.resolve", "android.network.local_addresses"),
+    ),
+    UnifiedFeatureSpec(
+        "network_transport",
+        TextR.string.feature_family_network_transport,
+        TextR.string.feature_family_network_transport_subtitle,
+        listOf("android.network.udp.send", "android.network.tcp.wait"),
     ),
     UnifiedFeatureSpec(
         "system_info",
@@ -741,13 +743,18 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
             "android.condition.audio.mode",
             "android.state.audio.microphone_muted",
             "android.condition.audio.microphone_muted",
-            "android.state.audio.speakerphone",
-            "android.condition.audio.speakerphone",
             "android.state.headset_connected",
             "android.condition.headset_connected",
             "android.state.tts_speaking",
             "android.condition.tts_speaking",
         ),
+    ),
+    // Speakerphone state is shown under MacroDroid's Screen/Speaker constraints.
+    UnifiedFeatureSpec(
+        "speaker_checks",
+        TextR.string.unified_speaker_checks,
+        TextR.string.unified_speaker_checks_subtitle,
+        listOf("android.state.audio.speakerphone", "android.condition.audio.speakerphone"),
     ),
     UnifiedFeatureSpec(
         "volume_checks",

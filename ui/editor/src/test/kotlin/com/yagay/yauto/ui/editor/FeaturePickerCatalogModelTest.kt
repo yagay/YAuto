@@ -29,6 +29,18 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test
+    fun `network and speaker families stay separate across MacroDroid categories`() {
+        val networkInfo = UNIFIED_FEATURE_SPECS.single { it.id == "network_information" }
+        val networkTransport = UNIFIED_FEATURE_SPECS.single { it.id == "network_transport" }
+        val speakers = UNIFIED_FEATURE_SPECS.single { it.id == "speaker_checks" }
+        val audio = UNIFIED_FEATURE_SPECS.single { it.id == "audio_checks" }
+        assertEquals(listOf("android.network.dns.resolve", "android.network.local_addresses"), networkInfo.memberIds)
+        assertEquals(listOf("android.network.udp.send", "android.network.tcp.wait"), networkTransport.memberIds)
+        assertEquals(listOf("android.state.audio.speakerphone", "android.condition.audio.speakerphone"), speakers.memberIds)
+        assertTrue(audio.memberIds.none { it in speakers.memberIds })
+    }
+
+    @Test
     fun `catalog sorts once and exposes stable category counts`() {
         val model = FeaturePickerCatalogModel.create(
             listOf(

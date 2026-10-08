@@ -163,6 +163,10 @@
     <string name="feature_family_image_tools_subtitle">OCR、裁剪、像素、颜色查找与图像匹配</string>
     <string name="feature_family_network_tools">网络工具</string>
     <string name="feature_family_network_tools_subtitle">DNS、本地地址、UDP 发送与 TCP 等待</string>
+    <string name="feature_family_network_information">网络信息</string>
+    <string name="feature_family_network_information_subtitle">DNS 查询与本机网络地址</string>
+    <string name="feature_family_network_transport">网络传输</string>
+    <string name="feature_family_network_transport_subtitle">UDP 发送与 TCP 端口等待</string>
     <string name="feature_family_system_info">系统信息</string>
     <string name="feature_family_system_info_subtitle">内存、运行时间、温度状态与区域语言信息</string>
     <string name="feature_family_communication_actions">消息</string>
@@ -213,7 +217,9 @@
     <string name="unified_connectivity_checks">连接设备</string>
     <string name="unified_connectivity_checks_subtitle">蓝牙、USB、NFC 与蜂窝服务检查</string>
     <string name="unified_audio_checks">音频状态</string>
-    <string name="unified_audio_checks_subtitle">播放、音频模式、耳机、麦克风与扬声器检查</string>
+    <string name="unified_audio_checks_subtitle">播放、音频模式、耳机与麦克风检查</string>
+    <string name="unified_speaker_checks">扬声器状态</string>
+    <string name="unified_speaker_checks_subtitle">检测免提扬声器是否启用</string>
     <string name="unified_volume_checks">音量状态</string>
     <string name="unified_volume_checks_subtitle">媒体音量与铃声模式检查</string>
     <string name="unified_display_checks">显示状态</string>

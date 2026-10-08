@@ -66,13 +66,17 @@ fun inferFeaturePickerCategory(
         // MacroDroid action picker separates macro management, variable operations and
         // control-flow blocks. The saved runtime IDs remain unchanged.
         kind == FeatureKind.ACTION && (
-            starts("automation.", "macro.", "flow.delay", "flow.wait") ||
+            starts("automation.", "macro.") ||
                 has(".automation.", ".macro.", ".action_block.", ".macro_run", "run_macro") ||
-                key == "core.delay"
+                key in setOf("core.category.set_enabled", "core.trigger.set_enabled", "core.runtime.set_enabled")
             ) -> FeaturePickerCategory.MACROS
 
+        // MacroDroid's Wait Before Next Action belongs to MacroDroid Specific, not Macros.
+        kind == FeatureKind.ACTION && key in setOf("core.delay", "flow.delay", "flow.wait") ->
+            FeaturePickerCategory.YAUTO_SPECIFIC
+
         kind == FeatureKind.ACTION && (
-            starts("variable.", "persistent.", "collection.") ||
+            starts("variable.", "persistent.", "collection.", "data.list.", "data.object.") ||
                 has(".variable.", ".variables.", ".array.", ".dictionary.")
             ) -> FeaturePickerCategory.VARIABLES
 
@@ -80,6 +84,10 @@ fun inferFeaturePickerCategory(
         kind == FeatureKind.ACTION && (
             starts("json.") || has(".json.", ".udp.send", ".tcp.send")
             ) -> FeaturePickerCategory.WEB_INTERACTIONS
+
+        // Root-level time features and log writes otherwise fall through the legacy bucket.
+        starts("time.") -> FeaturePickerCategory.DATE_TIME
+        kind == FeatureKind.ACTION && key == "core.log" -> FeaturePickerCategory.LOGGING
 
         // Calendar writes are filed with Logging/Calendar, not time triggers.
         kind == FeatureKind.ACTION && (
@@ -340,6 +348,7 @@ private fun explicitMacroDroidFeatureCategory(
         else -> null
     }
     FeatureKind.EVENT -> when (key) {
+        "android.event.location_mode_changed" -> FeaturePickerCategory.DEVICE_EVENTS
         "android.event.sleep_transition", "android.event.sleep_classification" ->
             FeaturePickerCategory.SENSORS
         "android.event.assistant_activated" -> FeaturePickerCategory.USER_INPUT
