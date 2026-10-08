@@ -162,6 +162,11 @@ fun inferFeaturePickerCategory(
         ) ->
             FeaturePickerCategory.LOCATION
 
+        // Measuring microphone sound level is an audio action; sensor keywords below are
+        // for sensor triggers and state checks, not audio capture operations.
+        kind == FeatureKind.ACTION && key == "android.audio.sound_level.measure" ->
+            FeaturePickerCategory.MEDIA
+
         has(
             ".sensor", "activity_recognition", "physical_activity", ".shake", ".pedometer", ".proximity",
             ".light_level", ".motion_detected",
@@ -177,8 +182,6 @@ fun inferFeaturePickerCategory(
             FeaturePickerCategory.YAUTO_SPECIFIC
         kind == FeatureKind.ACTION && key == "android.telephony.info" ->
             FeaturePickerCategory.CONNECTIVITY
-        kind == FeatureKind.ACTION && key == "android.audio.sound_level.measure" ->
-            FeaturePickerCategory.MEDIA
         kind == FeatureKind.ACTION && key.startsWith("android.plugin.locale.") ->
             FeaturePickerCategory.APPLICATIONS
 
