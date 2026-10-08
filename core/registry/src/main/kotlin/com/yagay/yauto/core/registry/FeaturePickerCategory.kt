@@ -346,6 +346,8 @@ private fun explicitMacroDroidFeatureCategory(
         "android.chart.create" -> FeaturePickerCategory.FILES
         "android.yauto.setting.set" -> FeaturePickerCategory.YAUTO_SPECIFIC
         "android.sensors_off.set" -> FeaturePickerCategory.DEVICE_SETTINGS
+        "android.keyguard.pin_unlock" -> FeaturePickerCategory.SCREEN
+        "android.systemui.demo" -> FeaturePickerCategory.DEVICE_SETTINGS
         "android.mode.set" -> FeaturePickerCategory.YAUTO_SPECIFIC
         "android.telephony.info", "android.sync.master.set" -> FeaturePickerCategory.CONNECTIVITY
         "android.audio.sound_level.measure" -> FeaturePickerCategory.MEDIA
@@ -357,6 +359,13 @@ private fun explicitMacroDroidFeatureCategory(
         } else null
     }
     FeatureKind.EVENT -> when (key) {
+        // These ShortX timers describe a schedule, not a generic Android device event.
+        "android.event.fixed_in_period", "android.event.random_in_period" ->
+            FeaturePickerCategory.DATE_TIME
+        // MacroDroid's Tasker/Locale plugin trigger belongs to Applications.
+        "android.event.plugin_locale" -> FeaturePickerCategory.APPLICATIONS
+        // A tap on a rich notification action is a user-initiated button trigger.
+        "android.event.ppn_action" -> FeaturePickerCategory.USER_INPUT
         "android.event.location_mode_changed" -> FeaturePickerCategory.DEVICE_EVENTS
         // Android service starts/commands are system lifecycle events, not app launches.
         "android.event.activity_manager_started",

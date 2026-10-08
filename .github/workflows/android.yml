@@ -52,6 +52,7 @@ jobs:
           :core:registry:test
           :feature:standard:test
           :importer:macrodroid:test
+          :platform:android:testDebugUnitTest
           :ui:editor:testDebugUnitTest
           --configuration-cache
           --parallel
