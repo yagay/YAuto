@@ -251,7 +251,7 @@ internal fun macroCategory(descriptor: FeatureDescriptor): CatalogCategory {
     return when {
         id.contains("location") || id.contains("geofence") || id.contains("gps") ->
             group("location", TextR.string.macro_category_location, TextR.string.macro_category_location_subtitle, 55)
-        id.contains("call") || id.contains("telephony") || id.contains("phone") || id.contains("dial") ->
+        id.contains("call") || id.contains("telephony") || Regex("(^|_)phone(_|$)").containsMatchIn(id) || id.contains("dial") ->
             group("phone", TextR.string.macro_category_phone, TextR.string.macro_category_phone_subtitle, 75)
         id.contains("sms") || id.contains("mms") || id.contains("email") || id.contains("message") ->
             group("messaging", TextR.string.macro_category_messaging, TextR.string.macro_category_messaging_subtitle, 76)
