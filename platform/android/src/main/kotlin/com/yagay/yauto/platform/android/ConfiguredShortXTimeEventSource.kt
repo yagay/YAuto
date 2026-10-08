@@ -85,9 +85,10 @@ class ConfiguredShortXTimeEventSource(
     }
 
     private fun evaluateFixed(feature: FeatureRef, now: ZonedDateTime) {
-        if (!dayMatches(feature.config.string("days"), now.dayOfWeek)) return
         val start = parseTime(feature.config.string("start")) ?: return
         val end = parseTime(feature.config.string("end")) ?: return
+        val anchorDate = shortXWindowStartDate(now, start, end)
+        if (!dayMatches(feature.config.string("days"), anchorDate.dayOfWeek)) return
         val intervalMs = feature.config.long("intervalMs", 60_000L).coerceIn(1_000L, 86_400_000L)
         val local = now.toLocalTime()
         if (!inWindow(local, start, end)) return
@@ -96,17 +97,17 @@ class ConfiguredShortXTimeEventSource(
         val slot = elapsedMs / intervalMs
         val slotStartMs = slot * intervalMs
         if (elapsedMs - slotStartMs > 1_500L) return
-        emitOnce(feature, now.toLocalDate().toString() + ":" + slot, mapOf(
+        emitOnce(feature, anchorDate.toString() + ":" + slot, mapOf(
             "slot" to ConfigValue.NumberValue(slot.toDouble()),
             "elapsedMs" to ConfigValue.NumberValue(elapsedMs.toDouble()),
         ))
     }
 
     private fun evaluateRandom(feature: FeatureRef, now: ZonedDateTime) {
-        if (!dayMatches(feature.config.string("days"), now.dayOfWeek)) return
         val start = parseTime(feature.config.string("start")) ?: return
         val end = parseTime(feature.config.string("end")) ?: return
-        val date = now.toLocalDate()
+        val date = shortXWindowStartDate(now, start, end)
+        if (!dayMatches(feature.config.string("days"), date.dayOfWeek)) return
         val windowMs = windowDurationMs(start, end)
         if (windowMs <= 0L) return
         val hash = (eventKey(feature) + ":" + date).hashCode().toLong().absoluteValue
@@ -174,3 +175,8 @@ internal fun shortXTimeRuleKey(feature: FeatureRef): String =
         .toSortedMap()
         .entries
         .joinToString(";") { it.key + "=" + it.value }
+
+/** Overnight windows belong to the calendar day when the interval began. */
+internal fun shortXWindowStartDate(now: ZonedDateTime, start: LocalTime, end: LocalTime): LocalDate =
+    if (end < start && now.toLocalTime() < end) now.toLocalDate().minusDays(1)
+    else now.toLocalDate()

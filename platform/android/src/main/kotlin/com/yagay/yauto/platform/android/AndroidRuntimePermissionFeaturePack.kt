@@ -138,8 +138,37 @@ internal fun runtimePermissionGroup(group: String): Array<String> = when (group)
     else -> emptyArray()
 }
 
+/**
+ * Feature-specific checks avoid requiring SMS send permission just to query messages, or
+ * calendar write permission just to read events. Generic permission-group checks stay strict.
+ */
+fun runtimePermissionsForFeature(group: String, featureId: String): Array<String> = when {
+    group == "sms" && featureId == "android.sms.send" ->
+        arrayOf(Manifest.permission.SEND_SMS)
+    group == "sms" && (featureId == "android.sms.query" || featureId.startsWith("android.event.sms_")) ->
+        arrayOf(Manifest.permission.READ_SMS)
+    group == "calendar" && featureId in setOf(
+        "android.calendar.event.insert", "android.calendar.event.update",
+        "android.calendar.attendee.set", "android.calendar.reminder.set",
+    ) -> arrayOf(Manifest.permission.WRITE_CALENDAR)
+    group == "calendar" && (
+        featureId.startsWith("android.calendar.") ||
+        featureId == "android.state.calendar_event" ||
+        featureId == "android.condition.calendar_event" ||
+        featureId == "android.event.calendar_changed"
+    ) -> arrayOf(Manifest.permission.READ_CALENDAR)
+    else -> runtimePermissionGroup(group)
+}
+
 internal fun runtimePermissionGranted(context: Context, group: String): Boolean {
     val permissions = runtimePermissionGroup(group)
+    return permissions.isNotEmpty() && permissions.all {
+        ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+    }
+}
+
+internal fun runtimePermissionGranted(context: Context, group: String, featureId: String): Boolean {
+    val permissions = runtimePermissionsForFeature(group, featureId)
     return permissions.isNotEmpty() && permissions.all {
         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
     }

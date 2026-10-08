@@ -57,7 +57,7 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "calendar")) return@registerAction permissionMissing("calendar")
+            if (!runtimePermissionGranted(context, "calendar", feature.typeId)) return@registerAction permissionMissing("calendar")
             val now = System.currentTimeMillis()
             val from = now + ((feature.config["fromOffsetMinutes"].numberOrNull() ?: -1440.0) * 60_000.0).toLong()
             val to = now + ((feature.config["toOffsetMinutes"].numberOrNull() ?: 43_200.0) * 60_000.0).toLong()
@@ -143,7 +143,7 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "calendar")) return@registerAction permissionMissing("calendar")
+            if (!runtimePermissionGranted(context, "calendar", feature.typeId)) return@registerAction permissionMissing("calendar")
             val calendarId = feature.config["calendarId"].numberOrNull()?.toLong() ?: return@registerAction invalid("Calendar ID is required")
             val start = feature.config["startEpochMs"].numberOrNull()?.toLong() ?: return@registerAction invalid("Start time is required")
             val end = feature.config["endEpochMs"].numberOrNull()?.toLong() ?: return@registerAction invalid("End time is required")
@@ -186,7 +186,7 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "calendar")) return@registerAction permissionMissing("calendar")
+            if (!runtimePermissionGranted(context, "calendar", feature.typeId)) return@registerAction permissionMissing("calendar")
             val eventId = feature.config["eventId"].numberOrNull()?.toLong() ?: return@registerAction invalid("Event ID is required")
             val calendarId = feature.config["calendarId"].numberOrNull()?.toLong() ?: return@registerAction invalid("Calendar ID is required")
             val start = feature.config["startEpochMs"].numberOrNull()?.toLong() ?: return@registerAction invalid("Start time is required")
@@ -241,7 +241,7 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "calendar")) return@registerAction permissionMissing("calendar")
+            if (!runtimePermissionGranted(context, "calendar", feature.typeId)) return@registerAction permissionMissing("calendar")
             val eventId = feature.config["eventId"].numberOrNull()?.toLong() ?: return@registerAction invalid("Event ID is required")
             val output = runCatching {
                 val rows = ArrayList<ConfigValue>()
@@ -342,7 +342,7 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "calendar")) return@registerAction permissionMissing("calendar")
+            if (!runtimePermissionGranted(context, "calendar", feature.typeId)) return@registerAction permissionMissing("calendar")
             val eventId = feature.config["eventId"].numberOrNull()?.toLong() ?: return@registerAction invalid("Event ID is required")
             val attendeeId = feature.config["attendeeId"].numberOrNull()?.toLong() ?: 0L
             val values = ContentValues().apply {
@@ -391,7 +391,7 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "calendar")) return@registerAction permissionMissing("calendar")
+            if (!runtimePermissionGranted(context, "calendar", feature.typeId)) return@registerAction permissionMissing("calendar")
             val eventId = feature.config["eventId"].numberOrNull()?.toLong() ?: return@registerAction invalid("Event ID is required")
             val output = runCatching {
                 val rows = ArrayList<ConfigValue>()
@@ -453,7 +453,7 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "calendar")) return@registerAction permissionMissing("calendar")
+            if (!runtimePermissionGranted(context, "calendar", feature.typeId)) return@registerAction permissionMissing("calendar")
             val eventId = feature.config["eventId"].numberOrNull()?.toLong() ?: return@registerAction invalid("Event ID is required")
             val reminderId = feature.config["reminderId"].numberOrNull()?.toLong() ?: 0L
             val minutes = feature.config["minutesPrior"].numberOrNull()?.toInt()?.coerceAtLeast(0)
@@ -492,7 +492,7 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
             FieldSchema.Toggle("value", "Matching event exists"),
         )
         val evaluator = ConditionEvaluator { feature, ctx ->
-            if (!runtimePermissionGranted(context, "calendar")) return@ConditionEvaluator false
+            if (!runtimePermissionGranted(context, "calendar", feature.typeId)) return@ConditionEvaluator false
             val now = System.currentTimeMillis()
             val within = ((feature.config["withinMinutes"].numberOrNull() ?: 0.0) * 60_000.0).toLong()
             val end = now + within
@@ -681,7 +681,7 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "sms")) return@registerAction permissionMissing("sms")
+            if (!runtimePermissionGranted(context, "sms", feature.typeId)) return@registerAction permissionMissing("sms")
             val wantedBox = feature.config.string("box", "any")
             val addressNeedle = feature.config.string("addressContains").resolveVariables(ctx.variables)
             val textNeedle = feature.config.string("textContains").resolveVariables(ctx.variables)
@@ -749,7 +749,7 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "sms")) return@registerAction permissionMissing("sms")
+            if (!runtimePermissionGranted(context, "sms", feature.typeId)) return@registerAction permissionMissing("sms")
             val number = feature.config.string("number").resolveVariables(ctx.variables).trim()
             val text = feature.config.string("text").resolveVariables(ctx.variables)
             if (number.isBlank() || text.isBlank()) return@registerAction invalid("Phone number and message are required")

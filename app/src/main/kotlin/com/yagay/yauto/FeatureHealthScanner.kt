@@ -18,6 +18,7 @@ import com.yagay.yauto.core.registry.resolvedAccessRequirements
 import com.yagay.yauto.core.registry.resolvedImplementationOptions
 import com.yagay.yauto.platform.accessibility.AccessibilityBackend
 import com.yagay.yauto.platform.android.isUsageStatsAccessGranted
+import com.yagay.yauto.platform.android.runtimePermissionsForFeature
 import com.yagay.yauto.platform.root.RootShell
 import com.yagay.yauto.platform.shizuku.ShizukuBackend
 import com.yagay.yauto.platform.xposed.XposedBackend
@@ -221,7 +222,13 @@ class FeatureHealthScanner(
             )
         }
 
-        val explicitMissing = descriptor.accessRequirements.filterNot { access[it] == true }.toSet()
+        val available: (AccessRequirement) -> Boolean = { requirement ->
+            if (requirement == AccessRequirement.SMS || requirement == AccessRequirement.CALENDAR) {
+                val group = if (requirement == AccessRequirement.SMS) "sms" else "calendar"
+                runtimePermissionsForFeature(group, descriptor.id.value).all(::granted)
+            } else access[requirement] == true
+        }
+        val explicitMissing = descriptor.accessRequirements.filterNot(available).toSet()
         if (explicitMissing.isNotEmpty()) {
             return FeatureHealthItem(
                 descriptor.id.value,
@@ -236,7 +243,7 @@ class FeatureHealthScanner(
         val options = descriptor.resolvedImplementationOptions()
         if (options.isNotEmpty()) {
             val readyOption = options.firstOrNull { option ->
-                option.requirements.all { access[it] == true }
+                option.requirements.all(available)
             }
             if (readyOption != null) {
                 return FeatureHealthItem(
@@ -248,7 +255,7 @@ class FeatureHealthScanner(
                     detail = "Implementation, backend and access checks passed",
                 )
             }
-            val missing = options.flatMap { it.requirements }.filterNot { access[it] == true }.toSet()
+            val missing = options.flatMap { it.requirements }.filterNot(available).toSet()
             return FeatureHealthItem(
                 descriptor.id.value,
                 descriptor.title,
@@ -260,7 +267,7 @@ class FeatureHealthScanner(
         }
 
         val resolvedMissing = descriptor.resolvedAccessRequirements()
-            .filterNot { access[it] == true }
+            .filterNot(available)
             .toSet()
         return FeatureHealthItem(
             descriptor.id.value,
