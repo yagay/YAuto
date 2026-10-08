@@ -5,6 +5,7 @@ import android.util.AtomicFile
 import android.util.Log
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.WorkspaceRepository
+import com.yagay.yauto.core.storage.readWorkspaceCandidates
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -24,30 +25,19 @@ class JsonWorkspaceRepository(
 
     override suspend fun load(): WorkspaceData = withContext(Dispatchers.IO) {
         mutex.withLock {
-            val candidates = buildList {
-                if (file.isFile) add(file)
-                if (backup.isFile) add(backup)
-            }
-            if (candidates.isEmpty()) return@withLock WorkspaceData()
-
-            var lastError: Throwable? = null
-            for (candidate in candidates) {
-                try {
-                    val decoded = candidate.bufferedReader().use {
+            readWorkspaceCandidates(
+                primary = file,
+                backup = backup,
+                decode = { candidate ->
+                    candidate.bufferedReader().use {
                         json.decodeFromString(WorkspaceData.serializer(), it.readText())
                     }
-                    if (candidate != file) writeLocked(decoded)
-                    return@withLock decoded
-                } catch (error: Throwable) {
-                    if (error is VirtualMachineError || error is ThreadDeath) throw error
-                    lastError = error
+                },
+                recoverBackup = ::writeLocked,
+                onDecodeFailure = { candidate, error ->
                     Log.e(TAG, "Unable to decode workspace candidate ${candidate.name}", error)
-                }
-            }
-
-            quarantineCorruptFiles()
-            Log.e(TAG, "Workspace could not be recovered; starting with an empty workspace", lastError)
-            WorkspaceData()
+                },
+            )
         }
     }
 
@@ -65,15 +55,6 @@ class JsonWorkspaceRepository(
         } catch (error: Exception) {
             atomic.failWrite(stream)
             throw error
-        }
-    }
-
-    private fun quarantineCorruptFiles() {
-        val stamp = System.currentTimeMillis()
-        listOf(file, backup).forEach { source ->
-            if (!source.isFile) return@forEach
-            val target = File(dir, "${source.name}.corrupt.$stamp")
-            runCatching { source.renameTo(target) }
         }
     }
 
