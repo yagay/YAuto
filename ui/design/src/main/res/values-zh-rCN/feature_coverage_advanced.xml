@@ -13,7 +13,7 @@
     <string name="feature_android_event_file_changed_field_recursive">监视子目录</string>
     <string name="feature_android_event_file_changed_field_namecontains">名称包含</string>
 
-    <string name="feature_android_ime_picker_show_title">显示输入法选择器</string>
+    <string name="feature_android_ime_picker_show_title">选择输入法</string>
     <string name="feature_android_ime_picker_show_description">打开 Android 输入法选择器</string>
 
     <string name="feature_android_ime_default_set_title">设置默认输入法</string>
@@ -55,10 +55,10 @@
     <string name="feature_android_condition_hardware_keyboard_description">检查 Android 是否检测到硬件键盘</string>
     <string name="feature_android_condition_hardware_keyboard_field_value">启用 / 是</string>
 
-    <string name="feature_android_state_user_unlocked_title">用户已解锁</string>
+    <string name="feature_android_state_user_unlocked_title">用户存储解锁状态</string>
     <string name="feature_android_state_user_unlocked_description">检查 Android 凭据加密用户存储是否已解锁</string>
     <string name="feature_android_state_user_unlocked_field_value">启用 / 是</string>
-    <string name="feature_android_condition_user_unlocked_title">用户已解锁</string>
+    <string name="feature_android_condition_user_unlocked_title">用户存储解锁状态</string>
     <string name="feature_android_condition_user_unlocked_description">检查 Android 凭据加密用户存储是否已解锁</string>
     <string name="feature_android_condition_user_unlocked_field_value">启用 / 是</string>
 
@@ -111,11 +111,11 @@
     <string name="feature_android_condition_default_launcher_description">匹配 Android 当前默认桌面应用</string>
     <string name="feature_android_condition_default_launcher_field_package">应用 / 包名</string>
 
-    <string name="feature_android_state_process_running_title">应用进程运行中</string>
+    <string name="feature_android_state_process_running_title">应用进程状态</string>
     <string name="feature_android_state_process_running_description">检查 pidof 是否报告指定应用存在运行中的进程</string>
     <string name="feature_android_state_process_running_field_package">应用 / 包名</string>
     <string name="feature_android_state_process_running_field_value">运行中</string>
-    <string name="feature_android_condition_process_running_title">应用进程运行中</string>
+    <string name="feature_android_condition_process_running_title">应用进程状态</string>
     <string name="feature_android_condition_process_running_description">检查 pidof 是否报告指定应用存在运行中的进程</string>
     <string name="feature_android_condition_process_running_field_package">应用 / 包名</string>
     <string name="feature_android_condition_process_running_field_value">运行中</string>

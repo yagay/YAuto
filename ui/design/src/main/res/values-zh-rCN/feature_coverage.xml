@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_android_airplane_mode_set_title">设置飞行模式</string>
+    <string name="feature_android_airplane_mode_set_title">飞行模式开关</string>
     <string name="feature_android_airplane_mode_set_description">通过已授权的特权 Shell 后端开启或关闭飞行模式</string>
     <string name="feature_android_airplane_mode_set_field_enabled">启用</string>
 
@@ -75,10 +75,10 @@
     <string name="feature_android_condition_font_scale_field_minscale">最小比例</string>
     <string name="feature_android_condition_font_scale_field_maxscale">最大比例</string>
 
-    <string name="feature_android_state_internet_validated_title">已验证互联网</string>
+    <string name="feature_android_state_internet_validated_title">互联网连接状态</string>
     <string name="feature_android_state_internet_validated_description">检查当前活动网络是否已通过互联网访问验证</string>
     <string name="feature_android_state_internet_validated_field_value">启用 / 是</string>
-    <string name="feature_android_condition_internet_validated_title">已验证互联网</string>
+    <string name="feature_android_condition_internet_validated_title">互联网连接状态</string>
     <string name="feature_android_condition_internet_validated_description">检查当前活动网络是否已通过互联网访问验证</string>
     <string name="feature_android_condition_internet_validated_field_value">启用 / 是</string>
 
@@ -89,17 +89,17 @@
     <string name="feature_android_condition_network_roaming_description">检查当前活动网络是否处于漫游</string>
     <string name="feature_android_condition_network_roaming_field_value">启用 / 是</string>
 
-    <string name="feature_android_state_vpn_active_title">VPN 已连接</string>
+    <string name="feature_android_state_vpn_active_title">VPN 状态</string>
     <string name="feature_android_state_vpn_active_description">检查当前活动网络是否使用 VPN 传输</string>
     <string name="feature_android_state_vpn_active_field_value">启用 / 是</string>
-    <string name="feature_android_condition_vpn_active_title">VPN 已连接</string>
+    <string name="feature_android_condition_vpn_active_title">VPN 状态</string>
     <string name="feature_android_condition_vpn_active_description">检查当前活动网络是否使用 VPN 传输</string>
     <string name="feature_android_condition_vpn_active_field_value">启用 / 是</string>
 
-    <string name="feature_android_state_device_secure_title">设备安全锁</string>
+    <string name="feature_android_state_device_secure_title">安全锁屏设置</string>
     <string name="feature_android_state_device_secure_description">检查设备是否配置了安全锁屏凭据</string>
     <string name="feature_android_state_device_secure_field_value">启用 / 是</string>
-    <string name="feature_android_condition_device_secure_title">设备安全锁</string>
+    <string name="feature_android_condition_device_secure_title">安全锁屏设置</string>
     <string name="feature_android_condition_device_secure_description">检查设备是否配置了安全锁屏凭据</string>
     <string name="feature_android_condition_device_secure_field_value">启用 / 是</string>
 
