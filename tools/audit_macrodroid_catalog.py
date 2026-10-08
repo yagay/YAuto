@@ -94,9 +94,19 @@ def main():
         row["yauto_resource_key"] for row in false_friends
         if (row["yauto_resource_key"], row["rejected_macro_resource_key"]) in reviewed_pairs
     ]
+    # Shared MacroDroid labels can hide distinct YAuto implementations; expose each group
+    # for manual review rather than incorrectly failing intentional state/constraint pairs.
+    reviewed_groups = defaultdict(list)
+    for row in reviewed:
+        reviewed_groups[row["macrodroid_resource_key"]].append(row["yauto_resource_key"])
+    multiple_features_per_macro_name = {
+        macro: sorted(keys) for macro, keys in sorted(reviewed_groups.items()) if len(keys) > 1
+    }
     report = {
         "macrodroid_aligned_feature_titles": len(macro_keys_en),
         "reviewed_mapping_count": len(reviewed),
+        "multiple_features_per_macro_name": multiple_features_per_macro_name,
+        "pending_semantic_review_keys": sorted(set(feature_keys) - set(reviewed_keys)),
         "rejected_unsafe_mapping_count": len(false_friends),
         "forbidden_matches": forbidden_matches,
         "unreviewed_feature_title_count": len(set(feature_keys) - set(reviewed_keys)),

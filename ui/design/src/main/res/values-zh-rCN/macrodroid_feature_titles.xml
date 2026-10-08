@@ -140,8 +140,6 @@
     <string name="macro_feature_android_event_cell_tower_changed_title">基站改变</string>
     <string name="macro_feature_android_event_system_setting_changed_filtered_title">系统设置更改</string>
     <string name="macro_feature_android_event_interval_title">固定时间间隔</string>
-    <string name="macro_feature_android_condition_accessibility_enabled_title">无障碍服务状态</string>
-    <string name="macro_feature_android_state_accessibility_enabled_title">无障碍服务状态</string>
     <string name="macro_feature_android_condition_reference_wired_headphones_connected_title">耳机连接</string>
     <string name="macro_feature_android_state_reference_wired_headphones_connected_title">耳机连接</string>
     <string name="macro_feature_android_event_camera_in_use_changed_title">摄像头正在使用中</string>
@@ -162,4 +160,15 @@
     <string name="macro_feature_android_http_server_respond_title">HTTP 服务器响应</string>
     <string name="macro_feature_android_event_ui_click_title">用户界面点击</string>
     <string name="macro_feature_android_screenshot_capture_title">截屏</string>
+    <string name="macro_feature_android_calendar_event_add_title">日历 - 添加事件</string>
+    <string name="macro_feature_android_condition_calendar_event_title">日历条目</string>
+    <string name="macro_feature_android_state_calendar_event_title">日历条目</string>
+    <string name="macro_feature_android_condition_orientation_title">设备方向</string>
+    <string name="macro_feature_android_state_orientation_title">设备方向</string>
+    <string name="macro_feature_android_condition_reference_orientation_title">设备方向</string>
+    <string name="macro_feature_android_state_reference_orientation_title">设备方向</string>
+    <string name="macro_feature_android_condition_keyboard_visible_title">键盘显示</string>
+    <string name="macro_feature_android_state_keyboard_visible_title">键盘显示</string>
+    <string name="macro_feature_android_event_data_usage_threshold_title">已用数据</string>
+    <string name="macro_feature_android_network_udp_send_title">UDP命令</string>
 </resources>

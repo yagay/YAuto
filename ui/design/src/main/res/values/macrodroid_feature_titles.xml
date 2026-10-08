@@ -140,8 +140,6 @@
     <string name="macro_feature_android_event_cell_tower_changed_title">Cell Tower Change</string>
     <string name="macro_feature_android_event_system_setting_changed_filtered_title">System Setting Change</string>
     <string name="macro_feature_android_event_interval_title">Regular Interval</string>
-    <string name="macro_feature_android_condition_accessibility_enabled_title">Accessibility Service State</string>
-    <string name="macro_feature_android_state_accessibility_enabled_title">Accessibility Service State</string>
     <string name="macro_feature_android_condition_reference_wired_headphones_connected_title">Headphone Connection</string>
     <string name="macro_feature_android_state_reference_wired_headphones_connected_title">Headphone Connection</string>
     <string name="macro_feature_android_event_camera_in_use_changed_title">Camera In Use</string>
@@ -162,4 +160,15 @@
     <string name="macro_feature_android_http_server_respond_title">HTTP Server Response</string>
     <string name="macro_feature_android_event_ui_click_title">UI Click</string>
     <string name="macro_feature_android_screenshot_capture_title">Take Screenshot</string>
+    <string name="macro_feature_android_calendar_event_add_title">Calendar - Add Event</string>
+    <string name="macro_feature_android_condition_calendar_event_title">Calendar Entry</string>
+    <string name="macro_feature_android_state_calendar_event_title">Calendar Entry</string>
+    <string name="macro_feature_android_condition_orientation_title">Device Orientation</string>
+    <string name="macro_feature_android_state_orientation_title">Device Orientation</string>
+    <string name="macro_feature_android_condition_reference_orientation_title">Device Orientation</string>
+    <string name="macro_feature_android_state_reference_orientation_title">Device Orientation</string>
+    <string name="macro_feature_android_condition_keyboard_visible_title">Keyboard Showing</string>
+    <string name="macro_feature_android_state_keyboard_visible_title">Keyboard Showing</string>
+    <string name="macro_feature_android_event_data_usage_threshold_title">Data Used</string>
+    <string name="macro_feature_android_network_udp_send_title">UDP Command</string>
 </resources>
