@@ -29,6 +29,50 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test
+    fun `every declared unified family preserves its members original semantic classification`() {
+        // Exercise the complete real family specification inventory instead of only a few
+        // handcrafted examples. A majority-category rewrite must never reappear.
+        val candidateIds = UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct()
+        val candidates = candidateIds.map { id ->
+            val kind = when {
+                ".event." in id -> FeatureKind.EVENT
+                ".state." in id -> FeatureKind.STATE
+                ".condition." in id -> FeatureKind.CONDITION
+                else -> FeatureKind.ACTION
+            }
+            val descriptor = FeatureDescriptor(
+                id = FeatureId(id),
+                kind = kind,
+                title = id,
+                description = id,
+                category = FeatureCategory.DEVICE,
+            )
+            FeaturePickerCatalogItem(
+                descriptor = descriptor,
+                title = id,
+                description = id,
+                category = catalogCategory(descriptor.pickerCategory, kind),
+                searchIndex = id,
+            )
+        }
+        val catalog = FeaturePickerCatalogModel.create(candidates, Comparator.naturalOrder())
+        assertEquals(candidates.size, catalog.allItems.size)
+        candidates.forEach { source ->
+            assertEquals(
+                source.descriptor.id.value,
+                source.category.id,
+                catalog.item(source.descriptor.id.value)?.category?.id,
+            )
+        }
+        val groups = catalog.allItems.mapNotNull { catalog.unifiedGroupForMember(it.descriptor.id.value) }
+            .distinctBy { it.spec.id }
+        groups.forEach { group ->
+            assertEquals(group.spec.id, 1, group.members.map { it.category.id }.distinct().size)
+            assertEquals(group.spec.id, 1, group.members.map { it.descriptor.kind }.distinct().size)
+        }
+    }
+
+    @Test
     fun `the picker uses a different category order for each feature kind`() {
         val appAction = catalogCategory(FeaturePickerCategory.APPLICATIONS, FeatureKind.ACTION)
         val fileAction = catalogCategory(FeaturePickerCategory.FILES, FeatureKind.ACTION)
