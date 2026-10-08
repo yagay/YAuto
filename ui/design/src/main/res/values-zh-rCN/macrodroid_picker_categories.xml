@@ -26,8 +26,14 @@
     <string name="macro_category_files_subtitle">文件、目录、存储、压缩包与下载</string>
     <string name="macro_category_location">位置</string>
     <string name="macro_category_location_subtitle">位置、GPS、地理围栏、基站与天气</string>
-    <string name="macro_category_logging">日志</string>
-    <string name="macro_category_logging_subtitle">日志、诊断、跟踪、Logcat 与系统报告</string>
+    <string name="macro_category_logging">日志/日历</string>
+    <string name="macro_category_logging_subtitle">日志、日历记录、诊断、Logcat 与系统报告</string>
+    <string name="macro_category_macros">宏</string>
+    <string name="macro_category_macros_subtitle">运行、启停、管理自动化及等待操作</string>
+    <string name="macro_category_variables">变量</string>
+    <string name="macro_category_variables_subtitle">设置、清空与操作变量、数组和字典</string>
+    <string name="macro_category_screen_speaker">屏幕/扬声器</string>
+    <string name="macro_category_screen_speaker_subtitle">屏幕、方向、音量和扬声器状态检查</string>
     <string name="macro_category_conditions_loops">条件/循环</string>
     <string name="macro_category_conditions_loops_subtitle">If、等待、延时、分支、循环与执行流程</string>
     <string name="macro_category_yauto_specific">YAuto 专属</string>

@@ -26,8 +26,14 @@
     <string name="macro_category_files_subtitle">Files, folders, storage, archives and downloads</string>
     <string name="macro_category_location">Location</string>
     <string name="macro_category_location_subtitle">Location, GPS, geofences, cell towers and weather</string>
-    <string name="macro_category_logging">Logging</string>
-    <string name="macro_category_logging_subtitle">Logs, diagnostics, tracing, Logcat and system reports</string>
+    <string name="macro_category_logging">Logging/Calendar</string>
+    <string name="macro_category_logging_subtitle">Logs, calendar entries, diagnostics and system reports</string>
+    <string name="macro_category_macros">Macros</string>
+    <string name="macro_category_macros_subtitle">Run, enable, stop or manage macros and waits</string>
+    <string name="macro_category_variables">Variables</string>
+    <string name="macro_category_variables_subtitle">Set, clear and manipulate variables, arrays and dictionaries</string>
+    <string name="macro_category_screen_speaker">Screen/Speaker</string>
+    <string name="macro_category_screen_speaker_subtitle">Screen, orientation, volume and speaker state checks</string>
     <string name="macro_category_conditions_loops">Conditions/Loops</string>
     <string name="macro_category_conditions_loops_subtitle">If, wait, delay, branches, loops and execution flow</string>
     <string name="macro_category_yauto_specific">YAuto Specific</string>

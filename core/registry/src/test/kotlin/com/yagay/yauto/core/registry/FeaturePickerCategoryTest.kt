@@ -11,7 +11,13 @@ class FeaturePickerCategoryTest {
             "android.app.launch" to FeaturePickerCategory.APPLICATIONS,
             "android.screen.screenshot" to FeaturePickerCategory.CAMERA_PHOTO,
             "android.wifi.network.connect" to FeaturePickerCategory.CONNECTIVITY,
-            "android.network.udp.send" to FeaturePickerCategory.CONNECTIVITY,
+            "android.network.udp.send" to FeaturePickerCategory.WEB_INTERACTIONS,
+            "json.parse" to FeaturePickerCategory.WEB_INTERACTIONS,
+            "android.calendar.event.insert" to FeaturePickerCategory.LOGGING,
+            "script.javascript.execute" to FeaturePickerCategory.APPLICATIONS,
+            "android.macro.run" to FeaturePickerCategory.MACROS,
+            "core.delay" to FeaturePickerCategory.MACROS,
+            "variable.increment" to FeaturePickerCategory.VARIABLES,
             "android.clipboard.write" to FeaturePickerCategory.DEVICE_ACTIONS,
             "android.wallpaper.set" to FeaturePickerCategory.DEVICE_SETTINGS,
             "android.stopwatch.start" to FeaturePickerCategory.DATE_TIME,
@@ -20,8 +26,9 @@ class FeaturePickerCategoryTest {
             "file.read_text" to FeaturePickerCategory.FILES,
             "android.location.update" to FeaturePickerCategory.LOCATION,
             "android.logcat.query" to FeaturePickerCategory.LOGGING,
-            "flow.delay" to FeaturePickerCategory.CONDITIONS_LOOPS,
-            "variable.set" to FeaturePickerCategory.YAUTO_SPECIFIC,
+            "flow.delay" to FeaturePickerCategory.MACROS,
+            "flow.if" to FeaturePickerCategory.CONDITIONS_LOOPS,
+            "variable.set" to FeaturePickerCategory.VARIABLES,
             "android.audio.play" to FeaturePickerCategory.MEDIA,
             "android.sms.compose" to FeaturePickerCategory.MESSAGING,
             "android.notification.reply" to FeaturePickerCategory.NOTIFICATIONS,
@@ -66,16 +73,16 @@ class FeaturePickerCategoryTest {
             "android.event.wifi_changed" to FeaturePickerCategory.CONNECTIVITY,
             "android.event.time_tick" to FeaturePickerCategory.DATE_TIME,
             "android.event.location_changed" to FeaturePickerCategory.LOCATION,
-            "android.event.media_track_changed" to FeaturePickerCategory.MEDIA,
-            "android.event.notification_posted" to FeaturePickerCategory.NOTIFICATIONS,
-            "android.event.screen_on" to FeaturePickerCategory.SCREEN,
+            "android.event.media_track_changed" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.notification_posted" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.screen_on" to FeaturePickerCategory.DEVICE_EVENTS,
             "android.event.sensor_value" to FeaturePickerCategory.SENSORS,
             "android.event.hardware_key" to FeaturePickerCategory.USER_INPUT,
-            "android.event.webhook" to FeaturePickerCategory.WEB_INTERACTIONS,
+            "android.event.webhook" to FeaturePickerCategory.DEVICE_EVENTS,
             "android.event.boot" to FeaturePickerCategory.DEVICE_EVENTS,
             "android.event.systemui_app_ready" to FeaturePickerCategory.DEVICE_EVENTS,
             "android.event.status_bar_icon_changed" to FeaturePickerCategory.DEVICE_EVENTS,
-            "android.event.clipboard_changed" to FeaturePickerCategory.USER_INPUT,
+            "android.event.clipboard_changed" to FeaturePickerCategory.DEVICE_EVENTS,
         )
 
         cases.forEach { (id, expected) ->
@@ -113,7 +120,7 @@ class FeaturePickerCategoryTest {
             "android.condition.phone_idle" to FeaturePickerCategory.PHONE,
             "android.condition.screen" to FeaturePickerCategory.SCREEN,
             "android.condition.sensor_value" to FeaturePickerCategory.SENSORS,
-            "android.condition.media_volume" to FeaturePickerCategory.VOLUME,
+            "android.condition.media_volume" to FeaturePickerCategory.SCREEN,
             "android.condition.device_locked" to FeaturePickerCategory.DEVICE_STATE,
         )
 
@@ -140,6 +147,53 @@ class FeaturePickerCategoryTest {
             FeaturePickerCategory.CONNECTIVITY,
             classify("android.condition.websocket_connected", FeatureKind.CONDITION),
         )
+    }
+
+    @Test
+    fun `every MacroDroid picker kind has a separate allowed set`() {
+        val trigger = macroDroidCategoriesForKind(FeatureKind.EVENT)
+        val action = macroDroidCategoriesForKind(FeatureKind.ACTION)
+        val condition = macroDroidCategoriesForKind(FeatureKind.CONDITION)
+        assertEquals(10, trigger.size)
+        assertEquals(21, action.size) // 20 reference categories + YAuto AI extension
+        assertEquals(11, condition.size)
+        assertEquals(condition, macroDroidCategoriesForKind(FeatureKind.STATE))
+        assertTrue(FeaturePickerCategory.MACROS in action)
+        assertTrue(FeaturePickerCategory.VARIABLES in action)
+        assertTrue(FeaturePickerCategory.MACROS !in trigger)
+        assertTrue(FeaturePickerCategory.CONDITIONS_LOOPS !in condition)
+        FeatureKind.entries.forEach { kind ->
+            FeaturePickerCategory.entries.forEach { category ->
+                assertTrue(
+                    "invalid remap for $kind / $category",
+                    normalizeMacroDroidPickerCategory(kind, category) in macroDroidCategoriesForKind(kind),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `triggers are classified by event not by similarly named action`() {
+        val examples = mapOf(
+            "android.event.screen_off" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.clipboard_changed" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.notification_posted" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.systemui_app_ready" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.airplane_mode_changed" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.nfc_tag" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.wifi_changed" to FeaturePickerCategory.CONNECTIVITY,
+            "android.event.hardware_key" to FeaturePickerCategory.USER_INPUT,
+            "android.event.battery_low" to FeaturePickerCategory.BATTERY_POWER,
+        )
+        examples.forEach { (id, expected) -> assertEquals(id, expected, classify(id, FeatureKind.EVENT)) }
+    }
+
+    @Test
+    fun `constraint taxonomy has device state and screen speaker without action categories`() {
+        assertEquals(FeaturePickerCategory.DEVICE_STATE, classify("android.condition.app_installed", FeatureKind.CONDITION))
+        assertEquals(FeaturePickerCategory.SCREEN, classify("android.state.audio.ringer_mode", FeatureKind.STATE))
+        assertEquals(FeaturePickerCategory.CONNECTIVITY, classify("android.condition.websocket_connected", FeatureKind.CONDITION))
+        assertEquals(FeaturePickerCategory.YAUTO_SPECIFIC, classify("variable.condition.equals", FeatureKind.CONDITION))
     }
 
     @Test

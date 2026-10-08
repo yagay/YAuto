@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeaturePickerCategory
 import com.yagay.yauto.core.registry.FeatureKind
+import com.yagay.yauto.core.registry.normalizeMacroDroidPickerCategory
 import com.yagay.yauto.ui.design.R as TextR
 import java.util.Locale
 
@@ -135,14 +136,20 @@ internal fun buildFeaturePickerCatalog(
             descriptor = descriptor,
             title = textResolver.title(descriptor),
             description = textResolver.description(descriptor),
-            category = catalogCategory(descriptor.pickerCategory),
+            category = catalogCategory(
+                normalizeMacroDroidPickerCategory(descriptor.kind, descriptor.pickerCategory),
+                descriptor.kind,
+            ),
             searchIndex = textResolver.searchText(descriptor).lowercase(Locale.ROOT),
         )
     },
     titleComparator = titleComparator,
 )
 
-internal fun catalogCategory(category: FeaturePickerCategory): CatalogCategory = when (category) {
+internal fun catalogCategory(
+    category: FeaturePickerCategory,
+    kind: FeatureKind? = null,
+): CatalogCategory = when (category) {
     FeaturePickerCategory.AI ->
         CatalogCategory("ai", TextR.string.macro_category_ai, TextR.string.macro_category_ai_subtitle, 10)
     FeaturePickerCategory.APPLICATIONS ->
@@ -171,6 +178,8 @@ internal fun catalogCategory(category: FeaturePickerCategory): CatalogCategory =
         CatalogCategory("location", TextR.string.macro_category_location, TextR.string.macro_category_location_subtitle, 130)
     FeaturePickerCategory.LOGGING ->
         CatalogCategory("logging", TextR.string.macro_category_logging, TextR.string.macro_category_logging_subtitle, 140)
+    FeaturePickerCategory.MACROS ->
+        CatalogCategory("macros", TextR.string.macro_category_macros, TextR.string.macro_category_macros_subtitle, 145)
     FeaturePickerCategory.CONDITIONS_LOOPS ->
         CatalogCategory("conditions_loops", TextR.string.macro_category_conditions_loops, TextR.string.macro_category_conditions_loops_subtitle, 150)
     FeaturePickerCategory.YAUTO_SPECIFIC ->
@@ -184,11 +193,17 @@ internal fun catalogCategory(category: FeaturePickerCategory): CatalogCategory =
     FeaturePickerCategory.PHONE ->
         CatalogCategory("phone", TextR.string.macro_category_phone, TextR.string.macro_category_phone_subtitle, 200)
     FeaturePickerCategory.SCREEN ->
-        CatalogCategory("screen", TextR.string.macro_category_screen, TextR.string.macro_category_screen_subtitle, 210)
+        if (kind == FeatureKind.CONDITION || kind == FeatureKind.STATE) {
+            CatalogCategory("screen", TextR.string.macro_category_screen_speaker, TextR.string.macro_category_screen_speaker_subtitle, 210)
+        } else {
+            CatalogCategory("screen", TextR.string.macro_category_screen, TextR.string.macro_category_screen_subtitle, 210)
+        }
     FeaturePickerCategory.SENSORS ->
         CatalogCategory("sensors", TextR.string.macro_category_sensors, TextR.string.macro_category_sensors_subtitle, 220)
     FeaturePickerCategory.USER_INPUT ->
         CatalogCategory("user_input", TextR.string.macro_category_user_input, TextR.string.macro_category_user_input_subtitle, 230)
+    FeaturePickerCategory.VARIABLES ->
+        CatalogCategory("variables", TextR.string.macro_category_variables, TextR.string.macro_category_variables_subtitle, 235)
     FeaturePickerCategory.VOLUME ->
         CatalogCategory("volume", TextR.string.macro_category_volume, TextR.string.macro_category_volume_subtitle, 240)
     FeaturePickerCategory.WEB_INTERACTIONS ->

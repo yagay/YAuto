@@ -7,6 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FieldSchema
+import com.yagay.yauto.core.registry.normalizeMacroDroidPickerCategory
 import com.yagay.yauto.ui.design.R as TextR
 import java.util.Locale
 
@@ -71,7 +72,7 @@ internal class FeatureTextResolver(private val context: Context) {
                 add(descriptor.title)
                 add(descriptor.description)
                 add(descriptor.id.value)
-                val semanticCategory = catalogCategory(descriptor.pickerCategory)
+                val semanticCategory = catalogCategory(normalizeMacroDroidPickerCategory(descriptor.kind, descriptor.pickerCategory), descriptor.kind)
                 add(context.getString(semanticCategory.titleRes))
                 add(context.getString(semanticCategory.subtitleRes))
                 addAll(descriptor.keywords)

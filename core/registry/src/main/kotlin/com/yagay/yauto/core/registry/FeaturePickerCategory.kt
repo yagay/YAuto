@@ -23,6 +23,7 @@ enum class FeaturePickerCategory {
     FILES,
     LOCATION,
     LOGGING,
+    MACROS,
     CONDITIONS_LOOPS,
     YAUTO_SPECIFIC,
     MEDIA,
@@ -32,6 +33,7 @@ enum class FeaturePickerCategory {
     SCREEN,
     SENSORS,
     USER_INPUT,
+    VARIABLES,
     VOLUME,
     WEB_INTERACTIONS,
 }
@@ -52,10 +54,39 @@ fun inferFeaturePickerCategory(
     fun has(vararg tokens: String): Boolean = tokens.any(key::contains)
     fun starts(vararg prefixes: String): Boolean = prefixes.any(key::startsWith)
 
-    return when {
+    val inferred = when {
         starts("ai.") || has(".ai.") ->
             if (kind == FeatureKind.ACTION) FeaturePickerCategory.AI
             else FeaturePickerCategory.YAUTO_SPECIFIC
+
+        // MacroDroid action picker separates macro management, variable operations and
+        // control-flow blocks. The saved runtime IDs remain unchanged.
+        kind == FeatureKind.ACTION && (
+            starts("automation.", "macro.") ||
+                has(".macro.", ".action_block.", ".macro_run", "run_macro") ||
+                key in setOf("core.delay", "flow.delay", "flow.wait")
+            ) -> FeaturePickerCategory.MACROS
+
+        kind == FeatureKind.ACTION && (
+            starts("variable.", "persistent.", "collection.") ||
+                has(".variable.", ".variables.", ".array.", ".dictionary.")
+            ) -> FeaturePickerCategory.VARIABLES
+
+        // MacroDroid's Web Interactions includes JSON parsing and UDP commands.
+        kind == FeatureKind.ACTION && (
+            starts("json.") || has(".json.", ".udp.send", ".tcp.send")
+            ) -> FeaturePickerCategory.WEB_INTERACTIONS
+
+        // Calendar writes are filed with Logging/Calendar, not time triggers.
+        kind == FeatureKind.ACTION && (
+            has(".calendar.event.insert", ".calendar.event.update", ".calendar.event.delete")
+            ) -> FeaturePickerCategory.LOGGING
+
+        // Script/Tasker plugin actions are in MacroDroid's Applications category.
+        kind == FeatureKind.ACTION && (
+            starts("script.", "tasker.plugin.") ||
+                has(".javascript.", ".beanshell.", ".mvel.", ".shell.execute")
+            ) -> FeaturePickerCategory.APPLICATIONS
 
         // MacroDroid exposes web/network requests separately from connectivity controls.
         has(
@@ -76,11 +107,11 @@ fun inferFeaturePickerCategory(
             FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
         }
 
-        // Conditions/loops is an Action-only MacroDroid category.
+        // Only branching/loops belong here; generic waits and macro control do not.
         kind == FeatureKind.ACTION && (
-            starts("flow.") ||
+            starts("flow.") && !starts("flow.delay", "flow.wait") ||
                 has(
-                    ".flow.", ".loop", ".branch", ".delay", ".wait", ".parallel",
+                    ".flow.", ".loop", ".branch", ".parallel",
                     "try_catch", ".if.", ".else.", ".break_loop", ".continue_loop",
                 )
             ) ->
@@ -110,6 +141,11 @@ fun inferFeaturePickerCategory(
             if (kind == FeatureKind.ACTION) FeaturePickerCategory.DEVICE_ACTIONS
             else FeaturePickerCategory.SENSORS
 
+        // NFC tags, airplane-mode and auto-sync changes are device events in MacroDroid.
+        kind == FeatureKind.EVENT && has(
+            ".nfc", ".airplane", "account_sync", ".sync.account",
+        ) -> FeaturePickerCategory.DEVICE_EVENTS
+
         has(
             ".wifi", ".bluetooth", ".ble", ".mobile_data", ".airplane", ".hotspot",
             ".tether", ".nfc", ".usb", ".connectivity", ".network_profile",
@@ -122,7 +158,7 @@ fun inferFeaturePickerCategory(
         // input events separate so identical names do not imply identical semantics.
         has(".clipboard") -> when (kind) {
             FeatureKind.ACTION -> FeaturePickerCategory.DEVICE_ACTIONS
-            FeatureKind.EVENT -> FeaturePickerCategory.USER_INPUT
+            FeatureKind.EVENT -> FeaturePickerCategory.DEVICE_EVENTS
             FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
         }
 
@@ -264,6 +300,75 @@ fun inferFeaturePickerCategory(
 
         else -> fallbackPickerCategory(kind, legacyCategory)
     }
+    return normalizeMacroDroidPickerCategory(kind, inferred)
+}
+
+/**
+ * MacroDroid maintains distinct category menus for triggers, actions and constraints.
+ * YAuto-specific capabilities use YAUTO_SPECIFIC without creating misleading empty tabs.
+ * STATE follows the constraint taxonomy because both inspect the current device state.
+ */
+fun macroDroidCategoriesForKind(kind: FeatureKind): Set<FeaturePickerCategory> = when (kind) {
+    FeatureKind.EVENT -> setOf(
+        FeaturePickerCategory.APPLICATIONS, FeaturePickerCategory.SENSORS,
+        FeaturePickerCategory.BATTERY_POWER, FeaturePickerCategory.USER_INPUT,
+        FeaturePickerCategory.LOCATION, FeaturePickerCategory.DEVICE_EVENTS,
+        FeaturePickerCategory.CONNECTIVITY, FeaturePickerCategory.CALL_SMS,
+        FeaturePickerCategory.DATE_TIME, FeaturePickerCategory.YAUTO_SPECIFIC,
+    )
+    FeatureKind.ACTION -> setOf(
+        FeaturePickerCategory.AI, FeaturePickerCategory.APPLICATIONS,
+        FeaturePickerCategory.CAMERA_PHOTO, FeaturePickerCategory.CONNECTIVITY,
+        FeaturePickerCategory.DATE_TIME, FeaturePickerCategory.DEVICE_ACTIONS,
+        FeaturePickerCategory.DEVICE_SETTINGS, FeaturePickerCategory.FILES,
+        FeaturePickerCategory.LOCATION, FeaturePickerCategory.LOGGING,
+        FeaturePickerCategory.MACROS, FeaturePickerCategory.CONDITIONS_LOOPS,
+        FeaturePickerCategory.YAUTO_SPECIFIC, FeaturePickerCategory.MEDIA,
+        FeaturePickerCategory.MESSAGING, FeaturePickerCategory.NOTIFICATIONS,
+        FeaturePickerCategory.PHONE, FeaturePickerCategory.SCREEN,
+        FeaturePickerCategory.VARIABLES, FeaturePickerCategory.VOLUME,
+        FeaturePickerCategory.WEB_INTERACTIONS,
+    )
+    FeatureKind.STATE, FeatureKind.CONDITION -> setOf(
+        FeaturePickerCategory.SENSORS, FeaturePickerCategory.BATTERY_POWER,
+        FeaturePickerCategory.MEDIA, FeaturePickerCategory.LOCATION,
+        FeaturePickerCategory.SCREEN, FeaturePickerCategory.DEVICE_STATE,
+        FeaturePickerCategory.CONNECTIVITY, FeaturePickerCategory.NOTIFICATIONS,
+        FeaturePickerCategory.PHONE, FeaturePickerCategory.DATE_TIME,
+        FeaturePickerCategory.YAUTO_SPECIFIC,
+    )
+}
+
+/** Constrain legacy and explicit categories to the matching MacroDroid-style picker menu. */
+fun normalizeMacroDroidPickerCategory(
+    kind: FeatureKind,
+    category: FeaturePickerCategory,
+): FeaturePickerCategory {
+    if (category in macroDroidCategoriesForKind(kind)) return category
+    return when (kind) {
+        FeatureKind.EVENT -> when (category) {
+            FeaturePickerCategory.PHONE, FeaturePickerCategory.MESSAGING -> FeaturePickerCategory.CALL_SMS
+            FeaturePickerCategory.AI, FeaturePickerCategory.VARIABLES,
+            FeaturePickerCategory.MACROS, FeaturePickerCategory.CONDITIONS_LOOPS ->
+                FeaturePickerCategory.YAUTO_SPECIFIC
+            else -> FeaturePickerCategory.DEVICE_EVENTS
+        }
+        FeatureKind.ACTION -> when (category) {
+            FeaturePickerCategory.BATTERY_POWER, FeaturePickerCategory.DEVICE_STATE ->
+                FeaturePickerCategory.DEVICE_SETTINGS
+            FeaturePickerCategory.CALL_SMS -> FeaturePickerCategory.MESSAGING
+            else -> FeaturePickerCategory.DEVICE_ACTIONS
+        }
+        FeatureKind.STATE, FeatureKind.CONDITION -> when (category) {
+            FeaturePickerCategory.VOLUME -> FeaturePickerCategory.SCREEN
+            FeaturePickerCategory.CALL_SMS, FeaturePickerCategory.MESSAGING -> FeaturePickerCategory.PHONE
+            FeaturePickerCategory.WEB_INTERACTIONS -> FeaturePickerCategory.CONNECTIVITY
+            FeaturePickerCategory.AI, FeaturePickerCategory.VARIABLES,
+            FeaturePickerCategory.MACROS, FeaturePickerCategory.CONDITIONS_LOOPS ->
+                FeaturePickerCategory.YAUTO_SPECIFIC
+            else -> FeaturePickerCategory.DEVICE_STATE
+        }
+    }
 }
 
 private fun fallbackPickerCategory(
@@ -276,7 +381,8 @@ private fun fallbackPickerCategory(
     FeatureCategory.AUDIO -> FeaturePickerCategory.MEDIA
     FeatureCategory.NOTIFICATION -> FeaturePickerCategory.NOTIFICATIONS
     FeatureCategory.FILE -> FeaturePickerCategory.FILES
-    FeatureCategory.VARIABLE -> FeaturePickerCategory.YAUTO_SPECIFIC
+    FeatureCategory.VARIABLE -> if (kind == FeatureKind.ACTION) FeaturePickerCategory.VARIABLES
+        else FeaturePickerCategory.YAUTO_SPECIFIC
     FeatureCategory.FLOW ->
         if (kind == FeatureKind.ACTION) FeaturePickerCategory.CONDITIONS_LOOPS
         else FeaturePickerCategory.YAUTO_SPECIFIC
