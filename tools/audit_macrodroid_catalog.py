@@ -89,6 +89,24 @@ def main():
                        "action")
         if row["kind"] != actual_kind or not row["macrodroid_resource_key"].startswith(actual_kind + "_"):
             mismatched_reviewed_kinds.append(name)
+    # Verify actual localized titles against the curated APK terminology reference.
+    with (ROOT / "tools/macrodroid_verified_titles.csv").open(encoding="utf-8", newline="") as source_file:
+        verified_titles = list(__import__("csv").DictReader(source_file))
+    verified_pairs = {(r["yauto_resource_key"], r["macrodroid_resource_key"]) for r in verified_titles}
+    missing_verified_pairs = sorted(reviewed_pairs - verified_pairs) if "reviewed_pairs" in locals() else []
+    # Compute directly because rejected/false-friend checks are defined below.
+    expected_pairs = {(r["yauto_resource_key"], r["macrodroid_resource_key"]) for r in reviewed}
+    missing_verified_pairs = sorted(expected_pairs - verified_pairs)
+    unreviewed_reference_pairs = sorted(verified_pairs - expected_pairs)
+    mismatched_verified_labels = []
+    for row in verified_titles:
+        key = "macro_" + row["yauto_resource_key"]
+        def normalized_android_label(value):
+            return value.replace("\\\\'", "'")
+        actual_en = normalized_android_label(en.get(key, ("", ""))[0])
+        actual_zh = normalized_android_label(zh.get(key, ("", ""))[0])
+        if actual_en != row["english"] or actual_zh != row["chinese"]:
+            mismatched_verified_labels.append(row["yauto_resource_key"])
     # Explicitly block misleading machine-suggested matches that change behavior.
     with (ROOT / "tools/macrodroid_false_matches.csv").open(encoding="utf-8", newline="") as rejected_file:
         false_friends = list(__import__("csv").DictReader(rejected_file))
@@ -108,6 +126,10 @@ def main():
     report = {
         "macrodroid_aligned_feature_titles": len(macro_keys_en),
         "reviewed_mapping_count": len(reviewed),
+        "apk_reference_titles_checked": len(verified_titles),
+        "missing_apk_reference_pairs": missing_verified_pairs,
+        "unreviewed_apk_reference_pairs": unreviewed_reference_pairs,
+        "titles_different_from_apk_reference": mismatched_verified_labels,
         "multiple_features_per_macro_name": multiple_features_per_macro_name,
         "pending_semantic_review_keys": sorted(set(feature_keys) - set(reviewed_keys)),
         "rejected_unsafe_mapping_count": len(false_friends),
@@ -146,6 +168,9 @@ def main():
     print(f"Missing: zh={len(missing_zh)}, en={len(missing_en)}; "
           f"shared labels={len(duplicated_labels)}; event/state collisions={len(event_names)}")
     print(f"Detailed report: {target}")
+    if missing_verified_pairs or unreviewed_reference_pairs or mismatched_verified_labels:
+        print("ERROR: MacroDroid localized titles differ from the approved APK reference", file=sys.stderr)
+        return 1
     if forbidden_matches:
         print("ERROR: non-equivalent MacroDroid names must not replace YAuto feature names", file=sys.stderr)
         return 1
