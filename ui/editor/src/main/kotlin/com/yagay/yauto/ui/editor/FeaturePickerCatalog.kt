@@ -263,7 +263,7 @@ internal fun macroCategory(descriptor: FeatureDescriptor): CatalogCategory {
             group("date_time", TextR.string.macro_category_date_time, TextR.string.macro_category_date_time_subtitle, 35)
         has("sensor", "shake", "proximity", "orientation", "accelerometer", "gyroscope") ->
             group("sensors", TextR.string.macro_category_sensors, TextR.string.macro_category_sensors_subtitle, 45)
-        has("battery", "charging", "charger", "power", "device_idle") ->
+        (has("battery", "charging", "charger", "device_idle") || (has("power") && !has("power_user"))) ->
             group("battery", TextR.string.macro_category_battery, TextR.string.macro_category_battery_subtitle, 40)
         has("bluetooth", "wifi", "network", "vpn", "nfc", "usb", "airplane", "hotspot", "mobile_data") ->
             group("connectivity", TextR.string.macro_category_connectivity, TextR.string.macro_category_connectivity_subtitle, 50)
