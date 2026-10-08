@@ -16,7 +16,8 @@ internal class FeatureTextResolver(private val context: Context) {
         get() = context.resources.configuration.locales[0] ?: Locale.getDefault()
 
     fun title(descriptor: FeatureDescriptor): String =
-        resource("feature_${resourceKey(descriptor.id.value)}_title")
+        resource("macro_feature_${resourceKey(descriptor.id.value)}_title")
+            ?: resource("feature_${resourceKey(descriptor.id.value)}_title")
             ?: phrase(descriptor.title)
             ?: genericTitle(descriptor)
 

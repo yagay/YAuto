@@ -67,7 +67,14 @@ def main():
     missing_category_mappings = sorted(category_ids - category_mappings)
     missing_category_en = sorted(category_keys - set(en))
     missing_category_zh = sorted(category_keys - set(zh))
+    macro_keys_en = {k for k in en if k.startswith("macro_feature_") and k.endswith("_title")}
+    macro_keys_zh = {k for k in zh if k.startswith("macro_feature_") and k.endswith("_title")}
+    missing_macro_en = sorted(macro_keys_zh - macro_keys_en)
+    missing_macro_zh = sorted(macro_keys_en - macro_keys_zh)
     report = {
+        "macrodroid_aligned_feature_titles": len(macro_keys_en),
+        "missing_macro_english": missing_macro_en,
+        "missing_macro_chinese": missing_macro_zh,
         "semantic_picker_categories": len(category_ids),
         "unmapped_picker_categories": missing_category_mappings,
         "missing_picker_category_english": missing_category_en,
@@ -95,6 +102,9 @@ def main():
     print(f"Missing: zh={len(missing_zh)}, en={len(missing_en)}; "
           f"shared labels={len(duplicated_labels)}; event/state collisions={len(event_names)}")
     print(f"Detailed report: {target}")
+    if missing_macro_en or missing_macro_zh:
+        print("ERROR: MacroDroid feature title overrides missing locale pair", file=sys.stderr)
+        return 1
     if missing_category_mappings or missing_category_en or missing_category_zh:
         print("ERROR: picker categories or translations are missing", file=sys.stderr)
         return 1
