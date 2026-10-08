@@ -71,4 +71,5 @@
     <string name="macro_category_media_subtitle">媒体控制、音频与音量</string>
     <string name="macro_category_screen">屏幕</string>
     <string name="macro_category_screen_subtitle">屏幕状态、亮度与显示控制</string>
+
 </resources>

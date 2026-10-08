@@ -15,6 +15,8 @@ import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.registry.FeatureCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
+import com.yagay.yauto.core.registry.FeaturePickerCategory
+import com.yagay.yauto.core.registry.inferFeaturePickerCategory
 import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.R as TextR
@@ -239,46 +241,61 @@ internal fun catalogCategory(category: FeatureCategory): CatalogCategory = when 
     FeatureCategory.COMPATIBILITY -> CatalogCategory("advanced", TextR.string.category_advanced, TextR.string.category_advanced_subtitle, 150)
 }
 
-/**
- * Presentation-only MacroDroid-style taxonomy. Feature IDs and persisted categories stay intact.
- * Resolve feature families before the broad registry category so phone/location/time entries
- * do not disappear into Device or System. Categories are computed for the active picker kind.
- */
-internal fun macroCategory(descriptor: FeatureDescriptor): CatalogCategory {
-    val id = descriptor.id.value.lowercase(Locale.ROOT)
-    fun group(key: String, title: Int, subtitle: Int, order: Int) =
-        CatalogCategory(key, title, subtitle, order)
-    // Match complete ID segments; these are presentation rules, never persisted IDs.
-    // Specific domains take precedence over general tokens (e.g. battery voltage,
-    // SMS notification, Wi-Fi scan time, media screen controls).
-    fun has(vararg tokens: String): Boolean = tokens.any { token ->
-        ("_" + id + "_").contains("_" + token + "_")
-    }
-    return when {
-        has("sms", "mms", "email", "messaging") || has("message") && !has("log") ->
-            group("messaging", TextR.string.macro_category_messaging, TextR.string.macro_category_messaging_subtitle, 76)
-        has("notification", "toast", "quick_tile", "qs_tile") ->
-            group("notification", TextR.string.category_notification, TextR.string.category_notification_subtitle, 70)
-        has("geofence", "location", "gps") ->
-            group("location", TextR.string.macro_category_location, TextR.string.macro_category_location_subtitle, 55)
-        has("phone", "telephony", "dial", "dialer") || has("call") && !has("callback") ->
-            group("phone", TextR.string.macro_category_phone, TextR.string.macro_category_phone_subtitle, 75)
-        has("headset", "audio", "volume", "ringer", "speakerphone", "microphone", "media", "playback", "midi") ->
-            group("media", TextR.string.macro_category_media, TextR.string.macro_category_media_subtitle, 65)
-        has("wifi", "bluetooth", "network", "vpn", "nfc", "usb", "airplane", "hotspot", "ethernet") ||
-            has("mobile") && has("data") ->
-            group("connectivity", TextR.string.macro_category_connectivity, TextR.string.macro_category_connectivity_subtitle, 50)
-        has("battery", "charging", "charger") || has("device", "idle") && id.contains("device_idle") ||
-            has("power") && !id.contains("power_user") ->
-            group("battery", TextR.string.macro_category_battery, TextR.string.macro_category_battery_subtitle, 40)
-        has("screen", "display", "brightness", "wallpaper", "rotation") ->
-            group("screen", TextR.string.macro_category_screen, TextR.string.macro_category_screen_subtitle, 60)
-        has("sensor", "shake", "proximity", "orientation", "accelerometer", "gyroscope") ->
-            group("sensors", TextR.string.macro_category_sensors, TextR.string.macro_category_sensors_subtitle, 45)
-        has("time", "date", "alarm", "calendar", "sunrise", "sunset", "interval", "clock", "schedule") ->
-            group("date_time", TextR.string.macro_category_date_time, TextR.string.macro_category_date_time_subtitle, 35)
-        else -> catalogCategory(descriptor.category)
-    }
+/** Semantic categories vary by Trigger, Action, State and Constraint. */
+internal fun macroCategory(descriptor: FeatureDescriptor): CatalogCategory =
+    catalogCategory(inferFeaturePickerCategory(descriptor.id.value, descriptor.kind, descriptor.category))
+
+internal fun catalogCategory(category: FeaturePickerCategory): CatalogCategory = when (category) {
+    FeaturePickerCategory.AI ->
+        CatalogCategory("ai", TextR.string.macro_category_ai, TextR.string.macro_category_ai_subtitle, 10)
+    FeaturePickerCategory.APPLICATIONS ->
+        CatalogCategory("applications", TextR.string.macro_category_applications, TextR.string.macro_category_applications_subtitle, 20)
+    FeaturePickerCategory.BATTERY_POWER ->
+        CatalogCategory("battery_power", TextR.string.macro_category_battery_power, TextR.string.macro_category_battery_power_subtitle, 30)
+    FeaturePickerCategory.CALL_SMS ->
+        CatalogCategory("call_sms", TextR.string.macro_category_call_sms, TextR.string.macro_category_call_sms_subtitle, 40)
+    FeaturePickerCategory.CAMERA_PHOTO ->
+        CatalogCategory("camera_photo", TextR.string.macro_category_camera_photo, TextR.string.macro_category_camera_photo_subtitle, 50)
+    FeaturePickerCategory.CONNECTIVITY ->
+        CatalogCategory("connectivity", TextR.string.macro_category_connectivity, TextR.string.macro_category_connectivity_subtitle, 60)
+    FeaturePickerCategory.DATE_TIME ->
+        CatalogCategory("date_time", TextR.string.macro_category_date_time, TextR.string.macro_category_date_time_subtitle, 70)
+    FeaturePickerCategory.DEVICE_ACTIONS ->
+        CatalogCategory("device_actions", TextR.string.macro_category_device_actions, TextR.string.macro_category_device_actions_subtitle, 80)
+    FeaturePickerCategory.DEVICE_EVENTS ->
+        CatalogCategory("device_events", TextR.string.macro_category_device_events, TextR.string.macro_category_device_events_subtitle, 90)
+    FeaturePickerCategory.DEVICE_SETTINGS ->
+        CatalogCategory("device_settings", TextR.string.macro_category_device_settings, TextR.string.macro_category_device_settings_subtitle, 100)
+    FeaturePickerCategory.DEVICE_STATE ->
+        CatalogCategory("device_state", TextR.string.macro_category_device_state, TextR.string.macro_category_device_state_subtitle, 110)
+    FeaturePickerCategory.FILES ->
+        CatalogCategory("files", TextR.string.macro_category_files, TextR.string.macro_category_files_subtitle, 120)
+    FeaturePickerCategory.LOCATION ->
+        CatalogCategory("location", TextR.string.macro_category_location, TextR.string.macro_category_location_subtitle, 130)
+    FeaturePickerCategory.LOGGING ->
+        CatalogCategory("logging", TextR.string.macro_category_logging, TextR.string.macro_category_logging_subtitle, 140)
+    FeaturePickerCategory.CONDITIONS_LOOPS ->
+        CatalogCategory("conditions_loops", TextR.string.macro_category_conditions_loops, TextR.string.macro_category_conditions_loops_subtitle, 150)
+    FeaturePickerCategory.YAUTO_SPECIFIC ->
+        CatalogCategory("yauto_specific", TextR.string.macro_category_yauto_specific, TextR.string.macro_category_yauto_specific_subtitle, 160)
+    FeaturePickerCategory.MEDIA ->
+        CatalogCategory("media", TextR.string.macro_category_media, TextR.string.macro_category_media_subtitle, 170)
+    FeaturePickerCategory.MESSAGING ->
+        CatalogCategory("messaging", TextR.string.macro_category_messaging, TextR.string.macro_category_messaging_subtitle, 180)
+    FeaturePickerCategory.NOTIFICATIONS ->
+        CatalogCategory("notifications", TextR.string.macro_category_notifications, TextR.string.macro_category_notifications_subtitle, 190)
+    FeaturePickerCategory.PHONE ->
+        CatalogCategory("phone", TextR.string.macro_category_phone, TextR.string.macro_category_phone_subtitle, 200)
+    FeaturePickerCategory.SCREEN ->
+        CatalogCategory("screen", TextR.string.macro_category_screen, TextR.string.macro_category_screen_subtitle, 210)
+    FeaturePickerCategory.SENSORS ->
+        CatalogCategory("sensors", TextR.string.macro_category_sensors, TextR.string.macro_category_sensors_subtitle, 220)
+    FeaturePickerCategory.USER_INPUT ->
+        CatalogCategory("user_input", TextR.string.macro_category_user_input, TextR.string.macro_category_user_input_subtitle, 230)
+    FeaturePickerCategory.VOLUME ->
+        CatalogCategory("volume", TextR.string.macro_category_volume, TextR.string.macro_category_volume_subtitle, 240)
+    FeaturePickerCategory.WEB_INTERACTIONS ->
+        CatalogCategory("web_interactions", TextR.string.macro_category_web_interactions, TextR.string.macro_category_web_interactions_subtitle, 250)
 }
 
 @Composable

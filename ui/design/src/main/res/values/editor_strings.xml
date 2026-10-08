@@ -71,4 +71,5 @@
     <string name="macro_category_media_subtitle">Media controls, audio and volume</string>
     <string name="macro_category_screen">Screen</string>
     <string name="macro_category_screen_subtitle">Screen, brightness and display settings</string>
+
 </resources>
