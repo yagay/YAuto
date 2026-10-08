@@ -123,7 +123,7 @@ fun inferFeaturePickerCategory(
 
         // MacroDroid keeps volume/ringer/DND separate from general media/audio.
         has(
-            ".volume", "ringer_mode", ".ringer.", "dnd_filter", ".dnd",
+            ".volume", "ringer_mode", ".ringer.", "_volume", "dnd_filter", ".dnd",
             "do_not_disturb",
         ) ->
             FeaturePickerCategory.VOLUME
