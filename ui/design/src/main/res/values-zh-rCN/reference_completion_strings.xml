@@ -3,7 +3,7 @@
     <string name="feature_android_search_web_title">网页搜索</string>
     <string name="feature_android_alarm_show_title">打开闹钟</string>
     <string name="feature_android_camera_still_open_title">打开相机</string>
-    <string name="feature_android_camera_video_open_title">录制视频</string>
+    <string name="feature_android_camera_video_open_title">打开录像相机</string>
     <string name="feature_android_app_market_open_title">打开应用商店</string>
     <string name="feature_android_app_uninstall_request_title">卸载应用</string>
     <string name="feature_android_wallpaper_picker_title">选择壁纸</string>
@@ -80,7 +80,7 @@
     <string name="feature_android_event_wifi_rssi_changed_title">Wi-Fi 信号强度变化</string>
     <string name="feature_android_event_wifi_supplicant_state_changed_title">Wi-Fi Supplicant 状态已更改</string>
     <string name="feature_android_event_wifi_supplicant_connection_changed_title">Wi-Fi Supplicant 连接已更改</string>
-    <string name="feature_android_event_package_changed_title">应用更新</string>
+    <string name="feature_android_event_package_changed_title">应用包状态变化</string>
     <string name="feature_android_event_package_fully_removed_title">应用已卸载</string>
     <string name="feature_android_event_package_data_cleared_title">应用数据清除</string>
     <string name="feature_android_event_package_restarted_title">应用程序包已重启</string>

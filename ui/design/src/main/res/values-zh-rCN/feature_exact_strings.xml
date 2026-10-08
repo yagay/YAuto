@@ -57,7 +57,7 @@
 
     <string name="feature_android_event_time_tick_description">在 Android 每分钟时钟事件触发时运行，并可按小时、分钟或 ISO 星期匹配</string>
     <string name="feature_android_event_clipboard_changed_description">当主剪贴板变化时触发；较新 Android 版本在后台时可能无法读取剪贴板文本</string>
-    <string name="feature_android_event_broadcast_title">接收 Intent</string>
+    <string name="feature_android_event_broadcast_title">接收广播</string>
     <string name="feature_android_event_broadcast_description">接收配置的 Android 广播动作，并可匹配简单的额外参数</string>
 
     <string name="feature_android_event_external_command_description">收到通过身份验证的 YAuto 命令广播时触发</string>

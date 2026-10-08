@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_android_notification_dismiss_all_title">清除通知</string>
+    <string name="feature_android_notification_dismiss_all_title">清除匹配通知</string>
     <string name="feature_android_notification_dismiss_all_description">关闭所有符合筛选条件的活动通知，并可保存成功关闭的数量</string>
     <string name="feature_android_notification_dismiss_all_field_resultvariable">将关闭数量保存到变量</string>
 
