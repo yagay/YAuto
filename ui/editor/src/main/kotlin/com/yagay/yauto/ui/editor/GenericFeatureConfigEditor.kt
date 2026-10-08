@@ -159,24 +159,20 @@ internal fun GenericFeatureConfigEditor(
         item {
             Button(
                 onClick = {
-                    val config = initial?.config.orEmpty().toMutableMap()
-                    semanticallyVisible.forEach { field ->
-                        val behavior = descriptor.fieldBehavior(field.key)
-                        val enabled = behavior.enabledWhen?.matches(typedValues) != false
-                        if (!enabled) return@forEach
-
-                        val raw = values[field.key].orEmpty()
-                        val old = initial?.config?.get(field.key)
-                        if (old != null && raw == editorConfigValueText(initialWithDefaults.config[field.key], locale)) {
-                            config[field.key] = old
-                        } else {
-                            config.remove(field.key)
-                            parseFieldValue(field, raw, locale)?.let { parsed -> config[field.key] = parsed }
-                        }
-                    }
-                    config.keys.filter { it.startsWith("hardwareIdentity") }.forEach(config::remove)
-                    config.putAll(hardwareIdentityConfig)
-                    onSave(FeatureRef(descriptor.id.value, descriptor.schemaVersion, config))
+                    onSave(
+                        FeatureRef(
+                            descriptor.id.value,
+                            descriptor.schemaVersion,
+                            buildEditedFeatureConfig(
+                                descriptor,
+                                initial,
+                                initialWithDefaults,
+                                values,
+                                locale,
+                                hardwareIdentityConfig,
+                            ),
+                        )
+                    )
                 },
                 enabled = valid,
                 modifier = Modifier.fillMaxWidth(),
@@ -408,6 +404,40 @@ private fun FieldEditor(
     }
 }
 
+
+/**
+ * Serialize only fields applicable to the currently selected mode. Retain unknown imported
+ * config keys for forward compatibility, but do not leak hidden/disabled schema fields when
+ * the user changes an operation's settings.
+ */
+internal fun buildEditedFeatureConfig(
+    descriptor: FeatureDescriptor,
+    initial: FeatureRef?,
+    initialWithDefaults: FeatureRef,
+    values: Map<String, String>,
+    locale: Locale,
+    hardwareIdentityConfig: Map<String, ConfigValue> = emptyMap(),
+): Map<String, ConfigValue> {
+    val typedValues = valuesAsConfig(descriptor.fields, values, locale)
+    val config = initial?.config.orEmpty().toMutableMap()
+    descriptor.fields.forEach { field ->
+        val prior = config.remove(field.key)
+        val behavior = descriptor.fieldBehavior(field.key)
+        if (behavior.visibleWhen?.matches(typedValues) == false ||
+            behavior.enabledWhen?.matches(typedValues) == false
+        ) return@forEach
+
+        val raw = values[field.key].orEmpty()
+        if (prior != null && raw == editorConfigValueText(initialWithDefaults.config[field.key], locale)) {
+            config[field.key] = prior
+        } else {
+            parseFieldValue(field, raw, locale)?.let { config[field.key] = it }
+        }
+    }
+    config.keys.filter { it.startsWith("hardwareIdentity") }.forEach(config::remove)
+    config.putAll(hardwareIdentityConfig)
+    return config
+}
 
 private fun valuesAsConfig(
     fields: List<FieldSchema>,

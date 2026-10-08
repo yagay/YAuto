@@ -50,8 +50,12 @@ jobs:
         run: >
           gradle
           :core:registry:test
+          :core:storage:test
+          :core:engine:test
           :feature:standard:test
           :importer:macrodroid:test
+          :importer:shortx:test
+          :importer:tasker:test
           :platform:android:testDebugUnitTest
           :ui:editor:testDebugUnitTest
           --configuration-cache
