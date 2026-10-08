@@ -82,8 +82,11 @@ def main():
     mismatched_reviewed_kinds = []
     for row in reviewed:
         name = row["yauto_resource_key"]
-        actual_kind = ("trigger" if "_event_" in name else
-                       "constraint" if "_condition_" in name or "_state_" in name else "action")
+        # Only a real feature kind segment counts: calendar_event_add is an
+        # ACTION and condition_calendar_event is a CONSTRAINT, despite "event".
+        actual_kind = ("constraint" if re.match(r"^feature_[a-z0-9]+_(?:condition|state)_", name) else
+                       "trigger" if re.match(r"^feature_[a-z0-9]+_event_", name) else
+                       "action")
         if row["kind"] != actual_kind or not row["macrodroid_resource_key"].startswith(actual_kind + "_"):
             mismatched_reviewed_kinds.append(name)
     # Explicitly block misleading machine-suggested matches that change behavior.
