@@ -36,6 +36,14 @@ internal class FeaturePickerCatalogModel private constructor(
 
     fun categoryCount(categoryId: String): Int = categoryCounts[categoryId] ?: 0
 
+    fun favoriteCount(favorites: Set<String>): Int =
+        collapseUnifiedFeatureItems(
+            allItems.filter { it.descriptor.id.value in favorites }, unifiedIndex,
+        ).size
+
+    fun recentCount(recent: List<String>): Int =
+        collapseUnifiedFeatureItems(recent.mapNotNull(byId::get), unifiedIndex).size
+
     fun unifiedGroup(id: String): UnifiedFeatureGroup? = unifiedIndex.byId[id]
 
     fun unifiedGroupForMember(memberId: String): UnifiedFeatureGroup? =

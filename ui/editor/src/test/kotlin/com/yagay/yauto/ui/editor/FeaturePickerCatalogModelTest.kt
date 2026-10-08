@@ -58,10 +58,10 @@ class FeaturePickerCatalogModelTest {
 
         val searchEntries = model.entries(page, favorites = emptySet(), recent = emptyList(), query = "adjust")
         assertEquals(1, searchEntries.size)
-        assertTrue(searchEntries.single() is FeaturePickerListEntry.Feature)
+        assertTrue(searchEntries.single() is FeaturePickerListEntry.Unified)
         assertEquals(
-            "android.audio.volume.adjust",
-            (searchEntries.single() as FeaturePickerListEntry.Feature).item.descriptor.id.value,
+            "volume",
+            (searchEntries.single() as FeaturePickerListEntry.Unified).group.spec.id,
         )
     }
 
@@ -183,6 +183,12 @@ class FeaturePickerCatalogModelTest {
             ),
             Comparator.naturalOrder(),
         )
+        assertEquals(1, model.favoriteCount(setOf(
+            "android.audio.volume.set", "android.audio.volume.adjust",
+        )))
+        assertEquals(1, model.recentCount(listOf(
+            "android.audio.volume.set", "android.audio.volume.adjust",
+        )))
         assertEquals(1, model.searchEntries("volume").size)
         assertTrue(model.searchEntries("volume").single() is FeaturePickerListEntry.Unified)
         assertEquals(1, model.entries(

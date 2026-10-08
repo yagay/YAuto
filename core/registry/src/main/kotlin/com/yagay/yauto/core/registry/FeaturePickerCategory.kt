@@ -280,7 +280,11 @@ private fun fallbackPickerCategory(
     FeatureCategory.FLOW ->
         if (kind == FeatureKind.ACTION) FeaturePickerCategory.CONDITIONS_LOOPS
         else FeaturePickerCategory.YAUTO_SPECIFIC
-    FeatureCategory.UI_AUTOMATION -> FeaturePickerCategory.USER_INPUT
+    FeatureCategory.UI_AUTOMATION -> when (kind) {
+        FeatureKind.ACTION -> FeaturePickerCategory.DEVICE_ACTIONS
+        FeatureKind.EVENT -> FeaturePickerCategory.USER_INPUT
+        FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
+    }
     FeatureCategory.SCRIPT -> FeaturePickerCategory.YAUTO_SPECIFIC
     FeatureCategory.CORE, FeatureCategory.COMPATIBILITY -> FeaturePickerCategory.YAUTO_SPECIFIC
     FeatureCategory.DEVICE,

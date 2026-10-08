@@ -109,6 +109,12 @@ fun MacroFeaturePickerDialog(
         prefs.edit().putString(favoriteKey(kind), favorites.joinToString("\n")).apply()
     }
 
+    fun toggleUnifiedFavorite(group: UnifiedFeatureGroup) {
+        val ids = group.members.map { it.descriptor.id.value }.toSet()
+        favorites = if (ids.any { it in favorites }) favorites - ids else favorites + ids
+        prefs.edit().putString(favoriteKey(kind), favorites.joinToString("\n")).apply()
+    }
+
     fun recordRecent(id: String) {
         recent = (listOf(id) + recent.filterNot { it == id }).take(12)
         prefs.edit().putString(recentKey(kind), recent.joinToString("\n")).apply()
@@ -172,6 +178,8 @@ fun MacroFeaturePickerDialog(
                     onFeature = ::openFeature,
                     onUnified = { push(PickerPage.Unified(it)) },
                     onFavorite = ::toggleFavorite,
+                    onUnifiedFavorite = ::toggleUnifiedFavorite,
+                    onUnifiedFavorite = ::toggleUnifiedFavorite,
                 )
                 is PickerPage.Features -> FeatureListPage(
                     modifier = Modifier.padding(padding),

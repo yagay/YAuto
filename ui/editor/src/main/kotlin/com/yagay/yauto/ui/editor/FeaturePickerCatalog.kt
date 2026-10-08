@@ -38,13 +38,14 @@ internal fun FeatureCategoryPage(
     onFeature: (FeatureDescriptor) -> Unit,
     onUnified: (UnifiedFeatureGroup) -> Unit,
     onFavorite: (String) -> Unit,
+    onUnifiedFavorite: (UnifiedFeatureGroup) -> Unit,
 ) {
     val availability = LocalFeatureAvailability.current
     val search = remember(catalog, query) {
         if (query.isBlank()) emptyList() else catalog.searchEntries(query)
     }
-    val recentCount = recent.count(catalog::contains)
-    val favoriteCount = favorites.count(catalog::contains)
+    val recentCount = remember(catalog, recent) { catalog.recentCount(recent) }
+    val favoriteCount = remember(catalog, favorites) { catalog.favoriteCount(favorites) }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -141,7 +142,9 @@ internal fun FeatureCategoryPage(
                     }
                     is FeaturePickerListEntry.Unified -> UnifiedFeatureRow(
                         group = entry.group,
+                        favorite = entry.group.members.any { it.descriptor.id.value in favorites },
                         onClick = { onUnified(entry.group) },
+                        onFavorite = { onUnifiedFavorite(entry.group) },
                     )
                 }
             }
@@ -163,6 +166,7 @@ internal fun FeatureListPage(
     onFeature: (FeatureDescriptor) -> Unit,
     onUnified: (UnifiedFeatureGroup) -> Unit,
     onFavorite: (String) -> Unit,
+    onUnifiedFavorite: (UnifiedFeatureGroup) -> Unit,
 ) {
     val availability = LocalFeatureAvailability.current
     val entries = remember(catalog, categoryPage, query, favorites, recent) {
@@ -227,7 +231,9 @@ internal fun FeatureListPage(
                 }
                 is FeaturePickerListEntry.Unified -> UnifiedFeatureRow(
                     group = entry.group,
+                    favorite = entry.group.members.any { it.descriptor.id.value in favorites },
                     onClick = { onUnified(entry.group) },
+                    onFavorite = { onUnifiedFavorite(entry.group) },
                 )
             }
         }
@@ -237,12 +243,15 @@ internal fun FeatureListPage(
 @Composable
 private fun UnifiedFeatureRow(
     group: UnifiedFeatureGroup,
+    favorite: Boolean,
     onClick: () -> Unit,
+    onFavorite: () -> Unit,
 ) {
     ListItem(
         headlineContent = {
+            val title = stringResource(group.spec.titleRes)
             Text(
-                text = stringResource(group.spec.titleRes),
+                text = if (favorite) stringResource(TextR.string.editor_favorite_prefix, title) else title,
                 fontWeight = FontWeight.Medium,
             )
         },
@@ -256,10 +265,18 @@ private fun UnifiedFeatureRow(
             )
         },
         trailingContent = {
-            Icon(
-                painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_chevron_right),
-                contentDescription = stringResource(TextR.string.icon_open_details),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_more),
+                    contentDescription = stringResource(TextR.string.icon_more_options),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(44.dp).clickable(onClick = onFavorite).padding(11.dp),
+                )
+                Icon(
+                    painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_chevron_right),
+                    contentDescription = stringResource(TextR.string.icon_open_details),
+                )
+            }
         },
         modifier = Modifier.clickable(onClick = onClick),
     )
