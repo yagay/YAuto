@@ -176,7 +176,7 @@ fun MacroFeaturePickerDialog(
                     onQuery = ::updateQuery,
                     onCategory = { push(it) },
                     onFeature = ::openFeature,
-                    onUnified = { push(PickerPage.Unified(it)) },
+                    onUnified = { group, preferredId -> push(PickerPage.Unified(group, preferredId)) },
                     onFavorite = ::toggleFavorite,
                     onUnifiedFavorite = ::toggleUnifiedFavorite,
                 )
@@ -191,7 +191,7 @@ fun MacroFeaturePickerDialog(
                     recent = recent,
                     onQuery = ::updateQuery,
                     onFeature = ::openFeature,
-                    onUnified = { push(PickerPage.Unified(it)) },
+                    onUnified = { group, preferredId -> push(PickerPage.Unified(group, preferredId)) },
                     onFavorite = ::toggleFavorite,
                     onUnifiedFavorite = ::toggleUnifiedFavorite,
                 )

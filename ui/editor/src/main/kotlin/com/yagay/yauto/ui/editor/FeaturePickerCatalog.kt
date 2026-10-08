@@ -36,7 +36,7 @@ internal fun FeatureCategoryPage(
     onQuery: (String) -> Unit,
     onCategory: (PickerPage.Features) -> Unit,
     onFeature: (FeatureDescriptor) -> Unit,
-    onUnified: (UnifiedFeatureGroup) -> Unit,
+    onUnified: (UnifiedFeatureGroup, String) -> Unit,
     onFavorite: (String) -> Unit,
     onUnifiedFavorite: (UnifiedFeatureGroup) -> Unit,
 ) {
@@ -143,7 +143,7 @@ internal fun FeatureCategoryPage(
                     is FeaturePickerListEntry.Unified -> UnifiedFeatureRow(
                         group = entry.group,
                         favorite = entry.group.members.any { it.descriptor.id.value in favorites },
-                        onClick = { onUnified(entry.group) },
+                        onClick = { onUnified(entry.group, entry.preferredMemberId) },
                         onFavorite = { onUnifiedFavorite(entry.group) },
                     )
                 }
@@ -164,7 +164,7 @@ internal fun FeatureListPage(
     recent: List<String>,
     onQuery: (String) -> Unit,
     onFeature: (FeatureDescriptor) -> Unit,
-    onUnified: (UnifiedFeatureGroup) -> Unit,
+    onUnified: (UnifiedFeatureGroup, String) -> Unit,
     onFavorite: (String) -> Unit,
     onUnifiedFavorite: (UnifiedFeatureGroup) -> Unit,
 ) {
@@ -232,7 +232,7 @@ internal fun FeatureListPage(
                 is FeaturePickerListEntry.Unified -> UnifiedFeatureRow(
                     group = entry.group,
                     favorite = entry.group.members.any { it.descriptor.id.value in favorites },
-                    onClick = { onUnified(entry.group) },
+                    onClick = { onUnified(entry.group, entry.preferredMemberId) },
                     onFavorite = { onUnifiedFavorite(entry.group) },
                 )
             }

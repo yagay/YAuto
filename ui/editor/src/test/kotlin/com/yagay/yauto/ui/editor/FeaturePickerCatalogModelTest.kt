@@ -91,6 +91,41 @@ class FeaturePickerCatalogModelTest {
             "volume",
             (searchEntries.single() as FeaturePickerListEntry.Unified).group.spec.id,
         )
+        assertEquals(
+            "android.audio.volume.adjust",
+            (searchEntries.single() as FeaturePickerListEntry.Unified).preferredMemberId,
+        )
+    }
+
+    @Test
+    fun `recent and favorites open the matching concrete operation within a unified family`() {
+        val model = FeaturePickerCatalogModel.create(
+            listOf(
+                item("android.audio.volume.set", "Set volume", app, "set volume"),
+                item("android.audio.volume.adjust", "Adjust volume", app, "adjust volume"),
+            ),
+            Comparator.naturalOrder(),
+        )
+        val recent = model.entries(
+            PickerPage.Features(app, special = "recent"),
+            favorites = emptySet(),
+            recent = listOf("android.audio.volume.set", "android.audio.volume.adjust"),
+            query = "",
+        ).single() as FeaturePickerListEntry.Unified
+        assertEquals("android.audio.volume.set", recent.preferredMemberId)
+        assertEquals("android.audio.volume.set", resolveUnifiedMemberId(recent.group, null, recent.preferredMemberId))
+
+        val favorite = model.entries(
+            PickerPage.Features(app, special = "favorites"),
+            favorites = setOf("android.audio.volume.set"),
+            recent = emptyList(),
+            query = "",
+        ).single() as FeaturePickerListEntry.Unified
+        assertEquals("android.audio.volume.set", favorite.preferredMemberId)
+
+        val globalSearch = model.searchEntries("adjust").single() as FeaturePickerListEntry.Unified
+        assertEquals("android.audio.volume.adjust", globalSearch.preferredMemberId)
+        assertEquals(2, globalSearch.group.members.size)
     }
 
     @Test

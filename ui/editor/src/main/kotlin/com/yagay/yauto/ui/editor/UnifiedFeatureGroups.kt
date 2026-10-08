@@ -7,7 +7,11 @@ internal data class UnifiedFeatureGroup(
 
 internal sealed interface FeaturePickerListEntry {
     data class Feature(val item: FeaturePickerCatalogItem) : FeaturePickerListEntry
-    data class Unified(val group: UnifiedFeatureGroup) : FeaturePickerListEntry
+    data class Unified(
+        val group: UnifiedFeatureGroup,
+        /** The operation that matched search, recent history or the favorites filter. */
+        val preferredMemberId: String,
+    ) : FeaturePickerListEntry
 }
 
 internal data class UnifiedFeatureIndex(
@@ -56,7 +60,7 @@ internal fun collapseUnifiedFeatureItems(
             if (group == null) {
                 add(FeaturePickerListEntry.Feature(item))
             } else if (emittedGroups.add(groupId)) {
-                add(FeaturePickerListEntry.Unified(group))
+                add(FeaturePickerListEntry.Unified(group, item.descriptor.id.value))
             }
         }
     }
