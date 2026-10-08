@@ -62,9 +62,9 @@ fun inferFeaturePickerCategory(
         // MacroDroid action picker separates macro management, variable operations and
         // control-flow blocks. The saved runtime IDs remain unchanged.
         kind == FeatureKind.ACTION && (
-            starts("automation.", "macro.") ||
-                has(".macro.", ".action_block.", ".macro_run", "run_macro") ||
-                key in setOf("core.delay", "flow.delay", "flow.wait")
+            starts("automation.", "macro.", "flow.delay", "flow.wait") ||
+                has(".automation.", ".macro.", ".action_block.", ".macro_run", "run_macro") ||
+                key == "core.delay"
             ) -> FeaturePickerCategory.MACROS
 
         kind == FeatureKind.ACTION && (
@@ -135,7 +135,8 @@ fun inferFeaturePickerCategory(
             FeaturePickerCategory.LOCATION
 
         has(
-            ".sensor", "activity_recognition", ".pedometer", ".proximity",
+            ".sensor", "activity_recognition", "physical_activity", ".shake", ".pedometer", ".proximity",
+            ".light_level", ".motion_detected",
             ".accelerometer", ".gyroscope", "light_sensor", "significant_motion",
             "sound_level",
         ) ->

@@ -16,6 +16,8 @@ class FeaturePickerCategoryTest {
             "android.calendar.event.insert" to FeaturePickerCategory.LOGGING,
             "script.javascript.execute" to FeaturePickerCategory.APPLICATIONS,
             "android.macro.run" to FeaturePickerCategory.MACROS,
+            "core.automation.run" to FeaturePickerCategory.MACROS,
+            "core.automation.set_enabled" to FeaturePickerCategory.MACROS,
             "core.delay" to FeaturePickerCategory.MACROS,
             "variable.increment" to FeaturePickerCategory.VARIABLES,
             "android.clipboard.write" to FeaturePickerCategory.DEVICE_ACTIONS,
@@ -121,6 +123,7 @@ class FeaturePickerCategoryTest {
             "android.condition.phone_idle" to FeaturePickerCategory.PHONE,
             "android.condition.screen" to FeaturePickerCategory.SCREEN,
             "android.condition.sensor_value" to FeaturePickerCategory.SENSORS,
+            "android.condition.physical_activity" to FeaturePickerCategory.SENSORS,
             "android.condition.media_volume" to FeaturePickerCategory.SCREEN,
             "android.condition.device_locked" to FeaturePickerCategory.DEVICE_STATE,
         )
@@ -185,6 +188,7 @@ class FeaturePickerCategoryTest {
             "android.event.wifi_changed" to FeaturePickerCategory.CONNECTIVITY,
             "android.event.hardware_key" to FeaturePickerCategory.USER_INPUT,
             "android.event.battery_low" to FeaturePickerCategory.BATTERY_POWER,
+            "android.event.shake" to FeaturePickerCategory.SENSORS,
         )
         examples.forEach { (id, expected) -> assertEquals(id, expected, classify(id, FeatureKind.EVENT)) }
     }
