@@ -9,6 +9,7 @@ import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.core.registry.FieldBehavior
 import com.yagay.yauto.core.registry.FieldRule
 import com.yagay.yauto.core.registry.FieldSchema
+import com.yagay.yauto.core.registry.applyDefaults
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
