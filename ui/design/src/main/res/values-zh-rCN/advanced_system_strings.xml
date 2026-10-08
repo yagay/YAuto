@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_android_display_rotation_set_title">设置固定屏幕方向</string>
+    <string name="feature_android_display_rotation_set_title">强制屏幕旋转</string>
     <string name="feature_android_display_rotation_set_description">关闭自动旋转，并把 Android 锁定到指定屏幕方向</string>
     <string name="feature_android_display_rotation_set_field_rotation">旋转角度</string>
     <string name="feature_android_display_rotation_set_field_rotation_option_0">0°</string>
@@ -8,11 +8,11 @@
     <string name="feature_android_display_rotation_set_field_rotation_option_180">180°</string>
     <string name="feature_android_display_rotation_set_field_rotation_option_270">270°</string>
 
-    <string name="feature_android_display_font_scale_set_title">设置系统字体缩放</string>
+    <string name="feature_android_display_font_scale_set_title">字体大小</string>
     <string name="feature_android_display_font_scale_set_description">通过特权设置修改 Android 系统字体缩放比例</string>
     <string name="feature_android_display_font_scale_set_field_scale">字体缩放</string>
 
-    <string name="feature_android_display_animation_scale_set_title">设置系统动画倍率</string>
+    <string name="feature_android_display_animation_scale_set_title">动画速度</string>
     <string name="feature_android_display_animation_scale_set_description">同时设置 Android 窗口、过渡和动画时长倍率</string>
     <string name="feature_android_display_animation_scale_set_field_scale">动画倍率</string>
 
@@ -22,16 +22,16 @@
     <string name="feature_android_display_size_set_field_width">宽度像素</string>
     <string name="feature_android_display_size_set_field_height">高度像素</string>
 
-    <string name="feature_android_display_density_set_title">设置显示密度覆盖</string>
+    <string name="feature_android_display_density_set_title">屏幕密度</string>
     <string name="feature_android_display_density_set_description">应用或重置 Android wm 显示密度覆盖</string>
     <string name="feature_android_display_density_set_field_reset">恢复物理密度</string>
     <string name="feature_android_display_density_set_field_dpi">密度 DPI</string>
 
-    <string name="feature_android_network_data_saver_set_title">设置流量节省</string>
+    <string name="feature_android_network_data_saver_set_title">数据节省模式</string>
     <string name="feature_android_network_data_saver_set_description">通过 netpolicy 开启或关闭 Android 后台数据限制</string>
     <string name="feature_android_network_data_saver_set_field_enabled">流量节省已启用</string>
 
-    <string name="feature_android_network_private_dns_set_title">设置私人 DNS</string>
+    <string name="feature_android_network_private_dns_set_title">私人 DNS</string>
     <string name="feature_android_network_private_dns_set_description">把 Android 私人 DNS 设置为关闭、自动或指定主机名</string>
     <string name="feature_android_network_private_dns_set_field_mode">私人 DNS 模式</string>
     <string name="feature_android_network_private_dns_set_field_hostname">私人 DNS 主机名</string>
@@ -39,12 +39,12 @@
     <string name="feature_android_network_private_dns_set_field_mode_option_automatic">自动</string>
     <string name="feature_android_network_private_dns_set_field_mode_option_hostname">主机名</string>
 
-    <string name="feature_android_time_automatic_set_title">设置自动时间</string>
+    <string name="feature_android_time_automatic_set_title">自动日期和时间</string>
     <string name="feature_android_time_automatic_set_description">开启或关闭 Android 自动时间和自动时区</string>
     <string name="feature_android_time_automatic_set_field_autotime">自动时间</string>
     <string name="feature_android_time_automatic_set_field_autotimezone">自动时区</string>
 
-    <string name="feature_android_power_device_idle_set_title">强制或释放设备空闲</string>
+    <string name="feature_android_power_device_idle_set_title">设备空闲模式</string>
     <string name="feature_android_power_device_idle_set_description">强制 Android DeviceIdle 进入空闲模式，或解除此前的强制空闲状态</string>
     <string name="feature_android_power_device_idle_set_field_forcedidle">强制空闲</string>
 

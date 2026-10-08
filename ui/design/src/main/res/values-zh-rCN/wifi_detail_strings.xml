@@ -4,9 +4,9 @@
     <string name="feature_android_wifi_connection_info_description">保存当前 Wi-Fi 的 SSID、BSSID、RSSI、频率、链路速度和网络验证信息</string>
     <string name="feature_android_wifi_connection_info_field_resultvariable">保存连接对象到变量</string>
 
-    <string name="feature_android_wifi_scan_start_title">开始 Wi-Fi 扫描</string>
+    <string name="feature_android_wifi_scan_start_title">扫描 Wi-Fi 网络</string>
     <string name="feature_android_wifi_scan_start_description">请求 Wi-Fi 扫描；Android 可能限制或拒绝频繁的后台扫描</string>
-    <string name="feature_android_wifi_scan_results_title">获取 Wi-Fi 扫描结果</string>
+    <string name="feature_android_wifi_scan_results_title">获取 Wi-Fi 网络列表</string>
     <string name="feature_android_wifi_scan_results_description">将 Android 最近一次 Wi-Fi 扫描结果保存为结构化对象列表</string>
     <string name="feature_android_wifi_scan_results_field_maxcount">最大结果数量</string>
     <string name="feature_android_wifi_scan_results_field_resultvariable">保存扫描结果列表到变量</string>
@@ -29,7 +29,7 @@
     <string name="feature_android_condition_wifi_scan_match_field_maxfrequencymhz">最高频率（MHz）</string>
     <string name="feature_android_condition_wifi_scan_match_field_value">存在匹配项</string>
 
-    <string name="feature_android_event_wifi_scan_results_title">Wi-Fi 扫描结果可用</string>
+    <string name="feature_android_event_wifi_scan_results_title">Wi-Fi 扫描完成</string>
     <string name="feature_android_event_wifi_scan_results_description">Android 报告新的 Wi-Fi 扫描结果并且至少有一个结果符合筛选条件时触发</string>
     <string name="feature_android_event_wifi_scan_results_field_ssidcontains">SSID 包含</string>
     <string name="feature_android_event_wifi_scan_results_field_bssid">BSSID 精确匹配</string>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_android_app_enabled_set_title">启用或停用应用</string>
+    <string name="feature_android_app_enabled_set_title">启用/禁用应用</string>
     <string name="feature_android_app_enabled_set_description">通过 Root 或 Shizuku 启用或停用已安装应用</string>
     <string name="feature_android_app_enabled_set_field_package">应用 / 包名</string>
     <string name="feature_android_app_enabled_set_field_enabled">已启用</string>
@@ -9,11 +9,11 @@
     <string name="feature_android_app_data_clear_description">通过 Root 或 Shizuku 清除已安装应用的全部用户数据</string>
     <string name="feature_android_app_data_clear_field_package">应用 / 包名</string>
 
-    <string name="feature_android_app_background_kill_title">结束应用后台进程</string>
+    <string name="feature_android_app_background_kill_title">终止后台应用</string>
     <string name="feature_android_app_background_kill_description">让 Android 结束应用的后台进程，但不执行强制停止</string>
     <string name="feature_android_app_background_kill_field_package">应用 / 包名</string>
 
-    <string name="feature_android_app_suspended_set_title">挂起或解除挂起应用</string>
+    <string name="feature_android_app_suspended_set_title">暂停/恢复应用</string>
     <string name="feature_android_app_suspended_set_description">为当前用户挂起已安装应用，或恢复其正常可用状态</string>
     <string name="feature_android_app_suspended_set_field_package">应用 / 包名</string>
     <string name="feature_android_app_suspended_set_field_suspended">已挂起</string>
@@ -27,13 +27,13 @@
     <string name="feature_android_app_install_existing_description">重新启用设备上仍存在、但已为当前用户移除的应用包</string>
     <string name="feature_android_app_install_existing_field_package">包名</string>
 
-    <string name="feature_android_app_permission_set_title">授予或撤销应用权限</string>
+    <string name="feature_android_app_permission_set_title">应用权限</string>
     <string name="feature_android_app_permission_set_description">通过 Root 或 Shizuku 为已安装应用授予或撤销运行时权限</string>
     <string name="feature_android_app_permission_set_field_package">应用 / 包名</string>
     <string name="feature_android_app_permission_set_field_permission">权限名称</string>
     <string name="feature_android_app_permission_set_field_granted">已授予</string>
 
-    <string name="feature_android_app_standby_bucket_set_title">设置应用待机桶</string>
+    <string name="feature_android_app_standby_bucket_set_title">应用待机分组</string>
     <string name="feature_android_app_standby_bucket_set_description">为当前用户把应用设置到 Android 应用待机桶</string>
     <string name="feature_android_app_standby_bucket_set_field_package">应用 / 包名</string>
     <string name="feature_android_app_standby_bucket_set_field_bucket">待机桶</string>
@@ -43,36 +43,36 @@
     <string name="feature_android_app_standby_bucket_set_field_bucket_option_rare">少用</string>
     <string name="feature_android_app_standby_bucket_set_field_bucket_option_restricted">受限</string>
 
-    <string name="feature_android_app_inactive_set_title">设置应用非活跃状态</string>
+    <string name="feature_android_app_inactive_set_title">应用空闲状态</string>
     <string name="feature_android_app_inactive_set_description">把应用标记为非活跃或活跃，用于 Android 应用空闲策略</string>
     <string name="feature_android_app_inactive_set_field_package">应用 / 包名</string>
     <string name="feature_android_app_inactive_set_field_inactive">非活跃</string>
 
-    <string name="feature_android_app_details_open_title">打开应用详情</string>
+    <string name="feature_android_app_details_open_title">应用信息</string>
     <string name="feature_android_app_details_open_description">打开指定已安装应用的 Android 应用详情设置页</string>
     <string name="feature_android_app_details_open_field_package">应用 / 包名</string>
 
-    <string name="feature_android_app_package_info_title">获取应用包信息</string>
+    <string name="feature_android_app_package_info_title">获取应用信息</string>
     <string name="feature_android_app_package_info_description">读取版本、安装时间、UID 和包标记并保存到对象变量</string>
     <string name="feature_android_app_package_info_field_package">应用 / 包名</string>
     <string name="feature_android_app_package_info_field_resultvariable">保存对象到变量</string>
 
-    <string name="feature_android_state_app_enabled_title">应用已启用</string>
+    <string name="feature_android_state_app_enabled_title">应用启用状态</string>
     <string name="feature_android_state_app_enabled_description">检查当前用户下指定应用是否处于启用状态</string>
     <string name="feature_android_state_app_enabled_field_package">应用 / 包名</string>
     <string name="feature_android_state_app_enabled_field_value">已启用</string>
 
-    <string name="feature_android_condition_app_enabled_title">应用已启用</string>
+    <string name="feature_android_condition_app_enabled_title">应用启用状态</string>
     <string name="feature_android_condition_app_enabled_description">检查当前用户下指定应用是否处于启用状态</string>
     <string name="feature_android_condition_app_enabled_field_package">应用 / 包名</string>
     <string name="feature_android_condition_app_enabled_field_value">已启用</string>
 
-    <string name="feature_android_state_app_process_running_title">应用进程正在运行</string>
+    <string name="feature_android_state_app_process_running_title">应用进程状态</string>
     <string name="feature_android_state_app_process_running_description">通过特权 Shell 检查指定应用包当前是否存在进程</string>
     <string name="feature_android_state_app_process_running_field_package">应用 / 包名</string>
     <string name="feature_android_state_app_process_running_field_value">正在运行</string>
 
-    <string name="feature_android_condition_app_process_running_title">应用进程正在运行</string>
+    <string name="feature_android_condition_app_process_running_title">应用进程状态</string>
     <string name="feature_android_condition_app_process_running_description">通过特权 Shell 检查指定应用包当前是否存在进程</string>
     <string name="feature_android_condition_app_process_running_field_package">应用 / 包名</string>
     <string name="feature_android_condition_app_process_running_field_value">正在运行</string>

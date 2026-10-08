@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_android_notification_dismiss_all_title">关闭匹配的通知</string>
+    <string name="feature_android_notification_dismiss_all_title">清除通知</string>
     <string name="feature_android_notification_dismiss_all_description">关闭所有符合筛选条件的活动通知，并可保存成功关闭的数量</string>
     <string name="feature_android_notification_dismiss_all_field_resultvariable">将关闭数量保存到变量</string>
 
-    <string name="feature_android_notification_action_title_title">按标题执行通知操作</string>
+    <string name="feature_android_notification_action_title_title">通知操作</string>
     <string name="feature_android_notification_action_title_description">执行第一个标题符合配置文本的通知操作按钮</string>
     <string name="feature_android_notification_action_title_field_actiontitle">操作标题</string>
     <string name="feature_android_notification_action_title_field_exactactiontitle">精确匹配操作标题</string>
 
-    <string name="feature_android_notification_query_title">查询活动通知</string>
+    <string name="feature_android_notification_query_title">获取通知</string>
     <string name="feature_android_notification_query_description">将匹配的活动通知及常用元数据保存为对象列表</string>
     <string name="feature_android_notification_query_field_maxcount">最大结果数</string>
     <string name="feature_android_notification_query_field_order">结果顺序</string>
@@ -17,7 +17,7 @@
     <string name="feature_android_notification_query_field_order_option_oldest">最早优先</string>
     <string name="feature_android_notification_query_field_resultvariable">将通知列表保存到变量</string>
 
-    <string name="feature_android_notification_count_title">统计活动通知</string>
+    <string name="feature_android_notification_count_title">通知数量</string>
     <string name="feature_android_notification_count_description">统计符合筛选条件的活动通知数量并保存到变量</string>
     <string name="feature_android_notification_count_field_resultvariable">将数量保存到变量</string>
 

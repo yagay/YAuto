@@ -19,7 +19,7 @@
     <string name="feature_android_condition_bluetooth_device_bonded_field_address">设备地址精确匹配</string>
     <string name="feature_android_condition_bluetooth_device_bonded_field_value">存在匹配项</string>
 
-    <string name="feature_android_event_bluetooth_device_connection_title">蓝牙设备连接变化</string>
+    <string name="feature_android_event_bluetooth_device_connection_title">蓝牙设备连接/断开</string>
     <string name="feature_android_event_bluetooth_device_connection_description">经典蓝牙设备连接或断开时触发</string>
     <string name="feature_android_event_bluetooth_device_connection_field_namecontains">设备名称包含</string>
     <string name="feature_android_event_bluetooth_device_connection_field_address">设备地址精确匹配</string>

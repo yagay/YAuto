@@ -11,7 +11,7 @@
     <string name="feature_android_event_location_update_field_minimumdistancemeters">最小移动距离（米）</string>
     <string name="feature_android_event_location_update_field_minimumintervalms">两次更新的最小间隔</string>
 
-    <string name="feature_android_event_geofence_transition_title">地理围栏变化</string>
+    <string name="feature_android_event_geofence_transition_title">进入/离开地理围栏</string>
     <string name="feature_android_event_geofence_transition_description">当设备进入或离开设定的圆形位置范围时触发</string>
     <string name="feature_android_event_geofence_transition_field_latitude">纬度</string>
     <string name="feature_android_event_geofence_transition_field_longitude">经度</string>
