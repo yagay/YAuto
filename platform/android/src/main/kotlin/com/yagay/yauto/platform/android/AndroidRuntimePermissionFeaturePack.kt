@@ -143,6 +143,14 @@ internal fun runtimePermissionGroup(group: String): Array<String> = when (group)
  * calendar write permission just to read events. Generic permission-group checks stay strict.
  */
 fun runtimePermissionsForFeature(group: String, featureId: String): Array<String> = when {
+    group == "phone" && featureId == "android.phone.call" ->
+        arrayOf(Manifest.permission.CALL_PHONE)
+    group == "phone" && featureId in setOf("android.phone.answer", "android.phone.end") ->
+        arrayOf(Manifest.permission.ANSWER_PHONE_CALLS)
+    group == "phone" && featureId in setOf(
+        "android.sim.subscriptions.query", "android.telephony.subscription.info",
+        "android.cell_tower.query",
+    ) -> arrayOf(Manifest.permission.READ_PHONE_STATE)
     group == "sms" && featureId == "android.sms.send" ->
         arrayOf(Manifest.permission.SEND_SMS)
     group == "sms" && (featureId == "android.sms.query" || featureId.startsWith("android.event.sms_")) ->

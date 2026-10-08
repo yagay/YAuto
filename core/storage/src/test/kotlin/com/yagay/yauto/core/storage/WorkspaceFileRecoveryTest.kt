@@ -23,6 +23,29 @@ class WorkspaceFileRecoveryTest {
         file.writeText(json.encodeToString(WorkspaceData.serializer(), data))
     }
 
+    @Test fun `future workspace must not be overwritten by a valid older backup`() {
+        val primary = folder.newFile("workspace.json")
+        val backup = folder.newFile("workspace.json.bak")
+        primary.writeText("{\"schemaVersion\":2,\"futureFeature\":true}")
+        val original = primary.readText()
+        write(backup, WorkspaceData())
+        try {
+            readWorkspaceCandidates(
+                primary, backup,
+                decode = { file ->
+                    val data = decode(file)
+                    if (data.schemaVersion != 1) throw UnsupportedWorkspaceSchemaException(data.schemaVersion)
+                    data
+                },
+                recoverBackup = { fail("Old backup must not replace newer schema") },
+            )
+            fail("Expected a future-schema error")
+        } catch (expected: UnsupportedWorkspaceSchemaException) {
+            assertEquals(2, expected.schemaVersion)
+        }
+        assertEquals(original, primary.readText())
+    }
+
     @Test fun `missing workspace is a valid fresh install`() {
         val primary = File(folder.root, "workspace.json")
         val backup = File(folder.root, "workspace.json.bak")

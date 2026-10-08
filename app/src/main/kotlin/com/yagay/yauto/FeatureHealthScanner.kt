@@ -223,8 +223,15 @@ class FeatureHealthScanner(
         }
 
         val available: (AccessRequirement) -> Boolean = { requirement ->
-            if (requirement == AccessRequirement.SMS || requirement == AccessRequirement.CALENDAR) {
-                val group = if (requirement == AccessRequirement.SMS) "sms" else "calendar"
+            if (requirement == AccessRequirement.SMS ||
+                requirement == AccessRequirement.CALENDAR ||
+                requirement == AccessRequirement.PHONE
+            ) {
+                val group = when (requirement) {
+                    AccessRequirement.SMS -> "sms"
+                    AccessRequirement.CALENDAR -> "calendar"
+                    else -> "phone"
+                }
                 runtimePermissionsForFeature(group, descriptor.id.value).all(::granted)
             } else access[requirement] == true
         }

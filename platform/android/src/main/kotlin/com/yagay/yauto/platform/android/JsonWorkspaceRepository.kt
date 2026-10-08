@@ -6,6 +6,7 @@ import android.util.Log
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.WorkspaceRepository
 import com.yagay.yauto.core.storage.readWorkspaceCandidates
+import com.yagay.yauto.core.storage.UnsupportedWorkspaceSchemaException
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -29,9 +30,13 @@ class JsonWorkspaceRepository(
                 primary = file,
                 backup = backup,
                 decode = { candidate ->
-                    candidate.bufferedReader().use {
+                    val decoded = candidate.bufferedReader().use {
                         json.decodeFromString(WorkspaceData.serializer(), it.readText())
                     }
+                    if (decoded.schemaVersion != 1) {
+                        throw UnsupportedWorkspaceSchemaException(decoded.schemaVersion)
+                    }
+                    decoded
                 },
                 recoverBackup = ::writeLocked,
                 onDecodeFailure = { candidate, error ->

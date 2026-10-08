@@ -56,6 +56,21 @@ class TimeAndPermissionRegressionTest {
         )
     }
 
+    @Test fun `direct calling, call answering and subscription queries need distinct permissions`() {
+        assertArrayEquals(
+            arrayOf(Manifest.permission.CALL_PHONE),
+            runtimePermissionsForFeature("phone", "android.phone.call"),
+        )
+        assertArrayEquals(
+            arrayOf(Manifest.permission.ANSWER_PHONE_CALLS),
+            runtimePermissionsForFeature("phone", "android.phone.answer"),
+        )
+        assertArrayEquals(
+            arrayOf(Manifest.permission.READ_PHONE_STATE),
+            runtimePermissionsForFeature("phone", "android.telephony.subscription.info"),
+        )
+    }
+
     @Test fun `generic permission groups remain comprehensive`() {
         assertEquals(3, runtimePermissionsForFeature("sms", "android.permission.request").size)
         assertEquals(2, runtimePermissionsForFeature("calendar", "android.permission.request").size)

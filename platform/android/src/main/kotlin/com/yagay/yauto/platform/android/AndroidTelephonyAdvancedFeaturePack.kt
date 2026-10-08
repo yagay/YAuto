@@ -49,7 +49,7 @@ class AndroidTelephonyAdvancedFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "phone")) return@registerAction missingPhonePermission()
+            if (!runtimePermissionGranted(context, "phone", feature.typeId)) return@registerAction missingPhonePermission()
             val output = runCatching {
                 @Suppress("MissingPermission")
                 ConfigValue.ListValue(subscriptions.activeSubscriptionInfoList.orEmpty().map { info ->
@@ -90,7 +90,7 @@ class AndroidTelephonyAdvancedFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "phone")) return@registerAction missingPhonePermission()
+            if (!runtimePermissionGranted(context, "phone", feature.typeId)) return@registerAction missingPhonePermission()
             val subId = feature.config["subscriptionId"].numberOrNull()?.toInt()
             val manager = subId?.let(telephony::createForSubscriptionId) ?: telephony
             val output = runCatching {
@@ -131,7 +131,7 @@ class AndroidTelephonyAdvancedFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "phone") || !runtimePermissionGranted(context, "location")) {
+            if (!runtimePermissionGranted(context, "phone", feature.typeId) || !runtimePermissionGranted(context, "location")) {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.phone_location_permission_required"))
             }
             val manager = feature.config["subscriptionId"].numberOrNull()?.toInt()?.let(telephony::createForSubscriptionId) ?: telephony
@@ -157,7 +157,7 @@ class AndroidTelephonyAdvancedFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            if (!runtimePermissionGranted(context, "phone")) return@registerAction missingPhonePermission()
+            if (!runtimePermissionGranted(context, "phone", feature.typeId)) return@registerAction missingPhonePermission()
             val number = feature.config.string("number").resolveVariables(ctx.variables).trim()
             if (!Regex("[+0-9*#,; -]{1,64}").matches(number)) {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.phone_number_invalid"))
@@ -180,7 +180,7 @@ class AndroidTelephonyAdvancedFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { _, _ ->
-            if (!runtimePermissionGranted(context, "phone")) return@registerAction missingPhonePermission()
+            if (!runtimePermissionGranted(context, "phone", "android.phone.answer")) return@registerAction missingPhonePermission()
             @Suppress("DEPRECATION", "MissingPermission")
             runCatching { telecom.acceptRingingCall(); ActionExecutionResult(true) }.getOrElse { failure(it) }
         }
@@ -197,7 +197,7 @@ class AndroidTelephonyAdvancedFeaturePack(context: Context) : FeaturePack {
                 ownerPackId = id,
             )
         ) { _, _ ->
-            if (!runtimePermissionGranted(context, "phone")) return@registerAction missingPhonePermission()
+            if (!runtimePermissionGranted(context, "phone", "android.phone.end")) return@registerAction missingPhonePermission()
             @Suppress("DEPRECATION", "MissingPermission")
             runCatching {
                 val ended = telecom.endCall()

@@ -2,6 +2,11 @@ package com.yagay.yauto.core.storage
 
 import java.io.File
 
+/** Newer workspace schemas must never be silently restored over from an older backup. */
+class UnsupportedWorkspaceSchemaException(val schemaVersion: Int) :
+    IllegalStateException("Unsupported workspace schema version $schemaVersion; original data preserved")
+
+
 /**
  * Reads an atomic workspace pair without ever silently treating corrupt user data as an empty
  * workspace. An absent workspace is new; a present but unreadable workspace is an error.
@@ -24,6 +29,7 @@ fun readWorkspaceCandidates(
         val data = try {
             decode(candidate)
         } catch (error: Exception) {
+            if (error is UnsupportedWorkspaceSchemaException) throw error
             lastError = error
             onDecodeFailure(candidate, error)
             continue
