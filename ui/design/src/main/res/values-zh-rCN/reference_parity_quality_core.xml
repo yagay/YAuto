@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_ai_image_generate_title">生成 AI 图片</string>
+    <string name="feature_ai_image_generate_description">通过兼容 OpenAI 的 Images 接口生成图片，并可选保存到文件</string>
+    <string name="feature_ai_image_generate_field_endpoint">Images 接口地址</string>
+    <string name="feature_ai_image_generate_field_apikey">API 密钥</string>
+    <string name="feature_ai_image_generate_field_model">模型</string>
+    <string name="feature_ai_image_generate_field_size">图片尺寸</string>
+    <string name="feature_ai_image_generate_field_quality">质量</string>
+    <string name="feature_ai_image_generate_field_responseformat">响应格式</string>
+    <string name="feature_ai_image_generate_field_timeoutms">请求超时</string>
+    <string name="feature_ai_image_generate_field_outputpath">可选输出图片路径</string>
+    <string name="feature_ai_image_generate_field_resultvariable">保存生成图片对象</string>
+    <string name="feature_ai_image_generate_field_size_option_256x256">256x256</string>
+    <string name="feature_ai_image_generate_field_size_option_512x512">512x512</string>
+    <string name="feature_ai_image_generate_field_size_option_1024x1024">1024x1024</string>
+    <string name="feature_ai_image_generate_field_size_option_1024x1792">1024x1792</string>
+    <string name="feature_ai_image_generate_field_size_option_1792x1024">1792x1024</string>
+    <string name="feature_ai_image_generate_field_quality_option_standard">标准</string>
+    <string name="feature_ai_image_generate_field_quality_option_hd">HD</string>
+    <string name="feature_ai_image_generate_field_responseformat_option_b64_json">Base64 JSON</string>
+
+    <string name="feature_android_event_call_screened_title">来电筛选</string>
+    <string name="feature_android_event_call_screened_description">当 YAuto 通过 Android 来电筛选角色收到通话时运行</string>
+    <string name="feature_android_event_call_screened_field_numbercontains">电话号码包含</string>
+    <string name="feature_android_event_call_screened_field_namecontains">联系人名称包含</string>
+    <string name="feature_android_event_call_screened_field_direction_option_incoming">来电</string>
+    <string name="feature_android_event_call_screened_field_direction_option_outgoing">去电</string>
+
+    <string name="feature_android_alarm_next_query_title">获取下一个闹钟</string>
+    <string name="feature_android_alarm_next_query_description">读取 Android 下一个计划闹钟的触发时间和来源应用</string>
+    <string name="feature_android_alarm_next_query_field_resultvariable">保存下一个闹钟对象</string>
+
+    <string name="feature_android_material_colors_get_title">获取 Material You 配色</string>
+    <string name="feature_android_material_colors_get_description">读取 Android 12 及以上系统的动态强调色和中性色调色板</string>
+    <string name="feature_android_material_colors_get_field_resultvariable">保存调色板对象</string>
+
+    <string name="feature_file_properties_title">获取文件属性</string>
+    <string name="feature_file_properties_description">读取可访问文件或目录的文件系统元数据</string>
+    <string name="feature_file_properties_field_resultvariable">保存属性对象</string>
+
+    <string name="feature_android_event_significant_motion_title">显著移动</string>
+    <string name="feature_android_event_significant_motion_description">当 Android 一次性显著移动传感器检测到设备移动时运行</string>
+
+    <string name="feature_android_voice_input_capture_title">获取语音输入</string>
+    <string name="feature_android_voice_input_capture_description">打开 Android 语音识别，等待一次语音结果并保存到变量</string>
+    <string name="feature_android_voice_input_capture_field_timeoutms">识别超时</string>
+</resources>

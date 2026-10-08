@@ -4,6 +4,7 @@ import com.yagay.yauto.core.importer.ImportInput
 import com.yagay.yauto.core.model.ActionFailurePolicy
 import com.yagay.yauto.core.model.ActionNode
 import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.PredicateNode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -21,10 +22,9 @@ class ShortXImporterTest {
         assertEquals(ActionFailurePolicy.CONTINUE, action.failurePolicy)
     }
 
-    @Test fun `protobuf disabled state is retained and ShortX break policy stays lossless`() {
+    @Test fun `protobuf disabled state and ShortX break policy map natively`() {
         val toast = message(field(1, "disabled"), varintField(98, 1), field(99, "comment"))
-        // ShortX ActionOnError enum is Continue=0, Break=1. Break is intentionally preserved as a
-        // compatibility node until every related execution semantic is mapped losslessly.
+        // ShortX ActionOnError enum is Continue=0, Break=1.
         val guarded = message(field(1, "guarded"), varintField(97, 1))
         val raw = message(field(4, "flags"), field(9, "Flags"),
             field(3, message(field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.action.ShowToast"), field(2, toast))),
@@ -35,7 +35,8 @@ class ShortXImporterTest {
         assertEquals(false, actions[0].enabled)
         assertEquals("comment", actions[0].comment)
         assertEquals(ActionFailurePolicy.CONTINUE, actions[0].failurePolicy)
-        assertEquals("compat.source.action", actions[1].feature.typeId)
+        assertEquals("android.toast.show", actions[1].feature.typeId)
+        assertEquals(ActionFailurePolicy.STOP, actions[1].failurePolicy)
     }
 
     @Test fun `maps ShowToast Any payload to native toast action`() {
@@ -120,8 +121,106 @@ class ShortXImporterTest {
 
         val text = ShortXImporter().import(ImportInput("view-text.rule", null,
             rule("view-text", "View text", any("FindAndClickViewByText", message(field(1, "OK"))))))
-        assertEquals("compat.source.action", actionFeature(text).typeId)
-        assertTrue(text.issues.any { it.suggestedFeatureId == "accessibility.click_text" })
+        assertEquals("accessibility.click_text", actionFeature(text).typeId)
+        assertEquals(ConfigValue.StringValue("OK"), actionFeature(text).config["text"])
+    }
+
+    @Test fun `maps verified ShortX status bar audio focus and ringtone actions`() {
+        val expand = ShortXImporter().import(
+            ImportInput("expand.rule", null, rule("expand", "Expand", any("ExpandNotification", message())))
+        )
+        assertEquals("android.status_bar.control", actionFeature(expand).typeId)
+        assertEquals(ConfigValue.StringValue("notifications"), actionFeature(expand).config["mode"])
+
+        val requestFocus = ShortXImporter().import(
+            ImportInput("focus.rule", null, rule("focus", "Focus", any("RequestAudioFocus", message(varintField(1, 1)))))
+        )
+        assertEquals("android.audio.focus.request", actionFeature(requestFocus).typeId)
+        assertEquals(ConfigValue.StringValue("gain"), actionFeature(requestFocus).config["gain"])
+
+        val abandonFocus = ShortXImporter().import(
+            ImportInput("focus-off.rule", null, rule("focus-off", "Focus off", any("RequestAudioFocus", message(varintField(1, 0)))))
+        )
+        assertEquals("android.audio.focus.abandon", actionFeature(abandonFocus).typeId)
+
+        val ringtonePayload = message(
+            field(
+                1,
+                message(
+                    field(1, "Default ringtone"),
+                    field(2, "content://media/internal/audio/media/1"),
+                    varintField(3, 1),
+                ),
+            )
+        )
+        val ringtone = ShortXImporter().import(
+            ImportInput("ringtone.rule", null, rule("ringtone", "Ringtone", any("PlayRingtone", ringtonePayload)))
+        )
+        assertEquals("android.audio.play", actionFeature(ringtone).typeId)
+        assertEquals(
+            ConfigValue.StringValue("content://media/internal/audio/media/1"),
+            actionFeature(ringtone).config["source"],
+        )
+    }
+
+    @Test fun `maps verified ShortX facts and conditions natively`() {
+        val raw = message(
+            field(1, factAny("ScreenOn", message())),
+            field(2, conditionAny("RequireRingerMode", message(varintField(1, 1)))),
+            field(2, conditionAny("RequireAPMMode", message(varintField(1, 0)))),
+            field(3, any("ShowToast", message(field(1, "ready")))),
+            field(4, "native-context"),
+            field(9, "Native context"),
+            varintField(11, 1),
+        )
+        val result = ShortXImporter().import(ImportInput("native-context.rule", null, raw))
+        assertTrue(result.success)
+        val automation = result.bundle.automations.single()
+        assertEquals(listOf("android.event.screen_on"), automation.activation.events.map { it.typeId })
+        val predicates = (automation.activation.condition as PredicateNode.All)
+            .children.map { (it as PredicateNode.Condition).feature }
+        assertEquals(
+            listOf("android.condition.ringer_mode", "android.condition.airplane_mode"),
+            predicates.map { it.typeId },
+        )
+        assertEquals(ConfigValue.StringValue("vibrate"), predicates[0].config["mode"])
+        assertEquals(ConfigValue.BooleanValue(false), predicates[1].config["value"])
+        assertTrue(result.trace.any { it.status == "MAPPED" && it.targetId == "android.event.screen_on" })
+        assertTrue(result.trace.any { it.status == "MAPPED" && it.targetId == "android.condition.ringer_mode" })
+    }
+
+    @Test fun `disabled ShortX facts and conditions are skipped`() {
+        val raw = message(
+            field(1, factAny("ScreenOn", message(varintField(101, 1)))),
+            field(2, conditionAny("ScreenIsOn", message(varintField(96, 1)))),
+            field(3, any("ShowToast", message(field(1, "still runs")))),
+            field(4, "disabled-context"),
+            field(9, "Disabled context"),
+            varintField(11, 1),
+        )
+        val result = ShortXImporter().import(ImportInput("disabled-context.rule", null, raw))
+        assertTrue(result.success)
+        val automation = result.bundle.automations.single()
+        assertTrue(automation.activation.events.isEmpty())
+        assertEquals(null, automation.activation.condition)
+        assertEquals("android.toast.show", (automation.onEvent.single() as ActionNode.Action).feature.typeId)
+    }
+
+    @Test fun `unsupported ShortX condition keeps payload and suggests canonical feature`() {
+        val battery = conditionAny("BatteryPercent", message(varintField(1, 80), varintField(2, 1)))
+        val raw = message(
+            field(2, battery),
+            field(3, any("ShowToast", message(field(1, "battery")))),
+            field(4, "battery-condition"),
+            field(9, "Battery condition"),
+            varintField(11, 1),
+        )
+        val result = ShortXImporter().import(ImportInput("battery-condition.rule", null, raw))
+        assertTrue(result.success)
+        val condition = ((result.bundle.automations.single().activation.condition as PredicateNode.All)
+            .children.single() as PredicateNode.Condition).feature
+        assertEquals("compat.source.condition", condition.typeId)
+        assertTrue(result.issues.any { it.suggestedFeatureId == "android.condition.battery_level" })
     }
 
     @Test fun `preserves variable gesture expressions instead of guessing`() {
@@ -139,8 +238,34 @@ class ShortXImporterTest {
         assertTrue(result.issues.any { it.suggestedFeatureId == "core.delay" })
     }
 
+    @Test fun `maps inverted ShortX condition as native negation`() {
+        val raw = message(
+            field(2, conditionAny("ScreenIsOn", message(varintField(98, 1)))),
+            field(3, any("ShowToast", message(field(1, "inverted")))),
+            field(4, "inverted-condition"),
+            field(9, "Inverted condition"),
+            varintField(11, 1),
+        )
+        val result = ShortXImporter().import(ImportInput("inverted.rule", null, raw))
+        assertTrue(result.success)
+        val root = result.bundle.automations.single().activation.condition as PredicateNode.All
+        val negated = root.children.single() as PredicateNode.None
+        val condition = negated.children.single() as PredicateNode.Condition
+        assertEquals("android.condition.screen", condition.feature.typeId)
+    }
+
     private fun actionFeature(result: com.yagay.yauto.core.importer.ImportResult) =
         (result.bundle.automations.single().onEvent.single() as ActionNode.Action).feature
+
+    private fun factAny(shortName: String, payload: ByteArray): ByteArray = message(
+        field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.fact.$shortName"),
+        field(2, payload),
+    )
+
+    private fun conditionAny(shortName: String, payload: ByteArray): ByteArray = message(
+        field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.condition.$shortName"),
+        field(2, payload),
+    )
 
     private fun any(shortName: String, payload: ByteArray): ByteArray = message(
         field(1, "type.googleapis.com/tornaco.apps.shortx.core.proto.action.$shortName"),

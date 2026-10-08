@@ -31,4 +31,9 @@
     <string name="feature_android_condition_notification_count_field_value">通知数量</string>
 
     <string name="runtime_feature_notification_operation_failed">未找到匹配通知，或通知操作执行失败</string>
+    <string name="feature_android_notification_reply_title">回复通知</string>
+    <string name="feature_android_notification_reply_description">通过第一个匹配通知的快捷回复操作发送文本</string>
+    <string name="feature_android_notification_reply_field_replytext">回复文本</string>
+    <string name="feature_android_notification_reply_field_actionindex">回复操作索引（可选）</string>
+
 </resources>

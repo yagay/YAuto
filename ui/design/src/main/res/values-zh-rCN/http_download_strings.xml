@@ -2,4 +2,8 @@
 <resources>
     <string name="feature_android_http_download_title">HTTP 下载</string>
     <string name="feature_android_http_download_description">将 HTTP 或 HTTPS 响应内容下载到本地文件，并提供大小、超时和覆盖保护</string>
+    <string name="feature_android_http_upload_title">HTTP 文件上传</string>
+    <string name="feature_android_http_upload_description">通过 HTTP PUT 上传本地文件，并将服务器响应作为结构化结果返回</string>
+    <string name="feature_android_http_upload_field_path">本地文件路径</string>
+    <string name="feature_android_http_upload_field_maxbytes">最大上传字节数</string>
 </resources>

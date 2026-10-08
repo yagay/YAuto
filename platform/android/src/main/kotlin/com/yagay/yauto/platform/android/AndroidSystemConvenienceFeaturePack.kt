@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
-import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.provider.Settings
@@ -28,14 +27,6 @@ class AndroidSystemConvenienceFeaturePack(context: Context) : FeaturePack {
         booleanPair(registry, "device_locked", "Device locked", "Check whether Android currently considers the device locked", FeatureCategory.DEVICE) {
             context.getSystemService(KeyguardManager::class.java).isDeviceLocked
         }
-        booleanPair(registry, "music_active", "Music playback active", "Check whether Android AudioManager currently reports active music playback", FeatureCategory.AUDIO) {
-            context.getSystemService(AudioManager::class.java).isMusicActive
-        }
-        booleanPair(registry, "network_metered", "Active network metered", "Check whether Android marks the active network as metered", FeatureCategory.NETWORK) {
-            context.getSystemService(ConnectivityManager::class.java).isActiveNetworkMetered
-        }
-        registerDataSaverState(registry, FeatureKind.STATE, "android.state.data_saver_status")
-        registerDataSaverState(registry, FeatureKind.CONDITION, "android.condition.data_saver_status")
         registerDndState(registry, FeatureKind.STATE, "android.state.dnd_filter")
         registerDndState(registry, FeatureKind.CONDITION, "android.condition.dnd_filter")
         registerLaunchHome(registry)
@@ -58,26 +49,6 @@ class AndroidSystemConvenienceFeaturePack(context: Context) : FeaturePack {
                 ActionExecutionResult(true, ConfigValue.BooleanValue(enabled))
             }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
-    }
-
-    private fun registerDataSaverState(registry: FeatureRegistry, kind: FeatureKind, typeId: String) {
-        val descriptor = FeatureDescriptor(
-            FeatureId(typeId), kind,
-            "Data saver status", "Match Android's background-data restriction status for YAuto on the active system",
-            FeatureCategory.NETWORK,
-            fields = listOf(FieldSchema.Choice("status", "Data saver status", true, listOf("disabled", "enabled", "whitelisted"))),
-            keywords = setOf("data saver", "background data", "metered", "network restriction"), ownerPackId = id,
-        )
-        val evaluator = ConditionEvaluator { feature, _ ->
-            val actual = when (context.getSystemService(ConnectivityManager::class.java).restrictBackgroundStatus) {
-                ConnectivityManager.RESTRICT_BACKGROUND_STATUS_DISABLED -> "disabled"
-                ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED -> "enabled"
-                ConnectivityManager.RESTRICT_BACKGROUND_STATUS_WHITELISTED -> "whitelisted"
-                else -> "unknown"
-            }
-            actual == feature.config.string("status", "disabled")
-        }
-        register(registry, descriptor, evaluator)
     }
 
     private fun registerDndState(registry: FeatureRegistry, kind: FeatureKind, typeId: String) {
@@ -133,7 +104,9 @@ class AndroidSystemConvenienceFeaturePack(context: Context) : FeaturePack {
                     "manage_apps", "default_apps", "battery_saver", "battery_optimization", "usage_access",
                     "overlay", "write_settings", "unknown_sources", "all_files_access", "dnd", "print",
                 ))),
-                keywords = setOf("settings", "wifi settings", "accessibility", "overlay", "usage access", "dnd", "developer", "storage", "notifications"), ownerPackId = id,
+                keywords = setOf("settings", "wifi settings", "accessibility", "overlay", "usage access", "dnd", "developer", "storage", "notifications"),
+                aliases = setOf("android.settings.open"),
+                ownerPackId = id,
             )
         ) { feature, _ ->
             val page = feature.config.string("page", "general")
@@ -173,7 +146,7 @@ class AndroidSystemConvenienceFeaturePack(context: Context) : FeaturePack {
 internal fun settingsPageIntent(page: String, packageName: String): Intent? {
     val packageUri = Uri.parse("package:$packageName")
     return when (page) {
-        "general" -> Intent(Settings.ACTION_SETTINGS)
+        "general", "main" -> Intent(Settings.ACTION_SETTINGS)
         "wireless" -> Intent("android.settings.WIRELESS_SETTINGS")
         "wifi" -> Intent(Settings.ACTION_WIFI_SETTINGS)
         "bluetooth" -> Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
@@ -195,7 +168,7 @@ internal fun settingsPageIntent(page: String, packageName: String): Intent? {
         "notification_listener" -> Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
         "notifications" -> Intent("android.settings.ALL_APPS_NOTIFICATION_SETTINGS")
         "app_notification" -> Intent("android.settings.APP_NOTIFICATION_SETTINGS").putExtra("android.provider.extra.APP_PACKAGE", packageName)
-        "manage_apps" -> Intent("android.settings.MANAGE_APPLICATIONS_SETTINGS")
+        "manage_apps", "apps" -> Intent("android.settings.MANAGE_APPLICATIONS_SETTINGS")
         "default_apps" -> Intent("android.settings.MANAGE_DEFAULT_APPS_SETTINGS")
         "battery_saver" -> Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS)
         "battery_optimization" -> Intent("android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS")

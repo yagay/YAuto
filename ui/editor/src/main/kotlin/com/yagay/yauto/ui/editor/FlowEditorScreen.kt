@@ -35,6 +35,11 @@ fun MacroFlowEditorScreen(
     var tree by remember { mutableStateOf(false) }
     var paramEdit by remember { mutableStateOf<Triple<FlowParamSide, Int?, FlowParameter?>?>(null) }
     var actionMenu by remember { mutableStateOf<Int?>(null) }
+    val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
+    val inheritedVariableNames = LocalEditorVariableNames.current
+    val editorVariableNames = remember(inheritedVariableNames, inputs, outputs) {
+        inheritedVariableNames + inputs.map { it.name } + outputs.map { it.name }
+    }
 
     Scaffold(
         topBar = {
@@ -122,9 +127,7 @@ fun MacroFlowEditorScreen(
                     if (actions.isEmpty()) FlowEmpty(stringResource(TextR.string.flow_add_action_hint))
                     actions.forEachIndexed { index, node ->
                         val feature = (node as? ActionNode.Action)?.feature
-                        val descriptor = feature?.let { ref ->
-                            descriptors.firstOrNull { it.id.value == ref.typeId }
-                        }
+                        val descriptor = feature?.let { ref -> descriptorById[ref.typeId] }
                         val summary = feature?.config?.entries
                             ?.filterNot { it.key.startsWith("source.") }
                             ?.take(3)
@@ -180,8 +183,9 @@ fun MacroFlowEditorScreen(
         }
     }
 
-    picker?.let { (index, feature) ->
-        MacroFeaturePickerDialog(
+    CompositionLocalProvider(LocalEditorVariableNames provides editorVariableNames) {
+        picker?.let { (index, feature) ->
+            MacroFeaturePickerDialog(
             kind = FeatureKind.ACTION,
             descriptors = descriptors,
             initial = feature,
@@ -196,10 +200,12 @@ fun MacroFlowEditorScreen(
                 }
                 picker = null
             },
-        )
+            )
+        }
     }
 
-    if (tree) {
+    CompositionLocalProvider(LocalEditorVariableNames provides editorVariableNames) {
+        if (tree) {
         ActionTreeDialog(
             title = stringResource(TextR.string.flow_action_tree_title),
             initial = actions,
@@ -210,7 +216,8 @@ fun MacroFlowEditorScreen(
                 actions = it
                 tree = false
             },
-        )
+            )
+        }
     }
 
     paramEdit?.let { (side, index, initialParam) ->
@@ -414,7 +421,9 @@ private fun flowNodeTitle(node: ActionNode, flows: List<Flow>): String = when (n
     is ActionNode.Switch -> stringResource(TextR.string.node_switch)
     is ActionNode.Repeat -> stringResource(TextR.string.node_repeat_format, node.times)
     is ActionNode.While -> stringResource(TextR.string.node_while)
+    is ActionNode.DoWhile -> stringResource(TextR.string.node_while) + " (do)"
     is ActionNode.WaitUntil -> stringResource(TextR.string.tree_wait_until)
+    is ActionNode.WaitEvent -> stringResource(TextR.string.tree_wait_until) + " (event)"
     is ActionNode.ForEach -> stringResource(TextR.string.node_foreach)
     is ActionNode.Parallel -> stringResource(TextR.string.node_parallel)
     is ActionNode.Try -> stringResource(TextR.string.node_try)
@@ -422,6 +431,8 @@ private fun flowNodeTitle(node: ActionNode, flows: List<Flow>): String = when (n
         TextR.string.node_call_flow_format,
         flows.firstOrNull { it.id == node.flowId }?.name ?: node.flowId.value,
     )
+    is ActionNode.Label -> stringResource(TextR.string.tree_label_format, node.name)
+    is ActionNode.Goto -> stringResource(TextR.string.tree_goto_format, node.label)
     is ActionNode.Return -> stringResource(TextR.string.node_return)
     is ActionNode.Break -> stringResource(TextR.string.node_break)
     is ActionNode.Continue -> stringResource(TextR.string.node_continue)

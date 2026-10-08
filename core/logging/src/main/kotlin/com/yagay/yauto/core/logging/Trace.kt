@@ -5,7 +5,7 @@ import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.FlowId
 import com.yagay.yauto.core.model.NodeId
 import kotlinx.serialization.Serializable
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.ArrayDeque
 import java.util.concurrent.atomic.AtomicLong
 
 @Serializable
@@ -59,18 +59,28 @@ class CompositeExecutionTracer(
 }
 
 class InMemoryExecutionTracer(
-    private val maxEvents: Int = 10_000,
+    maxEvents: Int = 10_000,
 ) : ExecutionTracer {
-    private val events = CopyOnWriteArrayList<TraceEvent>()
+    private val capacity = maxEvents.coerceAtLeast(1)
+    private val lock = Any()
+    private val events = ArrayDeque<TraceEvent>(capacity.coerceAtMost(1_024))
 
     override suspend fun record(event: TraceEvent) {
-        events += event
-        while (events.size > maxEvents) events.removeAt(0)
+        synchronized(lock) {
+            if (events.size >= capacity) events.removeFirst()
+            events.addLast(event)
+        }
     }
 
-    fun snapshot(): List<TraceEvent> = events.toList()
-    fun snapshot(executionId: ExecutionId): List<TraceEvent> = events.filter { it.executionId == executionId }
-    fun clear() = events.clear()
+    fun snapshot(): List<TraceEvent> = synchronized(lock) { events.toList() }
+
+    fun snapshot(executionId: ExecutionId): List<TraceEvent> = synchronized(lock) {
+        events.filter { it.executionId == executionId }
+    }
+
+    fun clear() {
+        synchronized(lock) { events.clear() }
+    }
 }
 
 object NoOpExecutionTracer : ExecutionTracer {

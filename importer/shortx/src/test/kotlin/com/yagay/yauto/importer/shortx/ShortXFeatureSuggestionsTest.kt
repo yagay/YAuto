@@ -1,7 +1,6 @@
 package com.yagay.yauto.importer.shortx
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ShortXFeatureSuggestionsTest {
@@ -32,7 +31,7 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.http.request", ShortXFeatureSuggestions.target("HttpRequest", path))
         assertEquals("android.app.launch", ShortXFeatureSuggestions.target("LaunchAppByPkg", path))
         assertEquals("android.app.force_stop", ShortXFeatureSuggestions.target("StopAppByPkg", path))
-        assertEquals("system.shell.execute", ShortXFeatureSuggestions.target("ShellCommand", path))
+        assertEquals("android.shell.execute", ShortXFeatureSuggestions.target("ShellCommand", path))
         assertEquals("accessibility.gesture.tap", ShortXFeatureSuggestions.target("InputTap", path))
         assertEquals("accessibility.gesture.swipe", ShortXFeatureSuggestions.target("InputSwipe", path))
         assertEquals("accessibility.input_text", ShortXFeatureSuggestions.target("InputText", path))
@@ -56,6 +55,12 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.audio.volume.adjust", ShortXFeatureSuggestions.target("AdjustVolume", path))
         assertEquals("system.notifications.expand", ShortXFeatureSuggestions.target("ExpandNotification", path))
         assertEquals("android.sms.compose", ShortXFeatureSuggestions.target("SendSMS", path))
+        assertEquals("variable.global.set", ShortXFeatureSuggestions.target("CreateGlobalVar", path))
+        assertEquals("variable.global.mutate", ShortXFeatureSuggestions.target("WriteGlobalVar", path))
+        assertEquals("variable.global.mutate", ShortXFeatureSuggestions.target("AddToGlobalVar", path))
+        assertEquals("variable.global.clear", ShortXFeatureSuggestions.target("DeleteGlobalVar", path))
+        assertEquals("android.app.previous.launch", ShortXFeatureSuggestions.target("StartPreviousApp", path))
+        assertEquals("android.app.next.launch", ShortXFeatureSuggestions.target("StartNextApp", path))
     }
 
     @Test fun `facts suggest matching runtime events`() {
@@ -65,7 +70,7 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.event.dark_mode_changed", ShortXFeatureSuggestions.target("DarkModeStatusChanged", path))
         assertEquals("android.event.nfc_state_changed", ShortXFeatureSuggestions.target("NFCStatusChanged", path))
         assertEquals("android.event.nfc_tag", ShortXFeatureSuggestions.target("NFCTagDiscover", path))
-        assertEquals("android.event.auto_rotate_changed", ShortXFeatureSuggestions.target("ScreenRotateTrigger", path))
+        assertEquals("android.event.orientation_changed", ShortXFeatureSuggestions.target("ScreenRotateTrigger", path))
         assertEquals("android.event.battery_changed", ShortXFeatureSuggestions.target("BatteryTemperatureChanged", path))
         assertEquals("android.event.power_connected", ShortXFeatureSuggestions.target("ChargerPlug", path))
         assertEquals("android.event.power_disconnected", ShortXFeatureSuggestions.target("ChargerUnplug", path))
@@ -82,6 +87,9 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.event.sensor_value", ShortXFeatureSuggestions.target("LightSensor", path))
         assertEquals("android.event.wifi_changed", ShortXFeatureSuggestions.target("WifiConnectedTo", path))
         assertEquals("android.event.network_changed", ShortXFeatureSuggestions.target("VPNConnected", path))
+        assertEquals("android.event.app_foreground", ShortXFeatureSuggestions.target("AppBecomeFg", path))
+        assertEquals("android.event.app_background", ShortXFeatureSuggestions.target("AppBecomeBg", path))
+        assertEquals("android.event.websocket", ShortXFeatureSuggestions.target("OnWebSocket", path))
     }
 
     @Test fun `conditions suggest compatible current states`() {
@@ -101,15 +109,17 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.condition.wifi_network", ShortXFeatureSuggestions.target("RequireWifiConnected", path))
         assertEquals("android.condition.audio.ringer_mode", ShortXFeatureSuggestions.target("RequireRingerMode", path))
         assertEquals("android.condition.phone_call_state", ShortXFeatureSuggestions.target("IsRinging", path))
+        assertEquals("android.condition.app_foreground", ShortXFeatureSuggestions.target("CurrentPkgList", path))
+        assertEquals("android.plugin.locale.condition", ShortXFeatureSuggestions.target("PluginCondition", path))
     }
 
-    @Test fun `different semantics are deliberately not guessed`() {
+    @Test fun `newly verified system and context capabilities suggest canonical features`() {
         val action = "rule[0].action[0]"
         val condition = "rule[0].condition[0]"
-        assertNull(ShortXFeatureSuggestions.target("AreaScreenshot", action))
-        assertNull(ShortXFeatureSuggestions.target("SetHotSpotEnabled", action))
-        assertNull(ShortXFeatureSuggestions.target("RequireScreenRotate", condition))
-        assertNull(ShortXFeatureSuggestions.target("CurrentActivity", condition))
-        assertNull(ShortXFeatureSuggestions.target("FlashlightIsOn", condition))
+        assertEquals("accessibility.screenshot.capture", ShortXFeatureSuggestions.target("AreaScreenshot", action))
+        assertEquals("android.network.tether.set", ShortXFeatureSuggestions.target("SetHotSpotEnabled", action))
+        assertEquals("android.condition.reference.display_rotation", ShortXFeatureSuggestions.target("RequireScreenRotate", condition))
+        assertEquals("android.condition.app_foreground", ShortXFeatureSuggestions.target("CurrentActivity", condition))
+        assertEquals("android.condition.torch_on", ShortXFeatureSuggestions.target("FlashlightIsOn", condition))
     }
 }

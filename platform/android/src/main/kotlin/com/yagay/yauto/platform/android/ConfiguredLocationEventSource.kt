@@ -40,6 +40,10 @@ class ConfiguredLocationEventSource(
     override val id: String = "android.location.configured"
     private val context = context.applicationContext
     private val manager = context.applicationContext.getSystemService(LocationManager::class.java)
+    private val runtimePrefs = this.context.getSharedPreferences(
+        AndroidMacroDroidSystemParityFeaturePack.PREFS,
+        Context.MODE_PRIVATE,
+    )
     private val started = AtomicBoolean(false)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val thread = HandlerThread("YAutoLocation")
@@ -215,8 +219,22 @@ class ConfiguredLocationEventSource(
     private fun subscription(feature: FeatureRef, defaultIntervalMs: Long, defaultDistanceMeters: Double): LocationSubscription? {
         val provider = feature.config.string("provider", "any")
         if (provider !in setOf("any", "gps", "network", "passive")) return null
-        val interval = feature.config.long("minimumIntervalMs", defaultIntervalMs).coerceIn(1_000L, 3_600_000L)
-        val distance = (feature.config["minimumDistanceMeters"].numberOrNull() ?: defaultDistanceMeters).coerceIn(0.0, 100_000.0)
+        val configuredInterval = feature.config.long("minimumIntervalMs", defaultIntervalMs)
+        val globalInterval = runtimePrefs.getLong(
+            AndroidMacroDroidSystemParityFeaturePack.KEY_LOCATION_INTERVAL,
+            -1L,
+        )
+        val interval = (if (globalInterval > 0L) globalInterval else configuredInterval)
+            .coerceIn(1_000L, 3_600_000L)
+        val configuredDistance =
+            (feature.config["minimumDistanceMeters"].numberOrNull() ?: defaultDistanceMeters)
+        val globalDistance = if (
+            runtimePrefs.contains(AndroidMacroDroidSystemParityFeaturePack.KEY_LOCATION_DISTANCE)
+        ) runtimePrefs.getFloat(
+            AndroidMacroDroidSystemParityFeaturePack.KEY_LOCATION_DISTANCE,
+            configuredDistance.toFloat(),
+        ).toDouble() else configuredDistance
+        val distance = globalDistance.coerceIn(0.0, 100_000.0)
         val maxAccuracy = (feature.config["maxAccuracyMeters"].numberOrNull() ?: 0.0).coerceIn(0.0, 100_000.0)
         return LocationSubscription(locationSubscriptionKey(feature), provider, interval, distance.toFloat(), maxAccuracy.toFloat())
     }

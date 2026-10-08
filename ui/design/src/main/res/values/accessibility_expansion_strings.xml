@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_accessibility_click_text_advanced_title">Click text with match mode</string>
+    <string name="feature_accessibility_click_text_advanced_description">Find visible text using contains, exact or regular-expression matching and click it</string>
+    <string name="feature_accessibility_click_text_advanced_field_text">Text / pattern</string>
+    <string name="feature_accessibility_click_text_advanced_field_mode">Match mode</string>
+    <string name="feature_accessibility_click_text_advanced_field_mode_option_contains">Contains</string>
+    <string name="feature_accessibility_click_text_advanced_field_mode_option_exact">Exact</string>
+    <string name="feature_accessibility_click_text_advanced_field_mode_option_regex">Regular expression</string>
+    <string name="feature_accessibility_click_text_advanced_field_ignorecase">Ignore case</string>
+
+    <string name="feature_accessibility_screen_text_get_title">Read screen text</string>
+    <string name="feature_accessibility_screen_text_get_description">Read visible text and content descriptions from the active Accessibility window</string>
+    <string name="feature_accessibility_screen_text_get_field_includedescriptions">Include content descriptions</string>
+    <string name="feature_accessibility_screen_text_get_field_unique">Remove duplicate text</string>
+    <string name="feature_accessibility_screen_text_get_field_limit">Maximum nodes</string>
+    <string name="feature_accessibility_screen_text_get_field_resultvariable">Store screen text</string>
+
+    <string name="feature_accessibility_view_text_get_title">Read text by View ID</string>
+    <string name="feature_accessibility_view_text_get_description">Read text or content description from a view resource ID</string>
+    <string name="feature_accessibility_view_text_get_field_viewid">View ID</string>
+    <string name="feature_accessibility_view_text_get_field_resultvariable">Store text</string>
+
+    <string name="feature_accessibility_ui_nodes_get_title">Read UI node tree</string>
+    <string name="feature_accessibility_ui_nodes_get_description">Read visible Accessibility nodes and their text, IDs and interaction flags into a list</string>
+    <string name="feature_accessibility_ui_nodes_get_field_limit">Maximum nodes</string>
+    <string name="feature_accessibility_ui_nodes_get_field_onlyvisible">Only visible nodes</string>
+    <string name="feature_accessibility_ui_nodes_get_field_clickableonly">Only clickable nodes</string>
+    <string name="feature_accessibility_ui_nodes_get_field_resultvariable">Store node list</string>
+
+    <string name="feature_accessibility_condition_text_matches_title">Screen text matches</string>
+    <string name="feature_accessibility_condition_text_matches_description">Check visible text using contains, exact or regular-expression matching</string>
+    <string name="feature_accessibility_condition_text_matches_field_text">Text / pattern</string>
+    <string name="feature_accessibility_condition_text_matches_field_mode">Match mode</string>
+    <string name="feature_accessibility_condition_text_matches_field_mode_option_contains">Contains</string>
+    <string name="feature_accessibility_condition_text_matches_field_mode_option_exact">Exact</string>
+    <string name="feature_accessibility_condition_text_matches_field_mode_option_regex">Regular expression</string>
+    <string name="feature_accessibility_condition_text_matches_field_ignorecase">Ignore case</string>
+
+    <string name="feature_android_event_ui_click_title">UI element clicked</string>
+    <string name="feature_android_event_ui_long_click_title">UI element long-clicked</string>
+    <string name="feature_android_event_ui_text_changed_title">UI text changed</string>
+    <string name="feature_android_event_ui_focused_title">UI element focused</string>
+    <string name="feature_android_event_ui_scrolled_title">UI content scrolled</string>
+    <string name="feature_phrase_trigger_on_accessibility_ui_interaction_events_and_optionally_filter_app_text_content_description_or_view_id">Trigger on Accessibility UI interaction events and optionally filter app, text, content description or View ID</string>
+<string name="feature_phrase_text_match">Text match</string>
+    <string name="feature_phrase_text_pattern">Text / pattern</string>
+    <string name="feature_phrase_content_description_contains">Content description contains</string>
+    <string name="feature_phrase_view_id_contains">View ID contains</string>
+    <string name="feature_phrase_ignore_case">Ignore case</string>
+<string name="feature_phrase_contains">Contains</string>
+    <string name="feature_phrase_exact">Exact</string>
+<string name="feature_android_event_screen_content_changed_title">Screen content matched</string>
+    <string name="feature_android_event_screen_content_changed_description">Trigger when Accessibility reports changed screen content matching text or a regular expression</string>
+    <string name="feature_android_event_screen_content_changed_field_package">App / package</string>
+    <string name="feature_android_event_screen_content_changed_field_mode">Match mode</string>
+    <string name="feature_android_event_screen_content_changed_field_mode_option_contains">Contains</string>
+    <string name="feature_android_event_screen_content_changed_field_mode_option_regex">Regular expression</string>
+    <string name="feature_android_event_screen_content_changed_field_text">Text / pattern</string>
+    <string name="feature_android_event_screen_content_changed_field_ignorecase">Ignore case</string>
+</resources>

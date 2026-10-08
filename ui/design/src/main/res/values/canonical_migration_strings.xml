@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_audio_focus_changed_field_change_option_loss_any">Any focus loss</string>
+</resources>

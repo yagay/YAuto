@@ -1,6 +1,9 @@
 package com.yagay.yauto.platform.android
 
+import android.app.SearchManager
 import android.content.Context
+import android.content.Intent
+import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import com.yagay.yauto.core.model.ConfigValue
@@ -22,9 +25,35 @@ import java.util.concurrent.ConcurrentHashMap
 /** Text-to-speech kept in its own pack so audio automation remains independently maintainable. */
 class AndroidSpeechFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.speech"
-    private val controller = SpeechController(context.applicationContext)
+    private val context = context.applicationContext
+    private val controller = SpeechController(this.context)
 
     override fun install(registry: FeatureRegistry) {
+        registerVoiceSearch(registry)
+        registerWebSearch(registry)
+        registerAssistant(registry)
+        registerVoiceInput(registry)
+        val speakingEvaluator = ConditionEvaluator { feature, _ ->
+            controller.isSpeaking() == feature.config.boolean("value", true)
+        }
+        val speakingState = FeatureDescriptor(
+            FeatureId("android.state.tts_speaking"),
+            FeatureKind.STATE,
+            "TTS speaking",
+            "Check whether YAuto's Android text-to-speech engine is currently speaking",
+            FeatureCategory.AUDIO,
+            fields = listOf(FieldSchema.Toggle("value", "Speaking")),
+            keywords = setOf("tts", "speaking", "speech", "macrodroid"),
+            ownerPackId = id,
+        )
+        registry.registerState(speakingState, speakingEvaluator)
+        registry.registerCondition(
+            speakingState.copy(
+                id = FeatureId("android.condition.tts_speaking"),
+                kind = FeatureKind.CONDITION,
+            ),
+            speakingEvaluator,
+        )
         registry.registerAction(
             FeatureDescriptor(
                 FeatureId("android.tts.speak"),
@@ -54,6 +83,137 @@ class AndroidSpeechFeaturePack(context: Context) : FeaturePack {
             controller.speak(text, languageTag, rate, pitch, wait)
         }
     }
+    private fun registerVoiceInput(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.voice_input.capture"),
+                FeatureKind.ACTION,
+                "Capture voice input",
+                "Open Android speech recognition, wait for one spoken result and store it in a variable",
+                FeatureCategory.AUDIO,
+                fields = listOf(
+                    FieldSchema.Text("prompt", "Prompt"),
+                    FieldSchema.Text("languageTag", "Language tag"),
+                    FieldSchema.Duration("timeoutMs", "Recognition timeout"),
+                    FieldSchema.Variable("resultVariable", "Store recognized text"),
+                ),
+                fieldBehaviors = mapOf(
+                    "prompt" to FieldBehavior(supportsVariables = true),
+                    "languageTag" to FieldBehavior(supportsVariables = true),
+                ),
+                accessRequirements = setOf(AccessRequirement.RECORD_AUDIO),
+                keywords = setOf("voice input", "speech recognition", "microphone", "macrodroid", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val token = UUID.randomUUID().toString()
+            val pending = VoiceInputRuntimeBridge.register(token)
+            val launched = runCatching {
+                context.startActivity(
+                    Intent()
+                        .setClassName(context.packageName, "com.yagay.yauto.VoiceInputActivity")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra("token", token)
+                        .putExtra("prompt", feature.config.string("prompt").resolveVariables(ctx.variables))
+                        .putExtra("language", feature.config.string("languageTag").resolveVariables(ctx.variables))
+                )
+                true
+            }.getOrDefault(false)
+            if (!launched) {
+                VoiceInputRuntimeBridge.cancel(token)
+                return@registerAction ActionExecutionResult(false, message = userText("feature.voice_input_open_failed"))
+            }
+            val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 60_000.0).toLong().coerceIn(1_000L, 180_000L)
+            val text = withTimeoutOrNull(timeout) { pending.await() }
+            VoiceInputRuntimeBridge.cancel(token)
+            if (text.isNullOrBlank()) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.voice_input_no_result"))
+            }
+            val output = ConfigValue.StringValue(text)
+            feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
+            ActionExecutionResult(true, output)
+        }
+    }
+
+    private fun registerVoiceSearch(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.voice_search.open"),
+                FeatureKind.ACTION,
+                "Open voice search",
+                "Open the system voice-search experience",
+                FeatureCategory.APP,
+                fields = listOf(
+                    FieldSchema.Text("prompt", "Voice-search prompt"),
+                    FieldSchema.Text("languageTag", "Language tag"),
+                ),
+                keywords = setOf("voice search", "search", "speech", "assistant", "MacroDroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val prompt = feature.config.string("prompt").resolveVariables(ctx.variables).trim()
+            val language = feature.config.string("languageTag").resolveVariables(ctx.variables).trim()
+            launchExternal(
+                Intent(RecognizerIntent.ACTION_WEB_SEARCH).apply {
+                    if (prompt.isNotBlank()) putExtra(RecognizerIntent.EXTRA_PROMPT, prompt)
+                    if (language.isNotBlank()) putExtra(RecognizerIntent.EXTRA_LANGUAGE, language)
+                },
+                feature.typeId,
+            )
+        }
+    }
+
+    private fun registerWebSearch(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.web_search.open"),
+                FeatureKind.ACTION,
+                "Open web search",
+                "Open the system web-search handler with a text query",
+                FeatureCategory.APP,
+                fields = listOf(FieldSchema.Text("query", "Search query", true)),
+                fieldBehaviors = mapOf("query" to FieldBehavior(supportsVariables = true)),
+                keywords = setOf("web search", "search", "query", "browser"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val query = feature.config.string("query").resolveVariables(ctx.variables).trim()
+            if (query.isBlank()) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
+            }
+            launchExternal(
+                Intent(Intent.ACTION_WEB_SEARCH).putExtra(SearchManager.QUERY, query),
+                feature.typeId,
+            )
+        }
+    }
+
+    private fun registerAssistant(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.assistant.open"),
+                FeatureKind.ACTION,
+                "Open digital assistant",
+                "Open the current Android assistant using the standard assist intent",
+                FeatureCategory.APP,
+                keywords = setOf("assistant", "voice assistant", "assist", "Tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, _ ->
+            launchExternal(Intent(Intent.ACTION_ASSIST), feature.typeId)
+        }
+    }
+
+    private fun launchExternal(intent: Intent, operationId: String): ActionExecutionResult = runCatching {
+        val launch = intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (launch.resolveActivity(context.packageManager) == null) {
+            return@runCatching ActionExecutionResult(false, message = userText("feature.no_compatible_app"))
+        }
+        context.startActivity(launch)
+        ActionExecutionResult(true)
+    }.getOrElse {
+        ActionExecutionResult(false, message = userText("feature.operation_failed", operationId))
+    }
 }
 
 private class SpeechController(private val context: Context) {
@@ -78,6 +238,8 @@ private class SpeechController(private val context: Context) {
             utteranceId?.let { completions.remove(it)?.complete(false) }
         }
     }
+
+    fun isSpeaking(): Boolean = runCatching { engine?.isSpeaking == true }.getOrDefault(false)
 
     suspend fun speak(
         text: String,

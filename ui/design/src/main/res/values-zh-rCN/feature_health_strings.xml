@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_settings_title_health">功能健康</string>
+    <string name="runtime_settings_feature_health">功能健康扫描</string>
+    <string name="runtime_settings_feature_health_subtitle">后台检查每个已注册功能的权限、依赖和后端可用性</string>
+    <string name="feature_health_scanning">正在扫描功能可用性…</string>
+    <string name="feature_health_not_scanned">尚未生成扫描结果</string>
+    <string name="feature_health_summary_format">共 %1$d 项 · 可用 %2$d · 受阻 %3$d · 异常 %4$d · 不支持 %5$d</string>
+    <string name="feature_health_search">搜索功能名称或 ID</string>
+    <string name="feature_health_recheck">重新扫描</string>
+    <string name="feature_health_ready">可用</string>
+    <string name="feature_health_blocked">受阻</string>
+    <string name="feature_health_broken">异常</string>
+    <string name="feature_health_unsupported">不支持</string>
+    <string name="feature_health_missing_format">缺少：%1$s</string>
+    <string name="feature_health_backend_format">后端：%1$s</string>
+    <string name="feature_health_safe_note">后台扫描会检查功能实现是否存在、Android 版本、权限和后端连通性，但不会真正执行会改变系统状态的动作。</string>
+    <string name="feature_health_scan_now">一键扫描</string>
+    <string name="feature_health_auto_scan">自动扫描</string>
+    <string name="feature_health_auto_scan_detail">开启后，YAuto 每次回到前台时在后台刷新功能状态；默认关闭。</string>
+    <string name="feature_health_auto_on_not_scanned">自动扫描已开启 · 尚未生成结果</string>
+    <string name="feature_health_quick_title">自动检测功能有效性</string>
+    <string name="feature_health_ready_detail">功能实现、所需权限和后端检查均通过；为避免副作用，后台检测不会真正执行会改变系统状态的动作。</string>
+    <string name="feature_health_blocked_detail_format">缺少所需访问能力：%1$s</string>
+    <string name="feature_health_broken_detail">功能已经注册，但 YAuto 没有找到与该功能类型对应的可执行实现。</string>
+    <string name="feature_health_unsupported_detail">当前 Android 版本不支持此功能。</string>
+    <string name="feature_health_reason_format">原因：%1$s</string>
+    <string name="feature_health_solution_format">解决办法：%1$s</string>
+    <string name="feature_health_reason_solution_format">%1$s；解决：%2$s</string>
+    <string name="feature_health_solution_root">请在 Root 管理器中授予 YAuto Root 权限，然后重新检测。</string>
+    <string name="feature_health_solution_shizuku">请启动 Shizuku 并授权 YAuto，然后重新检测。</string>
+    <string name="feature_health_solution_lsposed">请在 LSPosed 中启用 YAuto 模块并选择所需作用域；必要时重启目标进程，然后重新检测。</string>
+    <string name="feature_health_solution_zygisk">请启用或安装可用的 Zygisk 环境并重启设备，然后重新检测。</string>
+    <string name="feature_health_solution_generic_access_format">请在 Android 系统设置中授予或启用“%1$s”，然后重新检测。</string>
+    <string name="feature_health_solution_broken">这是 YAuto 内部功能实现问题。请导出功能检测日志，并根据功能 ID 定位缺失的执行器、事件匹配器或状态判断器。</string>
+    <string name="feature_health_solution_unsupported">请使用支持该功能的 Android 版本或设备，或改用兼容当前系统版本的替代功能。</string>
+    <string name="feature_health_solution_check_diagnostics">请打开诊断中心检查对应后端或权限状态，然后重新检测。</string>
+    <string name="feature_health_export_log">导出检测日志</string>
+    <string name="feature_health_export_saved">检测日志已导出</string>
+    <string name="feature_health_export_failed_format">导出失败：%1$s</string>
+</resources>

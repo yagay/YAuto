@@ -5,6 +5,7 @@ import com.yagay.yauto.core.engine.AutomationEngine
 import com.yagay.yauto.core.engine.AutomationPhase
 import com.yagay.yauto.core.engine.EngineResult
 import com.yagay.yauto.core.engine.FlowResolver
+import com.yagay.yauto.core.engine.RuntimeEventWaiter
 import com.yagay.yauto.core.engine.SimpleExpressionEngine
 import com.yagay.yauto.core.logging.ExecutionTracer
 import com.yagay.yauto.core.logging.TraceEvent
@@ -23,6 +24,7 @@ import com.yagay.yauto.core.registry.VariableAccess
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.WorkspaceRepository
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -30,6 +32,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.AbstractCoroutineContextElement
@@ -58,6 +61,7 @@ class AutomationRuntime(
     private val locks = ConcurrentHashMap<String, Mutex>()
     private val evaluationLocks = ConcurrentHashMap<String, Mutex>()
     private val runningExecutions = ConcurrentHashMap<String, MutableSet<Job>>()
+    private val eventWaitRequests = ConcurrentHashMap<String, EventWaitRequest>()
     private val workspaceMutationLock = Mutex()
     private val expressions = SimpleExpressionEngine()
 
@@ -73,13 +77,21 @@ class AutomationRuntime(
                 attributes = event.payload.mapValues { (_, value) -> value.asTraceText() },
             )
         )
+        notifyEventWaiters(event)
 
         val workspace = workspaceRepository.load()
+        if (!workspace.runtimeEnabled && event.typeId != "core.event.runtime_enabled_changed") {
+            return@coroutineScope RuntimeDispatchResult(dispatchId, event, emptyList())
+        }
         val flows = workspace.flows.associateBy { it.id }
         val runs = mutableListOf<RuntimeAutomationRun>()
         val callStack = currentCoroutineContext()[AutomationCallStack]?.ids.orEmpty()
 
-        for (automation in workspace.automations.filter { it.enabled && it.id.value !in callStack }) {
+        for (automation in workspace.automations.filter {
+            it.enabled &&
+                it.id.value !in callStack &&
+                categoryEnabled(it.category, workspace.disabledCategories)
+        }) {
             if (statesOnly && automation.activation.states.isEmpty()) continue
             try {
                 val variables = MapVariableAccess(buildMap {
@@ -92,9 +104,23 @@ class AutomationRuntime(
                 })
 
                 val phases = evaluationLocks.getOrPut(automation.id.value) { Mutex() }.withLock {
-                    val eventMatches = !statesOnly && automation.activation.events.any {
-                        matchEvent(it, event, variables, dispatchId)
+                    var matchedEventFeature: FeatureRef? = null
+                    val eventMatches = if (statesOnly) {
+                        false
+                    } else {
+                        for (candidate in automation.activation.events) {
+                            if (!triggerEnabled(workspace, automation, candidate)) continue
+                            if (matchEvent(candidate, event, variables, dispatchId)) {
+                                matchedEventFeature = candidate
+                                break
+                            }
+                        }
+                        matchedEventFeature != null
                     }
+                    matchedEventFeature
+                        ?.config
+                        ?.get("tag")
+                        ?.let { tag -> variables.set("event.fact_tag", tag) }
 
                     val stateful = automation.activation.states.isNotEmpty()
                     val statesMatch = automation.activation.states.all { state ->
@@ -171,7 +197,7 @@ class AutomationRuntime(
         val workspace = workspaceRepository.load()
         val automation = resolveAutomation(workspace, trimmed)
             ?: return ActionExecutionResult(false, message = userText("runtime.automation_not_found", trimmed))
-        if (!automation.enabled && !allowDisabled) {
+        if ((!automation.enabled || !categoryEnabled(automation.category, workspace.disabledCategories)) && !allowDisabled) {
             return ActionExecutionResult(false, message = userText("runtime.automation_disabled", automation.name))
         }
 
@@ -199,18 +225,29 @@ class AutomationRuntime(
         return ActionExecutionResult(result.success, result.returnValue, result.error)
     }
 
-    override suspend fun setEnabled(target: String, mode: AutomationEnableMode): ActionExecutionResult =
-        workspaceMutationLock.withLock {
-            val trimmed = target.trim()
-            if (trimmed.isEmpty()) return@withLock ActionExecutionResult(false, message = userText("runtime.automation_target_required"))
+    override suspend fun setEnabled(
+        target: String,
+        mode: AutomationEnableMode,
+    ): ActionExecutionResult {
+        val trimmed = target.trim()
+        if (trimmed.isEmpty()) {
+            return ActionExecutionResult(false, message = userText("runtime.automation_target_required"))
+        }
+        var changedAutomation: Automation? = null
+        var newEnabled = false
+        val result = workspaceMutationLock.withLock {
             val workspace = workspaceRepository.load()
             val automation = resolveAutomation(workspace, trimmed)
-                ?: return@withLock ActionExecutionResult(false, message = userText("runtime.automation_not_found", trimmed))
+                ?: return@withLock ActionExecutionResult(
+                    false,
+                    message = userText("runtime.automation_not_found", trimmed),
+                )
             val enabled = when (mode) {
                 AutomationEnableMode.ENABLE -> true
                 AutomationEnableMode.DISABLE -> false
                 AutomationEnableMode.TOGGLE -> !automation.enabled
             }
+            newEnabled = enabled
             if (enabled != automation.enabled) {
                 workspaceRepository.save(
                     workspace.copy(
@@ -219,6 +256,7 @@ class AutomationRuntime(
                         }
                     )
                 )
+                changedAutomation = automation
                 if (!enabled) {
                     cancelJobs(automation.id.value)
                     resetState(automation.id)
@@ -226,6 +264,21 @@ class AutomationRuntime(
             }
             ActionExecutionResult(true, ConfigValue.BooleanValue(enabled))
         }
+        changedAutomation?.let { automation ->
+            dispatch(
+                RuntimeEvent(
+                    typeId = "core.event.automation_enabled_changed",
+                    payload = mapOf(
+                        "automationId" to ConfigValue.StringValue(automation.id.value),
+                        "automationName" to ConfigValue.StringValue(automation.name),
+                        "enabled" to ConfigValue.BooleanValue(newEnabled),
+                    ),
+                    source = "runtime.automation_control",
+                )
+            )
+        }
+        return result
+    }
 
     override suspend fun cancel(target: String): ActionExecutionResult {
         val trimmed = target.trim()
@@ -245,6 +298,165 @@ class AutomationRuntime(
         val trimmed = target.trim()
         if (trimmed.isEmpty()) return null
         return resolveAutomation(workspaceRepository.load(), trimmed)?.enabled
+    }
+
+    override suspend fun isRunning(target: String): Boolean? {
+        val trimmed = target.trim()
+        if (trimmed.isEmpty()) return null
+        val automation = resolveAutomation(workspaceRepository.load(), trimmed) ?: return null
+        return runningExecutions[automation.id.value]?.any { it.isActive } == true
+    }
+
+    override suspend fun setRuntimeEnabled(mode: AutomationEnableMode): ActionExecutionResult {
+        var previous = true
+        var enabled = true
+        val result = workspaceMutationLock.withLock {
+            val workspace = workspaceRepository.load()
+            previous = workspace.runtimeEnabled
+            enabled = when (mode) {
+                AutomationEnableMode.ENABLE -> true
+                AutomationEnableMode.DISABLE -> false
+                AutomationEnableMode.TOGGLE -> !workspace.runtimeEnabled
+            }
+            if (enabled != workspace.runtimeEnabled) {
+                workspaceRepository.save(workspace.copy(runtimeEnabled = enabled))
+                if (!enabled) {
+                    runningExecutions.keys.toList().forEach(::cancelJobs)
+                    activeStates.clear()
+                }
+            }
+            ActionExecutionResult(true, ConfigValue.BooleanValue(enabled))
+        }
+        if (previous != enabled) {
+            dispatch(
+                RuntimeEvent(
+                    typeId = "core.event.runtime_enabled_changed",
+                    payload = mapOf("enabled" to ConfigValue.BooleanValue(enabled)),
+                    source = "runtime.master_control",
+                )
+            )
+        }
+        return result
+    }
+
+    override suspend fun isRuntimeEnabled(): Boolean = workspaceRepository.load().runtimeEnabled
+
+    override suspend fun setTriggerEnabled(
+        automation: String,
+        triggerType: String,
+        tag: String,
+        mode: AutomationEnableMode,
+    ): ActionExecutionResult {
+        val target = automation.trim()
+        val type = triggerType.trim()
+        val triggerTag = tag.trim()
+        if (target.isEmpty() || (type.isEmpty() && triggerTag.isEmpty())) {
+            return ActionExecutionResult(false, message = userText("runtime.trigger_target_required"))
+        }
+        return workspaceMutationLock.withLock {
+            val workspace = workspaceRepository.load()
+            val resolved = resolveAutomation(workspace, target)
+                ?: return@withLock ActionExecutionResult(
+                    false,
+                    message = userText("runtime.automation_not_found", target),
+                )
+            val candidates = resolved.activation.events.filter { feature ->
+                (type.isBlank() || feature.typeId == type || feature.config["source.type"]?.asTraceText() == type) &&
+                    (triggerTag.isBlank() || feature.config.string("tag") == triggerTag)
+            }
+            if (candidates.isEmpty()) {
+                return@withLock ActionExecutionResult(
+                    false,
+                    message = userText("runtime.trigger_not_found"),
+                )
+            }
+            val keys = candidates.map { triggerKey(resolved, it) }.toSet()
+            val currentlyEnabled = keys.any { it !in workspace.disabledTriggerKeys }
+            val enable = when (mode) {
+                AutomationEnableMode.ENABLE -> true
+                AutomationEnableMode.DISABLE -> false
+                AutomationEnableMode.TOGGLE -> !currentlyEnabled
+            }
+            val disabled = if (enable) workspace.disabledTriggerKeys - keys
+            else workspace.disabledTriggerKeys + keys
+            workspaceRepository.save(workspace.copy(disabledTriggerKeys = disabled))
+            ActionExecutionResult(true, ConfigValue.BooleanValue(enable))
+        }
+    }
+
+    override suspend fun isTriggerEnabled(
+        automation: String,
+        triggerType: String,
+        tag: String,
+    ): Boolean? {
+        val workspace = workspaceRepository.load()
+        val resolved = resolveAutomation(workspace, automation.trim()) ?: return null
+        val type = triggerType.trim()
+        val triggerTag = tag.trim()
+        val candidates = resolved.activation.events.filter { feature ->
+            (type.isBlank() || feature.typeId == type || feature.config["source.type"]?.asTraceText() == type) &&
+                (triggerTag.isBlank() || feature.config.string("tag") == triggerTag)
+        }
+        if (candidates.isEmpty()) return null
+        return candidates.any { triggerKey(resolved, it) !in workspace.disabledTriggerKeys }
+    }
+
+    override suspend fun setCategoryEnabled(
+        category: String,
+        mode: AutomationEnableMode,
+    ): ActionExecutionResult {
+        val name = category.trim()
+        if (name.isEmpty()) return ActionExecutionResult(false)
+        val changed = workspaceMutationLock.withLock {
+            val workspace = workspaceRepository.load()
+            val currentlyEnabled = name !in workspace.disabledCategories
+            val enabled = when (mode) {
+                AutomationEnableMode.ENABLE -> true
+                AutomationEnableMode.DISABLE -> false
+                AutomationEnableMode.TOGGLE -> !currentlyEnabled
+            }
+            if (enabled != currentlyEnabled) {
+                val disabled = if (enabled) workspace.disabledCategories - name
+                else workspace.disabledCategories + name
+                workspaceRepository.save(workspace.copy(disabledCategories = disabled))
+                if (!enabled) {
+                    workspace.automations
+                        .filter { it.category?.trim() == name }
+                        .forEach {
+                            cancelJobs(it.id.value)
+                            resetState(it.id)
+                        }
+                }
+            }
+            currentlyEnabled to enabled
+        }
+        if (changed.first != changed.second) {
+            dispatch(
+                RuntimeEvent(
+                    typeId = "core.event.category_enabled_changed",
+                    payload = mapOf(
+                        "category" to ConfigValue.StringValue(name),
+                        "enabled" to ConfigValue.BooleanValue(changed.second),
+                    ),
+                    source = "runtime.category",
+                )
+            )
+        }
+        return ActionExecutionResult(true, ConfigValue.BooleanValue(changed.second))
+    }
+
+    override suspend fun isCategoryEnabled(category: String): Boolean? {
+        val name = category.trim()
+        if (name.isEmpty()) return null
+        return name !in workspaceRepository.load().disabledCategories
+    }
+
+    override suspend fun lastRunEpochMs(target: String): Long? {
+        val trimmed = target.trim()
+        if (trimmed.isEmpty()) return null
+        val workspace = workspaceRepository.load()
+        val automation = resolveAutomation(workspace, trimmed) ?: return null
+        return workspace.automationLastRunEpochMs[automation.id.value]
     }
 
     override suspend fun get(name: String): ConfigValue? {
@@ -341,6 +553,13 @@ class AutomationRuntime(
         is PredicateNode.All -> predicate.children.all { evaluatePredicate(it, variables, dispatchId, automationId) }
         is PredicateNode.Any -> predicate.children.any { evaluatePredicate(it, variables, dispatchId, automationId) }
         is PredicateNode.None -> predicate.children.none { evaluatePredicate(it, variables, dispatchId, automationId) }
+        is PredicateNode.Xor -> {
+            var matches = 0
+            for (child in predicate.children) {
+                if (evaluatePredicate(child, variables, dispatchId, automationId)) matches++
+            }
+            matches == 1
+        }
         is PredicateNode.Literal -> predicate.value
         is PredicateNode.Expression -> expressions.evaluateBoolean(predicate.expression, variables)
         is PredicateNode.Condition -> {
@@ -376,13 +595,57 @@ class AutomationRuntime(
             coroutineScope {
                 val parentStack = currentCoroutineContext()[AutomationCallStack]?.ids.orEmpty()
                 val job = async(AutomationCallStack(parentStack + key)) {
+                    val lifecycleSourceEvent = (variables["event.type"] as? ConfigValue.StringValue)?.value.orEmpty()
+                    val emitLifecycle = !lifecycleSourceEvent.startsWith("core.event.automation_")
+                    val startedAt = System.currentTimeMillis()
+                    if (emitLifecycle) {
+                        dispatch(
+                            RuntimeEvent(
+                                typeId = "core.event.automation_started",
+                                payload = mapOf(
+                                    "automationId" to ConfigValue.StringValue(automation.id.value),
+                                    "automationName" to ConfigValue.StringValue(automation.name),
+                                    "phases" to ConfigValue.ListValue(phases.map { ConfigValue.StringValue(it.name.lowercase()) }),
+                                ),
+                                source = "runtime.automation",
+                            )
+                        )
+                    }
                     val engine = AutomationEngine(
                         registry = registry,
                         capabilities = capabilities,
                         tracer = tracer,
                         flowResolver = FlowResolver { id -> flows[id] },
+                        eventWaiter = RuntimeEventWaiter { events, baseVariables, timeoutMs, waitExecutionId, nodeId ->
+                            waitForRuntimeEvent(
+                                events = events,
+                                baseVariables = baseVariables,
+                                timeoutMs = timeoutMs,
+                                executionId = waitExecutionId,
+                                nodeId = nodeId,
+                            )
+                        },
                     )
-                    phases.map { phase -> engine.execute(automation, phase, variables) }
+                    val results = phases.map { phase -> engine.execute(automation, phase, variables) }
+                    val finishedAt = System.currentTimeMillis()
+                    recordLastRun(automation.id, finishedAt)
+                    if (emitLifecycle) {
+                        val success = results.all { it.success }
+                        dispatch(
+                            RuntimeEvent(
+                                typeId = "core.event.automation_finished",
+                                payload = mapOf(
+                                    "automationId" to ConfigValue.StringValue(automation.id.value),
+                                    "automationName" to ConfigValue.StringValue(automation.name),
+                                    "success" to ConfigValue.BooleanValue(success),
+                                    "durationMs" to ConfigValue.NumberValue((finishedAt - startedAt).toDouble()),
+                                    "phases" to ConfigValue.ListValue(phases.map { ConfigValue.StringValue(it.name.lowercase()) }),
+                                ),
+                                source = "runtime.automation",
+                            )
+                        )
+                    }
+                    results
                 }
                 trackJob(key, job)
                 try {
@@ -416,6 +679,104 @@ class AutomationRuntime(
         }
     }
 
+
+    private suspend fun recordLastRun(automationId: AutomationId, timestamp: Long) {
+        workspaceMutationLock.withLock {
+            val workspace = workspaceRepository.load()
+            if (workspace.automationLastRunEpochMs[automationId.value] == timestamp) return@withLock
+            workspaceRepository.save(
+                workspace.copy(
+                    automationLastRunEpochMs =
+                        workspace.automationLastRunEpochMs + (automationId.value to timestamp),
+                )
+            )
+        }
+    }
+
+    private fun categoryEnabled(category: String?, disabledCategories: Set<String>): Boolean {
+        val name = category?.trim().orEmpty()
+        return name.isBlank() || name !in disabledCategories
+    }
+
+    private suspend fun waitForRuntimeEvent(
+        events: List<FeatureRef>,
+        baseVariables: Map<String, ConfigValue>,
+        timeoutMs: Long?,
+        executionId: ExecutionId,
+        nodeId: NodeId,
+    ): Boolean {
+        if (events.isEmpty()) return false
+        val id = UUID.randomUUID().toString()
+        val deferred = CompletableDeferred<Boolean>()
+        val request = EventWaitRequest(
+            id = id,
+            events = events,
+            baseVariables = baseVariables,
+            executionId = executionId,
+            nodeId = nodeId,
+            deferred = deferred,
+        )
+        eventWaitRequests[id] = request
+        return try {
+            if (timeoutMs == null) {
+                deferred.await()
+            } else {
+                withTimeoutOrNull(timeoutMs.coerceAtLeast(1L)) { deferred.await() } ?: false
+            }
+        } finally {
+            eventWaitRequests.remove(id)
+        }
+    }
+
+    private suspend fun notifyEventWaiters(event: RuntimeEvent) {
+        if (eventWaitRequests.isEmpty()) return
+        val snapshot = eventWaitRequests.values.toList()
+        for (request in snapshot) {
+            if (request.deferred.isCompleted) continue
+            val variables = MapVariableAccess(buildMap {
+                putAll(request.baseVariables)
+                event.payload.forEach { (key, value) -> put("event.$key", value) }
+                put("event.type", ConfigValue.StringValue(event.typeId))
+                put("event.source", ConfigValue.StringValue(event.source))
+            })
+            val matched = request.events.any { feature ->
+                val matcher = registry.eventMatcher(feature.typeId)
+                if (matcher != null) {
+                    runCatching {
+                        matcher.matches(
+                            feature,
+                            EventMatchContext(
+                                request.executionId,
+                                event,
+                                variables,
+                                capabilities,
+                                tracer,
+                            ),
+                        )
+                    }.getOrDefault(false)
+                } else {
+                    feature.typeId == event.typeId
+                }
+            }
+            if (matched) {
+                eventWaitRequests.remove(request.id)
+                request.deferred.complete(true)
+            }
+        }
+    }
+
+    private fun triggerKey(automation: Automation, feature: FeatureRef): String {
+        val sourceType = feature.config["source.type"]?.asTraceText().orEmpty()
+        val tag = feature.config.string("tag").trim()
+        return automation.id.value + "|" + (if (sourceType.isNotBlank()) sourceType else feature.typeId) + "|" + tag
+    }
+
+    private fun triggerEnabled(
+        workspace: WorkspaceData,
+        automation: Automation,
+        feature: FeatureRef,
+    ): Boolean = triggerKey(automation, feature) !in workspace.disabledTriggerKeys
+
     private fun resolveAutomation(workspace: WorkspaceData, target: String): Automation? {
         workspace.automations.firstOrNull { it.id.value == target }?.let { return it }
         val matches = workspace.automations.filter { it.name.equals(target, ignoreCase = true) }
@@ -440,6 +801,15 @@ class AutomationRuntime(
         jobs.forEach(Job::cancel)
         return jobs.isNotEmpty()
     }
+
+    private data class EventWaitRequest(
+        val id: String,
+        val events: List<FeatureRef>,
+        val baseVariables: Map<String, ConfigValue>,
+        val executionId: ExecutionId,
+        val nodeId: NodeId,
+        val deferred: CompletableDeferred<Boolean>,
+    )
 
     private class MapVariableAccess(initial: Map<String, ConfigValue>) : VariableAccess {
         private val values = initial.toMutableMap()

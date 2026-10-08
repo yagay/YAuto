@@ -13,6 +13,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 import com.yagay.yauto.core.model.ConfigMap
+import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
@@ -50,16 +51,32 @@ class AndroidConnectivityFeaturePack(context: Context) : FeaturePack {
                 "Wi-Fi network changed", "Run when Android reports a Wi-Fi connection or signal state change",
                 FeatureCategory.NETWORK,
                 fields = listOf(
+                    FieldSchema.Choice("changeType", "Change type", options = listOf("any", "state", "network", "rssi")),
                     FieldSchema.Choice("connected", "Connection", options = listOf("any", "connected", "disconnected")),
                     FieldSchema.Text("ssid", "SSID contains"),
                     FieldSchema.Number("minRssi", "Minimum signal (dBm)", min = -127.0, max = 0.0),
                     FieldSchema.Number("maxRssi", "Maximum signal (dBm)", min = -127.0, max = 0.0),
                 ),
                 accessRequirements = setOf(AccessRequirement.LOCATION),
-                keywords = setOf("wifi", "ssid", "signal", "rssi", "network"), ownerPackId = id,
+                keywords = setOf("wifi", "ssid", "signal", "rssi", "network"),
+                ownerPackId = id,
+                aliases = setOf(
+                    "android.event.wifi_state_changed",
+                    "android.event.wifi_network_state_changed",
+                    "android.event.wifi_rssi_changed",
+                ),
+                aliasConfigDefaults = mapOf(
+                    "android.event.wifi_state_changed" to mapOf("changeType" to ConfigValue.StringValue("state")),
+                    "android.event.wifi_network_state_changed" to mapOf("changeType" to ConfigValue.StringValue("network")),
+                    "android.event.wifi_rssi_changed" to mapOf("changeType" to ConfigValue.StringValue("rssi")),
+                ),
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.wifi_changed") return@registerEvent false
+            val wantedChangeType = feature.config.string("changeType", "any")
+            if (wantedChangeType != "any" && ctx.event.payload.string("changeType") != wantedChangeType) {
+                return@registerEvent false
+            }
             matchesWifi(
                 feature.config,
                 WifiSnapshot(
@@ -79,7 +96,9 @@ class AndroidConnectivityFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.NETWORK,
                 fields = listOf(FieldSchema.Choice("state", "State", options = listOf("any", "on", "off"))),
                 accessRequirements = setOf(AccessRequirement.BLUETOOTH_CONNECT),
-                keywords = setOf("bluetooth", "bt"), ownerPackId = id,
+                keywords = setOf("bluetooth", "bt"),
+                ownerPackId = id,
+                aliases = setOf("android.event.bluetooth_state_changed"),
             )
         ) { feature, ctx ->
             if (ctx.event.typeId != "android.event.bluetooth_state") return@registerEvent false

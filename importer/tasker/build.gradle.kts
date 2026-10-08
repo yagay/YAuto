@@ -3,5 +3,6 @@ kotlin { jvmToolchain(17) }
 dependencies {
     implementation(project(":core:importer"))
     implementation(project(":core:model"))
+    implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit)
 }

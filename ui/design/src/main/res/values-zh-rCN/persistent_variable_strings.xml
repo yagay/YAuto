@@ -58,4 +58,5 @@
     <string name="runtime_feature_invalid_persistent_value">持久变量的值与所选类型不匹配</string>
     <string name="runtime_feature_persistent_variable_update_failed">无法更新持久变量</string>
     <string name="runtime_feature_persistent_variable_clear_failed">无法清除持久变量</string>
+    <string name="runtime_feature_persistent_variable_mutation_unsupported">该持久变量不支持所选修改操作</string>
 </resources>

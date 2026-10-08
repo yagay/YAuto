@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_settings_title_health">Feature health</string>
+    <string name="runtime_settings_feature_health">Feature health scan</string>
+    <string name="runtime_settings_feature_health_subtitle">Background readiness checks for every registered feature</string>
+    <string name="feature_health_scanning">Scanning feature readiness…</string>
+    <string name="feature_health_not_scanned">No scan result yet</string>
+    <string name="feature_health_summary_format">%1$d total · %2$d ready · %3$d blocked · %4$d broken · %5$d unsupported</string>
+    <string name="feature_health_search">Search feature name or ID</string>
+    <string name="feature_health_recheck">Scan again</string>
+    <string name="feature_health_ready">Ready</string>
+    <string name="feature_health_blocked">Blocked</string>
+    <string name="feature_health_broken">Broken</string>
+    <string name="feature_health_unsupported">Unsupported</string>
+    <string name="feature_health_missing_format">Missing: %1$s</string>
+    <string name="feature_health_backend_format">Backend: %1$s</string>
+    <string name="feature_health_safe_note">Background scan checks implementation presence, SDK support, permissions and backend connectivity. It never executes side-effect actions.</string>
+    <string name="feature_health_scan_now">Scan now</string>
+    <string name="feature_health_auto_scan">Automatic scan</string>
+    <string name="feature_health_auto_scan_detail">When enabled, YAuto refreshes feature status in the background whenever the app returns to the foreground. Off by default.</string>
+    <string name="feature_health_auto_on_not_scanned">Automatic scan enabled · No result yet</string>
+    <string name="feature_health_quick_title">Automatic feature validation</string>
+    <string name="feature_health_ready_detail">Implementation, required access and backend checks passed. Side-effect behavior was not executed.</string>
+    <string name="feature_health_blocked_detail_format">Required access is unavailable: %1$s</string>
+    <string name="feature_health_broken_detail">The feature is registered, but YAuto cannot find an executable implementation for its feature kind.</string>
+    <string name="feature_health_unsupported_detail">This feature is not supported by the current Android version.</string>
+    <string name="feature_health_reason_format">Reason: %1$s</string>
+    <string name="feature_health_solution_format">Suggested fix: %1$s</string>
+    <string name="feature_health_reason_solution_format">%1$s Fix: %2$s</string>
+    <string name="feature_health_solution_root">Grant YAuto root access in your root manager, then scan again.</string>
+    <string name="feature_health_solution_shizuku">Start Shizuku and authorize YAuto, then scan again.</string>
+    <string name="feature_health_solution_lsposed">Enable the YAuto module in LSPosed, select the required scope, restart the target process if needed, then scan again.</string>
+    <string name="feature_health_solution_zygisk">Enable or install a working Zygisk environment and restart the device, then scan again.</string>
+    <string name="feature_health_solution_generic_access_format">Grant or enable %1$s in Android settings, then scan again.</string>
+    <string name="feature_health_solution_broken">This is an internal YAuto implementation problem. Export the feature-health log and use the feature ID to locate the missing executor or matcher.</string>
+    <string name="feature_health_solution_unsupported">Use a supported Android version/device, or choose an alternative feature that supports this system version.</string>
+    <string name="feature_health_solution_check_diagnostics">Open Diagnostics and check the related backend or permission status, then scan again.</string>
+    <string name="feature_health_export_log">Export detection log</string>
+    <string name="feature_health_export_saved">Detection log exported</string>
+    <string name="feature_health_export_failed_format">Export failed: %1$s</string>
+</resources>

@@ -147,6 +147,18 @@
     <string name="backend_shizuku_unavailable">Not running or not authorized</string>
     <string name="backend_shizuku_return_hint">Return here after granting YAuto access in Shizuku.</string>
     <string name="backend_lsposed_title">LSPosed / system_server</string>
+    <string name="backend_lsposed_scope_title">LSPosed recommended scopes</string>
+    <string name="backend_lsposed_scope_detail">YAuto keeps the fixed system_server and System UI scopes, then adds target apps actually used by LSPosed features in this workspace.</string>
+    <string name="backend_lsposed_scope_connected">Framework connected</string>
+    <string name="backend_lsposed_scope_disconnected">Framework service not connected</string>
+    <string name="backend_lsposed_scope_current_format">Current: %1$s</string>
+    <string name="backend_lsposed_scope_recommended_format">Recommended: %1$s</string>
+    <string name="backend_lsposed_scope_missing_format">Missing: %1$s</string>
+    <string name="backend_lsposed_scope_complete">All recommended scopes are already enabled</string>
+    <string name="backend_lsposed_scope_request">Add missing scopes</string>
+    <string name="backend_lsposed_scope_refresh">Refresh scopes</string>
+    <string name="backend_lsposed_scope_requested">Scope request sent to LSPosed</string>
+    <string name="backend_lsposed_scope_request_failed_format">Scope request failed: %1$s</string>
     <string name="backend_lsposed_detail">The system-service bridge exposes only explicitly allow-listed operations, keeping Hook logic out of individual features.</string>
     <string name="backend_check_status">Check status</string>
     <string name="backend_authorize_refresh">Authorize / refresh</string>
@@ -256,4 +268,11 @@
     <string name="capability_system_ui">System UI</string>
     <string name="capability_lsposed">LSPosed</string>
     <string name="capability_other">Advanced capability</string>
+    <string name="access_calendar">Calendar</string>
+    <string name="access_contacts">Contacts</string>
+    <string name="access_call_log">Call log</string>
+    <string name="access_sms">SMS</string>
+    <string name="access_phone">Phone</string>
+    <string name="access_record_audio">Microphone recording</string>
+    <string name="access_activity_recognition">Activity recognition</string>
 </resources>

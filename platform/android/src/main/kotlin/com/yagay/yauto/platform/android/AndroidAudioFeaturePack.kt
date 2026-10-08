@@ -24,7 +24,10 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                     streamField(),
                     FieldSchema.Number("percent", "Volume percent", true, min = 0.0, max = 100.0),
                     FieldSchema.Toggle("showUi", "Show system volume UI"),
-                ), keywords = setOf("volume", "ring", "alarm", "notification"), ownerPackId = id,
+                ),
+                keywords = setOf("volume", "ring", "alarm", "notification"),
+                aliases = setOf("android.audio.media_volume.set"),
+                ownerPackId = id,
             )
         ) { feature, _ ->
             runCatching {
@@ -87,12 +90,24 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.audio.microphone_mute.set"), FeatureKind.ACTION, "Microphone mute",
                 "Mute or unmute the Android microphone through AudioManager",
                 FeatureCategory.AUDIO,
-                fields = listOf(FieldSchema.Toggle("enabled", "Muted")),
+                fields = listOf(
+                    FieldSchema.Toggle("enabled", "Muted"),
+                    FieldSchema.Choice("mode", "Microphone operation", options = listOf("set", "mute", "unmute", "toggle")),
+                ),
                 keywords = setOf("microphone", "mic", "mute"), ownerPackId = id,
             )
         ) { feature, _ ->
-            runCatching { @Suppress("DEPRECATION") audio.isMicrophoneMute = feature.config.boolean("enabled", true); ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
+            @Suppress("DEPRECATION")
+            val muted = when (feature.config.string("mode", "set")) {
+                "mute" -> true
+                "unmute" -> false
+                "toggle" -> !audio.isMicrophoneMute
+                else -> feature.config.boolean("enabled", true)
+            }
+            runCatching {
+                @Suppress("DEPRECATION") audio.isMicrophoneMute = muted
+                ActionExecutionResult(true, ConfigValue.BooleanValue(muted))
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
         registry.registerAction(
@@ -100,24 +115,60 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.audio.speakerphone.set"), FeatureKind.ACTION, "Speakerphone",
                 "Turn communication speakerphone routing on or off",
                 FeatureCategory.AUDIO,
-                fields = listOf(FieldSchema.Toggle("enabled", "Speakerphone on")),
+                fields = listOf(
+                    FieldSchema.Toggle("enabled", "Speakerphone on"),
+                    FieldSchema.Choice("mode", "Speakerphone operation", options = listOf("set", "enable", "disable", "toggle")),
+                ),
                 keywords = setOf("speaker", "speakerphone"), ownerPackId = id,
             )
         ) { feature, _ ->
-            runCatching { @Suppress("DEPRECATION") audio.isSpeakerphoneOn = feature.config.boolean("enabled", true); ActionExecutionResult(true) }
-                .getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
+            @Suppress("DEPRECATION")
+            val enabled = when (feature.config.string("mode", "set")) {
+                "enable" -> true
+                "disable" -> false
+                "toggle" -> !audio.isSpeakerphoneOn
+                else -> feature.config.boolean("enabled", true)
+            }
+            runCatching {
+                @Suppress("DEPRECATION") audio.isSpeakerphoneOn = enabled
+                ActionExecutionResult(true, ConfigValue.BooleanValue(enabled))
+            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
-        stateAndCondition(registry, "ringer_mode", "Ringer mode",
-            listOf(FieldSchema.Choice("mode", "Mode", true, listOf("normal", "vibrate", "silent")))) { feature ->
-            val actual = when (audio.ringerMode) { AudioManager.RINGER_MODE_VIBRATE -> "vibrate"; AudioManager.RINGER_MODE_SILENT -> "silent"; else -> "normal" }
-            actual == feature.config.string("mode", "normal")
+        stateAndCondition(
+            registry,
+            "ringer_mode",
+            "Ringer mode",
+            listOf(FieldSchema.Choice("mode", "Mode", true, listOf("normal", "vibrate", "silent"))),
+            legacyKey = "ringer_mode",
+        ) { feature ->
+            val actual = when (audio.ringerMode) {
+                AudioManager.RINGER_MODE_VIBRATE -> "vibrate"
+                AudioManager.RINGER_MODE_SILENT -> "silent"
+                else -> "normal"
+            }
+            val expected = feature.config.string("mode", "").ifBlank {
+                feature.config.string("value", "normal")
+            }
+            actual == expected
         }
-        stateAndCondition(registry, "microphone_muted", "Microphone muted", listOf(FieldSchema.Toggle("value", "Muted"))) { feature ->
+        stateAndCondition(
+            registry,
+            "microphone_muted",
+            "Microphone muted",
+            listOf(FieldSchema.Toggle("value", "Muted")),
+            legacyKey = "microphone_muted",
+        ) { feature ->
             @Suppress("DEPRECATION") val actual = audio.isMicrophoneMute
             actual == feature.config.boolean("value", true)
         }
-        stateAndCondition(registry, "speakerphone", "Speakerphone", listOf(FieldSchema.Toggle("value", "On"))) { feature ->
+        stateAndCondition(
+            registry,
+            "speakerphone",
+            "Speakerphone",
+            listOf(FieldSchema.Toggle("value", "On")),
+            legacyKey = "speakerphone_on",
+        ) { feature ->
             @Suppress("DEPRECATION") val actual = audio.isSpeakerphoneOn
             actual == feature.config.boolean("value", true)
         }
@@ -131,12 +182,34 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
         }
     }
 
-    private fun stateAndCondition(registry: FeatureRegistry, key: String, title: String, fields: List<FieldSchema>, evaluate: (com.yagay.yauto.core.model.FeatureRef) -> Boolean) {
-        val stateId = "android.state.audio.$key"; val conditionId = "android.condition.audio.$key"
-        val state = FeatureDescriptor(FeatureId(stateId), FeatureKind.STATE, title, "Evaluate current Android audio state", FeatureCategory.AUDIO, fields = fields, ownerPackId = id)
-        val condition = state.copy(id = FeatureId(conditionId), kind = FeatureKind.CONDITION)
+    private fun stateAndCondition(
+        registry: FeatureRegistry,
+        key: String,
+        title: String,
+        fields: List<FieldSchema>,
+        legacyKey: String? = null,
+        evaluate: (com.yagay.yauto.core.model.FeatureRef) -> Boolean,
+    ) {
+        val stateId = "android.state.audio.$key"
+        val conditionId = "android.condition.audio.$key"
+        val state = FeatureDescriptor(
+            FeatureId(stateId),
+            FeatureKind.STATE,
+            title,
+            "Evaluate current Android audio state",
+            FeatureCategory.AUDIO,
+            fields = fields,
+            aliases = legacyKey?.let { setOf("android.state.$it") }.orEmpty(),
+            ownerPackId = id,
+        )
+        val condition = state.copy(
+            id = FeatureId(conditionId),
+            kind = FeatureKind.CONDITION,
+            aliases = legacyKey?.let { setOf("android.condition.$it") }.orEmpty(),
+        )
         val evaluator = ConditionEvaluator { feature, _ -> runCatching { evaluate(feature) }.getOrDefault(false) }
-        registry.registerState(state, evaluator); registry.registerCondition(condition, evaluator)
+        registry.registerState(state, evaluator)
+        registry.registerCondition(condition, evaluator)
     }
 
     private fun streamField() = FieldSchema.Choice("stream", "Audio stream", true, listOf("media", "ring", "notification", "alarm", "system", "voice_call"))

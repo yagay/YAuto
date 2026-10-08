@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.UUID
 
 class JsonImportReportStore(
     context: Context,
@@ -15,9 +16,16 @@ class JsonImportReportStore(
     private val dir = File(context.filesDir, "import-reports").apply { mkdirs() }
 
     override suspend fun save(result: ImportResult): Unit = withContext(Dispatchers.IO) {
-        val file = File(dir, "import-${System.currentTimeMillis()}-${result.importerId}.json")
+        val file = File(
+            dir,
+            "import-${System.currentTimeMillis()}-${safeImportReportId(result.importerId)}-${UUID.randomUUID()}.json",
+        )
         file.writeText(json.encodeToString(ImportResult.serializer(), result))
         dir.listFiles()?.sortedByDescending { it.lastModified() }?.drop(20)?.forEach { it.delete() }
         Unit
     }
 }
+
+/** An importer ID can originate from a plugin; never treat its content as a file path. */
+internal fun safeImportReportId(id: String): String =
+    id.replace(Regex("[^A-Za-z0-9._-]"), "_").take(64).ifBlank { "unknown" }

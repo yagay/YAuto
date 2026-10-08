@@ -26,6 +26,16 @@ import java.util.UUID
 fun interface FlowResolver { suspend fun resolve(id: FlowId): Flow? }
 object EmptyFlowResolver : FlowResolver { override suspend fun resolve(id: FlowId): Flow? = null }
 
+fun interface RuntimeEventWaiter {
+    suspend fun await(
+        events: List<FeatureRef>,
+        variables: Map<String, ConfigValue>,
+        timeoutMs: Long?,
+        executionId: ExecutionId,
+        nodeId: NodeId,
+    ): Boolean
+}
+
 enum class AutomationPhase { ENTER, EVENT, EXIT }
 
 data class EngineResult(
@@ -41,6 +51,7 @@ class AutomationEngine(
     private val capabilities: CapabilityClient,
     private val tracer: ExecutionTracer,
     private val flowResolver: FlowResolver = EmptyFlowResolver,
+    private val eventWaiter: RuntimeEventWaiter? = null,
     private val expressions: ExpressionEngine = SimpleExpressionEngine(),
 ) {
     suspend fun execute(
@@ -71,6 +82,12 @@ class AutomationEngine(
             val result = when (signal) {
                 is Signal.Failure -> EngineResult(false, executionId, variables = variables.snapshot(), error = signal.message)
                 is Signal.Return -> EngineResult(true, executionId, signal.value, variables.snapshot())
+                is Signal.Goto -> EngineResult(
+                    false,
+                    executionId,
+                    variables = variables.snapshot(),
+                    error = userText("engine.unknown_label", signal.label),
+                )
                 Signal.Break, Signal.Continue, Signal.Next -> EngineResult(true, executionId, variables = variables.snapshot())
             }
             trace(executionId, TraceKind.EXECUTION_END, if (result.success) userText("engine.execution_completed") else userText("engine.execution_failed", result.error.orEmpty()), automation, success = result.success)
@@ -95,13 +112,31 @@ class AutomationEngine(
         flow: Flow?,
         maxLoopIterations: Int,
     ): Signal {
-        for (node in nodes) {
+        val labels = nodes.mapIndexedNotNull { index, node ->
+            (node as? ActionNode.Label)?.name?.trim()?.takeIf(String::isNotBlank)?.let { it to index }
+        }.toMap()
+        var index = 0
+        var jumpCount = 0
+        while (index < nodes.size) {
             currentCoroutineContext().ensureActive()
+            val node = nodes[index]
             val start = System.currentTimeMillis()
             trace(executionId, TraceKind.NODE_START, userText("engine.node_start"), automation, flow, node.id)
             val signal = executeNode(node, executionId, variables, automation, flow, maxLoopIterations)
             trace(executionId, TraceKind.NODE_END, userText("engine.node_end"), automation, flow, node.id, success = signal !is Signal.Failure, durationMs = System.currentTimeMillis() - start)
+            if (signal is Signal.Goto) {
+                val target = labels[signal.label]
+                if (target != null) {
+                    if (++jumpCount > maxLoopIterations) {
+                        return Signal.Failure(userText("engine.loop_limit"))
+                    }
+                    index = target + 1
+                    continue
+                }
+                return signal
+            }
             if (signal != Signal.Next) return signal
+            index++
         }
         return Signal.Next
     }
@@ -147,9 +182,29 @@ class AutomationEngine(
                 }
                 Signal.Next
             }
+            is ActionNode.DoWhile -> {
+                var iterations = 0
+                do {
+                    currentCoroutineContext().ensureActive()
+                    if (++iterations > maxLoopIterations) {
+                        return Signal.Failure(userText("engine.loop_limit"))
+                    }
+                    when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
+                        Signal.Next, Signal.Continue -> Unit
+                        Signal.Break -> return Signal.Next
+                        else -> return signal
+                    }
+                } while (evaluatePredicate(node.condition, executionId, node.id, variables))
+                Signal.Next
+            }
+
             is ActionNode.ForEach -> {
-                if (node.values.size > maxLoopIterations) return Signal.Failure(userText("engine.foreach_limit"))
-                for (value in node.values) {
+                val values = node.sourceVariable?.takeIf { it.isNotBlank() }?.let { sourceName ->
+                    (variables.get(sourceName) as? ConfigValue.ListValue)?.value
+                        ?: return Signal.Failure(userText("feature.variable_not_list"))
+                } ?: node.values
+                if (values.size > maxLoopIterations) return Signal.Failure(userText("engine.foreach_limit"))
+                for (value in values) {
                     currentCoroutineContext().ensureActive()
                     variables.set(node.variableName, value)
                     when (val signal = executeNodes(node.actions, executionId, variables, automation, flow, maxLoopIterations)) {
@@ -182,10 +237,19 @@ class AutomationEngine(
                 if (finalSignal != Signal.Next) finalSignal else handled
             }
             is ActionNode.WaitUntil -> {
-                if (node.timeoutMs <= 0L || node.pollIntervalMs <= 0L) {
+                if ((!node.unlimited && node.timeoutMs <= 0L) || node.pollIntervalMs <= 0L) {
                     return Signal.Failure(userText("engine.wait_until_invalid"))
                 }
                 val pollInterval = node.pollIntervalMs.coerceIn(100L, 60_000L)
+                if (node.unlimited) {
+                    while (currentCoroutineContext().isActive) {
+                        if (evaluatePredicate(node.condition, executionId, node.id, variables)) {
+                            return Signal.Next
+                        }
+                        delay(pollInterval)
+                    }
+                    return Signal.Failure(userText("runtime.automation_cancelled", automation?.name.orEmpty()))
+                }
                 val completed = withTimeoutOrNull(node.timeoutMs) {
                     while (currentCoroutineContext().isActive) {
                         if (evaluatePredicate(node.condition, executionId, node.id, variables)) {
@@ -196,6 +260,26 @@ class AutomationEngine(
                     false
                 } ?: false
                 if (completed) Signal.Next else Signal.Failure(userText("engine.wait_until_timeout", node.timeoutMs))
+            }
+            is ActionNode.WaitEvent -> {
+                if (node.events.isEmpty()) return Signal.Failure(userText("engine.wait_event_empty"))
+                if (!node.unlimited && node.timeoutMs <= 0L) {
+                    return Signal.Failure(userText("engine.wait_until_invalid"))
+                }
+                val waiter = eventWaiter
+                    ?: return Signal.Failure(userText("engine.wait_event_unavailable"))
+                val matched = waiter.await(
+                    events = node.events,
+                    variables = variables.snapshot(),
+                    timeoutMs = if (node.unlimited) null else node.timeoutMs,
+                    executionId = executionId,
+                    nodeId = node.id,
+                )
+                when {
+                    matched -> Signal.Next
+                    node.continueOnTimeout -> Signal.Next
+                    else -> Signal.Failure(userText("engine.wait_until_timeout", node.timeoutMs))
+                }
             }
             is ActionNode.CallFlow -> {
                 val depth = currentCoroutineContext()[FlowDepth]?.value ?: 0
@@ -226,6 +310,8 @@ class AutomationEngine(
                     else -> Signal.Next
                 }
             }
+            is ActionNode.Label -> Signal.Next
+            is ActionNode.Goto -> Signal.Goto(node.label.trim())
             is ActionNode.Return -> Signal.Return(node.value.resolveVariables(variables))
             is ActionNode.Break -> Signal.Break
             is ActionNode.Continue -> Signal.Continue
@@ -345,6 +431,7 @@ class AutomationEngine(
         is PredicateNode.All -> predicate.children.all { evaluatePredicate(it, executionId, nodeId, variables) }
         is PredicateNode.Any -> predicate.children.any { evaluatePredicate(it, executionId, nodeId, variables) }
         is PredicateNode.None -> predicate.children.none { evaluatePredicate(it, executionId, nodeId, variables) }
+        is PredicateNode.Xor -> predicate.children.count { evaluatePredicate(it, executionId, nodeId, variables) } == 1
         is PredicateNode.Literal -> predicate.value
         is PredicateNode.Expression -> expressions.evaluateBoolean(predicate.expression, variables)
         is PredicateNode.Condition -> {
@@ -380,6 +467,7 @@ class AutomationEngine(
         data object Break : Signal
         data object Continue : Signal
         data class Return(val value: ConfigValue) : Signal
+        data class Goto(val label: String) : Signal
         data class Failure(val message: String) : Signal
     }
 

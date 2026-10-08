@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_reference_signal_biometric_strong_title">强生物识别认证</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_description">匹配当前 Android 运行时/系统值</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value">预期值</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_success">可用</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_no_hardware">无硬件</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_none_enrolled">未录入</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_hardware_unavailable">硬件不可用</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_security_update_required">需要安全更新</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_unsupported">不支持</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_unknown">未知</string>
+    <string name="feature_android_state_reference_signal_biometric_strong_field_value_option_error">错误</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_title">强生物识别认证</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_description">匹配当前 Android 运行时/系统值</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value">预期值</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_success">可用</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_no_hardware">无硬件</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_none_enrolled">未录入</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_hardware_unavailable">硬件不可用</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_security_update_required">需要安全更新</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_unsupported">不支持</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_unknown">未知</string>
+    <string name="feature_android_condition_reference_signal_biometric_strong_field_value_option_error">错误</string>
+
+    <string name="feature_android_state_reference_signal_biometric_weak_title">生物识别认证</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_description">匹配当前 Android 运行时/系统值</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value">预期值</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_success">可用</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_no_hardware">无硬件</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_none_enrolled">未录入</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_hardware_unavailable">硬件不可用</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_security_update_required">需要安全更新</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_unsupported">不支持</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_unknown">未知</string>
+    <string name="feature_android_state_reference_signal_biometric_weak_field_value_option_error">错误</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_title">生物识别认证</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_description">匹配当前 Android 运行时/系统值</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value">预期值</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_success">可用</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_no_hardware">无硬件</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_none_enrolled">未录入</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_hardware_unavailable">硬件不可用</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_security_update_required">需要安全更新</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_unsupported">不支持</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_unknown">未知</string>
+    <string name="feature_android_condition_reference_signal_biometric_weak_field_value_option_error">错误</string>
+
+    <string name="feature_android_state_reference_signal_device_credential_title">设备凭据认证</string>
+    <string name="feature_android_state_reference_signal_device_credential_description">匹配当前 Android 运行时/系统值</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value">预期值</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_success">可用</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_no_hardware">无硬件</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_none_enrolled">未录入</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_hardware_unavailable">硬件不可用</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_security_update_required">需要安全更新</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_unsupported">不支持</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_unknown">未知</string>
+    <string name="feature_android_state_reference_signal_device_credential_field_value_option_error">错误</string>
+    <string name="feature_android_condition_reference_signal_device_credential_title">设备凭据认证</string>
+    <string name="feature_android_condition_reference_signal_device_credential_description">匹配当前 Android 运行时/系统值</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value">预期值</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_success">可用</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_no_hardware">无硬件</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_none_enrolled">未录入</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_hardware_unavailable">硬件不可用</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_security_update_required">需要安全更新</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_unsupported">不支持</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_unknown">未知</string>
+    <string name="feature_android_condition_reference_signal_device_credential_field_value_option_error">错误</string>
+
+    <string name="feature_android_state_reference_signal_developer_options_title">开发者选项已启用</string>
+    <string name="feature_android_state_reference_signal_developer_options_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_developer_options_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_developer_options_title">开发者选项已启用</string>
+    <string name="feature_android_condition_reference_signal_developer_options_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_developer_options_field_value">已启用 / true</string>
+
+    <string name="feature_android_state_reference_signal_adb_debugging_title">ADB 调试已启用</string>
+    <string name="feature_android_state_reference_signal_adb_debugging_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_adb_debugging_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_adb_debugging_title">ADB 调试已启用</string>
+    <string name="feature_android_condition_reference_signal_adb_debugging_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_adb_debugging_field_value">已启用 / true</string>
+
+    <string name="feature_android_state_reference_signal_screen_brightness_mode_title">屏幕亮度模式</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_mode_description">匹配当前 Android 运行时/系统值</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_mode_field_value">预期值</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_mode_field_value_option_manual">手动</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_mode_field_value_option_automatic">自动</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_mode_field_value_option_unknown">未知</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_mode_title">屏幕亮度模式</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_mode_description">匹配当前 Android 运行时/系统值</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_mode_field_value">预期值</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_mode_field_value_option_manual">手动</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_mode_field_value_option_automatic">自动</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_mode_field_value_option_unknown">未知</string>
+
+    <string name="feature_android_state_reference_signal_screen_brightness_title">屏幕亮度</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_description">将当前 Android 运行时/系统数值与设定范围进行比较</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_field_min">最小值</string>
+    <string name="feature_android_state_reference_signal_screen_brightness_field_max">最大值</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_title">屏幕亮度</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_description">将当前 Android 运行时/系统数值与设定范围进行比较</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_field_min">最小值</string>
+    <string name="feature_android_condition_reference_signal_screen_brightness_field_max">最大值</string>
+
+    <string name="feature_android_state_reference_signal_pointer_speed_title">指针速度</string>
+    <string name="feature_android_state_reference_signal_pointer_speed_description">将当前 Android 运行时/系统数值与设定范围进行比较</string>
+    <string name="feature_android_state_reference_signal_pointer_speed_field_min">最小值</string>
+    <string name="feature_android_state_reference_signal_pointer_speed_field_max">最大值</string>
+    <string name="feature_android_condition_reference_signal_pointer_speed_title">指针速度</string>
+    <string name="feature_android_condition_reference_signal_pointer_speed_description">将当前 Android 运行时/系统数值与设定范围进行比较</string>
+    <string name="feature_android_condition_reference_signal_pointer_speed_field_min">最小值</string>
+    <string name="feature_android_condition_reference_signal_pointer_speed_field_max">最大值</string>
+
+    <string name="feature_android_state_reference_signal_show_touches_title">显示触摸点</string>
+    <string name="feature_android_state_reference_signal_show_touches_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_show_touches_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_show_touches_title">显示触摸点</string>
+    <string name="feature_android_condition_reference_signal_show_touches_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_show_touches_field_value">已启用 / true</string>
+
+    <string name="feature_android_state_reference_signal_pointer_location_title">指针位置叠加层</string>
+    <string name="feature_android_state_reference_signal_pointer_location_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_pointer_location_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_pointer_location_title">指针位置叠加层</string>
+    <string name="feature_android_condition_reference_signal_pointer_location_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_pointer_location_field_value">已启用 / true</string>
+
+    <string name="feature_android_state_reference_signal_vibrate_when_ringing_title">响铃时振动</string>
+    <string name="feature_android_state_reference_signal_vibrate_when_ringing_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_vibrate_when_ringing_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_vibrate_when_ringing_title">响铃时振动</string>
+    <string name="feature_android_condition_reference_signal_vibrate_when_ringing_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_vibrate_when_ringing_field_value">已启用 / true</string>
+
+    <string name="feature_android_state_reference_signal_lockscreen_sounds_title">锁屏声音</string>
+    <string name="feature_android_state_reference_signal_lockscreen_sounds_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_lockscreen_sounds_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_lockscreen_sounds_title">锁屏声音</string>
+    <string name="feature_android_condition_reference_signal_lockscreen_sounds_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_lockscreen_sounds_field_value">已启用 / true</string>
+
+    <string name="feature_android_state_reference_signal_dial_pad_tones_title">拨号键音</string>
+    <string name="feature_android_state_reference_signal_dial_pad_tones_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_dial_pad_tones_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_dial_pad_tones_title">拨号键音</string>
+    <string name="feature_android_condition_reference_signal_dial_pad_tones_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_dial_pad_tones_field_value">已启用 / true</string>
+
+    <string name="feature_android_state_reference_signal_dnd_filter_title">勿扰模式筛选</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_description">匹配当前 Android 运行时/系统值</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_field_value">预期值</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_field_value_option_all">全部通知</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_field_value_option_priority">仅优先通知</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_field_value_option_none">无通知</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_field_value_option_alarms">仅闹钟</string>
+    <string name="feature_android_state_reference_signal_dnd_filter_field_value_option_unknown">未知</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_title">勿扰模式筛选</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_description">匹配当前 Android 运行时/系统值</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_field_value">预期值</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_field_value_option_all">全部通知</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_field_value_option_priority">仅优先通知</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_field_value_option_none">无通知</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_field_value_option_alarms">仅闹钟</string>
+    <string name="feature_android_condition_reference_signal_dnd_filter_field_value_option_unknown">未知</string>
+
+    <string name="feature_android_state_reference_signal_audio_playback_active_title">音频播放活动</string>
+    <string name="feature_android_state_reference_signal_audio_playback_active_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_audio_playback_active_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_active_title">音频播放活动</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_active_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_active_field_value">已启用 / true</string>
+
+    <string name="feature_android_state_reference_signal_audio_playback_count_title">活动音频播放数量</string>
+    <string name="feature_android_state_reference_signal_audio_playback_count_description">将当前 Android 运行时/系统数值与设定范围进行比较</string>
+    <string name="feature_android_state_reference_signal_audio_playback_count_field_min">最小值</string>
+    <string name="feature_android_state_reference_signal_audio_playback_count_field_max">最大值</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_count_title">活动音频播放数量</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_count_description">将当前 Android 运行时/系统数值与设定范围进行比较</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_count_field_min">最小值</string>
+    <string name="feature_android_condition_reference_signal_audio_playback_count_field_max">最大值</string>
+
+    <string name="feature_android_state_reference_signal_audio_recording_active_title">音频录制活动</string>
+    <string name="feature_android_state_reference_signal_audio_recording_active_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_audio_recording_active_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_active_title">音频录制活动</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_active_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_active_field_value">已启用 / true</string>
+
+    <string name="feature_android_state_reference_signal_audio_recording_count_title">活动音频录制数量</string>
+    <string name="feature_android_state_reference_signal_audio_recording_count_description">将当前 Android 运行时/系统数值与设定范围进行比较</string>
+    <string name="feature_android_state_reference_signal_audio_recording_count_field_min">最小值</string>
+    <string name="feature_android_state_reference_signal_audio_recording_count_field_max">最大值</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_count_title">活动音频录制数量</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_count_description">将当前 Android 运行时/系统数值与设定范围进行比较</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_count_field_min">最小值</string>
+    <string name="feature_android_condition_reference_signal_audio_recording_count_field_max">最大值</string>
+
+    <string name="feature_android_state_reference_signal_camera_count_title">摄像头数量</string>
+    <string name="feature_android_state_reference_signal_camera_count_description">将当前 Android 运行时/系统数值与设定范围进行比较</string>
+    <string name="feature_android_state_reference_signal_camera_count_field_min">最小值</string>
+    <string name="feature_android_state_reference_signal_camera_count_field_max">最大值</string>
+    <string name="feature_android_condition_reference_signal_camera_count_title">摄像头数量</string>
+    <string name="feature_android_condition_reference_signal_camera_count_description">将当前 Android 运行时/系统数值与设定范围进行比较</string>
+    <string name="feature_android_condition_reference_signal_camera_count_field_min">最小值</string>
+    <string name="feature_android_condition_reference_signal_camera_count_field_max">最大值</string>
+
+    <string name="feature_android_state_reference_signal_camera_flash_available_title">摄像头闪光灯可用</string>
+    <string name="feature_android_state_reference_signal_camera_flash_available_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_state_reference_signal_camera_flash_available_field_value">已启用 / true</string>
+    <string name="feature_android_condition_reference_signal_camera_flash_available_title">摄像头闪光灯可用</string>
+    <string name="feature_android_condition_reference_signal_camera_flash_available_description">比较当前 Android 运行时/系统状态</string>
+    <string name="feature_android_condition_reference_signal_camera_flash_available_field_value">已启用 / true</string>
+
+    <string name="feature_android_event_system_setting_changed_filtered_title">系统设置已更改</string>
+    <string name="feature_android_event_system_setting_changed_filtered_description">当 Android System、Secure 或 Global 设置发生变化时触发</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_namespace">设置命名空间</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_namespace_option_any">任意</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_namespace_option_system">System</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_namespace_option_secure">Secure</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_namespace_option_global">Global</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_keymode">键匹配方式</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_keymode_option_any">任意</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_keymode_option_exact">完全匹配</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_keymode_option_contains">包含</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_keymode_option_regex">正则表达式</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_key">设置键</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_valuecontains">新值包含</string>
+    <string name="feature_android_event_system_setting_changed_filtered_field_ignorecase">忽略大小写</string>
+
+    <string name="feature_android_event_dnd_filter_changed_filtered_title">勿扰模式已更改</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_description">当 Android 的中断筛选器发生变化时触发</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter">勿扰模式筛选</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter_option_any">任意</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter_option_all">全部通知</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter_option_priority">仅优先通知</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter_option_none">无通知</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter_option_alarms">仅闹钟</string>
+    <string name="feature_android_event_dnd_filter_changed_filtered_field_filter_option_unknown">未知</string>
+
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_title">音频播放活动已更改</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_description">当系统音频活动配置发生变化时触发</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_field_active">活动状态</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_field_active_option_any">任意</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_field_active_option_active">活动</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_field_active_option_inactive">非活动</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_field_mincount">最少活动数量</string>
+    <string name="feature_android_event_audio_playback_activity_changed_filtered_field_maxcount">最多活动数量</string>
+
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_title">音频录制活动已更改</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_description">当系统音频活动配置发生变化时触发</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_field_active">活动状态</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_field_active_option_any">任意</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_field_active_option_active">活动</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_field_active_option_inactive">非活动</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_field_mincount">最少活动数量</string>
+    <string name="feature_android_event_audio_recording_activity_changed_filtered_field_maxcount">最多活动数量</string>
+
+    <string name="feature_android_event_torch_state_changed_filtered_title">手电筒状态已更改</string>
+    <string name="feature_android_event_torch_state_changed_filtered_description">当摄像头手电筒开启、关闭或变为不可用时触发</string>
+    <string name="feature_android_event_torch_state_changed_filtered_field_cameraid">摄像头 ID</string>
+    <string name="feature_android_event_torch_state_changed_filtered_field_state">手电筒状态</string>
+    <string name="feature_android_event_torch_state_changed_filtered_field_state_option_any">任意</string>
+    <string name="feature_android_event_torch_state_changed_filtered_field_state_option_on">开启</string>
+    <string name="feature_android_event_torch_state_changed_filtered_field_state_option_off">关闭</string>
+    <string name="feature_android_event_torch_state_changed_filtered_field_state_option_unavailable">不可用</string>
+
+    <string name="feature_android_event_clipboard_text_filtered_title">过滤后的剪贴板文本已更改</string>
+    <string name="feature_android_event_clipboard_text_filtered_description">当剪贴板文本变化并匹配文本或正则表达式时触发</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_mode">文本匹配</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_mode_option_any">任意</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_mode_option_exact">完全匹配</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_mode_option_contains">包含</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_mode_option_regex">正则表达式</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_text">文本 / 模式</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_ignorecase">忽略大小写</string>
+    <string name="feature_android_event_clipboard_text_filtered_field_requiretext">需要非空文本</string>
+
+    <string name="feature_android_event_developer_options_changed_title">开发者选项已更改</string>
+    <string name="feature_android_event_developer_options_changed_description">当对应的 Android 设置发生变化时触发</string>
+
+    <string name="feature_android_event_adb_debugging_changed_title">ADB 调试已更改</string>
+    <string name="feature_android_event_adb_debugging_changed_description">当对应的 Android 设置发生变化时触发</string>
+
+    <string name="feature_android_event_screen_brightness_changed_title">屏幕亮度已更改</string>
+    <string name="feature_android_event_screen_brightness_changed_description">当对应的 Android 设置发生变化时触发</string>
+
+    <string name="feature_android_event_brightness_mode_changed_title">亮度模式已更改</string>
+    <string name="feature_android_event_brightness_mode_changed_description">当对应的 Android 设置发生变化时触发</string>
+
+    <string name="feature_android_event_show_touches_changed_title">显示触摸点已更改</string>
+    <string name="feature_android_event_show_touches_changed_description">当对应的 Android 设置发生变化时触发</string>
+
+    <string name="feature_android_event_pointer_location_changed_title">指针位置已更改</string>
+    <string name="feature_android_event_pointer_location_changed_description">当对应的 Android 设置发生变化时触发</string>
+
+    <string name="feature_android_event_pointer_speed_changed_title">指针速度已更改</string>
+    <string name="feature_android_event_pointer_speed_changed_description">当对应的 Android 设置发生变化时触发</string>
+
+    <string name="feature_android_event_vibrate_when_ringing_changed_title">响铃时振动已更改</string>
+    <string name="feature_android_event_vibrate_when_ringing_changed_description">当对应的 Android 设置发生变化时触发</string>
+
+    <string name="feature_android_event_lockscreen_sounds_changed_title">锁屏声音已更改</string>
+    <string name="feature_android_event_lockscreen_sounds_changed_description">当对应的 Android 设置发生变化时触发</string>
+
+    <string name="feature_android_event_dial_pad_tones_changed_title">拨号键音已更改</string>
+    <string name="feature_android_event_dial_pad_tones_changed_description">当对应的 Android 设置发生变化时触发</string>
+
+</resources>

@@ -1,8 +1,14 @@
 package com.yagay.yauto.ui.editor
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraManager
+import android.os.UserHandle
+import android.os.UserManager
+import android.provider.CalendarContract
+import android.telephony.SubscriptionManager
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,8 +34,9 @@ import com.yagay.yauto.ui.design.CapabilityBadge
 import com.yagay.yauto.ui.design.R as TextR
 import com.yagay.yauto.ui.design.localizedList
 import java.util.Locale
-
-private data class InstalledApp(val label: String, val packageName: String, val system: Boolean)
+import java.util.TimeZone
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Generic configuration screen driven entirely by [FeatureDescriptor]. */
 @Composable
@@ -38,6 +45,7 @@ internal fun GenericFeatureConfigEditor(
     descriptor: FeatureDescriptor,
     initial: FeatureRef?,
     accent: Color,
+    leadingContent: (@Composable () -> Unit)? = null,
     onSave: (FeatureRef) -> Unit,
 ) {
     val locale = currentEditorLocale()
@@ -50,6 +58,11 @@ internal fun GenericFeatureConfigEditor(
         }
     }
     var values by remember(descriptor.id.value, initial, locale) { mutableStateOf(initialTexts) }
+    var hardwareIdentityConfig by remember(descriptor.id.value, initial) {
+        mutableStateOf(
+            initial?.config.orEmpty().filterKeys { it.startsWith("hardwareIdentity") }
+        )
+    }
     var showAdvanced by remember(descriptor.id.value) { mutableStateOf(false) }
 
     val typedValues = remember(descriptor, values, locale) {
@@ -75,6 +88,10 @@ internal fun GenericFeatureConfigEditor(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        leadingContent?.let { content ->
+            item(key = "leading_content") { content() }
+        }
+
         item { FeatureSummaryCard(descriptor, accent) }
 
         if (descriptor.resolvedImplementationOptions().size > 1) {
@@ -116,12 +133,25 @@ internal fun GenericFeatureConfigEditor(
                 )
             } else {
                 FieldEditor(
-                    descriptorId = descriptor.id.value,
+                    descriptor = descriptor,
                     field = field,
                     behavior = behavior,
+                    allValues = values,
                     value = values[field.key].orEmpty(),
                     enabled = enabled,
-                    onValue = { values = values + (field.key to it) },
+                    onValue = { next ->
+                        values = values + (field.key to next)
+                        if (field.key.startsWith("keyCode")) {
+                            val suffix = field.key.removePrefix("keyCode")
+                            hardwareIdentityConfig = hardwareIdentityConfig - "hardwareIdentity$suffix"
+                        }
+                    },
+                    onRelatedValue = { key, value -> values = values + (key to value) },
+                    onHardwareIdentity = { suffix, captured ->
+                        hardwareIdentityConfig = hardwareIdentityConfig + (
+                            "hardwareIdentity$suffix" to captured.toHiddenHardwareIdentity()
+                        )
+                    },
                 )
             }
         }
@@ -129,22 +159,20 @@ internal fun GenericFeatureConfigEditor(
         item {
             Button(
                 onClick = {
-                    val config = initial?.config.orEmpty().toMutableMap()
-                    semanticallyVisible.forEach { field ->
-                        val behavior = descriptor.fieldBehavior(field.key)
-                        val enabled = behavior.enabledWhen?.matches(typedValues) != false
-                        if (!enabled) return@forEach
-
-                        val raw = values[field.key].orEmpty()
-                        val old = initial?.config?.get(field.key)
-                        if (old != null && raw == editorConfigValueText(initialWithDefaults.config[field.key], locale)) {
-                            config[field.key] = old
-                        } else {
-                            config.remove(field.key)
-                            parseFieldValue(field, raw, locale)?.let { parsed -> config[field.key] = parsed }
-                        }
-                    }
-                    onSave(FeatureRef(descriptor.id.value, descriptor.schemaVersion, config))
+                    onSave(
+                        FeatureRef(
+                            descriptor.id.value,
+                            descriptor.schemaVersion,
+                            buildEditedFeatureConfig(
+                                descriptor,
+                                initial,
+                                initialWithDefaults,
+                                values,
+                                locale,
+                                hardwareIdentityConfig,
+                            ),
+                        )
+                    )
                 },
                 enabled = valid,
                 modifier = Modifier.fillMaxWidth(),
@@ -285,16 +313,29 @@ private fun BackendChoiceEditor(
 
 @Composable
 private fun FieldEditor(
-    descriptorId: String,
+    descriptor: FeatureDescriptor,
     field: FieldSchema,
     behavior: FieldBehavior,
+    allValues: Map<String, String>,
     value: String,
     enabled: Boolean,
     onValue: (String) -> Unit,
+    onRelatedValue: (String, String) -> Unit,
+    onHardwareIdentity: (String, HardwareKeyCaptureResult) -> Unit,
 ) {
+    val descriptorId = descriptor.id.value
     val label = localizedFieldLabelShared(descriptorId, field)
-    when (field) {
-        is FieldSchema.Toggle -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    val variableNames = LocalEditorVariableNames.current
+    val variablePicker = if (field is FieldSchema.Variable && variableNames.isNotEmpty()) {
+        FieldPickerSource.Options(
+            variableNames.sorted().map { FieldPickerOption(it) }
+        )
+    } else {
+        null
+    }
+    val picker = behavior.picker ?: variablePicker ?: inferredPickerSource(descriptor, field)
+    when {
+        field is FieldSchema.Toggle -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(label)
                 if (field.required) {
@@ -307,7 +348,7 @@ private fun FieldEditor(
                 enabled = enabled,
             )
         }
-        is FieldSchema.Choice -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        field is FieldSchema.Choice -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(label, fontWeight = FontWeight.Medium)
             field.options.forEach { option ->
                 Row(
@@ -319,7 +360,23 @@ private fun FieldEditor(
                 }
             }
         }
-        is FieldSchema.AppPicker -> InstalledAppField(descriptorId, field, value, enabled, onValue)
+        field is FieldSchema.AppPicker -> InstalledAppField(descriptorId, field, value, enabled, onValue)
+        picker != null -> PickerBackedField(
+            descriptorId = descriptorId,
+            field = field,
+            picker = picker,
+            allValues = allValues,
+            value = value,
+            enabled = enabled,
+            allowManualInput = behavior.allowManualInput,
+            onValue = onValue,
+            onHardwareKeyCaptured = { captured ->
+                if (field.key.startsWith("keyCode")) {
+                    val suffix = field.key.removePrefix("keyCode")
+                    onHardwareIdentity(suffix, captured)
+                }
+            },
+        )
         else -> {
             val numeric = field is FieldSchema.Number || field is FieldSchema.Duration
             OutlinedTextField(
@@ -347,125 +404,39 @@ private fun FieldEditor(
     }
 }
 
-@Composable
-private fun InstalledAppField(
-    descriptorId: String,
-    field: FieldSchema.AppPicker,
-    value: String,
-    enabled: Boolean,
-    onValue: (String) -> Unit,
-) {
-    val context = LocalContext.current
-    var show by remember { mutableStateOf(false) }
-    val label = localizedFieldLabelShared(descriptorId, field)
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValue,
-            enabled = enabled,
-            modifier = Modifier.fillMaxWidth(),
-            label = {
-                Text(
-                    if (field.required) stringResource(TextR.string.editor_required_field_format, label)
-                    else label
-                )
-            },
-            singleLine = true,
-            supportingText = { Text(stringResource(TextR.string.feature_picker_app_input_hint)) },
-        )
-        OutlinedButton(
-            onClick = { show = true },
-            enabled = enabled,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(TextR.string.feature_picker_select_installed_app))
-        }
-    }
-    if (show) {
-        InstalledAppDialog(
-            context = context,
-            current = value,
-            onDismiss = { show = false },
-        ) {
-            onValue(it)
-            show = false
-        }
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun InstalledAppDialog(
-    context: Context,
-    current: String,
-    onDismiss: () -> Unit,
-    onPick: (String) -> Unit,
-) {
-    var query by remember { mutableStateOf("") }
-    var includeSystem by remember { mutableStateOf(false) }
-    val locale = currentEditorLocale()
-    val apps = remember(context, locale) { installedApps(context, locale) }
-    val filtered = remember(apps, query, includeSystem) {
-        apps.filter {
-            (includeSystem || !it.system) &&
-                (query.isBlank() || it.label.contains(query, true) || it.packageName.contains(query, true))
+/**
+ * Serialize only fields applicable to the currently selected mode. Retain unknown imported
+ * config keys for forward compatibility, but do not leak hidden/disabled schema fields when
+ * the user changes an operation's settings.
+ */
+internal fun buildEditedFeatureConfig(
+    descriptor: FeatureDescriptor,
+    initial: FeatureRef?,
+    initialWithDefaults: FeatureRef,
+    values: Map<String, String>,
+    locale: Locale,
+    hardwareIdentityConfig: Map<String, ConfigValue> = emptyMap(),
+): Map<String, ConfigValue> {
+    val typedValues = valuesAsConfig(descriptor.fields, values, locale)
+    val config = initial?.config.orEmpty().toMutableMap()
+    descriptor.fields.forEach { field ->
+        val prior = config.remove(field.key)
+        val behavior = descriptor.fieldBehavior(field.key)
+        if (behavior.visibleWhen?.matches(typedValues) == false ||
+            behavior.enabledWhen?.matches(typedValues) == false
+        ) return@forEach
+
+        val raw = values[field.key].orEmpty()
+        if (prior != null && raw == editorConfigValueText(initialWithDefaults.config[field.key], locale)) {
+            config[field.key] = prior
+        } else {
+            parseFieldValue(field, raw, locale)?.let { config[field.key] = it }
         }
     }
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(stringResource(TextR.string.feature_picker_choose_app)) },
-                    navigationIcon = {
-                        TextButton(onClick = onDismiss) { Text(stringResource(TextR.string.common_close)) }
-                    },
-                )
-            },
-        ) { padding ->
-            LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                item {
-                    OutlinedTextField(
-                        value = query,
-                        onValueChange = { query = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(TextR.string.feature_picker_search_app)) },
-                        singleLine = true,
-                    )
-                }
-                item {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(TextR.string.editor_show_system_apps), Modifier.weight(1f))
-                        Switch(includeSystem, { includeSystem = it })
-                    }
-                }
-                items(filtered, key = { it.packageName }) { app ->
-                    ListItem(
-                        headlineContent = {
-                            Text(
-                                app.label,
-                                fontWeight = if (app.packageName == current) FontWeight.Bold else FontWeight.Normal,
-                            )
-                        },
-                        supportingContent = { Text(app.packageName) },
-                        trailingContent = {
-                            if (app.system) {
-                                Text(
-                                    stringResource(TextR.string.editor_system_app),
-                                    style = MaterialTheme.typography.labelSmall,
-                                )
-                            }
-                        },
-                        modifier = Modifier.clickable { onPick(app.packageName) },
-                    )
-                    HorizontalDivider()
-                }
-            }
-        }
-    }
+    config.keys.filter { it.startsWith("hardwareIdentity") }.forEach(config::remove)
+    config.putAll(hardwareIdentityConfig)
+    return config
 }
 
 private fun valuesAsConfig(
@@ -496,24 +467,6 @@ private fun fieldValid(field: FieldSchema, raw: String, locale: Locale): Boolean
     else -> !field.required || raw.isNotBlank()
 }
 
-@Suppress("DEPRECATION")
-private fun installedApps(context: Context, locale: Locale): List<InstalledApp> = runCatching {
-    val pm = context.packageManager
-    val comparator = localizedStringComparator(locale)
-    pm.getInstalledApplications(PackageManager.GET_META_DATA).map { info ->
-        InstalledApp(
-            label = runCatching { pm.getApplicationLabel(info).toString() }.getOrDefault(info.packageName),
-            packageName = info.packageName,
-            system = info.flags and ApplicationInfo.FLAG_SYSTEM != 0,
-        )
-    }.sortedWith { left, right ->
-        when {
-            left.system != right.system -> left.system.compareTo(right.system)
-            else -> comparator.compare(left.label, right.label)
-        }
-    }
-}.getOrDefault(emptyList())
-
 @Composable
 private fun capabilityLabel(capabilityId: String): String = stringResource(
     when (capabilityId) {
@@ -543,6 +496,7 @@ private fun accessRequirementResource(requirement: AccessRequirement): Int = whe
     AccessRequirement.LSPOSED -> TextR.string.access_lsposed
     AccessRequirement.ZYGISK -> TextR.string.access_zygisk
     AccessRequirement.ACCESSIBILITY -> TextR.string.access_accessibility
+    AccessRequirement.USAGE_STATS -> TextR.string.access_usage_stats
     AccessRequirement.NOTIFICATION_LISTENER -> TextR.string.access_notification_listener
     AccessRequirement.POST_NOTIFICATIONS -> TextR.string.access_post_notifications
     AccessRequirement.OVERLAY -> TextR.string.access_overlay
@@ -552,6 +506,13 @@ private fun accessRequirementResource(requirement: AccessRequirement): Int = whe
     AccessRequirement.BLUETOOTH_CONNECT -> TextR.string.access_bluetooth
     AccessRequirement.DND_POLICY -> TextR.string.access_dnd_policy
     AccessRequirement.DEVICE_ADMIN -> TextR.string.access_device_admin
+    AccessRequirement.CALENDAR -> TextR.string.access_calendar
+    AccessRequirement.CONTACTS -> TextR.string.access_contacts
+    AccessRequirement.CALL_LOG -> TextR.string.access_call_log
+    AccessRequirement.SMS -> TextR.string.access_sms
+    AccessRequirement.PHONE -> TextR.string.access_phone
+    AccessRequirement.RECORD_AUDIO -> TextR.string.access_record_audio
+    AccessRequirement.ACTIVITY_RECOGNITION -> TextR.string.access_activity_recognition
 }
 
 @Composable
@@ -562,6 +523,7 @@ private fun implementationTitle(backendId: String): String = stringResource(
         "shizuku" -> TextR.string.implementation_shizuku_title
         "lsposed" -> TextR.string.implementation_lsposed_title
         "accessibility" -> TextR.string.implementation_accessibility_title
+        "usage_stats" -> TextR.string.implementation_usage_stats_title
         else -> TextR.string.implementation_method
     }
 )
@@ -573,6 +535,7 @@ private fun implementationSummary(backendId: String): String = when (backendId) 
     "shizuku" -> stringResource(TextR.string.implementation_shizuku_summary)
     "lsposed" -> stringResource(TextR.string.implementation_lsposed_summary)
     "accessibility" -> stringResource(TextR.string.implementation_accessibility_summary)
+    "usage_stats" -> stringResource(TextR.string.implementation_usage_stats_summary)
     else -> ""
 }
 
@@ -625,3 +588,24 @@ private fun implementationCons(backendId: String): List<String> = when (backendI
     )
     else -> emptyList()
 }
+
+
+
+
+private fun HardwareKeyCaptureResult.toHiddenHardwareIdentity(): ConfigValue.ObjectValue =
+    ConfigValue.ObjectValue(
+        buildMap {
+            if (keyCode > 0) put("androidKeyCode", ConfigValue.NumberValue(keyCode.toDouble()))
+            if (scanCode > 0) put("androidScanCode", ConfigValue.NumberValue(scanCode.toDouble()))
+            if (linuxEvKey > 0) put("linuxEvKey", ConfigValue.NumberValue(linuxEvKey.toDouble()))
+            if (mscScan != 0L) put("mscScan", ConfigValue.NumberValue(mscScan.toDouble()))
+            if (deviceId >= 0) put("deviceId", ConfigValue.NumberValue(deviceId.toDouble()))
+            if (deviceName.isNotBlank()) put("deviceName", ConfigValue.StringValue(deviceName))
+            if (deviceDescriptor.isNotBlank()) put("deviceDescriptor", ConfigValue.StringValue(deviceDescriptor))
+            if (vendorId > 0) put("vendorId", ConfigValue.NumberValue(vendorId.toDouble()))
+            if (productId > 0) put("productId", ConfigValue.NumberValue(productId.toDouble()))
+            if (sources.isNotEmpty()) {
+                put("sources", ConfigValue.ListValue(sources.sorted().map(ConfigValue::StringValue)))
+            }
+        }
+    )

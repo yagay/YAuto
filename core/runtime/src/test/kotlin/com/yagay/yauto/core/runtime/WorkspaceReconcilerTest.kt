@@ -18,6 +18,7 @@ import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.WorkspaceRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -133,6 +134,32 @@ class WorkspaceReconcilerTest {
         assertTrue(delegate.saved)
     }
 
+    @Test
+    fun `repository caches reconciled workspace and publishes saves`() = runBlocking {
+        val registry = FeatureRegistry()
+        val initial = WorkspaceData()
+        val delegate = FakeWorkspaceRepository(initial)
+        val repository = ReconcilingWorkspaceRepository(delegate, registry)
+        val observed = mutableListOf<WorkspaceData>()
+        val subscription = repository.addListener { observed += it }
+
+        val first = repository.load()
+        val second = repository.load()
+
+        assertSame(first, second)
+        assertEquals(1, delegate.loadCount)
+
+        val updated = initial.copy(runtimeEnabled = false)
+        repository.save(updated)
+
+        val cachedAfterSave = repository.snapshotOrNull()
+        assertEquals(updated, cachedAfterSave)
+        assertSame(cachedAfterSave, repository.load())
+        assertEquals(1, delegate.loadCount)
+        assertTrue(observed.contains(updated))
+        subscription.close()
+    }
+
     private fun descriptor(
         canonical: String,
         legacy: String,
@@ -149,8 +176,12 @@ class WorkspaceReconcilerTest {
     private class FakeWorkspaceRepository(initial: WorkspaceData) : WorkspaceRepository {
         var data = initial
         var saved = false
+        var loadCount = 0
 
-        override suspend fun load(): WorkspaceData = data
+        override suspend fun load(): WorkspaceData {
+            loadCount += 1
+            return data
+        }
 
         override suspend fun save(data: WorkspaceData) {
             this.data = data

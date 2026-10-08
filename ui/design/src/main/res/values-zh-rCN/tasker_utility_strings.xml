@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_feature_foreground_event_unavailable">没有可用的前台应用使用记录</string>
+</resources>

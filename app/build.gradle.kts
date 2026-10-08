@@ -14,6 +14,14 @@ android {
         versionName = "0.1.0"
     }
     buildFeatures { compose = true }
+    buildTypes {
+        create("profile") {
+            initWith(getByName("release"))
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release", "debug")
+        }
+    }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
 }
@@ -28,6 +36,9 @@ dependencies {
     implementation(project(":core:runtime"))
     implementation(project(":core:storage"))
     implementation(project(":core:importer"))
+    implementation(project(":importer:macrodroid"))
+    implementation(project(":importer:shortx"))
+    implementation(project(":importer:tasker"))
     implementation(project(":feature:standard"))
     implementation(project(":platform:android"))
     implementation(project(":platform:accessibility"))
@@ -48,5 +59,6 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
+    implementation("io.github.libxposed:service:102.0.0")
     debugImplementation(libs.compose.ui.tooling)
 }

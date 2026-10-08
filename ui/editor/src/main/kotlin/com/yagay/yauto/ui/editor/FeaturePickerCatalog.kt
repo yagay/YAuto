@@ -1,67 +1,58 @@
 package com.yagay.yauto.ui.editor
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.yagay.yauto.core.registry.FeatureCategory
+import com.yagay.yauto.core.registry.AccessRequirement
+import com.yagay.yauto.core.registry.FeaturePickerCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
-import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
+import com.yagay.yauto.ui.design.localizedList
 import com.yagay.yauto.ui.design.R as TextR
-import java.util.Locale
-
-internal data class CatalogCategory(
-    val id: String,
-    @StringRes val titleRes: Int,
-    @StringRes val subtitleRes: Int,
-    val order: Int,
-)
-
-internal sealed interface PickerPage {
-    data object Categories : PickerPage
-    data class Features(val category: CatalogCategory, val special: String? = null) : PickerPage
-    data class Configure(val descriptor: FeatureDescriptor, val fromCategory: Features?) : PickerPage
-}
 
 @Composable
 internal fun FeatureCategoryPage(
     modifier: Modifier,
     kind: FeatureKind,
-    descriptors: List<FeatureDescriptor>,
+    catalog: FeaturePickerCatalogModel,
     query: String,
+    listState: LazyListState,
     favorites: Set<String>,
     recent: List<String>,
     onQuery: (String) -> Unit,
     onCategory: (PickerPage.Features) -> Unit,
     onFeature: (FeatureDescriptor) -> Unit,
+    onUnified: (UnifiedFeatureGroup, String) -> Unit,
     onFavorite: (String) -> Unit,
+    onUnifiedFavorite: (UnifiedFeatureGroup) -> Unit,
 ) {
-    val categories = remember(descriptors) {
-        descriptors.map { catalogCategory(it.category) }.distinctBy { it.id }.sortedBy { it.order }
+    val availability = LocalFeatureAvailability.current
+    val search = remember(catalog, query) {
+        if (query.isBlank()) emptyList() else catalog.searchEntries(query)
     }
-    val textResolver = rememberFeatureTextResolver()
-    val search = remember(descriptors, query, textResolver) {
-        if (query.isBlank()) emptyList() else descriptors.filter { textResolver.matches(it, query) }
-    }
-    val recentCount = recent.count { id -> descriptors.any { it.id.value == id } }
-    val favoriteCount = favorites.count { id -> descriptors.any { it.id.value == id } }
+    val recentCount = remember(catalog, recent) { catalog.recentCount(recent) }
+    val favoriteCount = remember(catalog, favorites) { catalog.favoriteCount(favorites) }
 
     LazyColumn(
-        modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp),
+        modifier = modifier.fillMaxSize(),
+        state = listState,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     ) {
-        item {
+        item(contentType = "search") {
             OutlinedTextField(
                 value = query,
                 onValueChange = onQuery,
@@ -71,7 +62,7 @@ internal fun FeatureCategoryPage(
             )
         }
         if (query.isBlank()) {
-            item {
+            item(contentType = "hint") {
                 Card(colors = CardDefaults.cardColors(containerColor = kindAccent(kind).copy(alpha = .10f))) {
                     Column(Modifier.padding(12.dp)) {
                         Text(kindHelp(kind), fontWeight = FontWeight.SemiBold)
@@ -80,58 +71,85 @@ internal fun FeatureCategoryPage(
                 }
             }
             if (recentCount > 0) {
-                item {
+                item(key = "recent", contentType = "category") {
                     CategoryRow(
                         stringResource(TextR.string.feature_picker_recent),
                         stringResource(TextR.string.feature_picker_recent_subtitle_format, recentCount),
                     ) {
-                        onCategory(PickerPage.Features(catalogCategory(FeatureCategory.CORE), special = "recent"))
+                        onCategory(PickerPage.Features(catalogCategory(FeaturePickerCategory.YAUTO_SPECIFIC), special = "recent"))
                     }
                 }
             }
             if (favoriteCount > 0) {
-                item {
+                item(key = "favorites", contentType = "category") {
                     CategoryRow(
                         stringResource(TextR.string.feature_picker_favorites),
                         stringResource(TextR.string.feature_picker_favorites_subtitle_format, favoriteCount),
                     ) {
-                        onCategory(PickerPage.Features(catalogCategory(FeatureCategory.CORE), special = "favorites"))
+                        onCategory(PickerPage.Features(catalogCategory(FeaturePickerCategory.YAUTO_SPECIFIC), special = "favorites"))
                     }
                 }
             }
-            items(categories, key = { it.id }) { category ->
-                val count = descriptors.count { it.category.name.lowercase(Locale.ROOT) == category.id }
+            items(
+                items = catalog.categories,
+                key = { it.id },
+                contentType = { "category" },
+            ) { category ->
                 CategoryRow(
                     stringResource(category.titleRes),
                     stringResource(
                         TextR.string.editor_category_count_format,
                         stringResource(category.subtitleRes),
-                        count,
+                        catalog.categoryCount(category.id),
                     ),
                 ) { onCategory(PickerPage.Features(category)) }
             }
         } else {
-            item {
+            item(contentType = "result_count") {
                 Text(
                     stringResource(TextR.string.feature_picker_search_results_format, search.size),
                     style = MaterialTheme.typography.labelLarge,
                 )
             }
-            items(search, key = { it.id.value }) { descriptor ->
-                val title = localizedFeatureTitle(descriptor)
-                MacroItemRow(
-                    title = if (descriptor.id.value in favorites) {
-                        stringResource(TextR.string.editor_favorite_prefix, title)
-                    } else title,
-                    subtitle = stringResource(
-                        TextR.string.editor_feature_search_subtitle_format,
-                        stringResource(catalogCategory(descriptor.category).titleRes),
-                        localizedFeatureDescriptionShared(descriptor),
-                    ),
-                    accent = kindAccent(kind),
-                    onClick = { onFeature(descriptor) },
-                    onMenu = { onFavorite(descriptor.id.value) },
-                )
+            items(
+                items = search,
+                key = {
+                    when (it) {
+                        is FeaturePickerListEntry.Feature -> "feature:" + it.item.descriptor.id.value
+                        is FeaturePickerListEntry.Unified -> "unified:" + it.group.spec.id
+                    }
+                },
+                contentType = {
+                    when (it) {
+                        is FeaturePickerListEntry.Feature -> "feature_search_result"
+                        is FeaturePickerListEntry.Unified -> "unified_search_result"
+                    }
+                },
+            ) { entry ->
+                when (entry) {
+                    is FeaturePickerListEntry.Feature -> {
+                        val item = entry.item
+                        FeaturePickerRow(
+                            title = favoriteTitle(item, favorites),
+                            subtitle = stringResource(item.category.titleRes),
+                            accent = kindAccent(kind),
+                            onClick = { onFeature(item.descriptor) },
+                            onFavorite = { onFavorite(item.descriptor.id.value) },
+                            height = 72.dp,
+                            availability = availability[item.descriptor.id.value],
+                            accessTags = featureAccessTags(item.descriptor),
+                        )
+                    }
+                    is FeaturePickerListEntry.Unified -> UnifiedFeatureRow(
+                        group = entry.group,
+                        preferredTitle = entry.group.members.firstOrNull {
+                            it.descriptor.id.value == entry.preferredMemberId
+                        }?.title,
+                        favorite = entry.group.members.any { it.descriptor.id.value in favorites },
+                        onClick = { onUnified(entry.group, entry.preferredMemberId) },
+                        onFavorite = { onUnifiedFavorite(entry.group) },
+                    )
+                }
             }
         }
     }
@@ -142,35 +160,30 @@ internal fun FeatureListPage(
     modifier: Modifier,
     kind: FeatureKind,
     categoryPage: PickerPage.Features,
-    descriptors: List<FeatureDescriptor>,
+    catalog: FeaturePickerCatalogModel,
     query: String,
+    listState: LazyListState,
     favorites: Set<String>,
     recent: List<String>,
     onQuery: (String) -> Unit,
     onFeature: (FeatureDescriptor) -> Unit,
+    onUnified: (UnifiedFeatureGroup, String) -> Unit,
     onFavorite: (String) -> Unit,
+    onUnifiedFavorite: (UnifiedFeatureGroup) -> Unit,
 ) {
-    val textResolver = rememberFeatureTextResolver()
-    val locale = currentEditorLocale()
-    val titleComparator = remember(locale) { localizedStringComparator(locale) }
-    val features = remember(descriptors, categoryPage, query, favorites, recent, textResolver, titleComparator) {
-        val base = when (categoryPage.special) {
-            "recent" -> recent.mapNotNull { id -> descriptors.firstOrNull { it.id.value == id } }
-            "favorites" -> descriptors.filter { it.id.value in favorites }
-            else -> descriptors.filter { it.category.name.lowercase(Locale.ROOT) == categoryPage.category.id }
-        }
-        base.filter { query.isBlank() || textResolver.matches(it, query) }
-            .sortedWith { left, right -> titleComparator.compare(textResolver.title(left), textResolver.title(right)) }
+    val availability = LocalFeatureAvailability.current
+    val entries = remember(catalog, categoryPage, query, favorites, recent) {
+        catalog.entries(categoryPage, favorites, recent, query)
     }
     val title = categoryTitle(categoryPage)
     val subtitle = categorySubtitle(categoryPage)
 
     LazyColumn(
-        modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp),
+        modifier = modifier.fillMaxSize(),
+        state = listState,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     ) {
-        item {
+        item(contentType = "search") {
             OutlinedTextField(
                 value = query,
                 onValueChange = onQuery,
@@ -179,7 +192,7 @@ internal fun FeatureListPage(
                 singleLine = true,
             )
         }
-        item {
+        item(contentType = "hint") {
             Text(
                 stringResource(
                     TextR.string.feature_picker_category_hint_format,
@@ -190,19 +203,201 @@ internal fun FeatureListPage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        items(features, key = { it.id.value }) { descriptor ->
-            val localizedTitle = localizedFeatureTitle(descriptor)
-            MacroItemRow(
-                title = if (descriptor.id.value in favorites) {
-                    stringResource(TextR.string.editor_favorite_prefix, localizedTitle)
-                } else localizedTitle,
-                subtitle = localizedFeatureDescriptionShared(descriptor),
-                accent = kindAccent(kind),
-                onClick = { onFeature(descriptor) },
-                onMenu = { onFavorite(descriptor.id.value) },
-            )
+        items(
+            items = entries,
+            key = {
+                when (it) {
+                    is FeaturePickerListEntry.Feature -> "feature:" + it.item.descriptor.id.value
+                    is FeaturePickerListEntry.Unified -> "unified:" + it.group.spec.id
+                }
+            },
+            contentType = {
+                when (it) {
+                    is FeaturePickerListEntry.Feature -> "feature"
+                    is FeaturePickerListEntry.Unified -> "unified"
+                }
+            },
+        ) { entry ->
+            when (entry) {
+                is FeaturePickerListEntry.Feature -> {
+                    val item = entry.item
+                    FeaturePickerRow(
+                        title = favoriteTitle(item, favorites),
+                        subtitle = null,
+                        accent = kindAccent(kind),
+                        onClick = { onFeature(item.descriptor) },
+                        onFavorite = { onFavorite(item.descriptor.id.value) },
+                        height = 68.dp,
+                        availability = availability[item.descriptor.id.value],
+                        accessTags = featureAccessTags(item.descriptor),
+                    )
+                }
+                is FeaturePickerListEntry.Unified -> UnifiedFeatureRow(
+                    group = entry.group,
+                    preferredTitle = if (query.isNotBlank() || categoryPage.special != null) {
+                        entry.group.members.firstOrNull {
+                            it.descriptor.id.value == entry.preferredMemberId
+                        }?.title
+                    } else null,
+                    favorite = entry.group.members.any { it.descriptor.id.value in favorites },
+                    onClick = { onUnified(entry.group, entry.preferredMemberId) },
+                    onFavorite = { onUnifiedFavorite(entry.group) },
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun UnifiedFeatureRow(
+    group: UnifiedFeatureGroup,
+    preferredTitle: String?,
+    favorite: Boolean,
+    onClick: () -> Unit,
+    onFavorite: () -> Unit,
+) {
+    ListItem(
+        headlineContent = {
+            val title = stringResource(group.spec.titleRes)
+            Text(
+                text = if (favorite) stringResource(TextR.string.editor_favorite_prefix, title) else title,
+                fontWeight = FontWeight.Medium,
+            )
+        },
+        supportingContent = {
+            val details = stringResource(
+                TextR.string.feature_picker_family_count_format,
+                stringResource(group.spec.subtitleRes),
+                group.members.size,
+            )
+            Text(if (preferredTitle.isNullOrBlank()) details else "$preferredTitle · $details")
+        },
+        trailingContent = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_more),
+                    contentDescription = stringResource(TextR.string.icon_more_options),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(44.dp).clickable(onClick = onFavorite).padding(11.dp),
+                )
+                Icon(
+                    painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_chevron_right),
+                    contentDescription = stringResource(TextR.string.icon_open_details),
+                )
+            }
+        },
+        modifier = Modifier.clickable(onClick = onClick),
+    )
+    HorizontalDivider()
+}
+
+@Composable
+private fun favoriteTitle(item: FeaturePickerCatalogItem, favorites: Set<String>): String =
+    if (item.descriptor.id.value in favorites) {
+        stringResource(TextR.string.editor_favorite_prefix, item.title)
+    } else {
+        item.title
+    }
+
+@Composable
+private fun FeaturePickerRow(
+    title: String,
+    subtitle: String?,
+    accent: Color,
+    onClick: () -> Unit,
+    onFavorite: () -> Unit,
+    height: androidx.compose.ui.unit.Dp,
+    availability: FeatureAvailabilityUi? = null,
+    accessTags: String = "",
+) {
+    val divider = MaterialTheme.colorScheme.outlineVariant
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .drawBehind {
+                val accentWidth = 4.dp.toPx()
+                drawRect(accent, size = androidx.compose.ui.geometry.Size(accentWidth, size.height))
+                drawLine(
+                    color = divider,
+                    start = androidx.compose.ui.geometry.Offset(accentWidth, size.height),
+                    end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                    strokeWidth = 1.dp.toPx(),
+                )
+            }
+            .clickable(onClick = onClick)
+            .padding(start = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            val supporting = localizedList(
+                listOfNotNull(
+                    subtitle?.takeIf { it.isNotBlank() },
+                    accessTags.takeIf { it.isNotBlank() },
+                    availability?.summary?.takeIf { it.isNotBlank() },
+                )
+            )
+            if (supporting.isNotBlank()) {
+                Text(
+                    text = supporting,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        availability?.let {
+            Text(
+                text = it.statusLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = when (it.tone) {
+                    FeatureAvailabilityTone.READY -> MacroPalette.Constraint
+                    FeatureAvailabilityTone.BLOCKED -> MacroPalette.Trigger
+                    FeatureAvailabilityTone.BROKEN -> MaterialTheme.colorScheme.error
+                    FeatureAvailabilityTone.UNSUPPORTED -> MacroPalette.Utility
+                },
+                modifier = Modifier.padding(horizontal = 6.dp),
+                maxLines = 1,
+            )
+        }
+        Icon(
+            painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_more),
+            contentDescription = stringResource(TextR.string.icon_more_options),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .size(44.dp)
+                .clickable(onClick = onFavorite)
+                .padding(11.dp),
+        )
+    }
+}
+
+@Composable
+private fun featureAccessTags(descriptor: FeatureDescriptor): String {
+    val requirements = remember(descriptor) {
+        buildSet {
+            addAll(descriptor.accessRequirements)
+            descriptor.implementationOptions.forEach { addAll(it.requirements) }
+        }
+    }
+    val root = if (AccessRequirement.ROOT in requirements) stringResource(TextR.string.access_root) else null
+    val shizuku = if (AccessRequirement.SHIZUKU in requirements) stringResource(TextR.string.access_shizuku) else null
+    val lsposed = if (AccessRequirement.LSPOSED in requirements) stringResource(TextR.string.access_lsposed) else null
+    val zygisk = if (AccessRequirement.ZYGISK in requirements) stringResource(TextR.string.access_zygisk) else null
+    val accessibility = if (AccessRequirement.ACCESSIBILITY in requirements) {
+        stringResource(TextR.string.access_accessibility)
+    } else {
+        null
+    }
+    return localizedList(listOfNotNull(root, shizuku, lsposed, zygisk, accessibility))
 }
 
 @Composable
@@ -219,24 +414,6 @@ private fun CategoryRow(title: String, subtitle: String, onClick: () -> Unit) {
         modifier = Modifier.clickable(onClick = onClick),
     )
     HorizontalDivider()
-}
-
-internal fun catalogCategory(category: FeatureCategory): CatalogCategory = when (category) {
-    FeatureCategory.CORE -> CatalogCategory("core", TextR.string.category_core, TextR.string.category_core_subtitle, 10)
-    FeatureCategory.APP -> CatalogCategory("app", TextR.string.category_app, TextR.string.category_app_subtitle, 20)
-    FeatureCategory.DEVICE -> CatalogCategory("device", TextR.string.category_device, TextR.string.category_device_subtitle, 30)
-    FeatureCategory.NETWORK -> CatalogCategory("network", TextR.string.category_network, TextR.string.category_network_subtitle, 40)
-    FeatureCategory.DISPLAY -> CatalogCategory("display", TextR.string.category_display, TextR.string.category_display_subtitle, 50)
-    FeatureCategory.AUDIO -> CatalogCategory("audio", TextR.string.category_audio, TextR.string.category_audio_subtitle, 60)
-    FeatureCategory.NOTIFICATION -> CatalogCategory("notification", TextR.string.category_notification, TextR.string.category_notification_subtitle, 70)
-    FeatureCategory.FILE -> CatalogCategory("file", TextR.string.category_file, TextR.string.category_file_subtitle, 80)
-    FeatureCategory.VARIABLE -> CatalogCategory("variable", TextR.string.category_variable, TextR.string.category_variable_subtitle, 90)
-    FeatureCategory.FLOW -> CatalogCategory("flow", TextR.string.category_flow, TextR.string.category_flow_subtitle, 100)
-    FeatureCategory.UI_AUTOMATION -> CatalogCategory("ui_automation", TextR.string.category_ui_automation, TextR.string.category_ui_automation_subtitle, 110)
-    FeatureCategory.SYSTEM -> CatalogCategory("system", TextR.string.category_system, TextR.string.category_system_subtitle, 120)
-    FeatureCategory.SCRIPT -> CatalogCategory("script", TextR.string.category_script, TextR.string.category_script_subtitle, 130)
-    FeatureCategory.ADVANCED -> CatalogCategory("advanced", TextR.string.category_advanced, TextR.string.category_advanced_subtitle, 140)
-    FeatureCategory.COMPATIBILITY -> CatalogCategory("advanced", TextR.string.category_advanced, TextR.string.category_advanced_subtitle, 150)
 }
 
 @Composable

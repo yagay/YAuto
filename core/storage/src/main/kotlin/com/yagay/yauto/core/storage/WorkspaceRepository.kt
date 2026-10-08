@@ -14,6 +14,14 @@ data class WorkspaceData(
     val globalVariables: Map<String, String> = emptyMap(),
     /** Canonical typed persistent variables used by native YAuto automation features. */
     val persistentVariables: Map<String, ConfigValue> = emptyMap(),
+    /** Named automation categories currently disabled at runtime. */
+    val disabledCategories: Set<String> = emptySet(),
+    /** Persistent last successful/finished execution timestamp by automation ID. */
+    val automationLastRunEpochMs: Map<String, Long> = emptyMap(),
+    /** Master runtime gate. When false, automatic event dispatch is paused. */
+    val runtimeEnabled: Boolean = true,
+    /** Disabled activation event keys in "automationId|typeId|tag" form. */
+    val disabledTriggerKeys: Set<String> = emptySet(),
 )
 
 interface WorkspaceRepository {
@@ -21,10 +29,16 @@ interface WorkspaceRepository {
     suspend fun save(data: WorkspaceData)
 }
 
+interface ObservableWorkspaceRepository : WorkspaceRepository {
+    fun snapshotOrNull(): WorkspaceData?
+    fun addListener(listener: (WorkspaceData) -> Unit): AutoCloseable
+}
+
 fun WorkspaceData.merge(
     automationsToImport: List<Automation>,
     flowsToImport: List<Flow>,
     variablesToImport: Map<String, String>,
+    persistentVariablesToImport: Map<String, ConfigValue> = emptyMap(),
 ): WorkspaceData {
     val incomingAutomations = automationsToImport.associateBy { it.id.value }
     val incomingFlows = flowsToImport.associateBy { it.id.value }
@@ -32,5 +46,6 @@ fun WorkspaceData.merge(
         automations = (automations.filterNot { it.id.value in incomingAutomations } + incomingAutomations.values).sortedBy { it.name.lowercase() },
         flows = (flows.filterNot { it.id.value in incomingFlows } + incomingFlows.values).sortedBy { it.name.lowercase() },
         globalVariables = globalVariables + variablesToImport,
+        persistentVariables = persistentVariables + persistentVariablesToImport,
     )
 }

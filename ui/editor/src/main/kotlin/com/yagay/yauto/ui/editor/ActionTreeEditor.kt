@@ -16,8 +16,6 @@ import com.yagay.yauto.ui.design.R as TextR
 import java.util.UUID
 
 private fun nodeId() = NodeId(UUID.randomUUID().toString())
-private enum class ValueEditorKind { TEXT, NUMBER, BOOLEAN, NULL }
-private enum class PredicateGroupKind { ALL, ANY, NONE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +31,7 @@ fun ActionTreeDialog(
     var adding by remember { mutableStateOf(false) }
     var picker by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<ActionNode?>(null) }
+    val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Scaffold(
@@ -56,7 +55,7 @@ fun ActionTreeDialog(
                     key(node.id.value) {
                         Card(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(12.dp)) {
-                                Text(nodeLabel(node, descriptors, flows))
+                                Text(nodeLabel(node, descriptorById, flows))
                                 Row {
                                     TextButton(onClick = { editing = node }) {
                                         Text(stringResource(TextR.string.common_edit))
@@ -112,8 +111,14 @@ fun ActionTreeDialog(
                         stringResource(TextR.string.tree_while) to {
                             ActionNode.While(nodeId(), PredicateNode.Literal(false), emptyList())
                         },
+                        stringResource(TextR.string.tree_while) + " (do)" to {
+                            ActionNode.DoWhile(nodeId(), PredicateNode.Literal(false), emptyList())
+                        },
                         stringResource(TextR.string.tree_wait_until) to {
                             ActionNode.WaitUntil(nodeId(), PredicateNode.Literal(false))
+                        },
+                        stringResource(TextR.string.tree_wait_until) + " (event)" to {
+                            ActionNode.WaitEvent(nodeId(), emptyList())
                         },
                         stringResource(TextR.string.tree_foreach) to {
                             ActionNode.ForEach(nodeId(), emptyList(), "item", emptyList())
@@ -177,16 +182,18 @@ fun ActionTreeDialog(
 @Composable
 private fun nodeLabel(
     node: ActionNode,
-    descriptors: List<FeatureDescriptor>,
+    descriptors: Map<String, FeatureDescriptor>,
     flows: List<Flow>,
 ): String = when (node) {
-    is ActionNode.Action -> descriptors.firstOrNull { it.id.value == node.feature.typeId }
+    is ActionNode.Action -> descriptors[node.feature.typeId]
         ?.let { localizedFeatureTitle(it) } ?: node.feature.typeId
     is ActionNode.If -> stringResource(TextR.string.tree_if)
     is ActionNode.Switch -> stringResource(TextR.string.tree_switch_count_format, node.cases.size)
     is ActionNode.Repeat -> stringResource(TextR.string.node_repeat_format, node.times)
     is ActionNode.While -> stringResource(TextR.string.tree_while)
+    is ActionNode.DoWhile -> stringResource(TextR.string.tree_while) + " (do)"
     is ActionNode.WaitUntil -> stringResource(TextR.string.tree_wait_until)
+    is ActionNode.WaitEvent -> stringResource(TextR.string.tree_wait_until) + " (event)"
     is ActionNode.ForEach -> stringResource(TextR.string.tree_foreach_variable_format, node.variableName)
     is ActionNode.Parallel -> stringResource(TextR.string.tree_parallel_count_format, node.branches.size)
     is ActionNode.Try -> stringResource(TextR.string.tree_try)
@@ -194,6 +201,8 @@ private fun nodeLabel(
         TextR.string.tree_call_format,
         flows.firstOrNull { it.id == node.flowId }?.name ?: node.flowId.value,
     )
+    is ActionNode.Label -> stringResource(TextR.string.tree_label_format, node.name)
+    is ActionNode.Goto -> stringResource(TextR.string.tree_goto_format, node.label)
     is ActionNode.Return -> stringResource(TextR.string.tree_return_value)
     is ActionNode.Break -> stringResource(TextR.string.tree_break)
     is ActionNode.Continue -> stringResource(TextR.string.tree_continue)
@@ -212,6 +221,7 @@ private fun NodeDialog(
     var saveChild by remember { mutableStateOf<((List<ActionNode>) -> Unit)?>(null) }
     var predicate by remember { mutableStateOf<PredicateNode?>(null) }
     var savePredicate by remember { mutableStateOf<((PredicateNode) -> Unit)?>(null) }
+    val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
 
     fun children(label: String, actions: List<ActionNode>, update: (List<ActionNode>) -> Unit) {
         child = label to actions
@@ -224,7 +234,7 @@ private fun NodeDialog(
     }
 
     val action = draft as? ActionNode.Action
-    if (action != null && descriptors.any { it.id.value == action.feature.typeId }) {
+    if (action != null && descriptorById.containsKey(action.feature.typeId)) {
         MacroFeaturePickerDialog(
             kind = FeatureKind.ACTION,
             descriptors = descriptors,
@@ -237,7 +247,7 @@ private fun NodeDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(nodeLabel(draft, descriptors, flows)) },
+        title = { Text(nodeLabel(draft, descriptorById, flows)) },
         text = {
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -323,6 +333,15 @@ private fun NodeDialog(
                             children(loopLabel, node.actions) { draft = node.copy(actions = it) }
                         }
                     }
+                    is ActionNode.DoWhile -> {
+                        TextButton(onClick = {
+                            condition(node.condition) { draft = node.copy(condition = it) }
+                        }) { Text(stringResource(TextR.string.tree_edit_loop_condition)) }
+                        val loopLabel = stringResource(TextR.string.tree_loop_actions)
+                        BranchButton(loopLabel, node.actions) {
+                            children(loopLabel, node.actions) { draft = node.copy(actions = it) }
+                        }
+                    }
                     is ActionNode.WaitUntil -> {
                         TextButton(onClick = {
                             condition(node.condition) { draft = node.copy(condition = it) }
@@ -345,6 +364,40 @@ private fun NodeDialog(
                             },
                             label = { Text(stringResource(TextR.string.tree_wait_poll_interval_ms)) },
                         )
+                    }
+                    is ActionNode.WaitEvent -> {
+                        Text(
+                            stringResource(
+                                TextR.string.tree_wait_event_events_format,
+                                if (node.events.isEmpty()) stringResource(TextR.string.tree_none)
+                                else node.events.joinToString { it.typeId },
+                            )
+                        )
+                        Row {
+                            Text(stringResource(TextR.string.tree_wait_unlimited))
+                            Switch(
+                                checked = node.unlimited,
+                                onCheckedChange = { draft = node.copy(unlimited = it) },
+                            )
+                        }
+                        if (!node.unlimited) {
+                            OutlinedTextField(
+                                node.timeoutMs.toString(),
+                                { text ->
+                                    text.toLongOrNull()?.takeIf { it > 0L }?.let {
+                                        draft = node.copy(timeoutMs = it)
+                                    }
+                                },
+                                label = { Text(stringResource(TextR.string.tree_wait_timeout_ms)) },
+                            )
+                        }
+                        Row {
+                            Text(stringResource(TextR.string.tree_wait_continue_on_timeout))
+                            Switch(
+                                checked = node.continueOnTimeout,
+                                onCheckedChange = { draft = node.copy(continueOnTimeout = it) },
+                            )
+                        }
                     }
                     is ActionNode.ForEach -> {
                         OutlinedTextField(
@@ -409,6 +462,16 @@ private fun NodeDialog(
                         )
                         ConfigMapEditor(node.input) { draft = node.copy(input = it) }
                     }
+                    is ActionNode.Label -> OutlinedTextField(
+                        node.name,
+                        { draft = node.copy(name = it) },
+                        label = { Text(stringResource(TextR.string.tree_label_name)) },
+                    )
+                    is ActionNode.Goto -> OutlinedTextField(
+                        node.label,
+                        { draft = node.copy(label = it) },
+                        label = { Text(stringResource(TextR.string.tree_goto_target)) },
+                    )
                     is ActionNode.Return -> TypedValueEditor(node.value) { draft = node.copy(value = it) }
                     is ActionNode.Action -> Text(stringResource(TextR.string.tree_missing_feature))
                     is ActionNode.Break -> Text(stringResource(TextR.string.tree_break_description))
@@ -457,270 +520,5 @@ private fun NodeDialog(
 private fun BranchButton(label: String, nodes: List<ActionNode>, onClick: () -> Unit) {
     OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(TextR.string.tree_branch_count_format, label, nodes.size))
-    }
-}
-
-@Composable
-internal fun TypedValueEditor(value: ConfigValue, onChange: (ConfigValue) -> Unit) {
-    val currentKind = when (value) {
-        is ConfigValue.NumberValue -> ValueEditorKind.NUMBER
-        is ConfigValue.BooleanValue -> ValueEditorKind.BOOLEAN
-        ConfigValue.NullValue -> ValueEditorKind.NULL
-        else -> ValueEditorKind.TEXT
-    }
-    val scalarKinds = listOf(
-        ValueEditorKind.TEXT to stringResource(TextR.string.value_text),
-        ValueEditorKind.NUMBER to stringResource(TextR.string.value_number),
-        ValueEditorKind.BOOLEAN to stringResource(TextR.string.value_boolean),
-        ValueEditorKind.NULL to stringResource(TextR.string.value_null),
-    )
-    Row {
-        scalarKinds.forEach { (kind, label) ->
-            FilterChip(
-                selected = kind == currentKind && value !is ConfigValue.ListValue && value !is ConfigValue.ObjectValue,
-                onClick = {
-                    onChange(
-                        when (kind) {
-                            ValueEditorKind.NUMBER -> ConfigValue.NumberValue(0.0)
-                            ValueEditorKind.BOOLEAN -> ConfigValue.BooleanValue(false)
-                            ValueEditorKind.NULL -> ConfigValue.NullValue
-                            ValueEditorKind.TEXT -> ConfigValue.StringValue("")
-                        }
-                    )
-                },
-                label = { Text(label) },
-            )
-        }
-    }
-    Row {
-        TextButton(onClick = { onChange(ConfigValue.ListValue(emptyList())) }) {
-            Text(stringResource(TextR.string.value_list))
-        }
-        TextButton(onClick = { onChange(ConfigValue.ObjectValue(emptyMap())) }) {
-            Text(stringResource(TextR.string.value_object))
-        }
-    }
-    when (value) {
-        is ConfigValue.StringValue -> OutlinedTextField(
-            value.value,
-            { onChange(ConfigValue.StringValue(it)) },
-            label = { Text(stringResource(TextR.string.value_value)) },
-        )
-        is ConfigValue.NumberValue -> {
-            var text by remember(value) { mutableStateOf(value.value.toString()) }
-            OutlinedTextField(
-                text,
-                { raw ->
-                    text = raw
-                    raw.toDoubleOrNull()?.takeIf { it.isFinite() }?.let {
-                        onChange(ConfigValue.NumberValue(it))
-                    }
-                },
-                label = { Text(stringResource(TextR.string.value_numeric)) },
-            )
-        }
-        is ConfigValue.BooleanValue -> Switch(value.value, { onChange(ConfigValue.BooleanValue(it)) })
-        is ConfigValue.ListValue -> ValueListEditor(value.value) { onChange(ConfigValue.ListValue(it)) }
-        is ConfigValue.ObjectValue -> ConfigMapEditor(value.value) { onChange(ConfigValue.ObjectValue(it)) }
-        ConfigValue.NullValue -> Text(stringResource(TextR.string.value_null))
-    }
-}
-
-@Composable
-private fun ValueListEditor(values: List<ConfigValue>, onChange: (List<ConfigValue>) -> Unit) {
-    values.forEachIndexed { index, value ->
-        TypedValueEditor(value) { updated ->
-            onChange(values.toMutableList().apply { this[index] = updated })
-        }
-        TextButton(onClick = { onChange(values.filterIndexed { i, _ -> i != index }) }) {
-            Text(stringResource(TextR.string.value_delete_item_format, index + 1))
-        }
-    }
-    TextButton(onClick = { onChange(values + ConfigValue.StringValue("")) }) {
-        Text(stringResource(TextR.string.value_add_item))
-    }
-}
-
-@Composable
-internal fun ConfigMapEditor(values: ConfigMap, onChange: (ConfigMap) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    values.forEach { (key, value) ->
-        Text(key)
-        TypedValueEditor(value) { onChange(values + (key to it)) }
-        TextButton(onClick = { onChange(values - key) }) {
-            Text(stringResource(TextR.string.value_delete_key_format, key))
-        }
-    }
-    OutlinedTextField(
-        name,
-        { name = it },
-        label = { Text(stringResource(TextR.string.value_parameter_name)) },
-    )
-    TextButton(
-        enabled = name.isNotBlank() && name !in values,
-        onClick = {
-            onChange(values + (name to ConfigValue.StringValue("")))
-            name = ""
-        },
-    ) { Text(stringResource(TextR.string.value_add_parameter)) }
-}
-
-@Composable
-internal fun PredicateDialog(
-    initial: PredicateNode,
-    descriptors: List<FeatureDescriptor>,
-    onDismiss: () -> Unit,
-    onSave: (PredicateNode) -> Unit,
-) {
-    var draft by remember { mutableStateOf(initial) }
-    var editing by remember { mutableStateOf<Pair<Int, PredicateNode>?>(null) }
-    var picker by remember { mutableStateOf(false) }
-    var editingFeature by remember { mutableStateOf<FeatureRef?>(null) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(TextR.string.predicate_edit)) },
-        text = {
-            Column(
-                Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Row {
-                    TextButton(onClick = { draft = PredicateNode.Expression("") }) {
-                        Text(stringResource(TextR.string.predicate_expression))
-                    }
-                    TextButton(onClick = { picker = true }) {
-                        Text(stringResource(TextR.string.predicate_feature))
-                    }
-                }
-                val groups = listOf(
-                    PredicateGroupKind.ALL to stringResource(TextR.string.predicate_all),
-                    PredicateGroupKind.ANY to stringResource(TextR.string.predicate_any),
-                    PredicateGroupKind.NONE to stringResource(TextR.string.predicate_none),
-                )
-                Row {
-                    groups.forEach { (group, label) ->
-                        TextButton(onClick = {
-                            val children = when (val node = draft) {
-                                is PredicateNode.All -> node.children
-                                is PredicateNode.Any -> node.children
-                                is PredicateNode.None -> node.children
-                                else -> listOf(node)
-                            }
-                            draft = when (group) {
-                                PredicateGroupKind.ALL -> PredicateNode.All(children)
-                                PredicateGroupKind.ANY -> PredicateNode.Any(children)
-                                PredicateGroupKind.NONE -> PredicateNode.None(children)
-                            }
-                        }) { Text(label) }
-                    }
-                }
-                when (val node = draft) {
-                    is PredicateNode.Expression -> OutlinedTextField(
-                        node.expression,
-                        { draft = node.copy(expression = it) },
-                        label = { Text(stringResource(TextR.string.predicate_boolean_expression)) },
-                    )
-                    is PredicateNode.Literal -> Row {
-                        Text(stringResource(TextR.string.predicate_literal))
-                        Switch(node.value, { draft = PredicateNode.Literal(it) })
-                    }
-                    is PredicateNode.Condition -> TextButton(onClick = { editingFeature = node.feature }) {
-                        Text(
-                            descriptors.firstOrNull { it.id.value == node.feature.typeId }
-                                ?.let { localizedFeatureTitle(it) }
-                                ?: node.feature.typeId
-                        )
-                    }
-                    else -> {
-                        val children = when (node) {
-                            is PredicateNode.All -> node.children
-                            is PredicateNode.Any -> node.children
-                            is PredicateNode.None -> node.children
-                            else -> emptyList()
-                        }
-                        Text(
-                            stringResource(
-                                when (node) {
-                                    is PredicateNode.All -> TextR.string.predicate_all_satisfied
-                                    is PredicateNode.Any -> TextR.string.predicate_any_satisfied
-                                    else -> TextR.string.predicate_none_satisfied
-                                }
-                            )
-                        )
-                        fun updated(values: List<PredicateNode>) {
-                            draft = when (node) {
-                                is PredicateNode.All -> node.copy(children = values)
-                                is PredicateNode.Any -> node.copy(children = values)
-                                is PredicateNode.None -> node.copy(children = values)
-                                else -> node
-                            }
-                        }
-                        children.forEachIndexed { index, value ->
-                            Row {
-                                TextButton(onClick = { editing = index to value }) {
-                                    Text(stringResource(TextR.string.predicate_condition_format, index + 1))
-                                }
-                                TextButton(onClick = {
-                                    updated(children.filterIndexed { i, _ -> i != index })
-                                }) { Text(stringResource(TextR.string.common_delete)) }
-                            }
-                        }
-                        TextButton(onClick = { updated(children + PredicateNode.Literal(true)) }) {
-                            Text(stringResource(TextR.string.predicate_add_condition))
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onSave(draft) }) { Text(stringResource(TextR.string.common_confirm)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(TextR.string.common_cancel)) }
-        },
-    )
-
-    if (picker) {
-        MacroFeaturePickerDialog(
-            kind = FeatureKind.CONDITION,
-            descriptors = descriptors,
-            onDismiss = { picker = false },
-            onPick = { feature ->
-                draft = PredicateNode.Condition(feature)
-                picker = false
-            },
-        )
-    }
-
-    editingFeature?.let { feature ->
-        MacroFeaturePickerDialog(
-            kind = FeatureKind.CONDITION,
-            descriptors = descriptors,
-            initial = feature,
-            onDismiss = { editingFeature = null },
-            onPick = { updated ->
-                draft = PredicateNode.Condition(updated)
-                editingFeature = null
-            },
-        )
-    }
-
-    editing?.let { (index, value) ->
-        PredicateDialog(value, descriptors, { editing = null }) { updated ->
-            draft = when (val node = draft) {
-                is PredicateNode.All -> node.copy(
-                    children = node.children.toMutableList().apply { this[index] = updated }
-                )
-                is PredicateNode.Any -> node.copy(
-                    children = node.children.toMutableList().apply { this[index] = updated }
-                )
-                is PredicateNode.None -> node.copy(
-                    children = node.children.toMutableList().apply { this[index] = updated }
-                )
-                else -> node
-            }
-            editing = null
-        }
     }
 }

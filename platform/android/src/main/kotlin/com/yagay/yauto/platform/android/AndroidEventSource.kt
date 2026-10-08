@@ -36,6 +36,7 @@ class SystemBroadcastEventSource(
     private val started = AtomicBoolean(false)
     private var emitter: RuntimeEventEmitter? = null
     private var lastDarkMode: Boolean? = null
+    private var lastOrientation: Int? = null
 
     private val systemReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -46,8 +47,18 @@ class SystemBroadcastEventSource(
             }
             if (action == Intent.ACTION_CONFIGURATION_CHANGED) {
                 val darkMode = currentDarkMode()
-                if (lastDarkMode == darkMode) return
+                val orientation = this@SystemBroadcastEventSource.context.resources.configuration.orientation
+                val payload = configurationPayload(darkMode, orientation)
+                emitter?.emit(RuntimeEvent("android.event.configuration_changed", payload, source = id))
+                if (lastDarkMode != null && lastDarkMode != darkMode) {
+                    emitter?.emit(RuntimeEvent("android.event.dark_mode_changed", payload, source = id))
+                }
+                if (lastOrientation != null && lastOrientation != orientation) {
+                    emitter?.emit(RuntimeEvent("android.event.orientation_changed", payload, source = id))
+                }
                 lastDarkMode = darkMode
+                lastOrientation = orientation
+                return
             }
 
             val typeId = when (action) {
@@ -65,7 +76,6 @@ class SystemBroadcastEventSource(
                 Intent.ACTION_AIRPLANE_MODE_CHANGED -> "android.event.airplane_mode_changed"
                 NfcAdapter.ACTION_ADAPTER_STATE_CHANGED -> "android.event.nfc_state_changed"
                 LocationManager.MODE_CHANGED_ACTION -> "android.event.location_mode_changed"
-                Intent.ACTION_CONFIGURATION_CHANGED -> "android.event.dark_mode_changed"
                 Intent.ACTION_LOCALE_CHANGED -> "android.event.locale_changed"
                 Intent.ACTION_TIMEZONE_CHANGED -> "android.event.timezone_changed"
                 Intent.ACTION_TIME_TICK -> "android.event.time_tick"
@@ -92,9 +102,6 @@ class SystemBroadcastEventSource(
                     }.getOrDefault(false)
                     put("enabled", ConfigValue.BooleanValue(enabled))
                 }
-                if (action == Intent.ACTION_CONFIGURATION_CHANGED) {
-                    put("enabled", ConfigValue.BooleanValue(currentDarkMode()))
-                }
                 if (action == PowerManager.ACTION_POWER_SAVE_MODE_CHANGED) {
                     put(
                         "enabled",
@@ -112,6 +119,42 @@ class SystemBroadcastEventSource(
                     val temperatureTenths = intent.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE)
                     if (temperatureTenths != Int.MIN_VALUE) {
                         put("temperatureC", ConfigValue.NumberValue(temperatureTenths / 10.0))
+                    }
+                    put(
+                        "present",
+                        ConfigValue.BooleanValue(intent.getBooleanExtra(android.os.BatteryManager.EXTRA_PRESENT, false)),
+                    )
+                    put(
+                        "plugged",
+                        ConfigValue.StringValue(
+                            batteryPluggedName(intent.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0))
+                        ),
+                    )
+                    put(
+                        "status",
+                        ConfigValue.StringValue(
+                            batteryStatusName(
+                                intent.getIntExtra(
+                                    android.os.BatteryManager.EXTRA_STATUS,
+                                    android.os.BatteryManager.BATTERY_STATUS_UNKNOWN,
+                                )
+                            )
+                        ),
+                    )
+                    put(
+                        "health",
+                        ConfigValue.StringValue(
+                            batteryHealthName(
+                                intent.getIntExtra(
+                                    android.os.BatteryManager.EXTRA_HEALTH,
+                                    android.os.BatteryManager.BATTERY_HEALTH_UNKNOWN,
+                                )
+                            )
+                        ),
+                    )
+                    val voltageMv = intent.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, Int.MIN_VALUE)
+                    if (voltageMv != Int.MIN_VALUE) {
+                        put("voltageMv", ConfigValue.NumberValue(voltageMv.toDouble()))
                     }
                 }
                 if (action in setOf(Intent.ACTION_TIME_TICK, Intent.ACTION_TIME_CHANGED, Intent.ACTION_DATE_CHANGED, Intent.ACTION_TIMEZONE_CHANGED)) {
@@ -149,6 +192,7 @@ class SystemBroadcastEventSource(
         if (!started.compareAndSet(false, true)) return
         this.emitter = emitter
         lastDarkMode = currentDarkMode()
+        lastOrientation = context.resources.configuration.orientation
 
         val systemFilter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
@@ -193,6 +237,7 @@ class SystemBroadcastEventSource(
         runCatching { context.unregisterReceiver(packageReceiver) }
         emitter = null
         lastDarkMode = null
+        lastOrientation = null
     }
 
     private fun register(receiver: BroadcastReceiver, filter: IntentFilter) {
@@ -206,6 +251,20 @@ class SystemBroadcastEventSource(
 
     private fun currentDarkMode(): Boolean =
         context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+
+    private fun configurationPayload(darkMode: Boolean, orientation: Int): Map<String, ConfigValue> = mapOf(
+        "darkMode" to ConfigValue.BooleanValue(darkMode),
+        "orientation" to ConfigValue.StringValue(
+            when (orientation) {
+                Configuration.ORIENTATION_PORTRAIT -> "portrait"
+                Configuration.ORIENTATION_LANDSCAPE -> "landscape"
+                Configuration.ORIENTATION_SQUARE -> "square"
+                else -> "undefined"
+            }
+        ),
+        "fontScale" to ConfigValue.NumberValue(context.resources.configuration.fontScale.toDouble()),
+        "uiMode" to ConfigValue.NumberValue(context.resources.configuration.uiMode.toDouble()),
+    )
 
     private fun currentTimePayload(): Map<String, ConfigValue> {
         val now = ZonedDateTime.now()
@@ -282,9 +341,14 @@ class NetworkEventSource(
         capabilities ?: return@buildMap
         put("internet", ConfigValue.BooleanValue(capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)))
         put("validated", ConfigValue.BooleanValue(capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)))
+        put("metered", ConfigValue.BooleanValue(!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)))
+        put("roaming", ConfigValue.BooleanValue(!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING)))
+        put("restricted", ConfigValue.BooleanValue(!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)))
+        put("suspended", ConfigValue.BooleanValue(!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_SUSPENDED)))
         put("wifi", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)))
         put("cellular", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)))
         put("ethernet", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)))
         put("vpn", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)))
+        put("bluetooth", ConfigValue.BooleanValue(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH)))
     }
 }

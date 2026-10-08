@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_data_uuid_generate_description">生成随机 RFC 4122 UUID</string>
+    <string name="feature_data_uuid_generate_field_resultvariable">保存 UUID</string>
+
+    <string name="feature_data_arrays_compare_title">比较数组</string>
+    <string name="feature_data_arrays_compare_description">比较两个运行时列表变量并返回共同项、差异项和匹配结果</string>
+    <string name="feature_data_arrays_compare_field_first">第一个列表变量</string>
+    <string name="feature_data_arrays_compare_field_second">第二个列表变量</string>
+    <string name="feature_data_arrays_compare_field_resultvariable">保存比较结果对象</string>
+
+    <string name="feature_android_app_foreground_query_title">获取前台应用和活动</string>
+    <string name="feature_android_app_foreground_query_description">从 Android 使用情况事件读取最新前台包名和活动</string>
+    <string name="feature_android_app_foreground_query_field_lookbackms">回溯时间窗口</string>
+    <string name="feature_android_app_foreground_query_field_resultvariable">保存前台应用对象</string>
+
+    <string name="feature_android_audio_stream_limits_query_title">获取最大音量</string>
+    <string name="feature_android_audio_stream_limits_query_description">读取常用 Android 音频流的最大音量索引</string>
+    <string name="feature_android_audio_stream_limits_query_field_resultvariable">保存音频流范围对象</string>
+
+    <string name="feature_android_storage_volumes_query_title">列出存储卷</string>
+    <string name="feature_android_storage_volumes_query_description">读取 Android StorageManager 存储卷元数据</string>
+    <string name="feature_android_storage_volumes_query_field_resultvariable">保存存储卷列表</string>
+</resources>

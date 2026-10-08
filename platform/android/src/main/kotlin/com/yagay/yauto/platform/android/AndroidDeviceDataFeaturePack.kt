@@ -95,7 +95,7 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.sensor.read"), FeatureKind.ACTION, "Read sensor once",
                 "Capture one value from a common Android hardware sensor", FeatureCategory.DEVICE,
                 fields = listOf(
-                    FieldSchema.Choice("sensor", "Sensor", true, listOf("accelerometer", "gyroscope", "light", "proximity", "magnetic_field", "pressure")),
+                    FieldSchema.Choice("sensor", "Sensor", true, listOf("accelerometer", "gyroscope", "light", "proximity", "magnetic_field", "pressure", "gravity", "linear_acceleration", "rotation_vector", "relative_humidity", "ambient_temperature")),
                     FieldSchema.Duration("timeoutMs", "Timeout"),
                     FieldSchema.Variable("resultVariable", "Store object in variable", true),
                 ), keywords = setOf("sensor", "accelerometer", "light", "proximity"), ownerPackId = id,
@@ -107,6 +107,11 @@ class AndroidDeviceDataFeaturePack(context: Context) : FeaturePack {
                 "proximity" -> Sensor.TYPE_PROXIMITY
                 "magnetic_field" -> Sensor.TYPE_MAGNETIC_FIELD
                 "pressure" -> Sensor.TYPE_PRESSURE
+                "gravity" -> Sensor.TYPE_GRAVITY
+                "linear_acceleration" -> Sensor.TYPE_LINEAR_ACCELERATION
+                "rotation_vector" -> Sensor.TYPE_ROTATION_VECTOR
+                "relative_humidity" -> Sensor.TYPE_RELATIVE_HUMIDITY
+                "ambient_temperature" -> Sensor.TYPE_AMBIENT_TEMPERATURE
                 else -> Sensor.TYPE_ACCELEROMETER
             }
             val sensor = sensors.getDefaultSensor(type)

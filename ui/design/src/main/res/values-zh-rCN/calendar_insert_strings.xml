@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_calendar_event_insert_title">写入日历事件</string>
+    <string name="feature_android_calendar_event_insert_description">直接向 Android CalendarProvider 写入事件</string>
+    <string name="feature_android_calendar_event_insert_field_calendarid">日历 ID</string>
+    <string name="feature_android_calendar_event_insert_field_title">标题</string>
+    <string name="feature_android_calendar_event_insert_field_description">说明</string>
+    <string name="feature_android_calendar_event_insert_field_location">地点</string>
+    <string name="feature_android_calendar_event_insert_field_startepochms">开始时间戳（毫秒）</string>
+    <string name="feature_android_calendar_event_insert_field_endepochms">结束时间戳（毫秒）</string>
+    <string name="feature_android_calendar_event_insert_field_allday">全天事件</string>
+    <string name="feature_android_calendar_event_insert_field_timezone">时区 ID</string>
+    <string name="feature_android_calendar_event_insert_field_resultvariable">保存事件 ID</string>
+</resources>

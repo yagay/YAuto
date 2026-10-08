@@ -25,12 +25,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.yagay.yauto.platform.accessibility.YAutoAccessibilityService
+import com.yagay.yauto.platform.android.isUsageStatsAccessGranted
 import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
+import com.yagay.yauto.ui.design.localizedList
 import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.launch
 
-private enum class RuntimeSettingsPage { OVERVIEW, PERMISSIONS, BACKENDS, ENGINE }
+private enum class RuntimeSettingsPage { OVERVIEW, PERMISSIONS, BACKENDS, ENGINE, HEALTH }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +43,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     val checking = stringResource(TextR.string.common_checking)
     var refresh by remember { mutableIntStateOf(0) }
     var backendMessage by remember(notChecked) { mutableStateOf(notChecked) }
+    var lsposedScopeMessage by remember { mutableStateOf<String?>(null) }
     var page by remember { mutableStateOf(RuntimeSettingsPage.OVERVIEW) }
     val scope = rememberCoroutineScope()
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refresh++ }
@@ -49,6 +52,13 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) refresh++ }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
+    }
+
+    DisposableEffect(graph.workspace) {
+        val subscription = graph.workspace.addListener {
+            scope.launch { refresh++ }
+        }
+        onDispose { subscription.close() }
     }
 
     val notificationAccess = remember(refresh) {
@@ -74,6 +84,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
         context.getSystemService(NotificationManager::class.java).isNotificationPolicyAccessGranted
     }
     val writeSettings = remember(refresh) { Settings.System.canWrite(context) }
+    val usageStats = remember(refresh) { isUsageStatsAccessGranted(context) }
     val accessibility = remember(refresh) {
         val component = ComponentName(context, YAutoAccessibilityService::class.java).flattenToString()
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
@@ -81,10 +92,16 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
             ?.any { it.equals(component, ignoreCase = true) } == true
     }
     val grantedCount = listOf(
-        accessibility, writeSettings, notificationAccess, notifications, camera,
+        accessibility, usageStats, writeSettings, notificationAccess, notifications, camera,
         location, bluetooth, overlay, dndPolicy,
     ).count { it }
     val currentLanguageTag = remember(refresh) { AppLanguageManager.currentTag(context) }
+
+    LaunchedEffect(page) {
+        if (page == RuntimeSettingsPage.BACKENDS) {
+            runCatching { graph.lsposedScopes.start() }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -96,6 +113,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                             RuntimeSettingsPage.PERMISSIONS -> stringResource(TextR.string.runtime_settings_title_permissions)
                             RuntimeSettingsPage.BACKENDS -> stringResource(TextR.string.runtime_settings_title_backends)
                             RuntimeSettingsPage.ENGINE -> stringResource(TextR.string.runtime_settings_title_engine)
+                            RuntimeSettingsPage.HEALTH -> stringResource(TextR.string.runtime_settings_title_health)
                         }
                     )
                 },
@@ -135,7 +153,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 item {
                     MacroItemRow(
                         stringResource(TextR.string.runtime_settings_android_permissions),
-                        stringResource(TextR.string.runtime_settings_permission_count_format, grantedCount, 9),
+                        stringResource(TextR.string.runtime_settings_permission_count_format, grantedCount, 10),
                         MacroPalette.Constraint,
                         onClick = { page = RuntimeSettingsPage.PERMISSIONS },
                     )
@@ -156,6 +174,75 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         onClick = { page = RuntimeSettingsPage.ENGINE },
                     )
                 }
+                item {
+                    val scanning by graph.featureHealth.scanning.collectAsState()
+                    val autoScan by graph.featureHealth.autoScanEnabled.collectAsState()
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(
+                            Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Text(
+                                stringResource(TextR.string.feature_health_quick_title),
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                stringResource(TextR.string.feature_health_auto_scan_detail),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Text(
+                                    stringResource(TextR.string.feature_health_auto_scan),
+                                    Modifier.weight(1f),
+                                )
+                                Switch(
+                                    checked = autoScan,
+                                    onCheckedChange = graph.featureHealth::setAutoScanEnabled,
+                                )
+                            }
+                            Button(
+                                onClick = { graph.featureHealth.requestScan(force = true) },
+                                enabled = !scanning,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(
+                                    stringResource(
+                                        if (scanning) TextR.string.feature_health_scanning
+                                        else TextR.string.feature_health_scan_now
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+                item {
+                    val snapshot by graph.featureHealth.snapshot.collectAsState()
+                    val scanning by graph.featureHealth.scanning.collectAsState()
+                    val autoScan by graph.featureHealth.autoScanEnabled.collectAsState()
+                    val subtitle = when {
+                        scanning -> stringResource(TextR.string.feature_health_scanning)
+                        snapshot != null -> stringResource(
+                            TextR.string.feature_health_summary_format,
+                            snapshot!!.items.size,
+                            snapshot!!.readyCount,
+                            snapshot!!.blockedCount,
+                            snapshot!!.brokenCount,
+                            snapshot!!.unsupportedCount,
+                        )
+                        autoScan -> stringResource(TextR.string.feature_health_auto_on_not_scanned)
+                        else -> stringResource(TextR.string.feature_health_not_scanned)
+                    }
+                    MacroItemRow(
+                        stringResource(TextR.string.runtime_settings_feature_health),
+                        subtitle,
+                        MacroPalette.Diagnostics,
+                        onClick = { page = RuntimeSettingsPage.HEALTH },
+                    )
+                }
             }
 
             RuntimeSettingsPage.PERMISSIONS -> LazyColumn(
@@ -169,6 +256,13 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.permission_accessibility_detail),
                         stringResource(TextR.string.permission_accessibility_action),
                     ) { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+                }
+                item {
+                    PermissionCard(
+                        stringResource(TextR.string.permission_usage_stats_title), usageStats,
+                        stringResource(TextR.string.permission_usage_stats_detail),
+                        stringResource(TextR.string.permission_usage_stats_action),
+                    ) { context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
                 }
                 item {
                     PermissionCard(
@@ -290,6 +384,44 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         }
                     }
                 }
+                item {
+                    val scopeState by graph.lsposedScopes.state.collectAsState()
+                    val workspaceSnapshot = graph.workspace.snapshotOrNull()
+                    val recommendedScopes = remember(refresh, workspaceSnapshot) {
+                        workspaceSnapshot?.let { recommendedLsposedScopes(it, graph.features) }
+                            ?: LsposedScopeManager.FIXED_SCOPES
+                    }
+                    val missingScopes = remember(scopeState.currentScope, recommendedScopes) {
+                        recommendedScopes.filterNot(scopeState.currentScope.toSet()::contains)
+                    }
+                    val requestedMessage = stringResource(TextR.string.backend_lsposed_scope_requested)
+                    LsposedScopeCard(
+                        state = scopeState,
+                        recommended = recommendedScopes,
+                        missing = missingScopes,
+                        message = lsposedScopeMessage,
+                        onRefresh = {
+                            graph.lsposedScopes.refresh()
+                            refresh++
+                        },
+                        onRequest = {
+                            graph.lsposedScopes.requestScopes(recommendedScopes) { result ->
+                                scope.launch {
+                                    lsposedScopeMessage = result.fold(
+                                        onSuccess = { requestedMessage },
+                                        onFailure = { error ->
+                                            context.getString(
+                                                TextR.string.backend_lsposed_scope_request_failed_format,
+                                                error.message ?: error.javaClass.simpleName,
+                                            )
+                                        },
+                                    )
+                                    refresh++
+                                }
+                            }
+                        },
+                    )
+                }
             }
 
             RuntimeSettingsPage.ENGINE -> LazyColumn(
@@ -303,6 +435,11 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 item { EngineCard(stringResource(TextR.string.engine_execution_safety_title), stringResource(TextR.string.engine_execution_safety_detail)) }
                 item { EngineCard(stringResource(TextR.string.engine_execution_trace_title), stringResource(TextR.string.engine_execution_trace_detail)) }
             }
+
+            RuntimeSettingsPage.HEALTH -> FeatureHealthScreen(
+                modifier = Modifier.padding(padding),
+                scanner = graph.featureHealth,
+            )
         }
     }
 }
@@ -378,6 +515,95 @@ private fun BackendCard(
                         if (authorize) TextR.string.backend_authorize_refresh else TextR.string.backend_check_status
                     )
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LsposedScopeCard(
+    state: LsposedScopeState,
+    recommended: List<String>,
+    missing: List<String>,
+    message: String?,
+    onRefresh: () -> Unit,
+    onRequest: () -> Unit,
+) {
+    val notChecked = stringResource(TextR.string.common_not_checked)
+    val currentText = localizedList(state.currentScope).ifBlank { notChecked }
+    val recommendedText = localizedList(recommended).ifBlank { notChecked }
+    val missingText = localizedList(missing)
+
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                stringResource(TextR.string.backend_lsposed_scope_title),
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                stringResource(TextR.string.backend_lsposed_scope_detail),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                stringResource(
+                    if (state.connected) {
+                        TextR.string.backend_lsposed_scope_connected
+                    } else {
+                        TextR.string.backend_lsposed_scope_disconnected
+                    }
+                ),
+                style = MaterialTheme.typography.labelMedium,
+                color = if (state.connected) MacroPalette.Constraint else MacroPalette.Trigger,
+            )
+            Text(
+                stringResource(TextR.string.backend_lsposed_scope_current_format, currentText),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                stringResource(TextR.string.backend_lsposed_scope_recommended_format, recommendedText),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                if (missing.isEmpty()) {
+                    stringResource(TextR.string.backend_lsposed_scope_complete)
+                } else {
+                    stringResource(TextR.string.backend_lsposed_scope_missing_format, missingText)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = if (missing.isEmpty()) MacroPalette.Constraint else MacroPalette.Trigger,
+            )
+            state.frameworkName?.let { framework ->
+                val version = state.frameworkVersion.orEmpty()
+                Text(
+                    stringResource(TextR.string.common_status_format, localizedList(listOf(framework, version).filter { it.isNotBlank() })),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            message?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = onRefresh,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(TextR.string.backend_lsposed_scope_refresh))
+                }
+                Button(
+                    onClick = onRequest,
+                    enabled = state.connected && missing.isNotEmpty(),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(TextR.string.backend_lsposed_scope_request))
+                }
             }
         }
     }

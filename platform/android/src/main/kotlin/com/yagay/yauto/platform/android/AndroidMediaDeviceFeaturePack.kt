@@ -2,13 +2,10 @@ package com.yagay.yauto.platform.android
 
 import android.Manifest
 import android.app.NotificationManager
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
-import android.media.AudioManager
-import android.view.KeyEvent
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.model.string
@@ -21,69 +18,9 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
     private val context = context.applicationContext
 
     override fun install(registry: FeatureRegistry) {
-        mediaControl(registry)
-        clipboardRead(registry)
         torch(registry)
         doNotDisturb(registry)
-        musicActive(registry)
         doNotDisturbState(registry)
-    }
-
-    private fun mediaControl(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.media.control"), FeatureKind.ACTION,
-                "Media control", "Send a standard Android media transport command",
-                FeatureCategory.AUDIO,
-                fields = listOf(FieldSchema.Choice("command", "Command", true, listOf(
-                    "play_pause", "play", "pause", "next", "previous", "stop"
-                ))),
-                keywords = setOf("media", "play", "pause", "next", "previous"),
-                ownerPackId = id,
-            )
-        ) { feature, _ ->
-            val keyCode = when (feature.config.string("command", "play_pause")) {
-                "play" -> KeyEvent.KEYCODE_MEDIA_PLAY
-                "pause" -> KeyEvent.KEYCODE_MEDIA_PAUSE
-                "next" -> KeyEvent.KEYCODE_MEDIA_NEXT
-                "previous" -> KeyEvent.KEYCODE_MEDIA_PREVIOUS
-                "stop" -> KeyEvent.KEYCODE_MEDIA_STOP
-                else -> KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
-            }
-            runCatching {
-                val audio = context.getSystemService(AudioManager::class.java)
-                val now = android.os.SystemClock.uptimeMillis()
-                audio.dispatchMediaKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0))
-                audio.dispatchMediaKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0))
-                ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
-        }
-    }
-
-    private fun clipboardRead(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.clipboard.get"), FeatureKind.ACTION,
-                "Read clipboard", "Read the current clipboard text into a variable when Android permits background clipboard access",
-                FeatureCategory.DEVICE,
-                fields = listOf(FieldSchema.Variable("resultVariable", "Store text in variable", true)),
-                keywords = setOf("clipboard", "paste"),
-                ownerPackId = id,
-            )
-        ) { feature, ctx ->
-            val variable = feature.config.string("resultVariable").trim()
-            if (variable.isBlank()) return@registerAction ActionExecutionResult(false, message = userText("feature.result_variable_empty"))
-            runCatching {
-                val clipboard = context.getSystemService(ClipboardManager::class.java)
-                val clip = clipboard.primaryClip
-                val text = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString().orEmpty()
-                val value = ConfigValue.StringValue(text)
-                ctx.variables.set(variable, value)
-                ActionExecutionResult(true, value)
-            }.getOrElse {
-                ActionExecutionResult(false, message = userText("feature.clipboard_unavailable", it.message ?: it.javaClass.simpleName))
-            }
-        }
     }
 
     private fun torch(registry: FeatureRegistry) {
@@ -138,20 +75,6 @@ class AndroidMediaDeviceFeaturePack(context: Context) : FeaturePack {
                 manager.setInterruptionFilter(filter)
                 ActionExecutionResult(true, ConfigValue.StringValue(feature.config.string("mode", "all")))
             }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
-        }
-    }
-
-    private fun musicActive(registry: FeatureRegistry) {
-        registerStateAndCondition(
-            registry,
-            key = "music_active",
-            title = "Music / media active",
-            category = FeatureCategory.AUDIO,
-            fields = listOf(FieldSchema.Toggle("value", "Playing / active")),
-        ) { feature ->
-            val actual = context.getSystemService(AudioManager::class.java).isMusicActive
-            val expected = (feature.config["value"] as? ConfigValue.BooleanValue)?.value ?: true
-            actual == expected
         }
     }
 

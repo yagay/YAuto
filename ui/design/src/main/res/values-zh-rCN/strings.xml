@@ -147,6 +147,18 @@
     <string name="backend_shizuku_unavailable">未运行或未授权</string>
     <string name="backend_shizuku_return_hint">请在 Shizuku 授权后返回此页。</string>
     <string name="backend_lsposed_title">LSPosed / system_server</string>
+    <string name="backend_lsposed_scope_title">LSPosed 推荐作用域</string>
+    <string name="backend_lsposed_scope_detail">YAuto 固定保留 system_server 和 System UI 作用域，并根据当前工作区实际使用 LSPosed 的功能自动补充目标 App。</string>
+    <string name="backend_lsposed_scope_connected">框架服务已连接</string>
+    <string name="backend_lsposed_scope_disconnected">框架服务未连接</string>
+    <string name="backend_lsposed_scope_current_format">当前：%1$s</string>
+    <string name="backend_lsposed_scope_recommended_format">推荐：%1$s</string>
+    <string name="backend_lsposed_scope_missing_format">缺少：%1$s</string>
+    <string name="backend_lsposed_scope_complete">推荐作用域已经全部启用</string>
+    <string name="backend_lsposed_scope_request">补充缺失作用域</string>
+    <string name="backend_lsposed_scope_refresh">刷新作用域</string>
+    <string name="backend_lsposed_scope_requested">已向 LSPosed 发起作用域申请</string>
+    <string name="backend_lsposed_scope_request_failed_format">作用域申请失败：%1$s</string>
     <string name="backend_lsposed_detail">系统服务桥接只暴露明确白名单操作，避免单个功能把 Hook 逻辑散落到各模块。</string>
     <string name="backend_check_status">检查状态</string>
     <string name="backend_authorize_refresh">授权 / 刷新</string>
@@ -256,4 +268,11 @@
     <string name="capability_system_ui">系统界面</string>
     <string name="capability_lsposed">LSPosed</string>
     <string name="capability_other">高级能力</string>
+    <string name="access_calendar">日历</string>
+    <string name="access_contacts">联系人</string>
+    <string name="access_call_log">通话记录</string>
+    <string name="access_sms">短信</string>
+    <string name="access_phone">电话</string>
+    <string name="access_record_audio">麦克风录音</string>
+    <string name="access_activity_recognition">活动识别</string>
 </resources>

@@ -9,6 +9,7 @@ import android.os.VibratorManager
 import android.provider.Settings
 import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
+import com.yagay.yauto.core.capability.CapabilityResult
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.numberOrNull
@@ -25,6 +26,11 @@ import com.yagay.yauto.core.registry.FeaturePack
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.registry.FieldSchema
 import com.yagay.yauto.core.registry.resolveVariables
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
+import java.util.concurrent.TimeUnit
 
 /** High-value native utilities inspired by mature automation apps without adding compatibility layers. */
 class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
@@ -45,34 +51,118 @@ class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
     }
 
     private fun registerShell(registry: FeatureRegistry) {
+        registerShellAction(
+            registry,
+            "android.shell.execute",
+            "Run privileged shell command",
+            "Run a shell command through the selected Root or Shizuku backend and expose its structured result",
+            privileged = true,
+        )
+        registerShellAction(
+            registry,
+            "android.shell.execute_unprivileged",
+            "Run shell command",
+            "Run a shell command with YAuto app privileges and expose its structured result",
+            privileged = false,
+        )
+    }
+
+    private fun registerShellAction(
+        registry: FeatureRegistry,
+        typeId: String,
+        title: String,
+        description: String,
+        privileged: Boolean,
+    ) {
         registry.registerAction(
             FeatureDescriptor(
-                FeatureId("android.shell.execute"), FeatureKind.ACTION,
-                "Run privileged shell command", "Run a user-supplied shell command through the selected privileged backend and expose its structured result",
+                FeatureId(typeId), FeatureKind.ACTION,
+                title, description,
                 FeatureCategory.SCRIPT,
                 fields = listOf(
                     FieldSchema.Text("command", "Command", true, multiline = true),
+                    FieldSchema.Duration("timeoutMs", "Timeout"),
                     FieldSchema.Variable("resultVariable", "Store result object in variable"),
+                    FieldSchema.Variable("stdoutVariable", "Store stdout in variable"),
+                    FieldSchema.Variable("stderrVariable", "Store stderr in variable"),
+                    FieldSchema.Variable("exitCodeVariable", "Store exit code in variable"),
                 ),
-                capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
-                keywords = setOf("shell", "command", "root", "shizuku", "terminal"), ownerPackId = id,
+                capabilities = if (privileged) setOf(CapabilityIds.PRIVILEGED_SHELL) else emptySet(),
+                keywords = setOf("shell", "command", "root", "shizuku", "terminal", "tasker", "shortx", "macrodroid"),
+                ownerPackId = id,
             )
         ) { feature, ctx ->
             val command = validatedShellCommand(feature.config.string("command").resolveVariables(ctx.variables))
                 ?: return@registerAction ActionExecutionResult(false, message = userText("feature.shell_command_invalid"))
-            val result = ctx.capabilities.execute(
-                CapabilityRequest(
-                    capability = CapabilityIds.PRIVILEGED_SHELL,
-                    operationId = "android.shell.execute",
-                    payload = mapOf("command" to ConfigValue.StringValue(command)),
+            val timeoutMs = (feature.config["timeoutMs"].numberOrNull() ?: 10_000.0)
+                .toLong().coerceIn(1L, 300_000L)
+            val result = if (privileged) {
+                ctx.capabilities.execute(
+                    CapabilityRequest(
+                        capability = CapabilityIds.PRIVILEGED_SHELL,
+                        operationId = typeId,
+                        payload = mapOf(
+                            "command" to ConfigValue.StringValue(command),
+                            "timeoutMs" to ConfigValue.NumberValue(timeoutMs.toDouble()),
+                        ),
+                    )
                 )
-            )
-            feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { name ->
-                ctx.variables.set(name, result.value)
+            } else {
+                executeLocalShell(command, timeoutMs)
             }
+            storeShellOutputs(feature, ctx, result.value)
             ActionExecutionResult(result.success, result.value, result.message)
         }
     }
+
+    private fun storeShellOutputs(
+        feature: com.yagay.yauto.core.model.FeatureRef,
+        ctx: FeatureExecutionContext,
+        value: ConfigValue,
+    ) {
+        val result = (value as? ConfigValue.ObjectValue)?.value.orEmpty()
+        feature.config.string("resultVariable").trim().takeIf(String::isNotBlank)?.let { ctx.variables.set(it, value) }
+        feature.config.string("stdoutVariable").trim().takeIf(String::isNotBlank)?.let {
+            ctx.variables.set(it, result["stdout"] ?: ConfigValue.StringValue(""))
+        }
+        feature.config.string("stderrVariable").trim().takeIf(String::isNotBlank)?.let {
+            ctx.variables.set(it, result["stderr"] ?: ConfigValue.StringValue(""))
+        }
+        feature.config.string("exitCodeVariable").trim().takeIf(String::isNotBlank)?.let {
+            ctx.variables.set(it, result["exitCode"] ?: ConfigValue.NumberValue(-1.0))
+        }
+    }
+
+    private suspend fun executeLocalShell(command: String, timeoutMs: Long): CapabilityResult =
+        withContext(Dispatchers.IO) {
+            coroutineScope {
+                val process = ProcessBuilder("/system/bin/sh", "-c", command).start()
+                val stdout = async(Dispatchers.IO) { process.inputStream.bufferedReader().use { it.readText() } }
+                val stderr = async(Dispatchers.IO) { process.errorStream.bufferedReader().use { it.readText() } }
+                val finished = process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)
+                if (!finished) process.destroyForcibly()
+                val out = stdout.await()
+                val err = stderr.await()
+                val exitCode = if (finished) process.exitValue() else -1
+                val value = ConfigValue.ObjectValue(
+                    mapOf(
+                        "stdout" to ConfigValue.StringValue(out),
+                        "stderr" to ConfigValue.StringValue(err),
+                        "exitCode" to ConfigValue.NumberValue(exitCode.toDouble()),
+                    )
+                )
+                CapabilityResult(
+                    success = finished && exitCode == 0,
+                    backendId = "app_shell",
+                    value = value,
+                    message = when {
+                        !finished -> userText("capability.timed_out")
+                        err.isNotBlank() -> err
+                        else -> null
+                    },
+                )
+            }
+        }
 
     private fun registerVibration(registry: FeatureRegistry) {
         registry.registerAction(
@@ -84,10 +174,12 @@ class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
                     FieldSchema.Number("durationMs", "Duration milliseconds", true, min = 1.0, max = 60_000.0),
                     FieldSchema.Number("amplitude", "Amplitude (1-255)", min = 1.0, max = 255.0),
                 ),
-                keywords = setOf("vibrate", "vibration", "haptic"), ownerPackId = id,
+                keywords = setOf("vibrate", "vibration", "haptic"),
+                aliases = setOf("android.vibrate"),
+                ownerPackId = id,
             )
         ) { feature, _ ->
-            val duration = feature.config["durationMs"].numberOrNull()?.toLong()
+            val duration = feature.config["durationMs"].numberOrNull()?.toLong() ?: 300L
             val amplitude = feature.config["amplitude"].numberOrNull()?.toInt() ?: VibrationEffect.DEFAULT_AMPLITUDE
             if (duration == null || duration !in 1L..60_000L || (amplitude != VibrationEffect.DEFAULT_AMPLITUDE && amplitude !in 1..255)) {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.vibration_pattern_invalid"))
@@ -120,7 +212,9 @@ class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.vibration.cancel"), FeatureKind.ACTION,
                 "Cancel vibration", "Cancel vibration currently controlled by YAuto or another app using the default vibrator",
                 FeatureCategory.DEVICE,
-                keywords = setOf("vibrate", "cancel", "stop", "haptic"), ownerPackId = id,
+                keywords = setOf("vibrate", "cancel", "stop", "haptic"),
+                aliases = setOf("android.vibrate.cancel"),
+                ownerPackId = id,
             )
         ) { _, _ ->
             runCatching { vibrator.cancel(); ActionExecutionResult(true) }
@@ -135,13 +229,17 @@ class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
                 FeatureId("android.state.audio.music_active"), FeatureKind.STATE,
                 "Media audio active", "Check whether Android reports active music/media playback",
                 FeatureCategory.AUDIO,
-                fields = listOf(FieldSchema.Toggle("value", "Active")), ownerPackId = id,
+                fields = listOf(FieldSchema.Toggle("value", "Active")),
+                aliases = setOf("android.state.music_active"),
+                ownerPackId = id,
             ),
             FeatureDescriptor(
                 FeatureId("android.condition.audio.music_active"), FeatureKind.CONDITION,
                 "Media audio active", "Check whether Android reports active music/media playback",
                 FeatureCategory.AUDIO,
-                fields = listOf(FieldSchema.Toggle("value", "Active")), ownerPackId = id,
+                fields = listOf(FieldSchema.Toggle("value", "Active")),
+                aliases = setOf("android.condition.music_active"),
+                ownerPackId = id,
             ),
         ) { feature, _ -> audio.isMusicActive == feature.config.boolean("value", true) }
 
@@ -187,12 +285,18 @@ class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
             FeatureDescriptor(
                 FeatureId("android.state.data_saver"), FeatureKind.STATE,
                 "Data saver status", "Match Android background-data restriction status",
-                FeatureCategory.NETWORK, fields = dataSaverFields, ownerPackId = id,
+                FeatureCategory.NETWORK,
+                fields = dataSaverFields,
+                aliases = setOf("android.state.data_saver_status"),
+                ownerPackId = id,
             ),
             FeatureDescriptor(
                 FeatureId("android.condition.data_saver"), FeatureKind.CONDITION,
                 "Data saver status", "Match Android background-data restriction status",
-                FeatureCategory.NETWORK, fields = dataSaverFields, ownerPackId = id,
+                FeatureCategory.NETWORK,
+                fields = dataSaverFields,
+                aliases = setOf("android.condition.data_saver_status"),
+                ownerPackId = id,
             ),
         ) { feature, _ -> dataSaverStatus(connectivity.restrictBackgroundStatus) == feature.config.string("status", "disabled") }
 

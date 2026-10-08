@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_qs_tile_info_title">Get Quick Settings tile info</string>
+    <string name="feature_android_qs_tile_info_description">Read a YAuto tile label and visual state into a variable</string>
+    <string name="feature_android_qs_tile_info_field_slot">Tile slot (1-3)</string>
+    <string name="feature_android_qs_tile_info_field_resultvariable">Store tile info</string>
+
+    <string name="feature_android_state_qs_tile_state_title">Quick Settings tile state</string>
+    <string name="feature_android_state_qs_tile_state_description">Match a YAuto Quick Settings tile active, inactive or unavailable state</string>
+    <string name="feature_android_state_qs_tile_state_field_slot">Tile slot (1-3)</string>
+    <string name="feature_android_state_qs_tile_state_field_state">State</string>
+    <string name="feature_android_state_qs_tile_state_field_state_option_active">Active</string>
+    <string name="feature_android_state_qs_tile_state_field_state_option_inactive">Inactive</string>
+    <string name="feature_android_state_qs_tile_state_field_state_option_unavailable">Unavailable</string>
+
+    <string name="feature_android_condition_qs_tile_state_title">Quick Settings tile state</string>
+    <string name="feature_android_condition_qs_tile_state_description">Match a YAuto Quick Settings tile active, inactive or unavailable state</string>
+    <string name="feature_android_condition_qs_tile_state_field_slot">Tile slot (1-3)</string>
+    <string name="feature_android_condition_qs_tile_state_field_state">State</string>
+    <string name="feature_android_condition_qs_tile_state_field_state_option_active">Active</string>
+    <string name="feature_android_condition_qs_tile_state_field_state_option_inactive">Inactive</string>
+    <string name="feature_android_condition_qs_tile_state_field_state_option_unavailable">Unavailable</string>
+</resources>

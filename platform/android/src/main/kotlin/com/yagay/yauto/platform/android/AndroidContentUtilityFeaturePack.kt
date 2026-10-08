@@ -6,13 +6,17 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import androidx.core.content.FileProvider
 import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.boolean
+import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import java.net.URLConnection
+import java.util.UUID
 
 class AndroidContentUtilityFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.content_utility"
@@ -21,6 +25,8 @@ class AndroidContentUtilityFeaturePack(context: Context) : FeaturePack {
 
     override fun install(registry: FeatureRegistry) {
         registerOpenFile(registry)
+        registerFilePicker(registry)
+        registerPhotoPicker(registry)
         registerShareFile(registry)
         registerSetWallpaper(registry)
         registerClearWallpaper(registry)
@@ -50,6 +56,92 @@ class AndroidContentUtilityFeaturePack(context: Context) : FeaturePack {
                 })
                 ActionExecutionResult(true, ConfigValue.StringValue(uri.toString()))
             }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
+        }
+    }
+
+    private fun registerFilePicker(registry: FeatureRegistry) {
+        registerPicker(
+            registry = registry,
+            featureId = "file.pick",
+            title = "Pick file",
+            description = "Open Android's document picker and wait for one or more selected content URIs",
+            mode = "file",
+            includeMime = true,
+            keywords = setOf("pick file", "browse files", "document picker", "tasker"),
+        )
+    }
+
+    private fun registerPhotoPicker(registry: FeatureRegistry) {
+        registerPicker(
+            registry = registry,
+            featureId = "android.photo.pick",
+            title = "Pick photos",
+            description = "Open Android's image picker and wait for one or more selected image URIs",
+            mode = "photo",
+            includeMime = false,
+            keywords = setOf("pick photos", "photo picker", "images", "tasker"),
+        )
+    }
+
+    private fun registerPicker(
+        registry: FeatureRegistry,
+        featureId: String,
+        title: String,
+        description: String,
+        mode: String,
+        includeMime: Boolean,
+        keywords: Set<String>,
+    ) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId(featureId),
+                FeatureKind.ACTION,
+                title,
+                description,
+                FeatureCategory.FILE,
+                fields = buildList {
+                    if (includeMime) add(FieldSchema.Text("mimeType", "MIME type"))
+                    add(FieldSchema.Toggle("multiple", "Allow multiple selections"))
+                    add(FieldSchema.Duration("timeoutMs", "Picker timeout"))
+                    add(FieldSchema.Variable("resultVariable", "Store picker result object"))
+                },
+                keywords = keywords,
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val token = UUID.randomUUID().toString()
+            val pending = PickerRuntimeBridge.register(token)
+            val launched = runCatching {
+                context.startActivity(
+                    Intent()
+                        .setClassName(context.packageName, "com.yagay.yauto.RuntimePickerActivity")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra("token", token)
+                        .putExtra("mode", mode)
+                        .putExtra("multiple", feature.config.boolean("multiple"))
+                        .putExtra("mime", feature.config.string("mimeType").resolveVariables(ctx.variables))
+                )
+                true
+            }.getOrDefault(false)
+            if (!launched) {
+                PickerRuntimeBridge.cancel(token)
+                return@registerAction ActionExecutionResult(false, message = userText("feature.picker_open_failed"))
+            }
+            val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 120_000.0).toLong().coerceIn(1_000L, 600_000L)
+            val uris = withTimeoutOrNull(timeout) { pending.await() }
+            PickerRuntimeBridge.cancel(token)
+            if (uris.isNullOrEmpty()) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.picker_no_selection"))
+            }
+            val output = ConfigValue.ObjectValue(
+                mapOf(
+                    "first" to ConfigValue.StringValue(uris.first()),
+                    "uris" to ConfigValue.ListValue(uris.map(ConfigValue::StringValue)),
+                    "count" to ConfigValue.NumberValue(uris.size.toDouble()),
+                )
+            )
+            feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
+            ActionExecutionResult(true, output)
         }
     }
 

@@ -350,4 +350,7 @@
     <string name="feature_phrase_y">y</string>
     <string name="feature_phrase_yauto_shortcut">YAuto shortcut</string>
     <string name="feature_phrase_z">z</string>
+    <string name="feature_phrase_class_contains">Class contains</string>
+    <string name="feature_phrase_hook_method_contains">Hook method contains</string>
+    <string name="feature_phrase_detail_contains">Detail contains</string>
 </resources>

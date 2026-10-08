@@ -35,65 +35,11 @@ class AndroidControlFeaturePack(
     private val context = context.applicationContext
 
     override fun install(registry: FeatureRegistry) {
-        mediaVolume(registry)
-        vibration(registry)
         brightness(registry)
         sendIntent(registry)
         showNotification(registry)
         cancelNotification(registry)
         forceStop(registry)
-    }
-
-    private fun mediaVolume(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.audio.media_volume.set"), FeatureKind.ACTION,
-                "Set media volume", "Set the music/media stream volume by percentage",
-                FeatureCategory.AUDIO,
-                fields = listOf(
-                    FieldSchema.Number("percent", "Volume percent", true, min = 0.0, max = 100.0),
-                    FieldSchema.Toggle("showUi", "Show system volume UI"),
-                ),
-                keywords = setOf("volume", "media", "music"),
-                ownerPackId = id,
-            )
-        ) { feature, _ ->
-            runCatching {
-                val percent = (feature.config["percent"].numberOrNull() ?: 50.0).coerceIn(0.0, 100.0)
-                val audio = context.getSystemService(AudioManager::class.java)
-                val min = audio.getStreamMinVolume(AudioManager.STREAM_MUSIC)
-                val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-                val value = (min + (max - min) * percent / 100.0).roundToInt().coerceIn(min, max)
-                val flags = if (feature.config.boolean("showUi")) AudioManager.FLAG_SHOW_UI else 0
-                audio.setStreamVolume(AudioManager.STREAM_MUSIC, value, flags)
-                ActionExecutionResult(true, ConfigValue.NumberValue(percent))
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
-        }
-    }
-
-    private fun vibration(registry: FeatureRegistry) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId("android.vibrate"), FeatureKind.ACTION,
-                "Vibrate", "Vibrate the device for a configurable duration and amplitude",
-                FeatureCategory.DEVICE,
-                fields = listOf(
-                    FieldSchema.Duration("durationMs", "Duration"),
-                    FieldSchema.Number("amplitude", "Amplitude (1-255)", min = 1.0, max = 255.0),
-                ),
-                keywords = setOf("vibrate", "haptic"),
-                ownerPackId = id,
-            )
-        ) { feature, _ ->
-            runCatching {
-                val duration = feature.config.long("durationMs", 300).coerceIn(1, 60_000)
-                val amplitude = (feature.config["amplitude"].numberOrNull()?.roundToInt() ?: VibrationEffect.DEFAULT_AMPLITUDE)
-                    .let { if (it == VibrationEffect.DEFAULT_AMPLITUDE) it else it.coerceIn(1, 255) }
-                val vibrator = context.getSystemService(VibratorManager::class.java).defaultVibrator
-                vibrator.vibrate(VibrationEffect.createOneShot(duration, amplitude))
-                ActionExecutionResult(true)
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
-        }
     }
 
     private fun brightness(registry: FeatureRegistry) {

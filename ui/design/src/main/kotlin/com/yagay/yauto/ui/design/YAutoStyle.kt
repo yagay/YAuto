@@ -8,9 +8,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 object YAutoPalette {
@@ -86,18 +88,37 @@ fun YAutoItemRow(
     Surface(
         modifier = Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick),
         shape = RoundedCornerShape(7.dp),
-        tonalElevation = 1.dp,
+        tonalElevation = 0.dp,
     ) {
         Row(
-            Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            Modifier
+                .fillMaxWidth()
+                .drawBehind {
+                    drawRect(
+                        color = accent,
+                        size = androidx.compose.ui.geometry.Size(5.dp.toPx(), size.height),
+                    )
+                }
+                .padding(start = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.width(5.dp).fillMaxHeight().background(accent))
             Column(Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 10.dp)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 subtitle?.takeIf { it.isNotBlank() }?.let {
                     Spacer(Modifier.height(2.dp))
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
             if (onMenu != null) {

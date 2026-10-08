@@ -67,6 +67,11 @@ fun MacroAutomationEditorScreen(
     val loopLimit = policy.maxLoopIterations
     val unnamedAutomation = stringResource(TextR.string.automation_unnamed)
     val locale = currentEditorLocale()
+    val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
+    val inheritedVariableNames = LocalEditorVariableNames.current
+    val editorVariableNames = remember(inheritedVariableNames, variables) {
+        inheritedVariableNames + variables.keys
+    }
 
     fun save() {
         val simple = conditions.map { PredicateNode.Condition(it) }
@@ -172,8 +177,8 @@ fun MacroAutomationEditorScreen(
                     }
                     activationItems.forEachIndexed { index, feature ->
                         MacroItemRow(
-                            title = featureTitle(feature, descriptors),
-                            subtitle = featureSummary(feature, descriptors),
+                            title = featureTitle(feature, descriptorById),
+                            subtitle = featureSummary(feature, descriptorById),
                             accent = if (kind == FeatureKind.EVENT) MacroPalette.Trigger else MacroPalette.State,
                             onClick = { request = MacroEditRequest(kind, index, feature) },
                             onMenu = { menu = (if (kind == FeatureKind.EVENT) "event" else "state") to index },
@@ -218,8 +223,8 @@ fun MacroAutomationEditorScreen(
                     nodes.forEachIndexed { index, node ->
                         val feature = (node as? ActionNode.Action)?.feature
                         MacroItemRow(
-                            title = feature?.let { featureTitle(it, descriptors) } ?: actionNodeTitle(node, flows),
-                            subtitle = feature?.let { featureSummary(it, descriptors) },
+                            title = feature?.let { featureTitle(it, descriptorById) } ?: actionNodeTitle(node, flows),
+                            subtitle = feature?.let { featureSummary(it, descriptorById) },
                             accent = MacroPalette.Action,
                             onClick = {
                                 if (feature != null) {
@@ -255,8 +260,8 @@ fun MacroAutomationEditorScreen(
                     }
                     conditions.forEachIndexed { index, feature ->
                         MacroItemRow(
-                            title = featureTitle(feature, descriptors),
-                            subtitle = featureSummary(feature, descriptors),
+                            title = featureTitle(feature, descriptorById),
+                            subtitle = featureSummary(feature, descriptorById),
                             accent = MacroPalette.Constraint,
                             onClick = { request = MacroEditRequest(FeatureKind.CONDITION, index, feature) },
                             onMenu = { menu = "condition" to index },
@@ -343,8 +348,9 @@ fun MacroAutomationEditorScreen(
         }
     }
 
-    request?.let { edit ->
-        MacroFeaturePickerDialog(
+    CompositionLocalProvider(LocalEditorVariableNames provides editorVariableNames) {
+        request?.let { edit ->
+            MacroFeaturePickerDialog(
             kind = edit.kind,
             descriptors = descriptors,
             initial = edit.initial,
@@ -362,7 +368,8 @@ fun MacroAutomationEditorScreen(
                 }
                 request = null
             },
-        )
+            )
+        }
     }
 
     menu?.let { (section, index) ->
@@ -444,8 +451,9 @@ fun MacroAutomationEditorScreen(
         )
     }
 
-    treePhase?.let { phase ->
-        val nodes = when (phase) {
+    CompositionLocalProvider(LocalEditorVariableNames provides editorVariableNames) {
+        treePhase?.let { phase ->
+            val nodes = when (phase) {
             MacroActionPhase.EVENT -> onEvent
             MacroActionPhase.ENTER -> onEnter
             MacroActionPhase.EXIT -> onExit
@@ -470,7 +478,8 @@ fun MacroAutomationEditorScreen(
                 }
                 treePhase = null
             },
-        )
+            )
+        }
     }
 
     variableEdit?.let { (oldName, oldValue) ->
@@ -532,12 +541,12 @@ private fun EmptyHint(text: String) {
 }
 
 @Composable
-private fun featureTitle(feature: FeatureRef, descriptors: List<FeatureDescriptor>): String =
-    descriptors.firstOrNull { it.id.value == feature.typeId }?.let { localizedFeatureTitle(it) } ?: feature.typeId
+private fun featureTitle(feature: FeatureRef, descriptors: Map<String, FeatureDescriptor>): String =
+    descriptors[feature.typeId]?.let { localizedFeatureTitle(it) } ?: feature.typeId
 
 @Composable
-private fun featureSummary(feature: FeatureRef, descriptors: List<FeatureDescriptor>): String {
-    val descriptor = descriptors.firstOrNull { it.id.value == feature.typeId }
+private fun featureSummary(feature: FeatureRef, descriptors: Map<String, FeatureDescriptor>): String {
+    val descriptor = descriptors[feature.typeId]
     val items = feature.config.entries
         .filterNot { it.key.startsWith("source.") }
         .take(3)
@@ -567,7 +576,9 @@ private fun actionNodeTitle(node: ActionNode, flows: List<Flow>): String = when 
     is ActionNode.Switch -> stringResource(TextR.string.node_switch)
     is ActionNode.Repeat -> stringResource(TextR.string.node_repeat_format, node.times)
     is ActionNode.While -> stringResource(TextR.string.node_while)
+    is ActionNode.DoWhile -> stringResource(TextR.string.node_while) + " (do)"
     is ActionNode.WaitUntil -> stringResource(TextR.string.tree_wait_until)
+    is ActionNode.WaitEvent -> stringResource(TextR.string.tree_wait_until) + " (event)"
     is ActionNode.ForEach -> stringResource(TextR.string.node_foreach)
     is ActionNode.Parallel -> stringResource(TextR.string.node_parallel)
     is ActionNode.Try -> stringResource(TextR.string.node_try)
@@ -575,6 +586,8 @@ private fun actionNodeTitle(node: ActionNode, flows: List<Flow>): String = when 
         TextR.string.node_call_flow_format,
         flows.firstOrNull { it.id == node.flowId }?.name ?: node.flowId.value,
     )
+    is ActionNode.Label -> stringResource(TextR.string.tree_label_format, node.name)
+    is ActionNode.Goto -> stringResource(TextR.string.tree_goto_format, node.label)
     is ActionNode.Return -> stringResource(TextR.string.node_return)
     is ActionNode.Break -> stringResource(TextR.string.node_break)
     is ActionNode.Continue -> stringResource(TextR.string.node_continue)

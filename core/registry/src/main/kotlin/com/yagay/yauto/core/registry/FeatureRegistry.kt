@@ -4,6 +4,7 @@ import com.yagay.yauto.core.capability.CapabilityClient
 import com.yagay.yauto.core.capability.CapabilityId
 import com.yagay.yauto.core.capability.preferBackend
 import com.yagay.yauto.core.logging.ExecutionTracer
+import com.yagay.yauto.core.model.ConfigMap
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.FeatureRef
@@ -41,6 +42,7 @@ enum class AccessRequirement(val id: String) {
     LSPOSED("lsposed"),
     ZYGISK("zygisk"),
     ACCESSIBILITY("accessibility"),
+    USAGE_STATS("usage_stats"),
     NOTIFICATION_LISTENER("notification_listener"),
     POST_NOTIFICATIONS("post_notifications"),
     OVERLAY("overlay"),
@@ -50,6 +52,13 @@ enum class AccessRequirement(val id: String) {
     BLUETOOTH_CONNECT("bluetooth_connect"),
     DND_POLICY("dnd_policy"),
     DEVICE_ADMIN("device_admin"),
+    CALENDAR("calendar"),
+    CONTACTS("contacts"),
+    CALL_LOG("call_log"),
+    SMS("sms"),
+    PHONE("phone"),
+    RECORD_AUDIO("record_audio"),
+    ACTIVITY_RECOGNITION("activity_recognition"),
 }
 
 /** Language-neutral implementation metadata. UI copy is resolved by backendId in the Android layer. */
@@ -78,6 +87,25 @@ data class FeatureDescriptor(
     val aliases: Set<String> = emptySet(),
     /** Presentation and default-value metadata keyed by [FieldSchema.key]. */
     val fieldBehaviors: Map<String, FieldBehavior> = emptyMap(),
+    /** User-facing semantic domain; kept near the end to preserve positional constructor compatibility. */
+    val domain: FeatureDomain = inferFeatureDomain(id.value, category),
+    /**
+     * Declarative config defaults applied only when a historical alias is restored.
+     * Existing config wins over these values. This is appended to preserve all older positional
+     * constructor call sites.
+     */
+    val aliasConfigDefaults: Map<String, ConfigMap> = emptyMap(),
+    /**
+     * Optional historical config-key migrations keyed by alias ID.
+     * A direct canonical key already present in saved config wins over its renamed legacy key.
+     */
+    val aliasConfigKeyRenames: Map<String, Map<String, String>> = emptyMap(),
+    /**
+     * User-facing MacroDroid-style picker category. Kept separate from [category]/[domain] so
+     * execution buckets and compatibility metadata are not coupled to navigation.
+     */
+    val pickerCategory: FeaturePickerCategory =
+        inferFeaturePickerCategory(id.value, kind, category),
 )
 
 sealed interface FeatureResolution {
@@ -150,6 +178,7 @@ class FeatureRegistry {
     private val conditions = ConcurrentHashMap<String, ConditionEvaluator>()
     private val events = ConcurrentHashMap<String, EventMatcher>()
     private val states = ConcurrentHashMap<String, ConditionEvaluator>()
+    @Volatile private var descriptorSnapshot: List<FeatureDescriptor>? = null
 
     fun registerAction(descriptor: FeatureDescriptor, executor: ActionExecutor) {
         require(descriptor.kind == FeatureKind.ACTION)
@@ -204,6 +233,12 @@ class FeatureRegistry {
             "Feature ID collision: $id"
         }
 
+        require(decorated.aliasConfigDefaults.keys.all { it in decorated.aliases }) {
+            "Alias config defaults must target declared aliases for $id"
+        }
+        require(decorated.aliasConfigKeyRenames.keys.all { it in decorated.aliases }) {
+            "Alias config key renames must target declared aliases for $id"
+        }
         decorated.aliases.forEach { alias ->
             require(descriptors[alias] == null) {
                 "Feature alias collides with canonical ID: $alias"
@@ -216,7 +251,10 @@ class FeatureRegistry {
 
         // All validation is complete. Commit descriptor + aliases together while holding the same
         // registry monitor so a rejected descriptor cannot leave partial canonical/alias state.
-        if (existingDescriptor == null) descriptors[id] = decorated
+        if (existingDescriptor == null) {
+            descriptors[id] = decorated
+            descriptorSnapshot = null
+        }
         decorated.aliases.forEach { alias -> aliases[alias] = id }
     }
 
@@ -233,6 +271,7 @@ class FeatureRegistry {
             events.remove(it)
             states.remove(it)
         }
+        if (ids.isNotEmpty()) descriptorSnapshot = null
     }
 
     fun resolve(id: String, expectedKind: FeatureKind? = null): FeatureResolution {
@@ -259,8 +298,25 @@ class FeatureRegistry {
     }
 
     fun canonicalRef(feature: FeatureRef, expectedKind: FeatureKind? = null): FeatureRef {
-        val canonicalId = canonicalId(feature.typeId, expectedKind) ?: return feature
-        return if (canonicalId == feature.typeId) feature else feature.copy(typeId = canonicalId)
+        return when (val resolution = resolve(feature.typeId, expectedKind)) {
+            is FeatureResolution.Available -> feature
+            is FeatureResolution.Aliased -> {
+                val defaults = resolution.descriptor.aliasConfigDefaults[feature.typeId].orEmpty()
+                val renames = resolution.descriptor.aliasConfigKeyRenames[feature.typeId].orEmpty()
+                val renamed = buildMap {
+                    feature.config.forEach { (key, value) ->
+                        renames[key]?.let { target -> put(target, value) }
+                    }
+                }
+                val direct = feature.config.filterKeys { it !in renames.keys }
+                feature.copy(
+                    typeId = resolution.canonicalId,
+                    config = defaults + renamed + direct,
+                )
+            }
+            is FeatureResolution.Missing,
+            is FeatureResolution.Incompatible -> feature
+        }
     }
 
     fun descriptor(id: String): FeatureDescriptor? = when (val resolution = resolve(id)) {
@@ -274,9 +330,14 @@ class FeatureRegistry {
     fun conditionEvaluator(id: String): ConditionEvaluator? = canonicalId(id, FeatureKind.CONDITION)?.let(conditions::get)
     fun eventMatcher(id: String): EventMatcher? = canonicalId(id, FeatureKind.EVENT)?.let(events::get)
     fun stateEvaluator(id: String): ConditionEvaluator? = canonicalId(id, FeatureKind.STATE)?.let(states::get)
-    fun allDescriptors(): List<FeatureDescriptor> = descriptors.values.sortedWith(
-        compareBy<FeatureDescriptor> { it.category.name }.thenBy { it.title }
-    )
+    fun allDescriptors(): List<FeatureDescriptor> {
+        descriptorSnapshot?.let { return it }
+        return synchronized(this) {
+            descriptorSnapshot ?: descriptors.values.sortedWith(
+                compareBy<FeatureDescriptor> { it.category.name }.thenBy { it.title }
+            ).also { descriptorSnapshot = it }
+        }
+    }
 
     private fun prepareFeature(feature: FeatureRef, kind: FeatureKind): FeatureRef {
         val canonical = canonicalRef(feature, kind)

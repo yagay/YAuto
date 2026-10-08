@@ -106,8 +106,9 @@ class AndroidSystemPowerCoverageFeaturePack(context: Context) : FeaturePack {
             listOf(FieldSchema.AppPicker("package", "Package"), FieldSchema.Toggle("ignored", "Ignored / exempt")),
         ) { feature, ctx ->
             val packageName = feature.config.string("package").resolveVariables(ctx.variables).ifBlank { context.packageName }
-            context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName) ==
-                feature.config.boolean("ignored", true)
+            val expected = (feature.config["ignored"] as? ConfigValue.BooleanValue)?.value
+                ?: feature.config.boolean("value", true)
+            context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName) == expected
         }
     }
 

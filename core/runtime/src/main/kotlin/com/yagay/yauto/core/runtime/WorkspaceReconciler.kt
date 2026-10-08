@@ -9,7 +9,11 @@ import com.yagay.yauto.core.model.PredicateNode
 import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.storage.WorkspaceData
+import com.yagay.yauto.core.storage.ObservableWorkspaceRepository
 import com.yagay.yauto.core.storage.WorkspaceRepository
+import java.util.concurrent.CopyOnWriteArrayList
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Canonicalizes only Feature IDs that the current registry explicitly knows how to resolve for the
@@ -57,6 +61,10 @@ class WorkspaceReconciler(
             condition = predicate(value.condition),
             actions = actions(value.actions),
         )
+        is ActionNode.DoWhile -> value.copy(
+            condition = predicate(value.condition),
+            actions = actions(value.actions),
+        )
         is ActionNode.ForEach -> value.copy(actions = actions(value.actions))
         is ActionNode.Parallel -> value.copy(branches = value.branches.map(::actions))
         is ActionNode.Try -> value.copy(
@@ -65,7 +73,10 @@ class WorkspaceReconciler(
             finallyActions = actions(value.finallyActions),
         )
         is ActionNode.WaitUntil -> value.copy(condition = predicate(value.condition))
+        is ActionNode.WaitEvent -> value.copy(events = value.events.map { feature(it, FeatureKind.EVENT) })
         is ActionNode.CallFlow,
+        is ActionNode.Label,
+        is ActionNode.Goto,
         is ActionNode.Return,
         is ActionNode.Break,
         is ActionNode.Continue -> value
@@ -75,6 +86,7 @@ class WorkspaceReconciler(
         is PredicateNode.All -> value.copy(children = value.children.map(::predicate))
         is PredicateNode.Any -> value.copy(children = value.children.map(::predicate))
         is PredicateNode.None -> value.copy(children = value.children.map(::predicate))
+        is PredicateNode.Xor -> value.copy(children = value.children.map(::predicate))
         is PredicateNode.Condition -> value.copy(feature = feature(value.feature, FeatureKind.CONDITION))
         is PredicateNode.Expression,
         is PredicateNode.Literal -> value
@@ -91,12 +103,40 @@ class WorkspaceReconciler(
 class ReconcilingWorkspaceRepository(
     private val delegate: WorkspaceRepository,
     registry: FeatureRegistry,
-) : WorkspaceRepository {
+) : ObservableWorkspaceRepository {
     private val reconciler = WorkspaceReconciler(registry)
+    private val cacheLock = Mutex()
+    private val listeners = CopyOnWriteArrayList<(WorkspaceData) -> Unit>()
+    @Volatile private var cached: WorkspaceData? = null
 
-    override suspend fun load(): WorkspaceData = reconciler.reconcile(delegate.load())
+    override suspend fun load(): WorkspaceData {
+        cached?.let { return it }
+        return cacheLock.withLock {
+            cached ?: reconciler.reconcile(delegate.load()).also { loaded ->
+                cached = loaded
+                notifyListeners(loaded)
+            }
+        }
+    }
 
     override suspend fun save(data: WorkspaceData) {
-        delegate.save(reconciler.reconcile(data))
+        val reconciled = reconciler.reconcile(data)
+        cacheLock.withLock {
+            delegate.save(reconciled)
+            cached = reconciled
+        }
+        notifyListeners(reconciled)
+    }
+
+    override fun snapshotOrNull(): WorkspaceData? = cached
+
+    override fun addListener(listener: (WorkspaceData) -> Unit): AutoCloseable {
+        listeners += listener
+        cached?.let(listener)
+        return AutoCloseable { listeners -= listener }
+    }
+
+    private fun notifyListeners(data: WorkspaceData) {
+        listeners.forEach { listener -> runCatching { listener(data) } }
     }
 }

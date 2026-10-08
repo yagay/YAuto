@@ -62,6 +62,31 @@ class AndroidCommunicationEventFeaturePack(context: Context) : FeaturePack {
                 (numberFilter.isBlank() || ctx.event.payload.string("number").contains(numberFilter, ignoreCase = true))
         }
 
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.call_screened"),
+                FeatureKind.EVENT,
+                "Call screened",
+                "Run when YAuto receives a call through Android's Call Screening role",
+                FeatureCategory.DEVICE,
+                fields = listOf(
+                    FieldSchema.Choice("direction", "Direction", options = listOf("any", "incoming", "outgoing")),
+                    FieldSchema.Text("numberContains", "Phone number contains"),
+                    FieldSchema.Text("nameContains", "Contact name contains"),
+                ),
+                keywords = setOf("call screened", "call screening", "incoming", "outgoing", "tasker"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.call_screened") return@registerEvent false
+            val direction = feature.config.string("direction", "any")
+            val number = feature.config.string("numberContains")
+            val name = feature.config.string("nameContains")
+            (direction == "any" || ctx.event.payload.string("direction") == direction) &&
+                (number.isBlank() || ctx.event.payload.string("number").contains(number, ignoreCase = true)) &&
+                (name.isBlank() || ctx.event.payload.string("name").contains(name, ignoreCase = true))
+        }
+
         registerCallState(registry, FeatureKind.STATE, "android.state.phone_call_state")
         registerCallState(registry, FeatureKind.CONDITION, "android.condition.phone_call_state")
     }

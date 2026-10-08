@@ -30,6 +30,7 @@ fun List<ActionNode>.walk(): Sequence<ActionNode> = asSequence().flatMap { node 
         is ActionNode.Switch -> (node.cases.flatMap { it.actions } + node.defaultActions).walk()
         is ActionNode.Repeat -> node.actions.walk()
         is ActionNode.While -> node.actions.walk()
+        is ActionNode.DoWhile -> node.actions.walk()
         is ActionNode.ForEach -> node.actions.walk()
         is ActionNode.Parallel -> node.branches.flatten().walk()
         is ActionNode.Try -> (node.actions + node.onError + node.finallyActions).walk()
@@ -48,6 +49,7 @@ fun WorkspaceData.featureIds(): Set<String> = buildSet {
             is PredicateNode.All -> node.children.forEach(::predicate)
             is PredicateNode.Any -> node.children.forEach(::predicate)
             is PredicateNode.None -> node.children.forEach(::predicate)
+            is PredicateNode.Xor -> node.children.forEach(::predicate)
             else -> Unit
         }
     }
@@ -59,7 +61,9 @@ fun WorkspaceData.featureIds(): Set<String> = buildSet {
             is ActionNode.Action -> add(node.feature.typeId)
             is ActionNode.If -> predicate(node.condition)
             is ActionNode.While -> predicate(node.condition)
+            is ActionNode.DoWhile -> predicate(node.condition)
             is ActionNode.WaitUntil -> predicate(node.condition)
+            is ActionNode.WaitEvent -> addAll(node.events.map { it.typeId })
             else -> Unit
         }
     }

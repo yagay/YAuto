@@ -58,4 +58,5 @@
     <string name="runtime_feature_invalid_persistent_value">The persistent variable value is invalid for the selected type</string>
     <string name="runtime_feature_persistent_variable_update_failed">The persistent variable could not be updated</string>
     <string name="runtime_feature_persistent_variable_clear_failed">The persistent variable could not be cleared</string>
+    <string name="runtime_feature_persistent_variable_mutation_unsupported">This persistent variable does not support the selected mutation</string>
 </resources>

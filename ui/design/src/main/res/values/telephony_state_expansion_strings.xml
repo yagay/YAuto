@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_telephony_info_title">Get cellular status</string>
+    <string name="feature_android_telephony_info_description">Store mobile-data, roaming, service state and active SIM slot information</string>
+    <string name="feature_android_telephony_info_field_resultvariable">Store cellular status object</string>
+
+    <string name="feature_android_state_mobile_data_enabled_title">Mobile data enabled</string>
+    <string name="feature_android_state_mobile_data_enabled_description">Check whether mobile data is enabled for the default telephony subscription</string>
+    <string name="feature_android_state_mobile_data_enabled_field_value">Enabled / true</string>
+    <string name="feature_android_condition_mobile_data_enabled_title">Mobile data enabled</string>
+    <string name="feature_android_condition_mobile_data_enabled_description">Check whether mobile data is enabled for the default telephony subscription</string>
+    <string name="feature_android_condition_mobile_data_enabled_field_value">Enabled / true</string>
+
+
+    <string name="feature_android_state_cellular_service_available_title">Cellular service available</string>
+    <string name="feature_android_state_cellular_service_available_description">Check whether cellular service is in service for any or a selected active SIM</string>
+    <string name="feature_android_state_cellular_service_available_field_subscriptionid">Subscription ID (-1 = any active SIM)</string>
+    <string name="feature_android_state_cellular_service_available_field_value">Service available</string>
+    <string name="feature_android_condition_cellular_service_available_title">Cellular service available</string>
+    <string name="feature_android_condition_cellular_service_available_description">Check whether cellular service is in service for any or a selected active SIM</string>
+    <string name="feature_android_condition_cellular_service_available_field_subscriptionid">Subscription ID (-1 = any active SIM)</string>
+    <string name="feature_android_condition_cellular_service_available_field_value">Service available</string>
+</resources>

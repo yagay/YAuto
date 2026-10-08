@@ -32,6 +32,23 @@ object MacroDroidMappings {
                 "SetBrightnessAction" -> "android.display.brightness.set"
                 "SendIntentAction" -> "android.intent.send"
                 "NotificationAction" -> "android.notification.show"
+                "CarModeAction" -> "android.car_mode.set"
+                "DayDreamAction" -> "android.display.dream.start"
+                "InvertColoursAction" -> "android.display.color_inversion.set"
+                "HeadsUpNotificationsAction" -> "android.notification.heads_up.set"
+                "AmbientDisplayAction" -> "android.display.ambient_display.set"
+                "ExpandCollapseStatusBarAction" -> "android.status_bar.control"
+                "ConnectivityCheckAction" -> "android.network.connectivity.check"
+                "OpenCallLogAction" -> "android.call_log.open"
+                "SetRingtoneAction", "SetNotificationSoundAction" -> "android.audio.default_sound.set"
+                "DisplayDensityAction" -> "android.display.density.set"
+                "FontScaleAction" -> "android.display.font_scale.set"
+                "ImmersiveModeAction" -> "android.display.immersive.set"
+                "MuteMicrophoneAction" -> "android.audio.microphone_mute.set"
+                "SpeakerPhoneAction" -> "android.audio.speakerphone.set"
+                "ShowVolumePopupAction" -> "android.audio.volume_ui.show"
+                "LaunchHomeScreenAction" -> "android.home.launch"
+                "SetKeyboardAction" -> "android.ime.picker.show"
                 else -> null
             }
             SourceFeatureKind.EVENT -> when (sourceType) {
@@ -45,6 +62,10 @@ object MacroDroidMappings {
                 "ScreenOnConstraint" -> "android.condition.screen"
                 "VolumeLevelConstraint" -> "android.condition.media_volume"
                 "BrightnessConstraint" -> "android.condition.brightness"
+                "DataOnOffConstraint" -> "android.condition.mobile_data_enabled"
+                "IsRoamingConstraint" -> "android.condition.network_roaming"
+                "RoamingOnOffConstraint" -> "android.condition.data_roaming_setting"
+                "SignalOnOffConstraint" -> "android.condition.cellular_service_available"
                 else -> null
             }
             else -> null
@@ -67,6 +88,25 @@ object MacroDroidMappings {
         "SetBrightnessAction" -> setBrightness(obj, importerId, sourceType, raw)
         "SendIntentAction" -> sendIntent(obj, importerId, sourceType, raw)
         "NotificationAction" -> notification(obj, importerId, sourceType, raw)
+        "CarModeAction" -> modeAction(obj, "m_option", "android.car_mode.set", importerId, sourceType, raw)
+        "DayDreamAction" -> sourceFeature("android.display.dream.start", importerId, sourceType, raw)
+        "InvertColoursAction" -> modeAction(obj, "m_option", "android.display.color_inversion.set", importerId, sourceType, raw)
+        "HeadsUpNotificationsAction" -> modeAction(obj, "option", "android.notification.heads_up.set", importerId, sourceType, raw)
+        "AmbientDisplayAction" -> ambientDisplay(obj, importerId, sourceType, raw)
+        "ExpandCollapseStatusBarAction" -> statusBar(obj, importerId, sourceType, raw)
+        "ConnectivityCheckAction" -> connectivityCheck(obj, importerId, sourceType, raw)
+        "OpenCallLogAction" -> sourceFeature("android.call_log.open", importerId, sourceType, raw)
+        "SetRingtoneAction" -> defaultSound(obj, "ringtone", importerId, sourceType, raw)
+        "SetNotificationSoundAction" -> defaultSound(obj, "notification", importerId, sourceType, raw)
+        "DisplayDensityAction" -> percentageAction(obj, "android.display.density.set", "scalePercent", importerId, sourceType, raw, 50.0, 150.0)
+        "FontScaleAction" -> fontScale(obj, importerId, sourceType, raw)
+        "ImmersiveModeAction" -> immersiveMode(obj, importerId, sourceType, raw)
+        "MuteMicrophoneAction" -> microphoneMute(obj, importerId, sourceType, raw)
+        "SpeakerPhoneAction" -> speakerphone(obj, importerId, sourceType, raw)
+        "ShowVolumePopupAction" -> volumePopup(obj, importerId, sourceType, raw)
+        "LaunchHomeScreenAction" -> launchHome(obj, importerId, sourceType, raw)
+        "SetKeyboardAction" -> sourceFeature("android.ime.picker.show", importerId, sourceType, raw)
+        "DisableCategoryAction" -> categoryAction(obj, importerId, sourceType, raw)
         else -> null
     }
 
@@ -88,10 +128,337 @@ object MacroDroidMappings {
                 }
                 "VolumeLevelConstraint" -> volumeConstraint(obj, importerId, sourceType, raw)
                 "BrightnessConstraint" -> brightnessConstraint(obj, importerId, sourceType, raw)
+                "DataOnOffConstraint" -> booleanConstraint(obj, "m_dataOn", "android.condition.mobile_data_enabled", importerId, sourceType, raw)
+                "IsRoamingConstraint" -> booleanConstraint(obj, "m_isRoaming", "android.condition.network_roaming", importerId, sourceType, raw)
+                "RoamingOnOffConstraint" -> booleanConstraint(obj, "m_roamingOn", "android.condition.data_roaming_setting", importerId, sourceType, raw)
+                "SignalOnOffConstraint" -> signalConstraint(obj, importerId, sourceType, raw)
+                "CategoryEnabledConstraint" -> categoryConstraint(obj, importerId, sourceType, raw)
                 else -> null
             }
             else -> null
         }
+
+    private fun categoryAction(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val category = categoryName(obj) ?: return null
+        return sourceFeature(
+            "core.category.set_enabled",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "category" to ConfigValue.StringValue(category),
+                "mode" to ConfigValue.StringValue("disable"),
+            ),
+        )
+    }
+
+    private fun categoryConstraint(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val category = categoryName(obj) ?: return null
+        val expected = when (obj.number("m_option", "option")?.toInt()) {
+            0 -> true
+            1 -> false
+            null -> true
+            else -> return null
+        }
+        return sourceFeature(
+            "core.category.enabled",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "category" to ConfigValue.StringValue(category),
+                "value" to ConfigValue.BooleanValue(expected),
+            ),
+        )
+    }
+
+    private fun categoryName(obj: JsonObject): String? =
+        obj.string("m_categoryName", "categoryName", "m_category", "category")
+            ?.trim()
+            ?.takeIf(String::isNotBlank)
+            ?: obj.objectValue("m_category", "category")
+                ?.string("m_name", "name", "m_categoryName", "categoryName")
+                ?.trim()
+                ?.takeIf(String::isNotBlank)
+
+    private fun modeAction(
+        obj: JsonObject,
+        optionKey: String,
+        target: String,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = when (obj.number(optionKey)?.toInt()) {
+            0 -> "enable"
+            1 -> "disable"
+            2 -> "toggle"
+            else -> return null
+        }
+        return sourceFeature(
+            target,
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("mode" to ConfigValue.StringValue(mode)),
+        )
+    }
+
+    private fun ambientDisplay(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val setting = when (obj.number("m_settingOption")?.toInt()) {
+            0 -> "wake_for_notifications"
+            1 -> "always_on"
+            else -> return null
+        }
+        val mode = when (obj.number("m_option")?.toInt()) {
+            0 -> "enable"
+            1 -> "disable"
+            2 -> "toggle"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.display.ambient_display.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "setting" to ConfigValue.StringValue(setting),
+                "mode" to ConfigValue.StringValue(mode),
+            ),
+        )
+    }
+
+    private fun statusBar(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = when (obj.number("m_option")?.toInt()) {
+            0 -> "notifications"
+            1 -> "collapse"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.status_bar.control",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("mode" to ConfigValue.StringValue(mode)),
+        )
+    }
+
+    private fun connectivityCheck(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val site = obj.string("site")?.takeIf { it.isNotBlank() } ?: return null
+        val timeout = (obj.number("timeout") ?: 3_000.0).takeIf { it in 250.0..60_000.0 } ?: return null
+        val variableName = obj.objectValue("variable", "m_variable")
+            ?.string("m_name", "name")
+            ?: obj.string("variableName", "m_variableName")
+            ?: return null
+        if (variableName.isBlank()) return null
+        return sourceFeature(
+            "android.network.connectivity.check",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "site" to ConfigValue.StringValue(site),
+                "timeoutMs" to ConfigValue.NumberValue(timeout),
+                "resultVariable" to ConfigValue.StringValue(variableName),
+            ),
+        )
+    }
+
+    private fun defaultSound(
+        obj: JsonObject,
+        type: String,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val uri = obj.string("m_ringtoneUri")?.takeIf { it.isNotBlank() } ?: return null
+        return sourceFeature(
+            "android.audio.default_sound.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "type" to ConfigValue.StringValue(type),
+                "uri" to ConfigValue.StringValue(uri),
+                "silent" to ConfigValue.BooleanValue(false),
+            ),
+        )
+    }
+
+    private fun percentageAction(
+        obj: JsonObject,
+        target: String,
+        key: String,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+        min: Double,
+        max: Double,
+    ): FeatureRef? {
+        if (obj["variable"] != null && obj["variable"] !is JsonNull) return null
+        val dictionaryKeys = obj.array("varDictionaryKeys")
+        if (!dictionaryKeys.isNullOrEmpty()) return null
+        val value = obj.number(key)?.takeIf { it.isFinite() && it in min..max } ?: return null
+        return sourceFeature(
+            target,
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("scalePercent" to ConfigValue.NumberValue(value)),
+        )
+    }
+
+    private fun fontScale(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        if (obj["variable"] != null && obj["variable"] !is JsonNull) return null
+        val dictionaryKeys = obj.array("varDictionaryKeys")
+        if (!dictionaryKeys.isNullOrEmpty()) return null
+        val percent = obj.number("scalePercent")?.takeIf { it.isFinite() && it in 50.0..250.0 } ?: return null
+        return sourceFeature(
+            "android.display.font_scale.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("scale" to ConfigValue.NumberValue(percent / 100.0)),
+        )
+    }
+
+    private fun immersiveMode(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = when (obj.number("m_option")?.toInt()) {
+            0 -> "off"
+            1 -> "navigation"
+            2 -> "status"
+            3 -> "full"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.display.immersive.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("mode" to ConfigValue.StringValue(mode)),
+        )
+    }
+
+    private fun microphoneMute(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = when (obj.number("m_state")?.toInt()) {
+            0 -> "mute"
+            1 -> "unmute"
+            2 -> "toggle"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.audio.microphone_mute.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("mode" to ConfigValue.StringValue(mode)),
+        )
+    }
+
+    private fun speakerphone(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val mode = when (obj.number("m_state")?.toInt()) {
+            0 -> "enable"
+            1 -> "disable"
+            2 -> "toggle"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.audio.speakerphone.set",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("mode" to ConfigValue.StringValue(mode)),
+        )
+    }
+
+    private fun volumePopup(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val stream = when (obj.number("audioStream")?.toInt()) {
+            0 -> "alarm"
+            1 -> "music"
+            2 -> "notification"
+            3 -> "ringer"
+            4 -> "system"
+            5 -> "voice_call"
+            6 -> "bluetooth_voice"
+            else -> return null
+        }
+        return sourceFeature(
+            "android.audio.volume_ui.show",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("stream" to ConfigValue.StringValue(stream)),
+        )
+    }
+
+    private fun launchHome(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef {
+        return if (obj.bool("useAccessibilityService") == true) {
+            sourceFeature(
+                "accessibility.global_action",
+                importerId,
+                sourceType,
+                raw,
+                extra = mapOf("action" to ConfigValue.StringValue("home")),
+            )
+        } else {
+            sourceFeature("android.home.launch", importerId, sourceType, raw)
+        }
+    }
 
     private fun notificationTrigger(obj: JsonObject, importerId: String, sourceType: String, raw: String): FeatureRef? {
         if (obj.bool("m_excludeApps") == true || obj.bool("m_excludes") == true) return null
@@ -132,6 +499,49 @@ object MacroDroidMappings {
                 if (textContains.isNotBlank()) put("textContains", ConfigValue.StringValue(textContains))
                 if (obj.bool("m_ignoreOngoing") == true) put("ongoing", ConfigValue.StringValue("exclude"))
             },
+        )
+    }
+
+    private fun booleanConstraint(
+        obj: JsonObject,
+        key: String,
+        target: String,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val value = obj.bool(key) ?: return null
+        return sourceFeature(
+            target,
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf("value" to ConfigValue.BooleanValue(value)),
+        )
+    }
+
+    private fun signalConstraint(
+        obj: JsonObject,
+        importerId: String,
+        sourceType: String,
+        raw: String,
+    ): FeatureRef? {
+        val available = when (obj.number("m_option")?.toInt()) {
+            0 -> true
+            1 -> false
+            else -> return null
+        }
+        val subscriptionId = obj.number("subscriptionId")?.toInt() ?: -1
+        if (subscriptionId < -1) return null
+        return sourceFeature(
+            "android.condition.cellular_service_available",
+            importerId,
+            sourceType,
+            raw,
+            extra = mapOf(
+                "subscriptionId" to ConfigValue.NumberValue(subscriptionId.toDouble()),
+                "value" to ConfigValue.BooleanValue(available),
+            ),
         )
     }
 

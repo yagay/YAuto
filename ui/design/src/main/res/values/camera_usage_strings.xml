@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_state_reference_signal_camera_in_use_title">Camera in use</string>
+    <string name="feature_android_state_reference_signal_camera_in_use_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_camera_in_use_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_camera_in_use_title">Camera in use</string>
+    <string name="feature_android_condition_reference_signal_camera_in_use_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_camera_in_use_field_value">Enabled / true</string>
+
+    <string name="feature_android_state_reference_signal_camera_unavailable_count_title">Unavailable camera count</string>
+    <string name="feature_android_state_reference_signal_camera_unavailable_count_description">Compare the current Android runtime/system numeric value</string>
+    <string name="feature_android_state_reference_signal_camera_unavailable_count_field_min">Minimum</string>
+    <string name="feature_android_state_reference_signal_camera_unavailable_count_field_max">Maximum</string>
+    <string name="feature_android_condition_reference_signal_camera_unavailable_count_title">Unavailable camera count</string>
+    <string name="feature_android_condition_reference_signal_camera_unavailable_count_description">Compare the current Android runtime/system numeric value</string>
+    <string name="feature_android_condition_reference_signal_camera_unavailable_count_field_min">Minimum</string>
+    <string name="feature_android_condition_reference_signal_camera_unavailable_count_field_max">Maximum</string>
+
+    <string name="feature_android_event_camera_in_use_changed_title">Camera usage changed</string>
+    <string name="feature_android_event_camera_in_use_changed_description">Trigger when a camera becomes unavailable or available, commonly indicating camera use starting or stopping</string>
+    <string name="feature_android_event_camera_in_use_changed_field_cameraid">Camera ID</string>
+    <string name="feature_android_event_camera_in_use_changed_field_state">Camera state</string>
+    <string name="feature_android_event_camera_in_use_changed_field_state_option_any">Any</string>
+    <string name="feature_android_event_camera_in_use_changed_field_state_option_in_use">In use</string>
+    <string name="feature_android_event_camera_in_use_changed_field_state_option_available">Available</string>
+
+    <string name="feature_android_state_reference_signal_torch_available_title">Torch available</string>
+    <string name="feature_android_state_reference_signal_torch_available_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_torch_available_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_torch_available_title">Torch available</string>
+    <string name="feature_android_condition_reference_signal_torch_available_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_torch_available_field_value">Enabled / true</string>
+    <string name="feature_android_state_reference_signal_torch_enabled_title">Torch enabled</string>
+    <string name="feature_android_state_reference_signal_torch_enabled_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_state_reference_signal_torch_enabled_field_value">Enabled / true</string>
+    <string name="feature_android_condition_reference_signal_torch_enabled_title">Torch enabled</string>
+    <string name="feature_android_condition_reference_signal_torch_enabled_description">Compare the current Android runtime/system state</string>
+    <string name="feature_android_condition_reference_signal_torch_enabled_field_value">Enabled / true</string>
+</resources>

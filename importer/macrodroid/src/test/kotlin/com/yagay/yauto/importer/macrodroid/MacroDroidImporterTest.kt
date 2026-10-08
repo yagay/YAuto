@@ -15,13 +15,15 @@ class MacroDroidImporterTest {
         assertTrue(result.success)
         val rule = result.bundle.automations.single()
         assertEquals("android.event.screen_off", rule.activation.events.single().typeId)
-        val condition = (rule.activation.condition as PredicateNode.All).children.single() as PredicateNode.Condition
+        val condition = rule.activation.condition as PredicateNode.Condition
         assertEquals("android.condition.screen", condition.feature.typeId)
         assertEquals(ConfigValue.BooleanValue(false), condition.feature.config["value"])
         assertEquals("android.clipboard.set", (rule.onEvent[0] as ActionNode.Action).feature.typeId)
-        val guarded = (rule.onEvent[1] as ActionNode.Action).feature
-        assertEquals("compat.source.action", guarded.typeId)
-        assertTrue((guarded.config["source.raw"] as? ConfigValue.StringValue)?.value?.contains("UnknownConstraint") == true)
+        val guarded = rule.onEvent[1] as ActionNode.If
+        val guardedCondition = guarded.condition as PredicateNode.Condition
+        assertEquals("compat.source.condition", guardedCondition.feature.typeId)
+        assertTrue((guardedCondition.feature.config["source.raw"] as? ConfigValue.StringValue)?.value?.contains("UnknownConstraint") == true)
+        assertEquals("android.toast.show", (guarded.thenActions.single() as ActionNode.Action).feature.typeId)
     }
 
     @Test
@@ -92,6 +94,76 @@ class MacroDroidImporterTest {
     }
 
     @Test
+    fun `maps reference system actions using documented MacroDroid parameters`() {
+        val json = """
+            {"macro":{"m_GUID":"reference-system","m_name":"Reference system","m_triggerList":[],"m_actionList":[
+              {"m_classType":"CarModeAction","m_option":2},
+              {"m_classType":"DayDreamAction"},
+              {"m_classType":"InvertColoursAction","m_option":0},
+              {"m_classType":"HeadsUpNotificationsAction","option":1},
+              {"m_classType":"AmbientDisplayAction","m_settingOption":0,"m_option":2}
+            ]}}
+        """.trimIndent()
+
+        val result = MacroDroidImporter().import(ImportInput("reference-system.macro", null, json.toByteArray()))
+        assertTrue(result.success)
+        val features = result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature }
+
+        assertEquals(
+            listOf(
+                "android.car_mode.set",
+                "android.display.dream.start",
+                "android.display.color_inversion.set",
+                "android.notification.heads_up.set",
+                "android.display.ambient_display.set",
+            ),
+            features.map { it.typeId },
+        )
+        assertEquals(ConfigValue.StringValue("toggle"), features[0].config["mode"])
+        assertEquals(ConfigValue.StringValue("enable"), features[2].config["mode"])
+        assertEquals(ConfigValue.StringValue("disable"), features[3].config["mode"])
+        assertEquals(ConfigValue.StringValue("wake_for_notifications"), features[4].config["setting"])
+        assertEquals(ConfigValue.StringValue("toggle"), features[4].config["mode"])
+    }
+
+    @Test
+    fun `maps reference utility actions using verified MacroDroid fields`() {
+        val json = """
+            {"macro":{"m_GUID":"reference-utility","m_name":"Reference utility","m_triggerList":[],"m_actionList":[
+              {"m_classType":"ExpandCollapseStatusBarAction","m_option":0},
+              {"m_classType":"ExpandCollapseStatusBarAction","m_option":1},
+              {"m_classType":"ConnectivityCheckAction","site":"example.com","timeout":4500,"variable":{"m_name":"connected"}},
+              {"m_classType":"OpenCallLogAction"},
+              {"m_classType":"SetRingtoneAction","m_ringtoneUri":"content://media/internal/audio/media/1"},
+              {"m_classType":"SetNotificationSoundAction","m_ringtoneUri":"content://media/internal/audio/media/2"}
+            ]}}
+        """.trimIndent()
+
+        val result = MacroDroidImporter().import(ImportInput("reference-utility.macro", null, json.toByteArray()))
+        assertTrue(result.success)
+        val features = result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature }
+
+        assertEquals(
+            listOf(
+                "android.status_bar.control",
+                "android.status_bar.control",
+                "android.network.connectivity.check",
+                "android.call_log.open",
+                "android.audio.default_sound.set",
+                "android.audio.default_sound.set",
+            ),
+            features.map { it.typeId },
+        )
+        assertEquals(ConfigValue.StringValue("notifications"), features[0].config["mode"])
+        assertEquals(ConfigValue.StringValue("collapse"), features[1].config["mode"])
+        assertEquals(ConfigValue.StringValue("example.com"), features[2].config["site"])
+        assertEquals(ConfigValue.NumberValue(4500.0), features[2].config["timeoutMs"])
+        assertEquals(ConfigValue.StringValue("connected"), features[2].config["resultVariable"])
+        assertEquals(ConfigValue.StringValue("ringtone"), features[4].config["type"])
+        assertEquals(ConfigValue.StringValue("notification"), features[5].config["type"])
+    }
+
+    @Test
     fun `maps notification trigger and display constraints conservatively`() {
         val json = """
             {"macro":{"m_GUID":"contexts-2","m_name":"Contexts","m_triggerList":[
@@ -119,6 +191,38 @@ class MacroDroidImporterTest {
         assertEquals(ConfigValue.StringValue("=="), conditions[1].config["operator"])
         assertEquals(ConfigValue.StringValue("auto"), conditions[2].config["mode"])
         assertEquals(ConfigValue.BooleanValue(false), conditions[2].config["compareLevel"])
+    }
+
+    @Test
+    fun `maps cellular reference constraints natively`() {
+        val json = """
+            {"macro":{"m_GUID":"cellular-constraints","m_name":"Cellular","m_triggerList":[],"m_constraintList":[
+              {"m_classType":"DataOnOffConstraint","m_dataOn":true},
+              {"m_classType":"IsRoamingConstraint","m_isRoaming":false},
+              {"m_classType":"RoamingOnOffConstraint","m_roamingOn":true},
+              {"m_classType":"SignalOnOffConstraint","m_option":0,"subscriptionId":7}
+            ],"m_actionList":[]}}
+        """.trimIndent()
+
+        val result = MacroDroidImporter().import(ImportInput("cellular-constraints.macro", null, json.toByteArray()))
+        assertTrue(result.success)
+        val conditions = (result.bundle.automations.single().activation.condition as PredicateNode.All)
+            .children.map { (it as PredicateNode.Condition).feature }
+
+        assertEquals(
+            listOf(
+                "android.condition.mobile_data_enabled",
+                "android.condition.network_roaming",
+                "android.condition.data_roaming_setting",
+                "android.condition.cellular_service_available",
+            ),
+            conditions.map { it.typeId },
+        )
+        assertEquals(ConfigValue.BooleanValue(true), conditions[0].config["value"])
+        assertEquals(ConfigValue.BooleanValue(false), conditions[1].config["value"])
+        assertEquals(ConfigValue.BooleanValue(true), conditions[2].config["value"])
+        assertEquals(ConfigValue.NumberValue(7.0), conditions[3].config["subscriptionId"])
+        assertEquals(ConfigValue.BooleanValue(true), conditions[3].config["value"])
     }
 
     @Test
@@ -175,4 +279,17 @@ class MacroDroidImporterTest {
         assertTrue(result.bundle.automations.single().onEvent.single() is ActionNode.CallFlow)
         assertEquals("android.toast.show", (result.bundle.flows.single().actions.single() as ActionNode.Action).feature.typeId)
     }
+
+    @Test
+    fun `default importer exposes apk verified compatibility target hints`() {
+        val json = """{"macro":{"m_GUID":"verified-hint","m_name":"Verified hint","m_triggerList":[],"m_actionList":[{"m_classType":"SetNFCAction"}]}}"""
+        val result = MacroDroidImporter().import(ImportInput("verified-hint.macro", null, json.toByteArray()))
+
+        assertTrue(result.success)
+        val action = result.bundle.automations.single().onEvent.single() as ActionNode.Action
+        assertEquals("compat.source.action", action.feature.typeId)
+        assertTrue(result.issues.any { it.sourceType == "SetNFCAction" && it.suggestedFeatureId == "android.nfc.set" })
+    }
+
+
 }

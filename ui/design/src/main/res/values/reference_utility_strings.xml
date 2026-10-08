@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_status_bar_control_title">Control status bar</string>
+    <string name="feature_android_status_bar_control_description">Expand notifications, expand quick settings, or collapse the status bar</string>
+    <string name="feature_android_status_bar_control_field_mode">Status bar operation</string>
+    <string name="feature_android_status_bar_control_field_mode_option_notifications">Notifications</string>
+    <string name="feature_android_status_bar_control_field_mode_option_quick_settings">Quick settings</string>
+    <string name="feature_android_status_bar_control_field_mode_option_collapse">Collapse</string>
+
+    <string name="feature_android_network_connectivity_check_title">Check network connectivity</string>
+    <string name="feature_android_network_connectivity_check_description">Reach a website and store reachability, status code, latency and final URL</string>
+    <string name="feature_android_network_connectivity_check_field_site">Website / URL</string>
+    <string name="feature_android_network_connectivity_check_field_timeoutms">Timeout</string>
+    <string name="feature_android_network_connectivity_check_field_resultvariable">Store connectivity result</string>
+
+    <string name="feature_android_network_active_info_title">Get active network info</string>
+    <string name="feature_android_network_active_info_description">Store active transport, validation, metering, interface, DNS and link addresses</string>
+    <string name="feature_android_network_active_info_field_resultvariable">Store network object</string>
+
+    <string name="feature_android_screen_on_time_get_title">Get screen-on time</string>
+    <string name="feature_android_screen_on_time_get_description">Read the current screen-on session or total interactive time since system startup</string>
+    <string name="feature_android_screen_on_time_get_field_from">Measure from</string>
+    <string name="feature_android_screen_on_time_get_field_from_option_last_screen_off">Last screen off</string>
+    <string name="feature_android_screen_on_time_get_field_from_option_system_ready">System startup</string>
+    <string name="feature_android_screen_on_time_get_field_resultvariable">Store milliseconds in variable</string>
+
+    <string name="feature_android_audio_default_sound_get_title">Get default system sound</string>
+    <string name="feature_android_audio_default_sound_get_description">Read the current default ringtone, notification sound, or alarm sound URI</string>
+    <string name="feature_android_audio_default_sound_get_field_type">Sound type</string>
+    <string name="feature_android_audio_default_sound_get_field_type_option_ringtone">Ringtone</string>
+    <string name="feature_android_audio_default_sound_get_field_type_option_notification">Notification sound</string>
+    <string name="feature_android_audio_default_sound_get_field_type_option_alarm">Alarm sound</string>
+    <string name="feature_android_audio_default_sound_get_field_resultvariable">Store sound URI in variable</string>
+
+    <string name="feature_android_audio_default_sound_set_title">Set default system sound</string>
+    <string name="feature_android_audio_default_sound_set_description">Set or silence the default ringtone, notification sound, or alarm sound</string>
+    <string name="feature_android_audio_default_sound_set_field_type">Sound type</string>
+    <string name="feature_android_audio_default_sound_set_field_type_option_ringtone">Ringtone</string>
+    <string name="feature_android_audio_default_sound_set_field_type_option_notification">Notification sound</string>
+    <string name="feature_android_audio_default_sound_set_field_type_option_alarm">Alarm sound</string>
+    <string name="feature_android_audio_default_sound_set_field_uri">Sound URI</string>
+    <string name="feature_android_audio_default_sound_set_field_silent">Set silent</string>
+
+    <string name="feature_android_state_screen_on_time_title">Screen-on time</string>
+    <string name="feature_android_state_screen_on_time_description">Compare current screen-on duration with a configured range</string>
+    <string name="feature_android_state_screen_on_time_field_from">Measure from</string>
+    <string name="feature_android_state_screen_on_time_field_from_option_last_screen_off">Last screen off</string>
+    <string name="feature_android_state_screen_on_time_field_from_option_system_ready">System startup</string>
+    <string name="feature_android_state_screen_on_time_field_minms">Minimum duration</string>
+    <string name="feature_android_state_screen_on_time_field_maxms">Maximum duration</string>
+    <string name="feature_android_condition_screen_on_time_title">Screen-on time</string>
+    <string name="feature_android_condition_screen_on_time_description">Compare current screen-on duration with a configured range</string>
+    <string name="feature_android_condition_screen_on_time_field_from">Measure from</string>
+    <string name="feature_android_condition_screen_on_time_field_from_option_last_screen_off">Last screen off</string>
+    <string name="feature_android_condition_screen_on_time_field_from_option_system_ready">System startup</string>
+    <string name="feature_android_condition_screen_on_time_field_minms">Minimum duration</string>
+    <string name="feature_android_condition_screen_on_time_field_maxms">Maximum duration</string>
+
+    <string name="feature_android_state_ringer_mode_title">Ringer mode</string>
+    <string name="feature_android_state_ringer_mode_description">Match the current Android ringer mode</string>
+    <string name="feature_android_state_ringer_mode_field_mode">Ringer mode</string>
+    <string name="feature_android_state_ringer_mode_field_mode_option_normal">Normal</string>
+    <string name="feature_android_state_ringer_mode_field_mode_option_vibrate">Vibrate</string>
+    <string name="feature_android_state_ringer_mode_field_mode_option_silent">Silent</string>
+    <string name="feature_android_condition_ringer_mode_title">Ringer mode</string>
+    <string name="feature_android_condition_ringer_mode_description">Match the current Android ringer mode</string>
+    <string name="feature_android_condition_ringer_mode_field_mode">Ringer mode</string>
+    <string name="feature_android_condition_ringer_mode_field_mode_option_normal">Normal</string>
+    <string name="feature_android_condition_ringer_mode_field_mode_option_vibrate">Vibrate</string>
+    <string name="feature_android_condition_ringer_mode_field_mode_option_silent">Silent</string>
+</resources>

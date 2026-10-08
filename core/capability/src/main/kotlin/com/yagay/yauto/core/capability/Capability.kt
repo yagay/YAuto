@@ -17,6 +17,7 @@ object CapabilityIds {
     val NOTIFICATION_LISTENER = CapabilityId("android.notification_listener")
     val SYSTEM_UI = CapabilityId("android.systemui")
     val LSPOSED = CapabilityId("android.lsposed")
+    val LSPOSED_HOOK = CapabilityId("android.lsposed.hook")
 }
 
 /** Shared stable operation IDs for system controls; platform backends own their implementation. */
@@ -24,10 +25,25 @@ object SystemOperations {
     const val SLEEP = "system.screen.sleep"
     const val EXPAND_NOTIFICATIONS = "system.notifications.expand"
     const val COLLAPSE_PANELS = "system.notifications.collapse"
+    const val EXPAND_QUICK_SETTINGS = "system.quick_settings.expand"
+    const val WAKE = "system.screen.wake"
+    const val REBOOT = "system.device.reboot"
+    const val REBOOT_RECOVERY = "system.device.reboot.recovery"
+    const val REBOOT_BOOTLOADER = "system.device.reboot.bootloader"
+    const val SHUTDOWN = "system.device.shutdown"
+    const val SENSORS_OFF_ENABLE = "system.sensors_off.enable"
+    const val SENSORS_OFF_DISABLE = "system.sensors_off.disable"
+    const val SENSORS_OFF_QUERY = "system.sensors_off.query"
     fun shellCommand(operation: String): String? = when (operation) {
         SLEEP -> "input keyevent 223"
         EXPAND_NOTIFICATIONS -> "cmd statusbar expand-notifications"
         COLLAPSE_PANELS -> "cmd statusbar collapse"
+        EXPAND_QUICK_SETTINGS -> "cmd statusbar expand-settings"
+        WAKE -> "input keyevent 224"
+        REBOOT -> "svc power reboot"
+        REBOOT_RECOVERY -> "svc power reboot recovery"
+        REBOOT_BOOTLOADER -> "svc power reboot bootloader"
+        SHUTDOWN -> "svc power shutdown"
         else -> null
     }
 }

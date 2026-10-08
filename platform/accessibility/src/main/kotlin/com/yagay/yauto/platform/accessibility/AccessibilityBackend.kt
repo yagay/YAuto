@@ -8,11 +8,14 @@ import com.yagay.yauto.core.capability.RuntimeEnvironment
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.long
+import com.yagay.yauto.core.model.listOrEmpty
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
+import android.graphics.Bitmap
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.yagay.yauto.core.model.userText
 
 class AccessibilityBackend : CapabilityBackend {
     override val id: String = "accessibility"
@@ -37,9 +40,138 @@ class AccessibilityBackend : CapabilityBackend {
                     )
                     return@withContext CapabilityResult(success = true, value = ConfigValue.BooleanValue(found))
                 }
+                AccessibilityOperations.FIND_TEXT_ADVANCED -> {
+                    val found = service.matchesText(
+                        request.payload.string("text"),
+                        request.payload.string("mode", "contains"),
+                        request.payload.boolean("ignoreCase", true),
+                    )
+                    return@withContext CapabilityResult(success = true, value = ConfigValue.BooleanValue(found))
+                }
                 AccessibilityOperations.FIND_VIEW_ID -> {
                     val found = service.hasViewId(request.payload.string("viewId"))
                     return@withContext CapabilityResult(success = true, value = ConfigValue.BooleanValue(found))
+                }
+                AccessibilityOperations.KEYBOARD_VISIBLE -> {
+                    return@withContext CapabilityResult(
+                        success = true,
+                        value = ConfigValue.BooleanValue(service.keyboardVisible()),
+                    )
+                }
+                AccessibilityOperations.GET_SCREEN_TEXT -> {
+                    val value = service.screenText(
+                        includeDescriptions = request.payload.boolean("includeDescriptions", true),
+                        unique = request.payload.boolean("unique", true),
+                        limit = request.payload.long("limit", 500).toInt(),
+                    )
+                    return@withContext CapabilityResult(success = true, value = ConfigValue.StringValue(value))
+                }
+                AccessibilityOperations.GET_VIEW_TEXT -> {
+                    val value = service.textByViewId(request.payload.string("viewId"))
+                        ?: return@withContext CapabilityResult(success = false, value = ConfigValue.NullValue)
+                    return@withContext CapabilityResult(success = true, value = ConfigValue.StringValue(value))
+                }
+                AccessibilityOperations.CAPTURE_SCREENSHOT -> {
+                    val bitmap = service.captureScreenshotBitmap()
+                        ?: return@withContext CapabilityResult(success = false, message = userText("feature.screenshot_capture_failed"))
+                    val x = request.payload["x"].numberOrNull()?.toInt()
+                    val y = request.payload["y"].numberOrNull()?.toInt()
+                    val width = request.payload["width"].numberOrNull()?.toInt()
+                    val height = request.payload["height"].numberOrNull()?.toInt()
+                    val outputBitmap = if (x != null || y != null || width != null || height != null) {
+                        val left = x ?: 0
+                        val top = y ?: 0
+                        val w = width ?: (bitmap.width - left)
+                        val h = height ?: (bitmap.height - top)
+                        if (left < 0 || top < 0 || w <= 0 || h <= 0 || left + w > bitmap.width || top + h > bitmap.height) {
+                            bitmap.recycle()
+                            return@withContext CapabilityResult(success = false, message = userText("feature.screenshot_area_invalid"))
+                        }
+                        Bitmap.createBitmap(bitmap, left, top, w, h).also { bitmap.recycle() }
+                    } else bitmap
+                    val requested = request.payload.string("fileName").trim()
+                    val safeName = requested.ifBlank { "screenshot-" + System.currentTimeMillis() + ".png" }
+                        .let { if (it.lowercase().endsWith(".png")) it else "$it.png" }
+                        .takeIf { !it.contains('/') && !it.contains('\\') && it != "." && it != ".." }
+                        ?: run {
+                            outputBitmap.recycle()
+                            return@withContext CapabilityResult(success = false, message = userText("feature.screenshot_filename_invalid"))
+                        }
+                    val file = File(service.getExternalFilesDir(null) ?: service.filesDir, "Screenshots/$safeName")
+                    val saved = withContext(Dispatchers.IO) {
+                        runCatching {
+                            file.parentFile?.mkdirs()
+                            file.outputStream().use { outputBitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                        }.getOrDefault(false)
+                    }
+                    outputBitmap.recycle()
+                    if (!saved) return@withContext CapabilityResult(success = false, message = userText("feature.screenshot_save_failed"))
+                    return@withContext CapabilityResult(success = true, value = ConfigValue.StringValue(file.absolutePath))
+                }
+                AccessibilityOperations.GET_VIEW_BOUNDS -> {
+                    val bounds = service.viewBounds(request.payload.string("viewId"))
+                        ?: return@withContext CapabilityResult(success = false, value = ConfigValue.NullValue)
+                    val output = ConfigValue.ObjectValue(
+                        mapOf(
+                            "left" to ConfigValue.NumberValue(bounds.left.toDouble()),
+                            "top" to ConfigValue.NumberValue(bounds.top.toDouble()),
+                            "right" to ConfigValue.NumberValue(bounds.right.toDouble()),
+                            "bottom" to ConfigValue.NumberValue(bounds.bottom.toDouble()),
+                            "width" to ConfigValue.NumberValue(bounds.width().toDouble()),
+                            "height" to ConfigValue.NumberValue(bounds.height().toDouble()),
+                            "centerX" to ConfigValue.NumberValue(bounds.centerX().toDouble()),
+                            "centerY" to ConfigValue.NumberValue(bounds.centerY().toDouble()),
+                        )
+                    )
+                    return@withContext CapabilityResult(success = true, value = output)
+                }
+                AccessibilityOperations.GESTURE_PATH -> {
+                    val listPoints = request.payload["points"].listOrEmpty().mapNotNull { item ->
+                        val obj = (item as? ConfigValue.ObjectValue)?.value ?: return@mapNotNull null
+                        val x = obj["x"].numberOrNull() ?: return@mapNotNull null
+                        val y = obj["y"].numberOrNull() ?: return@mapNotNull null
+                        if (!x.isFinite() || !y.isFinite() || x < 0 || y < 0) return@mapNotNull null
+                        x.toFloat() to y.toFloat()
+                    }
+                    val textPoints = request.payload.string("path").lineSequence().mapNotNull { line ->
+                        val parts = line.trim().split(',', ' ', ';').filter { it.isNotBlank() }
+                        if (parts.size < 2) return@mapNotNull null
+                        val x = parts[0].toDoubleOrNull() ?: return@mapNotNull null
+                        val y = parts[1].toDoubleOrNull() ?: return@mapNotNull null
+                        if (!x.isFinite() || !y.isFinite() || x < 0 || y < 0) return@mapNotNull null
+                        x.toFloat() to y.toFloat()
+                    }.toList()
+                    val points = if (listPoints.isNotEmpty()) listPoints else textPoints
+                    if (points.isEmpty()) return@withContext CapabilityResult(success = false, value = ConfigValue.BooleanValue(false))
+                    val completed = service.gesturePath(points, request.payload.long("durationMs", 500))
+                    return@withContext CapabilityResult(success = completed, value = ConfigValue.BooleanValue(completed))
+                }
+                AccessibilityOperations.GET_UI_NODES -> {
+                    val nodes = service.uiNodes(
+                        limit = request.payload.long("limit", 500).toInt(),
+                        onlyVisible = request.payload.boolean("onlyVisible", true),
+                        clickableOnly = request.payload.boolean("clickableOnly", false),
+                    )
+                    val output = ConfigValue.ListValue(
+                        nodes.map { node ->
+                            ConfigValue.ObjectValue(
+                                mapOf(
+                                    "text" to ConfigValue.StringValue(node.text),
+                                    "contentDescription" to ConfigValue.StringValue(node.contentDescription),
+                                    "viewId" to ConfigValue.StringValue(node.viewId),
+                                    "class" to ConfigValue.StringValue(node.className),
+                                    "package" to ConfigValue.StringValue(node.packageName),
+                                    "clickable" to ConfigValue.BooleanValue(node.clickable),
+                                    "longClickable" to ConfigValue.BooleanValue(node.longClickable),
+                                    "editable" to ConfigValue.BooleanValue(node.editable),
+                                    "scrollable" to ConfigValue.BooleanValue(node.scrollable),
+                                    "enabled" to ConfigValue.BooleanValue(node.enabled),
+                                    "visible" to ConfigValue.BooleanValue(node.visible),
+                                )
+                            )
+                        }
+                    )
+                    return@withContext CapabilityResult(success = true, value = output)
                 }
             }
 
@@ -48,11 +180,26 @@ class AccessibilityBackend : CapabilityBackend {
                     request.payload.string("text"),
                     request.payload.boolean("exact"),
                 )
+                AccessibilityOperations.CLICK_TEXT_ADVANCED -> service.clickTextAdvanced(
+                    request.payload.string("text"),
+                    request.payload.string("mode", "contains"),
+                    request.payload.boolean("ignoreCase", true),
+                )
                 AccessibilityOperations.LONG_CLICK_TEXT -> service.longClickText(
                     request.payload.string("text"),
                     request.payload.boolean("exact"),
                 )
                 AccessibilityOperations.CLICK_VIEW_ID -> service.clickViewId(request.payload.string("viewId"))
+                AccessibilityOperations.LONG_CLICK_VIEW_ID -> service.longClickViewId(request.payload.string("viewId"))
+                AccessibilityOperations.FOCUS_VIEW_ID -> service.focusViewId(request.payload.string("viewId"))
+                AccessibilityOperations.CLEAR_TEXT_VIEW_ID -> service.clearTextByViewId(request.payload.string("viewId"))
+                AccessibilityOperations.SCROLL_VIEW_ID -> service.scrollViewId(
+                    request.payload.string("viewId"), request.payload.string("direction", "forward")
+                )
+                AccessibilityOperations.SELECT_ALL_VIEW_ID -> service.selectAllByViewId(request.payload.string("viewId"))
+                AccessibilityOperations.COPY_VIEW_ID -> service.copyByViewId(request.payload.string("viewId"))
+                AccessibilityOperations.CUT_VIEW_ID -> service.cutByViewId(request.payload.string("viewId"))
+                AccessibilityOperations.PASTE_VIEW_ID -> service.pasteByViewId(request.payload.string("viewId"))
                 AccessibilityOperations.CLICK_DESCRIPTION -> service.clickDescription(
                     request.payload.string("description"),
                     request.payload.boolean("exact"),

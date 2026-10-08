@@ -8,4 +8,6 @@ kotlin { jvmToolchain(17) }
 dependencies {
     implementation(project(":core:model"))
     implementation(libs.kotlinx.serialization.json)
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.core)
 }

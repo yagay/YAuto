@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_wifi_changed_field_changetype">变化类型</string>
+    <string name="feature_android_event_wifi_changed_field_changetype_option_any">任意</string>
+    <string name="feature_android_event_wifi_changed_field_changetype_option_state">Wi-Fi 开关状态</string>
+    <string name="feature_android_event_wifi_changed_field_changetype_option_network">网络连接状态</string>
+    <string name="feature_android_event_wifi_changed_field_changetype_option_rssi">信号强度</string>
+
+    <string name="feature_android_event_media_store_changed_field_changetype">变化类型</string>
+    <string name="feature_android_event_media_store_changed_field_changetype_option_any">任意</string>
+    <string name="feature_android_event_media_store_changed_field_changetype_option_inserted">新增</string>
+    <string name="feature_android_event_media_store_changed_field_changetype_option_updated">更新</string>
+    <string name="feature_android_event_media_store_changed_field_changetype_option_deleted">删除</string>
+    <string name="feature_android_event_media_store_changed_field_changetype_option_changed">其他变化</string>
+</resources>

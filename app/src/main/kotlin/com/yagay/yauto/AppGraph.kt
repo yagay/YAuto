@@ -15,6 +15,11 @@ import com.yagay.yauto.platform.accessibility.AccessibilityBackend
 import com.yagay.yauto.platform.accessibility.AccessibilityDiagnosticCollector
 import com.yagay.yauto.platform.accessibility.AccessibilityFeaturePack
 import com.yagay.yauto.platform.accessibility.AccessibilityKeyFeaturePack
+import com.yagay.yauto.platform.accessibility.AccessibilityInspectorFeaturePack
+import com.yagay.yauto.platform.accessibility.AccessibilityContinuousPointerFeaturePack
+import com.yagay.yauto.platform.accessibility.AccessibilityBeanShellFeaturePack
+import com.yagay.yauto.platform.accessibility.AccessibilityMvelFeaturePack
+import com.yagay.yauto.platform.accessibility.AccessibilityWindowSnapshot
 import com.yagay.yauto.platform.android.*
 import com.yagay.yauto.platform.root.*
 import com.yagay.yauto.platform.shizuku.ShizukuBackend
@@ -26,8 +31,8 @@ class AppGraph(context: Context) {
 
     val features = FeatureRegistry()
     /**
-     * Reserved for YAuto-native import/export formats. Third-party compatibility importers are
-     * intentionally not registered in the main product graph.
+     * Compatibility importers are described in a separate lazy catalog so AppGraph remains
+     * independent from third-party parser implementations and cold-start construction stays off.
      */
     val importers = ImporterRegistry()
     val diagnosticRegistry = DiagnosticRegistry()
@@ -36,9 +41,12 @@ class AppGraph(context: Context) {
     val tracer: ExecutionTracer = SequencedExecutionTracer(CompositeExecutionTracer(listOf(traceStore, persistentTracer)))
 
     val rootShell by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { RootShell() }
+    val hardwareKeys by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { DeviceHardwareKeyCatalog(rootShell) }
     val shizuku by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { ShizukuBackend(appContext) }
     val xposed by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { XposedBackend(appContext) }
+    val lsposedScopes = LsposedScopeManager()
     val accessibility by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AccessibilityBackend() }
+    private val usageForeground by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { SystemUsageStatsForegroundReader(appContext) }
     private val workspaceStorage = JsonWorkspaceRepository(appContext)
     val workspace = ReconcilingWorkspaceRepository(workspaceStorage, features)
     val importReports = JsonImportReportStore(appContext)
@@ -55,14 +63,54 @@ class AppGraph(context: Context) {
     })
     val diagnostics = DiagnosticCoordinator(diagnosticRegistry)
     val runtime = AutomationRuntime(workspace, features, capabilities, tracer)
+    val featureHealth by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        FeatureHealthScanner(
+            context = appContext,
+            descriptors = features::allDescriptors,
+            rootShell = rootShell,
+            shizuku = shizuku,
+            xposed = xposed,
+            accessibility = accessibility,
+            implementationAvailable = { descriptor ->
+                when (descriptor.kind) {
+                    com.yagay.yauto.core.registry.FeatureKind.ACTION ->
+                        features.actionExecutor(descriptor.id.value) != null
+                    com.yagay.yauto.core.registry.FeatureKind.CONDITION ->
+                        features.conditionEvaluator(descriptor.id.value) != null
+                    com.yagay.yauto.core.registry.FeatureKind.EVENT ->
+                        features.eventMatcher(descriptor.id.value) != null
+                    com.yagay.yauto.core.registry.FeatureKind.STATE ->
+                        features.stateEvaluator(descriptor.id.value) != null
+                }
+            },
+        )
+    }
 
     init {
+        safelyUnit("importers:compatibility") {
+            CompatibilityImporterCatalog.registerInto(importers)
+        }
+
         installCatalog("features.standard.catalog") { StandardFeaturePacks.all(runtime, runtime) }
         installCatalog("features.android.catalog") {
-            AndroidFeaturePacks.all(appContext, quickSettingsTiles, overlaySurfaces)
+            AndroidFeaturePacks.all(appContext, quickSettingsTiles, overlaySurfaces, workspace)
         }
-        installPack("feature:accessibility") { AccessibilityFeaturePack() }
+        installPack("feature:accessibility") {
+            AccessibilityFeaturePack {
+                usageForeground.currentForegroundApp()?.let { current ->
+                    AccessibilityWindowSnapshot(
+                        packageName = current.packageName,
+                        className = current.className,
+                        timestampEpochMs = current.timestampEpochMs,
+                    )
+                }
+            }
+        }
         installPack("feature:accessibility.key") { AccessibilityKeyFeaturePack() }
+        installPack("feature:accessibility.inspectors") { AccessibilityInspectorFeaturePack(appContext) }
+        installPack("feature:accessibility.pointer") { AccessibilityContinuousPointerFeaturePack(appContext) }
+        installPack("feature:accessibility.beanshell") { AccessibilityBeanShellFeaturePack(appContext) }
+        installPack("feature:accessibility.mvel") { AccessibilityMvelFeaturePack(appContext) }
 
         safelyUnit("backend:root") { capabilities.register(RootBackend(rootShell)) }
         safelyUnit("backend:shizuku") { capabilities.register(shizuku) }

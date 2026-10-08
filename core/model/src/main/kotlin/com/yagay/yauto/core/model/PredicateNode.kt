@@ -18,6 +18,10 @@ sealed interface PredicateNode {
     data class None(val children: List<PredicateNode>) : PredicateNode
 
     @Serializable
+    @SerialName("xor")
+    data class Xor(val children: List<PredicateNode>) : PredicateNode
+
+    @Serializable
     @SerialName("condition")
     data class Condition(val feature: FeatureRef) : PredicateNode
 

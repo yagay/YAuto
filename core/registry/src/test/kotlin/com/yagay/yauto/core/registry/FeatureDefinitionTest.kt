@@ -60,6 +60,60 @@ class FeatureDefinitionTest {
     }
 
     @Test
+    fun `semantic domain is inferred independently from legacy category`() {
+        assertEquals(
+            FeatureDomain.LOCATION,
+            FeatureDescriptor(
+                id = FeatureId("android.event.geofence_transition"),
+                kind = FeatureKind.EVENT,
+                title = "Geofence",
+                description = "Geofence",
+                category = FeatureCategory.DEVICE,
+            ).domain,
+        )
+        assertEquals(
+            FeatureDomain.WEB_NETWORK,
+            FeatureDescriptor(
+                id = FeatureId("android.http.request"),
+                kind = FeatureKind.ACTION,
+                title = "HTTP request",
+                description = "HTTP request",
+                category = FeatureCategory.SCRIPT,
+            ).domain,
+        )
+        assertEquals(
+            FeatureDomain.AI,
+            FeatureDescriptor(
+                id = FeatureId("ai.llm.query"),
+                kind = FeatureKind.ACTION,
+                title = "LLM query",
+                description = "LLM query",
+                category = FeatureCategory.ADVANCED,
+            ).domain,
+        )
+        assertEquals(
+            FeatureDomain.USER_INPUT,
+            FeatureDescriptor(
+                id = FeatureId("android.qs_tile.click"),
+                kind = FeatureKind.ACTION,
+                title = "Quick Settings tile",
+                description = "Quick Settings tile",
+                category = FeatureCategory.ADVANCED,
+            ).domain,
+        )
+        assertEquals(
+            FeatureDomain.COMMUNICATION,
+            FeatureDescriptor(
+                id = FeatureId("android.sms.compose"),
+                kind = FeatureKind.ACTION,
+                title = "Compose SMS",
+                description = "Compose SMS",
+                category = FeatureCategory.APP,
+            ).domain,
+        )
+    }
+
+    @Test
     fun `catalog validation rejects unknown conditional dependency`() {
         val descriptor = descriptor("test.rule").copy(
             fields = listOf(FieldSchema.Text("value", "Value")),

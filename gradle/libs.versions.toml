@@ -9,6 +9,14 @@ lifecycle = "2.9.2"
 coroutines = "1.10.2"
 serialization = "1.8.1"
 junit = "4.13.2"
+okhttp = "4.12.0"
+rhino = "1.7.15"
+zxing = "3.5.3"
+mlkitText = "16.0.1"
+beanshell = "2.0b6"
+mvel = "2.5.4.Final"
+playServicesWearable = "20.0.1"
+playServicesLocation = "21.3.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
@@ -23,6 +31,14 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 junit = { module = "junit:junit", version.ref = "junit" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+rhino = { module = "org.mozilla:rhino", version.ref = "rhino" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
+mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkitText" }
+beanshell = { module = "org.apache-extras.beanshell:bsh", version.ref = "beanshell" }
+mvel = { module = "org.mvel:mvel2", version.ref = "mvel" }
+play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -1,10 +1,12 @@
 package com.yagay.yauto.core.registry
 
+import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.FeatureRef
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -43,6 +45,87 @@ class FeatureRegistryResolutionTest {
         assertEquals(7, canonical.schemaVersion)
         assertNotNull(registry.actionExecutor("android.legacy.action"))
         assertEquals("android.test.action", registry.descriptor("android.legacy.action")?.id?.value)
+    }
+
+    @Test
+    fun `legacy alias applies declarative config defaults without overriding saved config`() {
+        val registry = FeatureRegistry()
+        registry.registerAction(
+            descriptor(
+                id = "android.test.action",
+                aliases = setOf("android.legacy.open"),
+                aliasConfigDefaults = mapOf(
+                    "android.legacy.open" to mapOf(
+                        "operation" to ConfigValue.StringValue("open"),
+                        "target" to ConfigValue.StringValue("default"),
+                    )
+                ),
+            )
+        ) { _, _ -> ActionExecutionResult(success = true) }
+
+        val migrated = registry.canonicalRef(
+            FeatureRef(
+                typeId = "android.legacy.open",
+                config = mapOf("target" to ConfigValue.StringValue("saved")),
+            )
+        )
+
+        assertEquals("android.test.action", migrated.typeId)
+        assertEquals(ConfigValue.StringValue("open"), migrated.config["operation"])
+        assertEquals(ConfigValue.StringValue("saved"), migrated.config["target"])
+    }
+
+    @Test
+    fun `legacy alias can rename config keys and canonical keys win collisions`() {
+        val registry = FeatureRegistry()
+        registry.registerAction(
+            descriptor(
+                id = "android.test.action",
+                aliases = setOf("android.legacy.action"),
+                aliasConfigKeyRenames = mapOf(
+                    "android.legacy.action" to mapOf(
+                        "value" to "operation",
+                        "oldTarget" to "target",
+                    )
+                ),
+            )
+        ) { _, _ -> ActionExecutionResult(success = true) }
+
+        val migrated = registry.canonicalRef(
+            FeatureRef(
+                typeId = "android.legacy.action",
+                config = mapOf(
+                    "value" to ConfigValue.StringValue("legacy"),
+                    "oldTarget" to ConfigValue.StringValue("old"),
+                    "target" to ConfigValue.StringValue("canonical"),
+                ),
+            )
+        )
+
+        assertEquals("android.test.action", migrated.typeId)
+        assertEquals(ConfigValue.StringValue("legacy"), migrated.config["operation"])
+        assertEquals(ConfigValue.StringValue("canonical"), migrated.config["target"])
+        assertFalse("value" in migrated.config)
+        assertFalse("oldTarget" in migrated.config)
+    }
+
+    @Test
+    fun `alias defaults must belong to declared aliases`() {
+        val registry = FeatureRegistry()
+
+        assertFails {
+            registry.registerDescriptor(
+                descriptor(
+                    id = "android.test.action",
+                    aliases = setOf("android.legacy.action"),
+                    aliasConfigDefaults = mapOf(
+                        "android.not_declared" to mapOf(
+                            "operation" to ConfigValue.StringValue("open"),
+                        )
+                    ),
+                )
+            )
+        }
     }
 
     @Test
@@ -142,9 +225,28 @@ class FeatureRegistryResolutionTest {
         assertFalse(registry.allDescriptors().any { it.ownerPackId == pack.id })
     }
 
+    @Test
+    fun `descriptor snapshot is reused until registry changes`() {
+        val registry = FeatureRegistry()
+        registry.registerDescriptor(descriptor("android.first"))
+
+        val first = registry.allDescriptors()
+        val second = registry.allDescriptors()
+        assertSame(first, second)
+
+        registry.registerDescriptor(descriptor("android.second"))
+        val third = registry.allDescriptors()
+
+        assertEquals(2, third.size)
+        assertFalse(first === third)
+        assertSame(third, registry.allDescriptors())
+    }
+
     private fun descriptor(
         id: String,
         aliases: Set<String> = emptySet(),
+        aliasConfigDefaults: Map<String, Map<String, ConfigValue>> = emptyMap(),
+        aliasConfigKeyRenames: Map<String, Map<String, String>> = emptyMap(),
         ownerPackId: String = "test",
         kind: FeatureKind = FeatureKind.ACTION,
     ) = FeatureDescriptor(
@@ -155,6 +257,8 @@ class FeatureRegistryResolutionTest {
         category = FeatureCategory.CORE,
         ownerPackId = ownerPackId,
         aliases = aliases,
+        aliasConfigDefaults = aliasConfigDefaults,
+        aliasConfigKeyRenames = aliasConfigKeyRenames,
     )
 
     private fun assertFails(block: () -> Unit) {

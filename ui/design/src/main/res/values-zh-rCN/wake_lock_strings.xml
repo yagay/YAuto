@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_power_wake_lock_acquire_title">获取 CPU 唤醒锁</string>
+    <string name="feature_android_power_wake_lock_acquire_description">使用 Android PARTIAL_WAKE_LOCK 在限定时间内保持 CPU 唤醒</string>
+    <string name="feature_android_power_wake_lock_acquire_field_timeoutms">最长保持时长</string>
+    <string name="feature_android_power_wake_lock_release_title">释放 CPU 唤醒锁</string>
+    <string name="feature_android_power_wake_lock_release_description">释放 YAuto 当前持有的 CPU 唤醒锁</string>
+    <string name="feature_android_state_wake_lock_held_title">CPU 唤醒锁已持有</string>
+    <string name="feature_android_state_wake_lock_held_description">检查 YAuto 当前是否持有限时 CPU 唤醒锁</string>
+    <string name="feature_android_state_wake_lock_held_field_value">唤醒锁已持有</string>
+    <string name="feature_android_condition_wake_lock_held_title">CPU 唤醒锁已持有</string>
+    <string name="feature_android_condition_wake_lock_held_description">检查 YAuto 当前是否持有限时 CPU 唤醒锁</string>
+    <string name="feature_android_condition_wake_lock_held_field_value">唤醒锁已持有</string>
+</resources>

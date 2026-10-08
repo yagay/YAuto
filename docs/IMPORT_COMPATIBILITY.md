@@ -1,9 +1,11 @@
 # Import compatibility
 
-Import support is intentionally adapter-based.
+YAuto registers the three compatibility importers lazily in the main app. They are constructed only when the user opens an import path, so normal startup does not pay the parsing cost.
 
-- MacroDroid: JSON structure, triggers/actions/constraints preserved; common mappings can be added by source class name.
-- Tasker: XML Profile/Task structure is imported; Task actions and contexts are preserved by code when not mapped.
-- ShortX: JSON rule shape and protobuf outer Rule/RuleList/RuleSetList structure are recognized. Protobuf `Any` payloads are preserved in Base64 until a per-type mapper is implemented.
+- MacroDroid 5.67.8: JSON macro/action-block structure, triggers, actions and constraints are imported. Lossless field-level mappings become native YAuto nodes; recognized but not-yet-lossless variants remain compatibility nodes with APK-verified canonical target hints.
+- ShortX 1.11: JSON rules and protobuf Rule/RuleList/RuleSetList containers are recognized. Verified protobuf/JSON payload layouts become native YAuto nodes; unknown or unsafe `Any` payload variants are preserved losslessly and receive canonical target hints when known.
+- Tasker 6.6.20: XML Profile/Task/Scene-related structure and supported control flow are imported. Verified action/context layouts become native YAuto nodes; unknown codes or parameter variants remain compatibility nodes with target hints when known.
 
-Every unsupported item creates a compatibility issue with its source path. Nothing is silently discarded.
+Every unsupported or unsafe conversion creates a compatibility issue with its source path. Nothing is silently discarded.
+
+The Android CI runs the MacroDroid, ShortX and Tasker importer test suites in addition to core/platform tests so compatibility regressions fail the pull request.

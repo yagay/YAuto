@@ -21,6 +21,65 @@ class CoreFeaturePack : FeaturePack {
     private val definitions: List<FeatureDefinition> = listOf(
         eventFeature(
             FeatureDescriptor(
+                id = FeatureId("core.event.any"),
+                kind = FeatureKind.EVENT,
+                title = "Any runtime event",
+                description = "Run for any YAuto runtime event",
+                category = FeatureCategory.CORE,
+                fields = listOf(FieldSchema.Text("tag", "Source tag")),
+                keywords = setOf("any event", "wildcard", "fact", "tag"),
+            )
+        ) { _, _ -> true },
+        eventFeature(
+            FeatureDescriptor(
+                id = FeatureId("core.event.automation_started"),
+                kind = FeatureKind.EVENT,
+                title = "Automation started",
+                description = "Run when another YAuto automation begins execution",
+                category = FeatureCategory.CORE,
+                fields = listOf(FieldSchema.Text("automation", "Automation ID or name")),
+                keywords = setOf("automation", "started", "operation", "shortx"),
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "core.event.automation_started") false
+            else {
+                val expected = feature.config.string("automation").trim()
+                expected.isBlank() ||
+                    ctx.event.payload.string("automationId") == expected ||
+                    ctx.event.payload.string("automationName").equals(expected, ignoreCase = true)
+            }
+        },
+        eventFeature(
+            FeatureDescriptor(
+                id = FeatureId("core.event.automation_finished"),
+                kind = FeatureKind.EVENT,
+                title = "Automation finished",
+                description = "Run when another YAuto automation finishes execution",
+                category = FeatureCategory.CORE,
+                fields = listOf(
+                    FieldSchema.Text("automation", "Automation ID or name"),
+                    FieldSchema.Choice("result", "Result", options = listOf("any", "success", "failure")),
+                ),
+                keywords = setOf("automation", "finished", "operation", "shortx"),
+            )
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "core.event.automation_finished") false
+            else {
+                val expected = feature.config.string("automation").trim()
+                val result = feature.config.string("result", "any")
+                val targetMatches = expected.isBlank() ||
+                    ctx.event.payload.string("automationId") == expected ||
+                    ctx.event.payload.string("automationName").equals(expected, ignoreCase = true)
+                val success = ctx.event.payload.boolean("success")
+                targetMatches && when (result) {
+                    "success" -> success
+                    "failure" -> !success
+                    else -> true
+                }
+            }
+        },
+        eventFeature(
+            FeatureDescriptor(
                 id = FeatureId("core.event.manual"),
                 kind = FeatureKind.EVENT,
                 title = "Manual event",
@@ -36,6 +95,17 @@ class CoreFeaturePack : FeaturePack {
                 expected.isBlank() || ctx.event.payload.string("name") == expected
             }
         },
+        actionFeature(
+            FeatureDescriptor(
+                id = FeatureId("core.noop"),
+                kind = FeatureKind.ACTION,
+                title = "No operation",
+                description = "Continue without performing an operation",
+                category = FeatureCategory.CORE,
+                fields = emptyList(),
+                keywords = setOf("noop", "empty", "continue"),
+            )
+        ) { _, _ -> ActionExecutionResult(true) },
         actionFeature(
             FeatureDescriptor(
                 id = FeatureId("core.delay"),
@@ -77,6 +147,21 @@ class CoreFeaturePack : FeaturePack {
                 )
             )
             ActionExecutionResult(true, message = message)
+        },
+        conditionFeature(
+            FeatureDescriptor(
+                id = FeatureId("core.condition.event_tag"),
+                kind = FeatureKind.CONDITION,
+                title = "Event source tag",
+                description = "Match the tag of the event feature that triggered the current automation",
+                category = FeatureCategory.CORE,
+                fields = listOf(FieldSchema.Text("tag", "Tag", true)),
+                fieldBehaviors = mapOf("tag" to FieldBehavior(supportsVariables = true)),
+                keywords = setOf("event tag", "fact tag", "shortx"),
+            )
+        ) { feature, ctx ->
+            val expected = feature.config.string("tag").resolveVariables(ctx.variables)
+            (ctx.variables.get("event.fact_tag") as? ConfigValue.StringValue)?.value == expected
         },
         conditionFeature(
             FeatureDescriptor(

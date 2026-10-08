@@ -20,7 +20,7 @@ class MacroDroidApkCoverageTest {
             "VolumeIncrementDecrementAction" to "android.audio.volume.adjust",
             "PlaySoundAction" to "android.audio.play",
             "ShareTextAction" to "android.share.text",
-            "ShellScriptAction" to "system.shell.execute",
+            "ShellScriptAction" to "android.shell.execute",
             "ClearNotificationsAction" to "android.notification.dismiss_all",
             "HttpRequestAction" to "android.http.request",
             "LaunchHomeScreenAction" to "android.home.launch",

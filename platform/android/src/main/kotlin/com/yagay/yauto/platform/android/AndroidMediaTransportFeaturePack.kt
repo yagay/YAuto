@@ -29,6 +29,7 @@ class AndroidMediaTransportFeaturePack(context: Context) : FeaturePack {
                     )
                 ),
                 keywords = setOf("media", "music", "play", "pause", "next", "previous", "transport"),
+                aliases = setOf("android.media.control"),
                 ownerPackId = id,
             )
         ) { feature, _ ->

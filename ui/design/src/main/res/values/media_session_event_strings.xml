@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_media_track_changed_title">Media track changed</string>
+    <string name="feature_android_event_media_track_changed_description">Trigger when an active Android media session publishes new track metadata</string>
+    <string name="feature_android_event_media_track_changed_field_package">App / package</string>
+    <string name="feature_android_event_media_track_changed_field_titlecontains">Title contains</string>
+    <string name="feature_android_event_media_track_changed_field_artistcontains">Artist contains</string>
+    <string name="feature_android_event_media_track_changed_field_albumcontains">Album contains</string>
+    <string name="feature_android_event_media_track_changed_field_mediaidcontains">Media ID contains</string>
+    <string name="feature_android_event_media_track_changed_field_ignorecase">Ignore case</string>
+
+    <string name="feature_android_event_media_playback_state_changed_title">Media playback state changed</string>
+    <string name="feature_android_event_media_playback_state_changed_description">Trigger when an active media session changes playback state</string>
+    <string name="feature_android_event_media_playback_state_changed_field_package">App / package</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state">Playback state</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_any">Any</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_none">None</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_stopped">Stopped</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_paused">Paused</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_playing">Playing</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_fast_forwarding">Fast forwarding</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_rewinding">Rewinding</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_buffering">Buffering</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_error">Error</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_connecting">Connecting</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_skipping_previous">Skipping to previous</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_skipping_next">Skipping to next</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_skipping_queue_item">Skipping queue item</string>
+    <string name="feature_android_event_media_playback_state_changed_field_state_option_unknown">Unknown</string>
+</resources>

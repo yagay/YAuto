@@ -73,12 +73,21 @@ sealed interface ActionNode {
         val actions: List<ActionNode>,
     ) : ActionNode
 
+    @Serializable @SerialName("do_while")
+    data class DoWhile(
+        override val id: NodeId,
+        val condition: PredicateNode,
+        val actions: List<ActionNode>,
+    ) : ActionNode
+
     @Serializable @SerialName("for_each")
     data class ForEach(
         override val id: NodeId,
-        val values: List<ConfigValue>,
+        val values: List<ConfigValue> = emptyList(),
         val variableName: String,
         val actions: List<ActionNode>,
+        /** Optional runtime list variable. When set, it takes precedence over [values]. */
+        val sourceVariable: String? = null,
     ) : ActionNode
 
     @Serializable @SerialName("parallel")
@@ -106,6 +115,17 @@ sealed interface ActionNode {
         val condition: PredicateNode,
         val timeoutMs: Long = 60_000L,
         val pollIntervalMs: Long = 500L,
+        /** Wait without a deadline. Used by sources such as Tasker's Wait Until. */
+        val unlimited: Boolean = false,
+    ) : ActionNode
+
+    @Serializable @SerialName("wait_event")
+    data class WaitEvent(
+        override val id: NodeId,
+        val events: List<FeatureRef>,
+        val timeoutMs: Long = 60_000L,
+        val unlimited: Boolean = false,
+        val continueOnTimeout: Boolean = false,
     ) : ActionNode
 
     @Serializable @SerialName("call_flow")
@@ -114,6 +134,18 @@ sealed interface ActionNode {
         val flowId: FlowId,
         val input: ConfigMap = emptyMap(),
         val resultVariable: String? = null,
+    ) : ActionNode
+
+    @Serializable @SerialName("label")
+    data class Label(
+        override val id: NodeId,
+        val name: String,
+    ) : ActionNode
+
+    @Serializable @SerialName("goto")
+    data class Goto(
+        override val id: NodeId,
+        val label: String,
     ) : ActionNode
 
     @Serializable @SerialName("return")

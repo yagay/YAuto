@@ -28,9 +28,9 @@ class ConnectivityBroadcastEventSource(context: Context) : AndroidEventSource {
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
-                WifiManager.NETWORK_STATE_CHANGED_ACTION,
-                WifiManager.RSSI_CHANGED_ACTION,
-                WifiManager.WIFI_STATE_CHANGED_ACTION -> emitWifi()
+                WifiManager.NETWORK_STATE_CHANGED_ACTION -> emitWifi("network")
+                WifiManager.RSSI_CHANGED_ACTION -> emitWifi("rssi")
+                WifiManager.WIFI_STATE_CHANGED_ACTION -> emitWifi("state")
                 BluetoothAdapter.ACTION_STATE_CHANGED -> emitBluetooth(intent)
             }
         }
@@ -50,7 +50,7 @@ class ConnectivityBroadcastEventSource(context: Context) : AndroidEventSource {
             @Suppress("DEPRECATION")
             context.registerReceiver(receiver, filter)
         }
-        emitWifi()
+        emitWifi("snapshot")
     }
 
     override fun stop() {
@@ -59,7 +59,7 @@ class ConnectivityBroadcastEventSource(context: Context) : AndroidEventSource {
         emitter = null
     }
 
-    private fun emitWifi() {
+    private fun emitWifi(changeType: String) {
         val network = connectivity.activeNetwork
         val caps = network?.let(connectivity::getNetworkCapabilities)
         val connected = caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
@@ -77,6 +77,7 @@ class ConnectivityBroadcastEventSource(context: Context) : AndroidEventSource {
                     "bssid" to ConfigValue.StringValue(selected?.bssid.orEmpty()),
                     "rssi" to ConfigValue.NumberValue((selected?.rssi ?: Int.MIN_VALUE).toDouble()),
                     "wifiEnabled" to ConfigValue.BooleanValue(wifi.isWifiEnabled),
+                    "changeType" to ConfigValue.StringValue(changeType),
                 ),
                 source = id,
             )

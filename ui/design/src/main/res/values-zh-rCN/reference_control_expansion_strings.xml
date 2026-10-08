@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_display_immersive_set_title">设置沉浸模式</string>
+    <string name="feature_android_display_immersive_set_description">在系统范围显示或隐藏 Android 状态栏和导航栏</string>
+    <string name="feature_android_display_immersive_set_field_mode">沉浸模式</string>
+    <string name="feature_android_display_immersive_set_field_mode_option_off">关闭</string>
+    <string name="feature_android_display_immersive_set_field_mode_option_navigation">隐藏导航栏</string>
+    <string name="feature_android_display_immersive_set_field_mode_option_status">隐藏状态栏</string>
+    <string name="feature_android_display_immersive_set_field_mode_option_full">完全沉浸</string>
+
+    <string name="feature_android_audio_volume_ui_show_title">显示音量面板</string>
+    <string name="feature_android_audio_volume_ui_show_description">为指定音频流显示 Android 系统音量面板</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream">音频流</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_alarm">闹钟</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_music">媒体</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_notification">通知</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_ringer">铃声</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_system">系统</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_voice_call">通话</string>
+    <string name="feature_android_audio_volume_ui_show_field_stream_option_bluetooth_voice">蓝牙通话</string>    <string name="feature_android_state_display_density_percent_title">显示密度百分比</string>
+    <string name="feature_android_state_display_density_percent_description">将当前显示密度与设备稳定密度百分比进行比较</string>
+    <string name="feature_android_state_display_density_percent_field_minpercent">最小百分比</string>
+    <string name="feature_android_state_display_density_percent_field_maxpercent">最大百分比</string>
+    <string name="feature_android_condition_display_density_percent_title">显示密度百分比</string>
+    <string name="feature_android_condition_display_density_percent_description">将当前显示密度与设备稳定密度百分比进行比较</string>
+    <string name="feature_android_condition_display_density_percent_field_minpercent">最小百分比</string>
+    <string name="feature_android_condition_display_density_percent_field_maxpercent">最大百分比</string>
+
+    <string name="feature_android_state_font_scale_percent_title">字体缩放百分比</string>
+    <string name="feature_android_state_font_scale_percent_description">比较当前 Android 字体缩放百分比</string>
+    <string name="feature_android_state_font_scale_percent_field_minpercent">最小百分比</string>
+    <string name="feature_android_state_font_scale_percent_field_maxpercent">最大百分比</string>
+    <string name="feature_android_condition_font_scale_percent_title">字体缩放百分比</string>
+    <string name="feature_android_condition_font_scale_percent_description">比较当前 Android 字体缩放百分比</string>
+    <string name="feature_android_condition_font_scale_percent_field_minpercent">最小百分比</string>
+    <string name="feature_android_condition_font_scale_percent_field_maxpercent">最大百分比</string>
+
+    <string name="feature_android_state_immersive_mode_title">沉浸模式</string>
+    <string name="feature_android_state_immersive_mode_description">匹配当前系统级沉浸模式策略</string>
+    <string name="feature_android_state_immersive_mode_field_value">值</string>
+    <string name="feature_android_state_immersive_mode_field_value_option_off">关闭</string>
+    <string name="feature_android_state_immersive_mode_field_value_option_navigation">隐藏导航栏</string>
+    <string name="feature_android_state_immersive_mode_field_value_option_status">隐藏状态栏</string>
+    <string name="feature_android_state_immersive_mode_field_value_option_full">完全沉浸</string>
+    <string name="feature_android_condition_immersive_mode_title">沉浸模式</string>
+    <string name="feature_android_condition_immersive_mode_description">匹配当前系统级沉浸模式策略</string>
+    <string name="feature_android_condition_immersive_mode_field_value">值</string>
+    <string name="feature_android_condition_immersive_mode_field_value_option_off">关闭</string>
+    <string name="feature_android_condition_immersive_mode_field_value_option_navigation">隐藏导航栏</string>
+    <string name="feature_android_condition_immersive_mode_field_value_option_status">隐藏状态栏</string>
+    <string name="feature_android_condition_immersive_mode_field_value_option_full">完全沉浸</string>
+
+    <string name="feature_android_state_animation_scale_title">动画倍率</string>
+    <string name="feature_android_state_animation_scale_description">比较当前 Android 动画倍率</string>
+    <string name="feature_android_state_animation_scale_field_target">动画倍率目标</string>
+    <string name="feature_android_state_animation_scale_field_target_option_window">窗口动画</string>
+    <string name="feature_android_state_animation_scale_field_target_option_transition">过渡动画</string>
+    <string name="feature_android_state_animation_scale_field_target_option_animator">动画器时长</string>
+    <string name="feature_android_state_animation_scale_field_min">最小倍率</string>
+    <string name="feature_android_state_animation_scale_field_max">最大倍率</string>
+    <string name="feature_android_condition_animation_scale_title">动画倍率</string>
+    <string name="feature_android_condition_animation_scale_description">比较当前 Android 动画倍率</string>
+    <string name="feature_android_condition_animation_scale_field_target">动画倍率目标</string>
+    <string name="feature_android_condition_animation_scale_field_target_option_window">窗口动画</string>
+    <string name="feature_android_condition_animation_scale_field_target_option_transition">过渡动画</string>
+    <string name="feature_android_condition_animation_scale_field_target_option_animator">动画器时长</string>
+    <string name="feature_android_condition_animation_scale_field_min">最小倍率</string>
+    <string name="feature_android_condition_animation_scale_field_max">最大倍率</string>
+</resources>
