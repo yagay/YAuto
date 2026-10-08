@@ -179,7 +179,6 @@ fun MacroFeaturePickerDialog(
                     onUnified = { push(PickerPage.Unified(it)) },
                     onFavorite = ::toggleFavorite,
                     onUnifiedFavorite = ::toggleUnifiedFavorite,
-                    onUnifiedFavorite = ::toggleUnifiedFavorite,
                 )
                 is PickerPage.Features -> FeatureListPage(
                     modifier = Modifier.padding(padding),
@@ -194,6 +193,7 @@ fun MacroFeaturePickerDialog(
                     onFeature = ::openFeature,
                     onUnified = { push(PickerPage.Unified(it)) },
                     onFavorite = ::toggleFavorite,
+                    onUnifiedFavorite = ::toggleUnifiedFavorite,
                 )
                 is PickerPage.Unified -> UnifiedFeatureConfigEditor(
                     modifier = Modifier.padding(padding),
