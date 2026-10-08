@@ -275,4 +275,6 @@
     <string name="access_phone">电话</string>
     <string name="access_record_audio">麦克风录音</string>
     <string name="access_activity_recognition">活动识别</string>
+    <string name="feature_picker_no_matches">没有找到匹配的功能，请尝试其他关键词。</string>
+    <string name="feature_picker_empty_category">此列表暂无功能。</string>
 </resources>

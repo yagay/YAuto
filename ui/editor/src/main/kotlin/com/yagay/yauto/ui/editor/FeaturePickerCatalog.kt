@@ -113,6 +113,11 @@ internal fun FeatureCategoryPage(
                     style = MaterialTheme.typography.labelLarge,
                 )
             }
+            if (search.isEmpty()) {
+                item(key = "no_search_results", contentType = "empty_state") {
+                    PickerEmptyState(stringResource(TextR.string.feature_picker_no_matches))
+                }
+            }
             items(
                 items = search,
                 key = {
@@ -206,6 +211,24 @@ internal fun FeatureListPage(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        if (query.isNotBlank()) {
+            item(key = "category_result_count", contentType = "result_count") {
+                Text(
+                    stringResource(TextR.string.feature_picker_search_results_format, entries.size),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
+        }
+        if (entries.isEmpty()) {
+            item(key = "empty_category", contentType = "empty_state") {
+                PickerEmptyState(
+                    stringResource(
+                        if (query.isNotBlank()) TextR.string.feature_picker_no_matches
+                        else TextR.string.feature_picker_empty_category,
+                    )
+                )
+            }
         }
         items(
             items = entries,
@@ -402,6 +425,16 @@ private fun featureAccessTags(descriptor: FeatureDescriptor): String {
         null
     }
     return localizedList(listOfNotNull(root, shizuku, lsposed, zygisk, accessibility))
+}
+
+@Composable
+private fun PickerEmptyState(message: String) {
+    Text(
+        text = message,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 20.dp),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /** Matches the main-branch card rhythm without changing category IDs or navigation. */

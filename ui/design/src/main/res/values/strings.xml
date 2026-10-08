@@ -275,4 +275,6 @@
     <string name="access_phone">Phone</string>
     <string name="access_record_audio">Microphone recording</string>
     <string name="access_activity_recognition">Activity recognition</string>
+    <string name="feature_picker_no_matches">No matching features. Try another keyword.</string>
+    <string name="feature_picker_empty_category">There are no features in this list.</string>
 </resources>
