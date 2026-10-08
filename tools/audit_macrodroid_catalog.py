@@ -71,8 +71,28 @@ def main():
     macro_keys_zh = {k for k in zh if k.startswith("macro_feature_") and k.endswith("_title")}
     missing_macro_en = sorted(macro_keys_zh - macro_keys_en)
     missing_macro_zh = sorted(macro_keys_en - macro_keys_zh)
+    # Stable, reviewed semantic mapping: no automatically guessed feature labels.
+    reviewed_path = ROOT / "tools/macrodroid_reviewed_names.csv"
+    with reviewed_path.open(encoding="utf-8", newline="") as mapping_file:
+        reviewed = list(__import__("csv").DictReader(mapping_file))
+    reviewed_keys = [row["yauto_resource_key"] for row in reviewed]
+    duplicate_reviewed_keys = sorted(key for key, cnt in __import__("collections").Counter(reviewed_keys).items() if cnt > 1)
+    missing_reviewed_overrides = sorted("macro_" + key for key in set(reviewed_keys) if "macro_" + key not in macro_keys_en or "macro_" + key not in macro_keys_zh)
+    unmapped_macro_overrides = sorted((macro_keys_en | macro_keys_zh) - {"macro_" + key for key in reviewed_keys})
+    mismatched_reviewed_kinds = []
+    for row in reviewed:
+        name = row["yauto_resource_key"]
+        actual_kind = ("trigger" if "_event_" in name else
+                       "constraint" if "_condition_" in name or "_state_" in name else "action")
+        if row["kind"] != actual_kind or not row["macrodroid_resource_key"].startswith(actual_kind + "_"):
+            mismatched_reviewed_kinds.append(name)
     report = {
         "macrodroid_aligned_feature_titles": len(macro_keys_en),
+        "reviewed_mapping_count": len(reviewed),
+        "duplicate_reviewed_keys": duplicate_reviewed_keys,
+        "missing_reviewed_overrides": missing_reviewed_overrides,
+        "unmapped_macro_overrides": unmapped_macro_overrides,
+        "mismatched_reviewed_kinds": mismatched_reviewed_kinds,
         "missing_macro_english": missing_macro_en,
         "missing_macro_chinese": missing_macro_zh,
         "semantic_picker_categories": len(category_ids),
@@ -102,6 +122,9 @@ def main():
     print(f"Missing: zh={len(missing_zh)}, en={len(missing_en)}; "
           f"shared labels={len(duplicated_labels)}; event/state collisions={len(event_names)}")
     print(f"Detailed report: {target}")
+    if duplicate_reviewed_keys or missing_reviewed_overrides or unmapped_macro_overrides or mismatched_reviewed_kinds:
+        print("ERROR: reviewed MacroDroid mapping is inconsistent with localization overrides", file=sys.stderr)
+        return 1
     if missing_macro_en or missing_macro_zh:
         print("ERROR: MacroDroid feature title overrides missing locale pair", file=sys.stderr)
         return 1
