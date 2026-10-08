@@ -111,7 +111,7 @@ fun inferFeaturePickerCategory(
             else FeaturePickerCategory.SENSORS
 
         has(
-            ".wifi", ".bluetooth", ".ble", ".mobile_data", ".airplane", ".hotspot",
+            ".network", ".wifi", ".bluetooth", ".ble", ".mobile_data", ".airplane", ".hotspot",
             ".tether", ".nfc", ".usb", ".connectivity", ".network_profile",
             ".data_usage", ".matter", ".wear", ".wireguard", ".vpn", ".private_dns",
             ".data_saver", ".ethernet", ".internet", "account_sync", ".sync.account",
@@ -163,7 +163,7 @@ fun inferFeaturePickerCategory(
         ) ->
             FeaturePickerCategory.DATE_TIME
 
-        has(
+        starts("file.") || has(
             ".file", ".directory", ".archive", ".zip", ".storage", ".download",
             "media_store", "document_tree",
         ) -> when (kind) {
