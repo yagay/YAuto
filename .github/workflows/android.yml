@@ -2,7 +2,7 @@ name: Android Fast Debug
 
 on:
   push:
-    branches: [ main, test ]
+    branches: [ main, test, refactor/macrodroid-on-1003-20261008 ]
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
@@ -35,6 +35,8 @@ jobs:
         with:
           gradle-version: '9.4.1'
 
+      - name: MacroDroid terminology audit
+        run: python3 tools/audit_macrodroid_catalog.py
       - name: Localization guard
         run: python3 .github/scripts/check-localization.py
       - name: Localization quality guard
