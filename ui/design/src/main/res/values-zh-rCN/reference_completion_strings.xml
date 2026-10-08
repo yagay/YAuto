@@ -57,14 +57,14 @@
     <string name="feature_android_event_user_unlocked_title">开机后用户已解锁</string>
     <string name="feature_android_event_wallpaper_changed_title">壁纸变化</string>
     <string name="feature_android_event_dock_changed_title">设备底座连接/断开</string>
-    <string name="feature_android_event_dreaming_started_title">屏幕保护启动</string>
-    <string name="feature_android_event_dreaming_stopped_title">屏幕保护停止</string>
+    <string name="feature_android_event_dreaming_started_title">屏幕保护程序开启</string>
+    <string name="feature_android_event_dreaming_stopped_title">屏幕保护程序关闭</string>
     <string name="feature_android_event_device_idle_mode_changed_title">设备空闲状态变化</string>
     <string name="feature_android_event_light_device_idle_mode_changed_title">轻度空闲状态变化</string>
     <string name="feature_android_event_managed_profile_available_title">工作资料可用</string>
     <string name="feature_android_event_managed_profile_unavailable_title">工作资料不可用</string>
     <string name="feature_android_event_managed_profile_unlocked_title">工作资料已解锁</string>
-    <string name="feature_android_event_next_alarm_changed_title">闹钟变化</string>
+    <string name="feature_android_event_next_alarm_changed_title">下一闹钟变化</string>
     <string name="feature_android_event_audio_becoming_noisy_title">音频即将切换到外放</string>
     <string name="feature_android_event_ringer_mode_changed_title">铃声模式变化</string>
     <string name="feature_android_event_bluetooth_state_changed_title">蓝牙状态变化</string>
@@ -81,7 +81,7 @@
     <string name="feature_android_event_wifi_supplicant_state_changed_title">Wi-Fi Supplicant 状态已更改</string>
     <string name="feature_android_event_wifi_supplicant_connection_changed_title">Wi-Fi Supplicant 连接已更改</string>
     <string name="feature_android_event_package_changed_title">应用包状态变化</string>
-    <string name="feature_android_event_package_fully_removed_title">应用已卸载</string>
+    <string name="feature_android_event_package_fully_removed_title">应用卸载</string>
     <string name="feature_android_event_package_data_cleared_title">应用数据清除</string>
     <string name="feature_android_event_package_restarted_title">应用程序包已重启</string>
     <string name="feature_android_event_packages_suspended_title">应用暂停</string>
