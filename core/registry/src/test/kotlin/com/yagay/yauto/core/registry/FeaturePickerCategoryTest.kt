@@ -248,6 +248,11 @@ class FeaturePickerCategoryTest {
             "android.event.input_filter_state_changed" to FeaturePickerCategory.DEVICE_EVENTS,
             "android.event.accessibility_windows_queried" to FeaturePickerCategory.DEVICE_EVENTS,
             "android.event.window_added" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.activity_manager_started" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.activity_manager_shell_command" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.window_manager_ready" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.task_cleanup" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.process_uncaught_exception" to FeaturePickerCategory.DEVICE_EVENTS,
         )
         eventCases.forEach { (id, expected) ->
             assertEquals(id, expected, classify(id, FeatureKind.EVENT))

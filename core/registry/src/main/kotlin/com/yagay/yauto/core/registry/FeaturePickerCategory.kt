@@ -357,6 +357,14 @@ private fun explicitMacroDroidFeatureCategory(
     }
     FeatureKind.EVENT -> when (key) {
         "android.event.location_mode_changed" -> FeaturePickerCategory.DEVICE_EVENTS
+        // Android service starts/commands are system lifecycle events, not app launches.
+        "android.event.activity_manager_started",
+        "android.event.activity_manager_ready",
+        "android.event.activity_manager_shell_command",
+        "android.event.window_manager_ready",
+        "android.event.task_cleanup",
+        "android.event.process_uncaught_exception",
+        "android.event.rendernode_crash_suppressed" -> FeaturePickerCategory.DEVICE_EVENTS
         // System-server/LSPosed observers are lifecycle events, not physical user input.
         "android.event.input_filter_state_changed",
         "android.event.input_manager_started",
