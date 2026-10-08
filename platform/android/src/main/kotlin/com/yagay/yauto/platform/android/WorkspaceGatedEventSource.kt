@@ -21,7 +21,8 @@ class WorkspaceGatedEventSource(
     private val factory: () -> AndroidEventSource,
 ) : AndroidEventSource {
     private val started = AtomicBoolean(false)
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    /** Every start gets a fresh job; a cancelled scope cannot be reused after stop(). */
+    private var scope: CoroutineScope? = null
     private var delegate: AndroidEventSource? = null
     private var delegateStarted = false
     private var subscription: AutoCloseable? = null
@@ -30,26 +31,36 @@ class WorkspaceGatedEventSource(
     override val id: String =
         "workspace-gated:" + requiredEventTypeIds.sorted().joinToString(",")
 
+    @Synchronized
     override fun start(emitter: RuntimeEventEmitter) {
         if (!started.compareAndSet(false, true)) return
+        val activeScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        scope = activeScope
         this.emitter = emitter
         subscription = workspace.addListener { data ->
-            scope.launch { applyWorkspace(data) }
+            activeScope.launch { applyWorkspace(data) }
         }
-        if (workspace.snapshotOrNull() == null) {
-            scope.launch {
+        // Not all ObservableWorkspaceRepository implementations replay their snapshot to newly
+        // added listeners. Always apply the initial workspace explicitly.
+        val snapshot = workspace.snapshotOrNull()
+        if (snapshot != null) {
+            activeScope.launch { applyWorkspace(snapshot) }
+        } else {
+            activeScope.launch {
                 runCatching { workspace.load() }.onSuccess(::applyWorkspace)
             }
         }
     }
 
+    @Synchronized
     override fun stop() {
         if (!started.compareAndSet(true, false)) return
         subscription?.close()
         subscription = null
+        scope?.cancel()
+        scope = null
         stopDelegate()
         emitter = null
-        scope.cancel()
     }
 
     @Synchronized
