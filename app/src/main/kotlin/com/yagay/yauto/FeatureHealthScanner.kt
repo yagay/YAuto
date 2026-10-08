@@ -154,7 +154,9 @@ class FeatureHealthScanner(
             }.getOrDefault(false)
         } else false
 
-        return AccessRequirement.entries.associateWith { requirement ->
+        // Probe only capabilities required by a registered feature. Checking every permission
+        // on every scan adds unnecessary system calls and reports unrelated access as denied.
+        return needed.associateWith { requirement ->
             when (requirement) {
                 AccessRequirement.ROOT -> root
                 AccessRequirement.SHIZUKU -> runCatching { shizuku.hasPermission() }.getOrDefault(false)
