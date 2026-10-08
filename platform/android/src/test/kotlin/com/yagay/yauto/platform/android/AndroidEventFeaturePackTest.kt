@@ -10,7 +10,11 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class AndroidEventFeaturePackTest {
-    private val registry = FeatureRegistry().apply { install(AndroidEventFeaturePack()) }
+    // Canonical battery matcher lives in its own feature pack; mirror the production registry.
+    private val registry = FeatureRegistry().apply {
+        install(AndroidEventFeaturePack())
+        install(AndroidBatteryEventFeaturePack())
+    }
     private val variables = object : VariableAccess {
         override fun get(name: String): ConfigValue? = null
         override fun set(name: String, value: ConfigValue) = Unit
