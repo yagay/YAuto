@@ -248,34 +248,30 @@ internal fun macroCategory(descriptor: FeatureDescriptor): CatalogCategory {
     val id = descriptor.id.value.lowercase(Locale.ROOT)
     fun group(key: String, title: Int, subtitle: Int, order: Int) =
         CatalogCategory(key, title, subtitle, order)
+    // Match complete ID tokens: runtime != time, callback != call.
+    fun has(vararg tokens: String): Boolean = tokens.any { token ->
+        ("_" + id + "_").contains("_" + token + "_")
+    }
     return when {
-        id.contains("location") || id.contains("geofence") || id.contains("gps") ->
+        has("location", "geofence", "gps") ->
             group("location", TextR.string.macro_category_location, TextR.string.macro_category_location_subtitle, 55)
-        id.contains("call") || id.contains("telephony") || Regex("(^|_)phone(_|$)").containsMatchIn(id) || id.contains("dial") ->
+        has("call", "telephony", "phone", "dial", "dialer") ->
             group("phone", TextR.string.macro_category_phone, TextR.string.macro_category_phone_subtitle, 75)
-        id.contains("sms") || id.contains("mms") || id.contains("email") || id.contains("message") ->
+        has("sms", "mms", "email", "message", "messaging") ->
             group("messaging", TextR.string.macro_category_messaging, TextR.string.macro_category_messaging_subtitle, 76)
-        id.contains("time") || id.contains("date") || id.contains("alarm") || id.contains("calendar") ||
-            id.contains("sunrise") || id.contains("sunset") || id.contains("interval") ->
+        has("time", "date", "alarm", "calendar", "sunrise", "sunset", "interval", "clock", "schedule") ->
             group("date_time", TextR.string.macro_category_date_time, TextR.string.macro_category_date_time_subtitle, 35)
-        id.contains("sensor") || id.contains("shake") || id.contains("proximity") ||
-            id.contains("orientation") || id.contains("accelerometer") ->
+        has("sensor", "shake", "proximity", "orientation", "accelerometer", "gyroscope") ->
             group("sensors", TextR.string.macro_category_sensors, TextR.string.macro_category_sensors_subtitle, 45)
-        id.contains("battery") || id.contains("charging") || id.contains("power") ||
-            id.contains("device_idle") ->
+        has("battery", "charging", "charger", "power", "device_idle") ->
             group("battery", TextR.string.macro_category_battery, TextR.string.macro_category_battery_subtitle, 40)
-        id.contains("bluetooth") || id.contains("wifi") || id.contains("network") ||
-            id.contains("vpn") || id.contains("nfc") || id.contains("usb") ||
-            id.contains("airplane") || id.contains("hotspot") || id.contains("mobile_data") ->
+        has("bluetooth", "wifi", "network", "vpn", "nfc", "usb", "airplane", "hotspot", "mobile_data") ->
             group("connectivity", TextR.string.macro_category_connectivity, TextR.string.macro_category_connectivity_subtitle, 50)
-        id.contains("volume") || id.contains("ringer") || id.contains("audio") ||
-            id.contains("speakerphone") || id.contains("microphone") || id.contains("media") ->
+        has("volume", "ringer", "audio", "speakerphone", "microphone", "media", "headset") ->
             group("media", TextR.string.macro_category_media, TextR.string.macro_category_media_subtitle, 65)
-        id.contains("screen") || id.contains("display") || id.contains("brightness") ||
-            id.contains("wallpaper") || id.contains("rotation") ->
+        has("screen", "display", "brightness", "wallpaper", "rotation") ->
             group("screen", TextR.string.macro_category_screen, TextR.string.macro_category_screen_subtitle, 60)
-        id.contains("notification") || id.contains("toast") || id.contains("quick_tile") ||
-            id.contains("qs_tile") ->
+        has("notification", "toast", "quick_tile", "qs_tile") ->
             group("notification", TextR.string.category_notification, TextR.string.category_notification_subtitle, 70)
         else -> catalogCategory(descriptor.category)
     }
