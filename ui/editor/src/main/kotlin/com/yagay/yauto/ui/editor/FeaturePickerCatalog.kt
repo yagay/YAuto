@@ -47,7 +47,7 @@ internal fun FeatureCategoryPage(
     onFavorite: (String) -> Unit,
 ) {
     val categories = remember(descriptors) {
-        descriptors.map { catalogCategory(it.category) }.distinctBy { it.id }.sortedBy { it.order }
+        descriptors.map { macroCategory(it) }.distinctBy { it.id }.sortedBy { it.order }
     }
     val textResolver = rememberFeatureTextResolver()
     val search = remember(descriptors, query, textResolver) {
@@ -100,7 +100,7 @@ internal fun FeatureCategoryPage(
                 }
             }
             items(categories, key = { it.id }) { category ->
-                val count = descriptors.count { it.category.name.lowercase(Locale.ROOT) == category.id }
+                val count = descriptors.count { macroCategory(it).id == category.id }
                 CategoryRow(
                     stringResource(category.titleRes),
                     stringResource(
@@ -125,7 +125,7 @@ internal fun FeatureCategoryPage(
                     } else title,
                     subtitle = stringResource(
                         TextR.string.editor_feature_search_subtitle_format,
-                        stringResource(catalogCategory(descriptor.category).titleRes),
+                        stringResource(macroCategory(descriptor).titleRes),
                         localizedFeatureDescriptionShared(descriptor),
                     ),
                     accent = kindAccent(kind),
@@ -157,7 +157,7 @@ internal fun FeatureListPage(
         val base = when (categoryPage.special) {
             "recent" -> recent.mapNotNull { id -> descriptors.firstOrNull { it.id.value == id } }
             "favorites" -> descriptors.filter { it.id.value in favorites }
-            else -> descriptors.filter { it.category.name.lowercase(Locale.ROOT) == categoryPage.category.id }
+            else -> descriptors.filter { macroCategory(it).id == categoryPage.category.id }
         }
         base.filter { query.isBlank() || textResolver.matches(it, query) }
             .sortedWith { left, right -> titleComparator.compare(textResolver.title(left), textResolver.title(right)) }
@@ -237,6 +237,48 @@ internal fun catalogCategory(category: FeatureCategory): CatalogCategory = when 
     FeatureCategory.SCRIPT -> CatalogCategory("script", TextR.string.category_script, TextR.string.category_script_subtitle, 130)
     FeatureCategory.ADVANCED -> CatalogCategory("advanced", TextR.string.category_advanced, TextR.string.category_advanced_subtitle, 140)
     FeatureCategory.COMPATIBILITY -> CatalogCategory("advanced", TextR.string.category_advanced, TextR.string.category_advanced_subtitle, 150)
+}
+
+/**
+ * Presentation-only MacroDroid-style taxonomy. Feature IDs and persisted categories stay intact.
+ * Resolve feature families before the broad registry category so phone/location/time entries
+ * do not disappear into Device or System. Categories are computed for the active picker kind.
+ */
+internal fun macroCategory(descriptor: FeatureDescriptor): CatalogCategory {
+    val id = descriptor.id.value.lowercase(Locale.ROOT)
+    fun group(key: String, title: Int, subtitle: Int, order: Int) =
+        CatalogCategory(key, title, subtitle, order)
+    return when {
+        id.contains("location") || id.contains("geofence") || id.contains("gps") ->
+            group("location", TextR.string.macro_category_location, TextR.string.macro_category_location_subtitle, 55)
+        id.contains("call") || id.contains("telephony") || id.contains("phone") || id.contains("dial") ->
+            group("phone", TextR.string.macro_category_phone, TextR.string.macro_category_phone_subtitle, 75)
+        id.contains("sms") || id.contains("mms") || id.contains("email") || id.contains("message") ->
+            group("messaging", TextR.string.macro_category_messaging, TextR.string.macro_category_messaging_subtitle, 76)
+        id.contains("time") || id.contains("date") || id.contains("alarm") || id.contains("calendar") ||
+            id.contains("sunrise") || id.contains("sunset") || id.contains("interval") ->
+            group("date_time", TextR.string.macro_category_date_time, TextR.string.macro_category_date_time_subtitle, 35)
+        id.contains("sensor") || id.contains("shake") || id.contains("proximity") ||
+            id.contains("orientation") || id.contains("accelerometer") ->
+            group("sensors", TextR.string.macro_category_sensors, TextR.string.macro_category_sensors_subtitle, 45)
+        id.contains("battery") || id.contains("charging") || id.contains("power") ||
+            id.contains("device_idle") ->
+            group("battery", TextR.string.macro_category_battery, TextR.string.macro_category_battery_subtitle, 40)
+        id.contains("bluetooth") || id.contains("wifi") || id.contains("network") ||
+            id.contains("vpn") || id.contains("nfc") || id.contains("usb") ||
+            id.contains("airplane") || id.contains("hotspot") || id.contains("mobile_data") ->
+            group("connectivity", TextR.string.macro_category_connectivity, TextR.string.macro_category_connectivity_subtitle, 50)
+        id.contains("volume") || id.contains("ringer") || id.contains("audio") ||
+            id.contains("speakerphone") || id.contains("microphone") || id.contains("media") ->
+            group("media", TextR.string.macro_category_media, TextR.string.macro_category_media_subtitle, 65)
+        id.contains("screen") || id.contains("display") || id.contains("brightness") ||
+            id.contains("wallpaper") || id.contains("rotation") ->
+            group("screen", TextR.string.macro_category_screen, TextR.string.macro_category_screen_subtitle, 60)
+        id.contains("notification") || id.contains("toast") || id.contains("quick_tile") ||
+            id.contains("qs_tile") ->
+            group("notification", TextR.string.category_notification, TextR.string.category_notification_subtitle, 70)
+        else -> catalogCategory(descriptor.category)
+    }
 }
 
 @Composable

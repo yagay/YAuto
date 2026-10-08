@@ -53,4 +53,22 @@
     <string name="implementation_lsposed_title">LSPosed</string>
     <string name="implementation_accessibility_title">Accessibility</string>
     <string name="editor_required_field_format">%1$s (required)</string>
+    <string name="macro_category_location">Location</string>
+    <string name="macro_category_location_subtitle">Location and geofence events</string>
+    <string name="macro_category_phone">Phone</string>
+    <string name="macro_category_phone_subtitle">Calls and phone operations</string>
+    <string name="macro_category_messaging">Messaging</string>
+    <string name="macro_category_messaging_subtitle">SMS, email and messages</string>
+    <string name="macro_category_date_time">Date/Time</string>
+    <string name="macro_category_date_time_subtitle">Schedules, dates and alarms</string>
+    <string name="macro_category_sensors">Sensors</string>
+    <string name="macro_category_sensors_subtitle">Movement and hardware sensors</string>
+    <string name="macro_category_battery">Battery/Power</string>
+    <string name="macro_category_battery_subtitle">Battery, charging and power saving</string>
+    <string name="macro_category_connectivity">Connectivity</string>
+    <string name="macro_category_connectivity_subtitle">Wi-Fi, Bluetooth, NFC and networks</string>
+    <string name="macro_category_media">Media/Volume</string>
+    <string name="macro_category_media_subtitle">Media controls, audio and volume</string>
+    <string name="macro_category_screen">Screen</string>
+    <string name="macro_category_screen_subtitle">Screen, brightness and display settings</string>
 </resources>

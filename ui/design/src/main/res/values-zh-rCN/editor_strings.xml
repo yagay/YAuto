@@ -53,4 +53,22 @@
     <string name="implementation_lsposed_title">LSPosed</string>
     <string name="implementation_accessibility_title">Accessibility</string>
     <string name="editor_required_field_format">%1$s（必填）</string>
+    <string name="macro_category_location">位置</string>
+    <string name="macro_category_location_subtitle">位置变化、地理围栏与定位</string>
+    <string name="macro_category_phone">电话</string>
+    <string name="macro_category_phone_subtitle">来电、通话与电话操作</string>
+    <string name="macro_category_messaging">消息</string>
+    <string name="macro_category_messaging_subtitle">短信、邮件与消息操作</string>
+    <string name="macro_category_date_time">日期/时间</string>
+    <string name="macro_category_date_time_subtitle">定时、日期、闹钟与时间条件</string>
+    <string name="macro_category_sensors">传感器</string>
+    <string name="macro_category_sensors_subtitle">运动、方向与硬件传感器</string>
+    <string name="macro_category_battery">电池/电源</string>
+    <string name="macro_category_battery_subtitle">电池、充电与省电模式</string>
+    <string name="macro_category_connectivity">连接</string>
+    <string name="macro_category_connectivity_subtitle">Wi-Fi、蓝牙、NFC 与网络连接</string>
+    <string name="macro_category_media">媒体/音量</string>
+    <string name="macro_category_media_subtitle">媒体控制、音频与音量</string>
+    <string name="macro_category_screen">屏幕</string>
+    <string name="macro_category_screen_subtitle">屏幕状态、亮度与显示控制</string>
 </resources>
