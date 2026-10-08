@@ -85,8 +85,23 @@ fun inferFeaturePickerCategory(
         // Script/Tasker plugin actions are in MacroDroid's Applications category.
         kind == FeatureKind.ACTION && (
             starts("script.", "tasker.plugin.") ||
-                has(".javascript.", ".beanshell.", ".mvel.", ".shell.execute")
+                has(".javascript.", ".beanshell.", ".mvel.", ".shell.execute", ".shell.exec")
             ) -> FeaturePickerCategory.APPLICATIONS
+
+        // Physical button / notification-bar interactions are user-input triggers,
+        // even when their name also contains media volume or notifications.
+        kind == FeatureKind.EVENT && has(
+            "volume_button", "power_button", "notification_bar_button",
+            "notification_button", "widget_button", "floating_button",
+        ) -> FeaturePickerCategory.USER_INPUT
+
+        // SIM-card changes are device events, unlike incoming calls and SMS messages.
+        kind == FeatureKind.EVENT && has(".sim_card", ".sim_state") ->
+            FeaturePickerCategory.DEVICE_EVENTS
+
+        // Screen-awake controls belong with screen actions, not device reboot commands.
+        kind == FeatureKind.ACTION && has(".power.stay_awake", ".screen.keep_awake") ->
+            FeaturePickerCategory.SCREEN
 
         // MacroDroid exposes web/network requests separately from connectivity controls.
         has(
