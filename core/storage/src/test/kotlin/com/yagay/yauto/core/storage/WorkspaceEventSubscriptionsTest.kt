@@ -59,6 +59,72 @@ class WorkspaceEventSubscriptionsTest {
     }
 
     @Test
+    fun `paused runtime does not keep costly configured event sources alive`() {
+        val paused = WorkspaceData(
+            runtimeEnabled = false,
+            automations = listOf(
+                Automation(
+                    id = AutomationId("paused"),
+                    name = "Paused",
+                    activation = Activation(events = listOf(FeatureRef("android.event.sensor_value"))),
+                    onEvent = listOf(
+                        ActionNode.WaitEvent(
+                            id = NodeId("wait"),
+                            events = listOf(FeatureRef("android.event.file_changed")),
+                        ),
+                    ),
+                ),
+            ),
+        )
+        assertEquals(emptySet<String>(), paused.runtimeEventFeatureIds())
+        assertEquals(
+            setOf("android.event.sensor_value", "android.event.file_changed"),
+            paused.copy(runtimeEnabled = true).runtimeEventFeatureIds(),
+        )
+    }
+
+    @Test
+    fun `disabled triggers stop subscriptions but wait events can still require same backend`() {
+        val id = "android.event.file_changed"
+        val trigger = FeatureRef(id)
+        val automation = Automation(
+            id = AutomationId("rule"),
+            name = "Rule",
+            activation = Activation(events = listOf(trigger)),
+        )
+        val disabled = WorkspaceData(
+            automations = listOf(automation),
+            disabledTriggerKeys = setOf("rule|$id|"),
+        )
+        assertEquals(emptySet<String>(), disabled.runtimeEventFeatureIds())
+        assertEquals(
+            setOf(id),
+            disabled.copy(automations = listOf(automation.copy(onEvent = listOf(
+                ActionNode.WaitEvent(NodeId("wait"), listOf(FeatureRef(id))),
+            )))).runtimeEventFeatureIds(),
+        )
+    }
+
+    @Test
+    fun `disabled imported trigger keys honor historical source type and tag`() {
+        val feature = FeatureRef(
+            "android.event.broadcast",
+            config = mapOf(
+                "source.type" to com.yagay.yauto.core.model.ConfigValue.StringValue("legacy.trigger"),
+                "tag" to com.yagay.yauto.core.model.ConfigValue.StringValue(" key "),
+            ),
+        )
+        val data = WorkspaceData(
+            automations = listOf(Automation(
+                AutomationId("imported"), "Imported",
+                activation = Activation(events = listOf(feature)),
+            )),
+            disabledTriggerKeys = setOf("imported|legacy.trigger|key"),
+        )
+        assertEquals(emptySet<String>(), data.runtimeEventFeatureIds())
+    }
+
+    @Test
     fun `disabled categories do not keep event sources alive`() {
         val automation = Automation(
             id = AutomationId("a"),

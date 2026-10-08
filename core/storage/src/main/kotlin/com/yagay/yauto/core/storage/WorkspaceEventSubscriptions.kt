@@ -3,6 +3,7 @@ package com.yagay.yauto.core.storage
 import com.yagay.yauto.core.model.ActionNode
 import com.yagay.yauto.core.model.Automation
 import com.yagay.yauto.core.model.FeatureRef
+import com.yagay.yauto.core.model.ConfigValue
 
 /**
  * Event feature IDs that the runtime must currently be able to receive.
@@ -12,18 +13,31 @@ import com.yagay.yauto.core.model.FeatureRef
  * subscription view instead of each backend independently rescanning workspace structure.
  */
 fun WorkspaceData.runtimeEventFeatureIds(): Set<String> = buildSet {
+    // Global pause must also stop expensive configured listeners, not only dispatch execution.
+    if (!runtimeEnabled) return@buildSet
     val active = automations.filter { automation ->
         automation.enabled &&
             (automation.category == null || automation.category !in disabledCategories)
     }
 
     active.forEach { automation ->
-        addAll(automation.activation.events.map(FeatureRef::typeId))
+        automation.activation.events.forEach { feature ->
+            if (runtimeTriggerKey(automation, feature) !in disabledTriggerKeys) {
+                add(feature.typeId)
+            }
+        }
         collectWaitEvents(automation.onEnter)
         collectWaitEvents(automation.onEvent)
         collectWaitEvents(automation.onExit)
         flowClosure(automation).forEach { flow -> collectWaitEvents(flow.actions) }
     }
+}
+
+/** Mirrors the runtime's persisted activation key for normal source.type and tag fields. */
+private fun runtimeTriggerKey(automation: com.yagay.yauto.core.model.Automation, feature: FeatureRef): String {
+    val sourceType = (feature.config["source.type"] as? ConfigValue.StringValue)?.value.orEmpty()
+    val tag = (feature.config["tag"] as? ConfigValue.StringValue)?.value.orEmpty().trim()
+    return automation.id.value + "|" + sourceType.ifBlank { feature.typeId } + "|" + tag
 }
 
 private fun MutableSet<String>.collectWaitEvents(nodes: List<ActionNode>) {
