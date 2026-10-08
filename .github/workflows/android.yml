@@ -46,6 +46,16 @@ jobs:
       - name: Architecture maintainability guard
         run: python3 .github/scripts/check-architecture.py
 
+      - name: Verify picker taxonomy and editor behavior
+        run: >
+          gradle
+          :core:registry:test
+          :ui:editor:testDebugUnitTest
+          --configuration-cache
+          --parallel
+          --build-cache
+          --stacktrace
+
       - name: Build debug APK
         run: >
           gradle

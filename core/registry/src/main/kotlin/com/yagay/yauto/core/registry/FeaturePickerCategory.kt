@@ -94,7 +94,8 @@ fun inferFeaturePickerCategory(
             "http_server", "rest_api", ".mqtt",
         ) -> when (kind) {
             FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.CONNECTIVITY
-            FeatureKind.ACTION, FeatureKind.EVENT -> FeaturePickerCategory.WEB_INTERACTIONS
+            FeatureKind.ACTION -> FeaturePickerCategory.WEB_INTERACTIONS
+            FeatureKind.EVENT -> FeaturePickerCategory.CONNECTIVITY
         }
 
         // Logging is a first-class MacroDroid category rather than a script/command subtype.
@@ -167,7 +168,7 @@ fun inferFeaturePickerCategory(
 
         // MacroDroid keeps volume/ringer/DND separate from general media/audio.
         has(
-            ".volume", "ringer_mode", ".ringer.", "dnd_filter", ".dnd",
+            ".volume", "_volume", "volume_", "ringer_mode", ".ringer.", "dnd_filter", ".dnd",
             "do_not_disturb",
         ) ->
             FeaturePickerCategory.VOLUME
