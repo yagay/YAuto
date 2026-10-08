@@ -2,6 +2,7 @@ package com.yagay.yauto.ui.editor
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -51,6 +52,7 @@ internal fun FeatureCategoryPage(
         modifier = modifier.fillMaxSize(),
         state = listState,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         item(contentType = "search") {
             OutlinedTextField(
@@ -131,7 +133,7 @@ internal fun FeatureCategoryPage(
                         val item = entry.item
                         FeaturePickerRow(
                             title = favoriteTitle(item, favorites),
-                            subtitle = stringResource(item.category.titleRes),
+                            subtitle = localizedList(listOf(stringResource(item.category.titleRes), item.description)),
                             accent = kindAccent(kind),
                             onClick = { onFeature(item.descriptor) },
                             onFavorite = { onFavorite(item.descriptor.id.value) },
@@ -142,6 +144,7 @@ internal fun FeatureCategoryPage(
                     }
                     is FeaturePickerListEntry.Unified -> UnifiedFeatureRow(
                         group = entry.group,
+                        accent = kindAccent(kind),
                         preferredTitle = entry.group.members.firstOrNull {
                             it.descriptor.id.value == entry.preferredMemberId
                         }?.title,
@@ -182,6 +185,7 @@ internal fun FeatureListPage(
         modifier = modifier.fillMaxSize(),
         state = listState,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         item(contentType = "search") {
             OutlinedTextField(
@@ -223,7 +227,7 @@ internal fun FeatureListPage(
                     val item = entry.item
                     FeaturePickerRow(
                         title = favoriteTitle(item, favorites),
-                        subtitle = null,
+                        subtitle = item.description,
                         accent = kindAccent(kind),
                         onClick = { onFeature(item.descriptor) },
                         onFavorite = { onFavorite(item.descriptor.id.value) },
@@ -234,6 +238,7 @@ internal fun FeatureListPage(
                 }
                 is FeaturePickerListEntry.Unified -> UnifiedFeatureRow(
                     group = entry.group,
+                    accent = kindAccent(kind),
                     preferredTitle = if (query.isNotBlank() || categoryPage.special != null) {
                         entry.group.members.firstOrNull {
                             it.descriptor.id.value == entry.preferredMemberId
@@ -253,42 +258,25 @@ private fun UnifiedFeatureRow(
     group: UnifiedFeatureGroup,
     preferredTitle: String?,
     favorite: Boolean,
+    accent: Color,
     onClick: () -> Unit,
     onFavorite: () -> Unit,
 ) {
-    ListItem(
-        headlineContent = {
-            val title = stringResource(group.spec.titleRes)
-            Text(
-                text = if (favorite) stringResource(TextR.string.editor_favorite_prefix, title) else title,
-                fontWeight = FontWeight.Medium,
-            )
-        },
-        supportingContent = {
-            val details = stringResource(
-                TextR.string.feature_picker_family_count_format,
-                stringResource(group.spec.subtitleRes),
-                group.members.size,
-            )
-            Text(if (preferredTitle.isNullOrBlank()) details else "$preferredTitle · $details")
-        },
-        trailingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_more),
-                    contentDescription = stringResource(TextR.string.icon_more_options),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(44.dp).clickable(onClick = onFavorite).padding(11.dp),
-                )
-                Icon(
-                    painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_chevron_right),
-                    contentDescription = stringResource(TextR.string.icon_open_details),
-                )
-            }
-        },
-        modifier = Modifier.clickable(onClick = onClick),
+    val title = stringResource(group.spec.titleRes)
+    val detail = stringResource(
+        TextR.string.feature_picker_family_count_format,
+        stringResource(group.spec.subtitleRes),
+        group.members.size,
     )
-    HorizontalDivider()
+    FeaturePickerRow(
+        title = if (favorite) stringResource(TextR.string.editor_favorite_prefix, title) else title,
+        subtitle = if (preferredTitle.isNullOrBlank()) detail else "$preferredTitle · $detail",
+        accent = accent,
+        onClick = onClick,
+        onFavorite = onFavorite,
+        height = 68.dp,
+        showChevron = true,
+    )
 }
 
 @Composable
@@ -299,6 +287,7 @@ private fun favoriteTitle(item: FeaturePickerCatalogItem, favorites: Set<String>
         item.title
     }
 
+/** Main-style rounded cards, with 1003's statuses, permission tags and stable list keys. */
 @Composable
 private fun FeaturePickerRow(
     title: String,
@@ -309,74 +298,88 @@ private fun FeaturePickerRow(
     height: androidx.compose.ui.unit.Dp,
     availability: FeatureAvailabilityUi? = null,
     accessTags: String = "",
+    showChevron: Boolean = false,
 ) {
-    val divider = MaterialTheme.colorScheme.outlineVariant
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(height)
-            .drawBehind {
-                val accentWidth = 4.dp.toPx()
-                drawRect(accent, size = androidx.compose.ui.geometry.Size(accentWidth, size.height))
-                drawLine(
-                    color = divider,
-                    start = androidx.compose.ui.geometry.Offset(accentWidth, size.height),
-                    end = androidx.compose.ui.geometry.Offset(size.width, size.height),
-                    strokeWidth = 1.dp.toPx(),
-                )
-            }
-            .clickable(onClick = onClick)
-            .padding(start = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Surface(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(7.dp),
+        tonalElevation = 1.dp,
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            val supporting = localizedList(
-                listOfNotNull(
-                    subtitle?.takeIf { it.isNotBlank() },
-                    accessTags.takeIf { it.isNotBlank() },
-                    availability?.summary?.takeIf { it.isNotBlank() },
-                )
-            )
-            if (supporting.isNotBlank()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = height)
+                .drawBehind {
+                    drawRect(accent, size = androidx.compose.ui.geometry.Size(5.dp.toPx(), size.height))
+                }
+                .padding(start = 16.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
                 Text(
-                    text = supporting,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+                subtitle?.takeIf { it.isNotBlank() }?.let {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                val meta = localizedList(
+                    listOfNotNull(
+                        accessTags.takeIf { it.isNotBlank() },
+                        availability?.summary?.takeIf { it.isNotBlank() },
+                    )
+                )
+                if (meta.isNotBlank()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = meta,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            availability?.let {
+                Text(
+                    text = it.statusLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = when (it.tone) {
+                        FeatureAvailabilityTone.READY -> MacroPalette.Constraint
+                        FeatureAvailabilityTone.BLOCKED -> MacroPalette.Trigger
+                        FeatureAvailabilityTone.BROKEN -> MaterialTheme.colorScheme.error
+                        FeatureAvailabilityTone.UNSUPPORTED -> MacroPalette.Utility
+                    },
+                    modifier = Modifier.padding(horizontal = 6.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Icon(
+                painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_more),
+                contentDescription = stringResource(TextR.string.icon_more_options),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(44.dp).clickable(onClick = onFavorite).padding(11.dp),
+            )
+            if (showChevron) {
+                Icon(
+                    painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_chevron_right),
+                    contentDescription = stringResource(TextR.string.icon_open_details),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 8.dp),
+                )
             }
         }
-        availability?.let {
-            Text(
-                text = it.statusLabel,
-                style = MaterialTheme.typography.labelSmall,
-                color = when (it.tone) {
-                    FeatureAvailabilityTone.READY -> MacroPalette.Constraint
-                    FeatureAvailabilityTone.BLOCKED -> MacroPalette.Trigger
-                    FeatureAvailabilityTone.BROKEN -> MaterialTheme.colorScheme.error
-                    FeatureAvailabilityTone.UNSUPPORTED -> MacroPalette.Utility
-                },
-                modifier = Modifier.padding(horizontal = 6.dp),
-                maxLines = 1,
-            )
-        }
-        Icon(
-            painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_more),
-            contentDescription = stringResource(TextR.string.icon_more_options),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .size(44.dp)
-                .clickable(onClick = onFavorite)
-                .padding(11.dp),
-        )
     }
 }
 
