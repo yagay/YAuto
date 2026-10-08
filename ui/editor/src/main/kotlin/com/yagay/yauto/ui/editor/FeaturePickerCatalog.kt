@@ -248,31 +248,35 @@ internal fun macroCategory(descriptor: FeatureDescriptor): CatalogCategory {
     val id = descriptor.id.value.lowercase(Locale.ROOT)
     fun group(key: String, title: Int, subtitle: Int, order: Int) =
         CatalogCategory(key, title, subtitle, order)
-    // Match complete ID tokens: runtime != time, callback != call.
+    // Match complete ID segments; these are presentation rules, never persisted IDs.
+    // Specific domains take precedence over general tokens (e.g. battery voltage,
+    // SMS notification, Wi-Fi scan time, media screen controls).
     fun has(vararg tokens: String): Boolean = tokens.any { token ->
         ("_" + id + "_").contains("_" + token + "_")
     }
     return when {
-        has("location", "geofence", "gps") ->
-            group("location", TextR.string.macro_category_location, TextR.string.macro_category_location_subtitle, 55)
-        has("call", "telephony", "phone", "dial", "dialer") ->
-            group("phone", TextR.string.macro_category_phone, TextR.string.macro_category_phone_subtitle, 75)
-        has("sms", "mms", "email", "message", "messaging") ->
+        has("sms", "mms", "email", "messaging") || has("message") && !has("log") ->
             group("messaging", TextR.string.macro_category_messaging, TextR.string.macro_category_messaging_subtitle, 76)
-        has("time", "date", "alarm", "calendar", "sunrise", "sunset", "interval", "clock", "schedule") ->
-            group("date_time", TextR.string.macro_category_date_time, TextR.string.macro_category_date_time_subtitle, 35)
-        has("sensor", "shake", "proximity", "orientation", "accelerometer", "gyroscope") ->
-            group("sensors", TextR.string.macro_category_sensors, TextR.string.macro_category_sensors_subtitle, 45)
-        (has("battery", "charging", "charger", "device_idle") || (has("power") && !has("power_user"))) ->
-            group("battery", TextR.string.macro_category_battery, TextR.string.macro_category_battery_subtitle, 40)
-        has("bluetooth", "wifi", "network", "vpn", "nfc", "usb", "airplane", "hotspot", "mobile_data") ->
-            group("connectivity", TextR.string.macro_category_connectivity, TextR.string.macro_category_connectivity_subtitle, 50)
-        has("volume", "ringer", "audio", "speakerphone", "microphone", "media", "headset") ->
-            group("media", TextR.string.macro_category_media, TextR.string.macro_category_media_subtitle, 65)
-        has("screen", "display", "brightness", "wallpaper", "rotation") ->
-            group("screen", TextR.string.macro_category_screen, TextR.string.macro_category_screen_subtitle, 60)
         has("notification", "toast", "quick_tile", "qs_tile") ->
             group("notification", TextR.string.category_notification, TextR.string.category_notification_subtitle, 70)
+        has("geofence", "location", "gps") ->
+            group("location", TextR.string.macro_category_location, TextR.string.macro_category_location_subtitle, 55)
+        has("phone", "telephony", "dial", "dialer") || has("call") && !has("callback") ->
+            group("phone", TextR.string.macro_category_phone, TextR.string.macro_category_phone_subtitle, 75)
+        has("headset", "audio", "volume", "ringer", "speakerphone", "microphone", "media", "playback", "midi") ->
+            group("media", TextR.string.macro_category_media, TextR.string.macro_category_media_subtitle, 65)
+        has("wifi", "bluetooth", "network", "vpn", "nfc", "usb", "airplane", "hotspot", "ethernet") ||
+            has("mobile") && has("data") ->
+            group("connectivity", TextR.string.macro_category_connectivity, TextR.string.macro_category_connectivity_subtitle, 50)
+        has("battery", "charging", "charger") || has("device", "idle") && id.contains("device_idle") ||
+            has("power") && !id.contains("power_user") ->
+            group("battery", TextR.string.macro_category_battery, TextR.string.macro_category_battery_subtitle, 40)
+        has("screen", "display", "brightness", "wallpaper", "rotation") ->
+            group("screen", TextR.string.macro_category_screen, TextR.string.macro_category_screen_subtitle, 60)
+        has("sensor", "shake", "proximity", "orientation", "accelerometer", "gyroscope") ->
+            group("sensors", TextR.string.macro_category_sensors, TextR.string.macro_category_sensors_subtitle, 45)
+        has("time", "date", "alarm", "calendar", "sunrise", "sunset", "interval", "clock", "schedule") ->
+            group("date_time", TextR.string.macro_category_date_time, TextR.string.macro_category_date_time_subtitle, 35)
         else -> catalogCategory(descriptor.category)
     }
 }
