@@ -159,6 +159,33 @@ class FeaturePickerCategoryTest {
     }
 
     @Test
+    fun `source audited concrete features override ambiguous category keywords`() {
+        val actionCases = mapOf(
+            "android.home.launch" to FeaturePickerCategory.APPLICATIONS,
+            "android.media.latest.open" to FeaturePickerCategory.CAMERA_PHOTO,
+            "android.contact_via_app.send" to FeaturePickerCategory.MESSAGING,
+            "android.keyguard.set" to FeaturePickerCategory.SCREEN,
+        )
+        actionCases.forEach { (id, expected) ->
+            assertEquals(id, expected, classify(id, FeatureKind.ACTION))
+        }
+        val eventCases = mapOf(
+            "android.event.sleep_transition" to FeaturePickerCategory.SENSORS,
+            "android.event.sleep_classification" to FeaturePickerCategory.SENSORS,
+            "android.event.assistant_activated" to FeaturePickerCategory.USER_INPUT,
+            "android.event.accessibility_state_changed" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.sim_subscription_changed" to FeaturePickerCategory.DEVICE_EVENTS,
+            "android.event.email_received" to FeaturePickerCategory.APPLICATIONS,
+            "android.event.window_focus_changed" to FeaturePickerCategory.APPLICATIONS,
+        )
+        eventCases.forEach { (id, expected) ->
+            assertEquals(id, expected, classify(id, FeatureKind.EVENT))
+        }
+        assertEquals(FeaturePickerCategory.SENSORS, classify("android.state.sleeping", FeatureKind.STATE))
+        assertEquals(FeaturePickerCategory.SENSORS, classify("android.condition.sleeping", FeatureKind.CONDITION))
+    }
+
+    @Test
     fun `every MacroDroid picker kind has a separate allowed set`() {
         val trigger = macroDroidCategoriesForKind(FeatureKind.EVENT)
         val action = macroDroidCategoriesForKind(FeatureKind.ACTION)

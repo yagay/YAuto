@@ -51,6 +51,10 @@ fun inferFeaturePickerCategory(
     legacyCategory: FeatureCategory,
 ): FeaturePickerCategory {
     val key = id.lowercase(Locale.ROOT)
+    // Apply verified concrete-feature corrections before broad compatibility keywords.
+    // This prevents a media/photo action or a system event from being misread as
+    // a playback action or a user-input trigger purely because of its ID.
+    explicitMacroDroidFeatureCategory(key, kind)?.let { return it }
     fun has(vararg tokens: String): Boolean = tokens.any(key::contains)
     fun starts(vararg prefixes: String): Boolean = prefixes.any(key::startsWith)
 
@@ -318,6 +322,41 @@ fun inferFeaturePickerCategory(
         else -> fallbackPickerCategory(kind, legacyCategory)
     }
     return normalizeMacroDroidPickerCategory(kind, inferred)
+}
+
+/**
+ * Source-audited exceptional IDs. Broad substring matching is not enough for these
+ * features; preserve this table when changing the overall category classifier.
+ */
+private fun explicitMacroDroidFeatureCategory(
+    key: String,
+    kind: FeatureKind,
+): FeaturePickerCategory? = when (kind) {
+    FeatureKind.ACTION -> when (key) {
+        "android.home.launch" -> FeaturePickerCategory.APPLICATIONS
+        "android.media.latest.open" -> FeaturePickerCategory.CAMERA_PHOTO
+        "android.contact_via_app.send" -> FeaturePickerCategory.MESSAGING
+        "android.keyguard.set" -> FeaturePickerCategory.SCREEN
+        else -> null
+    }
+    FeatureKind.EVENT -> when (key) {
+        "android.event.sleep_transition", "android.event.sleep_classification" ->
+            FeaturePickerCategory.SENSORS
+        "android.event.assistant_activated" -> FeaturePickerCategory.USER_INPUT
+        "android.event.accessibility_state_changed",
+        "android.event.sim_subscription_changed",
+        "android.event.sms_provider_ready", "android.event.sms_provider_changed" ->
+            FeaturePickerCategory.DEVICE_EVENTS
+        "android.event.email_received", "android.event.window_focus_changed" ->
+            FeaturePickerCategory.APPLICATIONS
+        else -> null
+    }
+    FeatureKind.STATE, FeatureKind.CONDITION -> when (key) {
+        "android.state.sleeping", "android.condition.sleeping",
+        "android.state.physical_activity", "android.condition.physical_activity" ->
+            FeaturePickerCategory.SENSORS
+        else -> null
+    }
 }
 
 /**
