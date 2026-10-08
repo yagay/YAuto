@@ -4,6 +4,7 @@ import com.yagay.yauto.core.registry.FeatureCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureId
 import com.yagay.yauto.core.registry.FeatureKind
+import com.yagay.yauto.core.registry.FeaturePickerCategory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -11,6 +12,21 @@ import org.junit.Test
 class FeaturePickerCatalogModelTest {
     private val core = CatalogCategory("core", 1, 2, 10)
     private val app = CatalogCategory("app", 3, 4, 20)
+
+    @Test
+    fun `the picker uses a different category order for each feature kind`() {
+        val appAction = catalogCategory(FeaturePickerCategory.APPLICATIONS, FeatureKind.ACTION)
+        val fileAction = catalogCategory(FeaturePickerCategory.FILES, FeatureKind.ACTION)
+        val sensorEvent = catalogCategory(FeaturePickerCategory.SENSORS, FeatureKind.EVENT)
+        val inputEvent = catalogCategory(FeaturePickerCategory.USER_INPUT, FeatureKind.EVENT)
+        val batteryCondition = catalogCategory(FeaturePickerCategory.BATTERY_POWER, FeatureKind.CONDITION)
+        val screenCondition = catalogCategory(FeaturePickerCategory.SCREEN, FeatureKind.CONDITION)
+        assertTrue(appAction.order < fileAction.order)
+        assertTrue(sensorEvent.order < inputEvent.order)
+        assertTrue(batteryCondition.order < screenCondition.order)
+        assertEquals("screen", screenCondition.id)
+        assertEquals("applications", appAction.id)
+    }
 
     @Test
     fun `catalog sorts once and exposes stable category counts`() {

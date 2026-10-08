@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeaturePickerCategory
 import com.yagay.yauto.core.registry.FeatureKind
+import com.yagay.yauto.core.registry.macroDroidCategoryOrder
 import com.yagay.yauto.core.registry.normalizeMacroDroidPickerCategory
 import com.yagay.yauto.ui.design.R as TextR
 import java.util.Locale
@@ -149,7 +150,8 @@ internal fun buildFeaturePickerCatalog(
 internal fun catalogCategory(
     category: FeaturePickerCategory,
     kind: FeatureKind? = null,
-): CatalogCategory = when (category) {
+): CatalogCategory {
+    val info = when (category) {
     FeaturePickerCategory.AI ->
         CatalogCategory("ai", TextR.string.macro_category_ai, TextR.string.macro_category_ai_subtitle, 10)
     FeaturePickerCategory.APPLICATIONS ->
@@ -208,6 +210,8 @@ internal fun catalogCategory(
         CatalogCategory("volume", TextR.string.macro_category_volume, TextR.string.macro_category_volume_subtitle, 240)
     FeaturePickerCategory.WEB_INTERACTIONS ->
         CatalogCategory("web_interactions", TextR.string.macro_category_web_interactions, TextR.string.macro_category_web_interactions_subtitle, 250)
+    }
+    return if (kind == null) info else info.copy(order = macroDroidCategoryOrder(kind, category))
 }
 
 private fun normalizeQuery(value: String): String = value.trim().lowercase(Locale.ROOT)

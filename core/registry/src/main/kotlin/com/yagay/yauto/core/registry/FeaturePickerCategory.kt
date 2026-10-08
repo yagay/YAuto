@@ -352,11 +352,58 @@ private fun explicitMacroDroidFeatureCategory(
         else -> null
     }
     FeatureKind.STATE, FeatureKind.CONDITION -> when (key) {
+        "android.state.audio.speakerphone", "android.condition.audio.speakerphone",
+        "android.state.speakerphone", "android.condition.speakerphone" ->
+            FeaturePickerCategory.SCREEN
         "android.state.sleeping", "android.condition.sleeping",
         "android.state.physical_activity", "android.condition.physical_activity" ->
             FeaturePickerCategory.SENSORS
         else -> null
     }
+}
+
+/** The category order on MacroDroid's three pickers is not alphabetical and differs by kind. */
+private val triggerPickerOrder = listOf(
+    FeaturePickerCategory.APPLICATIONS, FeaturePickerCategory.SENSORS,
+    FeaturePickerCategory.BATTERY_POWER, FeaturePickerCategory.USER_INPUT,
+    FeaturePickerCategory.LOCATION, FeaturePickerCategory.DEVICE_EVENTS,
+    FeaturePickerCategory.CONNECTIVITY, FeaturePickerCategory.CALL_SMS,
+    FeaturePickerCategory.DATE_TIME, FeaturePickerCategory.YAUTO_SPECIFIC,
+)
+
+private val actionPickerOrder = listOf(
+    FeaturePickerCategory.APPLICATIONS, FeaturePickerCategory.CAMERA_PHOTO,
+    FeaturePickerCategory.FILES, FeaturePickerCategory.MACROS,
+    FeaturePickerCategory.MESSAGING, FeaturePickerCategory.MEDIA,
+    FeaturePickerCategory.LOGGING, FeaturePickerCategory.LOCATION,
+    FeaturePickerCategory.VOLUME, FeaturePickerCategory.SCREEN,
+    FeaturePickerCategory.DEVICE_ACTIONS, FeaturePickerCategory.DEVICE_SETTINGS,
+    FeaturePickerCategory.CONDITIONS_LOOPS, FeaturePickerCategory.CONNECTIVITY,
+    FeaturePickerCategory.NOTIFICATIONS, FeaturePickerCategory.PHONE,
+    FeaturePickerCategory.DATE_TIME, FeaturePickerCategory.VARIABLES,
+    FeaturePickerCategory.YAUTO_SPECIFIC, FeaturePickerCategory.WEB_INTERACTIONS,
+    // YAuto extensions stay after the twenty MacroDroid reference categories.
+    FeaturePickerCategory.AI,
+)
+
+private val constraintPickerOrder = listOf(
+    FeaturePickerCategory.SENSORS, FeaturePickerCategory.BATTERY_POWER,
+    FeaturePickerCategory.MEDIA, FeaturePickerCategory.LOCATION,
+    FeaturePickerCategory.SCREEN, FeaturePickerCategory.DEVICE_STATE,
+    FeaturePickerCategory.CONNECTIVITY, FeaturePickerCategory.NOTIFICATIONS,
+    FeaturePickerCategory.PHONE, FeaturePickerCategory.DATE_TIME,
+    FeaturePickerCategory.YAUTO_SPECIFIC,
+)
+
+/** Stable UI order. Unknown/invalid combinations are placed after the supported categories. */
+fun macroDroidCategoryOrder(kind: FeatureKind, category: FeaturePickerCategory): Int {
+    val categories = when (kind) {
+        FeatureKind.EVENT -> triggerPickerOrder
+        FeatureKind.ACTION -> actionPickerOrder
+        FeatureKind.STATE, FeatureKind.CONDITION -> constraintPickerOrder
+    }
+    val index = categories.indexOf(category)
+    return if (index < 0) 10_000 else (index + 1) * 10
 }
 
 /**
@@ -365,34 +412,9 @@ private fun explicitMacroDroidFeatureCategory(
  * STATE follows the constraint taxonomy because both inspect the current device state.
  */
 fun macroDroidCategoriesForKind(kind: FeatureKind): Set<FeaturePickerCategory> = when (kind) {
-    FeatureKind.EVENT -> setOf(
-        FeaturePickerCategory.APPLICATIONS, FeaturePickerCategory.SENSORS,
-        FeaturePickerCategory.BATTERY_POWER, FeaturePickerCategory.USER_INPUT,
-        FeaturePickerCategory.LOCATION, FeaturePickerCategory.DEVICE_EVENTS,
-        FeaturePickerCategory.CONNECTIVITY, FeaturePickerCategory.CALL_SMS,
-        FeaturePickerCategory.DATE_TIME, FeaturePickerCategory.YAUTO_SPECIFIC,
-    )
-    FeatureKind.ACTION -> setOf(
-        FeaturePickerCategory.AI, FeaturePickerCategory.APPLICATIONS,
-        FeaturePickerCategory.CAMERA_PHOTO, FeaturePickerCategory.CONNECTIVITY,
-        FeaturePickerCategory.DATE_TIME, FeaturePickerCategory.DEVICE_ACTIONS,
-        FeaturePickerCategory.DEVICE_SETTINGS, FeaturePickerCategory.FILES,
-        FeaturePickerCategory.LOCATION, FeaturePickerCategory.LOGGING,
-        FeaturePickerCategory.MACROS, FeaturePickerCategory.CONDITIONS_LOOPS,
-        FeaturePickerCategory.YAUTO_SPECIFIC, FeaturePickerCategory.MEDIA,
-        FeaturePickerCategory.MESSAGING, FeaturePickerCategory.NOTIFICATIONS,
-        FeaturePickerCategory.PHONE, FeaturePickerCategory.SCREEN,
-        FeaturePickerCategory.VARIABLES, FeaturePickerCategory.VOLUME,
-        FeaturePickerCategory.WEB_INTERACTIONS,
-    )
-    FeatureKind.STATE, FeatureKind.CONDITION -> setOf(
-        FeaturePickerCategory.SENSORS, FeaturePickerCategory.BATTERY_POWER,
-        FeaturePickerCategory.MEDIA, FeaturePickerCategory.LOCATION,
-        FeaturePickerCategory.SCREEN, FeaturePickerCategory.DEVICE_STATE,
-        FeaturePickerCategory.CONNECTIVITY, FeaturePickerCategory.NOTIFICATIONS,
-        FeaturePickerCategory.PHONE, FeaturePickerCategory.DATE_TIME,
-        FeaturePickerCategory.YAUTO_SPECIFIC,
-    )
+    FeatureKind.EVENT -> triggerPickerOrder.toSet()
+    FeatureKind.ACTION -> actionPickerOrder.toSet()
+    FeatureKind.STATE, FeatureKind.CONDITION -> constraintPickerOrder.toSet()
 }
 
 /** Constrain legacy and explicit categories to the matching MacroDroid-style picker menu. */

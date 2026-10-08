@@ -131,6 +131,7 @@ class FeaturePickerCategoryTest {
             "android.condition.sensor_value" to FeaturePickerCategory.SENSORS,
             "android.condition.physical_activity" to FeaturePickerCategory.SENSORS,
             "android.condition.media_volume" to FeaturePickerCategory.SCREEN,
+            "android.condition.audio.speakerphone" to FeaturePickerCategory.SCREEN,
             "android.condition.device_locked" to FeaturePickerCategory.DEVICE_STATE,
         )
 
@@ -184,6 +185,33 @@ class FeaturePickerCategoryTest {
         }
         assertEquals(FeaturePickerCategory.SENSORS, classify("android.state.sleeping", FeatureKind.STATE))
         assertEquals(FeaturePickerCategory.SENSORS, classify("android.condition.sleeping", FeatureKind.CONDITION))
+    }
+
+    @Test
+    fun `MacroDroid category order is specific to triggers actions and constraints`() {
+        val actions = macroDroidCategoriesForKind(FeatureKind.ACTION)
+            .sortedBy { macroDroidCategoryOrder(FeatureKind.ACTION, it) }
+        assertEquals(FeaturePickerCategory.APPLICATIONS, actions.first())
+        assertEquals(FeaturePickerCategory.AI, actions.last())
+        assertEquals(FeaturePickerCategory.FILES, actions[2])
+        assertEquals(FeaturePickerCategory.MACROS, actions[3])
+        assertEquals(FeaturePickerCategory.VARIABLES, actions[17])
+        val events = macroDroidCategoriesForKind(FeatureKind.EVENT)
+            .sortedBy { macroDroidCategoryOrder(FeatureKind.EVENT, it) }
+        assertEquals(FeaturePickerCategory.APPLICATIONS, events.first())
+        assertEquals(FeaturePickerCategory.SENSORS, events[1])
+        assertEquals(FeaturePickerCategory.DEVICE_EVENTS, events[5])
+        val conditions = macroDroidCategoriesForKind(FeatureKind.CONDITION)
+            .sortedBy { macroDroidCategoryOrder(FeatureKind.CONDITION, it) }
+        assertEquals(FeaturePickerCategory.SENSORS, conditions.first())
+        assertEquals(FeaturePickerCategory.SCREEN, conditions[4])
+        assertEquals(conditions, macroDroidCategoriesForKind(FeatureKind.STATE)
+            .sortedBy { macroDroidCategoryOrder(FeatureKind.STATE, it) })
+        FeatureKind.entries.forEach { kind ->
+            val ranks = macroDroidCategoriesForKind(kind).map { macroDroidCategoryOrder(kind, it) }
+            assertEquals(ranks.size, ranks.toSet().size)
+            assertTrue(ranks.all { it < 10_000 })
+        }
     }
 
     @Test
