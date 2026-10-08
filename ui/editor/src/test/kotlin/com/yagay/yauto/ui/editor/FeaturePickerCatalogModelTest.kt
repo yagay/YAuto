@@ -289,7 +289,7 @@ class FeaturePickerCatalogModelTest {
             PickerPage.Features(app), emptySet(), emptyList(), "",
         )
         assertEquals(1, entries.size)
-        assertEquals("quick_settings_tile", (entries.single() as FeaturePickerListEntry.Unified).group.spec.id)
+        assertEquals("quick_settings_tile:action:app", (entries.single() as FeaturePickerListEntry.Unified).group.spec.id)
         assertEquals("app", model.item("android.qs_tile.click")?.category?.id)
         assertEquals("core", model.item("android.qs_tile.info")?.category?.id)
         assertEquals(null, model.unifiedGroupForMember("android.qs_tile.info"))
