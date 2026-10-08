@@ -46,16 +46,22 @@ jobs:
       - name: Architecture maintainability guard
         run: python3 .github/scripts/check-architecture.py
 
-      - name: Verify picker taxonomy and editor behavior
+      - name: Verify core runtime, storage, importers, Android, accessibility and editor
         run: >
           gradle
-          :core:registry:test
-          :core:storage:test
+          :core:diagnostics:test
           :core:engine:test
+          :core:importer:test
+          :core:logging:test
+          :core:registry:test
+          :core:runtime:test
+          :core:storage:test
           :feature:standard:test
           :importer:macrodroid:test
           :importer:shortx:test
           :importer:tasker:test
+          :plugin:api:test
+          :platform:accessibility:testDebugUnitTest
           :platform:android:testDebugUnitTest
           :ui:editor:testDebugUnitTest
           --configuration-cache
