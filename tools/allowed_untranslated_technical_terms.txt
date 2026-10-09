@@ -1,0 +1,27 @@
+# Machine values, protocols and product names intentionally unchanged in Chinese.
+feature_phrase_16000
+feature_phrase_44100
+feature_phrase_8000
+feature_phrase_adb
+feature_phrase_baidu
+feature_phrase_base64
+feature_phrase_chip_tool
+feature_phrase_debug
+feature_phrase_gaode
+feature_phrase_google
+feature_phrase_home_assistant
+feature_phrase_id
+feature_phrase_intent_uri
+feature_phrase_latin_ascii
+feature_phrase_lte_legacy
+feature_phrase_lte_only
+feature_phrase_max
+feature_phrase_min
+feature_phrase_mvel
+feature_phrase_nr_lte
+feature_phrase_nr_only
+feature_phrase_pin
+feature_phrase_pinyin
+feature_phrase_regex
+feature_phrase_symbol_2c_20
+feature_phrase_whatsapp

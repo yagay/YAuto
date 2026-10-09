@@ -58,6 +58,21 @@ def main():
         and re.search(r"[A-Za-z]{3}", value)
         and not re.search(r"[\\u4e00-\\u9fff]", value)
     )
+    # Only intentionally language-neutral terms may remain untranslated in the
+    # expansion vocabulary. A named allowlist prevents newly added English defaults
+    # from silently appearing in the Chinese feature picker.
+    neutral_term_file = ROOT / "tools/allowed_untranslated_technical_terms.txt"
+    neutral_terms = {
+        line.strip() for line in neutral_term_file.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    }
+    copied_expansion_keys = {
+        key for key, (value, filename) in zh.items()
+        if filename.endswith("values-zh-rCN/expansion_feature_phrases.xml")
+        and key in en and value == en[key][0]
+    }
+    unapproved_english_expansion = sorted(copied_expansion_keys - neutral_terms)
+    obsolete_neutral_exceptions = sorted(neutral_terms - copied_expansion_keys)
     english_copy_by_file = defaultdict(int)
     for key in english_copy_titles + english_copy_phrases:
         english_copy_by_file[zh[key][1]] += 1
@@ -202,6 +217,9 @@ def main():
         "missing_picker_category_chinese": missing_category_zh,
         "chinese_xml_files_scanned": len(zh_files),
         "english_xml_files_scanned": len(en_files),
+        "unapproved_english_expansion_phrases": unapproved_english_expansion,
+        "obsolete_untranslated_technical_exceptions": obsolete_neutral_exceptions,
+        "unchanged_language_neutral_terms": len(copied_expansion_keys),
         "feature_titles_identical_to_english": english_copy_titles,
         "phrase_labels_identical_to_english": english_copy_phrases,
         "english_copy_by_zh_resource_file": dict(sorted(english_copy_by_file.items(), key=lambda item: (-item[1], item[0]))),
@@ -233,6 +251,9 @@ def main():
     print(f"Detailed report: {target}")
     if missing_verified_pairs or unreviewed_reference_pairs or mismatched_verified_labels:
         print("ERROR: MacroDroid localized titles differ from the approved APK reference", file=sys.stderr)
+        return 1
+    if unapproved_english_expansion or obsolete_neutral_exceptions:
+        print("ERROR: Chinese expansion phrase vocabulary is missing translations or has stale exceptions", file=sys.stderr)
         return 1
     if shortx_issues:
         print("ERROR: ShortX title validation failed: " + "; ".join(shortx_issues), file=sys.stderr)
