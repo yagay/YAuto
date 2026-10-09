@@ -37,8 +37,9 @@ class SourceSemanticParityTests(unittest.TestCase):
 
     def test_shortx_incompatible_actions_keep_original_payload(self):
         hint = SHORTX_HINTS.read_text(encoding="utf-8")
+        self.assertIn('"StartAppProcess", "StartAppProcessByPkg" -> null', hint)
         for source in (
-            "StartAppProcess", "StartAppProcessByPkg", "SetStatusBarIcon", "RemoveStatusBarIcon",
+            "SetStatusBarIcon", "RemoveStatusBarIcon",
             "ShowStatusBarChip", "HideStatusBarClip", "PluginAction", "Toggle5G", "AreaScreenshot",
         ):
             self.assertIn('"' + source + '" -> null', hint, source)
