@@ -351,9 +351,13 @@ private fun explicitMacroDroidFeatureCategory(
         "android.mode.set" -> FeaturePickerCategory.YAUTO_SPECIFIC
         "android.telephony.info", "android.sync.master.set" -> FeaturePickerCategory.CONNECTIVITY
         "android.audio.sound_level.measure" -> FeaturePickerCategory.MEDIA
+        // Calendar CRUD manipulates schedule entries; it is not an execution log.
         "android.calendar.events.query", "android.calendar.event.insert",
         "android.calendar.event.update", "android.calendar.event.delete" ->
-            FeaturePickerCategory.LOGGING
+            FeaturePickerCategory.DATE_TIME
+        "android.media_store.query", "android.media_store.update", "android.media_store.delete",
+        "android.media_store.insert", "android.media_store.scan" ->
+            FeaturePickerCategory.FILES
         else -> if (key.startsWith("android.plugin.locale.")) {
             FeaturePickerCategory.APPLICATIONS
         } else null
@@ -404,9 +408,12 @@ private fun explicitMacroDroidFeatureCategory(
         "android.state.reference.mobile_network_code",
         "android.condition.reference.mobile_network_code" ->
             FeaturePickerCategory.CONNECTIVITY
+        // Speakerphone belongs to sound/audio status, not screen dimensions.
         "android.state.audio.speakerphone", "android.condition.audio.speakerphone",
         "android.state.speakerphone", "android.condition.speakerphone" ->
-            FeaturePickerCategory.SCREEN
+            FeaturePickerCategory.MEDIA
+        "android.state.media_store_available", "android.condition.media_store_available" ->
+            FeaturePickerCategory.DEVICE_STATE
         "android.state.sleeping", "android.condition.sleeping",
         "android.state.physical_activity", "android.condition.physical_activity" ->
             FeaturePickerCategory.SENSORS
@@ -509,7 +516,8 @@ fun normalizeMacroDroidPickerCategory(
             else -> FeaturePickerCategory.DEVICE_ACTIONS
         }
         FeatureKind.STATE, FeatureKind.CONDITION -> when (category) {
-            FeaturePickerCategory.VOLUME -> FeaturePickerCategory.SCREEN
+            // Volume/ringer constraints are audio-related, not display-related.
+            FeaturePickerCategory.VOLUME -> FeaturePickerCategory.MEDIA
             FeaturePickerCategory.CALL_SMS, FeaturePickerCategory.MESSAGING -> FeaturePickerCategory.PHONE
             FeaturePickerCategory.WEB_INTERACTIONS -> FeaturePickerCategory.CONNECTIVITY
             FeaturePickerCategory.AI, FeaturePickerCategory.VARIABLES,

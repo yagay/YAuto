@@ -6,6 +6,31 @@ import org.junit.Test
 
 class FeaturePickerCategoryTest {
     @Test
+    fun `calendar and audio semantically map regardless of similar keywords`() {
+        val actions = mapOf(
+            "android.calendar.events.query" to FeaturePickerCategory.DATE_TIME,
+            "android.calendar.event.insert" to FeaturePickerCategory.DATE_TIME,
+            "android.calendar.event.update" to FeaturePickerCategory.DATE_TIME,
+            "android.calendar.event.delete" to FeaturePickerCategory.DATE_TIME,
+            "android.media_store.query" to FeaturePickerCategory.FILES,
+            "android.media_store.update" to FeaturePickerCategory.FILES,
+        )
+        val constraints = mapOf(
+            "android.condition.audio.speakerphone" to FeaturePickerCategory.MEDIA,
+            "android.state.audio.speakerphone" to FeaturePickerCategory.MEDIA,
+            "android.condition.audio.stream_volume" to FeaturePickerCategory.MEDIA,
+            "android.condition.media_volume" to FeaturePickerCategory.MEDIA,
+            "android.condition.media_store_available" to FeaturePickerCategory.DEVICE_STATE,
+        )
+        actions.forEach { (id, expected) ->
+            assertEquals(id, expected, classify(id, FeatureKind.ACTION))
+        }
+        constraints.forEach { (id, expected) ->
+            assertEquals(id, expected, classify(id, if (id.contains(".state.")) FeatureKind.STATE else FeatureKind.CONDITION))
+        }
+    }
+
+    @Test
     fun `actions follow MacroDroid action categories`() {
         val cases = mapOf(
             "ai.text.generate" to FeaturePickerCategory.AI,
@@ -14,7 +39,7 @@ class FeaturePickerCategoryTest {
             "android.wifi.network.connect" to FeaturePickerCategory.CONNECTIVITY,
             "android.network.udp.send" to FeaturePickerCategory.WEB_INTERACTIONS,
             "json.parse" to FeaturePickerCategory.WEB_INTERACTIONS,
-            "android.calendar.event.insert" to FeaturePickerCategory.LOGGING,
+            "android.calendar.event.insert" to FeaturePickerCategory.DATE_TIME,
             "script.javascript.execute" to FeaturePickerCategory.APPLICATIONS,
             "android.macro.run" to FeaturePickerCategory.MACROS,
             "core.automation.run" to FeaturePickerCategory.MACROS,
@@ -103,9 +128,9 @@ class FeaturePickerCategoryTest {
             "android.condition.charging_source" to FeaturePickerCategory.BATTERY_POWER,
             "android.condition.phone_call_state" to FeaturePickerCategory.PHONE,
             "android.condition.notification_active" to FeaturePickerCategory.NOTIFICATIONS,
-            "android.condition.audio.stream_volume" to FeaturePickerCategory.SCREEN,
+            "android.condition.audio.stream_volume" to FeaturePickerCategory.MEDIA,
             "android.condition.screen" to FeaturePickerCategory.SCREEN,
-            "android.condition.audio.speakerphone" to FeaturePickerCategory.SCREEN,
+            "android.condition.audio.speakerphone" to FeaturePickerCategory.MEDIA,
             "android.condition.network_profile" to FeaturePickerCategory.CONNECTIVITY,
             "android.condition.wifi_network" to FeaturePickerCategory.CONNECTIVITY,
         )
@@ -198,8 +223,8 @@ class FeaturePickerCategoryTest {
             "android.condition.screen" to FeaturePickerCategory.SCREEN,
             "android.condition.sensor_value" to FeaturePickerCategory.SENSORS,
             "android.condition.physical_activity" to FeaturePickerCategory.SENSORS,
-            "android.condition.media_volume" to FeaturePickerCategory.SCREEN,
-            "android.condition.audio.speakerphone" to FeaturePickerCategory.SCREEN,
+            "android.condition.media_volume" to FeaturePickerCategory.MEDIA,
+            "android.condition.audio.speakerphone" to FeaturePickerCategory.MEDIA,
             "android.condition.device_locked" to FeaturePickerCategory.DEVICE_STATE,
         )
 
@@ -243,8 +268,8 @@ class FeaturePickerCategoryTest {
             "android.audio.sound_level.measure" to FeaturePickerCategory.MEDIA,
             "android.plugin.locale.action" to FeaturePickerCategory.APPLICATIONS,
             "android.plugin.locale.scan" to FeaturePickerCategory.APPLICATIONS,
-            "android.calendar.events.query" to FeaturePickerCategory.LOGGING,
-            "android.calendar.event.insert" to FeaturePickerCategory.LOGGING,
+            "android.calendar.events.query" to FeaturePickerCategory.DATE_TIME,
+            "android.calendar.event.insert" to FeaturePickerCategory.DATE_TIME,
             "android.yauto.setting.set" to FeaturePickerCategory.YAUTO_SPECIFIC,
             "android.sensors_off.set" to FeaturePickerCategory.DEVICE_SETTINGS,
         )
