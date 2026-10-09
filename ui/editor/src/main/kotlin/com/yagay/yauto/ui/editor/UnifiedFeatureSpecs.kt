@@ -231,4 +231,25 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         TextR.string.verified_family_camera_flash_subtitle,
         listOf("android.state.has_camera_flash", "android.state.reference_signal.camera_flash_available"),
     ),
+    // Same Android operation with distinct configurable implementation options.
+    UnifiedFeatureSpec(
+        "app_language",
+        TextR.string.verified_family_app_language,
+        TextR.string.verified_family_app_language_subtitle,
+        listOf("android.app.locale.set", "android.locale.app.set"),
+    ),
+    // Same Android operation with distinct configurable implementation options.
+    UnifiedFeatureSpec(
+        "torch_status_state",
+        TextR.string.verified_family_torch_status,
+        TextR.string.verified_family_torch_status_subtitle,
+        listOf("android.state.torch_on", "android.state.reference.signal.torch_enabled"),
+    ),
+    // Same Android operation with distinct configurable implementation options.
+    UnifiedFeatureSpec(
+        "torch_status_condition",
+        TextR.string.verified_family_torch_status,
+        TextR.string.verified_family_torch_status_subtitle,
+        listOf("android.condition.torch_on", "android.condition.reference.signal.torch_enabled"),
+    ),
 )

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_app_language">Set app language</string>
+    <string name="verified_family_app_language_subtitle">Choose Android user ID or restart behavior</string>
+    <string name="verified_family_torch_status">Flashlight state</string>
+    <string name="verified_family_torch_status_subtitle">Choose a camera-specific or aggregate torch state check</string>
+</resources>

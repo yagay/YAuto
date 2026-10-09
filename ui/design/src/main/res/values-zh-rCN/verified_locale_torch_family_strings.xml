@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_app_language">设置应用语言</string>
+    <string name="verified_family_app_language_subtitle">选择指定用户语言或设置后重启应用</string>
+    <string name="verified_family_torch_status">手电筒状态</string>
+    <string name="verified_family_torch_status_subtitle">选择按摄像头查询或系统汇总状态</string>
+</resources>

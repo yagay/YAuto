@@ -29,3 +29,6 @@ dnd_filter_condition,yauto_code,currentInterruptionFilter,condition,android.cond
 dnd_filter_state,yauto_code,currentInterruptionFilter,state,android.state.dnd_filter|android.state.reference_signal.dnd_filter,
 camera_flash_condition,yauto_code,camera_flash_hardware,condition,android.condition.has_camera_flash|android.condition.reference_signal.camera_flash_available,
 camera_flash_state,yauto_code,camera_flash_hardware,state,android.state.has_camera_flash|android.state.reference_signal.camera_flash_available,
+app_language,yauto_code,yauto.per_app_locale,action,android.app.locale.set|android.locale.app.set,
+torch_status_state,yauto_code,yauto.torch_status,state,android.state.torch_on|android.state.reference.signal.torch_enabled,
+torch_status_condition,yauto_code,yauto.torch_status,condition,android.condition.torch_on|android.condition.reference.signal.torch_enabled,

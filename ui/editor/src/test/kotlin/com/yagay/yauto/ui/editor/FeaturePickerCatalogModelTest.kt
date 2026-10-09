@@ -28,7 +28,7 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test fun `verified merges use upstream identical feature names and stable IDs`() {
-        assertEquals(30, UNIFIED_FEATURE_SPECS.size)
+        assertEquals(33, UNIFIED_FEATURE_SPECS.size)
         assertTrue(UNIFIED_FEATURE_SPECS.map { it.id }.containsAll(
             listOf("clipboard_write", "clipboard_read", "screenshot_capture",
                 "stopwatch", "file_operations", "device_power", "audio_recording",
@@ -39,7 +39,7 @@ class FeaturePickerCatalogModelTest {
             UNIFIED_FEATURE_SPECS.single { it.id == "clipboard_read" }.memberIds)
         assertEquals(listOf("android.screen.screenshot", "android.screenshot.capture"),
             UNIFIED_FEATURE_SPECS.single { it.id == "screenshot_capture" }.memberIds)
-        assertEquals(65, UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct().size)
+        assertEquals(71, UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct().size)
     }
 
     @Test fun `independent MacroDroid volume actions are separate picker options`() {
@@ -86,6 +86,24 @@ class FeaturePickerCatalogModelTest {
         assertEquals(1, entries.size)
         assertEquals("dnd_filter_condition",
             (entries.single() as FeaturePickerListEntry.Unified).group.spec.id)
+    }
+
+    @Test fun `per app language is one name with distinct implementation settings`() {
+        val model = build(listOf("android.app.locale.set", "android.locale.app.set"))
+        val entries = model.entries(PickerPage.Features(app), emptySet(), emptyList(), "")
+        assertEquals(1, entries.size)
+        val group = (entries.single() as FeaturePickerListEntry.Unified).group
+        assertEquals("app_language", group.spec.id)
+        assertEquals(2, group.members.size)
+    }
+
+    @Test fun `flashlight state is one entry with per camera or aggregate method`() {
+        val model = build(listOf("android.state.torch_on",
+            "android.state.reference.signal.torch_enabled"), FeatureKind.STATE)
+        val entries = model.entries(PickerPage.Features(app), emptySet(), emptyList(), "")
+        assertEquals(1, entries.size)
+        val group = (entries.single() as FeaturePickerListEntry.Unified).group
+        assertEquals("torch_status_state", group.spec.id)
     }
 
     @Test fun `one MacroDroid file operation has multiple selected modes`() {

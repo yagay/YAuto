@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variant_android_app_locale_set">Set app language for Android user</string>
+    <string name="feature_variant_android_locale_app_set">Set language and optionally restart app</string>
+    <string name="feature_variant_android_state_torch_on">Query flashlight by camera ID</string>
+    <string name="feature_variant_android_condition_torch_on">Query flashlight by camera ID</string>
+    <string name="feature_variant_android_state_reference_signal_torch_enabled">Query overall flashlight state</string>
+    <string name="feature_variant_android_condition_reference_signal_torch_enabled">Query overall flashlight state</string>
+</resources>

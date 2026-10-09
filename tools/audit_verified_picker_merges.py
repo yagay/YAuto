@@ -27,6 +27,14 @@ Y_AUTO_API_SOURCES = {
     "currentInterruptionFilter": ("AndroidSystemConvenienceFeaturePack.kt", "AndroidReferenceSignalFeaturePack.kt"),
 }
 Y_AUTO_EVIDENCE_TOKENS = {
+    "yauto.per_app_locale": (
+        ("AndroidLegacyParityFeaturePack.kt", 'FeatureId("android.app.locale.set")'),
+        ("AndroidPrivilegedParityFeaturePack.kt", '"android.locale.app.set"'),
+    ),
+    "yauto.torch_status": (
+        ("AndroidRemainingParityFeaturePack.kt", 'FeatureId("android.state.torch_on")'),
+        ("AndroidReferenceSignalFeaturePack.kt", '"torch_enabled"'),
+    ),
     "camera_flash_hardware": (
         ("AndroidReferenceCompletionFeaturePack.kt", '"android.hardware.camera.flash"'),
         ("AndroidReferenceSignalFeaturePack.kt", "PackageManager.FEATURE_CAMERA_FLASH"),
