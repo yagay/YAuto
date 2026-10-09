@@ -18,10 +18,10 @@ class FeaturePickerCategoryTest {
             "android.media_store.video.index" to FeaturePickerCategory.FILES,
         )
         val constraints = mapOf(
-            "android.condition.audio.speakerphone" to FeaturePickerCategory.MEDIA,
-            "android.state.audio.speakerphone" to FeaturePickerCategory.MEDIA,
-            "android.condition.audio.stream_volume" to FeaturePickerCategory.MEDIA,
-            "android.condition.media_volume" to FeaturePickerCategory.MEDIA,
+            "android.condition.audio.speakerphone" to FeaturePickerCategory.SCREEN,
+            "android.state.audio.speakerphone" to FeaturePickerCategory.SCREEN,
+            "android.condition.audio.stream_volume" to FeaturePickerCategory.SCREEN,
+            "android.condition.media_volume" to FeaturePickerCategory.SCREEN,
             "android.condition.media_store_available" to FeaturePickerCategory.DEVICE_STATE,
             "android.condition.media_store.index_ready" to FeaturePickerCategory.DEVICE_STATE,
         )
@@ -34,6 +34,62 @@ class FeaturePickerCategoryTest {
         }
         constraints.forEach { (id, expected) ->
             assertEquals(id, expected, classify(id, if (id.contains(".state.")) FeatureKind.STATE else FeatureKind.CONDITION))
+        }
+    }
+
+    @Test
+    fun `semantic constraints match MacroDroid groups rather than raw name tokens`() {
+        val deviceStates = listOf(
+            "android.condition.airplane_mode", "android.condition.nfc_enabled",
+            "android.state.nfc_enabled", "android.condition.vpn_active",
+            "android.state.vpn_active", "android.condition.master_sync",
+            "android.state.auto_rotate_enabled", "android.condition.tts_speaking",
+        )
+        deviceStates.forEach { id ->
+            val kind = if (id.contains(".state.")) FeatureKind.STATE else FeatureKind.CONDITION
+            assertEquals(id, FeaturePickerCategory.DEVICE_STATE, classify(id, kind))
+        }
+        val screens = listOf(
+            "android.condition.audio.speakerphone", "android.state.audio.speakerphone",
+            "android.condition.media_volume", "android.condition.audio.stream_volume",
+            "android.state.audio.ringer_mode",
+        )
+        screens.forEach { id ->
+            val kind = if (id.contains(".state.")) FeatureKind.STATE else FeatureKind.CONDITION
+            assertEquals(id, FeaturePickerCategory.SCREEN, classify(id, kind))
+        }
+        listOf("android.condition.location_mode", "android.state.location_enabled").forEach { id ->
+            val kind = if (id.contains(".state.")) FeatureKind.STATE else FeatureKind.CONDITION
+            assertEquals(id, FeaturePickerCategory.CONNECTIVITY, classify(id, kind))
+        }
+        listOf("android.condition.notification_volume", "android.condition.dnd_filter").forEach { id ->
+            assertEquals(id, FeaturePickerCategory.NOTIFICATIONS, classify(id, FeatureKind.CONDITION))
+        }
+        assertEquals(FeaturePickerCategory.MEDIA, classify("android.condition.audio.music_active", FeatureKind.CONDITION))
+        assertEquals(FeaturePickerCategory.LOCATION, classify("android.condition.geofence_inside", FeatureKind.CONDITION))
+        assertEquals(FeaturePickerCategory.DATE_TIME, classify("android.condition.calendar_event", FeatureKind.CONDITION))
+    }
+
+    @Test
+    fun `reference device states retain semantic category across feature pack aliases`() {
+        val fixtures = mapOf(
+            "android.condition.reference.nfc_enabled" to FeaturePickerCategory.DEVICE_STATE,
+            "android.state.reference.nfc_state" to FeaturePickerCategory.DEVICE_STATE,
+            "android.condition.reference.vpn_active" to FeaturePickerCategory.DEVICE_STATE,
+            "android.state.reference.vpn_state" to FeaturePickerCategory.DEVICE_STATE,
+            "android.condition.reference.auto_rotate_enabled" to FeaturePickerCategory.DEVICE_STATE,
+            "android.state.reference.master_sync" to FeaturePickerCategory.DEVICE_STATE,
+            "android.condition.reference.audio.ringer_mode" to FeaturePickerCategory.SCREEN,
+            "android.state.reference.audio.stream_volume" to FeaturePickerCategory.SCREEN,
+            "android.condition.reference.notification_volume" to FeaturePickerCategory.NOTIFICATIONS,
+            "android.state.reference.notification_priority_mode" to FeaturePickerCategory.NOTIFICATIONS,
+            "android.condition.reference.wifi_network" to FeaturePickerCategory.CONNECTIVITY,
+            "android.state.reference.location_mode" to FeaturePickerCategory.CONNECTIVITY,
+            "android.condition.reference.bluetooth_device_connected" to FeaturePickerCategory.CONNECTIVITY,
+        )
+        fixtures.forEach { (id, expected) ->
+            val kind = if (id.contains(".state.")) FeatureKind.STATE else FeatureKind.CONDITION
+            assertEquals(id, expected, classify(id, kind))
         }
     }
 
@@ -129,15 +185,15 @@ class FeaturePickerCategoryTest {
             "android.event.wifi_changed" to FeaturePickerCategory.CONNECTIVITY,
         )
         val conditions = mapOf(
-            "android.condition.airplane_mode" to FeaturePickerCategory.CONNECTIVITY,
+            "android.condition.airplane_mode" to FeaturePickerCategory.DEVICE_STATE,
             "android.condition.brightness" to FeaturePickerCategory.SCREEN,
             "time.condition.weekday" to FeaturePickerCategory.DATE_TIME,
             "android.condition.charging_source" to FeaturePickerCategory.BATTERY_POWER,
             "android.condition.phone_call_state" to FeaturePickerCategory.PHONE,
             "android.condition.notification_active" to FeaturePickerCategory.NOTIFICATIONS,
-            "android.condition.audio.stream_volume" to FeaturePickerCategory.MEDIA,
+            "android.condition.audio.stream_volume" to FeaturePickerCategory.SCREEN,
             "android.condition.screen" to FeaturePickerCategory.SCREEN,
-            "android.condition.audio.speakerphone" to FeaturePickerCategory.MEDIA,
+            "android.condition.audio.speakerphone" to FeaturePickerCategory.SCREEN,
             "android.condition.network_profile" to FeaturePickerCategory.CONNECTIVITY,
             "android.condition.wifi_network" to FeaturePickerCategory.CONNECTIVITY,
         )
@@ -230,8 +286,8 @@ class FeaturePickerCategoryTest {
             "android.condition.screen" to FeaturePickerCategory.SCREEN,
             "android.condition.sensor_value" to FeaturePickerCategory.SENSORS,
             "android.condition.physical_activity" to FeaturePickerCategory.SENSORS,
-            "android.condition.media_volume" to FeaturePickerCategory.MEDIA,
-            "android.condition.audio.speakerphone" to FeaturePickerCategory.MEDIA,
+            "android.condition.media_volume" to FeaturePickerCategory.SCREEN,
+            "android.condition.audio.speakerphone" to FeaturePickerCategory.SCREEN,
             "android.condition.device_locked" to FeaturePickerCategory.DEVICE_STATE,
         )
 
@@ -400,9 +456,9 @@ class FeaturePickerCategoryTest {
     }
 
     @Test
-    fun `constraint taxonomy keeps audio ringer separate from screen controls`() {
+    fun `constraint taxonomy follows Screen Speaker for ringer level`() {
         assertEquals(FeaturePickerCategory.DEVICE_STATE, classify("android.condition.app_installed", FeatureKind.CONDITION))
-        assertEquals(FeaturePickerCategory.MEDIA, classify("android.state.audio.ringer_mode", FeatureKind.STATE))
+        assertEquals(FeaturePickerCategory.SCREEN, classify("android.state.audio.ringer_mode", FeatureKind.STATE))
         assertEquals(FeaturePickerCategory.CONNECTIVITY, classify("android.condition.websocket_connected", FeatureKind.CONDITION))
         assertEquals(FeaturePickerCategory.YAUTO_SPECIFIC, classify("variable.condition.equals", FeatureKind.CONDITION))
     }

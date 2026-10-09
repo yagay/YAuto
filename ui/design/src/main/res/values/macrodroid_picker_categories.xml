@@ -26,8 +26,8 @@
     <string name="macro_category_files_subtitle">Files, folders, storage, archives and downloads</string>
     <string name="macro_category_location">Location</string>
     <string name="macro_category_location_subtitle">Location, GPS, geofences, cell towers and weather</string>
-    <string name="macro_category_logging">Logging/Calendar</string>
-    <string name="macro_category_logging_subtitle">Logs, calendar entries, diagnostics and system reports</string>
+    <string name="macro_category_logging">Logging</string>
+    <string name="macro_category_logging_subtitle">Execution logs, diagnostics, Logcat and system reports</string>
     <string name="macro_category_macros">Macros</string>
     <string name="macro_category_macros_subtitle">Run, enable, stop or manage YAuto automations</string>
     <string name="macro_category_variables">Variables</string>

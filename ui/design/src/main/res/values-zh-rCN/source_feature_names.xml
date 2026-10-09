@@ -66,7 +66,7 @@
     <string name="source_feature_name_view_id_lookup">查看 View ID</string>
     <string name="source_feature_name_share_file">分享文件</string>
     <string name="source_feature_name_open_map">打开地图</string>
-    <string name="source_feature_name_adb_wifi">ADB WiFi</string>
+    <string name="source_feature_name_adb_wifi">无线 ADB</string>
     <string name="source_feature_name_media_control">媒体控制</string>
     <string name="source_feature_name_set_wallpaper">设置壁纸</string>
     <string name="source_feature_name_launch_last_app">打开上一个应用</string>

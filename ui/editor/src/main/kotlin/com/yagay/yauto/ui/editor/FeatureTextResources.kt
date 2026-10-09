@@ -1,6 +1,7 @@
 package com.yagay.yauto.ui.editor
 
 import android.content.Context
+import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -21,6 +22,22 @@ internal class FeatureTextResolver(private val context: Context) {
     private val locale: Locale
         get() = context.resources.configuration.locales[0] ?: Locale.getDefault()
 
+
+    // The app bundles Simplified Chinese translations under values-zh-rCN.
+    // Without this fallback, a zh-HK / zh-TW / plain zh locale would receive
+    // English text even when the exact Chinese feature name is translated.
+    // Only feature editor text is resolved through this context; app locale,
+    // feature IDs and user settings remain unchanged.
+    private val localizedContext: Context by lazy {
+        if (locale.language == Locale.CHINESE.language && locale.country != Locale.CHINA.country) {
+            val config = Configuration(context.resources.configuration)
+            config.setLocale(Locale.SIMPLIFIED_CHINESE)
+            context.createConfigurationContext(config)
+        } else {
+            context
+        }
+    }
+
     private val resourceIdCache = HashMap<String, Int>()
     private val titleCache = HashMap<String, String>()
     private val descriptionCache = HashMap<String, String>()
@@ -32,8 +49,8 @@ internal class FeatureTextResolver(private val context: Context) {
         titleCache.getOrPut(descriptor.id.value) {
             resource("macro_feature_${resourceKey(descriptor.id.value)}_title")
                 ?: resource("shortx_feature_${resourceKey(descriptor.id.value)}_title")
-                ?: sourceAlignedFeatureTitle(descriptor.id.value)?.let(context::getString)
                 ?: resource("feature_${resourceKey(descriptor.id.value)}_title")
+                ?: sourceAlignedFeatureTitle(descriptor.id.value)?.let(localizedContext::getString)
                 ?: phrase(descriptor.title)
                 ?: descriptor.title.takeIf { it.isNotBlank() }
                 ?: genericTitle(descriptor)
@@ -44,7 +61,7 @@ internal class FeatureTextResolver(private val context: Context) {
             resource("feature_${resourceKey(descriptor.id.value)}_description")
                 ?: phrase(descriptor.description)
                 ?: descriptor.description.takeIf { it.isNotBlank() }
-                ?: context.getString(TextR.string.feature_generic_description_format, title(descriptor))
+                ?: localizedContext.getString(TextR.string.feature_generic_description_format, title(descriptor))
         }
 
     fun displayText(descriptor: FeatureDescriptor): FeatureDisplayText =
@@ -55,7 +72,7 @@ internal class FeatureTextResolver(private val context: Context) {
             resource("feature_${resourceKey(descriptorId)}_field_${resourceKey(field.key)}")
                 ?: phrase(field.label)
                 ?: field.label.takeIf { it.isNotBlank() }
-                ?: context.getString(TextR.string.feature_generic_parameter)
+                ?: localizedContext.getString(TextR.string.feature_generic_parameter)
         }
 
     fun choiceOption(descriptorId: String, fieldKey: String, option: String): String =
@@ -63,7 +80,7 @@ internal class FeatureTextResolver(private val context: Context) {
             resource("feature_${resourceKey(descriptorId)}_field_${resourceKey(fieldKey)}_option_${resourceKey(option)}")
                 ?: phrase(option)
                 ?: option.takeIf { it.isNotBlank() }
-                ?: context.getString(TextR.string.feature_generic_option)
+                ?: localizedContext.getString(TextR.string.feature_generic_option)
         }
 
     fun searchText(descriptor: FeatureDescriptor): String =
@@ -75,8 +92,8 @@ internal class FeatureTextResolver(private val context: Context) {
                 add(descriptor.description)
                 add(descriptor.id.value)
                 val semanticCategory = catalogCategory(normalizeMacroDroidPickerCategory(descriptor.kind, descriptor.pickerCategory), descriptor.kind)
-                add(context.getString(semanticCategory.titleRes))
-                add(context.getString(semanticCategory.subtitleRes))
+                add(localizedContext.getString(semanticCategory.titleRes))
+                add(localizedContext.getString(semanticCategory.subtitleRes))
                 addAll(descriptor.keywords)
                 descriptor.fields.forEach { field ->
                     add(fieldLabel(descriptor.id.value, field))
@@ -95,17 +112,17 @@ internal class FeatureTextResolver(private val context: Context) {
 
     private fun genericTitle(descriptor: FeatureDescriptor): String {
         val semanticCategory = catalogCategory(descriptor.pickerCategory)
-        return context.getString(
+        return localizedContext.getString(
             TextR.string.feature_generic_title_format,
-            context.getString(semanticCategory.titleRes),
+            localizedContext.getString(semanticCategory.titleRes),
         )
     }
 
     private fun resource(name: String): String? {
         val id = resourceIdCache.getOrPut(name) {
-            context.resources.getIdentifier(name, "string", context.packageName)
+            localizedContext.resources.getIdentifier(name, "string", localizedContext.packageName)
         }
-        return if (id != 0) context.getString(id) else null
+        return if (id != 0) localizedContext.getString(id) else null
     }
 }
 

@@ -76,6 +76,49 @@ def main():
     english_copy_by_file = defaultdict(int)
     for key in english_copy_titles + english_copy_phrases:
         english_copy_by_file[zh[key][1]] += 1
+    source_files = sorted((ROOT / "feature").rglob("*.kt")) + sorted((ROOT / "platform").rglob("*.kt"))
+    # Check all naming layers, including approved MacroDroid/ShortX terminology
+    # and YAuto source aliases, instead of checking only missing XML keys.
+    chinese_title_keys = sorted(
+        key for key in zh
+        if ((key.startswith(("feature_", "macro_feature_", "shortx_feature_")) and key.endswith("_title"))
+            or key.startswith("source_feature_name_"))
+    )
+    english_only_chinese_titles = sorted(
+        key for key in chinese_title_keys
+        if re.search(r"[A-Za-z]{3}", zh[key][0])
+        and not re.search(r"[\u3400-\u9fff]", zh[key][0])
+    )
+    # Report source descriptors at risk of showing their raw English title.
+    # These patterns are deliberately conservative; the reported list is an
+    # investigation aid because dynamic feature packs also generate descriptors.
+    explicit_source_titles = {}
+    named_descriptor = re.compile(
+        r'FeatureDescriptor\(\s*id\s*=\s*FeatureId\("([^"]+)"\)\s*,\s*'
+        r'kind\s*=\s*FeatureKind\.[A-Z]+\s*,\s*title\s*=\s*"([^"]+)"',
+        flags=re.S,
+    )
+    positional_descriptor = re.compile(
+        r'FeatureDescriptor\(\s*FeatureId\("([^"]+)"\)\s*,\s*'
+        r'FeatureKind\.[A-Z]+\s*,\s*"([^"]+)"',
+        flags=re.S,
+    )
+    for src in source_files:
+        source = src.read_text(encoding="utf-8")
+        for regex in (named_descriptor, positional_descriptor):
+            for match in regex.finditer(source):
+                explicit_source_titles[match.group(1)] = match.group(2)
+    def resource_key(value: str) -> str:
+        return re.sub(r"_+$", "", re.sub(r"[^a-z0-9]+", "_", value.lower()))
+    unlocalized_literal_feature_titles = []
+    for feature_id, raw_title in sorted(explicit_source_titles.items()):
+        suffix = resource_key(feature_id)
+        if (("macro_feature_" + suffix + "_title" in zh)
+                or ("shortx_feature_" + suffix + "_title" in zh)
+                or ("feature_" + suffix + "_title" in zh)
+                or ("feature_phrase_" + resource_key(raw_title) in zh)):
+            continue
+        unlocalized_literal_feature_titles.append({"id": feature_id, "raw_title": raw_title})
     feature_keys = sorted(k for k in set(zh) | set(en) if TITLE.match(k))
     missing_zh = sorted(set(feature_keys) - set(zh))
     missing_en = sorted(set(feature_keys) - set(en))
@@ -89,7 +132,6 @@ def main():
                    if any("_event_" in x for x in v)
                    and any(("_state_" in x or "_condition_" in x or "_set_" in x) for x in v)}
     # IDs with the same text may be valid siblings; report them for semantic review.
-    source_files = sorted((ROOT / "feature").rglob("*.kt")) + sorted((ROOT / "platform").rglob("*.kt"))
     definitions = sorted(set(m.group(1) for p in source_files for m in ID.finditer(p.read_text(encoding="utf-8"))))
     # Validate the complete semantic category vocabulary against picker resources.
     category_source = (ROOT / "core/registry/src/main/kotlin/com/yagay/yauto/core/registry/FeaturePickerCategory.kt").read_text(encoding="utf-8")
@@ -173,8 +215,17 @@ def main():
     resolver_code = resolver_path.read_text(encoding="utf-8")
     macro_title_line = 'resource("macro_feature_${resourceKey(descriptor.id.value)}_title")'
     shortx_title_line = 'resource("shortx_feature_${resourceKey(descriptor.id.value)}_title")'
-    if macro_title_line not in resolver_code or shortx_title_line not in resolver_code or resolver_code.index(macro_title_line) > resolver_code.index(shortx_title_line):
-        shortx_issues.append("wrong MacroDroid/ShortX title precedence")
+    native_title_line = 'resource("feature_${resourceKey(descriptor.id.value)}_title")'
+    source_alias_line = 'sourceAlignedFeatureTitle(descriptor.id.value)'
+    if (macro_title_line not in resolver_code
+            or shortx_title_line not in resolver_code
+            or native_title_line not in resolver_code
+            or source_alias_line not in resolver_code
+            or not (resolver_code.index(macro_title_line)
+                    < resolver_code.index(shortx_title_line)
+                    < resolver_code.index(native_title_line)
+                    < resolver_code.index(source_alias_line))):
+        shortx_issues.append("wrong MacroDroid > ShortX > native title > legacy alias order")
     # Explicitly block misleading machine-suggested matches that change behavior.
     with (ROOT / "tools/macrodroid_false_matches.csv").open(encoding="utf-8", newline="") as rejected_file:
         false_friends = list(__import__("csv").DictReader(rejected_file))
@@ -221,6 +272,10 @@ def main():
         "obsolete_untranslated_technical_exceptions": obsolete_neutral_exceptions,
         "unchanged_language_neutral_terms": len(copied_expansion_keys),
         "feature_titles_identical_to_english": english_copy_titles,
+        "chinese_title_keys_checked": len(chinese_title_keys),
+        "english_only_chinese_titles": english_only_chinese_titles,
+        "explicit_source_titles_scanned": len(explicit_source_titles),
+        "possible_raw_english_title_fallbacks": unlocalized_literal_feature_titles,
         "phrase_labels_identical_to_english": english_copy_phrases,
         "english_copy_by_zh_resource_file": dict(sorted(english_copy_by_file.items(), key=lambda item: (-item[1], item[0]))),
         "feature_title_keys": len(feature_keys),
@@ -249,6 +304,9 @@ def main():
     print("Top files still requiring translation:",
           sorted(english_copy_by_file.items(), key=lambda item: -item[1])[:8])
     print(f"Detailed report: {target}")
+    if english_only_chinese_titles:
+        print("ERROR: English-only feature/source titles in Chinese resources:", english_only_chinese_titles, file=sys.stderr)
+        return 1
     if missing_verified_pairs or unreviewed_reference_pairs or mismatched_verified_labels:
         print("ERROR: MacroDroid localized titles differ from the approved APK reference", file=sys.stderr)
         return 1

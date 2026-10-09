@@ -51,6 +51,39 @@ fun inferFeaturePickerCategory(
     legacyCategory: FeatureCategory,
 ): FeaturePickerCategory {
     val key = id.lowercase(Locale.ROOT)
+    // Normalize state/constraint synonyms from individual feature packs. Exact
+    // feature IDs are preserved, but names like reference.vpn_active and
+    // vpn_state share the same MacroDroid picker meaning. This runs before
+    // broad substring matches (which mistakenly treat VPN as Connectivity,
+    // ringer/volume as Media, and mobile service settings as Location).
+    if (kind == FeatureKind.CONDITION || kind == FeatureKind.STATE) {
+        val stateName = when {
+            ".condition." in key -> key.substringAfter(".condition.")
+            ".state." in key -> key.substringAfter(".state.")
+            else -> key
+        }.removePrefix("reference.")
+        val semanticCategory = when (stateName) {
+            "nfc_enabled", "nfc_state", "vpn_active", "vpn_state",
+            "airplane_mode", "master_sync", "auto_sync_enabled",
+            "auto_rotate_enabled", "auto_rotation_enabled", "tts_speaking",
+            "rooted", "device_locked" -> FeaturePickerCategory.DEVICE_STATE
+
+            "audio.ringer_mode", "ringer_mode", "audio.stream_volume",
+            "media_volume", "audio.speakerphone", "speakerphone" ->
+                FeaturePickerCategory.SCREEN
+
+            "notification_volume", "dnd_filter", "notification_priority_mode" ->
+                FeaturePickerCategory.NOTIFICATIONS
+
+            "location_mode", "location_enabled", "gps_enabled", "gps_state",
+            "mobile_data_enabled", "wifi_enabled", "bluetooth_enabled",
+            "wifi_network", "wifi_connected", "bluetooth_device_connected" ->
+                FeaturePickerCategory.CONNECTIVITY
+
+            else -> null
+        }
+        semanticCategory?.let { return it }
+    }
     // Apply verified concrete-feature corrections before broad compatibility keywords.
     // This prevents a media/photo action or a system event from being misread as
     // a playback action or a user-input trigger purely because of its ID.
@@ -417,10 +450,30 @@ private fun explicitMacroDroidFeatureCategory(
         "android.state.reference.mobile_network_code",
         "android.condition.reference.mobile_network_code" ->
             FeaturePickerCategory.CONNECTIVITY
-        // Speakerphone belongs to sound/audio status, not screen dimensions.
+        // MacroDroid's constraint Screen/Speaker category covers speakerphone.
         "android.state.audio.speakerphone", "android.condition.audio.speakerphone",
         "android.state.speakerphone", "android.condition.speakerphone" ->
-            FeaturePickerCategory.MEDIA
+            FeaturePickerCategory.SCREEN
+        // Real device settings/states: these do not describe a network link
+        // (unlike Wi-Fi connection status) or an audio playback operation.
+        "android.state.nfc_enabled", "android.condition.nfc_enabled",
+        "android.state.reference.nfc_enabled", "android.condition.reference.nfc_enabled",
+        "android.state.vpn_active", "android.condition.vpn_active",
+        "android.state.reference.vpn_active", "android.condition.reference.vpn_active",
+        "android.state.airplane_mode", "android.condition.airplane_mode",
+        "android.state.master_sync", "android.condition.master_sync",
+        "android.state.auto_rotate_enabled", "android.condition.auto_rotate_enabled",
+        "android.state.reference.auto_rotate_enabled", "android.condition.reference.auto_rotate_enabled",
+        "android.state.tts_speaking", "android.condition.tts_speaking" ->
+            FeaturePickerCategory.DEVICE_STATE
+        "android.state.location_mode", "android.condition.location_mode",
+        "android.state.location_enabled", "android.condition.location_enabled",
+        "android.state.gps_enabled", "android.condition.gps_enabled" ->
+            FeaturePickerCategory.CONNECTIVITY
+        "android.state.notification_volume", "android.condition.notification_volume",
+        "android.state.dnd_filter", "android.condition.dnd_filter",
+        "android.state.notification_priority_mode", "android.condition.notification_priority_mode" ->
+            FeaturePickerCategory.NOTIFICATIONS
         "android.state.media_store_available", "android.condition.media_store_available" ->
             FeaturePickerCategory.DEVICE_STATE
         "android.state.sleeping", "android.condition.sleeping",
@@ -526,7 +579,9 @@ fun normalizeMacroDroidPickerCategory(
         }
         FeatureKind.STATE, FeatureKind.CONDITION -> when (category) {
             // Volume/ringer constraints are audio-related, not display-related.
-            FeaturePickerCategory.VOLUME -> FeaturePickerCategory.MEDIA
+            // The MacroDroid constraint category is Screen/Speaker for
+            // ringer mode and audio stream volume, not the Media playback category.
+            FeaturePickerCategory.VOLUME -> FeaturePickerCategory.SCREEN
             FeaturePickerCategory.CALL_SMS, FeaturePickerCategory.MESSAGING -> FeaturePickerCategory.PHONE
             FeaturePickerCategory.WEB_INTERACTIONS -> FeaturePickerCategory.CONNECTIVITY
             FeaturePickerCategory.AI, FeaturePickerCategory.VARIABLES,
