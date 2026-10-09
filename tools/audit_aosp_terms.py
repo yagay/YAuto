@@ -158,6 +158,33 @@ def verify_official(terms: list[Term], pairs: dict[str, tuple[Path, Path]]) -> N
                 raise ValueError(f"AOSP original pair changed or disagrees: {source}:{row.source_key}")
 
 
+def import_official_terms(
+    reviewed: list[Term], pairs: dict[str, tuple[Path, Path]]
+) -> list[Term]:
+    """Build a wider, advisory bilingual lexicon from paired AOSP resource IDs.
+
+    Only short user-facing phrases are relevant to YAuto. Never merge by the
+    English value alone: the same word may have several different meanings.
+    """
+    seen = {(row.source, row.source_key) for row in reviewed}
+    imported = []
+    for source, (en_file, zh_file) in pairs.items():
+        english = resource_items(en_file)
+        chinese = resource_items(zh_file)
+        for key in sorted(english.keys() & chinese.keys()):
+            if (source, key) in seen:
+                continue
+            en, zh = english[key], chinese[key]
+            if not (1 <= len(en) <= 80 and 1 <= len(zh) <= 80):
+                continue
+            if any(marker in en + zh for marker in ("\n", "%", "\\n", "http://", "https://")):
+                continue
+            if not CJK.search(zh) and not TECHNICAL.fullmatch(zh):
+                continue
+            imported.append(Term(source, key, en, zh))
+    return imported
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", default="build/reports/aosp_terminology_audit.json")
@@ -175,10 +202,14 @@ def main() -> int:
         if en_file:
             official[source] = (en_file, zh_file)
     terms = load_terms()
+    reviewed_count = len(terms)
     if official:
         verify_official(terms, official)
+        terms.extend(import_official_terms(terms, official))
     en, zh = load_yauto_resources(ROOT)
     report = audit(terms, en, zh)
+    report["verified_glossary_terms"] = reviewed_count
+    report["imported_aosp_source_terms"] = len(terms) - reviewed_count
     report["sources"] = SOURCES
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
