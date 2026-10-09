@@ -1,0 +1,34 @@
+source,source_key,en,zh_cn
+settings,bluetooth,Bluetooth,蓝牙
+settings,bluetooth_devices,Bluetooth devices,蓝牙设备
+settings,bluetooth_device_name,Device name,设备名称
+settings,bluetooth_pairing_pref_title,Pair new device,与新设备配对
+settings,bluetooth_rename_device,Rename this device,重命名此设备
+settings,bluetooth_rename_button,Rename,重命名
+settings,bluetooth_notification_title,Notifications,通知
+settings,bluetooth_paired_device_title,Your devices,您的设备
+settings,bluetooth_devices_card_off_title,Bluetooth is off,蓝牙已关闭
+settings,bluetooth_audio_routing_title,Audio output,音频输出
+settings,app_locales_picker_menu_title,App languages,应用语言
+settings,app_locale_picker_title,App language,应用语言
+settings,airplane_mode,Airplane mode,飞行模式
+settings,location_settings_title,Location,位置信息
+settings,security_settings_title,Security,安全
+settings,security_status_title,Security status,安全状态
+settings,security_settings_fingerprint_preference_title,Fingerprint,指纹
+settings,security_settings_face_preference_title,Face Unlock,人脸解锁
+settings,wifi_settings,Wi\u2011Fi,WLAN
+settings,data_usage_summary_title,Data usage,流量使用情况
+settings,screen_timeout,Screen timeout,自动锁屏
+settings,display_settings,Display,显示
+settings,accessibility_settings,Accessibility,无障碍功能
+settings,accessibility_settings_title,Accessibility settings,无障碍设置
+settings,device_admin_settings_title,Device admin settings,设备管理设置
+settings,auto_rotate_settings_primary_switch_title,Use auto-rotate,启用自动屏幕旋转功能
+settings,zen_mode_settings_title,Do Not Disturb,勿扰模式
+settings,night_display_title,Night Light,护眼模式
+settings,location_settings_primary_switch_title,Use location,使用位置信息
+settings,bluetooth_pairing_key_msg,Bluetooth pairing code,蓝牙配对码
+systemui,tile_states_wifi[0],Unavailable,不可用
+systemui,tile_states_wifi[1],Off,已关闭
+systemui,tile_states_wifi[2],On,已开启
