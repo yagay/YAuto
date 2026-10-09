@@ -1,17 +1,17 @@
 package com.yagay.yauto.ui.editor
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,9 +20,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.model.FeatureRef
@@ -86,10 +86,6 @@ private fun UnifiedFeatureSelector(
     fun methodLabel(item: FeaturePickerCatalogItem): String =
         textResolver.implementationLabel(item.descriptor.id.value) ?: item.title
 
-    var expanded by remember(group.spec.id, selectedItem.descriptor.id.value) {
-        mutableStateOf(false)
-    }
-
     Card(Modifier.fillMaxWidth()) {
         Column(
             Modifier.fillMaxWidth().padding(14.dp),
@@ -104,45 +100,50 @@ private fun UnifiedFeatureSelector(
                 text = stringResource(unifiedSelectorLabelRes(selectedItem.descriptor.kind)),
                 style = MaterialTheme.typography.titleSmall,
             )
-            Box(Modifier.fillMaxWidth()) {
-                OutlinedButton(
+            // Two choices are compact chips; both are visible and switch immediately.
+            // For 3+ methods, full-width radio rows prevent long localized labels
+            // from being clipped or hidden behind an additional dropdown tap.
+            if (group.members.size == 2) {
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { expanded = true },
-                ) {
-                    Text(
-                        text = methodLabel(selectedItem),
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.padding(horizontal = 4.dp))
-                    Icon(
-                        painter = painterResource(TextR.drawable.ic_chevron_right),
-                        contentDescription = null,
-                        modifier = Modifier.rotate(90f),
-                    )
-                }
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     group.members.forEach { item ->
-                        DropdownMenuItem(
-                            text = {
-                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(methodLabel(item))
-                                    if (item.description.isNotBlank() && item.description != item.title) {
-                                        Text(
-                                            text = item.description,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                }
-                            },
-                            onClick = {
-                                expanded = false
-                                onSelect(item)
-                            },
+                        FilterChip(
+                            selected = item.descriptor.id.value == selectedItem.descriptor.id.value,
+                            onClick = { onSelect(item) },
+                            label = { Text(methodLabel(item)) },
                         )
+                    }
+                }
+            } else {
+                Column(Modifier.fillMaxWidth().selectableGroup()) {
+                    group.members.forEach { item ->
+                        val selected = item.descriptor.id.value == selectedItem.descriptor.id.value
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                                .selectable(
+                                    selected = selected,
+                                    role = Role.RadioButton,
+                                    onClick = { onSelect(item) },
+                                )
+                                .padding(vertical = 7.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            RadioButton(selected = selected, onClick = null)
+                            Column(Modifier.weight(1f)) {
+                                Text(methodLabel(item), style = MaterialTheme.typography.bodyMedium)
+                                if (item.description.isNotBlank() && item.description != item.title) {
+                                    Text(
+                                        text = item.description,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -154,7 +155,6 @@ private fun UnifiedFeatureSelector(
         }
     }
 }
-
 
 internal fun resolveUnifiedMemberId(
     group: UnifiedFeatureGroup,

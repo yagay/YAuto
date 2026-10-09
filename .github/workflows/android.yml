@@ -49,6 +49,9 @@ jobs:
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_duplicate_titles.py'
           python3 tools/audit_picker_duplicate_titles.py --fail-on-unresolved-zh --fail-on-unresolved-en
+      - name: One-tap unified method selector guard
+        run: |
+          python3 -m unittest discover -s tools -p 'test_unified_click_selector.py'
       - name: Unified picker parameter labels
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_method_labels.py'
