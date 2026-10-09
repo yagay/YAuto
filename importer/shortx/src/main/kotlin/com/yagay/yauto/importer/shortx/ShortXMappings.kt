@@ -21,6 +21,9 @@ internal object ShortXMappings {
         val fields = runCatching { ProtoFields(any.value) }.getOrNull() ?: return null
         if (fields.has(96)) return null
         return when (type) {
+            "NoAction" -> noAction(any, importerId, fields)
+            "MediaPlayback" -> mediaPlayback(any, importerId, fields)
+            "SetVolume" -> setVolume(any, importerId, fields)
             "ShowToast" -> showToast(any, importerId, fields)
             "Delay" -> delay(any, importerId, fields)
             "LaunchApp" -> launchApp(any, importerId, fields)
@@ -415,6 +418,32 @@ internal object ShortXMappings {
         if (obj["customContextDataKey"] != null && obj["customContextDataKey"] !is JsonNull) return null
         val raw = any.value.toString(Charsets.UTF_8)
         return when (shortName(any.typeUrl)) {
+            "NoAction" -> {
+                if (!jsonBusinessKeysOnly(obj, "icon")) return null
+                sourceFeature("core.noop", importerId, any.typeUrl, raw)
+            }
+            "MediaPlayback" -> {
+                if (!jsonBusinessKeysOnly(obj, "action")) return null
+                val mode = (obj["action"] as? JsonPrimitive)?.let {
+                    it.intOrNull ?: shortXMediaPlaybackNameToNumber(it.contentOrNull.orEmpty())
+                } ?: 0
+                val cmd = shortXMediaPlaybackCommand(mode) ?: return null
+                sourceFeature("android.media.transport", importerId, any.typeUrl, raw,
+                    extra = mapOf("command" to ConfigValue.StringValue(cmd)))
+            }
+            "SetVolume" -> {
+                if (!jsonBusinessKeysOnly(obj, "type", "index")) return null
+                val type = (obj["type"] as? JsonPrimitive)?.intOrNull ?: return null
+                val level = (obj["index"] as? JsonPrimitive)?.intOrNull ?: return null
+                val stream = shortXStreamFromAndroidType(type) ?: return null
+                if (level !in 0..1000) return null
+                sourceFeature("android.audio.volume.set", importerId, any.typeUrl, raw,
+                    extra = mapOf(
+                        "stream" to ConfigValue.StringValue(stream),
+                        "unit" to ConfigValue.StringValue("index"),
+                        "index" to ConfigValue.NumberValue(level.toDouble()),
+                    ))
+            }
             "ShowToast" -> {
                 val message = (obj["message"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
                 sourceFeature("android.toast.show", importerId, any.typeUrl, raw,
@@ -727,6 +756,7 @@ internal object ShortXMappings {
 
     fun suggestedActionFeature(typeUrl: String): String? = when (shortName(typeUrl)) {
         "ShowToast" -> "android.toast.show"
+        "NoAction" -> "core.noop"
         "Delay" -> "core.delay"
         "LaunchApp", "LaunchAppByPkg" -> "android.app.launch"
         "WriteClipboard" -> "android.clipboard.set"
@@ -863,6 +893,34 @@ internal object ShortXMappings {
 
     private fun jsonArrayEmpty(obj: JsonObject, key: String): Boolean =
         (obj[key] as? JsonArray)?.isEmpty() != false
+
+    private fun noAction(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields(1)) return null
+        return binaryFeature(any, importerId, "core.noop", emptyMap())
+    }
+
+    private fun mediaPlayback(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields(1)) return null
+        val command = shortXMediaPlaybackCommand((fields.varint(1) ?: 0L).toInt()) ?: return null
+        return binaryFeature(any, importerId, "android.media.transport",
+            mapOf("command" to ConfigValue.StringValue(command)))
+    }
+
+    private fun setVolume(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields(1, 2)) return null
+        val type = fields.varint(1)?.toInt() ?: return null
+        val index = fields.varint(2)?.toInt() ?: return null
+        val stream = shortXStreamFromAndroidType(type) ?: return null
+        if (index !in 0..1000) return null
+        return binaryFeature(any, importerId, "android.audio.volume.set", mapOf(
+            "stream" to ConfigValue.StringValue(stream),
+            "unit" to ConfigValue.StringValue("index"),
+            "index" to ConfigValue.NumberValue(index.toDouble()),
+        ))
+    }
+
+    private fun jsonBusinessKeysOnly(obj: JsonObject, vararg allowed: String): Boolean =
+        obj.keys.all { it in SOURCE_METADATA_KEYS || it in allowed }
 
     private fun showToast(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         val message = fields.string(1) ?: return null
@@ -1251,6 +1309,40 @@ internal object ShortXMappings {
         .substringAfterLast('$')
 }
 
+
+internal fun shortXMediaPlaybackCommand(value: Int): String? = when (value) {
+    0 -> "play"
+    1 -> "pause"
+    2 -> "next"
+    3 -> "previous"
+    4 -> "fast_forward"
+    5 -> "rewind"
+    6 -> "stop"
+    else -> null
+}
+
+internal fun shortXMediaPlaybackNameToNumber(value: String): Int? = when (value) {
+    "MediaPlaybackAction_Play" -> 0
+    "MediaPlaybackAction_Pause" -> 1
+    "MediaPlaybackAction_SkipToNext" -> 2
+    "MediaPlaybackAction_SkipToPrevious" -> 3
+    "MediaPlaybackAction_FastForward" -> 4
+    "MediaPlaybackAction_Rewind" -> 5
+    "MediaPlaybackAction_Stop" -> 6
+    else -> null
+}
+
+/** Android stream type IDs explicitly supported by the YAuto native audio executor. */
+internal fun shortXStreamFromAndroidType(type: Int): String? = when (type) {
+    0 -> "voice_call"
+    1 -> "system"
+    2 -> "ring"
+    3 -> "media"
+    4 -> "alarm"
+    5 -> "notification"
+    6 -> "bluetooth_sco"
+    else -> null
+}
 
 /** Strictly preserve an existing private slot rather than mapping a stock SystemUI slot. */
 internal fun importedYAutoStatusSlot(value: String?): String? {

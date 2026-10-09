@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_audio_volume_set_field_unit">Volume method</string>
+    <string name="feature_android_audio_volume_set_field_unit_option_percent">Percentage</string>
+    <string name="feature_android_audio_volume_set_field_unit_option_index">Android stream index</string>
+    <string name="feature_android_audio_volume_set_field_index">System stream volume index</string>
+    <string name="feature_android_audio_volume_set_field_stream_option_bluetooth_sco">Bluetooth call audio</string>
+    <string name="runtime_feature_volume_index_out_of_range">Audio index outside device range (%1$d–%2$d); no change was made.</string>
+</resources>

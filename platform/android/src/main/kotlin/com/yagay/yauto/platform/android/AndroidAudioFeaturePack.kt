@@ -22,22 +22,40 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.AUDIO,
                 fields = listOf(
                     streamField(),
-                    FieldSchema.Number("percent", "Volume percent", true, min = 0.0, max = 100.0),
+                    FieldSchema.Choice("unit", "Volume method", options = listOf("percent", "index")),
+                    FieldSchema.Number("percent", "Volume percent", min = 0.0, max = 100.0),
+                    FieldSchema.Number("index", "Android stream volume index", min = 0.0, max = 1000.0),
                     FieldSchema.Toggle("showUi", "Show system volume UI"),
                 ),
-                keywords = setOf("volume", "ring", "alarm", "notification"),
+                fieldBehaviors = mapOf(
+                    "unit" to FieldBehavior(defaultValue = ConfigValue.StringValue("percent")),
+                    "percent" to FieldBehavior(visibleWhen = FieldRule.Equals("unit", ConfigValue.StringValue("percent"))),
+                    "index" to FieldBehavior(visibleWhen = FieldRule.Equals("unit", ConfigValue.StringValue("index"))),
+                ),
+                keywords = setOf("volume", "ring", "alarm", "notification", "shortx", "index"),
                 aliases = setOf("android.audio.media_volume.set"),
                 ownerPackId = id,
             )
         ) { feature, _ ->
             runCatching {
                 val stream = stream(feature.config.string("stream", "media"))
-                val percent = (feature.config["percent"].numberOrNull() ?: 50.0).coerceIn(0.0, 100.0)
                 val min = audio.getStreamMinVolume(stream)
                 val max = audio.getStreamMaxVolume(stream)
-                val value = (min + (max - min) * percent / 100.0).roundToInt().coerceIn(min, max)
-                audio.setStreamVolume(stream, value, if (feature.config.boolean("showUi")) AudioManager.FLAG_SHOW_UI else 0)
-                ActionExecutionResult(true, ConfigValue.NumberValue(percent))
+                if (feature.config.string("unit", "percent") == "index") {
+                    val raw = feature.config["index"].numberOrNull()
+                    if (raw == null || !raw.isFinite() || raw != raw.toInt().toDouble() || raw < min || raw > max) {
+                        ActionExecutionResult(false, message = userText("feature.volume_index_out_of_range", min, max))
+                    } else {
+                        val index = raw.toInt()
+                        audio.setStreamVolume(stream, index, if (feature.config.boolean("showUi")) AudioManager.FLAG_SHOW_UI else 0)
+                        ActionExecutionResult(true, ConfigValue.NumberValue(index.toDouble()))
+                    }
+                } else {
+                    val percent = (feature.config["percent"].numberOrNull() ?: 50.0).coerceIn(0.0, 100.0)
+                    val value = (min + (max - min) * percent / 100.0).roundToInt().coerceIn(min, max)
+                    audio.setStreamVolume(stream, value, if (feature.config.boolean("showUi")) AudioManager.FLAG_SHOW_UI else 0)
+                    ActionExecutionResult(true, ConfigValue.NumberValue(percent))
+                }
             }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
 
@@ -212,13 +230,14 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
         registry.registerCondition(condition, evaluator)
     }
 
-    private fun streamField() = FieldSchema.Choice("stream", "Audio stream", true, listOf("media", "ring", "notification", "alarm", "system", "voice_call"))
+    private fun streamField() = FieldSchema.Choice("stream", "Audio stream", true, listOf("media", "ring", "notification", "alarm", "system", "voice_call", "bluetooth_sco"))
     private fun stream(value: String): Int = when (value) {
         "ring" -> AudioManager.STREAM_RING
         "notification" -> AudioManager.STREAM_NOTIFICATION
         "alarm" -> AudioManager.STREAM_ALARM
         "system" -> AudioManager.STREAM_SYSTEM
         "voice_call" -> AudioManager.STREAM_VOICE_CALL
+        "bluetooth_sco" -> AudioManager.STREAM_BLUETOOTH_SCO
         else -> AudioManager.STREAM_MUSIC
     }
 }

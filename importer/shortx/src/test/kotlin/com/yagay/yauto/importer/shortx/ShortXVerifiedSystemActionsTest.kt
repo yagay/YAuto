@@ -145,6 +145,49 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals(ConfigValue.StringValue("180"), features[2].config["rotation"])
     }
 
+    @Test fun `ShortX media playback enums map all seven native commands`() {
+        val commands = listOf("play", "pause", "next", "previous", "fast_forward", "rewind", "stop")
+        commands.forEachIndexed { number, expected ->
+            val feature = importAction("MediaPlayback", message(varintField(1, number.toLong())))
+            assertEquals("android.media.transport", feature.typeId)
+            assertEquals(ConfigValue.StringValue(expected), feature.config["command"])
+        }
+        assertEquals("compat.source.action", importAction("MediaPlayback", message(varintField(1, 7))).typeId)
+        assertEquals("compat.source.action", importAction("MediaPlayback", message(varintField(1, 1), field(2, "extra"))).typeId)
+    }
+
+    @Test fun `ShortX no operation preserves metadata and rejects unknown business fields`() {
+        assertEquals("core.noop", importAction("NoAction", message(field(1, "custom.icon"))).typeId)
+        assertEquals("compat.source.action", importAction("NoAction", message(varintField(2, 1))).typeId)
+    }
+
+    @Test fun `ShortX set volume imports exact index not a device dependent percentage`() {
+        val volume = importAction("SetVolume", message(varintField(1, 3), varintField(2, 8)))
+        assertEquals("android.audio.volume.set", volume.typeId)
+        assertEquals(ConfigValue.StringValue("media"), volume.config["stream"])
+        assertEquals(ConfigValue.StringValue("index"), volume.config["unit"])
+        assertEquals(ConfigValue.NumberValue(8.0), volume.config["index"])
+        assertEquals("compat.source.action", importAction("SetVolume", message(varintField(1, 11), varintField(2, 8))).typeId)
+        assertEquals("compat.source.action", importAction("SetVolume", message(varintField(1, 3), varintField(2, 1001))).typeId)
+    }
+
+    @Test fun `JSON native actions convert media noop and raw volume`() {
+        val json = """{"id":"shortx-expanded","title":"Actions","actions":[
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.MediaPlayback","action":"MediaPlaybackAction_SkipToNext"},
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.NoAction","icon":"circle"},
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.SetVolume","type":2,"index":4},
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.SetVolume","type":11,"index":4}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("actions.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        val refs = result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature }
+        assertEquals(listOf("android.media.transport", "core.noop", "android.audio.volume.set", "compat.source.action"),
+            refs.map { it.typeId })
+        assertEquals(ConfigValue.StringValue("next"), refs[0].config["command"])
+        assertEquals(ConfigValue.StringValue("ring"), refs[2].config["stream"])
+        assertEquals(ConfigValue.NumberValue(4.0), refs[2].config["index"])
+    }
+
     private fun assertBoolean(source: String, target: String, key: String, value: Boolean) {
         val feature = importAction(source, message(varintField(1, if (value) 1 else 0)))
         assertEquals(target, feature.typeId)
