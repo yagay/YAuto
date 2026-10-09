@@ -180,7 +180,7 @@ def main() -> int:
     feature_resolver = Path("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FeatureTextResources.kt")
     if feature_resolver.exists():
         resolver_text = feature_resolver.read_text(encoding="utf-8")
-        for pattern in (r'else\s+descriptor\.title', r'else\s+descriptor\.description', r'else\s+field\.label', r'else\s+option'):
+        for pattern in (r'(?:else|\\?:)\\s+descriptor\\.title', r'(?:else|\\?:)\\s+descriptor\\.description', r'(?:else|\\?:)\\s+field\\.label', r'(?:else|\\?:)\\s+option\\b'):
             match = re.search(pattern, resolver_text)
             if match:
                 failures.append(f"{feature_resolver}:{line_number(resolver_text, match.start())}: raw FeatureDescriptor display fallback is forbidden")
