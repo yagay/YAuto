@@ -90,7 +90,7 @@ private fun shellOutput(value: ConfigValue?): String =
     ((value as? ConfigValue.ObjectValue)?.value?.get("stdout") as? ConfigValue.StringValue)?.value
         ?: (value as? ConfigValue.StringValue)?.value.orEmpty()
 
-internal const val NR_BIT: Long = 1L shl 19
+internal const val NR_BIT: Long = 524288L
 
 /** Strictly decode the AOSP TelephonyShellCommand textual result; unknown tokens fail closed. */
 internal fun parseAllowedNetworkTypes(stdout: String): Long? {
