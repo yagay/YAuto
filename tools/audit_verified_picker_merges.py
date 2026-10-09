@@ -19,10 +19,10 @@ MACRO = ROOT / "tools/macrodroid_reviewed_names.csv"
 SHORTX = ROOT / "tools/shortx_verified_titles.csv"
 
 SPEC_RE = re.compile(
-    r'UnifiedFeatureSpec\\(\\s*"([^"]+)"\\s*,\\s*'
-    r'TextR\\.string\\.([a-zA-Z0-9_]+)\\s*,\\s*'
-    r'TextR\\.string\\.([a-zA-Z0-9_]+)\\s*,\\s*'
-    r'listOf\\(([\\s\\S]*?)\\)\\s*,?\\s*\\)',
+    r'UnifiedFeatureSpec\(\s*"([^"]+)"\s*,\s*'
+    r'TextR\.string\.([a-zA-Z0-9_]+)\s*,\s*'
+    r'TextR\.string\.([a-zA-Z0-9_]+)\s*,\s*'
+    r'listOf\(([\s\S]*?)\)\s*,?\s*\)',
 )
 ID_RE = re.compile(r'"([^"]+)"')
 
