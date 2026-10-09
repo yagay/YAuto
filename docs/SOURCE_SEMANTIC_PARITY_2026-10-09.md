@@ -4,7 +4,7 @@ Base: `refactor/macrodroid-on-1003-20261008`, commit `2ea18bec`.
 
 ## Implemented in this batch
 
-- Added distinct native `android.sms.send` alongside the existing `android.sms.compose`: Android `SmsManager`, SEND_SMS check, selected subscription, multipart texts, validation. Success means **submitted to the telephony service**, not carrier delivery. Carrier billing and Android SMS permission restrictions apply.
+- Reused and strengthened existing native `android.sms.send` in AndroidPersonalDataFeaturePack alongside `android.sms.compose`: Android SmsManager, explicit SEND_SMS check, selected subscription, multipart texts, length/number validation. Avoided registering a duplicate Feature ID. Success means **submitted to the telephony service**, not carrier delivery. Carrier billing and Android SMS permission restrictions apply.
 - Added `surface.gesture_recording.stop` and a recorder-specific stop API. Ending a recorder commits any pending valid points, closes its surface, and emits `gesture_recording_stopped`. It is keyed by Surface ID and does not close unrelated overlays.
 - Corrected ShortX `SendSMS` import hints to target direct sending rather than SMS compose. Unverified protobuf/JSON fields remain compatibility nodes until decoded losslessly; a hint does **not** mean conversion is complete.
 - Suppressed unsafe ShortX hints for `StartAppProcess`, `StartAppProcessByPkg`, `SetStatusBarIcon`, `RemoveStatusBarIcon`, `ShowStatusBarChip`, `HideStatusBarClip`, `PluginAction`, `Toggle5G`, `AreaScreenshot`. No unrelated Activity, notification, overlay, Locale plugin, mobile mode, or full-screen capture is misrepresented as equivalent.

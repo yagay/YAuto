@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_android_sms_send_title">Send SMS</string>
-    <string name="feature_android_sms_send_description">Send an SMS directly using the selected SIM. Requires SEND_SMS permission; submitting does not confirm delivery and may incur carrier charges.</string>
     <string name="feature_surface_gesture_recording_stop_title">Stop gesture recording</string>
     <string name="feature_surface_gesture_recording_stop_description">Finish the gesture recorder with the selected Surface ID and preserve the captured path.</string>
 </resources>

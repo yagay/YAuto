@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_android_sms_send_title">发送短信</string>
-    <string name="feature_android_sms_send_description">通过所选 SIM 卡直接发送短信。需要 SEND_SMS 权限；提交发送不等于已送达，运营商可能收取费用。</string>
     <string name="feature_surface_gesture_recording_stop_title">停止手势录制</string>
     <string name="feature_surface_gesture_recording_stop_description">结束指定悬浮界面 ID 的手势录制，并保存已捕获的路径。</string>
 </resources>

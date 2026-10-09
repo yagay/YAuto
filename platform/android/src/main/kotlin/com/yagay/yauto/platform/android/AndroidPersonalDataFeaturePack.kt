@@ -2,6 +2,8 @@ package com.yagay.yauto.platform.android
 
 import android.content.ContentValues
 import android.content.Context
+import android.Manifest
+import android.content.pm.PackageManager
 import android.provider.CallLog
 import android.provider.CalendarContract
 import android.provider.ContactsContract
@@ -752,14 +754,21 @@ class AndroidPersonalDataFeaturePack(context: Context) : FeaturePack {
             if (!runtimePermissionGranted(context, "sms", feature.typeId)) return@registerAction permissionMissing("sms")
             val number = feature.config.string("number").resolveVariables(ctx.variables).trim()
             val text = feature.config.string("text").resolveVariables(ctx.variables)
-            if (number.isBlank() || text.isBlank()) return@registerAction invalid("Phone number and message are required")
+            if (number.isBlank() || number.length > 40 || number.any { Character.isISOControl(it) } ||
+                text.isBlank() || text.length > 1600
+            ) return@registerAction invalid("Invalid SMS number or message")
+            if (context.checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+                return@registerAction permissionMissing("sms")
+            }
             runCatching {
                 @Suppress("DEPRECATION")
                 val manager = feature.config["subscriptionId"].numberOrNull()?.toInt()?.let(SmsManager::getSmsManagerForSubscriptionId)
                     ?: SmsManager.getDefault()
                 val parts = manager.divideMessage(text)
-                if (parts.size <= 1) manager.sendTextMessage(number, null, text, null, null)
+                if (parts.isEmpty() || parts.size > 24) return@runCatching invalid("SMS is too long")
+                if (parts.size == 1) manager.sendTextMessage(number, null, text, null, null)
                 else manager.sendMultipartTextMessage(number, null, parts, null, null)
+                // Queued with Android telephony: this does not confirm carrier delivery.
                 ActionExecutionResult(true)
             }.getOrElse { failure(it) }
         }

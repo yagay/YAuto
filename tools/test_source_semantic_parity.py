@@ -7,13 +7,15 @@ SHORTX_HINTS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/
 SHORTX_PARSER = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXMappings.kt"
 MACRO_HINTS = ROOT / "importer/macrodroid/src/main/kotlin/com/yagay/yauto/importer/macrodroid/MacroDroidFeatureSuggestions.kt"
 COMMUNICATION = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidCommunicationFeaturePack.kt"
+SMS_IMPLEMENTATION = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidPersonalDataFeaturePack.kt"
 SURFACE = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidSurfaceFeaturePack.kt"
 CONTROLLER = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/OverlaySurfaceController.kt"
 
 
 class SourceSemanticParityTests(unittest.TestCase):
     def test_direct_sms_is_distinct_from_composing_sms(self):
-        native = COMMUNICATION.read_text(encoding="utf-8")
+        native = SMS_IMPLEMENTATION.read_text(encoding="utf-8")
+        compose = COMMUNICATION.read_text(encoding="utf-8")
         shortx = SHORTX_HINTS.read_text(encoding="utf-8")
         parser = SHORTX_PARSER.read_text(encoding="utf-8")
         self.assertIn('FeatureId("android.sms.send")', native)
@@ -21,6 +23,8 @@ class SourceSemanticParityTests(unittest.TestCase):
         self.assertIn('sendTextMessage(', native)
         self.assertIn('sendMultipartTextMessage(', native)
         self.assertIn('AccessRequirement.SMS', native)
+        self.assertIn('FeatureId("android.sms.compose")', compose.replace('intentAction(registry, "android.sms.compose"', 'FeatureId("android.sms.compose")'))
+        self.assertNotIn('FeatureId("android.sms.send")', compose)
         self.assertIn('"SendSMS" -> "android.sms.send"', shortx)
         self.assertIn('"SendSMS" -> "android.sms.send"', parser)
         self.assertNotIn('"SendSMS" -> "android.sms.compose"', shortx + parser)
