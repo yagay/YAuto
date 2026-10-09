@@ -400,9 +400,9 @@ class FeaturePickerCategoryTest {
     }
 
     @Test
-    fun `constraint taxonomy has device state and screen speaker without action categories`() {
+    fun `constraint taxonomy keeps audio ringer separate from screen controls`() {
         assertEquals(FeaturePickerCategory.DEVICE_STATE, classify("android.condition.app_installed", FeatureKind.CONDITION))
-        assertEquals(FeaturePickerCategory.SCREEN, classify("android.state.audio.ringer_mode", FeatureKind.STATE))
+        assertEquals(FeaturePickerCategory.MEDIA, classify("android.state.audio.ringer_mode", FeatureKind.STATE))
         assertEquals(FeaturePickerCategory.CONNECTIVITY, classify("android.condition.websocket_connected", FeatureKind.CONDITION))
         assertEquals(FeaturePickerCategory.YAUTO_SPECIFIC, classify("variable.condition.equals", FeatureKind.CONDITION))
     }
