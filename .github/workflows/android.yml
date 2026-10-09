@@ -74,6 +74,8 @@ jobs:
         run: python3 .github/scripts/check-localization.py
       - name: Localization quality guard
         run: python3 .github/scripts/check-localization-quality.py
+      - name: Shared navigation architecture guard
+        run: python3 -m unittest discover -s tools -p 'test_navigation_architecture.py'
       - name: Startup safety guard
         run: python3 .github/scripts/check-startup-safety.py
       - name: Runtime event contract guard

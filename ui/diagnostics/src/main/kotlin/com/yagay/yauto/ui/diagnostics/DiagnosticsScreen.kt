@@ -1,5 +1,6 @@
 package com.yagay.yauto.ui.diagnostics
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,6 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.diagnostics.*
 import com.yagay.yauto.ui.design.MacroItemRow
+import com.yagay.yauto.ui.design.PageNavigation
+import com.yagay.yauto.ui.design.PageBackButton
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.localizedDateTime
 import com.yagay.yauto.ui.design.localizedList
@@ -34,7 +37,15 @@ fun DiagnosticsScreen(
     onExport: () -> Unit,
     onBack: () -> Unit,
 ) {
-    var page by remember { mutableStateOf<DiagnosticPage>(DiagnosticPage.Overview) }
+    var navigation by remember { mutableStateOf(PageNavigation.root<DiagnosticPage>(DiagnosticPage.Overview)) }
+    val page = navigation.current
+
+    fun navigateBack() {
+        val previous = navigation.back()
+        if (previous == null) onBack() else navigation = previous
+    }
+
+    BackHandler(enabled = navigation.canGoBack, onBack = ::navigateBack)
     val records = snapshot?.records.orEmpty()
 
     Scaffold(
@@ -50,16 +61,7 @@ fun DiagnosticsScreen(
                     )
                 },
                 navigationIcon = {
-                    TextButton(onClick = {
-                        page = when (val current = page) {
-                            DiagnosticPage.Overview -> {
-                                onBack()
-                                DiagnosticPage.Overview
-                            }
-                            is DiagnosticPage.Source -> DiagnosticPage.Overview
-                            is DiagnosticPage.Record -> DiagnosticPage.Source(current.source)
-                        }
-                    }) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_back), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_back)) }
+                    PageBackButton(onBack = ::navigateBack)
                 },
                 actions = {
                     if (page == DiagnosticPage.Overview) {
@@ -79,12 +81,12 @@ fun DiagnosticsScreen(
         when (val current = page) {
             DiagnosticPage.Overview -> DiagnosticOverview(
                 Modifier.padding(padding), statuses, records, snapshot != null, collecting,
-                onCollect, onExport, onSource = { page = DiagnosticPage.Source(it) },
+                onCollect, onExport, onSource = { navigation = navigation.forward(DiagnosticPage.Source(it)) },
             )
             is DiagnosticPage.Source -> DiagnosticSourcePage(
                 Modifier.padding(padding), current.source,
                 records.filter { it.source == current.source },
-                onRecord = { page = DiagnosticPage.Record(it, current.source) },
+                onRecord = { navigation = navigation.forward(DiagnosticPage.Record(it, current.source)) },
             )
             is DiagnosticPage.Record -> DiagnosticRecordPage(Modifier.padding(padding), current.record)
         }

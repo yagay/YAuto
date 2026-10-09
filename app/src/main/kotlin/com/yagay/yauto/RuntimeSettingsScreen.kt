@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -29,6 +30,8 @@ import com.yagay.yauto.platform.android.isUsageStatsAccessGranted
 import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.localizedList
+import com.yagay.yauto.ui.design.rememberPageNavigation
+import com.yagay.yauto.ui.design.PageBackButton
 import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.launch
 
@@ -44,7 +47,20 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     var refresh by remember { mutableIntStateOf(0) }
     var backendMessage by remember(notChecked) { mutableStateOf(notChecked) }
     var lsposedScopeMessage by remember { mutableStateOf<String?>(null) }
-    var page by remember { mutableStateOf(RuntimeSettingsPage.OVERVIEW) }
+    var navigation by rememberPageNavigation(RuntimeSettingsPage.OVERVIEW)
+    val page = navigation.current
+
+    fun navigateTo(destination: RuntimeSettingsPage) {
+        navigation = navigation.forward(destination)
+    }
+
+    fun navigateBack() {
+        val previous = navigation.back()
+        if (previous != null) navigation = previous else onBack()
+    }
+
+    // Nested settings pages consume system/gesture back before the app shell.
+    BackHandler(enabled = navigation.canGoBack, onBack = ::navigateBack)
     val scope = rememberCoroutineScope()
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refresh++ }
 
@@ -118,9 +134,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                     )
                 },
                 navigationIcon = {
-                    TextButton(onClick = {
-                        if (page == RuntimeSettingsPage.OVERVIEW) onBack() else page = RuntimeSettingsPage.OVERVIEW
-                    }) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_back), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_back)) }
+                    PageBackButton(onBack = ::navigateBack)
                 },
             )
         },
@@ -155,7 +169,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.runtime_settings_android_permissions),
                         stringResource(TextR.string.runtime_settings_permission_count_format, grantedCount, 10),
                         MacroPalette.Constraint,
-                        onClick = { page = RuntimeSettingsPage.PERMISSIONS },
+                        onClick = { navigateTo(RuntimeSettingsPage.PERMISSIONS) },
                     )
                 }
                 item {
@@ -163,7 +177,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.runtime_settings_privileged_backends),
                         stringResource(TextR.string.runtime_settings_privileged_backends_subtitle),
                         MacroPalette.Flow,
-                        onClick = { page = RuntimeSettingsPage.BACKENDS },
+                        onClick = { navigateTo(RuntimeSettingsPage.BACKENDS) },
                     )
                 }
                 item {
@@ -171,7 +185,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.runtime_settings_engine),
                         stringResource(TextR.string.runtime_settings_engine_subtitle),
                         MacroPalette.Action,
-                        onClick = { page = RuntimeSettingsPage.ENGINE },
+                        onClick = { navigateTo(RuntimeSettingsPage.ENGINE) },
                     )
                 }
                 item {
@@ -240,7 +254,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.runtime_settings_feature_health),
                         subtitle,
                         MacroPalette.Diagnostics,
-                        onClick = { page = RuntimeSettingsPage.HEALTH },
+                        onClick = { navigateTo(RuntimeSettingsPage.HEALTH) },
                     )
                 }
             }

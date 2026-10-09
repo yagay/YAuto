@@ -1,5 +1,6 @@
 package com.yagay.yauto.ui.editor
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +15,7 @@ import com.yagay.yauto.core.model.*
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.ui.design.*
 import com.yagay.yauto.ui.design.R as TextR
+import com.yagay.yauto.ui.design.PageBackButton
 import java.util.UUID
 
 private enum class MacroActionPhase { EVENT, ENTER, EXIT }
@@ -73,6 +75,18 @@ fun MacroAutomationEditorScreen(
         inheritedVariableNames + variables.keys
     }
 
+    fun navigateBack() {
+        when {
+            request != null -> request = null
+            treePhase != null -> treePhase = null
+            menu != null -> menu = null
+            variableEdit != null -> variableEdit = null
+            else -> onBack()
+        }
+    }
+
+    BackHandler(onBack = ::navigateBack)
+
     fun save() {
         val simple = conditions.map { PredicateNode.Condition(it) }
         val predicate = when {
@@ -111,7 +125,7 @@ fun MacroAutomationEditorScreen(
                         )
                     )
                 },
-                navigationIcon = { TextButton(onClick = onBack) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_back), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_back)) } },
+                navigationIcon = { PageBackButton(onBack = ::navigateBack) },
                 actions = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(TextR.string.automation_enabled), style = MaterialTheme.typography.labelMedium)

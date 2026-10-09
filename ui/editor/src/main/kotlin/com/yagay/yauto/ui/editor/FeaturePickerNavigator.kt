@@ -18,43 +18,34 @@ internal sealed interface PickerPage {
     data class Configure(val descriptor: FeatureDescriptor) : PickerPage
 }
 
+/**
+ * Feature picker destinations share the same back-stack primitive as the app,
+ * settings and diagnostics. The wrapper keeps the existing editor API stable.
+ */
 internal data class FeaturePickerNavState private constructor(
-    val stack: List<PickerPage>,
+    private val navigation: com.yagay.yauto.ui.design.PageNavigation<PickerPage>,
 ) {
-    init {
-        require(stack.isNotEmpty())
-        require(stack.first() == PickerPage.Categories)
-    }
+    val stack: List<PickerPage> get() = navigation.entries
+    val current: PickerPage get() = navigation.current
 
-    val current: PickerPage
-        get() = stack.last()
+    fun push(page: PickerPage): FeaturePickerNavState =
+        FeaturePickerNavState(navigation.forward(page))
 
-    fun push(page: PickerPage): FeaturePickerNavState = copy(stack = stack + page)
-
-    /**
-     * Returns null only when the caller is already on the picker root and should dismiss the dialog.
-     */
-    fun pop(): FeaturePickerNavState? =
-        if (stack.size == 1) null else copy(stack = stack.dropLast(1))
+    fun pop(): FeaturePickerNavState? = navigation.back()?.let(::FeaturePickerNavState)
 
     companion object {
-        fun initial(initialDescriptor: FeatureDescriptor?): FeaturePickerNavState =
-            FeaturePickerNavState(
-                buildList {
-                    add(PickerPage.Categories)
-                    initialDescriptor?.let { add(PickerPage.Configure(it)) }
-                }
-            )
+        fun initial(initialDescriptor: FeatureDescriptor?): FeaturePickerNavState {
+            var trail = com.yagay.yauto.ui.design.PageNavigation.root<PickerPage>(PickerPage.Categories)
+            initialDescriptor?.let { trail = trail.forward(PickerPage.Configure(it)) }
+            return FeaturePickerNavState(trail)
+        }
 
         fun initialUnified(
             group: UnifiedFeatureGroup,
             selectedMemberId: String? = null,
-        ): FeaturePickerNavState =
-            FeaturePickerNavState(
-                listOf(
-                    PickerPage.Categories,
-                    PickerPage.Unified(group, selectedMemberId),
-                )
-            )
+        ): FeaturePickerNavState = FeaturePickerNavState(
+            com.yagay.yauto.ui.design.PageNavigation.root<PickerPage>(PickerPage.Categories)
+                .forward(PickerPage.Unified(group, selectedMemberId))
+        )
     }
 }

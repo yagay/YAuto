@@ -8,11 +8,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.yagay.yauto.core.model.*
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.ui.design.R as TextR
+import com.yagay.yauto.ui.design.NavigationDialog
 import java.util.UUID
 
 private fun nodeId() = NodeId(UUID.randomUUID().toString())
@@ -33,7 +32,7 @@ fun ActionTreeDialog(
     var editing by remember { mutableStateOf<ActionNode?>(null) }
     val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    NavigationDialog(onBack = onDismiss) {
         Scaffold(
             topBar = {
                 TopAppBar(

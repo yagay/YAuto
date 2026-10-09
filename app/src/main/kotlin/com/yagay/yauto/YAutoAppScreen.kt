@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -38,6 +39,7 @@ import com.yagay.yauto.core.storage.featureIds
 import com.yagay.yauto.core.storage.merge
 import com.yagay.yauto.core.storage.references
 import com.yagay.yauto.ui.design.R as TextR
+import com.yagay.yauto.ui.design.rememberPageNavigation
 import com.yagay.yauto.ui.diagnostics.DiagnosticsScreen
 import com.yagay.yauto.ui.editor.AutomationEditorScreen
 import com.yagay.yauto.ui.editor.FlowEditorScreen
@@ -77,9 +79,11 @@ private enum class AppPage {
 @Composable
 internal fun YAutoAppScreen(graph: AppGraph) {
     val context = LocalContext.current
-    var page by remember { mutableStateOf(AppPage.HOME) }
-    var editingAutomation by remember { mutableStateOf<Automation?>(null) }
-    var editingFlow by remember { mutableStateOf<Flow?>(null) }
+    var navigation by rememberPageNavigation(AppPage.HOME)
+    val page = navigation.current
+    // Store selected IDs instead of stale editor instances across language changes.
+    var editingAutomationId by rememberSaveable { mutableStateOf<String?>(null) }
+    var editingFlowId by rememberSaveable { mutableStateOf<String?>(null) }
     var workspaceReady by remember { mutableStateOf(false) }
     var workspaceSaving by remember { mutableStateOf(false) }
     var pendingRestore by remember { mutableStateOf<WorkspaceBackup?>(null) }
@@ -88,6 +92,8 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     var diagnosticSnapshot by remember { mutableStateOf<DiagnosticSnapshot?>(null) }
     var collecting by remember { mutableStateOf(false) }
     var workspace by remember { mutableStateOf(WorkspaceData()) }
+    val editingAutomation = workspace.automations.firstOrNull { it.id.value == editingAutomationId }
+    val editingFlow = workspace.flows.firstOrNull { it.id.value == editingFlowId }
     var importSummary by remember { mutableStateOf<String?>(null) }
     var runtimeSummary by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
@@ -109,14 +115,24 @@ internal fun YAutoAppScreen(graph: AppGraph) {
         }
     }
 
-    BackHandler(enabled = page != AppPage.HOME) {
+    fun navigateTo(destination: AppPage) {
+        navigation = navigation.forward(destination)
+    }
+
+    fun navigateBack() {
+        val previous = navigation.back() ?: return
         when (page) {
-            AppPage.AUTOMATION -> editingAutomation = null
-            AppPage.FLOW -> editingFlow = null
+            AppPage.AUTOMATION -> editingAutomationId = null
+            AppPage.FLOW -> editingFlowId = null
             else -> Unit
         }
-        page = AppPage.HOME
+        navigation = previous
     }
+
+    // The app shell handles one top-level page at a time. Child destinations
+    // (settings, editor drafts, full-screen dialogs) take priority with their own
+    // BackHandler. Physical back and the page's toolbar both call navigateBack.
+    BackHandler(enabled = navigation.canGoBack, onBack = ::navigateBack)
 
     fun operation(block: suspend () -> Unit) {
         scope.launch {
@@ -337,12 +353,12 @@ internal fun YAutoAppScreen(graph: AppGraph) {
                     workspace.automations + automation
                 }
                 saveWorkspace(workspace.copy(automations = automations), automation.id)
-                editingAutomation = null
-                page = AppPage.HOME
+                editingAutomationId = null
+                navigateBack()
             },
             onBack = {
-                editingAutomation = null
-                page = AppPage.HOME
+                editingAutomationId = null
+                navigateBack()
             },
             )
         }
@@ -361,12 +377,12 @@ internal fun YAutoAppScreen(graph: AppGraph) {
                 saveWorkspace(
                     workspace.copy(flows = workspace.flows.filterNot { it.id == flow.id } + flow)
                 )
-                editingFlow = null
-                page = AppPage.HOME
+                editingFlowId = null
+                navigateBack()
             },
             onBack = {
-                editingFlow = null
-                page = AppPage.HOME
+                editingFlowId = null
+                navigateBack()
             },
             )
         }
@@ -375,12 +391,12 @@ internal fun YAutoAppScreen(graph: AppGraph) {
             workspace.globalVariables,
             onSave = {
                 saveWorkspace(workspace.copy(globalVariables = it))
-                page = AppPage.HOME
+                navigateBack()
             },
-            onBack = { page = AppPage.HOME },
+            onBack = { navigateBack() },
         )
 
-        AppPage.SETTINGS -> RuntimeSettingsScreen(graph, onBack = { page = AppPage.HOME })
+        AppPage.SETTINGS -> RuntimeSettingsScreen(graph, onBack = { navigateBack() })
 
         AppPage.DIAGNOSTICS -> DiagnosticsScreen(
             statuses = statuses,
@@ -398,18 +414,18 @@ internal fun YAutoAppScreen(graph: AppGraph) {
                 }
             },
             onExport = { diagnosticsExportLauncher.launch("YAuto-diagnostic.json") },
-            onBack = { page = AppPage.HOME },
+            onBack = { navigateBack() },
         )
 
         AppPage.HOME -> HomeScreen(
             flows = workspace.flows,
             onNewFlow = {
-                editingFlow = null
-                page = AppPage.FLOW
+                editingFlowId = null
+                navigateTo(AppPage.FLOW)
             },
             onEditFlow = {
-                editingFlow = it
-                page = AppPage.FLOW
+                editingFlowId = it.id.value
+                navigateTo(AppPage.FLOW)
             },
             onDeleteFlow = { flow ->
                 if (workspace.references(flow.id)) {
@@ -418,8 +434,8 @@ internal fun YAutoAppScreen(graph: AppGraph) {
                     saveWorkspace(workspace.copy(flows = workspace.flows.filterNot { it.id == flow.id }))
                 }
             },
-            onEditVariables = { page = AppPage.VARIABLES },
-            onOpenSettings = { page = AppPage.SETTINGS },
+            onEditVariables = { navigateTo(AppPage.VARIABLES) },
+            onOpenSettings = { navigateTo(AppPage.SETTINGS) },
             onBackup = {
                 backupText = WorkspaceBackupCodec.encode(workspace, "0.1.0")
                 backupLauncher.launch("YAuto-backup.json")
@@ -432,12 +448,12 @@ internal fun YAutoAppScreen(graph: AppGraph) {
             importSummary = importSummary,
             runtimeSummary = runtimeSummary,
             onNewAutomation = {
-                editingAutomation = null
-                page = AppPage.AUTOMATION
+                editingAutomationId = null
+                navigateTo(AppPage.AUTOMATION)
             },
             onEditAutomation = { automation ->
-                editingAutomation = automation
-                page = AppPage.AUTOMATION
+                editingAutomationId = automation.id.value
+                navigateTo(AppPage.AUTOMATION)
             },
             onToggleAutomation = { automation, enabled ->
                 val updated = workspace.copy(
@@ -480,7 +496,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
                 }
             },
             onOpenDiagnostics = {
-                page = AppPage.DIAGNOSTICS
+                navigateTo(AppPage.DIAGNOSTICS)
                 operation {
                     statuses = graph.diagnosticRegistry.all().map { it.status() }
                 }

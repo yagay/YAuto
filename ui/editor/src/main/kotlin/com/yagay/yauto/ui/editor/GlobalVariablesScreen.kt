@@ -1,5 +1,6 @@
 package com.yagay.yauto.ui.editor
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.R as TextR
+import com.yagay.yauto.ui.design.PageBackButton
 
 private data class VariableDraft(val originalName: String?, val name: String, val value: String)
 
@@ -25,6 +27,11 @@ fun GlobalVariablesScreen(
     var values by remember { mutableStateOf(initial) }
     var query by remember { mutableStateOf("") }
     var draft by remember { mutableStateOf<VariableDraft?>(null) }
+    fun navigateBack() {
+        if (draft != null) draft = null else onBack()
+    }
+    BackHandler(onBack = ::navigateBack)
+
     val locale = currentEditorLocale()
     val nameComparator = remember(locale) { localizedStringComparator(locale) }
 
@@ -41,7 +48,7 @@ fun GlobalVariablesScreen(
                     )
                 },
                 navigationIcon = {
-                    TextButton(onClick = { if (draft != null) draft = null else onBack() }) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_back), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_back)) }
+                    PageBackButton(onBack = ::navigateBack)
                 },
                 actions = {
                     if (draft == null) {

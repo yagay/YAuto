@@ -30,10 +30,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.ui.design.R as TextR
+import com.yagay.yauto.ui.design.NavigationDialog
 import java.util.Locale
 import java.util.TimeZone
 import kotlinx.coroutines.Dispatchers
@@ -302,7 +301,7 @@ private fun SystemValuePickerDialog(
         }
     }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    NavigationDialog(onBack = onDismiss) {
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -433,7 +432,7 @@ private fun InstalledAppDialog(
                 (query.isBlank() || it.label.contains(query, true) || it.packageName.contains(query, true))
         }
     }
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    NavigationDialog(onBack = onDismiss) {
         Scaffold(
             topBar = {
                 TopAppBar(

@@ -1,5 +1,6 @@
 package com.yagay.yauto.ui.editor
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -12,6 +13,7 @@ import com.yagay.yauto.core.model.*
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.ui.design.*
 import com.yagay.yauto.ui.design.R as TextR
+import com.yagay.yauto.ui.design.PageBackButton
 import java.util.Locale
 import java.util.UUID
 
@@ -41,13 +43,25 @@ fun MacroFlowEditorScreen(
         inheritedVariableNames + inputs.map { it.name } + outputs.map { it.name }
     }
 
+    fun navigateBack() {
+        when {
+            picker != null -> picker = null
+            tree -> tree = false
+            paramEdit != null -> paramEdit = null
+            actionMenu != null -> actionMenu = null
+            else -> onBack()
+        }
+    }
+
+    BackHandler(onBack = ::navigateBack)
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(stringResource(if (initial == null) TextR.string.flow_add_title else TextR.string.flow_edit_title))
                 },
-                navigationIcon = { TextButton(onClick = onBack) { androidx.compose.material3.Icon(painter = androidx.compose.ui.res.painterResource(com.yagay.yauto.ui.design.R.drawable.ic_back), contentDescription = androidx.compose.ui.res.stringResource(com.yagay.yauto.ui.design.R.string.icon_back)) } },
+                navigationIcon = { PageBackButton(onBack = ::navigateBack) },
                 actions = {
                     TextButton(
                         enabled = name.isNotBlank(),

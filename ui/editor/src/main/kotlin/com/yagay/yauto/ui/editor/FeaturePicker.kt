@@ -1,7 +1,6 @@
 package com.yagay.yauto.ui.editor
 
 import android.content.Context
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.Scaffold
@@ -14,14 +13,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.model.Stability
 import com.yagay.yauto.core.registry.FeatureCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.ui.design.R as TextR
+import com.yagay.yauto.ui.design.NavigationDialog
+import com.yagay.yauto.ui.design.PageBackButton
 import java.util.Locale
 
 /**
@@ -121,14 +120,7 @@ fun MacroFeaturePickerDialog(
         prefs.edit().putString(recentKey(kind), recent.joinToString("\n")).apply()
     }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = false,
-        ),
-    ) {
-        BackHandler(onBack = ::navigateBack)
+    NavigationDialog(onBack = ::navigateBack) {
 
         Scaffold(
             topBar = {
@@ -150,16 +142,12 @@ fun MacroFeaturePickerDialog(
                         )
                     },
                     navigationIcon = {
-                        TextButton(onClick = ::navigateBack) {
-                            if (page == PickerPage.Categories) {
+                        if (page == PickerPage.Categories) {
+                            TextButton(onClick = ::navigateBack) {
                                 Text(stringResource(TextR.string.common_close), color = Color.White)
-                            } else {
-                                androidx.compose.material3.Icon(
-                                    painter = androidx.compose.ui.res.painterResource(TextR.drawable.ic_back),
-                                    contentDescription = stringResource(TextR.string.icon_back),
-                                    tint = Color.White,
-                                )
                             }
+                        } else {
+                            PageBackButton(onBack = ::navigateBack, tint = Color.White)
                         }
                     },
                 )
