@@ -165,7 +165,6 @@ internal object ShortXFeatureSuggestions {
         "ClickTile" -> "android.qs_tile.click"
         "ShowGlobalActionsMenu" -> "android.global_actions.show"
         "ShowHideInsets" -> "android.insets.immersive.set"
-        "StopService" -> "android.service.stop"
         "CloseActivity" -> "android.activity.close"
         "RemoveTasks", "RemoveTasksByPkg" -> "android.tasks.remove"
         "WaitForIdle" -> "android.ui.wait_for_idle"

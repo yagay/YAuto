@@ -66,6 +66,7 @@ class SourceSemanticParityTests(unittest.TestCase):
         self.assertIn('"StartService", "StopService" -> "android.service.control"', hints)
         self.assertIn('"StartService", "StopService" -> "android.service.control"', parser)
         self.assertNotIn('"StartService" -> "android.external.intent.invoke"', hints)
+        self.assertNotIn('"StopService" -> "android.service.stop"', hints)
 
     def test_macro_screenshot_content_and_spotify_are_not_generic_triggers(self):
         macro = MACRO_HINTS.read_text(encoding="utf-8")
