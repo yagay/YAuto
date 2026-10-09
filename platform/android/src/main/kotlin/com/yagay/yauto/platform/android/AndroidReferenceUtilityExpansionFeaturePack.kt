@@ -155,7 +155,7 @@ class AndroidReferenceUtilityExpansionFeaturePack(context: Context) : FeaturePac
                         "from",
                         "Measure from",
                         true,
-                        listOf("last_screen_off", "system_ready"),
+                        listOf("last_screen_off", "system_ready", "today", "last_24_hours"),
                     ),
                     FieldSchema.Variable("resultVariable", "Store milliseconds in variable", true),
                 ),
@@ -255,7 +255,7 @@ class AndroidReferenceUtilityExpansionFeaturePack(context: Context) : FeaturePac
 
     private fun registerScreenOnTimePair(registry: FeatureRegistry) {
         val fields = listOf(
-            FieldSchema.Choice("from", "Measure from", true, listOf("last_screen_off", "system_ready")),
+            FieldSchema.Choice("from", "Measure from", true, listOf("last_screen_off", "system_ready", "today", "last_24_hours")),
             FieldSchema.Duration("minMs", "Minimum duration"),
             FieldSchema.Duration("maxMs", "Maximum duration"),
         )
@@ -313,10 +313,10 @@ class AndroidReferenceUtilityExpansionFeaturePack(context: Context) : FeaturePac
         )
     }
 
-    private fun screenOnTimeMs(from: String): Long? {
+    private suspend fun screenOnTimeMs(from: String): Long? = withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         val bootStart = (now - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
-        return runCatching {
+        runCatching {
             when (from) {
                 "system_ready" -> usage.queryEventStats(
                     UsageStatsManager.INTERVAL_BEST,
@@ -325,6 +325,10 @@ class AndroidReferenceUtilityExpansionFeaturePack(context: Context) : FeaturePac
                 ).filter { it.eventType == UsageEvents.Event.SCREEN_INTERACTIVE }
                     .sumOf { it.totalTime }
                 "last_screen_off" -> currentScreenSessionMs(bootStart, now)
+                "today" -> readScreenOnTimeWindow(
+                    usage, java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(), now,
+                )
+                "last_24_hours" -> readScreenOnTimeWindow(usage, now - 86_400_000L, now)
                 else -> null
             }
         }.getOrNull()

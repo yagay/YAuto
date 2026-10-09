@@ -1,30 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_core_condition_trigger_fired_title">Trigger fired</string>
-    <string name="feature_core_condition_trigger_fired_description">Match the current trigger event type, with optional source or tag filters. The event type ID is the YAuto event ID; two triggers with the same type need a source or tag to distinguish them.</string>
-    <string name="feature_core_condition_trigger_fired_field_eventtype">Trigger event ID</string>
-    <string name="feature_core_condition_trigger_fired_field_source">Source (optional)</string>
-    <string name="feature_core_condition_trigger_fired_field_facttag">Trigger tag (optional)</string>
-    <string name="feature_android_screen_on_time_get_title">Get screen-on time</string>
-    <string name="feature_android_screen_on_time_get_description">Measure approximate interactive-screen duration from Android usage events; save milliseconds to a variable. Requires Usage Access and available history.</string>
-    <string name="feature_android_state_screen_on_time_title">Screen-on time</string>
-    <string name="feature_android_condition_screen_on_time_title">Screen-on time</string>
-    <string name="feature_android_state_screen_on_time_description">Compare measured interactive-screen time against a minute range.</string>
-    <string name="feature_android_condition_screen_on_time_description">Require measured interactive-screen time to be within the configured minute range.</string>
-    <string name="feature_android_screen_on_time_get_field_window">Measurement window</string>
-    <string name="feature_android_screen_on_time_get_field_window_option_today">Today (since local midnight)</string>
-    <string name="feature_android_screen_on_time_get_field_window_option_last_24_hours">Last 24 hours</string>
-    <string name="feature_android_screen_on_time_get_field_resultvariable">Store duration in milliseconds</string>
-    <string name="feature_android_state_screen_on_time_field_window">Measurement window</string>
-    <string name="feature_android_state_screen_on_time_field_window_option_today">Today (since local midnight)</string>
-    <string name="feature_android_state_screen_on_time_field_window_option_last_24_hours">Last 24 hours</string>
-    <string name="feature_android_state_screen_on_time_field_minminutes">Minimum minutes</string>
-    <string name="feature_android_state_screen_on_time_field_maxminutes">Maximum minutes</string>
-    <string name="feature_android_condition_screen_on_time_field_window">Measurement window</string>
-    <string name="feature_android_condition_screen_on_time_field_window_option_today">Today (since local midnight)</string>
-    <string name="feature_android_condition_screen_on_time_field_window_option_last_24_hours">Last 24 hours</string>
-    <string name="feature_android_condition_screen_on_time_field_minminutes">Minimum minutes</string>
-    <string name="feature_android_condition_screen_on_time_field_maxminutes">Maximum minutes</string>
+    <string name="feature_android_screen_on_time_get_field_from_option_today">Today (since local midnight)</string>
+    <string name="feature_android_screen_on_time_get_field_from_option_last_24_hours">Last 24 hours</string>
+    <string name="feature_android_state_screen_on_time_field_from_option_today">Today (since local midnight)</string>
+    <string name="feature_android_state_screen_on_time_field_from_option_last_24_hours">Last 24 hours</string>
+    <string name="feature_android_condition_screen_on_time_field_from_option_today">Today (since local midnight)</string>
+    <string name="feature_android_condition_screen_on_time_field_from_option_last_24_hours">Last 24 hours</string>
     <string name="runtime_feature_screen_on_time_usage_required">Usage Access is required to read interactive-screen history.</string>
     <string name="runtime_feature_screen_on_time_data_unavailable">Screen interactive history is unavailable or incomplete; no duration was estimated.</string>
 </resources>

@@ -1,30 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_core_condition_trigger_fired_title">触发器已触发</string>
-    <string name="feature_core_condition_trigger_fired_description">匹配当前触发的 YAuto 事件 ID，并可按来源或标签筛选。多个触发器使用同一事件类型时，需用来源或标签进一步区分。</string>
-    <string name="feature_core_condition_trigger_fired_field_eventtype">触发事件 ID</string>
-    <string name="feature_core_condition_trigger_fired_field_source">事件来源（选填）</string>
-    <string name="feature_core_condition_trigger_fired_field_facttag">触发器标签（选填）</string>
-    <string name="feature_android_screen_on_time_get_title">获取亮屏时间</string>
-    <string name="feature_android_screen_on_time_get_description">通过 Android 使用情况事件估算亮屏交互时长，并将毫秒数保存到变量。需要使用情况访问权限及完整的事件记录。</string>
-    <string name="feature_android_state_screen_on_time_title">亮屏时间</string>
-    <string name="feature_android_condition_screen_on_time_title">亮屏时间</string>
-    <string name="feature_android_state_screen_on_time_description">检查估算的亮屏时间是否落在设定的分钟区间。</string>
-    <string name="feature_android_condition_screen_on_time_description">仅在亮屏时间处于指定分钟范围时允许执行。</string>
-    <string name="feature_android_screen_on_time_get_field_window">统计时间范围</string>
-    <string name="feature_android_screen_on_time_get_field_window_option_today">今天（本地零时起）</string>
-    <string name="feature_android_screen_on_time_get_field_window_option_last_24_hours">最近 24 小时</string>
-    <string name="feature_android_screen_on_time_get_field_resultvariable">将亮屏毫秒数保存到变量</string>
-    <string name="feature_android_state_screen_on_time_field_window">统计时间范围</string>
-    <string name="feature_android_state_screen_on_time_field_window_option_today">今天（本地零时起）</string>
-    <string name="feature_android_state_screen_on_time_field_window_option_last_24_hours">最近 24 小时</string>
-    <string name="feature_android_state_screen_on_time_field_minminutes">最少分钟数</string>
-    <string name="feature_android_state_screen_on_time_field_maxminutes">最多分钟数</string>
-    <string name="feature_android_condition_screen_on_time_field_window">统计时间范围</string>
-    <string name="feature_android_condition_screen_on_time_field_window_option_today">今天（本地零时起）</string>
-    <string name="feature_android_condition_screen_on_time_field_window_option_last_24_hours">最近 24 小时</string>
-    <string name="feature_android_condition_screen_on_time_field_minminutes">最少分钟数</string>
-    <string name="feature_android_condition_screen_on_time_field_maxminutes">最多分钟数</string>
+    <string name="feature_android_screen_on_time_get_field_from_option_today">今天（本地零时起）</string>
+    <string name="feature_android_screen_on_time_get_field_from_option_last_24_hours">最近 24 小时</string>
+    <string name="feature_android_state_screen_on_time_field_from_option_today">今天（本地零时起）</string>
+    <string name="feature_android_state_screen_on_time_field_from_option_last_24_hours">最近 24 小时</string>
+    <string name="feature_android_condition_screen_on_time_field_from_option_today">今天（本地零时起）</string>
+    <string name="feature_android_condition_screen_on_time_field_from_option_last_24_hours">最近 24 小时</string>
     <string name="runtime_feature_screen_on_time_usage_required">读取亮屏记录需要授予使用情况访问权限。</string>
     <string name="runtime_feature_screen_on_time_data_unavailable">亮屏交互事件缺失或记录不完整，无法可靠估算时长。</string>
 </resources>
