@@ -48,7 +48,7 @@ jobs:
       - name: Full picker title collision inventory
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_duplicate_titles.py'
-          python3 tools/audit_picker_duplicate_titles.py --fail-on-unresolved-zh
+          python3 tools/audit_picker_duplicate_titles.py --fail-on-unresolved-zh --fail-on-unresolved-en
       - name: Unified picker parameter labels
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_method_labels.py'

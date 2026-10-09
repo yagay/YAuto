@@ -28,7 +28,7 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test fun `verified merges use upstream identical feature names and stable IDs`() {
-        assertEquals(33, UNIFIED_FEATURE_SPECS.size)
+        assertEquals(34, UNIFIED_FEATURE_SPECS.size)
         assertTrue(UNIFIED_FEATURE_SPECS.map { it.id }.containsAll(
             listOf("clipboard_write", "clipboard_read", "screenshot_capture",
                 "stopwatch", "file_operations", "device_power", "audio_recording",
@@ -39,7 +39,7 @@ class FeaturePickerCatalogModelTest {
             UNIFIED_FEATURE_SPECS.single { it.id == "clipboard_read" }.memberIds)
         assertEquals(listOf("android.screen.screenshot", "android.screenshot.capture"),
             UNIFIED_FEATURE_SPECS.single { it.id == "screenshot_capture" }.memberIds)
-        assertEquals(71, UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct().size)
+        assertEquals(73, UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct().size)
     }
 
     @Test fun `independent MacroDroid volume actions are separate picker options`() {
@@ -104,6 +104,16 @@ class FeaturePickerCatalogModelTest {
         assertEquals(1, entries.size)
         val group = (entries.single() as FeaturePickerListEntry.Unified).group
         assertEquals("torch_status_state", group.spec.id)
+    }
+
+    @Test fun `power menu is one picker option with accessibility or privileged method`() {
+        val ids = listOf("android.global_actions.show", "android.device.power_menu.show")
+        val model = build(ids)
+        val rows = model.entries(PickerPage.Features(app), emptySet(), emptyList(), "")
+        assertEquals(1, rows.size)
+        val group = (rows.single() as FeaturePickerListEntry.Unified).group
+        assertEquals("power_menu_access_method", group.spec.id)
+        assertEquals(ids.toSet(), group.members.map { it.descriptor.id.value }.toSet())
     }
 
     @Test fun `one MacroDroid file operation has multiple selected modes`() {

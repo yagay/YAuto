@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_power_menu">显示电源菜单</string>
+    <string name="verified_family_power_menu_subtitle">选择无障碍服务或 Root/特权命令的执行方式</string>
+    <string name="feature_variant_android_global_actions_show">通过无障碍服务</string>
+    <string name="feature_variant_android_device_power_menu_show">通过 Root/特权命令</string>
+</resources>

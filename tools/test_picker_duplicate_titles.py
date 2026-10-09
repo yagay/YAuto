@@ -37,5 +37,8 @@ class DuplicateTitleInventoryTests(unittest.TestCase):
         self.assertGreater(inspect(zh)["resource_feature_titles"],100)
         unresolved = [g for g in inspect(zh)["groups"] if not g["approved_as_one_parameterized_entry"]]
         self.assertEqual(unresolved, [], "Unapproved same-role Chinese title collisions")
+        en = read_titles(RES / "values")
+        unresolved_en = [g for g in inspect(en)["groups"] if not g["approved_as_one_parameterized_entry"]]
+        self.assertEqual(unresolved_en, [], "Unapproved same-role English title collisions")
 if __name__=="__main__":
     unittest.main()

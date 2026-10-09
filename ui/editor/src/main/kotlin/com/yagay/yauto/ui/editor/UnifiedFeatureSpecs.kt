@@ -252,4 +252,11 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         TextR.string.verified_family_torch_status_subtitle,
         listOf("android.condition.torch_on", "android.condition.reference.signal.torch_enabled"),
     ),
+    // Same power menu operation. One picker item with Accessibility/privileged execution method.
+    UnifiedFeatureSpec(
+        "power_menu_access_method",
+        TextR.string.verified_family_power_menu,
+        TextR.string.verified_family_power_menu_subtitle,
+        listOf("android.global_actions.show", "android.device.power_menu.show"),
+    ),
 )

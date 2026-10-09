@@ -104,6 +104,7 @@ def main() -> int:
     ap=argparse.ArgumentParser()
     ap.add_argument("--output",default="build/reports/picker_duplicate_title_inventory.json")
     ap.add_argument("--fail-on-unresolved-zh",action="store_true")
+    ap.add_argument("--fail-on-unresolved-en",action="store_true")
     args=ap.parse_args()
     en=inspect(read_titles(RES/"values"))
     zh=inspect(read_titles(RES/"values-zh-rCN"))
@@ -124,6 +125,8 @@ def main() -> int:
     print(f"Review report: {output}")
     if args.fail_on_unresolved_zh and zh["unresolved_candidate_groups"]:
         raise SystemExit("Unresolved same-kind Chinese picker title collisions remain.")
+    if args.fail_on_unresolved_en and en["unresolved_candidate_groups"]:
+        raise SystemExit("Unresolved same-kind English picker title collisions remain.")
     return 0
 
 if __name__=="__main__":

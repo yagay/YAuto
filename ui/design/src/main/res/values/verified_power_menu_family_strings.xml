@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_power_menu">Show power menu</string>
+    <string name="verified_family_power_menu_subtitle">Choose Accessibility or Root/privileged execution method</string>
+    <string name="feature_variant_android_global_actions_show">Via Accessibility service</string>
+    <string name="feature_variant_android_device_power_menu_show">Via Root or privileged command</string>
+</resources>

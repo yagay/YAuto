@@ -27,6 +27,10 @@ Y_AUTO_API_SOURCES = {
     "currentInterruptionFilter": ("AndroidSystemConvenienceFeaturePack.kt", "AndroidReferenceSignalFeaturePack.kt"),
 }
 Y_AUTO_EVIDENCE_TOKENS = {
+    "yauto.power_menu": (
+        ("AndroidShortXParityFeaturePack.kt", 'FeatureId("android.global_actions.show")'),
+        ("AndroidPrivilegedParityFeaturePack.kt", '"android.device.power_menu.show"'),
+    ),
     "yauto.per_app_locale": (
         ("AndroidLegacyParityFeaturePack.kt", 'FeatureId("android.app.locale.set")'),
         ("AndroidPrivilegedParityFeaturePack.kt", '"android.locale.app.set"'),

@@ -32,3 +32,4 @@ camera_flash_state,yauto_code,camera_flash_hardware,state,android.state.has_came
 app_language,yauto_code,yauto.per_app_locale,action,android.app.locale.set|android.locale.app.set,
 torch_status_state,yauto_code,yauto.torch_status,state,android.state.torch_on|android.state.reference.signal.torch_enabled,
 torch_status_condition,yauto_code,yauto.torch_status,condition,android.condition.torch_on|android.condition.reference.signal.torch_enabled,
+power_menu_access_method,yauto_code,yauto.power_menu,action,android.global_actions.show|android.device.power_menu.show,

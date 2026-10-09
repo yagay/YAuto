@@ -5,8 +5,8 @@ class VerifiedPickerMergeTests(unittest.TestCase):
     def test_only_proven_source_matched_actions_are_merged(self):
         report = audit(SPEC.read_text(encoding="utf-8"), csv_rows(APPROVED))
         self.assertEqual(report["errors"], [])
-        self.assertEqual(report["approved_merged_picker_entries"], 33)
-        self.assertEqual(report["approved_concrete_feature_ids"], 71)
+        self.assertEqual(report["approved_merged_picker_entries"], 34)
+        self.assertEqual(report["approved_concrete_feature_ids"], 73)
 
     def test_unverified_merge_is_rejected(self):
         source = SPEC.read_text(encoding="utf-8")
@@ -52,6 +52,14 @@ class VerifiedPickerMergeTests(unittest.TestCase):
         self.assertEqual(len(matches), 4)
         self.assertEqual({r["source_key"] for r in matches},
                          {"currentInterruptionFilter", "camera_flash_hardware"})
+
+    def test_power_menu_methods_have_source_evidence(self):
+        report = audit(SPEC.read_text(encoding="utf-8"), csv_rows(APPROVED))
+        approved = [row for row in report["evidence"]
+                    if row["group_id"] == "power_menu_access_method"]
+        self.assertEqual(len(approved), 1)
+        self.assertEqual(approved[0]["source_key"], "yauto.power_menu")
+        self.assertEqual(approved[0]["kind"], "action")
 
     def test_feature_resource_key_matches_reviewed_apk_rows(self):
         self.assertEqual(feature_key("android.screen.screenshot"),
