@@ -52,7 +52,6 @@ internal class FeatureTextResolver(private val context: Context) {
                 ?: resource("feature_${resourceKey(descriptor.id.value)}_title")
                 ?: sourceAlignedFeatureTitle(descriptor.id.value)?.let(localizedContext::getString)
                 ?: phrase(descriptor.title)
-                ?: descriptor.title.takeIf { it.isNotBlank() }
                 ?: genericTitle(descriptor)
         }
 
@@ -60,7 +59,6 @@ internal class FeatureTextResolver(private val context: Context) {
         descriptionCache.getOrPut(descriptor.id.value) {
             resource("feature_${resourceKey(descriptor.id.value)}_description")
                 ?: phrase(descriptor.description)
-                ?: descriptor.description.takeIf { it.isNotBlank() }
                 ?: localizedContext.getString(TextR.string.feature_generic_description_format, title(descriptor))
         }
 
@@ -71,7 +69,6 @@ internal class FeatureTextResolver(private val context: Context) {
         fieldLabelCache.getOrPut("$descriptorId|${field.key}") {
             resource("feature_${resourceKey(descriptorId)}_field_${resourceKey(field.key)}")
                 ?: phrase(field.label)
-                ?: field.label.takeIf { it.isNotBlank() }
                 ?: localizedContext.getString(TextR.string.feature_generic_parameter)
         }
 
@@ -79,7 +76,6 @@ internal class FeatureTextResolver(private val context: Context) {
         choiceOptionCache.getOrPut("$descriptorId|$fieldKey|$option") {
             resource("feature_${resourceKey(descriptorId)}_field_${resourceKey(fieldKey)}_option_${resourceKey(option)}")
                 ?: phrase(option)
-                ?: option.takeIf { it.isNotBlank() }
                 ?: localizedContext.getString(TextR.string.feature_generic_option)
         }
 
