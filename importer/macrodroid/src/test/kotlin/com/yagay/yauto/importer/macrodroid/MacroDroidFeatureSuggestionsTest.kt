@@ -2,6 +2,7 @@ package com.yagay.yauto.importer.macrodroid
 
 import com.yagay.yauto.core.importer.SourceFeatureKind
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class MacroDroidFeatureSuggestionsTest {
@@ -66,4 +67,18 @@ class MacroDroidFeatureSuggestionsTest {
     @Test fun `existing mappings still fall through to original mapper`() {
         assertEquals("core.delay", MacroDroidFeatureSuggestions.mapper.targetId("PauseAction", SourceFeatureKind.ACTION))
     }
+    @Test fun `screen OCR and Spotify triggers cannot silently become generic events`() {
+        val mapper = MacroDroidFeatureSuggestions.mapper
+        assertNull(mapper.targetId("ScreenshotContentTrigger", SourceFeatureKind.EVENT))
+        assertNull(mapper.targetId("SpotifyTrigger", SourceFeatureKind.EVENT))
+        assertEquals(
+            "android.event.screen_text_appeared",
+            mapper.targetId("ScreenTextAppearedTrigger", SourceFeatureKind.EVENT),
+        )
+        assertEquals(
+            "android.event.media_track_changed",
+            mapper.targetId("MediaTrackChangedTrigger", SourceFeatureKind.EVENT),
+        )
+    }
+
 }

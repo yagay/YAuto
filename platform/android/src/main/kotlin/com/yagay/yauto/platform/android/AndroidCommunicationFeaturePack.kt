@@ -2,6 +2,10 @@ package com.yagay.yauto.platform.android
 
 import android.content.Context
 import android.content.Intent
+import android.Manifest
+import android.content.pm.PackageManager
+import android.telephony.SmsManager
+import com.yagay.yauto.core.model.ConfigValue
 import android.net.Uri
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
@@ -20,6 +24,57 @@ class AndroidCommunicationFeaturePack(context: Context) : FeaturePack {
             listOf(FieldSchema.Text("number", "Phone number"), FieldSchema.Text("message", "Message", multiline = true)), setOf("sms", "message")) { feature, ctx ->
             Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${Uri.encode(feature.config.string("number").resolveVariables(ctx.variables))}"))
                 .putExtra("sms_body", feature.config.string("message").resolveVariables(ctx.variables))
+        }
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.sms.send"),
+                FeatureKind.ACTION,
+                "Send SMS",
+                "Submit an SMS directly through Android telephony after SEND_SMS permission is granted. Submission is not delivery confirmation.",
+                FeatureCategory.APP,
+                fields = listOf(
+                    FieldSchema.Text("number", "Phone number", true),
+                    FieldSchema.Text("message", "Message", true, multiline = true),
+                    FieldSchema.Number("subscriptionId", "SIM subscription ID (-1 = default)", min = -1.0),
+                ),
+                accessRequirements = setOf(AccessRequirement.SMS),
+                keywords = setOf("send sms", "text message", "direct send", "shortx", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val number = feature.config.string("number").resolveVariables(ctx.variables).trim()
+            val message = feature.config.string("message").resolveVariables(ctx.variables)
+            if (number.isEmpty() || number.length > 40 || number.any { Character.isISOControl(it) } ||
+                message.isBlank() || message.length > 1600
+            ) {
+                return@registerAction ActionExecutionResult(
+                    false, message = userText("feature.operation_failed", "Invalid SMS number or message"),
+                )
+            }
+            if (context.checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+                return@registerAction ActionExecutionResult(
+                    false, message = userText("feature.operation_failed", "SEND_SMS permission required"),
+                )
+            }
+            runCatching {
+                val base = context.getSystemService(SmsManager::class.java)
+                    ?: return@runCatching ActionExecutionResult(
+                        false, message = userText("feature.operation_failed", "SMS service unavailable"),
+                    )
+                val subId = (feature.config["subscriptionId"] as? ConfigValue.NumberValue)?.value?.toInt() ?: -1
+                val sender = if (subId >= 0) base.createForSubscriptionId(subId) else base
+                val parts = sender.divideMessage(message)
+                if (parts.isEmpty() || parts.size > 24) {
+                    return@runCatching ActionExecutionResult(
+                        false, message = userText("feature.operation_failed", "SMS is too long"),
+                    )
+                }
+                if (parts.size == 1) sender.sendTextMessage(number, null, message, null, null)
+                else sender.sendMultipartTextMessage(number, null, ArrayList(parts), null, null)
+                ActionExecutionResult(true, ConfigValue.BooleanValue(true))
+            }.getOrElse {
+                ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: "SMS send failed"))
+            }
         }
         intentAction(registry, "android.email.compose", "Compose email", "Open an email application with recipient, subject and body", FeatureCategory.APP,
             listOf(FieldSchema.Text("to", "Recipient"), FieldSchema.Text("subject", "Subject"), FieldSchema.Text("body", "Body", multiline = true)), setOf("email", "mail")) { feature, ctx ->

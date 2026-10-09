@@ -107,11 +107,12 @@ internal object ShortXFeatureSuggestions {
         "AdjustVolume", "ContinuousAdjustVolume" -> "android.audio.volume.adjust"
         "PlayRingtone" -> "android.audio.play"
         "ExpandNotification" -> "system.notifications.expand"
-        "SendSMS" -> "android.sms.compose"
+        "SendSMS" -> "android.sms.send"
         "ShareContent" -> "android.share.text"
         "Delay" -> "core.delay"
         "KillProcessByName" -> "android.process.kill_by_name"
-        "StartAppProcess", "StartAppProcessByPkg" -> "android.app.launch"
+        // Android launching an Activity does not start a background app process with ShortX semantics.
+        "StartAppProcess", "StartAppProcessByPkg" -> null
         "SetSensorsOffEnabled", "ToggleSensorsOff", "EnableSensorsOff", "DisableSensorsOff" -> "android.sensors_off.set"
         "ShowOverlayButton", "ShowOverlay" -> "surface.overlay.show"
         "HideOverlayButton", "HideOverlay" -> "surface.overlay.hide"
@@ -119,14 +120,15 @@ internal object ShortXFeatureSuggestions {
         "SelectScreenArea" -> "surface.region_selector.show"
         "InjectGestureRecording" -> "accessibility.gesture.path"
         "StartGestureRecording", "ToggleGestureRecording" -> "surface.gesture_recorder.show"
-        "StopGestureRecording" -> "surface.overlay.hide"
+        "StopGestureRecording" -> "surface.gesture_recording.stop"
         "GetTextFromScreenNode" -> "accessibility.ui_nodes.get"
         "EnableViewIdViewer" -> "accessibility.view_id_viewer.show"
         "EnableUniversalCopy" -> "accessibility.universal_copy.show"
         "GetCurrentLocationInfo" -> "android.location.current.query"
         "GetCurrentLocationAddress" -> "android.location.reverse_geocode"
         "SetHotSpotEnabled", "ToggleHotSpot", "EnableHotSpot", "DisableHotSpot" -> "android.network.tether.set"
-        "Toggle5G" -> "android.telephony.network_mode.set"
+        // Toggle5G must restore the original network mode; generic mode-setting is not equivalent.
+        "Toggle5G" -> null
         "SwitchMobileDataSlot" -> "android.sim.default_data.set"
         "TakePhoto" -> "android.camera.photo.capture"
         "ScreenFlash" -> "surface.screen_flash.show"
@@ -151,12 +153,14 @@ internal object ShortXFeatureSuggestions {
         "ShowChoiceDialog", "ShowListDialog", "ShowMenuDialog" -> "surface.list.show"
         "ShowTextFieldDialog" -> "surface.input.show"
         "ShowClipboardView" -> "accessibility.universal_copy.show"
-        "ShowStatusBarChip" -> "surface.chip.show"
-        "HideStatusBarClip" -> "surface.overlay.hide"
+        // A system status-bar chip is not a TYPE_APPLICATION_OVERLAY.
+        "ShowStatusBarChip" -> null
+        "HideStatusBarClip" -> null
         "WebDavGet", "WebDavList", "WebDavPut" -> "android.webdav.request"
         "WebSocketConnect" -> "android.websocket.connect"
         "WebSocketSend" -> "android.websocket.send"
-        "PluginAction" -> "android.plugin.locale.action"
+        // ShortX plug-in payloads have not been verified as Locale/Tasker FIRE_SETTING bundles.
+        "PluginAction" -> null
         "PerformContextMenuAction" -> "accessibility.context_menu.perform"
         "ClickTile" -> "android.qs_tile.click"
         "ShowGlobalActionsMenu" -> "android.global_actions.show"
@@ -174,8 +178,9 @@ internal object ShortXFeatureSuggestions {
         "StartActivity", "StartActivityIntent", "StartActivityIntentUri", "StartActivityUrlSchema" -> "android.external.intent.invoke"
         "StartService" -> "android.external.intent.invoke"
         "MapNav", "MapApp" -> "android.maps.open"
-        "SetStatusBarIcon" -> "android.notification.ppn.show"
-        "RemoveStatusBarIcon" -> "android.notification.ppn.remove"
+        // Notification icons do not provide the SystemUI status-bar icon API.
+        "SetStatusBarIcon" -> null
+        "RemoveStatusBarIcon" -> null
         "SetRuleEnabled" -> "core.automation.set_enabled"
         "GetScreenOnTime" -> "android.screen_on_time.get"
         "MatchRegex" -> "data.regex.matches"
@@ -187,7 +192,8 @@ internal object ShortXFeatureSuggestions {
         "RequestAudioFocus" -> "android.audio.focus.request"
         "ExecuteMVEL", "RemoteExecuteMVEL", "MVEL", "RemoteMVEL" -> "script.mvel.execute"
         "ExecuteJS" -> "script.javascript.execute"
-        "AreaScreenshot" -> "accessibility.screenshot.capture"
+        // A full-screen capture is not a cropped area capture.
+        "AreaScreenshot" -> null
         "DrawBoard", "ShowDrawBoard" -> "surface.draw_board.show"
         "ShowPieMenu", "PieMenu" -> "surface.pie.show"
         "ShowSidebar", "Sidebar" -> "surface.sidebar.show"
@@ -196,7 +202,8 @@ internal object ShortXFeatureSuggestions {
         "HideFloatWindow" -> "surface.overlay.hide"
         "ShowActionSidebar", "ShowSideBar" -> "surface.sidebar.show"
         "HideSideBar" -> "surface.overlay.hide"
-        "ShowStatusBarChip" -> "surface.chip.show"
+        // A system status-bar chip is not a TYPE_APPLICATION_OVERLAY.
+        "ShowStatusBarChip" -> null
         "ShowDrawBoard" -> "surface.draw_board.show"
         else -> ShortXMappings.suggestedActionFeature(name)
     }

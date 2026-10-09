@@ -602,6 +602,24 @@ class AndroidSurfaceFeaturePack(
 
         registry.registerAction(
             FeatureDescriptor(
+                FeatureId("surface.gesture_recording.stop"), FeatureKind.ACTION,
+                "Stop gesture recording",
+                "Commit the current touch path (if valid) and close a gesture recorder by its Surface ID",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(FieldSchema.Text("surfaceId", "Surface ID", true)),
+                keywords = setOf("gesture recording", "stop", "save gesture", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            ActionExecutionResult(
+                controller.stopGestureRecorder(
+                    feature.config.string("surfaceId").resolveVariables(ctx.variables).trim()
+                )
+            )
+        }
+
+        registry.registerAction(
+            FeatureDescriptor(
                 FeatureId("surface.gesture_recording.get"), FeatureKind.ACTION,
                 "Get recorded gesture",
                 "Return the latest recorded gesture path for a recorder Surface ID",

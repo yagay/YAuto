@@ -692,6 +692,17 @@ class OverlaySurfaceController(context: Context) {
         return true
     }
 
+    fun stopGestureRecorder(id: String): Boolean {
+        if (id.isBlank() || surfaces[id] !is GestureRecorderView) return false
+        main.post {
+            val recorder = surfaces[id] as? GestureRecorderView ?: return@post
+            recorder.finishRecording()
+            hideInternal(id)
+            SurfaceRuntimeBridge.emit(id, "gesture_recording_stopped")
+        }
+        return true
+    }
+
     fun recordedGesture(id: String): String? = recordedGestures[id]
 
     fun clearRecordedGesture(id: String): Boolean = recordedGestures.remove(id) != null
@@ -1270,6 +1281,19 @@ private class GestureRecorderView(
     private val recorded: (String) -> Unit,
 ) : View(context) {
     private val points = ArrayList<Pair<Float, Float>>()
+    private var lastCommitted: String? = null
+
+    fun finishRecording(): Boolean {
+        if (points.size < 2) return false
+        val text = points.joinToString("\n") { point ->
+            point.first.toInt().toString() + "," + point.second.toInt().toString()
+        }
+        if (text != lastCommitted) {
+            lastCommitted = text
+            recorded(text)
+        }
+        return true
+    }
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xCCFFFFFF.toInt()
         style = Paint.Style.STROKE
@@ -1286,6 +1310,7 @@ private class GestureRecorderView(
             MotionEvent.ACTION_DOWN -> {
                 points.clear()
                 path.reset()
+                lastCommitted = null
                 addPoint(event.x, event.y, true)
                 invalidate()
                 return true
@@ -1301,11 +1326,7 @@ private class GestureRecorderView(
             MotionEvent.ACTION_UP -> {
                 addPoint(event.x, event.y, false)
                 invalidate()
-                if (points.size >= 2) {
-                    recorded(points.joinToString("\n") { pair ->
-                        pair.first.toInt().toString() + "," + pair.second.toInt().toString()
-                    })
-                }
+                finishRecording()
                 return true
             }
             MotionEvent.ACTION_CANCEL -> {

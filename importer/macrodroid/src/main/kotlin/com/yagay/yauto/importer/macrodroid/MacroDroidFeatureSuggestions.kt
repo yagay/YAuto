@@ -267,7 +267,9 @@ object MacroDroidFeatureSuggestions {
         "MediaButtonPressedTrigger", "MediaButtonV2Trigger",
         "PowerButtonLongPressTrigger", "PowerButtonToggleTrigger",
         "VolumeButtonTrigger", "VolumeLongPressTrigger" -> "android.event.hardware_key"
-        "MediaTrackChangedTrigger", "SpotifyTrigger" -> "android.event.media_track_changed"
+        "MediaTrackChangedTrigger" -> "android.event.media_track_changed"
+        // Spotify-specific conditions require source-app information that this hint cannot carry.
+        "SpotifyTrigger" -> null
         "ModeEnterExitTrigger" -> "android.event.mode_changed"
         "MusicPlayingTrigger" -> "android.event.media_playback_state_changed"
         "NetworkRoamingChangedTrigger" -> "android.event.network_changed"
@@ -278,7 +280,8 @@ object MacroDroidFeatureSuggestions {
         "QuickSettingsTileTrigger" -> "android.event.qs_tile"
         "RegularIntervalTrigger" -> "android.event.interval"
         "ScreenContentTrigger" -> "android.event.screen_content_changed"
-        "ScreenshotContentTrigger" -> "android.event.screen_text_appeared"
+        // This requires a screenshot + OCR/image event source, not accessibility text changes.
+        "ScreenshotContentTrigger" -> null
         "ShareFileTrigger" -> "android.event.share_file_received"
         "ShareTextTrigger" -> "android.event.share_text_received"
         "ShortcutTrigger", "MacroDroidIconLongPressShortcutTrigger" -> "android.event.shortcut"

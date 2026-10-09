@@ -762,7 +762,7 @@ internal object ShortXMappings {
         "SetVolume" -> "android.audio.volume.set"
         "AdjustVolume" -> "android.audio.volume.adjust"
         "ShareContent" -> "android.file.share"
-        "SendSMS" -> "android.sms.compose"
+        "SendSMS" -> "android.sms.send"
         "LockDeviceNow" -> "system.screen.sleep"
         "ExpandNotification" -> "android.status_bar.control"
         "PlayRingtone" -> "android.audio.play"

@@ -1,6 +1,7 @@
 package com.yagay.yauto.importer.shortx
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ShortXFeatureSuggestionsTest {
@@ -54,7 +55,7 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("android.audio.volume.set", ShortXFeatureSuggestions.target("SetVolume", path))
         assertEquals("android.audio.volume.adjust", ShortXFeatureSuggestions.target("AdjustVolume", path))
         assertEquals("system.notifications.expand", ShortXFeatureSuggestions.target("ExpandNotification", path))
-        assertEquals("android.sms.compose", ShortXFeatureSuggestions.target("SendSMS", path))
+        assertEquals("android.sms.send", ShortXFeatureSuggestions.target("SendSMS", path))
         assertEquals("variable.global.set", ShortXFeatureSuggestions.target("CreateGlobalVar", path))
         assertEquals("variable.global.mutate", ShortXFeatureSuggestions.target("WriteGlobalVar", path))
         assertEquals("variable.global.mutate", ShortXFeatureSuggestions.target("AddToGlobalVar", path))
@@ -116,10 +117,24 @@ class ShortXFeatureSuggestionsTest {
     @Test fun `newly verified system and context capabilities suggest canonical features`() {
         val action = "rule[0].action[0]"
         val condition = "rule[0].condition[0]"
-        assertEquals("accessibility.screenshot.capture", ShortXFeatureSuggestions.target("AreaScreenshot", action))
+        assertNull(ShortXFeatureSuggestions.target("AreaScreenshot", action))
         assertEquals("android.network.tether.set", ShortXFeatureSuggestions.target("SetHotSpotEnabled", action))
         assertEquals("android.condition.reference.display_rotation", ShortXFeatureSuggestions.target("RequireScreenRotate", condition))
         assertEquals("android.condition.app_foreground", ShortXFeatureSuggestions.target("CurrentActivity", condition))
         assertEquals("android.condition.torch_on", ShortXFeatureSuggestions.target("FlashlightIsOn", condition))
     }
+    @Test fun `unsafe cross-feature import suggestions are never treated as equivalent`() {
+        val path = "rule[0].action[0]"
+        listOf(
+            "StartAppProcess", "StartAppProcessByPkg",
+            "SetStatusBarIcon", "RemoveStatusBarIcon",
+            "ShowStatusBarChip", "HideStatusBarClip",
+            "PluginAction", "Toggle5G", "AreaScreenshot",
+        ).forEach { source ->
+            assertNull("Unsafe import hint for " + source, ShortXFeatureSuggestions.target(source, path))
+        }
+        assertEquals("surface.gesture_recording.stop", ShortXFeatureSuggestions.target("StopGestureRecording", path))
+        assertEquals("android.sms.send", ShortXFeatureSuggestions.target("SendSMS", path))
+    }
+
 }
