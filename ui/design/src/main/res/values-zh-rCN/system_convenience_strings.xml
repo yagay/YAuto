@@ -74,7 +74,7 @@
     <string name="feature_android_settings_page_open_field_page_option_bluetooth">蓝牙</string>
     <string name="feature_android_settings_page_open_field_page_option_vpn">VPN</string>
     <string name="feature_android_settings_page_open_field_page_option_data_roaming">移动数据 / 漫游</string>
-    <string name="feature_android_settings_page_open_field_page_option_location">定位</string>
+    <string name="feature_android_settings_page_open_field_page_option_location">位置信息</string>
     <string name="feature_android_settings_page_open_field_page_option_nfc">NFC</string>
     <string name="feature_android_settings_page_open_field_page_option_nfc_payment">NFC 支付</string>
     <string name="feature_android_settings_page_open_field_page_option_display">显示</string>
@@ -85,7 +85,7 @@
     <string name="feature_android_settings_page_open_field_page_option_developer">开发者选项</string>
     <string name="feature_android_settings_page_open_field_page_option_date_time">日期和时间</string>
     <string name="feature_android_settings_page_open_field_page_option_input_method">键盘和输入法</string>
-    <string name="feature_android_settings_page_open_field_page_option_accessibility">无障碍</string>
+    <string name="feature_android_settings_page_open_field_page_option_accessibility">无障碍功能</string>
     <string name="feature_android_settings_page_open_field_page_option_captioning">字幕</string>
     <string name="feature_android_settings_page_open_field_page_option_notification_listener">通知使用权</string>
     <string name="feature_android_settings_page_open_field_page_option_notifications">通知</string>

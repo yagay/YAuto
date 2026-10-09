@@ -278,7 +278,7 @@
     <string name="implementation_root_title">Root</string>
     <string name="implementation_shizuku_title">Shizuku</string>
     <string name="implementation_lsposed_title">LSPosed</string>
-    <string name="implementation_accessibility_title">Accessibility</string>
+    <string name="implementation_accessibility_title">无障碍功能</string>
     <string name="editor_required_field_format">%1$s（必填）</string>
     <string name="feature_picker_select_value">从可用选项中选择</string>
     <string name="feature_picker_choose_value">选择值</string>

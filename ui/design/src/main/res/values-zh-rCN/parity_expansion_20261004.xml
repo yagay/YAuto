@@ -10,7 +10,7 @@
     <string name="feature_android_permission_request_field_group_option_phone">电话</string>
     <string name="feature_android_permission_request_field_group_option_microphone">麦克风</string>
     <string name="feature_android_permission_request_field_group_option_camera">相机</string>
-    <string name="feature_android_permission_request_field_group_option_location">定位</string>
+    <string name="feature_android_permission_request_field_group_option_location">位置信息</string>
     <string name="feature_android_permission_request_field_group_option_bluetooth">蓝牙</string>
     <string name="feature_android_permission_request_field_group_option_notifications">通知</string>
     <string name="feature_android_permission_settings_open_title">打开应用权限设置</string>
@@ -26,7 +26,7 @@
     <string name="feature_android_state_runtime_permission_field_group_option_phone">电话</string>
     <string name="feature_android_state_runtime_permission_field_group_option_microphone">麦克风</string>
     <string name="feature_android_state_runtime_permission_field_group_option_camera">相机</string>
-    <string name="feature_android_state_runtime_permission_field_group_option_location">定位</string>
+    <string name="feature_android_state_runtime_permission_field_group_option_location">位置信息</string>
     <string name="feature_android_state_runtime_permission_field_group_option_bluetooth">蓝牙</string>
     <string name="feature_android_state_runtime_permission_field_group_option_notifications">通知</string>
     <string name="feature_android_condition_runtime_permission_title">运行时权限已授予</string>
@@ -40,7 +40,7 @@
     <string name="feature_android_condition_runtime_permission_field_group_option_phone">电话</string>
     <string name="feature_android_condition_runtime_permission_field_group_option_microphone">麦克风</string>
     <string name="feature_android_condition_runtime_permission_field_group_option_camera">相机</string>
-    <string name="feature_android_condition_runtime_permission_field_group_option_location">定位</string>
+    <string name="feature_android_condition_runtime_permission_field_group_option_location">位置信息</string>
     <string name="feature_android_condition_runtime_permission_field_group_option_bluetooth">蓝牙</string>
     <string name="feature_android_condition_runtime_permission_field_group_option_notifications">通知</string>
     <string name="feature_android_calendar_events_query_title">查询日历事件</string>

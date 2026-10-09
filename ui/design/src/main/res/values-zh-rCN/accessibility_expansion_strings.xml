@@ -18,7 +18,7 @@
 
     <string name="feature_accessibility_view_text_get_title">按 View ID 读取文本</string>
     <string name="feature_accessibility_view_text_get_description">从指定资源 ID 的控件读取文本或内容描述</string>
-    <string name="feature_accessibility_view_text_get_field_viewid">View ID</string>
+    <string name="feature_accessibility_view_text_get_field_viewid">视图 ID</string>
     <string name="feature_accessibility_view_text_get_field_resultvariable">保存文本</string>
 
     <string name="feature_accessibility_ui_nodes_get_title">读取 UI 节点树</string>

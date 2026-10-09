@@ -337,7 +337,7 @@
     <string name="feature_phrase_variable_exists">变量存在</string>
     <string name="feature_phrase_variable_name">变量名</string>
     <string name="feature_phrase_vibrate">振动</string>
-    <string name="feature_phrase_view_id">View ID</string>
+    <string name="feature_phrase_view_id">视图 ID</string>
     <string name="feature_phrase_voice_call">语音通话</string>
     <string name="feature_phrase_volume_percent">音量百分比</string>
     <string name="feature_phrase_vpn">VPN</string>

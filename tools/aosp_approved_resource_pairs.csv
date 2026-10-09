@@ -1,0 +1,10 @@
+resource,source,source_key
+ui/design/src/main/res::permission_location_title,settings,location_settings_title
+ui/design/src/main/res::access_location,settings,location_settings_title
+ui/design/src/main/res::access_accessibility,settings,accessibility_settings
+ui/design/src/main/res::implementation_accessibility_title,settings,accessibility_settings
+ui/design/src/main/res::feature_android_settings_page_open_field_page_option_location,settings,location_settings_title
+ui/design/src/main/res::feature_android_settings_page_open_field_page_option_accessibility,settings,accessibility_settings
+ui/design/src/main/res::feature_android_permission_request_field_group_option_location,settings,location_settings_title
+ui/design/src/main/res::feature_android_state_runtime_permission_field_group_option_location,settings,location_settings_title
+ui/design/src/main/res::feature_android_condition_runtime_permission_field_group_option_location,settings,location_settings_title

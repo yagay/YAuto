@@ -86,6 +86,58 @@ def load_terms(path: Path = GLOSSARY) -> list[Term]:
     return terms
 
 
+
+APPROVED = ROOT / "tools/aosp_approved_resource_pairs.csv"
+
+
+def load_approved(path: Path = APPROVED) -> list[dict[str, str]]:
+    """Explicitly approved AOSP-to-YAuto resource matches (never guessed from wording)."""
+    with path.open(encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        if reader.fieldnames != ["resource", "source", "source_key"]:
+            raise ValueError("Invalid approved AOSP mapping CSV columns")
+        rows = list(reader)
+    if any(not all(row.values()) for row in rows):
+        raise ValueError("Approved AOSP mappings must not have empty fields")
+    return rows
+
+
+def check_approved_pairs(
+    approved: list[dict[str, str]], terms: list[Term], english: dict, chinese: dict
+) -> list[dict[str, str]]:
+    """Fail CI when a reviewed *specific resource* drifts from its approved bilingual pair.
+
+    This intentionally does not rewrite arbitrary feature titles, actions or constraints.
+    """
+    glossary = {(term.source, term.source_key): term for term in terms}
+    checked: set[str] = set()
+    mismatches = []
+    for row in approved:
+        key = row["resource"]
+        upstream_key = (row["source"], row["source_key"])
+        if key in checked:
+            raise ValueError(f"Duplicate approved YAuto resource mapping: {key}")
+        checked.add(key)
+        if upstream_key not in glossary:
+            raise ValueError(f"Unverified AOSP resource pair: {upstream_key}")
+        if protected_title(key.rsplit("::", 1)[-1]):
+            raise ValueError(f"Protected feature title cannot use AOSP override: {key}")
+        official = glossary[upstream_key]
+        en = english.get(key, {}).get("value")
+        zh = chinese.get(key, {}).get("value")
+        if en != official.en or zh != official.zh_cn:
+            mismatches.append({
+                "resource": key,
+                "source": row["source"],
+                "source_key": row["source_key"],
+                "expected_en": official.en,
+                "actual_en": en,
+                "expected_zh": official.zh_cn,
+                "actual_zh": zh,
+            })
+    return mismatches
+
+
 def load_yauto_resources(root: Path) -> tuple[dict, dict]:
     result: dict[str, dict] = {"en": {}, "zh_cn": {}}
     for en_folder in sorted(root.glob("**/src/main/res/values")):
@@ -210,6 +262,10 @@ def main() -> int:
     report = audit(terms, en, zh)
     report["verified_glossary_terms"] = reviewed_count
     report["imported_aosp_source_terms"] = len(terms) - reviewed_count
+    approved = load_approved()
+    approved_mismatches = check_approved_pairs(approved, load_terms(), en, zh)
+    report["approved_aosp_resources_checked"] = len(approved)
+    report["approved_aosp_mismatches"] = approved_mismatches
     report["sources"] = SOURCES
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -220,6 +276,9 @@ def main() -> int:
         f"{report['untranslated_count']} English-copy candidates; "
         f"report: {output}"
     )
+    if approved_mismatches:
+        print(f"ERROR: {len(approved_mismatches)} approved AOSP translations changed", flush=True)
+        return 1
     return 0
 
 

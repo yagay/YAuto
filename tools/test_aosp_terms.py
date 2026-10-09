@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from audit_aosp_terms import Term, audit, import_official_terms, load_terms, resource_items, verify_official
+from audit_aosp_terms import Term, audit, check_approved_pairs, import_official_terms, load_terms, resource_items, verify_official
 
 
 class AospAuditTests(unittest.TestCase):
@@ -53,6 +53,30 @@ class AospAuditTests(unittest.TestCase):
             reviewed = [Term("settings", "old", "Bluetooth", "蓝牙")]
             result = import_official_terms(reviewed, {"settings": (en, zh)})
             self.assertEqual(result, [Term("settings", "new", "Quick settings", "快捷设置")])
+
+    def test_approved_resource_pair_blocks_translation_regression(self):
+        official = [Term("settings", "location_settings_title", "Location", "位置信息")]
+        mapping = [{"resource": "ui::access_location", "source": "settings", "source_key": "location_settings_title"}]
+        english = {"ui::access_location": {"value": "Location"}}
+        chinese = {"ui::access_location": {"value": "位置信息"}}
+        self.assertEqual(check_approved_pairs(mapping, official, english, chinese), [])
+        chinese["ui::access_location"]["value"] = "Location"
+        issues = check_approved_pairs(mapping, official, english, chinese)
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0]["expected_zh"], "位置信息")
+
+    def test_unverified_or_protected_resource_cannot_be_approved(self):
+        official = [Term("settings", "accessibility_settings", "Accessibility", "无障碍功能")]
+        with self.assertRaisesRegex(ValueError, "Protected feature title"):
+            check_approved_pairs(
+                [{"resource": "ui::macro_feature_test_title", "source": "settings", "source_key": "accessibility_settings"}],
+                official, {}, {},
+            )
+        with self.assertRaisesRegex(ValueError, "Unverified AOSP resource pair"):
+            check_approved_pairs(
+                [{"resource": "ui::access_accessibility", "source": "settings", "source_key": "unknown"}],
+                official, {}, {},
+            )
 
     def test_glossary_present_and_valid(self):
         self.assertGreaterEqual(len(load_terms()), 30)
