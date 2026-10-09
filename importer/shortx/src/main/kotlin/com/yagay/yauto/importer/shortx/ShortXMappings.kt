@@ -51,6 +51,9 @@ internal object ShortXMappings {
             "SetAutoBrightness" -> setAutoBrightness(any, importerId, fields)
             "ExpandNotification" -> expandNotification(any, importerId, fields)
             "AreaScreenshot" -> noFieldAction(any, importerId, fields, "android.screenshot.area_select")
+            "SetStatusBarIcon" -> nativeStatusBarIcon(any, importerId, fields, "show")
+            "RemoveStatusBarIcon" -> nativeStatusBarIcon(any, importerId, fields, "remove")
+            "StopService" -> nativeStopServices(any, importerId, fields)
             "RequestAudioFocus" -> requestAudioFocus(any, importerId, fields)
             "PlayRingtone" -> playRingtone(any, importerId, fields)
             else -> null
@@ -519,6 +522,9 @@ internal object ShortXMappings {
                 sourceFeature("android.display.screen_timeout.set", importerId, any.typeUrl, raw,
                     extra = mapOf("timeoutMs" to ConfigValue.NumberValue(timeout.toDouble())))
             }
+            "SetStatusBarIcon" -> nativeJsonStatusBarIcon(obj, any, importerId, raw, "show")
+            "RemoveStatusBarIcon" -> nativeJsonStatusBarIcon(obj, any, importerId, raw, "remove")
+            "StopService" -> nativeJsonStopServices(obj, any, importerId, raw)
             "AreaScreenshot" -> if (obj.keys.all { it in setOf("@type", "type", "typeUrl", "type_url", "id", "isDisabled", "note", "actionOnError") })
                 sourceFeature("android.screenshot.area_select", importerId, any.typeUrl, raw)
                 else null
@@ -980,6 +986,85 @@ internal object ShortXMappings {
             mapOf("timeoutMs" to ConfigValue.NumberValue(timeout.toDouble())))
     }
 
+
+    /**
+     * ShortX slots must already belong to YAuto; otherwise rewriting an Android-owned or
+     * third-party slot into YAuto's private prefix would silently change the imported action.
+     *
+     * Allow only the five equivalent platform drawable aliases supported by our native action.
+     */
+    private fun nativeStatusBarIcon(
+        any: AnyStub, importerId: String, fields: ProtoFields, mode: String,
+    ): FeatureRef? {
+        if (!fields.onlyBusinessFields(*(if (mode == "show") intArrayOf(1, 2) else intArrayOf(1)))) return null
+        val slot = importedYAutoStatusSlot(fields.string(1)) ?: return null
+        val icon = if (mode == "show") importedStatusIcon(fields.string(2)) ?: return null else "info"
+        return binaryFeature(any, importerId, "android.status_icon.control", mapOf(
+            "mode" to ConfigValue.StringValue(mode),
+            "slot" to ConfigValue.StringValue(slot),
+            "icon" to ConfigValue.StringValue(icon),
+        ))
+    }
+
+    private fun nativeJsonStatusBarIcon(
+        obj: JsonObject, any: AnyStub, importerId: String, raw: String, mode: String,
+    ): FeatureRef? {
+        if (!jsonBusinessKeysSafe(obj, if (mode == "show") setOf("slot", "icon") else setOf("slot"))) return null
+        val slot = importedYAutoStatusSlot((obj["slot"] as? JsonPrimitive)?.contentOrNull) ?: return null
+        val icon = if (mode == "show") {
+            importedStatusIcon((obj["icon"] as? JsonPrimitive)?.contentOrNull) ?: return null
+        } else "info"
+        return sourceFeature("android.status_icon.control", importerId, any.typeUrl, raw,
+            extra = mapOf(
+                "mode" to ConfigValue.StringValue(mode),
+                "slot" to ConfigValue.StringValue(slot),
+                "icon" to ConfigValue.StringValue(icon),
+            ),
+        )
+    }
+
+    /**
+     * Support only an unambiguous flattened service component. Other AppComponent layouts,
+     * selectors and unknown business fields remain raw compatibility nodes.
+     */
+    private fun nativeStopServices(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields(1)) return null
+        val components = fields.allBytes(1).map { bytes ->
+            val nested = runCatching { ProtoFields(bytes) }.getOrNull() ?: return null
+            if (!nested.onlyBusinessFields(1)) return null
+            nested.string(1)?.takeIf(::importedServiceComponentValid) ?: return null
+        }.distinct()
+        if (components.isEmpty() || components.size > 32) return null
+        return binaryFeature(any, importerId, "android.service.control",
+            mapOf(
+                "mode" to ConfigValue.StringValue("stop"),
+                "components" to ConfigValue.StringValue(components.joinToString("\n")),
+            ),
+        )
+    }
+
+    private fun nativeJsonStopServices(
+        obj: JsonObject, any: AnyStub, importerId: String, raw: String,
+    ): FeatureRef? {
+        if (!jsonBusinessKeysSafe(obj, setOf("services"))) return null
+        val services = (obj["services"] as? JsonArray)?.map { item ->
+            val nested = item as? JsonObject ?: return null
+            if (nested.keys != setOf("component")) return null
+            (nested["component"] as? JsonPrimitive)?.contentOrNull
+                ?.takeIf(::importedServiceComponentValid) ?: return null
+        }?.distinct() ?: return null
+        if (services.isEmpty() || services.size > 32) return null
+        return sourceFeature("android.service.control", importerId, any.typeUrl, raw,
+            extra = mapOf(
+                "mode" to ConfigValue.StringValue("stop"),
+                "components" to ConfigValue.StringValue(services.joinToString("\n")),
+            ),
+        )
+    }
+
+    private fun jsonBusinessKeysSafe(obj: JsonObject, keys: Set<String>): Boolean =
+        obj.keys.all { key -> key in keys || key in SOURCE_METADATA_KEYS }
+
     private fun noFieldAction(any: AnyStub, importerId: String, fields: ProtoFields, target: String): FeatureRef? {
         if (!fields.onlyBusinessFields()) return null
         return binaryFeature(any, importerId, target, emptyMap())
@@ -1165,6 +1250,32 @@ internal object ShortXMappings {
         .substringAfterLast('.')
         .substringAfterLast('$')
 }
+
+
+/** Strictly preserve an existing private slot rather than mapping a stock SystemUI slot. */
+internal fun importedYAutoStatusSlot(value: String?): String? {
+    val input = value ?: return null
+    if (!input.startsWith("yauto_")) return null
+    return input.removePrefix("yauto_").takeIf { Regex("[a-z][a-z0-9_]{0,23}").matches(it) }
+}
+
+internal fun importedStatusIcon(value: String?): String? = when (value) {
+    // Only explicit Android framework resource identities are semantically equivalent
+    // to the platform drawable selected by AndroidStatusIconFeaturePack.
+    "android:drawable/ic_dialog_info" -> "info"
+    "android:drawable/ic_dialog_alert" -> "warning"
+    "android:drawable/ic_lock_idle_lock" -> "lock"
+    "android:drawable/ic_menu_upload" -> "upload"
+    "android:drawable/ic_menu_save" -> "save"
+    else -> null
+}
+
+internal fun importedServiceComponentValid(value: String): Boolean =
+    Regex("""[A-Za-z_][A-Za-z0-9_.]*/[A-Za-z_.$][A-Za-z0-9_.$]*""").matches(value)
+
+private val SOURCE_METADATA_KEYS = setOf(
+    "@type", "type", "typeUrl", "type_url", "id", "isDisabled", "note", "actionOnError",
+)
 
 internal class ProtoFields(bytes: ByteArray) {
     private val fields = Wire(bytes).fields()

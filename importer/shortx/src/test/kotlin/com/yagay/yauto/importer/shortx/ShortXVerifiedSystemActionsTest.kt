@@ -83,6 +83,45 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals("compat.source.action", unsupported.typeId)
     }
 
+    @Test fun `YAuto scoped status icon payloads are imported without changing their slots`() {
+        val set = importAction("SetStatusBarIcon", message(field(1, "yauto_monitor"), field(2, "android:drawable/ic_dialog_info")))
+        assertEquals("android.status_icon.control", set.typeId)
+        assertEquals(ConfigValue.StringValue("monitor"), set.config["slot"])
+        assertEquals(ConfigValue.StringValue("show"), set.config["mode"])
+        assertEquals(ConfigValue.StringValue("info"), set.config["icon"])
+        val remove = importAction("RemoveStatusBarIcon", message(field(1, "yauto_monitor")))
+        assertEquals("android.status_icon.control", remove.typeId)
+        assertEquals(ConfigValue.StringValue("remove"), remove.config["mode"])
+        assertEquals("compat.source.action", importAction("SetStatusBarIcon", message(field(1, "wifi"), field(2, "android:drawable/ic_dialog_info"))).typeId)
+        assertEquals("compat.source.action", importAction("SetStatusBarIcon", message(field(1, "yauto_monitor"), field(2, "custom_png"))).typeId)
+        assertEquals("compat.source.action", importAction("RemoveStatusBarIcon", message(field(1, "alarm"))).typeId)
+        assertEquals("compat.source.action", importAction("RemoveStatusBarIcon", message(field(1, "yauto_monitor"), varintField(2, 1))).typeId)
+    }
+
+    @Test fun `ShortX repeated service stops only map unambiguous components`() {
+        val stop = importAction("StopService", message(
+            field(1, message(field(1, "com.example.app/.Worker"))),
+            field(1, message(field(1, "com.example.app/.OtherWorker"))),
+        ))
+        assertEquals("android.service.control", stop.typeId)
+        assertEquals(ConfigValue.StringValue("stop"), stop.config["mode"])
+        assertEquals(ConfigValue.StringValue("com.example.app/.Worker\\ncom.example.app/.OtherWorker"), stop.config["components"])
+        assertEquals("compat.source.action", importAction("StopService", message(field(1, message(field(2, "com.example/.Worker"))))).typeId)
+        assertEquals("compat.source.action", importAction("StopService", message(field(1, message(field(1, "com.example/.Worker"), varintField(2, 1))))).typeId)
+    }
+
+    @Test fun `ShortX status icon JSON only maps explicitly supported fields`() {
+        val json = """{"id":"icons","title":"Icons","actions":[
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.SetStatusBarIcon","slot":"yauto_monitor","icon":"android:drawable/ic_dialog_info"},
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.RemoveStatusBarIcon","slot":"yauto_monitor"},
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.SetStatusBarIcon","slot":"wifi","icon":"android:drawable/ic_dialog_info"}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("icons.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        assertEquals(listOf("android.status_icon.control", "android.status_icon.control", "compat.source.action"),
+            result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature.typeId })
+    }
+
     @Test fun `auto brightness only converts lossless enable case`() {
         val enabled = importAction("SetAutoBrightness", message(varintField(1, 1)))
         assertEquals("android.display.brightness.set", enabled.typeId)

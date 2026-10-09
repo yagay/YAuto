@@ -60,3 +60,19 @@ Native improvements:
 - Removed duplicated/dead ShortX hint arms for ShowStatusBarChip and ShowDrawBoard. ShowStatusBarChip remains unsupported until the true SystemUI chip protocol and appearance are known.
 
 Not yet fully equivalent: ShortX exact plugin protocol, general arbitrary-process starting, arbitrary status icon art, actual SystemUI chip operation, multi-component StopService protobuf AppComponent parsing, complete StartService AndroidIntent schema/extras, and OEM/device verification. No global parity claim is justified.
+
+## Android 16 genuine promoted ongoing status chip
+
+- Added `android.notification.live_update.control` to request/finish **real Android 16 Live Updates** for ongoing user-initiated navigation, ride or delivery activity; added the `POST_PROMOTED_NOTIFICATIONS` manifest permission and checks for notification permission, promotion eligibility and user settings.
+- Android can still choose not to display the status-bar chip; a successfully posted Live Update cannot guarantee an OEM chip. It is **not** equivalent to ShortX arbitrary text/icon chip, and ShortX ShowStatusBarChip/HideStatusBarClip remain compatibility nodes.
+- Official requirements: https://developer.android.com/develop/ui/views/notifications/live-update
+
+## Source-contract constrained importer completion
+
+- Validated the ShortX public proto contracts for `SetStatusBarIcon` (slot #1, icon #2), `RemoveStatusBarIcon` (slot #1), and `StopService` (repeated services #1).
+- Add native conversion of set/remove status icons **only** when source slot is already `yauto_<id>`, icon explicitly names an exact Android framework drawable in YAuto's small whitelist, and there are no unrecognized business fields. This prevents accidental rewrites of Android-owned slots.
+- Add narrow protobuf/JSON StopService conversion for explicitly flattened service component strings with no unknown AppComponent fields. Other AppComponent encodings remain compatibility nodes.
+- Preserve source payload metadata in the converted nodes. Existing broad ShortX hints for arbitrary icons/process starts remain intentionally null.
+- ShortX plugins use `shortx.plugin.ActionEvaluator` and typed `ParamsData` (ShortX-Plugin-SDK), not Locale FIRE_SETTING; evaluation requires a separate trusted-code execution architecture.
+- Source: https://shortx-repo.github.io/ShortX-Pages/javadoc/tornaco/apps/shortx/core/proto/action/SetStatusBarIcon.html
+- Source: https://shortx-repo.github.io/ShortX-Pages/javadoc/tornaco/apps/shortx/core/proto/action/StopService.html

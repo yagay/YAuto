@@ -91,6 +91,28 @@ class SourceSemanticParityTests(unittest.TestCase):
         self.assertIn('withTimeoutOrNull(maxWait)', surface)
         self.assertIn('controller.hide(id)', surface)
 
+    def test_shortx_scoped_status_icons_decode_without_overriding_systemui_slots(self):
+        shortx = SHORTX_PARSER.read_text(encoding="utf-8")
+        self.assertIn('"SetStatusBarIcon" -> nativeStatusBarIcon(', shortx)
+        self.assertIn('"RemoveStatusBarIcon" -> nativeStatusBarIcon(', shortx)
+        self.assertIn('"StopService" -> nativeStopServices(', shortx)
+        self.assertIn('input.startsWith("yauto_")', shortx)
+        self.assertIn('jsonBusinessKeysSafe(', shortx)
+
+    def test_android_16_native_live_update_is_not_mislabelled_shortx_overlay(self):
+        manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text(encoding="utf-8")
+        pack = (ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidLiveUpdateFeaturePack.kt").read_text(encoding="utf-8")
+        shortx = SHORTX_HINTS.read_text(encoding="utf-8")
+        self.assertIn('android.permission.POST_PROMOTED_NOTIFICATIONS', manifest)
+        self.assertIn('FeatureId("android.notification.live_update.control")', pack)
+        self.assertIn('liveUpdateRequestPromotion(', pack)
+        self.assertIn('liveUpdatePromotionAllowed(manager)', pack)
+        self.assertIn('liveUpdatePromotable(', pack)
+        self.assertIn('manager.cancel(', pack)
+        self.assertIn('"ShowStatusBarChip" -> null', shortx)
+        self.assertIn('"HideStatusBarClip" -> null', shortx)
+        self.assertNotIn('TYPE_APPLICATION_OVERLAY', pack)
+
     def test_macro_screenshot_content_and_spotify_are_not_generic_triggers(self):
         macro = MACRO_HINTS.read_text(encoding="utf-8")
         self.assertIn('"ScreenshotContentTrigger" -> "android.event.screenshot_content"', macro)

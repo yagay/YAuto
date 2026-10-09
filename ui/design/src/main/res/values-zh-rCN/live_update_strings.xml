@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_notification_live_update_control_title">Android 16 实时状态栏卡片</string>
+    <string name="feature_android_notification_live_update_control_description">针对正在进行、由用户发起的导航、行程或配送活动，申请 Android 16 系统状态栏实时卡片，或结束该卡片。需要通知权限及系统允许推广；部分设备仍可能仅显示普通通知。</string>
+    <string name="feature_android_notification_live_update_control_field_mode">操作方式</string>
+    <string name="feature_android_notification_live_update_control_field_mode_option_show">申请实时卡片</string>
+    <string name="feature_android_notification_live_update_control_field_mode_option_remove">结束实时卡片</string>
+    <string name="feature_android_notification_live_update_control_field_tag">实时卡片标识</string>
+    <string name="feature_android_notification_live_update_control_field_purpose">正在进行的活动</string>
+    <string name="feature_android_notification_live_update_control_field_purpose_option_navigation">导航</string>
+    <string name="feature_android_notification_live_update_control_field_purpose_option_ride">行程</string>
+    <string name="feature_android_notification_live_update_control_field_purpose_option_delivery">配送</string>
+    <string name="feature_android_notification_live_update_control_field_title">活动标题</string>
+    <string name="feature_android_notification_live_update_control_field_message">当前进度信息</string>
+    <string name="runtime_feature_live_update_unsupported">系统实时卡片功能需要 Android 16 或更高版本。</string>
+    <string name="runtime_feature_live_update_invalid">请选择有效的活动、标题、进度内容和实时卡片标识。</string>
+    <string name="runtime_feature_live_update_promotion_disabled">系统不支持此功能，或未允许 YAuto 使用实时推广通知。</string>
+    <string name="runtime_feature_live_update_not_eligible">此通知不符合 Android 实时卡片的使用条件。</string>
+</resources>

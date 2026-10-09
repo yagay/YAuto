@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_notification_live_update_control_title">Android 16 Live Update</string>
+    <string name="feature_android_notification_live_update_control_description">Request an Android 16 system status-bar chip for an active, user-initiated navigation, ride or delivery activity, or finish that Live Update. Requires notification permissions and system promotion eligibility; some devices may still show a normal notification instead.</string>
+    <string name="feature_android_notification_live_update_control_field_mode">Operation</string>
+    <string name="feature_android_notification_live_update_control_field_mode_option_show">Request Live Update</string>
+    <string name="feature_android_notification_live_update_control_field_mode_option_remove">End Live Update</string>
+    <string name="feature_android_notification_live_update_control_field_tag">Live Update ID</string>
+    <string name="feature_android_notification_live_update_control_field_purpose">Ongoing activity</string>
+    <string name="feature_android_notification_live_update_control_field_purpose_option_navigation">Navigation</string>
+    <string name="feature_android_notification_live_update_control_field_purpose_option_ride">Ride</string>
+    <string name="feature_android_notification_live_update_control_field_purpose_option_delivery">Delivery</string>
+    <string name="feature_android_notification_live_update_control_field_title">Activity title</string>
+    <string name="feature_android_notification_live_update_control_field_message">Current progress</string>
+    <string name="runtime_feature_live_update_unsupported">System Live Updates require Android 16 or newer.</string>
+    <string name="runtime_feature_live_update_invalid">Choose a valid activity, title, progress message and Live Update ID.</string>
+    <string name="runtime_feature_live_update_promotion_disabled">Promoted notifications are unavailable or disabled for YAuto in system settings.</string>
+    <string name="runtime_feature_live_update_not_eligible">The notification does not meet Android's Live Update eligibility requirements.</string>
+</resources>

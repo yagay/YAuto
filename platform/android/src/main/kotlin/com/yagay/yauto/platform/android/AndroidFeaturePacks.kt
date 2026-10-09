@@ -57,6 +57,7 @@ object AndroidFeaturePacks {
         Android5gToggleFeaturePack(context),
         AndroidStatusIconFeaturePack(),
         AndroidPpnFeaturePack(context),
+        AndroidLiveUpdateFeaturePack(context),
         AndroidShortXParityFeaturePack(context),
         AndroidShortXStateFeaturePack(),
         AndroidTextProcessingFeaturePack(),
