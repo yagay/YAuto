@@ -32,4 +32,15 @@
     <string name="feature_backend_usage_stats_limitation">Note: usage records may lag and do not expose complete screen content or privileged control.</string>
     <string name="feature_backend_auto_paths_format">Supported alternative permission paths (grant only those you use): %1$s</string>
     <string name="feature_backend_additional_requirements_format">Other feature-declared access: %1$s</string>
+    <string name="feature_backend_android_wifi_set_root_description">Changing the Wi-Fi switch is a system network-control operation. Root uses su authorization to change the switch, not merely read Wi-Fi details; OEM restrictions may still apply.</string>
+    <string name="feature_backend_android_wifi_set_shizuku_description">To toggle Wi-Fi, Shizuku uses shell-level system controls. Location permission alone cannot toggle the switch, and not every Android version permits shell control.</string>
+    <string name="feature_backend_android_device_reboot_root_description">Rebooting the device requires a privileged power-management request. Root uses su for that request; ordinary notification or battery permissions do not substitute.</string>
+    <string name="feature_backend_android_device_reboot_shizuku_description">For a reboot, Shizuku attempts the system reboot request as shell. This may fail when Android or the ROM restricts reboot commands for shell.</string>
+    <string name="feature_backend_android_device_shutdown_root_description">Powering off is different from locking the screen and requires a privileged power operation. Root authorizes the shutdown request through su; device-admin access alone is not equivalent.</string>
+    <string name="feature_backend_android_device_shutdown_shizuku_description">For shutdown, Shizuku attempts a system power-off command as shell. Shell may not be permitted to shut the device down on every Android build.</string>
+    <string name="feature_backend_android_global_actions_show_accessibility_description">To display the system power menu, this method requests an Android global action through the enabled Accessibility service. It needs Accessibility, not Root or Shizuku.</string>
+    <string name="feature_backend_android_device_power_menu_show_root_description">To show the power menu, this Root method attempts a privileged device command, rather than the Accessibility global action; su authorization is required.</string>
+    <string name="feature_backend_android_device_power_menu_show_shizuku_description">To show the power menu, this Shizuku method attempts a system device command as shell. Whether it can do so depends on Android’s shell restrictions.</string>
+    <string name="feature_backend_android_app_locale_set_root_description">Setting an app’s language changes its locale configuration for a particular Android user. The Root path uses su for the protected configuration operation.</string>
+    <string name="feature_backend_android_app_locale_set_shizuku_description">When setting an app’s language, the Shizuku path attempts the locale configuration change as shell; Android and shell restrictions still apply.</string>
 </resources>
