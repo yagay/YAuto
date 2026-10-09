@@ -15,5 +15,5 @@
     <string name="runtime_feature_live_update_unsupported">System Live Updates require Android 16 or newer.</string>
     <string name="runtime_feature_live_update_invalid">Choose a valid activity, title, progress message and Live Update ID.</string>
     <string name="runtime_feature_live_update_promotion_disabled">Promoted notifications are unavailable or disabled for YAuto in system settings.</string>
-    <string name="runtime_feature_live_update_not_eligible">The notification does not meet Android's Live Update eligibility requirements.</string>
+    <string name="runtime_feature_live_update_not_eligible">The notification does not meet the requirements for Android Live Updates.</string>
 </resources>
