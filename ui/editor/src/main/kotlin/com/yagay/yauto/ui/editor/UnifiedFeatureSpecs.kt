@@ -119,4 +119,32 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         TextR.string.verified_family_wifi_control_subtitle,
         listOf("android.wifi.set", "android.wifi.network.connect"),
     ),
+    // Same approved MacroDroid source key: constraint_music_active; method chosen as a parameter.
+    UnifiedFeatureSpec(
+        "music_activity_condition",
+        TextR.string.verified_family_music_activity,
+        TextR.string.verified_family_music_activity_subtitle,
+        listOf("android.condition.music_active", "android.condition.audio.music_active"),
+    ),
+    // Same approved MacroDroid source key: constraint_music_active; method chosen as a parameter.
+    UnifiedFeatureSpec(
+        "music_activity_state",
+        TextR.string.verified_family_music_activity,
+        TextR.string.verified_family_music_activity_subtitle,
+        listOf("android.state.music_active", "android.state.audio.music_active"),
+    ),
+    // Same approved MacroDroid source key: constraint_device_orientation; method chosen as a parameter.
+    UnifiedFeatureSpec(
+        "device_orientation_condition",
+        TextR.string.verified_family_device_orientation,
+        TextR.string.verified_family_device_orientation_subtitle,
+        listOf("android.condition.orientation", "android.condition.reference.orientation"),
+    ),
+    // Same approved MacroDroid source key: constraint_device_orientation; method chosen as a parameter.
+    UnifiedFeatureSpec(
+        "device_orientation_state",
+        TextR.string.verified_family_device_orientation,
+        TextR.string.verified_family_device_orientation_subtitle,
+        listOf("android.state.orientation", "android.state.reference.orientation"),
+    ),
 )

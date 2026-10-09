@@ -62,7 +62,7 @@ def audit(spec: str, approval_rows: list[dict]) -> dict:
             errors.append(f"Duplicate approval {group_id}")
         if len(member_ids) < 2 or len(member_ids) != len(set(member_ids)):
             errors.append(f"Invalid members for {group_id}")
-        if row["kind"] not in {"action", "event"}:
+        if row["kind"] not in {"action", "event", "condition", "state"}:
             errors.append(f"Unsupported picker kind in {group_id}: {row['kind']}")
         if row["source"] not in {"macrodroid", "shortx", "macrodroid_apk"}:
             errors.append(f"Invalid upstream source for {group_id}")

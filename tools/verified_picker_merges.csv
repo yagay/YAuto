@@ -13,3 +13,7 @@ package_install_events,macrodroid_apk,assets/ai/triggers/ApplicationInstalledRem
 notification_received_cleared,macrodroid_apk,assets/ai/triggers/NotificationTrigger.yaml,event,android.event.notification_posted|android.event.notification_removed,m_option
 power_connection_events,macrodroid_apk,assets/ai/triggers/ExternalPowerTrigger.yaml,event,android.event.power_connected|android.event.power_disconnected,m_powerConnected
 wifi_control,macrodroid_apk,assets/ai/actions/SetWifiAction.yaml,action,android.wifi.set|android.wifi.network.connect,m_state
+music_activity_condition,macrodroid,constraint_music_active,condition,android.condition.music_active|android.condition.audio.music_active,
+music_activity_state,macrodroid,constraint_music_active,state,android.state.music_active|android.state.audio.music_active,
+device_orientation_condition,macrodroid,constraint_device_orientation,condition,android.condition.orientation|android.condition.reference.orientation,
+device_orientation_state,macrodroid,constraint_device_orientation,state,android.state.orientation|android.state.reference.orientation,

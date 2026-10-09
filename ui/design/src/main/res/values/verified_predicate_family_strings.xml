@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_music_activity">Music activity</string>
+    <string name="verified_family_music_activity_subtitle">Choose music or audio activity checking method</string>
+    <string name="verified_family_device_orientation">Device orientation</string>
+    <string name="verified_family_device_orientation_subtitle">Choose device orientation checking method</string>
+</resources>
