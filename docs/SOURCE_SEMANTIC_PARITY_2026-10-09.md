@@ -41,3 +41,22 @@ No existing stable feature ID or saved task is migrated or overwritten. Unsuppor
 - Replaced the incorrect ShortX `StartService` hint targeting Activity-intent invocation; ShortX `StartService` and `StopService` now point to Android Service control.
 - Root/Shizuku command validation rejects malformed component/user ID and reports service-shell error output; Android service export and foreground restrictions remain enforced by Android.
 - Unsupported ShortX original payload variants remain compatibility nodes until proven lossless.
+
+## Consolidated reference-backed coverage batch
+
+Source contracts were checked against the published ShortX protobuf API:
+- StartService: AndroidIntent = 1, userId = 2, isForegroundService = 3. https://shortx-repo.github.io/ShortX-Pages/javadoc/tornaco/apps/shortx/core/proto/action/StartService.html
+- StopService: repeated AppComponent services = 1. https://shortx-repo.github.io/ShortX-Pages/javadoc/tornaco/apps/shortx/core/proto/action/StopService.html
+- AreaScreenshot: no user-defined business fields. https://shortx-repo.github.io/ShortX-Pages/javadoc/tornaco/apps/shortx/core/proto/action/AreaScreenshot.html
+- SetStatusBarIcon: slot = 1, icon = 2. https://shortx-repo.github.io/ShortX-Pages/javadoc/tornaco/apps/shortx/core/proto/action/SetStatusBarIcon.html
+- PluginAction: ShortXPluginAction = 1 and ParamsDataWrapper = 2; not a Locale plugin bundle. https://shortx-repo.github.io/ShortX-Pages/javadoc/tornaco/apps/shortx/core/proto/action/PluginAction.html
+
+Native improvements:
+- Added `android.screenshot.area_select`: display a real interactive rectangle selector, translate overlay-relative coordinates into screen coordinates, dismiss the selector, then use Accessibility screenshot capture to crop to PNG and optionally store the absolute path in a variable. Cancellation/timeout closes the selector.
+- Metadata-only ShortX AreaScreenshot protobuf and JSON actions now convert natively into this action; unknown extra fields keep the original compatibility node. The original ShortX output folder and further side effects have not been verified.
+- Added `android.status_icon.control` via existing, authenticated LSPosed system_server bridge to the actual `StatusBarManager.setIcon/removeIcon` API, with allowlisted Android drawable resources and an enforced `yauto_` slot prefix. No notification or overlay impersonation. Some OEM implementations can still reject the hidden method.
+- ShortX SetStatusBarIcon and RemoveStatusBarIcon stay compatibility nodes because arbitrary ShortX icon strings and slots cannot be losslessly mapped to the restricted Android icon set.
+- Improved `android.service.control` to support action/data for explicit start intents, up to 32 stop targets, and strict pre-execution validation. Existing `android.service.stop` alias stays mapped to `stop`.
+- Removed duplicated/dead ShortX hint arms for ShowStatusBarChip and ShowDrawBoard. ShowStatusBarChip remains unsupported until the true SystemUI chip protocol and appearance are known.
+
+Not yet fully equivalent: ShortX exact plugin protocol, general arbitrary-process starting, arbitrary status icon art, actual SystemUI chip operation, multi-component StopService protobuf AppComponent parsing, complete StartService AndroidIntent schema/extras, and OEM/device verification. No global parity claim is justified.

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_screenshot_area_select_title">Capture selected screen area</string>
+    <string name="feature_android_screenshot_area_select_description">Draw a rectangle on the screen, remove the selection overlay, and save the cropped screenshot through Accessibility. Secure screens cannot be captured.</string>
+    <string name="feature_android_screenshot_area_select_field_filename">PNG file name</string>
+    <string name="feature_android_screenshot_area_select_field_timeoutms">Selection timeout</string>
+    <string name="feature_android_screenshot_area_select_field_resultvariable">Store screenshot file path</string>
+    <string name="runtime_feature_area_screenshot_overlay_unavailable">Allow YAuto to display overlays before selecting a screenshot area.</string>
+    <string name="runtime_feature_area_screenshot_timed_out">Screen area selection expired without a valid rectangle.</string>
+    <string name="runtime_feature_area_screenshot_invalid">The selected screen area is invalid.</string>
+</resources>

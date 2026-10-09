@@ -191,9 +191,8 @@ internal object ShortXFeatureSuggestions {
         "RequestAudioFocus" -> "android.audio.focus.request"
         "ExecuteMVEL", "RemoteExecuteMVEL", "MVEL", "RemoteMVEL" -> "script.mvel.execute"
         "ExecuteJS" -> "script.javascript.execute"
-        // Verified: accessibility.screenshot.capture accepts x/y/width/height and saves a cropped PNG.
-        // The original ShortX fields still remain in a compatibility node until decoded losslessly.
-        "AreaScreenshot" -> "accessibility.screenshot.capture"
+        // ShortX AreaScreenshot selects an area interactively; it is not a fixed-coordinate crop.
+        "AreaScreenshot" -> "android.screenshot.area_select"
         "DrawBoard", "ShowDrawBoard" -> "surface.draw_board.show"
         "ShowPieMenu", "PieMenu" -> "surface.pie.show"
         "ShowSidebar", "Sidebar" -> "surface.sidebar.show"
@@ -203,8 +202,6 @@ internal object ShortXFeatureSuggestions {
         "ShowActionSidebar", "ShowSideBar" -> "surface.sidebar.show"
         "HideSideBar" -> "surface.overlay.hide"
         // A system status-bar chip is not a TYPE_APPLICATION_OVERLAY.
-        "ShowStatusBarChip" -> null
-        "ShowDrawBoard" -> "surface.draw_board.show"
         else -> ShortXMappings.suggestedActionFeature(name)
     }
 

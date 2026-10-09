@@ -559,6 +559,7 @@ class OverlaySurfaceController(context: Context) {
     fun showRegionSelector(
         id: String,
         autoHideMs: Long,
+        onSelected: ((Int, Int, Int, Int) -> Unit)? = null,
     ): Boolean {
         if (!canDraw() || id.isBlank()) return false
         main.post {
@@ -570,6 +571,7 @@ class OverlaySurfaceController(context: Context) {
                     listOf(left, top, right, bottom).joinToString(","),
                 )
                 hide(id)
+                onSelected?.invoke(left, top, right, bottom)
             }
             addSurface(
                 id = id,
@@ -1250,7 +1252,12 @@ private class RegionSelectorView(
                 val right = maxOf(startX, endX).toInt().coerceAtMost(width)
                 val bottom = maxOf(startY, endY).toInt().coerceAtMost(height)
                 selecting = false
-                if (right - left >= 4 && bottom - top >= 4) selected(left, top, right, bottom)
+                if (right - left >= 4 && bottom - top >= 4) {
+                    // Region selection coordinates must match Accessibility's full-display screenshot.
+                    val offset = IntArray(2)
+                    getLocationOnScreen(offset)
+                    selected(left + offset[0], top + offset[1], right + offset[0], bottom + offset[1])
+                }
                 return true
             }
             MotionEvent.ACTION_CANCEL -> {

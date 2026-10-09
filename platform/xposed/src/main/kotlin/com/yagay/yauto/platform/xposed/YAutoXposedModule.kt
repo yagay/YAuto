@@ -89,6 +89,47 @@ class YAutoXposedModule : XposedModule() {
                     require(intent.getIntExtra("version", -1) == SystemBridgeProtocol.VERSION) { "Protocol mismatch" }
                     when (intent.getStringExtra("operation")) {
                         SystemBridgeProtocol.PING -> Unit
+                        SystemBridgeProtocol.STATUS_ICON_SET,
+                        SystemBridgeProtocol.STATUS_ICON_REMOVE -> {
+                            // Only allocate YAuto-prefixed slots: never override stock system icons.
+                            val requestedSlot = intent.getStringExtra("slot").orEmpty().trim()
+                            require(Regex("[a-z][a-z0-9_]{0,23}").matches(requestedSlot)) {
+                                "Invalid YAuto icon slot"
+                            }
+                            val slot = "yauto_" + requestedSlot
+                            val status = context.getSystemService("statusbar")
+                                ?: error("Status bar manager unavailable")
+                            if (intent.getStringExtra("operation") == SystemBridgeProtocol.STATUS_ICON_REMOVE) {
+                                val remove = status.javaClass.methods.firstOrNull {
+                                    it.name == "removeIcon" && it.parameterCount == 1 &&
+                                        it.parameterTypes[0] == String::class.java
+                                } ?: error("StatusBarManager.removeIcon unavailable on this ROM")
+                                remove.invoke(status, slot)
+                            } else {
+                                val name = when (intent.getStringExtra("icon")) {
+                                    "info" -> "ic_dialog_info"
+                                    "warning" -> "ic_dialog_alert"
+                                    "lock" -> "ic_lock_idle_lock"
+                                    "upload" -> "ic_menu_upload"
+                                    "save" -> "ic_menu_save"
+                                    else -> error("Unsupported built-in icon")
+                                }
+                                val resId = context.resources.getIdentifier(name, "drawable", "android")
+                                require(resId != 0) { "Android icon resource unavailable" }
+                                val set = status.javaClass.methods.firstOrNull {
+                                    it.name == "setIcon" && it.parameterCount == 4 &&
+                                        it.parameterTypes[0] == String::class.java &&
+                                        it.parameterTypes[1] == Int::class.javaPrimitiveType &&
+                                        it.parameterTypes[2] == Int::class.javaPrimitiveType &&
+                                        it.parameterTypes[3] == String::class.java
+                                } ?: error("StatusBarManager.setIcon unavailable on this ROM")
+                                set.invoke(status, slot, resId, 0, "YAuto: " + requestedSlot)
+                                status.javaClass.methods.firstOrNull {
+                                    it.name == "setIconVisibility" && it.parameterCount == 2
+                                }?.invoke(status, slot, true)
+                            }
+                            response.putString("slot", slot)
+                        }
                         SystemBridgeProtocol.SHORTX_BEHAVIOR_SET -> {
                             installShortXBehaviorHooks(context, classLoader)
                             val behavior = intent.getStringExtra("behavior").orEmpty()

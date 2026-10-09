@@ -1,5 +1,13 @@
 package com.yagay.yauto.platform.android
 
+import com.yagay.yauto.core.capability.CapabilityIds
+import com.yagay.yauto.core.capability.CapabilityRequest
+import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.userText
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
+import java.util.UUID
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.long
 import com.yagay.yauto.core.model.numberOrNull
@@ -504,6 +512,66 @@ class AndroidSurfaceFeaturePack(
             )
         }
 
+
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.screenshot.area_select"), FeatureKind.ACTION,
+                "Capture selected screen area",
+                "Draw a region, close the selector, and save a cropped screenshot using Accessibility",
+                FeatureCategory.UI_AUTOMATION,
+                fields = listOf(
+                    FieldSchema.Text("fileName", "Saved PNG file name"),
+                    FieldSchema.Duration("timeoutMs", "Selection timeout"),
+                    FieldSchema.Variable("resultVariable", "Save screenshot path to variable"),
+                ),
+                accessRequirements = setOf(AccessRequirement.OVERLAY, AccessRequirement.ACCESSIBILITY),
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                keywords = setOf("area screenshot", "screen region", "selected screenshot", "shortx"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val selection = CompletableDeferred<List<Int>>()
+            val id = "yauto-area-" + UUID.randomUUID().toString()
+            val maxWait = feature.config.long("timeoutMs", 30_000L).coerceIn(1_000L, 120_000L)
+            val shown = controller.showRegionSelector(id, maxWait) { left, top, right, bottom ->
+                selection.complete(listOf(left, top, right, bottom))
+            }
+            if (!shown) return@registerAction ActionExecutionResult(false, message = userText("feature.area_screenshot_overlay_unavailable"))
+            try {
+                val rect = withTimeoutOrNull(maxWait) { selection.await() }
+                    ?: return@registerAction ActionExecutionResult(false, message = userText("feature.area_screenshot_timed_out"))
+                // Overlay hide is scheduled on the UI thread; let it detach before capture.
+                delay(200L)
+                val width = rect[2] - rect[0]
+                val height = rect[3] - rect[1]
+                if (rect[0] < 0 || rect[1] < 0 || width < 4 || height < 4) {
+                    return@registerAction ActionExecutionResult(false, message = userText("feature.area_screenshot_invalid"))
+                }
+                val capture = ctx.capabilities.execute(
+                    CapabilityRequest(
+                        capability = CapabilityIds.ACCESSIBILITY,
+                        operationId = "accessibility.screenshot.capture",
+                        payload = mapOf(
+                            "x" to ConfigValue.NumberValue(rect[0].toDouble()),
+                            "y" to ConfigValue.NumberValue(rect[1].toDouble()),
+                            "width" to ConfigValue.NumberValue(width.toDouble()),
+                            "height" to ConfigValue.NumberValue(height.toDouble()),
+                            "fileName" to ConfigValue.StringValue(
+                                feature.config.string("fileName").resolveVariables(ctx.variables)
+                            ),
+                        ),
+                    )
+                )
+                if (capture.success) {
+                    feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let {
+                        ctx.variables.set(it, capture.value)
+                    }
+                }
+                ActionExecutionResult(capture.success, capture.value, capture.message)
+            } finally {
+                controller.hide(id)
+            }
+        }
 
         registry.registerAction(
             FeatureDescriptor(

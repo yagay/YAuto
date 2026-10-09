@@ -50,6 +50,7 @@ internal object ShortXMappings {
             "InjectKeyCode" -> injectKeyCode(any, importerId, fields)
             "SetAutoBrightness" -> setAutoBrightness(any, importerId, fields)
             "ExpandNotification" -> expandNotification(any, importerId, fields)
+            "AreaScreenshot" -> noFieldAction(any, importerId, fields, "android.screenshot.area_select")
             "RequestAudioFocus" -> requestAudioFocus(any, importerId, fields)
             "PlayRingtone" -> playRingtone(any, importerId, fields)
             else -> null
@@ -518,6 +519,9 @@ internal object ShortXMappings {
                 sourceFeature("android.display.screen_timeout.set", importerId, any.typeUrl, raw,
                     extra = mapOf("timeoutMs" to ConfigValue.NumberValue(timeout.toDouble())))
             }
+            "AreaScreenshot" -> if (obj.keys.all { it in setOf("@type", "type", "typeUrl", "type_url", "id", "isDisabled", "note", "actionOnError") })
+                sourceFeature("android.screenshot.area_select", importerId, any.typeUrl, raw)
+                else null
             "WakeupScreen" -> sourceFeature("android.screen.wake", importerId, any.typeUrl, raw)
             "SleepScreen" -> sourceFeature("system.screen.sleep", importerId, any.typeUrl, raw)
             "TTS" -> {

@@ -7,6 +7,9 @@
     <string name="feature_android_service_control_field_mode_option_stop">停止服务</string>
     <string name="feature_android_service_control_field_mode_option_start_foreground">启动前台服务</string>
     <string name="feature_android_service_control_field_component">服务组件</string>
+    <string name="feature_android_service_control_field_components">其他要停止的服务（每行一个）</string>
+    <string name="feature_android_service_control_field_intentaction">启动 Intent 动作</string>
+    <string name="feature_android_service_control_field_datauri">启动 Intent 数据 URI</string>
     <string name="feature_android_service_control_field_userid">Android 用户 ID</string>
     <string name="runtime_feature_service_invalid_component">请选择明确的 Android 服务组件，例如 com.example.app/.SyncService。</string>
     <string name="runtime_feature_service_invalid_user">请选择有效的 Android 用户 ID。</string>

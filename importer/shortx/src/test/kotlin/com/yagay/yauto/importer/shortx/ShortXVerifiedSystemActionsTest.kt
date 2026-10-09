@@ -76,6 +76,13 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals("compat.source.action", importAction("InjectKeyCode", message(varintField(1, 85), varintField(3, 1))).typeId)
     }
 
+    @Test fun `interactive area screenshot imports only metadata-only protobuf`() {
+        val area = importAction("AreaScreenshot", byteArrayOf())
+        assertEquals("android.screenshot.area_select", area.typeId)
+        val unsupported = importAction("AreaScreenshot", message(varintField(1, 500)))
+        assertEquals("compat.source.action", unsupported.typeId)
+    }
+
     @Test fun `auto brightness only converts lossless enable case`() {
         val enabled = importAction("SetAutoBrightness", message(varintField(1, 1)))
         assertEquals("android.display.brightness.set", enabled.typeId)

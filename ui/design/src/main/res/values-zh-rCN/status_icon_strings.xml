@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_status_icon_control_title">系统状态栏图标</string>
+    <string name="feature_android_status_icon_control_description">通过 LSPosed 系统桥接显示或移除 YAuto 专用状态栏图标，使用 Android 内置图标。部分厂商系统可能不支持；不支持 ShortX 的自定义图标素材。</string>
+    <string name="feature_android_status_icon_control_field_mode">操作方式</string>
+    <string name="feature_android_status_icon_control_field_mode_option_show">显示图标</string>
+    <string name="feature_android_status_icon_control_field_mode_option_remove">移除图标</string>
+    <string name="feature_android_status_icon_control_field_slot">图标槽位</string>
+    <string name="feature_android_status_icon_control_field_icon">内置图标</string>
+    <string name="feature_android_status_icon_control_field_icon_option_info">信息</string>
+    <string name="feature_android_status_icon_control_field_icon_option_warning">警告</string>
+    <string name="feature_android_status_icon_control_field_icon_option_lock">锁定</string>
+    <string name="feature_android_status_icon_control_field_icon_option_upload">上传</string>
+    <string name="feature_android_status_icon_control_field_icon_option_save">保存</string>
+    <string name="runtime_feature_status_icon_bad_slot">请输入有效图标槽位，仅允许小写英文字母、数字和下划线。</string>
+    <string name="runtime_feature_status_icon_bad_operation">请选择受支持的状态栏图标操作与图标。</string>
+</resources>

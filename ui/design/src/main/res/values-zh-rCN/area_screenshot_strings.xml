@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_screenshot_area_select_title">框选区域截图</string>
+    <string name="feature_android_screenshot_area_select_description">在屏幕上框选区域，隐藏选框后通过无障碍服务截取并保存 PNG 图片。受保护的屏幕内容无法截图。</string>
+    <string name="feature_android_screenshot_area_select_field_filename">PNG 文件名</string>
+    <string name="feature_android_screenshot_area_select_field_timeoutms">框选超时时间</string>
+    <string name="feature_android_screenshot_area_select_field_resultvariable">保存截图路径到变量</string>
+    <string name="runtime_feature_area_screenshot_overlay_unavailable">需要先允许 YAuto 显示悬浮窗，才能框选截图区域。</string>
+    <string name="runtime_feature_area_screenshot_timed_out">未能在规定时间内完成有效区域框选。</string>
+    <string name="runtime_feature_area_screenshot_invalid">所选的屏幕区域无效。</string>
+</resources>

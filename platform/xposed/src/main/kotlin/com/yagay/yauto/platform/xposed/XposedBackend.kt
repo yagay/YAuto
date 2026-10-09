@@ -75,7 +75,11 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
     override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment): Boolean =
         (request.capability == CapabilityIds.SYSTEM_UI && request.operationId in supportedOperations()) ||
             (request.capability == CapabilityIds.LSPOSED &&
-                request.operationId == SystemBridgeProtocol.SHORTX_BEHAVIOR_SET) ||
+                request.operationId in setOf(
+                    SystemBridgeProtocol.SHORTX_BEHAVIOR_SET,
+                    SystemBridgeProtocol.STATUS_ICON_SET,
+                    SystemBridgeProtocol.STATUS_ICON_REMOVE,
+                )) ||
             (request.capability == CapabilityIds.LSPOSED_HOOK &&
                 request.operationId in setOf(
                     SystemBridgeProtocol.HOOK_INSTALL_SESSION,

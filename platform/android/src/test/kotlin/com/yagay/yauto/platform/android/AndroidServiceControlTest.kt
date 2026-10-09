@@ -22,6 +22,16 @@ class AndroidServiceControlTest {
         assertNull(serviceControlCommand("com.example/.Service", 1000, "start"))
         assertNull(serviceControlCommand("com.example/.Service", 0, "reboot"))
         assertNull(serviceControlCommand("com.example", 0, "start"))
+        assertNull(serviceControlCommand("com.example/.Service", 0, "start", "android.intent.action;rm"))
+        assertNull(serviceControlCommand("com.example/.Service", 0, "stop", "android.intent.action.MAIN"))
+        assertNull(serviceControlCommand("com.example/.Service", 0, "start", dataUri = "not-a-uri"))
+    }
+
+    @Test fun `service intents support explicit action and data with safe quoting`() {
+        assertEquals(
+            "am startservice --user 0 -n 'com.example/.Service' -a 'android.intent.action.VIEW' -d 'example://open?a=b'",
+            serviceControlCommand("com.example/.Service", 0, "start", "android.intent.action.VIEW", "example://open?a=b"),
+        )
     }
 
     @Test fun `am service text errors do not masquerade as successful operations`() {

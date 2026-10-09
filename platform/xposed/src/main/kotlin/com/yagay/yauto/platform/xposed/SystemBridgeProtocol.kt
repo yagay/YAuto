@@ -5,6 +5,8 @@ object SystemBridgeProtocol {
     const val ACTION = "com.yagay.yauto.SYSTEM_OPERATION"
     const val PERMISSION = "com.yagay.yauto.permission.SYSTEM_BRIDGE"
     const val PING = "ping"
+    const val STATUS_ICON_SET = "status_icon.set"
+    const val STATUS_ICON_REMOVE = "status_icon.remove"
     const val HARDWARE_KEY_CAPTURE_START = "hardware_key_capture.start"
     const val SYSTEM_EVENT_SUBSCRIPTIONS_SET = "system_event_subscriptions.set"
     const val SHORTX_BEHAVIOR_SET = "shortx.behavior.set"

@@ -49,7 +49,11 @@ class SourceSemanticParityTests(unittest.TestCase):
             self.assertIn('"' + source + '" -> null', hint, source)
         self.assertNotIn('"StartAppProcess", "StartAppProcessByPkg" -> "android.app.launch"', hint)
         self.assertNotIn('"SetStatusBarIcon" -> "android.notification.ppn.show"', hint)
-        self.assertIn('"AreaScreenshot" -> "accessibility.screenshot.capture"', hint)
+        self.assertIn('"AreaScreenshot" -> "android.screenshot.area_select"', hint)
+        surface = SURFACE.read_text(encoding="utf-8")
+        self.assertIn('FeatureId("android.screenshot.area_select")', surface)
+        self.assertIn('onSelected: ((Int, Int, Int, Int) -> Unit)? = null', CONTROLLER.read_text(encoding="utf-8"))
+        self.assertIn('"AreaScreenshot" -> noFieldAction(', SHORTX_PARSER.read_text(encoding="utf-8"))
         self.assertIn('"Toggle5G" -> "android.telephony.5g.toggle"', hint)
         native = (ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/Android5gToggleFeaturePack.kt").read_text(encoding="utf-8")
         self.assertIn('FeatureId("android.telephony.5g.toggle")', native)
@@ -67,6 +71,25 @@ class SourceSemanticParityTests(unittest.TestCase):
         self.assertIn('"StartService", "StopService" -> "android.service.control"', parser)
         self.assertNotIn('"StartService" -> "android.external.intent.invoke"', hints)
         self.assertNotIn('"StopService" -> "android.service.stop"', hints)
+        self.assertIn('FieldSchema.Text("components"' , pack)
+        self.assertIn('FieldSchema.Text("intentAction"' , pack)
+        self.assertIn('FieldSchema.Text("dataUri"' , pack)
+
+    def test_real_status_bar_bridge_and_area_selection_not_notification_fallback(self):
+        xposed = (ROOT / "platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/YAutoXposedModule.kt").read_text(encoding="utf-8")
+        backend = (ROOT / "platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedBackend.kt").read_text(encoding="utf-8")
+        pack = (ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidStatusIconFeaturePack.kt").read_text(encoding="utf-8")
+        surface = SURFACE.read_text(encoding="utf-8")
+        for operation in ("STATUS_ICON_SET", "STATUS_ICON_REMOVE"):
+            self.assertIn("SystemBridgeProtocol." + operation, xposed)
+            self.assertIn("SystemBridgeProtocol." + operation, backend)
+        self.assertIn('FeatureId("android.status_icon.control")', pack)
+        self.assertIn('CapabilityIds.LSPOSED', pack)
+        self.assertIn('"yauto_" + requestedSlot', xposed)
+        self.assertIn('FeatureId("android.screenshot.area_select")', surface)
+        self.assertIn('operationId = "accessibility.screenshot.capture"', surface)
+        self.assertIn('withTimeoutOrNull(maxWait)', surface)
+        self.assertIn('controller.hide(id)', surface)
 
     def test_macro_screenshot_content_and_spotify_are_not_generic_triggers(self):
         macro = MACRO_HINTS.read_text(encoding="utf-8")

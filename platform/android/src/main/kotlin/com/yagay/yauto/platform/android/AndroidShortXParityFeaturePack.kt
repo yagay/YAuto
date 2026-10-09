@@ -69,8 +69,11 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.APP,
                 fields = listOf(
                     FieldSchema.Choice("mode", "Operation", true, listOf("stop", "start", "start_foreground")),
-                    FieldSchema.Text("component", "Service component package/class", true),
+                    FieldSchema.Text("component", "Service component package/class"),
+                    FieldSchema.Text("components", "Additional services to stop, one per line", multiline = true),
                     FieldSchema.Number("userId", "Android user ID", min = 0.0, max = 999.0),
+                    FieldSchema.Text("intentAction", "Start Intent action"),
+                    FieldSchema.Text("dataUri", "Start Intent data URI"),
                 ),
                 capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
                 implementationOptions = privilegedOptions(),
@@ -82,25 +85,44 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
                 ),
             )
         ) { feature, ctx ->
-            val parsed = ComponentName.unflattenFromString(
-                feature.config.string("component").resolveVariables(ctx.variables).trim()
-            ) ?: return@registerAction ActionExecutionResult(false, message = userText("feature.service_invalid_component"))
+            val mode = feature.config.string("mode", "stop")
             val rawUserId = feature.config["userId"].numberOrNull() ?: 0.0
             if (!rawUserId.isFinite() || rawUserId % 1.0 != 0.0 || rawUserId !in 0.0..999.0) {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.service_invalid_user"))
             }
-            val mode = feature.config.string("mode", "stop")
-            val command = serviceControlCommand(parsed.flattenToString(), rawUserId.toInt(), mode)
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.service_invalid_command"))
-            val result = shellResult(ctx, command)
-            val stdoutText = stdout(result)
-            val stderrText = ((result.value as? ConfigValue.ObjectValue)?.value?.get("stderr") as? ConfigValue.StringValue)?.value.orEmpty()
-            val ok = result.success && !serviceControlFailed(stdoutText + "\n" + stderrText)
-            ActionExecutionResult(
-                ok,
-                result.value,
-                if (ok) result.message else (stdoutText + "\n" + stderrText).trim().take(300).takeIf { it.isNotBlank() }?.let { userText("feature.operation_failed", it) } ?: userText("feature.service_command_failed"),
-            )
+            val user = rawUserId.toInt()
+            val primary = feature.config.string("component").resolveVariables(ctx.variables).trim()
+            val extra = feature.config.string("components").resolveVariables(ctx.variables).lineSequence()
+                .map(String::trim).filter(String::isNotEmpty).toList()
+            val names = (listOf(primary).filter(String::isNotEmpty) + extra).distinct()
+            if (names.isEmpty() || names.size > 32 || (mode != "stop" && names.size != 1)) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.service_invalid_component"))
+            }
+            val intentAction = feature.config.string("intentAction").resolveVariables(ctx.variables).trim()
+            val dataUri = feature.config.string("dataUri").resolveVariables(ctx.variables).trim()
+            val commands = names.map { name ->
+                serviceControlCommand(name, user, mode, intentAction, dataUri)
+                    ?: return@registerAction ActionExecutionResult(false, message = userText("feature.service_invalid_command"))
+            }
+            var completed = 0
+            var lastValue: ConfigValue = ConfigValue.NullValue
+            for (command in commands) {
+                val result = shellResult(ctx, command)
+                val stdoutText = stdout(result)
+                val stderrText = ((result.value as? ConfigValue.ObjectValue)?.value?.get("stderr") as? ConfigValue.StringValue)?.value.orEmpty()
+                val output = (stdoutText + "\n" + stderrText).trim()
+                val ok = result.success && !serviceControlFailed(output)
+                if (!ok) {
+                    return@registerAction ActionExecutionResult(
+                        false, result.value,
+                        output.take(300).takeIf { it.isNotBlank() }?.let { userText("feature.operation_failed", it) }
+                            ?: userText("feature.service_command_failed"),
+                    )
+                }
+                completed++
+                lastValue = result.value
+            }
+            ActionExecutionResult(true, if (names.size == 1) lastValue else ConfigValue.NumberValue(completed.toDouble()))
         }
     }
 
@@ -455,7 +477,7 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
 }
 
 /** Restrict privileged commands to an explicit Android component and numeric user ID. */
-internal fun serviceControlCommand(component: String, userId: Int, mode: String): String? {
+internal fun serviceControlCommand(component: String, userId: Int, mode: String, action: String = "", dataUri: String = ""): String? {
     if (userId !in 0..999) return null
     if (!Regex("""[A-Za-z_][A-Za-z0-9_.]*\/[A-Za-z_.$][A-Za-z0-9_.$]*""").matches(component)) return null
     val verb = when (mode) {
@@ -464,7 +486,14 @@ internal fun serviceControlCommand(component: String, userId: Int, mode: String)
         "start_foreground" -> "start-foreground-service"
         else -> return null
     }
-    return "am " + verb + " --user " + userId + " -n '" + component + "'"
+    if (mode == "stop" && (action.isNotBlank() || dataUri.isNotBlank())) return null
+    if (action.isNotBlank() && !Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*").matches(action)) return null
+    if (dataUri.isNotBlank() && (!Regex("[A-Za-z][A-Za-z0-9+.-]*:.*").matches(dataUri) || dataUri.length > 2_048)) return null
+    val options = buildString {
+        if (action.isNotBlank()) append(" -a " + shellServiceArg(action))
+        if (dataUri.isNotBlank()) append(" -d " + shellServiceArg(dataUri))
+    }
+    return "am " + verb + " --user " + userId + " -n " + shellServiceArg(component) + options
 }
 
 /** 'am' can exit 0 yet report failure text. */
@@ -473,3 +502,5 @@ internal fun serviceControlFailed(output: String): Boolean {
     return listOf("error:", "securityexception", "permission denial", "not allowed",
         "not found", "does not exist", "unable to start", "exception occurred").any(normalized::contains)
 }
+
+private fun shellServiceArg(value: String): String = "'" + value.replace("'", "'\\''") + "'"

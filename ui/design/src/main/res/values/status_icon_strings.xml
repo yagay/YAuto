@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_status_icon_control_title">System status bar icon</string>
+    <string name="feature_android_status_icon_control_description">Show or remove a YAuto-owned status bar icon with an Android built-in symbol. Requires the LSPosed system bridge; some ROMs may reject the operation. Custom ShortX icon assets are not supported.</string>
+    <string name="feature_android_status_icon_control_field_mode">Operation</string>
+    <string name="feature_android_status_icon_control_field_mode_option_show">Show icon</string>
+    <string name="feature_android_status_icon_control_field_mode_option_remove">Remove icon</string>
+    <string name="feature_android_status_icon_control_field_slot">Icon slot</string>
+    <string name="feature_android_status_icon_control_field_icon">Built-in icon</string>
+    <string name="feature_android_status_icon_control_field_icon_option_info">Information</string>
+    <string name="feature_android_status_icon_control_field_icon_option_warning">Warning</string>
+    <string name="feature_android_status_icon_control_field_icon_option_lock">Lock</string>
+    <string name="feature_android_status_icon_control_field_icon_option_upload">Upload</string>
+    <string name="feature_android_status_icon_control_field_icon_option_save">Save</string>
+    <string name="runtime_feature_status_icon_bad_slot">Enter a valid icon slot with lowercase letters, digits or underscores.</string>
+    <string name="runtime_feature_status_icon_bad_operation">Choose a supported status icon operation and symbol.</string>
+</resources>

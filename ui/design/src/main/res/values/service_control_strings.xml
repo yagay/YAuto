@@ -7,6 +7,9 @@
     <string name="feature_android_service_control_field_mode_option_stop">Stop service</string>
     <string name="feature_android_service_control_field_mode_option_start_foreground">Start foreground service</string>
     <string name="feature_android_service_control_field_component">Service component</string>
+    <string name="feature_android_service_control_field_components">Additional services to stop (one per line)</string>
+    <string name="feature_android_service_control_field_intentaction">Start Intent action</string>
+    <string name="feature_android_service_control_field_datauri">Start Intent data URI</string>
     <string name="feature_android_service_control_field_userid">Android user ID</string>
     <string name="runtime_feature_service_invalid_component">Select an explicit Android service component, such as com.example.app/.SyncService.</string>
     <string name="runtime_feature_service_invalid_user">Select a valid Android user ID.</string>
