@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.mlkit.text.recognition)
     implementation("io.github.libxposed:service:102.0.0")
     debugImplementation(libs.compose.ui.tooling)
 }

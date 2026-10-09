@@ -81,6 +81,7 @@ object AndroidFeaturePacks {
         AndroidAudioFeaturePack(context),
         AndroidMediaTransportFeaturePack(context),
         AndroidMediaSessionEventFeaturePack(),
+        AndroidScreenshotContentFeaturePack(),
         AndroidSpeechFeaturePack(context),
         AndroidPlaybackFeaturePack(context),
         AndroidMediaCaptureFeaturePack(context),

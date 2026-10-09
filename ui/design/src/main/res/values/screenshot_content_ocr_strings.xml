@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_screenshot_content_title">Screenshot text detected</string>
+    <string name="feature_android_event_screenshot_content_description">Detect specified text through on-device screenshot OCR while this trigger is enabled. Checks roughly every 10 seconds, needs Accessibility, and may not read secure screens.</string>
+    <string name="feature_android_event_screenshot_content_field_textcontains">Text to detect</string>
+    <string name="feature_android_event_screenshot_content_field_ignorecase">Ignore letter case</string>
+</resources>

@@ -58,7 +58,9 @@ class SourceSemanticParityTests(unittest.TestCase):
 
     def test_macro_screenshot_content_and_spotify_are_not_generic_triggers(self):
         macro = MACRO_HINTS.read_text(encoding="utf-8")
-        self.assertIn('"ScreenshotContentTrigger" -> null', macro)
+        self.assertIn('"ScreenshotContentTrigger" -> "android.event.screenshot_content"', macro)
+        self.assertIn('FeatureId("android.event.screenshot_content")', (ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidScreenshotContentFeaturePack.kt").read_text(encoding="utf-8"))
+        self.assertIn('WorkspaceGatedEventSource(appGraph.workspace, setOf("android.event.screenshot_content"))', (ROOT / "app/src/main/kotlin/com/yagay/yauto/AutomationRuntimeService.kt").read_text(encoding="utf-8"))
         self.assertIn('"SpotifyTrigger" -> "android.event.spotify"', macro)
         self.assertIn('"ScreenTextAppearedTrigger" -> "android.event.screen_text_appeared"', macro)
         self.assertIn('"MediaTrackChangedTrigger" -> "android.event.media_track_changed"', macro)

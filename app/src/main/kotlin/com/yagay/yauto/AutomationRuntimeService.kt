@@ -98,6 +98,11 @@ class AutomationRuntimeService : Service() {
                 SpotifyBroadcastEventSource(this)
             }
         }
+        registerSource("screenshot-content-ocr") {
+            WorkspaceGatedEventSource(appGraph.workspace, setOf("android.event.screenshot_content")) {
+                ScreenshotContentOcrEventSource(appGraph.workspace)
+            }
+        }
         registerSource("media-store") { MediaStoreEventSource(this) }
         registerSource("http-server") { HttpServerEventSource() }
         registerSource("stopwatch") { StopwatchEventSource() }

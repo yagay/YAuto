@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_screenshot_content_title">截图文字检测</string>
+    <string name="feature_android_event_screenshot_content_description">通过本机 OCR 检查屏幕截图中的指定文字。仅在启用本触发器时约每 10 秒检查一次，需要无障碍服务；受保护画面可能无法读取。</string>
+    <string name="feature_android_event_screenshot_content_field_textcontains">要检测的文字</string>
+    <string name="feature_android_event_screenshot_content_field_ignorecase">忽略大小写</string>
+</resources>

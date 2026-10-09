@@ -280,8 +280,8 @@ object MacroDroidFeatureSuggestions {
         "QuickSettingsTileTrigger" -> "android.event.qs_tile"
         "RegularIntervalTrigger" -> "android.event.interval"
         "ScreenContentTrigger" -> "android.event.screen_content_changed"
-        // This requires a screenshot + OCR/image event source, not accessibility text changes.
-        "ScreenshotContentTrigger" -> null
+        // Screenshot OCR is a separate gated source, not an accessibility text-change event.
+        "ScreenshotContentTrigger" -> "android.event.screenshot_content"
         "ShareFileTrigger" -> "android.event.share_file_received"
         "ShareTextTrigger" -> "android.event.share_text_received"
         "ShortcutTrigger", "MacroDroidIconLongPressShortcutTrigger" -> "android.event.shortcut"

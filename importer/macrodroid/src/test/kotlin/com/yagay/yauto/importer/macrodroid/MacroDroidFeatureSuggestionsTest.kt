@@ -69,7 +69,7 @@ class MacroDroidFeatureSuggestionsTest {
     }
     @Test fun `screen OCR and Spotify triggers cannot silently become generic events`() {
         val mapper = MacroDroidFeatureSuggestions.mapper
-        assertNull(mapper.targetId("ScreenshotContentTrigger", SourceFeatureKind.EVENT))
+        assertEquals("android.event.screenshot_content", mapper.targetId("ScreenshotContentTrigger", SourceFeatureKind.EVENT))
         assertEquals("android.event.spotify", mapper.targetId("SpotifyTrigger", SourceFeatureKind.EVENT))
         assertEquals(
             "android.event.screen_text_appeared",

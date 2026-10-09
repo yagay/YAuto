@@ -13,9 +13,18 @@ Base: `refactor/macrodroid-on-1003-20261008`, commit `2ea18bec`.
 
 ## Still not equivalent
 
-Do not claim complete feature coverage or lossless task import without original exported rules and device-level verification. Important remaining work includes an actual arbitrary-process start mechanism, SystemUI icon/Chip controls, screenshot-content OCR trigger source, Spotify-specific filters, cropped screenshots, verified ShortX plug-in protocol, reversible 5G toggle and complete ShortX native protobuf decoding. Root/Shizuku/LSPosed capabilities require real-device verification.
+Do not claim complete feature coverage or lossless task import without original exported rules and device-level verification. Important remaining work includes an actual arbitrary-process start mechanism, SystemUI icon/Chip controls, Spotify-specific filters, cropped screenshots, verified ShortX plug-in protocol, reversible 5G toggle and complete ShortX native protobuf decoding. Root/Shizuku/LSPosed capabilities require real-device verification.
 
 No existing stable feature ID or saved task is migrated or overwritten. Unsupported source variants keep their original compatibility payload.
+
+## Next batch: actual screenshot-content OCR trigger
+
+- Registered `android.event.screenshot_content` with an explicit text query; this is **screen-image OCR**, not accessibility node text.
+- Gated the OCR source to workspaces containing enabled rules of this type; no polling without relevant enabled rules.
+- Every 10 seconds, when Accessibility screenshot access is available, YAuto recognizes text on-device with ML Kit. The source only emits events when a specific configured search text changes from absent to present. Changes to unrelated on-screen content do not retrigger matching rules.
+- Event payload contains the configured match and no complete OCR transcript, reducing leakage of other screen text into logs.
+- MacroDroid `ScreenshotContentTrigger` suggests this feature ID, while its original compatibility payload remains until all source parameters have been decoded losslessly.
+- Device permissions, OCR accuracy, protected/secure displays, power usage and Android background limits must be tested on real devices.
 
 ## Next batch: reversible 5G switch
 
