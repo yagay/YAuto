@@ -5,8 +5,8 @@ class VerifiedPickerMergeTests(unittest.TestCase):
     def test_only_proven_source_matched_actions_are_merged(self):
         report = audit(SPEC.read_text(encoding="utf-8"), csv_rows(APPROVED))
         self.assertEqual(report["errors"], [])
-        self.assertEqual(report["approved_merged_picker_entries"], 3)
-        self.assertEqual(report["approved_concrete_feature_ids"], 6)
+        self.assertEqual(report["approved_merged_picker_entries"], 14)
+        self.assertEqual(report["approved_concrete_feature_ids"], 31)
 
     def test_unverified_merge_is_rejected(self):
         source = SPEC.read_text(encoding="utf-8")
@@ -29,8 +29,15 @@ class VerifiedPickerMergeTests(unittest.TestCase):
     def test_cross_kind_conditions_and_triggers_never_merge_by_name(self):
         all_members = [feature for group in published_groups(SPEC.read_text(encoding="utf-8"))
                        for feature in group["members"]]
-        self.assertFalse(any(".event." in k or ".condition." in k or ".state." in k for k in all_members))
+        self.assertFalse(any(".condition." in k or ".state." in k for k in all_members))
         self.assertFalse(any("android.audio.volume." in k for k in all_members))
+
+    def test_macro_apk_sources_are_declared_with_mode_fields(self):
+        report = audit(SPEC.read_text(encoding="utf-8"), csv_rows(APPROVED))
+        modes = [r for r in report["evidence"] if r["source"] == "macrodroid_apk"]
+        self.assertEqual(len(modes), 11)
+        self.assertTrue(all(row["source_key"].startswith("assets/ai/") and row["option_field"]
+                            for row in modes))
 
     def test_feature_resource_key_matches_reviewed_apk_rows(self):
         self.assertEqual(feature_key("android.screen.screenshot"),

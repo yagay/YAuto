@@ -47,3 +47,20 @@ python3 tools/audit_verified_picker_merges.py --fail-on-unsafe
 
 这套规则刻意采用保守默认策略：**缺少来源证据时不合并**。因此操作列表比以前多，但每个选项含义明确，
 不会将 MacroDroid 本应分开的独立动作藏进同一个大杂烩菜单。
+
+## MacroDroid 5.67.8 APK 提供的结构化证据
+
+MacroDroid APK 内 `assets/ai/actions/*.yaml` 和 `assets/ai/triggers/*.yaml` 明确指出
+不同操作属于同一个 Action/Trigger 的可配置模式（不是把相同大分类当成一个菜单）。
+现增加 11 个有 `option_field` 的已审核合并入口，包括：秒表、文件操作、振动、重启/关机、
+录像启停、录音启停、亮屏/息屏、应用安装/卸载/更新、通知收到/清除、电源连接/断开、Wi-Fi 开关/连接。
+
+要复核原始 APK 源依据，传入本地 MacroDroid APK：
+
+```sh
+python3 tools/audit_verified_picker_merges.py --fail-on-unsafe \\
+  --macrodroid-apk /path/to/MacroDroid_5.67.8.apk
+```
+
+这会核对每项在 APK 内的 YAML 是否真实存在，以及对应模式字段是否确实出现。
+没找到等价操作模式的功能继续独立展示；此项审计不改变保存的具体功能 ID。

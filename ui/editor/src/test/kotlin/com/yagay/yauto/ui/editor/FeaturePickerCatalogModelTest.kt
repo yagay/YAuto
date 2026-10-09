@@ -28,15 +28,18 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test fun `verified merges use upstream identical feature names and stable IDs`() {
-        assertEquals(setOf("clipboard_write", "clipboard_read", "screenshot_capture"),
-            UNIFIED_FEATURE_SPECS.map { it.id }.toSet())
+        assertEquals(14, UNIFIED_FEATURE_SPECS.size)
+        assertTrue(UNIFIED_FEATURE_SPECS.map { it.id }.containsAll(
+            listOf("clipboard_write", "clipboard_read", "screenshot_capture",
+                "stopwatch", "file_operations", "device_power", "audio_recording",
+                "screen_power_events", "package_install_events", "notification_received_cleared")))
         assertEquals(listOf("android.clipboard.set", "android.clipboard.write"),
             UNIFIED_FEATURE_SPECS.single { it.id == "clipboard_write" }.memberIds)
         assertEquals(listOf("android.clipboard.get", "android.clipboard.read"),
             UNIFIED_FEATURE_SPECS.single { it.id == "clipboard_read" }.memberIds)
         assertEquals(listOf("android.screen.screenshot", "android.screenshot.capture"),
             UNIFIED_FEATURE_SPECS.single { it.id == "screenshot_capture" }.memberIds)
-        assertEquals(6, UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct().size)
+        assertEquals(31, UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct().size)
     }
 
     @Test fun `independent MacroDroid volume actions are separate picker options`() {
@@ -63,6 +66,26 @@ class FeaturePickerCatalogModelTest {
         val model = build(ids, FeatureKind.CONDITION)
         assertEquals(4, model.entries(PickerPage.Features(app), emptySet(), emptyList(), "").size)
         ids.forEach { assertNull(model.unifiedGroupForMember(it)) }
+    }
+
+    @Test fun `one MacroDroid file operation has multiple selected modes`() {
+        val ids = listOf("file.copy", "file.move", "file.delete", "file.mkdir", "file.list")
+        val model = build(ids)
+        val family = (model.entries(PickerPage.Features(app), emptySet(), emptyList(), "")
+            .single() as FeaturePickerListEntry.Unified).group
+        assertEquals("file_operations", family.spec.id)
+        assertEquals(ids.toSet(), family.members.map { it.descriptor.id.value }.toSet())
+    }
+
+    @Test fun `MacroDroid combined notification trigger is distinct from notification updates`() {
+        val ids = listOf("android.event.notification_posted",
+            "android.event.notification_removed", "android.event.notification_updated")
+        val model = build(ids, FeatureKind.EVENT)
+        val entries = model.entries(PickerPage.Features(app), emptySet(), emptyList(), "")
+        assertEquals(2, entries.size)
+        assertTrue(entries.any { it is FeaturePickerListEntry.Unified })
+        assertTrue(entries.any { it is FeaturePickerListEntry.Feature &&
+            it.item.descriptor.id.value == "android.event.notification_updated" })
     }
 
     @Test fun `independent system event triggers are not hidden in family menus`() {

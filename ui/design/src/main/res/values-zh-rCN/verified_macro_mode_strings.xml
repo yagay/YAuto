@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_stopwatch">秒表</string>
+    <string name="verified_family_stopwatch_subtitle">开始、暂停或重置秒表</string>
+    <string name="verified_family_file_operations">文件操作</string>
+    <string name="verified_family_file_operations_subtitle">复制、移动、删除、创建文件夹或列出文件</string>
+    <string name="verified_family_vibration_pattern">振动</string>
+    <string name="verified_family_vibration_pattern_subtitle">简单振动或选择振动模式</string>
+    <string name="verified_family_device_power">重启或关机</string>
+    <string name="verified_family_device_power_subtitle">选择重启或关机</string>
+    <string name="verified_family_camera_video">视频录制</string>
+    <string name="verified_family_camera_video_subtitle">开始或停止摄像头录像</string>
+    <string name="verified_family_audio_recording">麦克风录音</string>
+    <string name="verified_family_audio_recording_subtitle">开始或停止麦克风录音</string>
+    <string name="verified_family_screen_power_events">屏幕亮起或关闭</string>
+    <string name="verified_family_screen_power_events_subtitle">选择亮屏或息屏事件</string>
+    <string name="verified_family_package_install_events">应用安装变化</string>
+    <string name="verified_family_package_install_events_subtitle">应用安装、卸载或更新</string>
+    <string name="verified_family_notification_received_cleared">通知收到或清除</string>
+    <string name="verified_family_notification_received_cleared_subtitle">选择收到通知或通知被清除</string>
+    <string name="verified_family_power_connection_events">电源连接或断开</string>
+    <string name="verified_family_power_connection_events_subtitle">选择电源连接或断开事件</string>
+    <string name="verified_family_wifi_control">Wi-Fi 控制</string>
+    <string name="verified_family_wifi_control_subtitle">开关 Wi-Fi 或连接到网络</string>
+</resources>

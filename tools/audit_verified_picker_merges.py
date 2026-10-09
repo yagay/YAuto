@@ -10,6 +10,7 @@ import argparse
 import csv
 import json
 import re
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,22 +62,34 @@ def audit(spec: str, approval_rows: list[dict]) -> dict:
             errors.append(f"Duplicate approval {group_id}")
         if len(member_ids) < 2 or len(member_ids) != len(set(member_ids)):
             errors.append(f"Invalid members for {group_id}")
-        if row["kind"] != "action":
-            errors.append(f"Unexpected feature kind in {group_id}: {row['kind']}")
-        if row["source"] not in {"macrodroid", "shortx"}:
+        if row["kind"] not in {"action", "event"}:
+            errors.append(f"Unsupported picker kind in {group_id}: {row['kind']}")
+        if row["source"] not in {"macrodroid", "shortx", "macrodroid_apk"}:
             errors.append(f"Invalid upstream source for {group_id}")
             continue
-        sources = upstream_pairs(row["source"])
+        if row["source"] == "macrodroid_apk":
+            if not row["source_key"].startswith("assets/ai/") or not row["source_key"].endswith(".yaml"):
+                errors.append(f"Invalid MacroDroid asset in {group_id}")
+            if not row.get("option_field"):
+                errors.append(f"Missing MacroDroid option field in {group_id}")
+        elif row.get("option_field"):
+            errors.append(f"An upstream title key must not have an APK mode field: {group_id}")
+        sources = upstream_pairs(row["source"]) if row["source"] != "macrodroid_apk" else {}
         for member in member_ids:
             if member in all_mapped_ids:
                 errors.append(f"Feature merged into multiple picker entries: {member}")
             all_mapped_ids.add(member)
-            upstream = sources.get(feature_key(member))
-            if upstream != row["source_key"]:
-                errors.append(
-                    f"{group_id}: {member} matches {upstream!r}, "
-                    f"not {row['source']}:{row['source_key']}"
-                )
+            derived_kind = ("event" if ".event." in member else "condition" if ".condition." in member
+                            else "state" if ".state." in member else "action")
+            if derived_kind != row["kind"]:
+                errors.append(f"Mixed feature kinds in {group_id}: {member}")
+            if row["source"] != "macrodroid_apk":
+                upstream = sources.get(feature_key(member))
+                if upstream != row["source_key"]:
+                    errors.append(
+                        f"{group_id}: {member} matches {upstream!r}, "
+                        f"not {row['source']}:{row['source_key']}"
+                    )
         declared[group_id] = member_ids
     for group in groups:
         if group["group_id"] not in declared:
@@ -103,12 +116,36 @@ def audit(spec: str, approval_rows: list[dict]) -> dict:
         "note": "Other operations are independent picker options. IDs, categories and runtime behavior are untouched.",
     }
 
+def verify_macro_apk_sources(approval_rows: list[dict], apk_path: Path) -> list[str]:
+    """Validate reviewed action/trigger YAML source and mode fields in MacroDroid APK."""
+    errors = []
+    with zipfile.ZipFile(apk_path) as apk:
+        for row in approval_rows:
+            if row["source"] != "macrodroid_apk":
+                continue
+            asset = row["source_key"]
+            try:
+                yaml = apk.read(asset).decode("utf-8")
+            except KeyError:
+                errors.append(f"Missing source YAML in MacroDroid APK: {asset}")
+                continue
+            option = re.escape(row["option_field"])
+            if not re.search(rf"(?m)^\\s*{option}\\??:", yaml):
+                errors.append(f"Missing option {row['option_field']} in {asset}")
+    return errors
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--output", default="build/reports/verified_picker_merges.json")
     ap.add_argument("--fail-on-unsafe", action="store_true")
+    ap.add_argument("--macrodroid-apk", type=Path, help="Optional MacroDroid APK to verify YAML modes")
     args = ap.parse_args()
-    result = audit(SPEC.read_text(encoding="utf-8"), csv_rows(APPROVED))
+    evidence = csv_rows(APPROVED)
+    result = audit(SPEC.read_text(encoding="utf-8"), evidence)
+    if args.macrodroid_apk:
+        result["errors"].extend(verify_macro_apk_sources(evidence, args.macrodroid_apk))
+        result["apk_verified"] = str(args.macrodroid_apk)
     destination = ROOT / args.output
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

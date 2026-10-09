@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_stopwatch">Stopwatch</string>
+    <string name="verified_family_stopwatch_subtitle">Start, pause or reset one stopwatch</string>
+    <string name="verified_family_file_operations">File operations</string>
+    <string name="verified_family_file_operations_subtitle">Copy, move, delete, make folder or list files</string>
+    <string name="verified_family_vibration_pattern">Vibration</string>
+    <string name="verified_family_vibration_pattern_subtitle">Use a simple vibration or choose a pattern</string>
+    <string name="verified_family_device_power">Reboot or power off</string>
+    <string name="verified_family_device_power_subtitle">Choose reboot or power off</string>
+    <string name="verified_family_camera_video">Video recording</string>
+    <string name="verified_family_camera_video_subtitle">Start or stop camera video recording</string>
+    <string name="verified_family_audio_recording">Microphone recording</string>
+    <string name="verified_family_audio_recording_subtitle">Start or stop a microphone recording</string>
+    <string name="verified_family_screen_power_events">Screen on or off</string>
+    <string name="verified_family_screen_power_events_subtitle">Select the screen-on or screen-off event</string>
+    <string name="verified_family_package_install_events">App installation changes</string>
+    <string name="verified_family_package_install_events_subtitle">App installed, uninstalled or updated</string>
+    <string name="verified_family_notification_received_cleared">Notification received or cleared</string>
+    <string name="verified_family_notification_received_cleared_subtitle">Select notification received or cleared</string>
+    <string name="verified_family_power_connection_events">Power connected or disconnected</string>
+    <string name="verified_family_power_connection_events_subtitle">Select charging power connected or removed</string>
+    <string name="verified_family_wifi_control">Wi-Fi control</string>
+    <string name="verified_family_wifi_control_subtitle">Turn Wi-Fi on/off or connect to a network</string>
+</resources>
