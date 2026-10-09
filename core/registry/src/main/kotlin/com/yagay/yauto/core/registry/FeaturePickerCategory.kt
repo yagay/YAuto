@@ -122,6 +122,15 @@ fun inferFeaturePickerCategory(
             FeatureKind.EVENT -> FeaturePickerCategory.CONNECTIVITY
         }
 
+        // Android MediaStore indexing/query is a file/data operation, not audio playback.
+        // Put this BEFORE the generic '.media' keyword rule; the entire family is supported.
+        has(".media_store", "media_store", "media_provider", "media_scanner", "document_tree") ->
+            when (kind) {
+                FeatureKind.ACTION -> FeaturePickerCategory.FILES
+                FeatureKind.EVENT -> FeaturePickerCategory.DEVICE_EVENTS
+                FeatureKind.STATE, FeatureKind.CONDITION -> FeaturePickerCategory.DEVICE_STATE
+            }
+
         // Logging is a first-class MacroDroid category rather than a script/command subtype.
         has(
             ".logcat", ".dumpsys", ".log.write", ".log.export", ".system_log",

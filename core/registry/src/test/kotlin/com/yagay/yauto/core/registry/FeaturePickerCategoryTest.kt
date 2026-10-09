@@ -14,6 +14,8 @@ class FeaturePickerCategoryTest {
             "android.calendar.event.delete" to FeaturePickerCategory.DATE_TIME,
             "android.media_store.query" to FeaturePickerCategory.FILES,
             "android.media_store.update" to FeaturePickerCategory.FILES,
+            "android.media_store.audio.query" to FeaturePickerCategory.FILES,
+            "android.media_store.video.index" to FeaturePickerCategory.FILES,
         )
         val constraints = mapOf(
             "android.condition.audio.speakerphone" to FeaturePickerCategory.MEDIA,
@@ -21,6 +23,11 @@ class FeaturePickerCategoryTest {
             "android.condition.audio.stream_volume" to FeaturePickerCategory.MEDIA,
             "android.condition.media_volume" to FeaturePickerCategory.MEDIA,
             "android.condition.media_store_available" to FeaturePickerCategory.DEVICE_STATE,
+            "android.condition.media_store.index_ready" to FeaturePickerCategory.DEVICE_STATE,
+        )
+        assertEquals(
+            FeaturePickerCategory.DEVICE_EVENTS,
+            classify("android.event.media_provider_changed", FeatureKind.EVENT),
         )
         actions.forEach { (id, expected) ->
             assertEquals(id, expected, classify(id, FeatureKind.ACTION))
