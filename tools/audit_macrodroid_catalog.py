@@ -48,7 +48,7 @@ def main():
         and key in en
         and value == en[key][0]
         and re.search(r"[A-Za-z]{3}", value)
-        and not re.search(r"[\\u4e00-\\u9fff]", value)
+        and not re.search(r"[\u4e00-\u9fff]", value)
     )
     english_copy_phrases = sorted(
         key for key, (value, _) in zh.items()
@@ -56,7 +56,7 @@ def main():
         and key in en
         and value == en[key][0]
         and re.search(r"[A-Za-z]{3}", value)
-        and not re.search(r"[\\u4e00-\\u9fff]", value)
+        and not re.search(r"[\u4e00-\u9fff]", value)
     )
     # Only intentionally language-neutral terms may remain untranslated in the
     # expansion vocabulary. A named allowlist prevents newly added English defaults
