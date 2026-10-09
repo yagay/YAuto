@@ -41,6 +41,10 @@ jobs:
         run: |
           python3 -m unittest discover -s tools -p 'test_aosp_terms.py'
           python3 tools/audit_aosp_terms.py --output build/reports/aosp_terminology_audit.json
+      - name: Verified picker merge audit
+        run: |
+          python3 -m unittest discover -s tools -p 'test_verified_picker_merges.py'
+          python3 tools/audit_verified_picker_merges.py --fail-on-unsafe
       - name: Feature name collision audit
         run: |
           python3 -m unittest discover -s tools -p 'test_feature_name_collisions.py'
@@ -96,6 +100,7 @@ jobs:
           path: |
             build/reports/aosp_terminology_audit.json
             build/reports/feature_name_collisions.json
+            build/reports/verified_picker_merges.json
           if-no-files-found: warn
 
       - name: Normalize APK name

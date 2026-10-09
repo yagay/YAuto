@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_clipboard_write">写入剪贴板</string>
+    <string name="verified_family_clipboard_write_subtitle">两种实现使用 MacroDroid 同一剪贴板写入动作</string>
+    <string name="verified_family_clipboard_read">读取剪贴板</string>
+    <string name="verified_family_clipboard_read_subtitle">两种实现对应 ShortX 同一剪贴板读取动作</string>
+    <string name="verified_family_screenshot_capture">截取屏幕</string>
+    <string name="verified_family_screenshot_capture_subtitle">两种实现对应 MacroDroid 同一截屏动作</string>
+</resources>

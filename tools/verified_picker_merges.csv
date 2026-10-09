@@ -1,0 +1,4 @@
+group_id,source,source_key,kind,member_ids
+clipboard_write,macrodroid,action_clipboard,action,android.clipboard.set|android.clipboard.write
+clipboard_read,shortx,ui.action.read.clipboard,action,android.clipboard.get|android.clipboard.read
+screenshot_capture,macrodroid,action_take_screenshot,action,android.screen.screenshot|android.screenshot.capture

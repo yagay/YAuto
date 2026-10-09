@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_clipboard_write">Write clipboard</string>
+    <string name="verified_family_clipboard_write_subtitle">Two implementations of one verified MacroDroid clipboard action</string>
+    <string name="verified_family_clipboard_read">Read clipboard</string>
+    <string name="verified_family_clipboard_read_subtitle">Two implementations of one verified ShortX clipboard action</string>
+    <string name="verified_family_screenshot_capture">Take screenshot</string>
+    <string name="verified_family_screenshot_capture_subtitle">Two implementations of one verified MacroDroid screenshot action</string>
+</resources>
