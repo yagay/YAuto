@@ -84,14 +84,14 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
         ) { feature, ctx ->
             val parsed = ComponentName.unflattenFromString(
                 feature.config.string("component").resolveVariables(ctx.variables).trim()
-            ) ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Invalid service component"))
+            ) ?: return@registerAction ActionExecutionResult(false, message = userText("feature.service_invalid_component"))
             val rawUserId = feature.config["userId"].numberOrNull() ?: 0.0
             if (!rawUserId.isFinite() || rawUserId % 1.0 != 0.0 || rawUserId !in 0.0..999.0) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Invalid Android user ID"))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.service_invalid_user"))
             }
             val mode = feature.config.string("mode", "stop")
             val command = serviceControlCommand(parsed.flattenToString(), rawUserId.toInt(), mode)
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Invalid service command"))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.service_invalid_command"))
             val result = shellResult(ctx, command)
             val stdoutText = stdout(result)
             val stderrText = ((result.value as? ConfigValue.ObjectValue)?.value?.get("stderr") as? ConfigValue.StringValue)?.value.orEmpty()
@@ -99,7 +99,7 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
             ActionExecutionResult(
                 ok,
                 result.value,
-                if (ok) result.message else userText("feature.operation_failed", (stdoutText + "\n" + stderrText).trim().take(300).ifBlank { "Service command failed" }),
+                if (ok) result.message else (stdoutText + "\n" + stderrText).trim().take(300).takeIf { it.isNotBlank() }?.let { userText("feature.operation_failed", it) } ?: userText("feature.service_command_failed"),
             )
         }
     }

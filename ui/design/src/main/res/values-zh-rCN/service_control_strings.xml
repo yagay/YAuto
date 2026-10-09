@@ -8,4 +8,8 @@
     <string name="feature_android_service_control_field_mode_option_start_foreground">启动前台服务</string>
     <string name="feature_android_service_control_field_component">服务组件</string>
     <string name="feature_android_service_control_field_userid">Android 用户 ID</string>
+    <string name="runtime_feature_service_invalid_component">请选择明确的 Android 服务组件，例如 com.example.app/.SyncService。</string>
+    <string name="runtime_feature_service_invalid_user">请选择有效的 Android 用户 ID。</string>
+    <string name="runtime_feature_service_invalid_command">请选择有效的服务操作和组件。</string>
+    <string name="runtime_feature_service_command_failed">Android 未确认服务操作成功。</string>
 </resources>
