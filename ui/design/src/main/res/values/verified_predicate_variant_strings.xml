@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variant_android_condition_music_active">Music activity check</string>
+    <string name="feature_variant_android_state_music_active">Music activity check</string>
+    <string name="feature_variant_android_condition_audio_music_active">Audio playback activity check</string>
+    <string name="feature_variant_android_state_audio_music_active">Audio playback activity check</string>
+    <string name="feature_variant_android_condition_orientation">Standard orientation check</string>
+    <string name="feature_variant_android_state_orientation">Standard orientation check</string>
+    <string name="feature_variant_android_condition_reference_orientation">Extended orientation check</string>
+    <string name="feature_variant_android_state_reference_orientation">Extended orientation check</string>
+</resources>

@@ -82,6 +82,10 @@ private fun UnifiedFeatureSelector(
     selectedItem: FeaturePickerCatalogItem,
     onSelect: (FeaturePickerCatalogItem) -> Unit,
 ) {
+    val textResolver = rememberFeatureTextResolver()
+    fun methodLabel(item: FeaturePickerCatalogItem): String =
+        textResolver.implementationLabel(item.descriptor.id.value) ?: item.title
+
     var expanded by remember(group.spec.id, selectedItem.descriptor.id.value) {
         mutableStateOf(false)
     }
@@ -106,7 +110,7 @@ private fun UnifiedFeatureSelector(
                     onClick = { expanded = true },
                 ) {
                     Text(
-                        text = selectedItem.title,
+                        text = methodLabel(selectedItem),
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.padding(horizontal = 4.dp))
@@ -124,7 +128,7 @@ private fun UnifiedFeatureSelector(
                         DropdownMenuItem(
                             text = {
                                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(item.title)
+                                    Text(methodLabel(item))
                                     if (item.description.isNotBlank() && item.description != item.title) {
                                         Text(
                                             text = item.description,

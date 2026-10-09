@@ -56,6 +56,10 @@ internal class FeatureTextResolver(private val context: Context) {
                 ?: genericTitle(descriptor)
         }
 
+    /** A mode parameter label, not a new or numbered feature title. */
+    fun implementationLabel(featureId: String): String? =
+        resource("feature_variant_${resourceKey(featureId)}")
+
     fun description(descriptor: FeatureDescriptor): String =
         descriptionCache.getOrPut(descriptor.id.value) {
             resource("feature_${resourceKey(descriptor.id.value)}_description")

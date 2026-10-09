@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variant_android_condition_music_active">音乐活动检测</string>
+    <string name="feature_variant_android_state_music_active">音乐活动检测</string>
+    <string name="feature_variant_android_condition_audio_music_active">音频播放活动检测</string>
+    <string name="feature_variant_android_state_audio_music_active">音频播放活动检测</string>
+    <string name="feature_variant_android_condition_orientation">常规方向检测</string>
+    <string name="feature_variant_android_state_orientation">常规方向检测</string>
+    <string name="feature_variant_android_condition_reference_orientation">扩展方向检测</string>
+    <string name="feature_variant_android_state_reference_orientation">扩展方向检测</string>
+</resources>
