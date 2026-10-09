@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Purpose and permission rationale is specialized by concrete feature description, kind, and backend. -->
+<resources>
+    <string name="feature_backend_auto_action_format">This action performs “%1$s”. Automatic mode selects an available supported backend at runtime; it does not itself grant Root, Shizuku, or any other access.</string>
+    <string name="feature_backend_auto_event_format">This trigger observes “%1$s”. Automatic mode selects an available supported event path; the selected path still needs its own access.</string>
+    <string name="feature_backend_auto_condition_format">This condition checks “%1$s”. Automatic mode uses an available check path; the data it can inspect depends on that backend's permissions.</string>
+    <string name="feature_backend_auto_state_format">This state reads “%1$s”. Automatic mode selects an available state-reading path; it cannot bypass Android access controls by itself.</string>
+    <string name="feature_backend_root_action_format">To perform “%1$s”, the Root backend executes the privileged steps through su. YAuto must be authorized by the Root manager.</string>
+    <string name="feature_backend_root_event_format">To observe “%1$s”, the Root backend uses privileged access to event sources that ordinary apps may not read. su access is required.</string>
+    <string name="feature_backend_root_condition_format">To check “%1$s”, the Root backend reads restricted system information via su; ordinary app permissions alone may not suffice.</string>
+    <string name="feature_backend_root_state_format">To read “%1$s”, the Root backend accesses the relevant privileged system state. Root-manager authorization is required.</string>
+    <string name="feature_backend_shizuku_action_format">To perform “%1$s”, the Shizuku backend runs the relevant system command with the service's shell identity, not unrestricted Root access.</string>
+    <string name="feature_backend_shizuku_event_format">To observe “%1$s”, the Shizuku backend uses shell-level access to the required event source; its service must remain running.</string>
+    <string name="feature_backend_shizuku_condition_format">To check “%1$s”, the Shizuku backend queries the required system information as shell; shell restrictions still apply.</string>
+    <string name="feature_backend_shizuku_state_format">To read “%1$s”, the Shizuku backend queries the corresponding system state as shell; available data depends on Android shell privileges.</string>
+    <string name="feature_backend_lsposed_action_format">To perform “%1$s”, the LSPosed backend uses Hooks in the scoped target process for the relevant system or app call; the correct scope is essential.</string>
+    <string name="feature_backend_lsposed_event_format">To observe “%1$s”, the LSPosed backend hooks events in the selected target process; enable the module and the appropriate scope.</string>
+    <string name="feature_backend_lsposed_condition_format">To check “%1$s”, the LSPosed backend uses Hooks to inspect the corresponding internal state; scope and OS version matter.</string>
+    <string name="feature_backend_lsposed_state_format">To read “%1$s”, the LSPosed backend obtains state accessible through scoped process Hooks, not unrestricted access to all app data.</string>
+    <string name="feature_backend_accessibility_action_format">To perform “%1$s”, the Accessibility backend uses accessible UI nodes or Android accessibility actions; the YAuto service must be enabled.</string>
+    <string name="feature_backend_accessibility_event_format">To observe “%1$s”, the Accessibility backend listens for UI events exposed to the service; unavailable events cannot be detected.</string>
+    <string name="feature_backend_accessibility_condition_format">To check “%1$s”, the Accessibility backend inspects accessible UI state; controls hidden from the service may not be detectable.</string>
+    <string name="feature_backend_accessibility_state_format">To read “%1$s”, the Accessibility backend uses information accessible to the service in the current UI, not privileged system reads.</string>
+    <string name="feature_backend_usage_stats_action_format">For “%1$s”, Usage Access provides app-usage or foreground-activity records only; it cannot itself perform protected system actions.</string>
+    <string name="feature_backend_usage_stats_event_format">To observe “%1$s”, Usage Access relies on Android usage records rather than real-time Accessibility events.</string>
+    <string name="feature_backend_usage_stats_condition_format">To check “%1$s”, Usage Access queries Android's app-usage records; recording latency can affect results.</string>
+    <string name="feature_backend_usage_stats_state_format">To read “%1$s”, Usage Access queries permitted Android usage state, not private internal state of every app.</string>
+    <string name="feature_backend_root_limitation">Note: Root access is highly privileged; results still depend on the device, Android version, and command involved.</string>
+    <string name="feature_backend_shizuku_limitation">Note: shell is more restricted than Root, so some operations may fail; Shizuku may need restarting after reboot.</string>
+    <string name="feature_backend_lsposed_limitation">Note: Hook scope and Android/ROM versions affect results; changing Hooks can require restarting the target process.</string>
+    <string name="feature_backend_accessibility_limitation">Note: UI accessibility can be limited with the screen off, hidden controls, or custom-rendered app interfaces.</string>
+    <string name="feature_backend_usage_stats_limitation">Note: usage records may lag and do not expose complete screen content or privileged control.</string>
+    <string name="feature_backend_auto_paths_format">Supported alternative permission paths (grant only those you use): %1$s</string>
+    <string name="feature_backend_additional_requirements_format">Other feature-declared access: %1$s</string>
+</resources>
