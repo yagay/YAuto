@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_display_android_condition_data_saver_title">Data Saver mode</string>
+    <string name="feature_display_android_state_data_saver_title">Data Saver mode</string>
+    <string name="feature_display_android_condition_data_saver_status_title">Background data restriction status</string>
+    <string name="feature_display_android_state_data_saver_status_title">Background data restriction status</string>
+</resources>

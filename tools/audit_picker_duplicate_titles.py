@@ -41,11 +41,15 @@ def effective_titles(resources: dict[str, str]) -> dict[str, str]:
     return {key: data[1] for key, data in candidates.items()}
 
 def kind(feature: str) -> str:
-    for tag, role in (("android_event_", "trigger"), ("android_state_", "state"),
-                      ("android_condition_", "constraint")):
-        if feature.startswith(tag):
-            return role
+    if feature.startswith("android_event_") or "_event_" in feature: return "trigger"
+    if feature.startswith("android_condition_") or "_condition_" in feature or feature.endswith("_condition"): return "constraint"
+    if feature.startswith("android_state_") or "_state_" in feature or feature.endswith("_state"): return "state"
     return "action"
+
+def approved_members() -> list[set[str]]:
+    from audit_verified_picker_merges import APPROVED, csv_rows
+    return [set(part.replace(".", "_") for part in r["member_ids"].split("|"))
+            for r in csv_rows(APPROVED)]
 
 def inspect(titles: dict[str,str]) -> dict:
     resolved = effective_titles(titles)
@@ -57,9 +61,15 @@ def inspect(titles: dict[str,str]) -> dict:
         for (role,title),ids in same.items() if len(ids)>1
     ]
     candidates.sort(key=lambda x:(-len(x["feature_ids"]), x["kind"],x["title"]))
+    approvals = approved_members()
+    for group in candidates:
+        ids = set(group["feature_ids"])
+        group["approved_as_one_parameterized_entry"] = any(ids <= approved for approved in approvals)
+    unresolved = [row for row in candidates if not row["approved_as_one_parameterized_entry"]]
     return {
         "resource_feature_titles":len(resolved),
         "possible_same_kind_duplicate_groups":len(candidates),
+        "unresolved_candidate_groups":len(unresolved),
         "groups":candidates,
     }
 
@@ -78,8 +88,9 @@ def main() -> int:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print(f"Picker title candidates: en {en['possible_same_kind_duplicate_groups']}, "
-          f"zh-CN {zh['possible_same_kind_duplicate_groups']}")
-    for row in zh["groups"][:12]:
+          f"zh-CN {zh['possible_same_kind_duplicate_groups']}; "
+          f"unresolved zh-CN {zh['unresolved_candidate_groups']}")
+    for row in (r for r in zh["groups"] if not r["approved_as_one_parameterized_entry"]):
         print(f"  {row['kind']} / {row['title']}: {', '.join(row['feature_ids'])}")
     print(f"Review report: {output}")
     return 0
