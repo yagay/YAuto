@@ -23,3 +23,5 @@ battery_voltage_condition,yauto_code,BatteryManager.EXTRA_VOLTAGE,condition,andr
 battery_voltage_state,yauto_code,BatteryManager.EXTRA_VOLTAGE,state,android.state.battery_voltage|android.state.reference.battery_voltage_mv,
 font_scale_condition,yauto_code,context.resources.configuration.fontScale,condition,android.condition.font_scale|android.condition.reference.font_scale,
 font_scale_state,yauto_code,context.resources.configuration.fontScale,state,android.state.font_scale|android.state.reference.font_scale,
+audio_mode_condition,yauto_code,audio.mode,condition,android.condition.audio.mode|android.condition.reference.audio_mode,
+audio_mode_state,yauto_code,audio.mode,state,android.state.audio.mode|android.state.reference.audio_mode,

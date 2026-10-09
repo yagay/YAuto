@@ -5,8 +5,8 @@ class VerifiedPickerMergeTests(unittest.TestCase):
     def test_only_proven_source_matched_actions_are_merged(self):
         report = audit(SPEC.read_text(encoding="utf-8"), csv_rows(APPROVED))
         self.assertEqual(report["errors"], [])
-        self.assertEqual(report["approved_merged_picker_entries"], 24)
-        self.assertEqual(report["approved_concrete_feature_ids"], 53)
+        self.assertEqual(report["approved_merged_picker_entries"], 26)
+        self.assertEqual(report["approved_concrete_feature_ids"], 57)
 
     def test_unverified_merge_is_rejected(self):
         source = SPEC.read_text(encoding="utf-8")
@@ -39,6 +39,12 @@ class VerifiedPickerMergeTests(unittest.TestCase):
         self.assertEqual(len(modes), 11)
         self.assertTrue(all(row["source_key"].startswith("assets/ai/") and row["option_field"]
                             for row in modes))
+
+    def test_audio_mode_parameters_have_same_android_api_evidence(self):
+        rows = csv_rows(APPROVED)
+        audio = [r for r in rows if r["group_id"].startswith("audio_mode_")]
+        self.assertEqual({r["kind"] for r in audio}, {"condition", "state"})
+        self.assertTrue(all(r["source"] == "yauto_code" and r["source_key"] == "audio.mode" for r in audio))
 
     def test_feature_resource_key_matches_reviewed_apk_rows(self):
         self.assertEqual(feature_key("android.screen.screenshot"),

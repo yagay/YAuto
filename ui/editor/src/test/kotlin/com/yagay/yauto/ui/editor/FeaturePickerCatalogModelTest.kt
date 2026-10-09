@@ -28,7 +28,7 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test fun `verified merges use upstream identical feature names and stable IDs`() {
-        assertEquals(24, UNIFIED_FEATURE_SPECS.size)
+        assertEquals(26, UNIFIED_FEATURE_SPECS.size)
         assertTrue(UNIFIED_FEATURE_SPECS.map { it.id }.containsAll(
             listOf("clipboard_write", "clipboard_read", "screenshot_capture",
                 "stopwatch", "file_operations", "device_power", "audio_recording",
@@ -39,7 +39,7 @@ class FeaturePickerCatalogModelTest {
             UNIFIED_FEATURE_SPECS.single { it.id == "clipboard_read" }.memberIds)
         assertEquals(listOf("android.screen.screenshot", "android.screenshot.capture"),
             UNIFIED_FEATURE_SPECS.single { it.id == "screenshot_capture" }.memberIds)
-        assertEquals(53, UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct().size)
+        assertEquals(57, UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct().size)
     }
 
     @Test fun `independent MacroDroid volume actions are separate picker options`() {
@@ -66,6 +66,17 @@ class FeaturePickerCatalogModelTest {
         val model = build(ids, FeatureKind.CONDITION)
         assertEquals(4, model.entries(PickerPage.Features(app), emptySet(), emptyList(), "").size)
         ids.forEach { assertNull(model.unifiedGroupForMember(it)) }
+    }
+
+    @Test fun `audio mode has one title and two parameterized detection methods`() {
+        val model = build(listOf("android.condition.audio.mode",
+            "android.condition.reference.audio_mode"), FeatureKind.CONDITION)
+        val entries = model.entries(PickerPage.Features(app), emptySet(), emptyList(), "")
+        assertEquals(1, entries.size)
+        val group = (entries.single() as FeaturePickerListEntry.Unified).group
+        assertEquals("audio_mode_condition", group.spec.id)
+        assertEquals("android.condition.reference.audio_mode",
+            resolveUnifiedMemberId(group, "android.condition.reference.audio_mode", null))
     }
 
     @Test fun `one MacroDroid file operation has multiple selected modes`() {

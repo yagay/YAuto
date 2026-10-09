@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_audio_mode">音频模式</string>
+    <string name="verified_family_audio_mode_subtitle">选择标准或扩展音频模式检测方式</string>
+</resources>

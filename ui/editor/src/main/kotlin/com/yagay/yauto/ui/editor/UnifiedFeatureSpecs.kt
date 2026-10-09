@@ -189,4 +189,18 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         TextR.string.verified_family_font_scale_subtitle,
         listOf("android.state.font_scale", "android.state.reference.font_scale"),
     ),
+    // Both implementations compare AudioManager.mode; select coverage as a parameter.
+    UnifiedFeatureSpec(
+        "audio_mode_condition",
+        TextR.string.verified_family_audio_mode,
+        TextR.string.verified_family_audio_mode_subtitle,
+        listOf("android.condition.audio.mode", "android.condition.reference.audio_mode"),
+    ),
+    // Both implementations compare AudioManager.mode; select coverage as a parameter.
+    UnifiedFeatureSpec(
+        "audio_mode_state",
+        TextR.string.verified_family_audio_mode,
+        TextR.string.verified_family_audio_mode_subtitle,
+        listOf("android.state.audio.mode", "android.state.reference.audio_mode"),
+    ),
 )

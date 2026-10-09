@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variant_android_state_audio_mode">Standard audio mode check</string>
+    <string name="feature_variant_android_condition_audio_mode">Standard audio mode check</string>
+    <string name="feature_variant_android_state_reference_audio_mode">Extended audio mode check (including call screening)</string>
+    <string name="feature_variant_android_condition_reference_audio_mode">Extended audio mode check (including call screening)</string>
+</resources>

@@ -18,13 +18,12 @@ SPEC = ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/UnifiedFeatur
 APPROVED = ROOT / "tools/verified_picker_merges.csv"
 MACRO = ROOT / "tools/macrodroid_reviewed_names.csv"
 SHORTX = ROOT / "tools/shortx_verified_titles.csv"
-Y_AUTO_EQUIVALENT_SOURCE = (
-    ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidSystemPowerCoverageFeaturePack.kt",
-    ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidReferenceGapFeaturePack.kt",
-)
-Y_AUTO_SAME_ANDROID_VALUE = {
-    "BatteryManager.EXTRA_STATUS", "BatteryManager.EXTRA_VOLTAGE",
-    "context.resources.configuration.fontScale",
+ANDROID_PACKS = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android"
+Y_AUTO_API_SOURCES = {
+    "BatteryManager.EXTRA_STATUS": ("AndroidSystemPowerCoverageFeaturePack.kt", "AndroidReferenceGapFeaturePack.kt"),
+    "BatteryManager.EXTRA_VOLTAGE": ("AndroidSystemPowerCoverageFeaturePack.kt", "AndroidReferenceGapFeaturePack.kt"),
+    "context.resources.configuration.fontScale": ("AndroidSystemPowerCoverageFeaturePack.kt", "AndroidReferenceGapFeaturePack.kt"),
+    "audio.mode": ("AndroidPowerUserFeaturePack.kt", "AndroidReferenceGapFeaturePack.kt"),
 }
 
 SPEC_RE = re.compile(
@@ -81,10 +80,11 @@ def audit(spec: str, approval_rows: list[dict]) -> dict:
             if not row.get("option_field"):
                 errors.append(f"Missing MacroDroid option field in {group_id}")
         elif row["source"] == "yauto_code":
-            if row["source_key"] not in Y_AUTO_SAME_ANDROID_VALUE:
+            source_files = Y_AUTO_API_SOURCES.get(row["source_key"])
+            if source_files is None:
                 errors.append(f"Unreviewed YAuto API evidence for {group_id}")
-            elif not all(row["source_key"] in path.read_text(encoding="utf-8")
-                         for path in Y_AUTO_EQUIVALENT_SOURCE):
+            elif not all(row["source_key"] in (ANDROID_PACKS / filename).read_text(encoding="utf-8")
+                         for filename in source_files):
                 errors.append(f"YAuto source does not share Android API {row['source_key']}")
             if row.get("option_field"):
                 errors.append(f"YAuto source should not contain MacroDroid option field: {group_id}")

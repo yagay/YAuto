@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variant_android_state_audio_mode">标准音频模式检测</string>
+    <string name="feature_variant_android_condition_audio_mode">标准音频模式检测</string>
+    <string name="feature_variant_android_state_reference_audio_mode">扩展音频模式检测（包含通话筛选）</string>
+    <string name="feature_variant_android_condition_reference_audio_mode">扩展音频模式检测（包含通话筛选）</string>
+</resources>
