@@ -4,6 +4,5 @@
     <string name="feature_android_audio_volume_set_field_unit_option_percent">百分比</string>
     <string name="feature_android_audio_volume_set_field_unit_option_index">系统音量级数</string>
     <string name="feature_android_audio_volume_set_field_index">Android 系统音量级数</string>
-    <string name="feature_android_audio_volume_set_field_stream_option_bluetooth_sco">蓝牙通话音量</string>
     <string name="runtime_feature_volume_index_out_of_range">音量级数超出设备支持范围（%1$d–%2$d），未进行修改。</string>
 </resources>

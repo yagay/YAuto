@@ -230,14 +230,13 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
         registry.registerCondition(condition, evaluator)
     }
 
-    private fun streamField() = FieldSchema.Choice("stream", "Audio stream", true, listOf("media", "ring", "notification", "alarm", "system", "voice_call", "bluetooth_sco"))
+    private fun streamField() = FieldSchema.Choice("stream", "Audio stream", true, listOf("media", "ring", "notification", "alarm", "system", "voice_call"))
     private fun stream(value: String): Int = when (value) {
         "ring" -> AudioManager.STREAM_RING
         "notification" -> AudioManager.STREAM_NOTIFICATION
         "alarm" -> AudioManager.STREAM_ALARM
         "system" -> AudioManager.STREAM_SYSTEM
         "voice_call" -> AudioManager.STREAM_VOICE_CALL
-        "bluetooth_sco" -> AudioManager.STREAM_BLUETOOTH_SCO
         else -> AudioManager.STREAM_MUSIC
     }
 }

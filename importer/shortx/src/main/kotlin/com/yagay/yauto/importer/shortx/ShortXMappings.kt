@@ -909,7 +909,7 @@ internal object ShortXMappings {
 
     private fun setVolume(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1, 2)) return null
-        val type = fields.varint(1)?.takeIf { it in 0L..6L }?.toInt() ?: return null
+        val type = fields.varint(1)?.takeIf { it in 0L..5L }?.toInt() ?: return null
         val index = fields.varint(2)?.takeIf { it in 0L..1000L }?.toInt() ?: return null
         val stream = shortXStreamFromAndroidType(type) ?: return null
         if (index !in 0..1000) return null
@@ -1341,7 +1341,6 @@ internal fun shortXStreamFromAndroidType(type: Int): String? = when (type) {
     3 -> "media"
     4 -> "alarm"
     5 -> "notification"
-    6 -> "bluetooth_sco"
     else -> null
 }
 
