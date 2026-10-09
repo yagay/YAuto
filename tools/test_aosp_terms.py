@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from audit_aosp_terms import Term, audit, load_terms, resource_items, verify_official
+from audit_aosp_terms import Term, audit, import_official_terms, load_terms, resource_items, verify_official
 
 
 class AospAuditTests(unittest.TestCase):
@@ -44,6 +44,15 @@ class AospAuditTests(unittest.TestCase):
         chinese = {key: {"value": value["value"], "file": "cn.xml"} for key, value in english.items()}
         report = audit([], english, chinese)
         self.assertEqual([r["resource"] for r in report["untranslated_english"]], ["ui::a"])
+
+    def test_full_official_source_import_is_advisory_and_keyed(self):
+        with tempfile.TemporaryDirectory() as d:
+            en, zh = Path(d) / "en.xml", Path(d) / "zh.xml"
+            en.write_text('<resources><string name="new">Quick settings</string><string name="old">Bluetooth</string></resources>', encoding="utf-8")
+            zh.write_text('<resources><string name="new">快捷设置</string><string name="old">蓝牙</string></resources>', encoding="utf-8")
+            reviewed = [Term("settings", "old", "Bluetooth", "蓝牙")]
+            result = import_official_terms(reviewed, {"settings": (en, zh)})
+            self.assertEqual(result, [Term("settings", "new", "Quick settings", "快捷设置")])
 
     def test_glossary_present_and_valid(self):
         self.assertGreaterEqual(len(load_terms()), 30)
