@@ -9,6 +9,8 @@ import android.os.Binder
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.os.UserHandle
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.SystemClock
 import android.util.Log
@@ -35,6 +37,8 @@ class YAutoXposedModule : XposedModule() {
     private val enabledShortXBehaviors = AtomicReference<Set<String>>(emptySet())
     private val enabledPackageBehaviors = AtomicReference<Set<String>>(emptySet())
     private val yAutoUid = AtomicLong(-1L)
+    private val systemUiChipRegistered = AtomicBoolean(false)
+    @Volatile private var systemUiChipController: ShortXStatusChipController? = null
 
     override fun onSystemServerStarting(param: SystemServerStartingParam) {
         try {
@@ -89,6 +93,37 @@ class YAutoXposedModule : XposedModule() {
                     require(intent.getIntExtra("version", -1) == SystemBridgeProtocol.VERSION) { "Protocol mismatch" }
                     when (intent.getStringExtra("operation")) {
                         SystemBridgeProtocol.PING -> Unit
+                        SystemBridgeProtocol.APP_PROCESS_START -> {
+                            val pkg = intent.getStringExtra("package").orEmpty().trim()
+                            val requestedUser = intent.getDoubleExtra("userId", -1.0)
+                            require(Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)+").matches(pkg)) {
+                                "Invalid application package"
+                            }
+                            require(requestedUser.isFinite() && requestedUser in 0.0..99.0 &&
+                                requestedUser.toInt().toDouble() == requestedUser) { "Invalid user ID" }
+                            val userId = requestedUser.toInt()
+                            // Resolve ApplicationInfo for the requested Android user. Do not inject
+                            // a process under a guessed UID or emulate it with an Activity start.
+                            val userContext = context.createContextAsUser(UserHandle.of(userId), 0)
+                            val info = userContext.packageManager.getApplicationInfo(pkg, 0)
+                            require(info.uid > 0 && info.packageName == pkg && info.enabled) { "Target app unavailable" }
+                            val localServices = classLoader.loadClass("com.android.server.LocalServices")
+                            val amInterface = classLoader.loadClass("android.app.ActivityManagerInternal")
+                            val getService = localServices.getMethod("getService", Class::class.java)
+                            val am = getService.invoke(null, amInterface)
+                                ?: error("ActivityManagerInternal unavailable on this ROM")
+                            val start = amInterface.methods.firstOrNull { method ->
+                                method.name == "startProcess" && method.parameterCount == 6 &&
+                                    method.parameterTypes[0] == String::class.java &&
+                                    method.parameterTypes[1] == ApplicationInfo::class.java
+                            } ?: error("ActivityManagerInternal.startProcess signature unsupported")
+                            // This is Android-managed process creation, without bringing up an Activity.
+                            // AMS may subsequently reclaim an idle process.
+                            start.invoke(am, info.processName, info, false, false, "yauto", null)
+                            response.putString("package", pkg)
+                            response.putInt("userId", userId)
+                            response.putBoolean("dispatched", true)
+                        }
                         SystemBridgeProtocol.STATUS_ICON_SET,
                         SystemBridgeProtocol.STATUS_ICON_REMOVE -> {
                             // Only allocate YAuto-prefixed slots: never override stock system icons.
@@ -106,7 +141,13 @@ class YAutoXposedModule : XposedModule() {
                                 } ?: error("StatusBarManager.removeIcon unavailable on this ROM")
                                 remove.invoke(status, slot)
                             } else {
-                                val name = when (intent.getStringExtra("icon")) {
+                                val name = if (intent.getStringExtra("iconSource") == "android_drawable") {
+                                    intent.getStringExtra("drawable").orEmpty().also {
+                                        require(Regex("[a-z][a-z0-9_]{0,63}").matches(it)) {
+                                            "Invalid framework drawable name"
+                                        }
+                                    }
+                                } else when (intent.getStringExtra("icon")) {
                                     "info" -> "ic_dialog_info"
                                     "warning" -> "ic_dialog_alert"
                                     "lock" -> "ic_lock_idle_lock"
@@ -1109,6 +1150,7 @@ class YAutoXposedModule : XposedModule() {
         val infrastructurePackage = when {
             packageName == "com.android.systemui" -> {
                 installShortXSystemUiHooks(context, classLoader)
+                installShortXStatusChipHooks(context, classLoader)
                 true
             }
             packageName == "com.android.nfc" -> {
@@ -1164,6 +1206,75 @@ class YAutoXposedModule : XposedModule() {
                     chain.proceed()
                 }
             }
+    }
+
+    /**
+     * Real status-bar chip inside SystemUI, activated only when SystemUI is an LSPosed
+     * target. The ordered receiver requires the YAuto signature permission.
+     */
+    private fun installShortXStatusChipHooks(context: Context, classLoader: ClassLoader) {
+        val controller = ShortXStatusChipController(context) { chipId, gesture ->
+            emitPackageRuntimeEvent(context, "android.event.status_chip_interaction",
+                mapOf("chipId" to chipId, "gesture" to gesture))
+        }
+        systemUiChipController = controller
+        var hookedCount = 0
+        listOf(
+            "com.android.systemui.statusbar.phone.PhoneStatusBarView",
+            "com.android.systemui.statusbar.phone.MiuiPhoneStatusBarView",
+        ).forEach { name ->
+            val clazz = runCatching { classLoader.loadClass(name) }.getOrNull() ?: return@forEach
+            clazz.declaredMethods.filter { it.name in setOf("onFinishInflate", "onAttachedToWindow") }.forEach { method ->
+                val key = "yauto-chip|" + method.toGenericString()
+                if (!installedHooks.add(key)) return@forEach
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    val result = chain.proceed()
+                    runCatching { controller.attach(chain.thisObject) }
+                    result
+                }
+                hookedCount++
+            }
+        }
+        if (systemUiChipRegistered.getAndSet(true)) return
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(received: Context?, intent: Intent?) {
+                if (intent?.action != SystemBridgeProtocol.CHIP_ACTION || !isOrderedBroadcast) return
+                val response = Bundle().apply { putInt("version", SystemBridgeProtocol.VERSION) }
+                try {
+                    require(intent.getIntExtra("version", -1) == SystemBridgeProtocol.VERSION) { "Protocol mismatch" }
+                    require(hookedCount > 0) { "SystemUI status-bar ViewGroup not available on this ROM" }
+                    controller.update(
+                        intent.getStringExtra("operation").orEmpty(),
+                        intent.getStringExtra("chipId").orEmpty(),
+                        intent.getStringExtra("text").orEmpty(),
+                        intent.getStringExtra("iconMode").orEmpty().ifBlank { "none" },
+                        intent.getStringExtra("icon").orEmpty(),
+                        intent.getStringExtra("imageBase64").orEmpty(),
+                    )
+                    response.putBoolean("success", true)
+                    response.putBoolean("accepted", true)
+                } catch (error: Exception) {
+                    response.putBoolean("success", false)
+                    response.putString("error", error.cause?.message ?: error.message)
+                    log(Log.ERROR, "YAuto", "Status chip request failed", error)
+                }
+                setResultExtras(response)
+            }
+        }
+        try {
+            if (Build.VERSION.SDK_INT >= 33) {
+                context.registerReceiver(receiver, IntentFilter(SystemBridgeProtocol.CHIP_ACTION),
+                    SystemBridgeProtocol.PERMISSION, null, Context.RECEIVER_EXPORTED)
+            } else {
+                @Suppress("DEPRECATION")
+                context.registerReceiver(receiver, IntentFilter(SystemBridgeProtocol.CHIP_ACTION),
+                    SystemBridgeProtocol.PERMISSION, null)
+            }
+        } catch (error: Exception) {
+            systemUiChipRegistered.set(false)
+            log(Log.ERROR, "YAuto", "Unable to register SystemUI chip receiver", error)
+        }
     }
 
     private fun installShortXSystemUiHooks(context: Context, classLoader: ClassLoader) {

@@ -205,6 +205,7 @@ class ShortXImporter : AutomationImporter {
             }
         }
 
+        val chipInteractionAutomations = mutableListOf<Automation>()
         val automations = content.rules.mapIndexed { index, rule ->
             val events = rule.facts.mapIndexedNotNull { factIndex, any ->
                 if (!ShortXMappings.factEnabled(any)) return@mapIndexedNotNull null
@@ -233,7 +234,48 @@ class ShortXImporter : AutomationImporter {
             }
 
             val actions = rule.actions.mapIndexed { actionIndex, any ->
-                mapAction(any, "rule[" + index + "].action[" + actionIndex + "]")
+                val path = "rule[" + index + "].action[" + actionIndex + "]"
+                // A ShortX chip can contain two independent action lists. Import them as
+                // native, chip-filtered event rules rather than throwing away callbacks.
+                // The global ShortX hide command hides whichever imported chip is active.
+                val chipId = "sx_${index}_${actionIndex}"
+                val chip = if (ShortXMappings.enabled(any))
+                    ShortXMappings.nativeChipInteraction(any, id, chipId) else null
+                if (chip == null) {
+                    mapAction(any, path)
+                } else {
+                    fun handlerRule(gesture: String, children: List<AnyStub>) {
+                        if (children.isEmpty()) return
+                        val nodes = children.mapIndexed { n, child ->
+                            mapAction(child, "$path.$gesture[$n]")
+                        }
+                        chipInteractionAutomations += Automation(
+                            id = AutomationId("import-shortx-" + rule.id + "-chip-" + actionIndex + "-" + gesture),
+                            name = rule.title + " / chip " + gesture,
+                            enabled = rule.enabled,
+                            activation = Activation(events = listOf(FeatureRef(
+                                typeId = "android.event.status_chip_interaction",
+                                config = mapOf(
+                                    "chipId" to ConfigValue.StringValue(chipId),
+                                    "gesture" to ConfigValue.StringValue(gesture),
+                                ),
+                            ))),
+                            onEvent = nodes,
+                            source = SourceMetadata(id, rule.id + ":chip:" + actionIndex + ":" + gesture, "ChipInteraction"),
+                        )
+                    }
+                    handlerRule("click", chip.click)
+                    handlerRule("long_click", chip.longClick)
+                    trace += ImportTrace(path, chip.feature.typeId, "MAPPED", any.typeUrl)
+                    ActionNode.Action(
+                        NodeId(UUID.randomUUID().toString()),
+                        chip.feature,
+                        enabled = ShortXMappings.enabled(any),
+                        comment = ShortXMappings.note(any),
+                        failurePolicy = if (ShortXMappings.actionBreaksOnError(any))
+                            ActionFailurePolicy.STOP else ActionFailurePolicy.CONTINUE,
+                    )
+                }
             }
 
             val automation = Automation(
@@ -260,7 +302,7 @@ class ShortXImporter : AutomationImporter {
         return ImportResult(
             importerId = id,
             success = true,
-            bundle = ImportBundle(automations = automations, flows = flows),
+            bundle = ImportBundle(automations = automations + chipInteractionAutomations, flows = flows),
             issues = issues,
             trace = trace,
         )

@@ -25,7 +25,14 @@ class AndroidStatusIconFeaturePack : FeaturePack {
                 fields = listOf(
                     FieldSchema.Choice("mode", "Operation", true, listOf("show", "remove")),
                     FieldSchema.Text("slot", "YAuto icon slot (letters, digits, underscore)", true),
+                    FieldSchema.Choice("iconSource", "Icon method", options = listOf("built_in", "android_drawable")),
                     FieldSchema.Choice("icon", "Built-in icon", options = listOf("info", "warning", "lock", "upload", "save")),
+                    FieldSchema.Text("drawable", "Android framework drawable name"),
+                ),
+                fieldBehaviors = mapOf(
+                    "iconSource" to FieldBehavior(defaultValue = ConfigValue.StringValue("built_in")),
+                    "icon" to FieldBehavior(visibleWhen = FieldRule.Equals("iconSource", ConfigValue.StringValue("built_in"))),
+                    "drawable" to FieldBehavior(visibleWhen = FieldRule.Equals("iconSource", ConfigValue.StringValue("android_drawable"))),
                 ),
                 capabilities = setOf(CapabilityIds.LSPOSED),
                 accessRequirements = setOf(AccessRequirement.LSPOSED),
@@ -43,7 +50,10 @@ class AndroidStatusIconFeaturePack : FeaturePack {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.status_icon_bad_operation"))
             }
             val icon = feature.config.string("icon", "info")
-            if (mode == "show" && icon !in STATUS_ICON_CHOICES) {
+            val source = feature.config.string("iconSource", "built_in")
+            val drawable = feature.config.string("drawable").trim()
+            if (mode == "show" && !(source == "built_in" && icon in STATUS_ICON_CHOICES ||
+                    source == "android_drawable" && statusFrameworkDrawableValid(drawable))) {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.status_icon_bad_operation"))
             }
             val result = ctx.capabilities.execute(
@@ -53,6 +63,8 @@ class AndroidStatusIconFeaturePack : FeaturePack {
                     payload = mapOf(
                         "slot" to ConfigValue.StringValue(slot),
                         "icon" to ConfigValue.StringValue(icon),
+                        "iconSource" to ConfigValue.StringValue(source),
+                        "drawable" to ConfigValue.StringValue(drawable),
                     ),
                     preferredBackendId = "lsposed",
                     allowFallback = false,
@@ -65,3 +77,5 @@ class AndroidStatusIconFeaturePack : FeaturePack {
 
 internal val STATUS_ICON_CHOICES = setOf("info", "warning", "lock", "upload", "save")
 internal fun statusSlotValid(raw: String): Boolean = Regex("[a-z][a-z0-9_]{0,23}").matches(raw)
+
+internal fun statusFrameworkDrawableValid(name: String) = Regex("[a-z][a-z0-9_]{0,63}").matches(name)

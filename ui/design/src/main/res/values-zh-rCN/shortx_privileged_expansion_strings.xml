@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_app_process_start_title">启动应用进程</string>
+    <string name="feature_android_app_process_start_description">通过 LSPosed 的 system_server 桥接请求 Android 启动应用进程，不打开应用界面。无活跃组件时系统仍可能回收进程。</string>
+    <string name="feature_android_app_process_start_field_packages">应用包名，每行一个</string>
+    <string name="feature_android_app_process_start_field_packages_help">仅接受已安装的应用包名，不会启动应用界面。</string>
+    <string name="feature_android_app_process_start_field_packagesets">应用集合变量名，每行一个</string>
+    <string name="feature_android_app_process_start_field_userid">Android 用户 ID</string>
+    <string name="feature_android_app_process_start_field_resultvariable">保存请求结果</string>
+    <string name="feature_android_status_chip_control_title">SystemUI 状态栏 Chip</string>
+    <string name="feature_android_status_chip_control_description">通过 LSPosed 在真实 SystemUI 状态栏中显示或隐藏 Chip，点击和长按可触发 YAuto 任务。兼容性因厂商系统而异。</string>
+    <string name="feature_android_status_chip_control_field_mode">操作</string>
+    <string name="feature_android_status_chip_control_field_mode_option_show">显示</string>
+    <string name="feature_android_status_chip_control_field_mode_option_hide">隐藏</string>
+    <string name="feature_android_status_chip_control_field_chipid">Chip 标识</string>
+    <string name="feature_android_status_chip_control_field_text">显示文字</string>
+    <string name="feature_android_status_chip_control_field_iconmode">图标实现方式</string>
+    <string name="feature_android_status_chip_control_field_iconmode_option_none">仅文字</string>
+    <string name="feature_android_status_chip_control_field_iconmode_option_android_drawable">Android 系统图标</string>
+    <string name="feature_android_status_chip_control_field_iconmode_option_png_file">本地 PNG 图片</string>
+    <string name="feature_android_status_chip_control_field_icon">Android Drawable 名称</string>
+    <string name="feature_android_status_chip_control_field_pngpath">PNG 绝对路径（最大 64 KiB / 128 像素）</string>
+    <string name="feature_android_event_status_chip_interaction_title">状态栏 Chip 交互</string>
+    <string name="feature_android_event_status_chip_interaction_description">点击或长按 SystemUI 内的 Chip 时触发规则。</string>
+    <string name="feature_android_event_status_chip_interaction_field_chipid">Chip 标识（留空匹配全部）</string>
+    <string name="feature_android_event_status_chip_interaction_field_gesture">交互方式</string>
+    <string name="feature_android_event_status_chip_interaction_field_gesture_option_any">任意</string>
+    <string name="feature_android_event_status_chip_interaction_field_gesture_option_click">点击</string>
+    <string name="feature_android_event_status_chip_interaction_field_gesture_option_long_click">长按</string>
+    <string name="feature_android_status_icon_control_field_iconsource">图标实现方式</string>
+    <string name="feature_android_status_icon_control_field_iconsource_option_built_in">内置图标</string>
+    <string name="feature_android_status_icon_control_field_iconsource_option_android_drawable">Android 系统 Drawable</string>
+    <string name="feature_android_status_icon_control_field_drawable">Android Drawable 名称</string>
+</resources>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_app_process_start_title">Start application process</string>
+    <string name="feature_android_app_process_start_description">Request an Android-managed process without launching its activity using the LSPosed system_server bridge. A process without active components can be reclaimed.</string>
+    <string name="feature_android_app_process_start_field_packages">Application packages, one per line</string>
+    <string name="feature_android_app_process_start_field_packages_help">Only installed app package names. This does not open an app screen.</string>
+    <string name="feature_android_app_process_start_field_packagesets">Package-set variable names, one per line</string>
+    <string name="feature_android_app_process_start_field_userid">Android user ID</string>
+    <string name="feature_android_app_process_start_field_resultvariable">Store request result</string>
+    <string name="feature_android_status_chip_control_title">SystemUI status bar chip</string>
+    <string name="feature_android_status_chip_control_description">Show/hide a chip injected into the actual status bar view using LSPosed. Clicks and long-clicks trigger separate YAuto events. Device SystemUI support varies.</string>
+    <string name="feature_android_status_chip_control_field_mode">Operation</string>
+    <string name="feature_android_status_chip_control_field_mode_option_show">Show</string>
+    <string name="feature_android_status_chip_control_field_mode_option_hide">Hide</string>
+    <string name="feature_android_status_chip_control_field_chipid">Chip ID</string>
+    <string name="feature_android_status_chip_control_field_text">Chip text</string>
+    <string name="feature_android_status_chip_control_field_iconmode">Icon method</string>
+    <string name="feature_android_status_chip_control_field_iconmode_option_none">Text only</string>
+    <string name="feature_android_status_chip_control_field_iconmode_option_android_drawable">Android drawable</string>
+    <string name="feature_android_status_chip_control_field_iconmode_option_png_file">Local PNG file</string>
+    <string name="feature_android_status_chip_control_field_icon">Android drawable name</string>
+    <string name="feature_android_status_chip_control_field_pngpath">PNG absolute path (64 KiB / 128 px maximum)</string>
+    <string name="feature_android_event_status_chip_interaction_title">Status chip interaction</string>
+    <string name="feature_android_event_status_chip_interaction_description">Run a rule when a chip is clicked or long-clicked within SystemUI.</string>
+    <string name="feature_android_event_status_chip_interaction_field_chipid">Chip ID (blank matches any)</string>
+    <string name="feature_android_event_status_chip_interaction_field_gesture">Interaction</string>
+    <string name="feature_android_event_status_chip_interaction_field_gesture_option_any">Any</string>
+    <string name="feature_android_event_status_chip_interaction_field_gesture_option_click">Click</string>
+    <string name="feature_android_event_status_chip_interaction_field_gesture_option_long_click">Long press</string>
+    <string name="feature_android_status_icon_control_field_iconsource">Icon method</string>
+    <string name="feature_android_status_icon_control_field_iconsource_option_built_in">Built-in icon</string>
+    <string name="feature_android_status_icon_control_field_iconsource_option_android_drawable">Android framework drawable</string>
+    <string name="feature_android_status_icon_control_field_drawable">Android drawable name</string>
+</resources>

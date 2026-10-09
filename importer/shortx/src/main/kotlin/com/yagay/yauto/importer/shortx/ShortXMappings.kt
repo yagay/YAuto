@@ -57,6 +57,14 @@ internal object ShortXMappings {
             "SetStatusBarIcon" -> nativeStatusBarIcon(any, importerId, fields, "show")
             "RemoveStatusBarIcon" -> nativeStatusBarIcon(any, importerId, fields, "remove")
             "StopService" -> nativeStopServices(any, importerId, fields)
+            "StartAppProcess" -> nativeStartAppProcess(any, importerId, fields)
+            "StartAppProcessByPkg" -> nativeStartAppProcessByPkg(any, importerId, fields)
+            "ShowStatusBarChip" -> nativeShowStatusChip(any, importerId, fields)
+            "HideStatusBarClip" -> noFieldAction(any, importerId, fields, "android.status_chip.control")
+                ?.let { it.copy(config = it.config + mapOf(
+                    "mode" to ConfigValue.StringValue("hide"),
+                    "chipId" to ConfigValue.StringValue("shortx"),
+                )) }
             "RequestAudioFocus" -> requestAudioFocus(any, importerId, fields)
             "PlayRingtone" -> playRingtone(any, importerId, fields)
             else -> null
@@ -554,6 +562,16 @@ internal object ShortXMappings {
             "SetStatusBarIcon" -> nativeJsonStatusBarIcon(obj, any, importerId, raw, "show")
             "RemoveStatusBarIcon" -> nativeJsonStatusBarIcon(obj, any, importerId, raw, "remove")
             "StopService" -> nativeJsonStopServices(obj, any, importerId, raw)
+            "StartAppProcess" -> nativeJsonStartAppProcess(obj, any, importerId, raw)
+            "StartAppProcessByPkg" -> nativeJsonStartAppProcessByPkg(obj, any, importerId, raw)
+            "ShowStatusBarChip" -> nativeJsonShowStatusChip(obj, any, importerId, raw)
+            "HideStatusBarClip" -> if (jsonBusinessKeysSafe(obj, emptySet()))
+                sourceFeature("android.status_chip.control", importerId, any.typeUrl, raw,
+                    extra = mapOf(
+                        "mode" to ConfigValue.StringValue("hide"),
+                        "chipId" to ConfigValue.StringValue("shortx"),
+                    ))
+                else null
             "AreaScreenshot" -> if (obj.keys.all { it in setOf("@type", "type", "typeUrl", "type_url", "id", "isDisabled", "note", "actionOnError") })
                 sourceFeature("android.screenshot.area_select", importerId, any.typeUrl, raw)
                 else null
@@ -1052,16 +1070,215 @@ internal object ShortXMappings {
      *
      * Allow only the five equivalent platform drawable aliases supported by our native action.
      */
+    /**
+     * Return the actual callback chains rather than dropping them. The caller must
+     * create separate, chip-ID-filtered YAuto automations for click and long-click.
+     * Only ShortX Rule action sites use this mapping; functions/DA with independent
+     * scope remain compatibility nodes when they carry callbacks.
+     */
+    fun nativeChipInteraction(any: AnyStub, importerId: String, chipId: String): ShortXChipInteractionMapping? {
+        if (!Regex("[a-z][a-z0-9_]{0,23}").matches(chipId)) return null
+        if (shortName(any.typeUrl) != "ShowStatusBarChip") return null
+        if (any.isJson) {
+            val obj = runCatching { Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject }
+                .getOrNull() ?: return null
+            if (!jsonBusinessKeysSafe(obj, setOf("text", "icon", "clickAction", "longClickAction")) ||
+                obj["customContextDataKey"] != null && obj["customContextDataKey"] !is JsonNull) return null
+            val title = (obj["text"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() && it.length <= 48 }
+                ?: return null
+            val icon = (obj["icon"] as? JsonPrimitive)?.contentOrNull.orEmpty()
+            val res = nativeAndroidDrawableName(icon)
+            if (icon.isNotBlank() && res == null) return null
+            fun parsed(key: String): List<AnyStub>? {
+                val data = obj[key] as? JsonArray ?: return if (obj[key] == null) emptyList() else null
+                if (data.size > 24) return null
+                return data.mapIndexed { index, element ->
+                    val value = element as? JsonObject ?: return null
+                    val type = sequenceOf("@type", "typeUrl", "type_url", "type")
+                        .mapNotNull { (value[it] as? JsonPrimitive)?.contentOrNull }
+                        .firstOrNull()?.takeIf { it.isNotBlank() } ?: return null
+                    AnyStub(type, value.toString().encodeToByteArray(), isJson = true)
+                }
+            }
+            val click = parsed("clickAction") ?: return null
+            val long = parsed("longClickAction") ?: return null
+            if (click.size + long.size > 24) return null
+            return ShortXChipInteractionMapping(
+                sourceFeature("android.status_chip.control", importerId, any.typeUrl,
+                    any.value.toString(Charsets.UTF_8), extra = chipDisplayConfig(chipId, title, res)),
+                click, long,
+            )
+        }
+        val data = runCatching { ProtoFields(any.value) }.getOrNull() ?: return null
+        if (!data.onlyBusinessFields(1, 2, 3, 4) || data.has(96)) return null
+        val title = data.string(1)?.takeIf { it.isNotBlank() && it.length <= 48 } ?: return null
+        val icon = data.string(2).orEmpty()
+        val res = nativeAndroidDrawableName(icon)
+        if (icon.isNotBlank() && res == null) return null
+        fun parsed(field: Int): List<AnyStub>? {
+            val chunks = data.allBytes(field)
+            if (chunks.size > 24) return null
+            return chunks.map { bytes ->
+                val nested = runCatching { ProtoFields(bytes) }.getOrNull() ?: return null
+                if (!nested.onlyBusinessFields(1, 2)) return null
+                val type = nested.string(1)?.takeIf { it.isNotBlank() } ?: return null
+                val raw = nested.bytes(2) ?: return null
+                AnyStub(type, raw)
+            }
+        }
+        val click = parsed(3) ?: return null
+        val long = parsed(4) ?: return null
+        if (click.size + long.size > 24) return null
+        return ShortXChipInteractionMapping(
+            binaryFeature(any, importerId, "android.status_chip.control", chipDisplayConfig(chipId, title, res)),
+            click, long,
+        )
+    }
+
+    private fun chipDisplayConfig(chipId: String, title: String, drawable: String?) = mapOf(
+        "mode" to ConfigValue.StringValue("show"),
+        "chipId" to ConfigValue.StringValue(chipId),
+        "text" to ConfigValue.StringValue(title),
+        "iconMode" to ConfigValue.StringValue(if (drawable == null) "none" else "android_drawable"),
+        "icon" to ConfigValue.StringValue(drawable.orEmpty()),
+    )
+
+    /** ShortX AppPkg repeated #1 and package-set references #2. No UI launch. */
+    private fun nativeStartAppProcess(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields(1, 2)) return null
+        val values = fields.allBytes(1).map { raw ->
+            val nested = runCatching { ProtoFields(raw) }.getOrNull() ?: return null
+            if (!nested.onlyBusinessFields(1, 2)) return null
+            val pkg = nested.string(1)?.takeIf(::nativeProcessPackageValid) ?: return null
+            val user = (nested.varint(2) ?: 0L).takeIf { it in 0L..99L } ?: return null
+            pkg to user
+        }
+        val users = values.map { it.second }.distinct()
+        if (users.size > 1) return null // One YAuto action has one user ID.
+        val names = values.map { it.first }.distinct()
+        val packageSets = fields.allStrings(2).distinct()
+        if (packageSets.any { !Regex("[A-Za-z_][A-Za-z0-9_.:-]{0,95}").matches(it) }) return null
+        if ((names.isEmpty() && packageSets.isEmpty()) || names.size + packageSets.size > 24) return null
+        return binaryFeature(any, importerId, "android.app.process.start", mapOf(
+            "packages" to ConfigValue.StringValue(names.joinToString("\n")),
+            "packageSets" to ConfigValue.StringValue(packageSets.joinToString("\n")),
+            "userId" to ConfigValue.NumberValue((users.singleOrNull() ?: 0L).toDouble()),
+        ))
+    }
+
+    /** ShortX pkgAndUsers repeated StringPair; different user IDs stay lossless source nodes. */
+    private fun nativeStartAppProcessByPkg(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields(1)) return null
+        val targets = fields.allBytes(1).map { raw ->
+            val nested = runCatching { ProtoFields(raw) }.getOrNull() ?: return null
+            if (!nested.onlyBusinessFields(1, 2)) return null
+            val pkg = nested.string(1)?.takeIf(::nativeProcessPackageValid) ?: return null
+            val uid = nested.string(2)?.toLongOrNull()?.takeIf { it in 0L..99L } ?: return null
+            pkg to uid
+        }
+        if (targets.isEmpty() || targets.size > 24 || targets.map { it.second }.distinct().size != 1) return null
+        return binaryFeature(any, importerId, "android.app.process.start", mapOf(
+            "packages" to ConfigValue.StringValue(targets.map { it.first }.distinct().joinToString("\n")),
+            "userId" to ConfigValue.NumberValue(targets.first().second.toDouble()),
+        ))
+    }
+
+    /** Preserve embedded click/long-click Any action chains until their execution is identical. */
+    private fun nativeShowStatusChip(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields(1, 2, 3, 4) || fields.has(3) || fields.has(4)) return null
+        val text = fields.string(1)?.takeIf { it.isNotBlank() && it.length <= 48 } ?: return null
+        val icon = fields.string(2).orEmpty()
+        val frameworkName = nativeAndroidDrawableName(icon)
+        if (icon.isNotBlank() && frameworkName == null) return null
+        return binaryFeature(any, importerId, "android.status_chip.control", mapOf(
+            "mode" to ConfigValue.StringValue("show"),
+            "chipId" to ConfigValue.StringValue("shortx"),
+            "text" to ConfigValue.StringValue(text),
+            "iconMode" to ConfigValue.StringValue(if (frameworkName == null) "none" else "android_drawable"),
+            "icon" to ConfigValue.StringValue(frameworkName.orEmpty()),
+        ))
+    }
+
+    private fun nativeJsonStartAppProcess(
+        obj: JsonObject, any: AnyStub, importerId: String, raw: String,
+    ): FeatureRef? {
+        if (!jsonBusinessKeysSafe(obj, setOf("appPkg", "pkgSets"))) return null
+        val targets = (obj["appPkg"] as? JsonArray)?.map { rawTarget ->
+            val target = rawTarget as? JsonObject ?: return null
+            if (target.keys.any { it !in setOf("pkgName", "userId") }) return null
+            val pkg = (target["pkgName"] as? JsonPrimitive)?.contentOrNull
+                ?.takeIf(::nativeProcessPackageValid) ?: return null
+            val user = (target["userId"] as? JsonPrimitive)?.longOrNull ?: 0L
+            if (user !in 0L..99L) return null
+            pkg to user
+        }.orEmpty()
+        val sets = (obj["pkgSets"] as? JsonArray)?.map { item ->
+            (item as? JsonPrimitive)?.contentOrNull?.takeIf {
+                Regex("[A-Za-z_][A-Za-z0-9_.:-]{0,95}").matches(it)
+            } ?: return null
+        }.orEmpty()
+        if (targets.map { it.second }.distinct().size > 1 ||
+            (targets.isEmpty() && sets.isEmpty()) || targets.size + sets.size > 24) return null
+        return sourceFeature("android.app.process.start", importerId, any.typeUrl, raw, extra = mapOf(
+            "packages" to ConfigValue.StringValue(targets.map { it.first }.distinct().joinToString("\n")),
+            "packageSets" to ConfigValue.StringValue(sets.distinct().joinToString("\n")),
+            "userId" to ConfigValue.NumberValue((targets.firstOrNull()?.second ?: 0L).toDouble()),
+        ))
+    }
+
+    private fun nativeJsonStartAppProcessByPkg(
+        obj: JsonObject, any: AnyStub, importerId: String, raw: String,
+    ): FeatureRef? {
+        if (!jsonBusinessKeysSafe(obj, setOf("pkgAndUsers"))) return null
+        val targets = (obj["pkgAndUsers"] as? JsonArray)?.map { item ->
+            val pair = item as? JsonObject ?: return null
+            if (pair.keys.any { it !in setOf("first", "second") }) return null
+            val pkg = (pair["first"] as? JsonPrimitive)?.contentOrNull
+                ?.takeIf(::nativeProcessPackageValid) ?: return null
+            val user = (pair["second"] as? JsonPrimitive)?.contentOrNull
+                ?.toLongOrNull()?.takeIf { it in 0L..99L } ?: return null
+            pkg to user
+        } ?: return null
+        if (targets.isEmpty() || targets.size > 24 || targets.map { it.second }.distinct().size != 1) return null
+        return sourceFeature("android.app.process.start", importerId, any.typeUrl, raw, extra = mapOf(
+            "packages" to ConfigValue.StringValue(targets.map { it.first }.distinct().joinToString("\n")),
+            "userId" to ConfigValue.NumberValue(targets.first().second.toDouble()),
+        ))
+    }
+
+    private fun nativeJsonShowStatusChip(obj: JsonObject, any: AnyStub, importerId: String, raw: String): FeatureRef? {
+        if (!jsonBusinessKeysSafe(obj, setOf("text", "icon", "clickAction", "longClickAction")) ||
+            (obj["clickAction"] as? JsonArray)?.isNotEmpty() == true ||
+            (obj["longClickAction"] as? JsonArray)?.isNotEmpty() == true) return null
+        val text = (obj["text"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() && it.length <= 48 }
+            ?: return null
+        val icon = (obj["icon"] as? JsonPrimitive)?.contentOrNull.orEmpty()
+        val frameworkName = nativeAndroidDrawableName(icon)
+        if (icon.isNotEmpty() && frameworkName == null) return null
+        return sourceFeature("android.status_chip.control", importerId, any.typeUrl, raw, extra = mapOf(
+            "mode" to ConfigValue.StringValue("show"),
+            "chipId" to ConfigValue.StringValue("shortx"),
+            "text" to ConfigValue.StringValue(text),
+            "iconMode" to ConfigValue.StringValue(if (frameworkName == null) "none" else "android_drawable"),
+            "icon" to ConfigValue.StringValue(frameworkName.orEmpty()),
+        ))
+    }
+
     private fun nativeStatusBarIcon(
         any: AnyStub, importerId: String, fields: ProtoFields, mode: String,
     ): FeatureRef? {
         if (!fields.onlyBusinessFields(*(if (mode == "show") intArrayOf(1, 2) else intArrayOf(1)))) return null
         val slot = importedYAutoStatusSlot(fields.string(1)) ?: return null
-        val icon = if (mode == "show") importedStatusIcon(fields.string(2)) ?: return null else "info"
+        val input = fields.string(2)
+        val icon = if (mode == "show") importedStatusIcon(input) else "info"
+        val drawable = if (mode == "show" && icon == null) nativeAndroidDrawableName(input.orEmpty()) else null
+        if (mode == "show" && icon == null && drawable == null) return null
         return binaryFeature(any, importerId, "android.status_icon.control", mapOf(
             "mode" to ConfigValue.StringValue(mode),
             "slot" to ConfigValue.StringValue(slot),
-            "icon" to ConfigValue.StringValue(icon),
+            "icon" to ConfigValue.StringValue(icon ?: "info"),
+            "iconSource" to ConfigValue.StringValue(if (drawable == null) "built_in" else "android_drawable"),
+            "drawable" to ConfigValue.StringValue(drawable.orEmpty()),
         ))
     }
 
@@ -1070,14 +1287,17 @@ internal object ShortXMappings {
     ): FeatureRef? {
         if (!jsonBusinessKeysSafe(obj, if (mode == "show") setOf("slot", "icon") else setOf("slot"))) return null
         val slot = importedYAutoStatusSlot((obj["slot"] as? JsonPrimitive)?.contentOrNull) ?: return null
-        val icon = if (mode == "show") {
-            importedStatusIcon((obj["icon"] as? JsonPrimitive)?.contentOrNull) ?: return null
-        } else "info"
+        val input = (obj["icon"] as? JsonPrimitive)?.contentOrNull
+        val icon = if (mode == "show") importedStatusIcon(input) else "info"
+        val drawable = if (mode == "show" && icon == null) nativeAndroidDrawableName(input.orEmpty()) else null
+        if (mode == "show" && icon == null && drawable == null) return null
         return sourceFeature("android.status_icon.control", importerId, any.typeUrl, raw,
             extra = mapOf(
                 "mode" to ConfigValue.StringValue(mode),
                 "slot" to ConfigValue.StringValue(slot),
-                "icon" to ConfigValue.StringValue(icon),
+                "icon" to ConfigValue.StringValue(icon ?: "info"),
+                "iconSource" to ConfigValue.StringValue(if (drawable == null) "built_in" else "android_drawable"),
+                "drawable" to ConfigValue.StringValue(drawable.orEmpty()),
             ),
         )
     }
@@ -1351,6 +1571,14 @@ internal fun importedYAutoStatusSlot(value: String?): String? {
     return input.removePrefix("yauto_").takeIf { Regex("[a-z][a-z0-9_]{0,23}").matches(it) }
 }
 
+internal fun nativeProcessPackageValid(value: String): Boolean =
+    value.length in 3..180 && Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)+").matches(value)
+
+internal fun nativeAndroidDrawableName(value: String): String? =
+    value.takeIf { it.startsWith("android:drawable/") }
+        ?.removePrefix("android:drawable/")
+        ?.takeIf { Regex("[a-z][a-z0-9_]{0,63}").matches(it) }
+
 internal fun importedStatusIcon(value: String?): String? = when (value) {
     // Only explicit Android framework resource identities are semantically equivalent
     // to the platform drawable selected by AndroidStatusIconFeaturePack.
@@ -1399,3 +1627,9 @@ internal class ProtoFields(bytes: ByteArray) {
         .firstOrNull { it.number == number && it.wire == 0 }
         ?.varint
 }
+
+internal data class ShortXChipInteractionMapping(
+    val feature: FeatureRef,
+    val click: List<AnyStub>,
+    val longClick: List<AnyStub>,
+)

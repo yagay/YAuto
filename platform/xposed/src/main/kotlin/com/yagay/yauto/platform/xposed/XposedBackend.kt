@@ -79,6 +79,9 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                     SystemBridgeProtocol.SHORTX_BEHAVIOR_SET,
                     SystemBridgeProtocol.STATUS_ICON_SET,
                     SystemBridgeProtocol.STATUS_ICON_REMOVE,
+                    SystemBridgeProtocol.APP_PROCESS_START,
+                    SystemBridgeProtocol.STATUS_CHIP_SHOW,
+                    SystemBridgeProtocol.STATUS_CHIP_HIDE,
                 )) ||
             (request.capability == CapabilityIds.LSPOSED_HOOK &&
                 request.operationId in setOf(
@@ -92,6 +95,9 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                 request.operationId == SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_SET ->
                 requestPackageBehavior(request)
             request.capability == CapabilityIds.LSPOSED_HOOK -> requestHook(request)
+            request.capability == CapabilityIds.LSPOSED &&
+                request.operationId in setOf(SystemBridgeProtocol.STATUS_CHIP_SHOW, SystemBridgeProtocol.STATUS_CHIP_HIDE) ->
+                requestSystem(request.operationId, request.payload, "com.android.systemui", SystemBridgeProtocol.CHIP_ACTION)
             request.capability == CapabilityIds.LSPOSED -> requestSystem(request.operationId, request.payload)
             else -> requestSystem(request.operationId)
         }
@@ -116,9 +122,14 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
         )
     }
 
-    private suspend fun requestSystem(operation: String, payload: Map<String, ConfigValue> = emptyMap()): Bundle? {
-        val intent = Intent(SystemBridgeProtocol.ACTION)
-            .setPackage("android")
+    private suspend fun requestSystem(
+        operation: String,
+        payload: Map<String, ConfigValue> = emptyMap(),
+        destination: String = "android",
+        action: String = SystemBridgeProtocol.ACTION,
+    ): Bundle? {
+        val intent = Intent(action)
+            .setPackage(destination)
             .putExtra("version", protocolVersion)
             .putExtra("operation", operation)
         payload.forEach { (key, value) ->

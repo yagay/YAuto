@@ -94,6 +94,12 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals(ConfigValue.StringValue("remove"), remove.config["mode"])
         assertEquals("compat.source.action", importAction("SetStatusBarIcon", message(field(1, "wifi"), field(2, "android:drawable/ic_dialog_info"))).typeId)
         assertEquals("compat.source.action", importAction("SetStatusBarIcon", message(field(1, "yauto_monitor"), field(2, "custom_png"))).typeId)
+        val framework = importAction("SetStatusBarIcon", message(
+            field(1, "yauto_monitor"), field(2, "android:drawable/ic_menu_camera"),
+        ))
+        assertEquals("android.status_icon.control", framework.typeId)
+        assertEquals(ConfigValue.StringValue("android_drawable"), framework.config["iconSource"])
+        assertEquals(ConfigValue.StringValue("ic_menu_camera"), framework.config["drawable"])
         assertEquals("compat.source.action", importAction("RemoveStatusBarIcon", message(field(1, "alarm"))).typeId)
         assertEquals("compat.source.action", importAction("RemoveStatusBarIcon", message(field(1, "yauto_monitor"), varintField(2, 1))).typeId)
     }
@@ -190,6 +196,93 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals(ConfigValue.StringValue("next"), refs[0].config["command"])
         assertEquals(ConfigValue.StringValue("ring"), refs[2].config["stream"])
         assertEquals(ConfigValue.NumberValue(4.0), refs[2].config["index"])
+    }
+
+    @Test fun `ShortX StartAppProcess retains package identity and Android user`() {
+        val first = message(field(1, "com.example.alpha"), varintField(2, 10))
+        val second = message(field(1, "com.example.beta"), varintField(2, 10))
+        val start = importAction("StartAppProcess", message(
+            field(1, first), field(1, second), field(2, "saved_group"),
+        ))
+        assertEquals("android.app.process.start", start.typeId)
+        assertEquals(ConfigValue.StringValue("com.example.alpha\ncom.example.beta"), start.config["packages"])
+        assertEquals(ConfigValue.StringValue("saved_group"), start.config["packageSets"])
+        assertEquals(ConfigValue.NumberValue(10.0), start.config["userId"])
+        assertEquals("compat.source.action", importAction("StartAppProcess", message(
+            field(1, first), field(1, message(field(1, "com.example.beta"), varintField(2, 0))),
+        )).typeId)
+        assertEquals("compat.source.action", importAction("StartAppProcess", message(field(1, first), varintField(3, 1))).typeId)
+    }
+
+    @Test fun `ShortX process by package preserves explicit user and rejects unknown fields`() {
+        val pair = message(field(1, "com.example.alpha"), field(2, "12"))
+        val start = importAction("StartAppProcessByPkg", message(field(1, pair)))
+        assertEquals("android.app.process.start", start.typeId)
+        assertEquals(ConfigValue.NumberValue(12.0), start.config["userId"])
+        assertEquals("compat.source.action", importAction("StartAppProcessByPkg", message(
+            field(1, message(field(1, "com.example.alpha"), field(2, "not_number"))),
+        )).typeId)
+    }
+
+    @Test fun `ShortX chip show hide and unknown interaction chains`() {
+        val show = importAction("ShowStatusBarChip", message(
+            field(1, "Sync running"), field(2, "android:drawable/ic_dialog_info"),
+        ))
+        assertEquals("android.status_chip.control", show.typeId)
+        assertEquals(ConfigValue.StringValue("Sync running"), show.config["text"])
+        assertEquals(ConfigValue.StringValue("android_drawable"), show.config["iconMode"])
+        val hide = importAction("HideStatusBarClip", byteArrayOf())
+        assertEquals("android.status_chip.control", hide.typeId)
+        assertEquals(ConfigValue.StringValue("hide"), hide.config["mode"])
+        assertEquals("compat.source.action", importAction("ShowStatusBarChip", message(
+            field(1, "Sync running"), field(3, message(field(1, "another-action"))),
+        )).typeId)
+        assertEquals("compat.source.action", importAction("ShowStatusBarChip", message(
+            field(1, "Sync running"), field(2, "unsupported://art"),
+        )).typeId)
+    }
+
+    @Test fun `ShortX JSON process and text chip convert without losing metadata`() {
+        val json = """{"id":"shortx-nonplugin","title":"Actions","actions":[
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.StartAppProcess","appPkg":[
+                {"pkgName":"com.example.alpha","userId":0}]},
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.ShowStatusBarChip","text":"Work","icon":""},
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.HideStatusBarClip"},
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.ShowStatusBarChip",
+                "text":"With handlers","clickAction":[{"@type":"unknown"}]}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("chips.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        val refs = result.bundle.automations.first().onEvent.map { (it as ActionNode.Action).feature }
+        assertEquals(listOf("android.app.process.start", "android.status_chip.control",
+            "android.status_chip.control", "android.status_chip.control"), refs.map { it.typeId })
+        val handler = result.bundle.automations.single { it.id.value.endsWith("-chip-3-click") }
+        assertEquals("android.event.status_chip_interaction", handler.activation.events.single().typeId)
+        assertEquals("compat.source.action", (handler.onEvent.single() as ActionNode.Action).feature.typeId)
+        assertEquals(ConfigValue.StringValue("sx_0_3"), handler.activation.events.single().config["chipId"])
+    }
+
+    @Test fun `ShortX chip callback actions are imported as click and long-click rules`() {
+        val json = """{"id":"chip-callback","title":"Chip","actions":[
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.ShowStatusBarChip",
+                "text":"Sync","clickAction":[
+                    {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.ShowToast","message":"Clicked"}],
+                "longClickAction":[
+                    {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.Delay","time":10}]}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("chip-callback.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        val bundle = result.bundle.automations
+        assertEquals(3, bundle.size)
+        val action = (bundle.first().onEvent.single() as ActionNode.Action).feature
+        assertEquals("android.status_chip.control", action.typeId)
+        assertEquals(ConfigValue.StringValue("sx_0_0"), action.config["chipId"])
+        val click = bundle.single { it.id.value.endsWith("-chip-0-click") }
+        val long = bundle.single { it.id.value.endsWith("-chip-0-long_click") }
+        assertEquals("android.toast.show", (click.onEvent.single() as ActionNode.Action).feature.typeId)
+        assertEquals("core.delay", (long.onEvent.single() as ActionNode.Action).feature.typeId)
+        assertEquals(ConfigValue.StringValue("click"), click.activation.events.single().config["gesture"])
+        assertEquals(ConfigValue.StringValue("long_click"), long.activation.events.single().config["gesture"])
     }
 
     private fun assertBoolean(source: String, target: String, key: String, value: Boolean) {
