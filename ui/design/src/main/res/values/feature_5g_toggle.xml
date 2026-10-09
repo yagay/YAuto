@@ -8,4 +8,8 @@
     <string name="feature_android_telephony_5g_toggle_field_operation_option_enable">Enable</string>
     <string name="feature_android_telephony_5g_toggle_field_operation_option_disable">Disable</string>
     <string name="feature_android_telephony_5g_toggle_field_resultvariable">Save resulting bitmask to variable</string>
+    <string name="runtime_feature_5g_invalid_config">Select a valid SIM slot and 5G operation.</string>
+    <string name="runtime_feature_5g_unsupported_mode">The phone returned an unsupported network mode. 5G was not changed.</string>
+    <string name="runtime_feature_5g_no_safe_mode">There is no safe network type left after disabling 5G. No change was made.</string>
+    <string name="runtime_feature_5g_not_confirmed">The phone service did not confirm the network-mode change.</string>
 </resources>

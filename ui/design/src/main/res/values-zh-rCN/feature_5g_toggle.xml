@@ -8,4 +8,8 @@
     <string name="feature_android_telephony_5g_toggle_field_operation_option_enable">开启</string>
     <string name="feature_android_telephony_5g_toggle_field_operation_option_disable">关闭</string>
     <string name="feature_android_telephony_5g_toggle_field_resultvariable">将结果掩码保存到变量</string>
+    <string name="runtime_feature_5g_invalid_config">请选择有效的 SIM 卡槽和 5G 操作。</string>
+    <string name="runtime_feature_5g_unsupported_mode">手机返回的网络模式无法识别，因此没有修改 5G。</string>
+    <string name="runtime_feature_5g_no_safe_mode">关闭 5G 后没有可用的其他网络类型，因此未执行修改。</string>
+    <string name="runtime_feature_5g_not_confirmed">手机服务未确认网络模式修改成功。</string>
 </resources>

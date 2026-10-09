@@ -6,6 +6,7 @@ import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -46,24 +47,24 @@ class Android5gToggleFeaturePack(context: Context) : FeaturePack {
                 val slot = (feature.config["slotId"].numberOrNull() ?: 0.0).toInt()
                 val operation = feature.config.string("operation", "toggle")
                 if (slot !in 0..7 || operation !in setOf("toggle", "enable", "disable")) {
-                    return@withLock ActionExecutionResult(false, message = "Invalid SIM or operation")
+                    return@withLock ActionExecutionResult(false, message = userText("feature.5g_invalid_config"))
                 }
                 val read = ctx.capabilities.execute(shellRequest("cmd phone get-allowed-network-types-for-users -s $slot"))
                 if (!read.success) return@withLock ActionExecutionResult(false, read.value, read.message)
                 val output = shellOutput(read.value)
                 val current = parseAllowedNetworkTypes(output)
-                    ?: return@withLock ActionExecutionResult(false, message = "Unsupported network-mode response; 5G unchanged")
+                    ?: return@withLock ActionExecutionResult(false, message = userText("feature.5g_unsupported_mode"))
                 val key = "saved_mode_slot_$slot"
                 val saved = if (prefs.contains(key)) prefs.getLong(key, 0L).takeIf { it > 0 } else null
                 val next = planFiveGMode(current, saved, operation)
-                    ?: return@withLock ActionExecutionResult(false, message = "No safe non-5G radio mode; 5G unchanged")
+                    ?: return@withLock ActionExecutionResult(false, message = userText("feature.5g_no_safe_mode"))
                 if (next != current) {
                     val command = "cmd phone set-allowed-network-types-for-users -s $slot " + java.lang.Long.toBinaryString(next)
                     val write = ctx.capabilities.execute(shellRequest(command))
                     if (!write.success) return@withLock ActionExecutionResult(false, write.value, write.message)
                     // AOSP's phone shell has returned exit code 0 even when its service reported failed.
                     if (!shellOutput(write.value).contains("set-allowed-network-types-for-users completed", ignoreCase = true)) {
-                        return@withLock ActionExecutionResult(false, write.value, "Telephony service did not confirm the mode change")
+                        return@withLock ActionExecutionResult(false, write.value, userText("feature.5g_not_confirmed"))
                     }
                 }
                 if (next != current && current and NR_BIT != 0L && next and NR_BIT == 0L) {
