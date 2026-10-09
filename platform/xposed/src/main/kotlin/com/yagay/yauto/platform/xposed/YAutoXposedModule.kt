@@ -9,7 +9,6 @@ import android.os.Binder
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
-import android.os.UserHandle
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.SystemClock
@@ -104,8 +103,20 @@ class YAutoXposedModule : XposedModule() {
                             val userId = requestedUser.toInt()
                             // Resolve ApplicationInfo for the requested Android user. Do not inject
                             // a process under a guessed UID or emulate it with an Activity start.
-                            val userContext = context.createContextAsUser(UserHandle.of(userId), 0)
-                            val info = userContext.packageManager.getApplicationInfo(pkg, 0)
+                            val pm = context.packageManager
+                            val info = if (userId == 0) {
+                                pm.getApplicationInfo(pkg, 0)
+                            } else {
+                                // PackageManager.getApplicationInfoAsUser is hidden on this
+                                // SDK. Look up the actual user-specific ApplicationInfo via
+                                // reflection inside system_server; never substitute user 0.
+                                val lookup = pm.javaClass.methods.firstOrNull {
+                                    it.name == "getApplicationInfoAsUser" && it.parameterCount == 3
+                                } ?: error("Cross-user package lookup unavailable on this ROM")
+                                lookup.isAccessible = true
+                                lookup.invoke(pm, pkg, 0, userId) as? ApplicationInfo
+                                    ?: error("Target package not installed for requested user")
+                            }
                             require(info.uid > 0 && info.packageName == pkg && info.enabled) { "Target app unavailable" }
                             val localServices = classLoader.loadClass("com.android.server.LocalServices")
                             val amInterface = classLoader.loadClass("android.app.ActivityManagerInternal")

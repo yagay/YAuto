@@ -88,9 +88,9 @@ internal class ShortXStatusChipController(
                     cornerRadius = 10 * density
                 }
                 isClickable = true
-                setOnClickListener { if (visible) onGesture(id, "click") }
+                setOnClickListener { if (visible) onGesture(this@ShortXStatusChipController.id, "click") }
                 setOnLongClickListener {
-                    if (visible) { onGesture(id, "long_click"); true } else false
+                    if (visible) { onGesture(this@ShortXStatusChipController.id, "long_click"); true } else false
                 }
                 visibility = View.GONE
                 tag = "yauto.shortx.status_chip"
