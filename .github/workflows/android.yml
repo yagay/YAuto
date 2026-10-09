@@ -49,6 +49,10 @@ jobs:
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_duplicate_titles.py'
           python3 tools/audit_picker_duplicate_titles.py --fail-on-unresolved-zh
+      - name: Unified picker parameter labels
+        run: |
+          python3 -m unittest discover -s tools -p 'test_picker_method_labels.py'
+          python3 tools/audit_picker_method_labels.py --fail-on-duplicates
       - name: Runtime picker title coverage
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_runtime_names.py'
@@ -111,6 +115,7 @@ jobs:
             build/reports/verified_picker_merges.json
             build/reports/picker_duplicate_title_inventory.json
             build/reports/picker_runtime_title_coverage.json
+            build/reports/picker_parameter_labels.json
           if-no-files-found: warn
 
       - name: Normalize APK name

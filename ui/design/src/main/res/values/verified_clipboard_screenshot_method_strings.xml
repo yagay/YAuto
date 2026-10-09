@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variant_android_clipboard_set">Set clipboard text</string>
+    <string name="feature_variant_android_clipboard_write">Write clipboard content</string>
+    <string name="feature_variant_android_clipboard_get">Get clipboard text</string>
+    <string name="feature_variant_android_clipboard_read">Read clipboard content</string>
+    <string name="feature_variant_android_screen_screenshot">Take screenshot</string>
+    <string name="feature_variant_android_screenshot_capture">Capture screen image</string>
+</resources>

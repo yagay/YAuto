@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variant_android_clipboard_set">设置剪贴板文本</string>
+    <string name="feature_variant_android_clipboard_write">写入剪贴板内容</string>
+    <string name="feature_variant_android_clipboard_get">获取剪贴板文本</string>
+    <string name="feature_variant_android_clipboard_read">读取剪贴板内容</string>
+    <string name="feature_variant_android_screen_screenshot">执行截屏</string>
+    <string name="feature_variant_android_screenshot_capture">捕获屏幕截图</string>
+</resources>
