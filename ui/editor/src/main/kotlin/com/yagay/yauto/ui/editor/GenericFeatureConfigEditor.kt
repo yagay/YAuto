@@ -228,7 +228,9 @@ private fun AccessRequirementBadges(descriptor: FeatureDescriptor) {
     // as if both need granting. Each option's requirements appear in its own guide.
     val optionOnly = options.flatMap { it.requirements }.toSet()
     val requirements = if (options.size > 1) {
-        descriptor.resolvedAccessRequirements() - optionOnly
+        // Do not turn possible paths inferred from a broad capability into mandatory
+        // permissions; the implementation guide is the source of backend requirements.
+        descriptor.accessRequirements - optionOnly
     } else {
         descriptor.resolvedAccessRequirements()
     }
