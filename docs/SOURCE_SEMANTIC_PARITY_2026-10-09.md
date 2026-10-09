@@ -33,3 +33,11 @@ No existing stable feature ID or saved task is migrated or overwritten. Unsuppor
 - Save the pre-disable mask for each SIM slot and restore it only if other network technologies remain unchanged.
 - Check the phone service's completion text, because the shell command can return exit status 0 while reporting failure.
 - ShortX `Toggle5G` now points to the dedicated action, but unverified source payloads remain as compatibility nodes. ROM and carrier capabilities need real-device verification.
+
+## Next batch: start/stop service control
+
+- Combined start, foreground start and stop into one native `android.service.control` action with a click-selectable `mode` parameter and an explicit component/user ID.
+- Preserved the old `android.service.stop` ID as an alias whose default operation is **stop**, so existing tasks retain their behavior.
+- Replaced the incorrect ShortX `StartService` hint targeting Activity-intent invocation; ShortX `StartService` and `StopService` now point to Android Service control.
+- Root/Shizuku command validation rejects malformed component/user ID and reports service-shell error output; Android service export and foreground restrictions remain enforced by Android.
+- Unsupported ShortX original payload variants remain compatibility nodes until proven lossless.

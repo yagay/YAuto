@@ -25,7 +25,7 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
 
     override fun install(registry: FeatureRegistry) {
         registerQuickSettingsClick(registry)
-        registerStopService(registry)
+        registerServiceControl(registry)
         registerLastUsedApp(registry)
         registerRecentAppNavigation(registry)
         registerGlobalActions(registry)
@@ -56,28 +56,51 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
         }
     }
 
-    private fun registerStopService(registry: FeatureRegistry) {
+    /**
+     * One operation picker for Android services. The historical android.service.stop ID
+     * remains a resolvable alias with an explicit 'stop' default.
+     */
+    private fun registerServiceControl(registry: FeatureRegistry) {
         registry.registerAction(
             FeatureDescriptor(
-                FeatureId("android.service.stop"), FeatureKind.ACTION,
-                "Stop Android service",
-                "Stop an explicit Android Service component through ActivityManager",
+                FeatureId("android.service.control"), FeatureKind.ACTION,
+                "Control Android service",
+                "Start, start as foreground service, or stop an explicit Android Service component through a privileged shell",
                 FeatureCategory.APP,
                 fields = listOf(
+                    FieldSchema.Choice("mode", "Operation", true, listOf("stop", "start", "start_foreground")),
                     FieldSchema.Text("component", "Service component package/class", true),
-                    FieldSchema.Number("userId", "Android user ID", min = 0.0),
+                    FieldSchema.Number("userId", "Android user ID", min = 0.0, max = 999.0),
                 ),
                 capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
                 implementationOptions = privilegedOptions(),
-                keywords = setOf("stop service", "android service", "shortx", "root", "shizuku"),
+                keywords = setOf("start service", "stop service", "foreground service", "shortx", "root", "shizuku"),
                 ownerPackId = id,
+                aliases = setOf("android.service.stop"),
+                aliasConfigDefaults = mapOf(
+                    "android.service.stop" to mapOf("mode" to ConfigValue.StringValue("stop")),
+                ),
             )
         ) { feature, ctx ->
-            val component = feature.config.string("component").resolveVariables(ctx.variables).trim()
-            val parsed = ComponentName.unflattenFromString(component)
-                ?: return@registerAction ActionExecutionResult(false)
-            val user = (feature.config["userId"].numberOrNull() ?: 0.0).toInt().coerceAtLeast(0)
-            shell(ctx, "am stopservice --user " + user + " -n " + shellArg(parsed.flattenToString()))
+            val parsed = ComponentName.unflattenFromString(
+                feature.config.string("component").resolveVariables(ctx.variables).trim()
+            ) ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Invalid service component"))
+            val rawUserId = feature.config["userId"].numberOrNull() ?: 0.0
+            if (!rawUserId.isFinite() || rawUserId % 1.0 != 0.0 || rawUserId !in 0.0..999.0) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Invalid Android user ID"))
+            }
+            val mode = feature.config.string("mode", "stop")
+            val command = serviceControlCommand(parsed.flattenToString(), rawUserId.toInt(), mode)
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", "Invalid service command"))
+            val result = shellResult(ctx, command)
+            val stdoutText = stdout(result)
+            val stderrText = ((result.value as? ConfigValue.ObjectValue)?.value?.get("stderr") as? ConfigValue.StringValue)?.value.orEmpty()
+            val ok = result.success && !serviceControlFailed(stdoutText + "\n" + stderrText)
+            ActionExecutionResult(
+                ok,
+                result.value,
+                if (ok) result.message else userText("feature.operation_failed", (stdoutText + "\n" + stderrText).trim().take(300).ifBlank { "Service command failed" }),
+            )
         }
     }
 
@@ -429,4 +452,24 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
     private companion object {
         val PACKAGE = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
     }
+}
+
+/** Restrict privileged commands to an explicit Android component and numeric user ID. */
+internal fun serviceControlCommand(component: String, userId: Int, mode: String): String? {
+    if (userId !in 0..999) return null
+    if (!Regex("""[A-Za-z_][A-Za-z0-9_.]*\/[A-Za-z_.$][A-Za-z0-9_.$]*""").matches(component)) return null
+    val verb = when (mode) {
+        "stop" -> "stopservice"
+        "start" -> "startservice"
+        "start_foreground" -> "start-foreground-service"
+        else -> return null
+    }
+    return "am " + verb + " --user " + userId + " -n '" + component + "'"
+}
+
+/** 'am' can exit 0 yet report failure text. */
+internal fun serviceControlFailed(output: String): Boolean {
+    val normalized = output.lowercase()
+    return listOf("error:", "securityexception", "permission denial", "not allowed",
+        "not found", "does not exist", "unable to start", "exception occurred").any(normalized::contains)
 }

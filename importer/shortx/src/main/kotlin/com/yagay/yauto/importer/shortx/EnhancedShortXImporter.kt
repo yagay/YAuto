@@ -176,7 +176,7 @@ internal object ShortXFeatureSuggestions {
         "StartNextApp" -> "android.app.next.launch"
         "LaunchPinedItem", "AppShortcut" -> "android.intent_uri.launch"
         "StartActivity", "StartActivityIntent", "StartActivityIntentUri", "StartActivityUrlSchema" -> "android.external.intent.invoke"
-        "StartService" -> "android.external.intent.invoke"
+        "StartService", "StopService" -> "android.service.control"
         "MapNav", "MapApp" -> "android.maps.open"
         // Notification icons do not provide the SystemUI status-bar icon API.
         "SetStatusBarIcon" -> null

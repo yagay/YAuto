@@ -136,6 +136,8 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("surface.gesture_recording.stop", ShortXFeatureSuggestions.target("StopGestureRecording", path))
         assertEquals("android.sms.send", ShortXFeatureSuggestions.target("SendSMS", path))
         assertEquals("android.telephony.5g.toggle", ShortXFeatureSuggestions.target("Toggle5G", path))
+        assertEquals("android.service.control", ShortXFeatureSuggestions.target("StartService", path))
+        assertEquals("android.service.control", ShortXFeatureSuggestions.target("StopService", path))
     }
 
 }

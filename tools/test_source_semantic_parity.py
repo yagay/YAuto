@@ -56,6 +56,17 @@ class SourceSemanticParityTests(unittest.TestCase):
         self.assertIn('parseAllowedNetworkTypes(', native)
         self.assertIn('planFiveGMode(', native)
 
+    def test_service_control_replaces_activity_intent_hint_without_losing_legacy_stop(self):
+        pack = (ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidShortXParityFeaturePack.kt").read_text(encoding="utf-8")
+        hints = SHORTX_HINTS.read_text(encoding="utf-8")
+        parser = SHORTX_PARSER.read_text(encoding="utf-8")
+        self.assertIn('FeatureId("android.service.control")', pack)
+        self.assertIn('aliases = setOf("android.service.stop")', pack)
+        self.assertIn('"android.service.stop" to mapOf("mode" to ConfigValue.StringValue("stop"))', pack)
+        self.assertIn('"StartService", "StopService" -> "android.service.control"', hints)
+        self.assertIn('"StartService", "StopService" -> "android.service.control"', parser)
+        self.assertNotIn('"StartService" -> "android.external.intent.invoke"', hints)
+
     def test_macro_screenshot_content_and_spotify_are_not_generic_triggers(self):
         macro = MACRO_HINTS.read_text(encoding="utf-8")
         self.assertIn('"ScreenshotContentTrigger" -> "android.event.screenshot_content"', macro)

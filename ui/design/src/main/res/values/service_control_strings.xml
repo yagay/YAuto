@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_service_control_title">Control Android service</string>
+    <string name="feature_android_service_control_description">Start, start in the foreground, or stop an explicit Android service using Root or Shizuku. Android may reject the operation.</string>
+    <string name="feature_android_service_control_field_mode">Operation</string>
+    <string name="feature_android_service_control_field_mode_option_start">Start service</string>
+    <string name="feature_android_service_control_field_mode_option_stop">Stop service</string>
+    <string name="feature_android_service_control_field_mode_option_start_foreground">Start foreground service</string>
+    <string name="feature_android_service_control_field_component">Service component</string>
+    <string name="feature_android_service_control_field_userid">Android user ID</string>
+</resources>
