@@ -64,6 +64,27 @@ internal class FeatureTextResolver(private val context: Context) {
     fun implementationDescription(featureId: String): String? =
         resource("feature_variant_${resourceKey(featureId)}_description")
 
+    /**
+     * Explain this precise feature/implementation pair, rather than showing the same
+     * Root/Shizuku/LSPosed permission paragraph for every unrelated feature.
+     * Reviewed pair-specific explanations win; all other pairs use the localized
+     * concrete operation and a backend- and kind-specific permission rationale.
+     */
+    fun backendPermissionExplanation(descriptor: FeatureDescriptor, backendId: String): String {
+        val idKey = resourceKey(descriptor.id.value)
+        val backendKey = resourceKey(backendId)
+        resource("feature_backend_${idKey}_${backendKey}_description")?.let { return it }
+        val purpose = implementationDescription(descriptor.id.value) ?: description(descriptor)
+        val formatName = "feature_backend_${backendKey}_${descriptor.kind.name.lowercase(Locale.ROOT)}_format"
+        val formatId = resourceIdCache.getOrPut(formatName) {
+            localizedContext.resources.getIdentifier(formatName, "string", localizedContext.packageName)
+        }
+        return if (formatId != 0) localizedContext.getString(formatId, purpose) else purpose
+    }
+
+    fun backendLimitation(backendId: String): String? =
+        resource("feature_backend_${resourceKey(backendId)}_limitation")
+
     fun description(descriptor: FeatureDescriptor): String =
         descriptionCache.getOrPut(descriptor.id.value) {
             resource("feature_${resourceKey(descriptor.id.value)}_description")
