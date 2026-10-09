@@ -8,4 +8,9 @@
     <string name="feature_android_condition_screen_on_time_field_from_option_last_24_hours">Last 24 hours</string>
     <string name="runtime_feature_screen_on_time_usage_required">Usage Access is required to read interactive-screen history.</string>
     <string name="runtime_feature_screen_on_time_data_unavailable">Screen interactive history is unavailable or incomplete; no duration was estimated.</string>
+    <string name="feature_core_condition_trigger_fired_title">Trigger fired</string>
+    <string name="feature_core_condition_trigger_fired_description">Check the event that started this automation by YAuto event ID, optional source and optional trigger tag.</string>
+    <string name="feature_core_condition_trigger_fired_field_eventtype">Trigger event ID</string>
+    <string name="feature_core_condition_trigger_fired_field_source">Source (optional)</string>
+    <string name="feature_core_condition_trigger_fired_field_facttag">Trigger tag (optional)</string>
 </resources>

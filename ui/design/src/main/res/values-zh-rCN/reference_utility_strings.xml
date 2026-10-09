@@ -18,7 +18,7 @@
     <string name="feature_android_network_active_info_field_resultvariable">将网络对象保存到变量</string>
 
     <string name="feature_android_screen_on_time_get_title">获取屏幕点亮时长</string>
-    <string name="feature_android_screen_on_time_get_description">读取本次屏幕点亮时长或系统启动后的累计交互时长</string>
+    <string name="feature_android_screen_on_time_get_description">读取本次亮屏、开机以来、今天或最近 24 小时的亮屏交互时长</string>
     <string name="feature_android_screen_on_time_get_field_from">统计起点</string>
     <string name="feature_android_screen_on_time_get_field_from_option_last_screen_off">上次息屏</string>
     <string name="feature_android_screen_on_time_get_field_from_option_system_ready">系统启动</string>
@@ -42,14 +42,14 @@
     <string name="feature_android_audio_default_sound_set_field_silent">设为静音</string>
 
     <string name="feature_android_state_screen_on_time_title">屏幕点亮时长</string>
-    <string name="feature_android_state_screen_on_time_description">将当前屏幕点亮时长与设定范围进行比较</string>
+    <string name="feature_android_state_screen_on_time_description">将指定统计时间范围内的亮屏时长与设定区间比较</string>
     <string name="feature_android_state_screen_on_time_field_from">统计起点</string>
     <string name="feature_android_state_screen_on_time_field_from_option_last_screen_off">上次息屏</string>
     <string name="feature_android_state_screen_on_time_field_from_option_system_ready">系统启动</string>
     <string name="feature_android_state_screen_on_time_field_minms">最短时长</string>
     <string name="feature_android_state_screen_on_time_field_maxms">最长时长</string>
     <string name="feature_android_condition_screen_on_time_title">屏幕点亮时长</string>
-    <string name="feature_android_condition_screen_on_time_description">将当前屏幕点亮时长与设定范围进行比较</string>
+    <string name="feature_android_condition_screen_on_time_description">仅在所选统计范围内亮屏时长符合设定区间时执行</string>
     <string name="feature_android_condition_screen_on_time_field_from">统计起点</string>
     <string name="feature_android_condition_screen_on_time_field_from_option_last_screen_off">上次息屏</string>
     <string name="feature_android_condition_screen_on_time_field_from_option_system_ready">系统启动</string>

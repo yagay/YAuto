@@ -18,7 +18,7 @@
     <string name="feature_android_network_active_info_field_resultvariable">Store network object</string>
 
     <string name="feature_android_screen_on_time_get_title">Get screen-on time</string>
-    <string name="feature_android_screen_on_time_get_description">Read the current screen-on session or total interactive time since system startup</string>
+    <string name="feature_android_screen_on_time_get_description">Read interactive screen time for the current session, since boot, today, or the last 24 hours</string>
     <string name="feature_android_screen_on_time_get_field_from">Measure from</string>
     <string name="feature_android_screen_on_time_get_field_from_option_last_screen_off">Last screen off</string>
     <string name="feature_android_screen_on_time_get_field_from_option_system_ready">System startup</string>
@@ -42,14 +42,14 @@
     <string name="feature_android_audio_default_sound_set_field_silent">Set silent</string>
 
     <string name="feature_android_state_screen_on_time_title">Screen-on time</string>
-    <string name="feature_android_state_screen_on_time_description">Compare current screen-on duration with a configured range</string>
+    <string name="feature_android_state_screen_on_time_description">Compare interactive screen time within the selected measurement period</string>
     <string name="feature_android_state_screen_on_time_field_from">Measure from</string>
     <string name="feature_android_state_screen_on_time_field_from_option_last_screen_off">Last screen off</string>
     <string name="feature_android_state_screen_on_time_field_from_option_system_ready">System startup</string>
     <string name="feature_android_state_screen_on_time_field_minms">Minimum duration</string>
     <string name="feature_android_state_screen_on_time_field_maxms">Maximum duration</string>
     <string name="feature_android_condition_screen_on_time_title">Screen-on time</string>
-    <string name="feature_android_condition_screen_on_time_description">Compare current screen-on duration with a configured range</string>
+    <string name="feature_android_condition_screen_on_time_description">Require interactive screen time in the selected measurement period to match a duration range</string>
     <string name="feature_android_condition_screen_on_time_field_from">Measure from</string>
     <string name="feature_android_condition_screen_on_time_field_from_option_last_screen_off">Last screen off</string>
     <string name="feature_android_condition_screen_on_time_field_from_option_system_ready">System startup</string>

@@ -8,4 +8,9 @@
     <string name="feature_android_condition_screen_on_time_field_from_option_last_24_hours">最近 24 小时</string>
     <string name="runtime_feature_screen_on_time_usage_required">读取亮屏记录需要授予使用情况访问权限。</string>
     <string name="runtime_feature_screen_on_time_data_unavailable">亮屏交互事件缺失或记录不完整，无法可靠估算时长。</string>
+    <string name="feature_core_condition_trigger_fired_title">触发器已触发</string>
+    <string name="feature_core_condition_trigger_fired_description">根据 YAuto 事件 ID、可选事件来源及触发标签，判断当前是哪种事件启动了任务。</string>
+    <string name="feature_core_condition_trigger_fired_field_eventtype">触发事件 ID</string>
+    <string name="feature_core_condition_trigger_fired_field_source">事件来源（选填）</string>
+    <string name="feature_core_condition_trigger_fired_field_facttag">触发标签（选填）</string>
 </resources>

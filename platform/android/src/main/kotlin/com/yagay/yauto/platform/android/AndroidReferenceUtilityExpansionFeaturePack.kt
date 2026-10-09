@@ -168,10 +168,10 @@ class AndroidReferenceUtilityExpansionFeaturePack(context: Context) : FeaturePac
             )
         ) { feature, ctx ->
             if (!isUsageStatsAccessGranted(context)) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
+                return@registerAction ActionExecutionResult(false, message = userText("feature.screen_on_time_usage_required"))
             }
             val duration = screenOnTimeMs(feature.config.string("from", "last_screen_off"))
-                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.operation_failed", feature.typeId))
+                ?: return@registerAction ActionExecutionResult(false, message = userText("feature.screen_on_time_data_unavailable"))
             val variable = feature.config.string("resultVariable").trim()
             if (variable.isBlank()) {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.destination_variable_empty"))
