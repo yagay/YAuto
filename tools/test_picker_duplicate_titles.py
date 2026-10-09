@@ -21,6 +21,15 @@ class DuplicateTitleInventoryTests(unittest.TestCase):
         }
         self.assertEqual(inspect(example)["unresolved_candidate_groups"], 0)
 
+    def test_data_saver_compatibility_alias_keeps_canonical_meaning(self):
+        en = read_titles(RES / "values")
+        zh = read_titles(RES / "values-zh-rCN")
+        for resource_map in (en, zh):
+            for kind in ("state", "condition"):
+                canonical = resource_map["feature_display_android_" + kind + "_data_saver_title"]
+                compatibility = resource_map["feature_display_android_" + kind + "_data_saver_status_title"]
+                self.assertEqual(canonical, compatibility)
+
     def test_real_chinese_resources_are_scanned(self):
         en=read_titles(RES/"values")
         zh=read_titles(RES/"values-zh-rCN")

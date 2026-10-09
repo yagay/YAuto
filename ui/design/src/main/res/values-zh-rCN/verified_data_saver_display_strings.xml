@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_display_android_condition_data_saver_title">流量节省模式</string>
-    <string name="feature_display_android_state_data_saver_title">流量节省模式</string>
+    <string name="feature_display_android_condition_data_saver_title">后台流量限制状态</string>
+    <string name="feature_display_android_state_data_saver_title">后台流量限制状态</string>
     <string name="feature_display_android_condition_data_saver_status_title">后台流量限制状态</string>
     <string name="feature_display_android_state_data_saver_status_title">后台流量限制状态</string>
 </resources>
