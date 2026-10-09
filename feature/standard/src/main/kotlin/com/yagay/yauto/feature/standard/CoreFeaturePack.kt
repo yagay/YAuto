@@ -150,6 +150,34 @@ class CoreFeaturePack : FeaturePack {
         },
         conditionFeature(
             FeatureDescriptor(
+                id = FeatureId("core.condition.trigger_fired"),
+                kind = FeatureKind.CONDITION,
+                title = "Trigger fired",
+                description = "Match the runtime event that started this automation by its feature ID, source or trigger tag",
+                category = FeatureCategory.CORE,
+                fields = listOf(
+                    FieldSchema.Text("eventType", "Trigger event type ID", true),
+                    FieldSchema.Text("source", "Event source (optional)"),
+                    FieldSchema.Text("factTag", "Trigger tag (optional)"),
+                ),
+                fieldBehaviors = mapOf(
+                    "eventType" to FieldBehavior(supportsVariables = true),
+                    "source" to FieldBehavior(supportsVariables = true),
+                    "factTag" to FieldBehavior(supportsVariables = true),
+                ),
+                keywords = setOf("trigger fired", "event type", "source", "event tag", "macrodroid"),
+            )
+        ) { feature, ctx ->
+            val eventType = feature.config.string("eventType").resolveVariables(ctx.variables).trim()
+            val source = feature.config.string("source").resolveVariables(ctx.variables).trim()
+            val tag = feature.config.string("factTag").resolveVariables(ctx.variables).trim()
+            eventType.isNotEmpty() &&
+                (ctx.variables.get("event.type") as? ConfigValue.StringValue)?.value == eventType &&
+                (source.isEmpty() || (ctx.variables.get("event.source") as? ConfigValue.StringValue)?.value == source) &&
+                (tag.isEmpty() || (ctx.variables.get("event.fact_tag") as? ConfigValue.StringValue)?.value == tag)
+        },
+        conditionFeature(
+            FeatureDescriptor(
                 id = FeatureId("core.condition.event_tag"),
                 kind = FeatureKind.CONDITION,
                 title = "Event source tag",

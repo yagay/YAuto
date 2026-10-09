@@ -26,6 +26,7 @@ object AndroidFeaturePacks {
         AndroidWifiPrivilegedFeaturePack(),
         AndroidAccountSyncFeaturePack(),
         AndroidDataUsageFeaturePack(context),
+        AndroidScreenOnTimeFeaturePack(context),
         AndroidStopwatchFeaturePack(),
         AndroidMediaStoreEventFeaturePack(),
         AndroidHttpServerFeaturePack(),
