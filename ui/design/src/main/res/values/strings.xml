@@ -204,6 +204,7 @@
     <string name="access_lsposed">LSPosed</string>
     <string name="access_zygisk">Zygisk</string>
     <string name="access_accessibility">Accessibility</string>
+    <string name="access_usage_stats">Usage access</string>
     <string name="access_notification_listener">Notification access</string>
     <string name="access_post_notifications">Notification permission</string>
     <string name="access_overlay">Overlay</string>

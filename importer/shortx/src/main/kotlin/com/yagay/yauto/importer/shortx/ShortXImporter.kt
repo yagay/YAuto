@@ -148,6 +148,11 @@ class ShortXImporter : AutomationImporter {
                             path,
                             ShortXMappings.suggestedActionFeature(any.typeUrl),
                         ),
+                        // Compatibility nodes must preserve execution metadata as well as payload.
+                        // Otherwise a disabled source action can silently become enabled on import.
+                        enabled = ShortXMappings.enabled(any),
+                        comment = ShortXMappings.note(any),
+                        failurePolicy = if (ShortXMappings.actionBreaksOnError(any)) ActionFailurePolicy.STOP else ActionFailurePolicy.CONTINUE,
                     )
                 }
             }

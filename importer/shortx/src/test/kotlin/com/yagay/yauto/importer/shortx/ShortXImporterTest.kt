@@ -254,6 +254,35 @@ class ShortXImporterTest {
         assertEquals("android.condition.screen", condition.feature.typeId)
     }
 
+
+    @Test fun `unsupported JSON action preserves disabled flag note and error policy`() {
+        val json = """{"id":"unmapped","title":"Keep source metadata","actions":[
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.UnknownExtension",
+             "isDisabled":true,"note":"do not enable","actionOnError":1,"extensionSetting":"retain"}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("unknown.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        val action = result.bundle.automations.single().onEvent.single() as ActionNode.Action
+        assertEquals("compat.source.action", action.feature.typeId)
+        assertEquals(false, action.enabled)
+        assertEquals("do not enable", action.comment)
+        assertEquals(ActionFailurePolicy.STOP, action.failurePolicy)
+        assertTrue(result.issues.isNotEmpty())
+    }
+
+    @Test fun `unsupported protobuf action preserves disabled flag note and break policy`() {
+        val payload = message(field(1, "vendor-specific"), varintField(97, 1), varintField(98, 1), field(99, "keep disabled"))
+        val result = ShortXImporter().import(
+            ImportInput("unknown.rule", null, rule("unknown", "Unknown", any("UnknownExtension", payload)))
+        )
+        assertTrue(result.success)
+        val action = result.bundle.automations.single().onEvent.single() as ActionNode.Action
+        assertEquals("compat.source.action", action.feature.typeId)
+        assertEquals(false, action.enabled)
+        assertEquals("keep disabled", action.comment)
+        assertEquals(ActionFailurePolicy.STOP, action.failurePolicy)
+    }
+
     private fun actionFeature(result: com.yagay.yauto.core.importer.ImportResult) =
         (result.bundle.automations.single().onEvent.single() as ActionNode.Action).feature
 

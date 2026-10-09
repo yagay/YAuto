@@ -21,6 +21,7 @@ import com.yagay.yauto.core.registry.AccessRequirement
 import com.yagay.yauto.core.registry.FeaturePickerCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
+import com.yagay.yauto.core.registry.resolvedAccessRequirements
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.localizedList
 import com.yagay.yauto.ui.design.R as TextR
@@ -409,22 +410,35 @@ private fun FeaturePickerRow(
 
 @Composable
 private fun featureAccessTags(descriptor: FeatureDescriptor): String {
-    val requirements = remember(descriptor) {
-        buildSet {
-            addAll(descriptor.accessRequirements)
-            descriptor.implementationOptions.forEach { addAll(it.requirements) }
-        }
-    }
-    val root = if (AccessRequirement.ROOT in requirements) stringResource(TextR.string.access_root) else null
-    val shizuku = if (AccessRequirement.SHIZUKU in requirements) stringResource(TextR.string.access_shizuku) else null
-    val lsposed = if (AccessRequirement.LSPOSED in requirements) stringResource(TextR.string.access_lsposed) else null
-    val zygisk = if (AccessRequirement.ZYGISK in requirements) stringResource(TextR.string.access_zygisk) else null
-    val accessibility = if (AccessRequirement.ACCESSIBILITY in requirements) {
-        stringResource(TextR.string.access_accessibility)
-    } else {
-        null
-    }
-    return localizedList(listOfNotNull(root, shizuku, lsposed, zygisk, accessibility))
+    // Use the same resolved requirements as the configuration editor. Reading only
+    // accessRequirements/implementationOptions hides permissions inferred from capabilities.
+    val requirements = remember(descriptor) { descriptor.resolvedAccessRequirements() }
+    return localizedList(requirements.sortedBy { it.ordinal }.map { requirement ->
+        stringResource(when (requirement) {
+        AccessRequirement.ROOT -> TextR.string.access_root
+        AccessRequirement.SHIZUKU -> TextR.string.access_shizuku
+        AccessRequirement.LSPOSED -> TextR.string.access_lsposed
+        AccessRequirement.ZYGISK -> TextR.string.access_zygisk
+        AccessRequirement.ACCESSIBILITY -> TextR.string.access_accessibility
+        AccessRequirement.USAGE_STATS -> TextR.string.access_usage_stats
+        AccessRequirement.NOTIFICATION_LISTENER -> TextR.string.access_notification_listener
+        AccessRequirement.POST_NOTIFICATIONS -> TextR.string.access_post_notifications
+        AccessRequirement.OVERLAY -> TextR.string.access_overlay
+        AccessRequirement.WRITE_SETTINGS -> TextR.string.access_write_settings
+        AccessRequirement.CAMERA -> TextR.string.access_camera
+        AccessRequirement.LOCATION -> TextR.string.access_location
+        AccessRequirement.BLUETOOTH_CONNECT -> TextR.string.access_bluetooth
+        AccessRequirement.DND_POLICY -> TextR.string.access_dnd_policy
+        AccessRequirement.DEVICE_ADMIN -> TextR.string.access_device_admin
+        AccessRequirement.CALENDAR -> TextR.string.access_calendar
+        AccessRequirement.CONTACTS -> TextR.string.access_contacts
+        AccessRequirement.CALL_LOG -> TextR.string.access_call_log
+        AccessRequirement.SMS -> TextR.string.access_sms
+        AccessRequirement.PHONE -> TextR.string.access_phone
+        AccessRequirement.RECORD_AUDIO -> TextR.string.access_record_audio
+        AccessRequirement.ACTIVITY_RECOGNITION -> TextR.string.access_activity_recognition
+        })
+    })
 }
 
 @Composable
