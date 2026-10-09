@@ -153,6 +153,7 @@ class ShortXVerifiedSystemActionsTest {
             assertEquals(ConfigValue.StringValue(expected), feature.config["command"])
         }
         assertEquals("compat.source.action", importAction("MediaPlayback", message(varintField(1, 7))).typeId)
+        assertEquals("compat.source.action", importAction("MediaPlayback", message(varintField(1, 4_294_967_296L))).typeId)
         assertEquals("compat.source.action", importAction("MediaPlayback", message(varintField(1, 1), field(2, "extra"))).typeId)
     }
 
@@ -169,6 +170,8 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals(ConfigValue.NumberValue(8.0), volume.config["index"])
         assertEquals("compat.source.action", importAction("SetVolume", message(varintField(1, 11), varintField(2, 8))).typeId)
         assertEquals("compat.source.action", importAction("SetVolume", message(varintField(1, 3), varintField(2, 1001))).typeId)
+        assertEquals("compat.source.action", importAction("SetVolume", message(varintField(1, 4_294_967_299L), varintField(2, 8))).typeId)
+        assertEquals("compat.source.action", importAction("SetVolume", message(varintField(1, 3), varintField(2, 4_294_967_304L))).typeId)
     }
 
     @Test fun `JSON native actions convert media noop and raw volume`() {
