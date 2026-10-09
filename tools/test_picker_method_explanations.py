@@ -36,10 +36,31 @@ class FeatureMethodExplanationsTests(unittest.TestCase):
         self.assertIn("onSelect(item)", source)
         self.assertIn("selectedMemberId = it.descriptor.id.value", source)
 
-    def test_backend_guide_uses_the_current_feature_context(self):
-        source = GENERIC.read_text(encoding="utf-8")
-        self.assertIn("resolver.implementationDescription(descriptor.id.value)", source)
-        self.assertIn("?: resolver.description(descriptor)", source)
+    def test_backend_guide_uses_selected_feature_and_backend(self):
+        editor = GENERIC.read_text(encoding="utf-8")
+        resolver = RESOLVER.read_text(encoding="utf-8")
+        self.assertIn("resolver.backendPermissionExplanation(descriptor, backendId)", editor)
+        self.assertIn("values[FEATURE_BACKEND_CONFIG_KEY]", editor)
+        self.assertIn("descriptor.accessRequirements - optionPermissions", editor)
+        self.assertIn("val optionOnly = options.flatMap { it.requirements }.toSet()", editor)
+        self.assertNotIn("implementationPros(backendId)", editor)
+        self.assertIn("implementationDescription(descriptor.id.value) ?: description(descriptor)", resolver)
+        self.assertIn("feature_backend_${idKey}_${backendKey}_description", resolver)
+
+    def test_backend_permission_explanations_cover_each_kind_in_both_locales(self):
+        for locale in ("values", "values-zh-rCN"):
+            strings = locale_strings(RES / locale)
+            for backend in ("auto", "root", "shizuku", "lsposed", "accessibility", "usage_stats"):
+                for kind in ("action", "event", "condition", "state"):
+                    key = f"feature_backend_{backend}_{kind}_format"
+                    self.assertIn(key, strings, f"Missing {locale}/{key}")
+                    self.assertIn("%1$s", strings[key])
+            for key in ("feature_backend_auto_paths_format", "feature_backend_additional_requirements_format"):
+                self.assertIn(key, strings)
+            self.assertNotEqual(
+                strings["feature_backend_root_action_format"],
+                strings["feature_backend_shizuku_action_format"],
+            )
 
     def test_resource_resolver_has_distinct_description_key(self):
         source = RESOLVER.read_text(encoding="utf-8")
