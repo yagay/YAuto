@@ -95,7 +95,12 @@ internal fun GenericFeatureConfigEditor(
         item { FeatureSummaryCard(descriptor, accent) }
 
         if (descriptor.resolvedImplementationOptions().size > 1) {
-            item { ImplementationGuide(descriptor) }
+            item {
+                ImplementationGuide(
+                    descriptor,
+                    values[FEATURE_BACKEND_CONFIG_KEY].orEmpty().ifBlank { "auto" },
+                )
+            }
         }
 
         if (descriptor.fields.isEmpty()) {
@@ -218,7 +223,15 @@ private fun FeatureSummaryCard(descriptor: FeatureDescriptor, accent: Color) {
 
 @Composable
 private fun AccessRequirementBadges(descriptor: FeatureDescriptor) {
-    val requirements = descriptor.resolvedAccessRequirements()
+    val options = descriptor.resolvedImplementationOptions()
+    // Alternatives are NOT cumulative requirements: Root OR Shizuku must not appear
+    // as if both need granting. Each option's requirements appear in its own guide.
+    val optionOnly = options.flatMap { it.requirements }.toSet()
+    val requirements = if (options.size > 1) {
+        descriptor.resolvedAccessRequirements() - optionOnly
+    } else {
+        descriptor.resolvedAccessRequirements()
+    }
     if (requirements.isEmpty()) return
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -229,67 +242,75 @@ private fun AccessRequirementBadges(descriptor: FeatureDescriptor) {
 }
 
 @Composable
-private fun ImplementationGuide(descriptor: FeatureDescriptor) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(TextR.string.implementation_method), fontWeight = FontWeight.SemiBold)
-            // Explain what the selected feature actually performs before listing
-            // generic backend trade-offs; its explanation varies by Feature ID.
-            val resolver = rememberFeatureTextResolver()
-            Text(
-                text = resolver.implementationDescription(descriptor.id.value)
-                    ?: resolver.description(descriptor),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            ImplementationExplanation("auto", emptySet(), false)
-            descriptor.resolvedImplementationOptions().forEach { option ->
-                ImplementationExplanation(option.backendId.orEmpty(), option.requirements, option.restartRequired)
-            }
-        }
-    }
-}
+private fun ImplementationGuide(descriptor: FeatureDescriptor, requestedBackendId: String) {
+    val options = descriptor.resolvedImplementationOptions()
+    val selected = options.firstOrNull { it.backendId == requestedBackendId }
+    val backendId = selected?.backendId ?: "auto"
+    val resolver = rememberFeatureTextResolver()
+    val optionPermissions = options.flatMap { it.requirements }.toSet()
+    val additionalPermissions = descriptor.accessRequirements - optionPermissions
 
-@Composable
-private fun ImplementationExplanation(
-    backendId: String,
-    requirements: Set<AccessRequirement>,
-    restartRequired: Boolean,
-) {
-    val title = implementationTitle(backendId)
-    val summary = implementationSummary(backendId)
-    val pros = implementationPros(backendId)
-    val cons = implementationCons(backendId)
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(title, fontWeight = FontWeight.Medium)
-        if (requirements.isNotEmpty()) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(TextR.string.implementation_method), fontWeight = FontWeight.SemiBold)
+            Text(implementationTitle(backendId), style = MaterialTheme.typography.titleSmall)
             Text(
-                stringResource(
-                    TextR.string.implementation_requirements_format,
-                    localizedList(requirements.map { accessRequirementLabelNonComposable(it) }),
-                ),
-                style = MaterialTheme.typography.labelSmall,
-            )
-        }
-        if (summary.isNotBlank()) Text(summary, style = MaterialTheme.typography.bodySmall)
-        if (pros.isNotEmpty()) {
-            Text(
-                stringResource(TextR.string.implementation_pros_format, localizedList(pros)),
+                resolver.backendPermissionExplanation(descriptor, backendId),
                 style = MaterialTheme.typography.bodySmall,
             )
-        }
-        if (cons.isNotEmpty()) {
-            Text(
-                stringResource(TextR.string.implementation_cons_format, localizedList(cons)),
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-        if (restartRequired) {
-            Text(
-                stringResource(TextR.string.implementation_restart_note),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+
+            if (selected != null) {
+                if (selected.requirements.isNotEmpty()) {
+                    Text(
+                        stringResource(
+                            TextR.string.implementation_requirements_format,
+                            localizedList(selected.requirements.map { accessRequirementLabelNonComposable(it) }),
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+                if (selected.restartRequired) {
+                    Text(
+                        stringResource(TextR.string.implementation_restart_note),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                // Auto does not itself grant access; show the separate permission
+                // routes that the engine may choose, without suggesting they are all required.
+                val paths = options.map { option ->
+                    val title = implementationTitle(option.backendId.orEmpty())
+                    val requirementLabels = option.requirements.map { accessRequirementLabelNonComposable(it) }
+                    if (requirementLabels.isEmpty()) title
+                    else "$title: ${localizedList(requirementLabels)}"
+                }
+                Text(
+                    stringResource(
+                        TextR.string.feature_backend_auto_paths_format,
+                        localizedList(paths),
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+
+            if (additionalPermissions.isNotEmpty()) {
+                Text(
+                    stringResource(
+                        TextR.string.feature_backend_additional_requirements_format,
+                        localizedList(additionalPermissions.map { accessRequirementLabelNonComposable(it) }),
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+
+            resolver.backendLimitation(backendId)?.let { limitation ->
+                Text(
+                    limitation,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -536,70 +557,6 @@ private fun implementationTitle(backendId: String): String = stringResource(
         else -> TextR.string.implementation_method
     }
 )
-
-@Composable
-private fun implementationSummary(backendId: String): String = when (backendId) {
-    "auto" -> stringResource(TextR.string.implementation_auto_summary)
-    "root" -> stringResource(TextR.string.implementation_root_summary)
-    "shizuku" -> stringResource(TextR.string.implementation_shizuku_summary)
-    "lsposed" -> stringResource(TextR.string.implementation_lsposed_summary)
-    "accessibility" -> stringResource(TextR.string.implementation_accessibility_summary)
-    "usage_stats" -> stringResource(TextR.string.implementation_usage_stats_summary)
-    else -> ""
-}
-
-@Composable
-private fun implementationPros(backendId: String): List<String> = when (backendId) {
-    "root" -> listOf(
-        stringResource(TextR.string.implementation_root_pro_1),
-        stringResource(TextR.string.implementation_root_pro_2),
-        stringResource(TextR.string.implementation_root_pro_3),
-    )
-    "shizuku" -> listOf(
-        stringResource(TextR.string.implementation_shizuku_pro_1),
-        stringResource(TextR.string.implementation_shizuku_pro_2),
-        stringResource(TextR.string.implementation_shizuku_pro_3),
-    )
-    "lsposed" -> listOf(
-        stringResource(TextR.string.implementation_lsposed_pro_1),
-        stringResource(TextR.string.implementation_lsposed_pro_2),
-        stringResource(TextR.string.implementation_lsposed_pro_3),
-    )
-    "accessibility" -> listOf(
-        stringResource(TextR.string.implementation_accessibility_pro_1),
-        stringResource(TextR.string.implementation_accessibility_pro_2),
-        stringResource(TextR.string.implementation_accessibility_pro_3),
-    )
-    else -> emptyList()
-}
-
-@Composable
-private fun implementationCons(backendId: String): List<String> = when (backendId) {
-    "root" -> listOf(
-        stringResource(TextR.string.implementation_root_con_1),
-        stringResource(TextR.string.implementation_root_con_2),
-        stringResource(TextR.string.implementation_root_con_3),
-    )
-    "shizuku" -> listOf(
-        stringResource(TextR.string.implementation_shizuku_con_1),
-        stringResource(TextR.string.implementation_shizuku_con_2),
-        stringResource(TextR.string.implementation_shizuku_con_3),
-    )
-    "lsposed" -> listOf(
-        stringResource(TextR.string.implementation_lsposed_con_1),
-        stringResource(TextR.string.implementation_lsposed_con_2),
-        stringResource(TextR.string.implementation_lsposed_con_3),
-    )
-    "accessibility" -> listOf(
-        stringResource(TextR.string.implementation_accessibility_con_1),
-        stringResource(TextR.string.implementation_accessibility_con_2),
-        stringResource(TextR.string.implementation_accessibility_con_3),
-    )
-    else -> emptyList()
-}
-
-
-
 
 private fun HardwareKeyCaptureResult.toHiddenHardwareIdentity(): ConfigValue.ObjectValue =
     ConfigValue.ObjectValue(
