@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_android_nfc_set_title">NFC</string>
+    <string name="feature_android_nfc_set_title">开关 NFC</string>
     <string name="feature_android_nfc_set_description">通过 Android NFC 服务开启或关闭 NFC</string>
 
     <string name="feature_android_location_enabled_set_title">定位服务</string>
