@@ -25,7 +25,8 @@ internal object ShortXStructuralMappings {
         val fields = runCatching { ProtoFields(any.value) }.getOrNull() ?: return null
         if (fields.varint(98) == 1L) return null
         return when (type) {
-            "NoAction" -> featureAction("core.noop")
+            // NoAction is handled by ShortXMappings.nativeAction so unknown protobuf
+            // business fields cannot silently vanish during conversion.
             "BreakActionExecute", "Brk" -> ActionNode.Break(nodeId())
             "StopAllActions" -> ActionNode.Return(nodeId(), ConfigValue.NullValue)
             "SetFunctionReturnValue" -> ActionNode.Return(
