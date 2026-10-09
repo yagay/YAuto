@@ -45,6 +45,10 @@ jobs:
         run: |
           python3 -m unittest discover -s tools -p 'test_verified_picker_merges.py'
           python3 tools/audit_verified_picker_merges.py --fail-on-unsafe
+      - name: Full picker title collision inventory
+        run: |
+          python3 -m unittest discover -s tools -p 'test_picker_duplicate_titles.py'
+          python3 tools/audit_picker_duplicate_titles.py
       - name: Feature name collision audit
         run: |
           python3 -m unittest discover -s tools -p 'test_feature_name_collisions.py'
@@ -101,6 +105,7 @@ jobs:
             build/reports/aosp_terminology_audit.json
             build/reports/feature_name_collisions.json
             build/reports/verified_picker_merges.json
+            build/reports/picker_duplicate_title_inventory.json
           if-no-files-found: warn
 
       - name: Normalize APK name
