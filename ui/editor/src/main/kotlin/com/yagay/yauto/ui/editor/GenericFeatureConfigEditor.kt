@@ -94,11 +94,13 @@ internal fun GenericFeatureConfigEditor(
 
         item { FeatureSummaryCard(descriptor, accent) }
 
-        if (descriptor.resolvedImplementationOptions().size > 1) {
+        val backends = descriptor.resolvedImplementationOptions()
+        if (backends.isNotEmpty()) {
             item {
                 ImplementationGuide(
                     descriptor,
-                    values[FEATURE_BACKEND_CONFIG_KEY].orEmpty().ifBlank { "auto" },
+                    if (backends.size == 1) backends.first().backendId.orEmpty()
+                    else values[FEATURE_BACKEND_CONFIG_KEY].orEmpty().ifBlank { "auto" },
                 )
             }
         }
