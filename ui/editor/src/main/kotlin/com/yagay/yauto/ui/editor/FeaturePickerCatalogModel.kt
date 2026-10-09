@@ -82,7 +82,19 @@ internal class FeaturePickerCatalogModel private constructor(
             else -> byCategory[page.category.id].orEmpty()
         }
         val needle = normalizeQuery(query)
-        return if (needle.isEmpty()) base else base.filter { needle in it.searchIndex }
+        if (needle.isEmpty()) return base
+        // Categories contain one canonical item per verified logical function.
+        // Still search every implementation's text/ID and route a matching
+        // alternate method into the same unified editor.
+        if (page.special != null) return base.filter { needle in it.searchIndex }
+        return base.mapNotNull { item ->
+            val group = unifiedGroupForMember(item.descriptor.id.value)
+            if (group == null) {
+                item.takeIf { needle in it.searchIndex }
+            } else {
+                group.members.firstOrNull { needle in it.searchIndex }
+            }
+        }
     }
 
     companion object {
@@ -93,11 +105,18 @@ internal class FeaturePickerCatalogModel private constructor(
             val sorted = items.sortedWith { left, right ->
                 titleComparator.compare(left.title, right.title)
             }
-            // Each descriptor keeps its own semantic category. Unified families may collapse
-            // compatible operations but must never rewrite their browsing categories.
+            // Keep original descriptors intact for import, search and execution.
+            // Present each source-verified function exactly once in the category
+            // of its primary implementation, even if another implementation's
+            // registry category differs. Do not merge unverified lookalikes.
             val unifiedIndex = buildUnifiedFeatureIndex(sorted)
-            val categories = sorted.map { it.category }.distinctBy { it.id }.sortedBy { it.order }
-            val byCategory = sorted.groupBy { it.category.id }
+            val visibleItems = sorted.filter { item ->
+                val groupId = unifiedIndex.byMemberId[item.descriptor.id.value]
+                val group = groupId?.let(unifiedIndex.byId::get)
+                group == null || group.members.first().descriptor.id.value == item.descriptor.id.value
+            }
+            val categories = visibleItems.map { it.category }.distinctBy { it.id }.sortedBy { it.order }
+            val byCategory = visibleItems.groupBy { it.category.id }
             return FeaturePickerCatalogModel(
                 allItems = sorted,
                 categories = categories,

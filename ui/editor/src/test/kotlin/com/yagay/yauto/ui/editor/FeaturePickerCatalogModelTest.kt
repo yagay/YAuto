@@ -165,18 +165,45 @@ class FeaturePickerCatalogModelTest {
         assertEquals(2, model.categoryCount("app"))
     }
 
-    @Test fun `cross category screenshot implementations never mix semantic categories`() {
+    @Test fun `cross category implementations appear once under verified primary category`() {
         val model = FeaturePickerCatalogModel.create(listOf(
-            item("android.screen.screenshot", app),
-            item("android.screenshot.capture", core),
+            item("android.screen.screenshot", app, "Take screenshot"),
+            item("android.screenshot.capture", core, "Alternate capture"),
         ), Comparator.naturalOrder())
+        // Underlying descriptors retain their own original semantic category.
         assertEquals(2, model.allItems.size)
+        assertEquals("core", model.item("android.screenshot.capture")?.category?.id)
+        assertEquals(1, model.categoryCount("app"))
+        assertEquals(0, model.categoryCount("core"))
+        assertEquals(listOf("app"), model.categories.map { it.id })
+        val entry = model.entries(PickerPage.Features(app), emptySet(), emptyList(), "")
+            .single() as FeaturePickerListEntry.Unified
+        assertEquals("screenshot_capture", entry.group.spec.id)
+        assertEquals(2, entry.group.members.size)
+        assertEquals(emptyList<FeaturePickerListEntry>(),
+            model.entries(PickerPage.Features(core), emptySet(), emptyList(), ""))
+        // Searching either method still yields the SAME picker row.
+        val byAlternateName = model.entries(
+            PickerPage.Features(app), emptySet(), emptyList(), "alternate"
+        ).single() as FeaturePickerListEntry.Unified
+        assertEquals("android.screenshot.capture", byAlternateName.preferredMemberId)
+        assertEquals(1, model.searchEntries("alternate").size)
+        assertEquals(1, model.favoriteCount(setOf("android.screenshot.capture")))
+        assertEquals(1, model.recentCount(listOf("android.screenshot.capture")))
+        // Editing an existing rule must select its saved concrete method.
+        assertEquals("android.screenshot.capture", resolveUnifiedMemberId(
+            entry.group, "android.screenshot.capture", "android.screen.screenshot"))
+    }
+
+    @Test fun `same name without verified source evidence stays two independent operations`() {
+        val model = FeaturePickerCatalogModel.create(listOf(
+            item("android.audio.volume.set", app, "Volume"),
+            item("android.audio.volume.adjust", core, "Volume"),
+        ), Comparator.naturalOrder())
         assertEquals(1, model.categoryCount("app"))
         assertEquals(1, model.categoryCount("core"))
-        assertTrue(model.entries(PickerPage.Features(app), emptySet(), emptyList(), "")
-            .single() is FeaturePickerListEntry.Feature)
-        assertTrue(model.entries(PickerPage.Features(core), emptySet(), emptyList(), "")
-            .single() is FeaturePickerListEntry.Feature)
+        assertNull(model.unifiedGroupForMember("android.audio.volume.set"))
+        assertNull(model.unifiedGroupForMember("android.audio.volume.adjust"))
     }
 
     @Test fun `favorites recent and search keep preferred concrete clipboard operation`() {
