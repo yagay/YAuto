@@ -57,7 +57,6 @@
     <string name="feature_surface_toggle_show_title">Show floating switch</string>
     <string name="feature_surface_touch_blocker_show_title">Show touch blocker</string>
     <string name="feature_surface_web_show_title">Show floating web view</string>
-    <string name="feature_system_shell_execute_title">Execute shell command</string>
     <string name="feature_tasker_condition_compare_title">Compare Tasker condition</string>
     <string name="feature_tasker_scene_create_title">Create Tasker scene</string>
     <string name="feature_tasker_scene_destroy_title">Destroy Tasker scene</string>
