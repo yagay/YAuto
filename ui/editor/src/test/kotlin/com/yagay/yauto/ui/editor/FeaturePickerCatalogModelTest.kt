@@ -28,7 +28,7 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test fun `verified merges use upstream identical feature names and stable IDs`() {
-        assertEquals(26, UNIFIED_FEATURE_SPECS.size)
+        assertEquals(30, UNIFIED_FEATURE_SPECS.size)
         assertTrue(UNIFIED_FEATURE_SPECS.map { it.id }.containsAll(
             listOf("clipboard_write", "clipboard_read", "screenshot_capture",
                 "stopwatch", "file_operations", "device_power", "audio_recording",
@@ -39,7 +39,7 @@ class FeaturePickerCatalogModelTest {
             UNIFIED_FEATURE_SPECS.single { it.id == "clipboard_read" }.memberIds)
         assertEquals(listOf("android.screen.screenshot", "android.screenshot.capture"),
             UNIFIED_FEATURE_SPECS.single { it.id == "screenshot_capture" }.memberIds)
-        assertEquals(57, UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct().size)
+        assertEquals(65, UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct().size)
     }
 
     @Test fun `independent MacroDroid volume actions are separate picker options`() {
@@ -77,6 +77,15 @@ class FeaturePickerCatalogModelTest {
         assertEquals("audio_mode_condition", group.spec.id)
         assertEquals("android.condition.reference.audio_mode",
             resolveUnifiedMemberId(group, "android.condition.reference.audio_mode", null))
+    }
+
+    @Test fun `same DND system filter has one picker entry with two methods`() {
+        val model = build(listOf("android.condition.dnd_filter",
+            "android.condition.reference_signal.dnd_filter"), FeatureKind.CONDITION)
+        val entries = model.entries(PickerPage.Features(app), emptySet(), emptyList(), "")
+        assertEquals(1, entries.size)
+        assertEquals("dnd_filter_condition",
+            (entries.single() as FeaturePickerListEntry.Unified).group.spec.id)
     }
 
     @Test fun `one MacroDroid file operation has multiple selected modes`() {

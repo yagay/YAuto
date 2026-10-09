@@ -52,7 +52,7 @@ jobs:
       - name: Unified picker parameter labels
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_method_labels.py'
-          python3 tools/audit_picker_method_labels.py --fail-on-duplicates
+          python3 tools/audit_picker_method_labels.py --fail-on-duplicates --fail-on-missing
       - name: Runtime picker title coverage
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_runtime_names.py'

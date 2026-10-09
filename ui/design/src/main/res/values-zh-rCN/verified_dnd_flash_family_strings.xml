@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_dnd_filter">勿扰模式过滤状态</string>
+    <string name="verified_family_dnd_filter_subtitle">选择 Android 勿扰模式检测方式</string>
+    <string name="verified_family_camera_flash">摄像头闪光灯能力</string>
+    <string name="verified_family_camera_flash_subtitle">选择系统硬件能力或运行信号检测</string>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_display_android_condition_app_process_running_title">App process running (privileged check)</string>
+    <string name="feature_display_android_state_app_process_running_title">App process running (privileged check)</string>
+</resources>

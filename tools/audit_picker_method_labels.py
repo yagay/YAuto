@@ -79,6 +79,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--output", default="build/reports/picker_parameter_labels.json")
     p.add_argument("--fail-on-duplicates", action="store_true")
+    p.add_argument("--fail-on-missing", action="store_true")
     a = p.parse_args()
     groups = csv_rows(APPROVED)
     data = {lang: inspect(groups, locale_strings(RES / folder))
@@ -96,6 +97,8 @@ def main():
     print(f"Report: {dst}")
     if a.fail_on_duplicates and any(info["duplicate_parameter_labels"] for info in data.values()):
         raise SystemExit("Duplicate parameter labels found in unified feature editor")
+    if a.fail_on_missing and any(info["missing_direct_method_or_title"] for info in data.values()):
+        raise SystemExit("Missing localized parameter labels in source-approved groups")
     return 0
 
 

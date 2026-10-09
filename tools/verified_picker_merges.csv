@@ -25,3 +25,7 @@ font_scale_condition,yauto_code,context.resources.configuration.fontScale,condit
 font_scale_state,yauto_code,context.resources.configuration.fontScale,state,android.state.font_scale|android.state.reference.font_scale,
 audio_mode_condition,yauto_code,audio.mode,condition,android.condition.audio.mode|android.condition.reference.audio_mode,
 audio_mode_state,yauto_code,audio.mode,state,android.state.audio.mode|android.state.reference.audio_mode,
+dnd_filter_condition,yauto_code,currentInterruptionFilter,condition,android.condition.dnd_filter|android.condition.reference_signal.dnd_filter,
+dnd_filter_state,yauto_code,currentInterruptionFilter,state,android.state.dnd_filter|android.state.reference_signal.dnd_filter,
+camera_flash_condition,yauto_code,camera_flash_hardware,condition,android.condition.has_camera_flash|android.condition.reference_signal.camera_flash_available,
+camera_flash_state,yauto_code,camera_flash_hardware,state,android.state.has_camera_flash|android.state.reference_signal.camera_flash_available,

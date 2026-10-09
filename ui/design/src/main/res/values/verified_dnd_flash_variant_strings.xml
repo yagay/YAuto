@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variant_android_condition_dnd_filter">Standard interruption filter check</string>
+    <string name="feature_variant_android_state_dnd_filter">Standard interruption filter check</string>
+    <string name="feature_variant_android_condition_reference_signal_dnd_filter">Extended interruption filter check</string>
+    <string name="feature_variant_android_state_reference_signal_dnd_filter">Extended interruption filter check</string>
+    <string name="feature_variant_android_condition_has_camera_flash">Check camera flash hardware</string>
+    <string name="feature_variant_android_state_has_camera_flash">Check camera flash hardware</string>
+    <string name="feature_variant_android_condition_reference_signal_camera_flash_available">Check camera flash system signal</string>
+    <string name="feature_variant_android_state_reference_signal_camera_flash_available">Check camera flash system signal</string>
+</resources>

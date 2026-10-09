@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variant_file_copy">Copy files</string>
+    <string name="feature_variant_file_move">Move files</string>
+    <string name="feature_variant_file_delete">Delete files</string>
+    <string name="feature_variant_file_mkdir">Create folder</string>
+    <string name="feature_variant_file_list">List files</string>
+    <string name="feature_variant_android_camera_video_start">Start video recording</string>
+    <string name="feature_variant_android_camera_video_stop">Stop video recording</string>
+    <string name="feature_variant_android_event_screen_on">Screen turned on</string>
+    <string name="feature_variant_android_event_screen_off">Screen turned off</string>
+    <string name="feature_variant_android_event_package_added">App installed</string>
+    <string name="feature_variant_android_event_package_removed">App removed</string>
+    <string name="feature_variant_android_event_package_replaced">App updated</string>
+    <string name="feature_variant_android_event_notification_removed">Notification cleared</string>
+    <string name="feature_variant_android_event_power_connected">Power connected</string>
+    <string name="feature_variant_android_event_power_disconnected">Power disconnected</string>
+    <string name="feature_variant_android_wifi_set">Change Wi-Fi state</string>
+</resources>

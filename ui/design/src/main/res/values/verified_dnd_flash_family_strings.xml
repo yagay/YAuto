@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_dnd_filter">Do Not Disturb filter</string>
+    <string name="verified_family_dnd_filter_subtitle">Choose how to check Android Do Not Disturb filter</string>
+    <string name="verified_family_camera_flash">Camera flash availability</string>
+    <string name="verified_family_camera_flash_subtitle">Choose hardware feature or runtime signal checking</string>
+</resources>

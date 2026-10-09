@@ -203,4 +203,32 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         TextR.string.verified_family_audio_mode_subtitle,
         listOf("android.state.audio.mode", "android.state.reference.audio_mode"),
     ),
+    // Same Android system signal; preserve concrete IDs as the detection-method parameter.
+    UnifiedFeatureSpec(
+        "dnd_filter_condition",
+        TextR.string.verified_family_dnd_filter,
+        TextR.string.verified_family_dnd_filter_subtitle,
+        listOf("android.condition.dnd_filter", "android.condition.reference_signal.dnd_filter"),
+    ),
+    // Same Android system signal; preserve concrete IDs as the detection-method parameter.
+    UnifiedFeatureSpec(
+        "dnd_filter_state",
+        TextR.string.verified_family_dnd_filter,
+        TextR.string.verified_family_dnd_filter_subtitle,
+        listOf("android.state.dnd_filter", "android.state.reference_signal.dnd_filter"),
+    ),
+    // Same Android system signal; preserve concrete IDs as the detection-method parameter.
+    UnifiedFeatureSpec(
+        "camera_flash_condition",
+        TextR.string.verified_family_camera_flash,
+        TextR.string.verified_family_camera_flash_subtitle,
+        listOf("android.condition.has_camera_flash", "android.condition.reference_signal.camera_flash_available"),
+    ),
+    // Same Android system signal; preserve concrete IDs as the detection-method parameter.
+    UnifiedFeatureSpec(
+        "camera_flash_state",
+        TextR.string.verified_family_camera_flash,
+        TextR.string.verified_family_camera_flash_subtitle,
+        listOf("android.state.has_camera_flash", "android.state.reference_signal.camera_flash_available"),
+    ),
 )

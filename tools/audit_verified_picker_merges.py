@@ -24,6 +24,13 @@ Y_AUTO_API_SOURCES = {
     "BatteryManager.EXTRA_VOLTAGE": ("AndroidSystemPowerCoverageFeaturePack.kt", "AndroidReferenceGapFeaturePack.kt"),
     "context.resources.configuration.fontScale": ("AndroidSystemPowerCoverageFeaturePack.kt", "AndroidReferenceGapFeaturePack.kt"),
     "audio.mode": ("AndroidPowerUserFeaturePack.kt", "AndroidReferenceGapFeaturePack.kt"),
+    "currentInterruptionFilter": ("AndroidSystemConvenienceFeaturePack.kt", "AndroidReferenceSignalFeaturePack.kt"),
+}
+Y_AUTO_EVIDENCE_TOKENS = {
+    "camera_flash_hardware": (
+        ("AndroidReferenceCompletionFeaturePack.kt", '"android.hardware.camera.flash"'),
+        ("AndroidReferenceSignalFeaturePack.kt", "PackageManager.FEATURE_CAMERA_FLASH"),
+    ),
 }
 
 SPEC_RE = re.compile(
@@ -81,11 +88,17 @@ def audit(spec: str, approval_rows: list[dict]) -> dict:
                 errors.append(f"Missing MacroDroid option field in {group_id}")
         elif row["source"] == "yauto_code":
             source_files = Y_AUTO_API_SOURCES.get(row["source_key"])
-            if source_files is None:
+            specific_sources = Y_AUTO_EVIDENCE_TOKENS.get(row["source_key"])
+            if source_files is not None:
+                if not all(row["source_key"] in (ANDROID_PACKS / filename).read_text(encoding="utf-8")
+                           for filename in source_files):
+                    errors.append(f"YAuto source does not share Android API {row['source_key']}")
+            elif specific_sources is not None:
+                if not all(token in (ANDROID_PACKS / filename).read_text(encoding="utf-8")
+                           for filename, token in specific_sources):
+                    errors.append(f"YAuto source does not match verified system capability {row['source_key']}")
+            else:
                 errors.append(f"Unreviewed YAuto API evidence for {group_id}")
-            elif not all(row["source_key"] in (ANDROID_PACKS / filename).read_text(encoding="utf-8")
-                         for filename in source_files):
-                errors.append(f"YAuto source does not share Android API {row['source_key']}")
             if row.get("option_field"):
                 errors.append(f"YAuto source should not contain MacroDroid option field: {group_id}")
         elif row.get("option_field"):
