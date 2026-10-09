@@ -92,7 +92,7 @@ class AndroidScreenOnTimeFeaturePack(context: Context) : FeaturePack {
         val start = when (window) {
             "today" -> LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             "last_24_hours" -> end - 86_400_000L
-            else -> return null
+            else -> return@runCatching null
         }
         val records = mutableListOf<ScreenInteractionTransition>()
         val stream = usage.queryEvents(start, end)

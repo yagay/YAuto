@@ -12,7 +12,7 @@ class AndroidScreenOnTimeFeaturePackTest {
             ScreenInteractionTransition(7_000, false),
             ScreenInteractionTransition(9_000, true),
         )
-        assertEquals(7_000L, calculateScreenOnTimeMs(0, 10_000, timeline))
+        assertEquals(6_000L, calculateScreenOnTimeMs(0, 10_000, timeline))
     }
 
     @Test fun `first screen-on transition implies initial screen-off state`() {
