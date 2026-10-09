@@ -6,7 +6,7 @@ class VerifiedPickerMergeTests(unittest.TestCase):
         report = audit(SPEC.read_text(encoding="utf-8"), csv_rows(APPROVED))
         self.assertEqual(report["errors"], [])
         self.assertEqual(report["approved_merged_picker_entries"], 14)
-        self.assertEqual(report["approved_concrete_feature_ids"], 31)
+        self.assertEqual(report["approved_concrete_feature_ids"], 33)
 
     def test_unverified_merge_is_rejected(self):
         source = SPEC.read_text(encoding="utf-8")

@@ -130,7 +130,7 @@ def verify_macro_apk_sources(approval_rows: list[dict], apk_path: Path) -> list[
                 errors.append(f"Missing source YAML in MacroDroid APK: {asset}")
                 continue
             option = re.escape(row["option_field"])
-            if not re.search(rf"(?m)^\\s*{option}\\??:", yaml):
+            if not re.search(rf"(?m)^\s*{option}\??:", yaml):
                 errors.append(f"Missing option {row['option_field']} in {asset}")
     return errors
 
