@@ -204,7 +204,6 @@
     <string name="access_lsposed">LSPosed</string>
     <string name="access_zygisk">Zygisk</string>
     <string name="access_accessibility">无障碍功能</string>
-    <string name="access_usage_stats">使用情况访问权限</string>
     <string name="access_notification_listener">通知监听</string>
     <string name="access_post_notifications">通知权限</string>
     <string name="access_overlay">悬浮窗</string>
