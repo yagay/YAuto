@@ -32,4 +32,15 @@
     <string name="feature_backend_usage_stats_limitation">注意：使用情况访问可能有更新延迟，且不提供完整的界面内容或特权控制能力.</string>
     <string name="feature_backend_auto_paths_format">支持的可选权限路径（只需授权实际使用的方式）：%1$s</string>
     <string name="feature_backend_additional_requirements_format">此功能另行声明的权限：%1$s</string>
+    <string name="feature_backend_android_wifi_set_root_description">切换 Wi-Fi 开关涉及系统网络控制。Root 方式通过 su 授权尝试修改开关状态，而不是仅查询当前 Wi-Fi 信息；厂商限制仍可能影响执行。</string>
+    <string name="feature_backend_android_wifi_set_shizuku_description">切换 Wi-Fi 开关时，Shizuku 方式以 shell 权限调用相关系统控制命令；它不能凭借定位权限完成开关操作，也不保证每个 Android 版本都允许。</string>
+    <string name="feature_backend_android_device_reboot_root_description">重启设备需要电源管理级别的系统操作；Root 方式通过 su 获得执行重启请求的权限，而普通应用的通知或电池权限不能替代。</string>
+    <string name="feature_backend_android_device_reboot_shizuku_description">重启设备时，Shizuku 方式尝试以 shell 身份提出系统重启请求；如果厂商或当前系统限制 shell 的重启能力，此方式可能失败。</string>
+    <string name="feature_backend_android_device_shutdown_root_description">关机与锁屏不同，需要受保护的电源管理操作。Root 方式通过 su 取得尝试关机的特权，并非普通设备管理员授权即可完成。</string>
+    <string name="feature_backend_android_device_shutdown_shizuku_description">关机时，Shizuku 方式使用 shell 身份尝试系统关机命令；shell 不一定有执行关机的权限，具体取决于系统实现。</string>
+    <string name="feature_backend_android_global_actions_show_accessibility_description">显示系统电源菜单时，通过已启用的无障碍服务请求系统全局电源菜单动作；这里需要的是无障碍服务，而非 Root 或 Shizuku。</string>
+    <string name="feature_backend_android_device_power_menu_show_root_description">显示电源菜单时，Root 方式尝试执行受保护的设备命令；与无障碍的全局电源菜单动作不同，需要 su 授权。</string>
+    <string name="feature_backend_android_device_power_menu_show_shizuku_description">显示电源菜单时，Shizuku 方式尝试通过 shell 权限发出系统设备命令；能否显示取决于当前系统对该命令的限制。</string>
+    <string name="feature_backend_android_app_locale_set_root_description">为指定应用设置语言涉及修改该应用与 Android 用户对应的语言配置；Root 路径以 su 权限执行受保护的配置操作。</string>
+    <string name="feature_backend_android_app_locale_set_shizuku_description">为指定应用设置语言时，Shizuku 路径以 shell 权限尝试修改应用语言配置；系统版本及 shell 权限限制仍然适用。</string>
 </resources>
