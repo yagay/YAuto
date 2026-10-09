@@ -192,8 +192,9 @@ internal object ShortXFeatureSuggestions {
         "RequestAudioFocus" -> "android.audio.focus.request"
         "ExecuteMVEL", "RemoteExecuteMVEL", "MVEL", "RemoteMVEL" -> "script.mvel.execute"
         "ExecuteJS" -> "script.javascript.execute"
-        // A full-screen capture is not a cropped area capture.
-        "AreaScreenshot" -> null
+        // Verified: accessibility.screenshot.capture accepts x/y/width/height and saves a cropped PNG.
+        // The original ShortX fields still remain in a compatibility node until decoded losslessly.
+        "AreaScreenshot" -> "accessibility.screenshot.capture"
         "DrawBoard", "ShowDrawBoard" -> "surface.draw_board.show"
         "ShowPieMenu", "PieMenu" -> "surface.pie.show"
         "ShowSidebar", "Sidebar" -> "surface.sidebar.show"

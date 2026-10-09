@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_spotify_title">Spotify 播放事件</string>
+    <string name="feature_android_event_spotify_description">监听 Spotify 开始播放、停止播放及歌曲切换。需要在 Spotify 设置中启用设备广播状态，部分版本可能不再发送广播。</string>
+    <string name="feature_android_event_spotify_field_mode">事件类型</string>
+    <string name="feature_android_event_spotify_field_mode_option_any">全部 Spotify 事件</string>
+    <string name="feature_android_event_spotify_field_mode_option_playback_started">开始播放</string>
+    <string name="feature_android_event_spotify_field_mode_option_playback_stopped">停止播放</string>
+    <string name="feature_android_event_spotify_field_mode_option_song_changed">歌曲切换</string>
+    <string name="feature_android_event_spotify_field_trackcontains">歌曲名称包含</string>
+    <string name="feature_android_event_spotify_field_artistcontains">歌手名称包含</string>
+    <string name="feature_android_event_spotify_field_albumcontains">专辑名称包含</string>
+</resources>

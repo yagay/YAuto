@@ -117,7 +117,7 @@ class ShortXFeatureSuggestionsTest {
     @Test fun `newly verified system and context capabilities suggest canonical features`() {
         val action = "rule[0].action[0]"
         val condition = "rule[0].condition[0]"
-        assertNull(ShortXFeatureSuggestions.target("AreaScreenshot", action))
+        assertEquals("accessibility.screenshot.capture", ShortXFeatureSuggestions.target("AreaScreenshot", action))
         assertEquals("android.network.tether.set", ShortXFeatureSuggestions.target("SetHotSpotEnabled", action))
         assertEquals("android.condition.reference.display_rotation", ShortXFeatureSuggestions.target("RequireScreenRotate", condition))
         assertEquals("android.condition.app_foreground", ShortXFeatureSuggestions.target("CurrentActivity", condition))
@@ -129,7 +129,7 @@ class ShortXFeatureSuggestionsTest {
             "StartAppProcess", "StartAppProcessByPkg",
             "SetStatusBarIcon", "RemoveStatusBarIcon",
             "ShowStatusBarChip", "HideStatusBarClip",
-            "PluginAction", "Toggle5G", "AreaScreenshot",
+            "PluginAction", "Toggle5G",
         ).forEach { source ->
             assertNull("Unsafe import hint for " + source, ShortXFeatureSuggestions.target(source, path))
         }

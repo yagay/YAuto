@@ -93,6 +93,11 @@ class AutomationRuntimeService : Service() {
         registerSource("configured-location") { WorkspaceGatedEventSource(appGraph.workspace, setOf("android.event.geofence_transition", "android.event.location_update")) { ConfiguredLocationEventSource(this, appGraph.workspace) } }
         registerSource("configured-interval") { WorkspaceGatedEventSource(appGraph.workspace, setOf("android.event.interval")) { ConfiguredIntervalEventSource(appGraph.workspace) } }
         registerSource("configured-file") { WorkspaceGatedEventSource(appGraph.workspace, setOf("android.event.file_changed")) { ConfiguredFileEventSource(appGraph.workspace) } }
+        registerSource("spotify") {
+            WorkspaceGatedEventSource(appGraph.workspace, setOf("android.event.spotify")) {
+                SpotifyBroadcastEventSource(this)
+            }
+        }
         registerSource("media-store") { MediaStoreEventSource(this) }
         registerSource("http-server") { HttpServerEventSource() }
         registerSource("stopwatch") { StopwatchEventSource() }

@@ -268,8 +268,8 @@ object MacroDroidFeatureSuggestions {
         "PowerButtonLongPressTrigger", "PowerButtonToggleTrigger",
         "VolumeButtonTrigger", "VolumeLongPressTrigger" -> "android.event.hardware_key"
         "MediaTrackChangedTrigger" -> "android.event.media_track_changed"
-        // Spotify-specific conditions require source-app information that this hint cannot carry.
-        "SpotifyTrigger" -> null
+        // Dedicated Spotify trigger, but keep unverified MacroDroid mode parameters in the source payload.
+        "SpotifyTrigger" -> "android.event.spotify"
         "ModeEnterExitTrigger" -> "android.event.mode_changed"
         "MusicPlayingTrigger" -> "android.event.media_playback_state_changed"
         "NetworkRoamingChangedTrigger" -> "android.event.network_changed"

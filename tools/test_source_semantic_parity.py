@@ -44,16 +44,17 @@ class SourceSemanticParityTests(unittest.TestCase):
         self.assertIn('"StartAppProcess", "StartAppProcessByPkg" -> null', hint)
         for source in (
             "SetStatusBarIcon", "RemoveStatusBarIcon",
-            "ShowStatusBarChip", "HideStatusBarClip", "PluginAction", "Toggle5G", "AreaScreenshot",
+            "ShowStatusBarChip", "HideStatusBarClip", "PluginAction", "Toggle5G",
         ):
             self.assertIn('"' + source + '" -> null', hint, source)
         self.assertNotIn('"StartAppProcess", "StartAppProcessByPkg" -> "android.app.launch"', hint)
         self.assertNotIn('"SetStatusBarIcon" -> "android.notification.ppn.show"', hint)
+        self.assertIn('"AreaScreenshot" -> "accessibility.screenshot.capture"', hint)
 
     def test_macro_screenshot_content_and_spotify_are_not_generic_triggers(self):
         macro = MACRO_HINTS.read_text(encoding="utf-8")
         self.assertIn('"ScreenshotContentTrigger" -> null', macro)
-        self.assertIn('"SpotifyTrigger" -> null', macro)
+        self.assertIn('"SpotifyTrigger" -> "android.event.spotify"', macro)
         self.assertIn('"ScreenTextAppearedTrigger" -> "android.event.screen_text_appeared"', macro)
         self.assertIn('"MediaTrackChangedTrigger" -> "android.event.media_track_changed"', macro)
 

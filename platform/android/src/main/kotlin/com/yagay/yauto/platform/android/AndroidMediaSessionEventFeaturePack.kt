@@ -17,6 +17,7 @@ class AndroidMediaSessionEventFeaturePack : FeaturePack {
 
     override fun install(registry: FeatureRegistry) {
         registerTrackChanged(registry)
+        registerSpotify(registry)
         registerPlaybackStateChanged(registry)
     }
 
@@ -50,6 +51,39 @@ class AndroidMediaSessionEventFeaturePack : FeaturePack {
                 mediaContains(payload.string("artist"), feature.config.string("artistContains"), ignoreCase) &&
                 mediaContains(payload.string("album"), feature.config.string("albumContains"), ignoreCase) &&
                 mediaContains(payload.string("mediaId"), feature.config.string("mediaIdContains"), ignoreCase)
+        }
+    }
+
+    /** Spotify's own broadcast events are not interchangeable with MediaSession events. */
+    private fun registerSpotify(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                FeatureId("android.event.spotify"),
+                FeatureKind.EVENT,
+                "Spotify playback event",
+                "Listen for Spotify device-status broadcasts: playback start, stop or song change",
+                FeatureCategory.AUDIO,
+                fields = listOf(
+                    FieldSchema.Choice("mode", "Spotify event", true, listOf(
+                        "any", "playback_started", "playback_stopped", "song_changed",
+                    )),
+                    FieldSchema.Text("trackContains", "Track contains"),
+                    FieldSchema.Text("artistContains", "Artist contains"),
+                    FieldSchema.Text("albumContains", "Album contains"),
+                    FieldSchema.Toggle("ignoreCase", "Ignore case"),
+                ),
+                keywords = setOf("spotify", "song changed", "playback start", "playback stop", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, context ->
+            if (context.event.typeId != "android.event.spotify") return@registerEvent false
+            val payload = context.event.payload
+            val mode = feature.config.string("mode", "any")
+            if (mode != "any" && mode != payload.string("mode")) return@registerEvent false
+            val ignoreCase = feature.config.boolean("ignoreCase", true)
+            mediaContains(payload.string("track"), feature.config.string("trackContains"), ignoreCase) &&
+                mediaContains(payload.string("artist"), feature.config.string("artistContains"), ignoreCase) &&
+                mediaContains(payload.string("album"), feature.config.string("albumContains"), ignoreCase)
         }
     }
 

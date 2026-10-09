@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_spotify_title">Spotify playback event</string>
+    <string name="feature_android_event_spotify_description">React to Spotify playback starts, stops and track changes. Enable device broadcast status in Spotify settings; some Spotify versions do not emit these broadcasts.</string>
+    <string name="feature_android_event_spotify_field_mode">Event</string>
+    <string name="feature_android_event_spotify_field_mode_option_any">Any Spotify event</string>
+    <string name="feature_android_event_spotify_field_mode_option_playback_started">Playback started</string>
+    <string name="feature_android_event_spotify_field_mode_option_playback_stopped">Playback stopped</string>
+    <string name="feature_android_event_spotify_field_mode_option_song_changed">Song changed</string>
+    <string name="feature_android_event_spotify_field_trackcontains">Track contains</string>
+    <string name="feature_android_event_spotify_field_artistcontains">Artist contains</string>
+    <string name="feature_android_event_spotify_field_albumcontains">Album contains</string>
+</resources>
