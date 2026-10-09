@@ -86,6 +86,10 @@ private fun UnifiedFeatureSelector(
     fun methodLabel(item: FeaturePickerCatalogItem): String =
         textResolver.implementationLabel(item.descriptor.id.value) ?: item.title
 
+    fun methodDescription(item: FeaturePickerCatalogItem): String? =
+        textResolver.implementationDescription(item.descriptor.id.value)
+            ?: item.description.takeIf { it.isNotBlank() && it != item.title }
+
     Card(Modifier.fillMaxWidth()) {
         Column(
             Modifier.fillMaxWidth().padding(14.dp),
@@ -117,6 +121,15 @@ private fun UnifiedFeatureSelector(
                         )
                     }
                 }
+                // Compact choices keep both methods visible; explain whichever
+                // implementation is selected instead of repeating a generic hint.
+                methodDescription(selectedItem)?.let { description ->
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             } else {
                 Column(Modifier.fillMaxWidth().selectableGroup()) {
                     group.members.forEach { item ->
@@ -135,10 +148,10 @@ private fun UnifiedFeatureSelector(
                             RadioButton(selected = selected, onClick = null)
                             Column(Modifier.weight(1f)) {
                                 Text(methodLabel(item), style = MaterialTheme.typography.bodyMedium)
-                                if (item.description.isNotBlank() && item.description != item.title) {
+                                methodDescription(item)?.let { description ->
                                     Text(
-                                        text = item.description,
-                                        style = MaterialTheme.typography.labelSmall,
+                                        text = description,
+                                        style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
@@ -147,11 +160,6 @@ private fun UnifiedFeatureSelector(
                     }
                 }
             }
-            Text(
-                text = stringResource(unifiedSelectorHintRes(selectedItem.descriptor.kind)),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }

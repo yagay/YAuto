@@ -60,6 +60,10 @@ internal class FeatureTextResolver(private val context: Context) {
     fun implementationLabel(featureId: String): String? =
         resource("feature_variant_${resourceKey(featureId)}")
 
+    /** Concrete, localized explanation for this implementation, not a shared generic hint. */
+    fun implementationDescription(featureId: String): String? =
+        resource("feature_variant_${resourceKey(featureId)}_description")
+
     fun description(descriptor: FeatureDescriptor): String =
         descriptionCache.getOrPut(descriptor.id.value) {
             resource("feature_${resourceKey(descriptor.id.value)}_description")

@@ -233,6 +233,15 @@ private fun ImplementationGuide(descriptor: FeatureDescriptor) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(stringResource(TextR.string.implementation_method), fontWeight = FontWeight.SemiBold)
+            // Explain what the selected feature actually performs before listing
+            // generic backend trade-offs; its explanation varies by Feature ID.
+            val resolver = rememberFeatureTextResolver()
+            Text(
+                text = resolver.implementationDescription(descriptor.id.value)
+                    ?: resolver.description(descriptor),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             ImplementationExplanation("auto", emptySet(), false)
             descriptor.resolvedImplementationOptions().forEach { option ->
                 ImplementationExplanation(option.backendId.orEmpty(), option.requirements, option.restartRequired)
