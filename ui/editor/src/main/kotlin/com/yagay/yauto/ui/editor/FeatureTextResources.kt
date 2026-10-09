@@ -112,10 +112,20 @@ internal class FeatureTextResolver(private val context: Context) {
         resource("feature_phrase_${resourceKey(text)}")
 
     private fun genericTitle(descriptor: FeatureDescriptor): String {
-        val semanticCategory = catalogCategory(descriptor.pickerCategory)
+        // A category-only fallback gave *every* untranslated action in that
+        // category the same visible name (e.g. "Device feature").
+        // Preserve a meaningful source title until its exact localized entry
+        // is reviewed; never collapse unrelated feature IDs into that label.
+        val sourceName = descriptiveFallbackName(descriptor.title, descriptor.id.value)
+        if (locale.language != Locale.CHINESE.language) return sourceName
+        val category = catalogCategory(
+            normalizeMacroDroidPickerCategory(descriptor.kind, descriptor.pickerCategory),
+            descriptor.kind,
+        )
         return localizedContext.getString(
-            TextR.string.feature_generic_title_format,
-            localizedContext.getString(semanticCategory.titleRes),
+            TextR.string.feature_generic_distinct_title_format,
+            localizedContext.getString(category.titleRes),
+            sourceName,
         )
     }
 
@@ -125,6 +135,17 @@ internal class FeatureTextResolver(private val context: Context) {
         }
         return if (id != 0) localizedContext.getString(id) else null
     }
+}
+
+/**
+ * Never replace all unknown titles with a category placeholder.
+ * Use the authored descriptor label, or a readable stable ID when blank.
+ * Localized resource translations and source-approved names still take precedence.
+ */
+internal fun descriptiveFallbackName(authoredTitle: String, featureId: String): String {
+    val candidate = authoredTitle.trim()
+    if (candidate.isNotEmpty()) return candidate
+    return featureId.replace('.', ' ').replace('_', ' ').trim().ifEmpty { featureId }
 }
 
 @Composable

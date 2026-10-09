@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_pebble_app_data_send_title">发送 Pebble 应用数据</string>
+    <string name="feature_android_pebble_notification_title">发送 Pebble 通知</string>
+    <string name="feature_android_plugin_locale_action_title">Locale 插件动作</string>
+    <string name="feature_android_plugin_locale_condition_title">Locale 插件条件</string>
+    <string name="feature_android_plugin_locale_fire_title">触发 Locale 插件</string>
+    <string name="feature_android_plugin_locale_scan_title">扫描 Locale 插件</string>
+    <string name="feature_android_role_holder_manage_title">管理应用角色持有者</string>
+    <string name="feature_android_role_request_title">请求 Android 系统角色</string>
+    <string name="feature_android_samsung_routines_control_title">控制三星日常程序</string>
+    <string name="feature_android_samsung_routines_list_title">列出三星日常程序</string>
+    <string name="feature_android_sensors_off_set_title">切换传感器关闭状态</string>
+    <string name="feature_android_shortcut_create_title">创建应用快捷方式</string>
+    <string name="feature_android_shortcut_remove_title">移除应用快捷方式</string>
+    <string name="feature_android_sim_default_data_set_title">设置默认数据 SIM 卡</string>
+    <string name="feature_android_sms_default_app_query_title">查询默认短信应用</string>
+    <string name="feature_android_sms_default_app_set_title">设置默认短信应用</string>
+    <string name="feature_android_sms_delete_title">删除短信</string>
+    <string name="feature_android_standalone_export_title">导出独立自动化</string>
+    <string name="feature_android_systemui_demo_title">系统界面演示模式</string>
+    <string name="feature_android_telephony_allowed_network_types_query_title">查询允许的网络制式</string>
+    <string name="feature_android_telephony_allowed_network_types_set_title">设置允许的网络制式</string>
+    <string name="feature_android_telephony_ims_set_title">配置 IMS 服务</string>
+    <string name="feature_android_telephony_network_mode_set_title">设置蜂窝网络模式</string>
+    <string name="feature_android_telephony_physical_subscription_set_title">设置实体 SIM 卡订阅</string>
+    <string name="feature_android_telephony_slot_set_title">选择 SIM 卡槽</string>
+    <string name="feature_android_text_pinyin_title">文字转拼音</string>
+    <string name="feature_android_text_process_title">处理文本</string>
+    <string name="feature_android_widget_configure_title">配置小部件</string>
+    <string name="feature_android_widget_pin_title">将小部件固定到桌面</string>
+    <string name="feature_android_widget_refresh_title">刷新小部件</string>
+    <string name="feature_android_wireguard_tunnel_set_title">设置 WireGuard 隧道</string>
+    <string name="feature_android_workspace_backup_export_title">导出工作区备份</string>
+</resources>

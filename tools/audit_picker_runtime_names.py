@@ -28,6 +28,13 @@ ALIAS = re.compile(r'aliases\s*=\s*setOf\(([^)]*)\)', re.S)
 QUOTED = re.compile(r'"([^"]+)"')
 
 
+SOURCE_MAP = ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FeatureSourceNames.kt"
+SOURCE_ID_RE = re.compile(r'"([^"]+)"\s*->\s*TextR\.string\.')
+
+def approved_source_mapped_ids() -> set[str]:
+    return set(SOURCE_ID_RE.findall(SOURCE_MAP.read_text(encoding="utf-8")))
+
+
 def descriptor_arguments(source: str):
     """Extract balanced FeatureDescriptor(...) constructor arguments.
 
@@ -114,15 +121,19 @@ def audit(records: list[dict], en: dict[str, str], zh: dict[str, str]) -> dict:
     zh_names = effective_titles(zh)
     aliases = {alias for record in records for alias in record["aliases"]}
     concrete = [record for record in records if record["feature_id"] not in aliases]
+    source_mapped = approved_source_mapped_ids()
     lookup = {}
     for locale, resources in (("en", en_names), ("zh_cn", zh_names)):
         missing = []
+        generic_risk = []
         collisions = defaultdict(list)
         for record in concrete:
             feature = title_key(record["feature_id"])
             title = resources.get(feature)
             if title is None:
                 missing.append(record["feature_id"])
+                if record["feature_id"] not in source_mapped:
+                    generic_risk.append(record["feature_id"])
             elif record["category"] is not None:
                 collisions[(record["kind"], record["category"], title)].append(record["feature_id"])
         duplicate_groups = [
@@ -132,12 +143,15 @@ def audit(records: list[dict], en: dict[str, str], zh: dict[str, str]) -> dict:
         lookup[locale] = {
             "without_direct_title_key": sorted(set(missing)),
             "without_direct_title_key_count": len(set(missing)),
+            "without_direct_or_source_aligned_title": sorted(set(generic_risk)),
+            "without_direct_or_source_aligned_title_count": len(set(generic_risk)),
             "same_kind_category_title_candidates": duplicate_groups,
         }
     return {
         "literal_descriptors_checked": len(records),
         "unique_literal_feature_ids": len({r["feature_id"] for r in records}),
         "registered_compatibility_aliases": sorted(aliases),
+        "approved_source_mapped_feature_ids": len(source_mapped),
         "en": lookup["en"],
         "zh_cn": lookup["zh_cn"],
         "scope": "Only literal FeatureDescriptor(FeatureId(...)) declarations; dynamically registered features are not counted.",
@@ -148,6 +162,7 @@ def audit(records: list[dict], en: dict[str, str], zh: dict[str, str]) -> dict:
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--output", default="build/reports/picker_runtime_title_coverage.json")
+    p.add_argument("--fail-on-generic-fallback", action="store_true")
     args = p.parse_args()
     records = scan_sources()
     result = audit(records, read_titles(RES / "values"), read_titles(RES / "values-zh-rCN"))
@@ -163,6 +178,10 @@ def main():
               f"same-kind/category candidates: "
               f"{len(result[language]['same_kind_category_title_candidates'])}")
     print(f"Report: {dst}")
+    if args.fail_on_generic_fallback and any(
+        result[loc]["without_direct_or_source_aligned_title_count"] for loc in ("en", "zh_cn")
+    ):
+        raise SystemExit("Static runtime feature IDs have no localized title or approved source name")
 
 
 if __name__ == "__main__":

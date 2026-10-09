@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_pebble_app_data_send_title">Send Pebble app data</string>
+    <string name="feature_android_pebble_notification_title">Send Pebble notification</string>
+    <string name="feature_android_plugin_locale_action_title">Locale plugin action</string>
+    <string name="feature_android_plugin_locale_condition_title">Locale plugin condition</string>
+    <string name="feature_android_plugin_locale_fire_title">Trigger Locale plugin</string>
+    <string name="feature_android_plugin_locale_scan_title">Scan Locale plugins</string>
+    <string name="feature_android_role_holder_manage_title">Manage app role holders</string>
+    <string name="feature_android_role_request_title">Request Android role</string>
+    <string name="feature_android_samsung_routines_control_title">Control Samsung Routines</string>
+    <string name="feature_android_samsung_routines_list_title">List Samsung Routines</string>
+    <string name="feature_android_sensors_off_set_title">Toggle sensors off</string>
+    <string name="feature_android_shortcut_create_title">Create app shortcut</string>
+    <string name="feature_android_shortcut_remove_title">Remove app shortcut</string>
+    <string name="feature_android_sim_default_data_set_title">Set default data SIM</string>
+    <string name="feature_android_sms_default_app_query_title">Query default SMS app</string>
+    <string name="feature_android_sms_default_app_set_title">Set default SMS app</string>
+    <string name="feature_android_sms_delete_title">Delete SMS</string>
+    <string name="feature_android_standalone_export_title">Export standalone automation</string>
+    <string name="feature_android_systemui_demo_title">System UI demo mode</string>
+    <string name="feature_android_telephony_allowed_network_types_query_title">Query allowed network types</string>
+    <string name="feature_android_telephony_allowed_network_types_set_title">Set allowed network types</string>
+    <string name="feature_android_telephony_ims_set_title">Configure IMS service</string>
+    <string name="feature_android_telephony_network_mode_set_title">Set cellular network mode</string>
+    <string name="feature_android_telephony_physical_subscription_set_title">Set physical SIM subscription</string>
+    <string name="feature_android_telephony_slot_set_title">Select SIM slot</string>
+    <string name="feature_android_text_pinyin_title">Convert text to Pinyin</string>
+    <string name="feature_android_text_process_title">Process text</string>
+    <string name="feature_android_widget_configure_title">Configure widget</string>
+    <string name="feature_android_widget_pin_title">Pin widget to home screen</string>
+    <string name="feature_android_widget_refresh_title">Refresh widget</string>
+    <string name="feature_android_wireguard_tunnel_set_title">Set WireGuard tunnel</string>
+    <string name="feature_android_workspace_backup_export_title">Export workspace backup</string>
+</resources>

@@ -56,7 +56,7 @@ jobs:
       - name: Runtime picker title coverage
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_runtime_names.py'
-          python3 tools/audit_picker_runtime_names.py
+          python3 tools/audit_picker_runtime_names.py --fail-on-generic-fallback
       - name: Feature name collision audit
         run: |
           python3 -m unittest discover -s tools -p 'test_feature_name_collisions.py'

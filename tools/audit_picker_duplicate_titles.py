@@ -15,7 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / "ui/design/src/main/res"
 PREFIX = ("feature_display_", "macro_feature_", "shortx_feature_", "feature_")
 FEATURE_START = ("android_", "file_", "core_", "surface_", "script_",
-                 "tasker_", "accessibility_", "data_", "ai_", "variable_")
+                 "tasker_", "accessibility_", "data_", "ai_", "variable_",
+                 "expression_", "system_")
 
 def read_titles(folder: Path) -> dict[str, str]:
     result = {}

@@ -32,6 +32,7 @@ class RuntimeNameCoverageTests(unittest.TestCase):
         self.assertEqual(result["unique_literal_feature_ids"], 1)
         self.assertEqual(result["registered_compatibility_aliases"], ["android.vibrate.cancel"])
         self.assertEqual(result["en"]["without_direct_title_key_count"], 0)
+        self.assertEqual(result["zh_cn"]["without_direct_or_source_aligned_title_count"], 0)
         self.assertEqual(result["en"]["same_kind_category_title_candidates"], [])
 
     def test_runtime_id_key_is_unchanged(self):
