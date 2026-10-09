@@ -41,6 +41,10 @@ jobs:
         run: |
           python3 -m unittest discover -s tools -p 'test_aosp_terms.py'
           python3 tools/audit_aosp_terms.py --output build/reports/aosp_terminology_audit.json
+      - name: Feature name collision audit
+        run: |
+          python3 -m unittest discover -s tools -p 'test_feature_name_collisions.py'
+          python3 tools/audit_feature_name_collisions.py --output build/reports/feature_name_collisions.json --fail-on-unsafe
       - name: Localization guard
         run: python3 .github/scripts/check-localization.py
       - name: Localization quality guard
@@ -89,7 +93,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: YAuto-aosp-terminology-audit
-          path: build/reports/aosp_terminology_audit.json
+          path: |
+            build/reports/aosp_terminology_audit.json
+            build/reports/feature_name_collisions.json
           if-no-files-found: warn
 
       - name: Normalize APK name

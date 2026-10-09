@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Display-only disambiguation. Leave verified MacroDroid and ShortX translations untouched. -->
+<resources>
+    <string name="feature_display_android_app_enabled_set_title">Enable or disable app</string>
+    <string name="feature_display_android_display_dark_mode_set_title">Set dark theme</string>
+    <string name="feature_display_android_torch_set_title">Set flashlight state</string>
+    <string name="feature_display_android_event_torch_state_changed_filtered_title">Flashlight state changed</string>
+    <string name="feature_display_android_event_camera_in_use_changed_title">Camera usage changed</string>
+    <string name="feature_display_android_condition_auto_rotate_title">Auto-rotate</string>
+    <string name="feature_display_android_state_auto_rotate_title">Auto-rotate</string>
+    <string name="feature_display_android_clipboard_set_title">Set clipboard text</string>
+    <string name="feature_display_android_clipboard_write_title">Write clipboard content</string>
+    <string name="feature_display_android_clipboard_get_title">Get clipboard text</string>
+    <string name="feature_display_android_clipboard_read_title">Read clipboard content</string>
+    <string name="feature_display_android_screen_screenshot_title">Take screen screenshot</string>
+    <string name="feature_display_android_screenshot_capture_title">Capture screenshot</string>
+</resources>
