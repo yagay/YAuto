@@ -1,6 +1,5 @@
 package com.yagay.yauto.ui.editor
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -14,6 +13,7 @@ import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.ui.design.*
 import com.yagay.yauto.ui.design.R as TextR
 import com.yagay.yauto.ui.design.PageBackButton
+import com.yagay.yauto.ui.design.PageBackHandler
 import java.util.Locale
 import java.util.UUID
 
@@ -53,7 +53,7 @@ fun MacroFlowEditorScreen(
         }
     }
 
-    BackHandler(onBack = ::navigateBack)
+    PageBackHandler(onBack = ::navigateBack)
 
     Scaffold(
         topBar = {

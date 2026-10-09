@@ -1,6 +1,5 @@
 package com.yagay.yauto.ui.editor
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +15,7 @@ import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.ui.design.*
 import com.yagay.yauto.ui.design.R as TextR
 import com.yagay.yauto.ui.design.PageBackButton
+import com.yagay.yauto.ui.design.PageBackHandler
 import java.util.UUID
 
 private enum class MacroActionPhase { EVENT, ENTER, EXIT }
@@ -85,7 +85,7 @@ fun MacroAutomationEditorScreen(
         }
     }
 
-    BackHandler(onBack = ::navigateBack)
+    PageBackHandler(onBack = ::navigateBack)
 
     fun save() {
         val simple = conditions.map { PredicateNode.Condition(it) }

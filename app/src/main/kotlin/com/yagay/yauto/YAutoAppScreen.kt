@@ -1,6 +1,5 @@
 package com.yagay.yauto
 
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -40,6 +39,7 @@ import com.yagay.yauto.core.storage.merge
 import com.yagay.yauto.core.storage.references
 import com.yagay.yauto.ui.design.R as TextR
 import com.yagay.yauto.ui.design.rememberPageNavigation
+import com.yagay.yauto.ui.design.PageBackHandler
 import com.yagay.yauto.ui.diagnostics.DiagnosticsScreen
 import com.yagay.yauto.ui.editor.AutomationEditorScreen
 import com.yagay.yauto.ui.editor.FlowEditorScreen
@@ -132,7 +132,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     // The app shell handles one top-level page at a time. Child destinations
     // (settings, editor drafts, full-screen dialogs) take priority with their own
     // BackHandler. Physical back and the page's toolbar both call navigateBack.
-    BackHandler(enabled = navigation.canGoBack, onBack = ::navigateBack)
+    PageBackHandler(enabled = navigation.canGoBack, onBack = ::navigateBack)
 
     fun operation(block: suspend () -> Unit) {
         scope.launch {

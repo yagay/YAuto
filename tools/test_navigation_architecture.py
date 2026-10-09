@@ -19,7 +19,7 @@ class SharedNavigationArchitectureTest(unittest.TestCase):
             value = source(path)
             self.assertIn("rememberPageNavigation(", value, path)
             self.assertIn("navigation.back()", value, path)
-            self.assertIn("BackHandler(", value, path)
+            self.assertIn("PageBackHandler(", value, path)
             self.assertNotRegex(value, r"page\s*=\s*(?:AppPage\.HOME|RuntimeSettingsPage\.OVERVIEW)")
 
     def test_nested_page_stacks_share_one_model(self):
@@ -41,7 +41,7 @@ class SharedNavigationArchitectureTest(unittest.TestCase):
             "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/GlobalVariablesScreen.kt",
         ):
             value = source(path)
-            self.assertIn("BackHandler(onBack = ::navigateBack)", value, path)
+            self.assertIn("PageBackHandler(onBack = ::navigateBack)", value, path)
             self.assertIn("PageBackButton(onBack = ::navigateBack)", value, path)
 
     def test_fullscreen_selection_dialogs_use_shared_back_policy(self):

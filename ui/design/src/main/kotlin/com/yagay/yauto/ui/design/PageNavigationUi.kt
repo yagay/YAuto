@@ -11,6 +11,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
+/** All route-level system and gesture back events pass through this shared handler. */
+@Composable
+fun PageBackHandler(enabled: Boolean = true, onBack: () -> Unit) {
+    BackHandler(enabled = enabled, onBack = onBack)
+}
+
 /**
  * Shared action for top app bars. All visible back arrows must call the same
  * destination-level callback as the system/gesture BackHandler.
@@ -41,7 +47,7 @@ fun NavigationDialog(onBack: () -> Unit, content: @Composable () -> Unit) {
             dismissOnBackPress = false,
         ),
     ) {
-        BackHandler(onBack = onBack)
+        PageBackHandler(onBack = onBack)
         content()
     }
 }

@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -31,6 +30,7 @@ import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.localizedList
 import com.yagay.yauto.ui.design.rememberPageNavigation
+import com.yagay.yauto.ui.design.PageBackHandler
 import com.yagay.yauto.ui.design.PageBackButton
 import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.launch
@@ -60,7 +60,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     }
 
     // Nested settings pages consume system/gesture back before the app shell.
-    BackHandler(enabled = navigation.canGoBack, onBack = ::navigateBack)
+    PageBackHandler(enabled = navigation.canGoBack, onBack = ::navigateBack)
     val scope = rememberCoroutineScope()
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refresh++ }
 

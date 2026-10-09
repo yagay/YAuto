@@ -1,6 +1,5 @@
 package com.yagay.yauto.ui.diagnostics
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.diagnostics.*
 import com.yagay.yauto.ui.design.MacroItemRow
+import com.yagay.yauto.ui.design.PageBackHandler
 import com.yagay.yauto.ui.design.PageNavigation
 import com.yagay.yauto.ui.design.PageBackButton
 import com.yagay.yauto.ui.design.MacroPalette
@@ -45,7 +45,7 @@ fun DiagnosticsScreen(
         if (previous == null) onBack() else navigation = previous
     }
 
-    BackHandler(enabled = navigation.canGoBack, onBack = ::navigateBack)
+    PageBackHandler(enabled = navigation.canGoBack, onBack = ::navigateBack)
     val records = snapshot?.records.orEmpty()
 
     Scaffold(

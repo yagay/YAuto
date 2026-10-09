@@ -1,6 +1,5 @@
 package com.yagay.yauto.ui.editor
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +13,7 @@ import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.R as TextR
 import com.yagay.yauto.ui.design.PageBackButton
+import com.yagay.yauto.ui.design.PageBackHandler
 
 private data class VariableDraft(val originalName: String?, val name: String, val value: String)
 
@@ -30,7 +30,7 @@ fun GlobalVariablesScreen(
     fun navigateBack() {
         if (draft != null) draft = null else onBack()
     }
-    BackHandler(onBack = ::navigateBack)
+    PageBackHandler(onBack = ::navigateBack)
 
     val locale = currentEditorLocale()
     val nameComparator = remember(locale) { localizedStringComparator(locale) }
