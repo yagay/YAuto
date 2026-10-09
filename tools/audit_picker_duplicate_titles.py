@@ -51,10 +51,35 @@ def approved_members() -> list[set[str]]:
     return [set(part.replace(".", "_") for part in r["member_ids"].split("|"))
             for r in csv_rows(APPROVED)]
 
+# These are registered compatibility aliases, not separate picker descriptors.
+# Validate against FeatureDescriptor before excluding them from the title audit.
+ALIAS_PACK = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidPowerUserFeaturePack.kt"
+ALIAS_IDS = {
+    "android_vibrate_cancel": ("android.vibration.cancel", "android.vibrate.cancel"),
+    "android_state_data_saver_status": ("android.state.data_saver", "android.state.data_saver_status"),
+    "android_condition_data_saver_status": ("android.condition.data_saver", "android.condition.data_saver_status"),
+}
+
+def registered_alias_ids() -> set[str]:
+    source = ALIAS_PACK.read_text(encoding="utf-8")
+    matches = set()
+    for normalized, (canonical, alias) in ALIAS_IDS.items():
+        start = source.find(f'FeatureId("{canonical}")')
+        if start < 0:
+            raise ValueError(f"Missing canonical feature descriptor {canonical}")
+        segment = source[start:start+950]
+        if f'aliases = setOf("{alias}")' not in segment:
+            raise ValueError(f"Unverified compatibility alias {canonical} -> {alias}")
+        matches.add(normalized)
+    return matches
+
 def inspect(titles: dict[str,str]) -> dict:
     resolved = effective_titles(titles)
+    aliases = registered_alias_ids()
     same = defaultdict(list)
     for fid, title in resolved.items():
+        if fid in aliases:
+            continue  # backward-compatibility ID is not a separate user-facing operation
         same[(kind(fid),title)].append(fid)
     candidates = [
         {"kind":role,"title":title,"feature_ids":sorted(ids)}
@@ -68,6 +93,7 @@ def inspect(titles: dict[str,str]) -> dict:
     unresolved = [row for row in candidates if not row["approved_as_one_parameterized_entry"]]
     return {
         "resource_feature_titles":len(resolved),
+        "compatibility_alias_resource_titles": sorted(aliases & set(resolved)),
         "possible_same_kind_duplicate_groups":len(candidates),
         "unresolved_candidate_groups":len(unresolved),
         "groups":candidates,
@@ -76,6 +102,7 @@ def inspect(titles: dict[str,str]) -> dict:
 def main() -> int:
     ap=argparse.ArgumentParser()
     ap.add_argument("--output",default="build/reports/picker_duplicate_title_inventory.json")
+    ap.add_argument("--fail-on-unresolved-zh",action="store_true")
     args=ap.parse_args()
     en=inspect(read_titles(RES/"values"))
     zh=inspect(read_titles(RES/"values-zh-rCN"))
@@ -90,9 +117,12 @@ def main() -> int:
     print(f"Picker title candidates: en {en['possible_same_kind_duplicate_groups']}, "
           f"zh-CN {zh['possible_same_kind_duplicate_groups']}; "
           f"unresolved zh-CN {zh['unresolved_candidate_groups']}")
-    for row in (r for r in zh["groups"] if not r["approved_as_one_parameterized_entry"]):
-        print(f"  {row['kind']} / {row['title']}: {', '.join(row['feature_ids'])}")
+    for language, data in (("zh-CN", zh), ("en", en)):
+        for row in (r for r in data["groups"] if not r["approved_as_one_parameterized_entry"]):
+            print(f"  {language} {row['kind']} / {row['title']}: {', '.join(row['feature_ids'])}")
     print(f"Review report: {output}")
+    if args.fail_on_unresolved_zh and zh["unresolved_candidate_groups"]:
+        raise SystemExit("Unresolved same-kind Chinese picker title collisions remain.")
     return 0
 
 if __name__=="__main__":

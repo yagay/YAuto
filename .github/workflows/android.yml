@@ -48,7 +48,7 @@ jobs:
       - name: Full picker title collision inventory
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_duplicate_titles.py'
-          python3 tools/audit_picker_duplicate_titles.py
+          python3 tools/audit_picker_duplicate_titles.py --fail-on-unresolved-zh
       - name: Feature name collision audit
         run: |
           python3 -m unittest discover -s tools -p 'test_feature_name_collisions.py'
