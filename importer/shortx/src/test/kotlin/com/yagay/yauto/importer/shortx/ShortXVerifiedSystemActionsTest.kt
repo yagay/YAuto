@@ -105,7 +105,7 @@ class ShortXVerifiedSystemActionsTest {
         ))
         assertEquals("android.service.control", stop.typeId)
         assertEquals(ConfigValue.StringValue("stop"), stop.config["mode"])
-        assertEquals(ConfigValue.StringValue("com.example.app/.Worker\\ncom.example.app/.OtherWorker"), stop.config["components"])
+        assertEquals(ConfigValue.StringValue(listOf("com.example.app/.Worker", "com.example.app/.OtherWorker").joinToString("\n")), stop.config["components"])
         assertEquals("compat.source.action", importAction("StopService", message(field(1, message(field(2, "com.example/.Worker"))))).typeId)
         assertEquals("compat.source.action", importAction("StopService", message(field(1, message(field(1, "com.example/.Worker"), varintField(2, 1))))).typeId)
     }
