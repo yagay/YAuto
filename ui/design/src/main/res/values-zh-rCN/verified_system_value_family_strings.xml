@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_battery_status">电池状态</string>
+    <string name="verified_family_battery_status_subtitle">选择系统检测方式</string>
+    <string name="verified_family_battery_voltage">电池电压</string>
+    <string name="verified_family_battery_voltage_subtitle">选择系统检测方式</string>
+    <string name="verified_family_font_scale">系统字体缩放</string>
+    <string name="verified_family_font_scale_subtitle">选择系统检测方式</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="verified_family_battery_status">Battery status</string>
+    <string name="verified_family_battery_status_subtitle">Choose the system detection method</string>
+    <string name="verified_family_battery_voltage">Battery voltage</string>
+    <string name="verified_family_battery_voltage_subtitle">Choose the system detection method</string>
+    <string name="verified_family_font_scale">System font scale</string>
+    <string name="verified_family_font_scale_subtitle">Choose the system detection method</string>
+</resources>

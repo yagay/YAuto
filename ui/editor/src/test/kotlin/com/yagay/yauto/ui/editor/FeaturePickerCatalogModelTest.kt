@@ -28,7 +28,7 @@ class FeaturePickerCatalogModelTest {
     }
 
     @Test fun `verified merges use upstream identical feature names and stable IDs`() {
-        assertEquals(18, UNIFIED_FEATURE_SPECS.size)
+        assertEquals(24, UNIFIED_FEATURE_SPECS.size)
         assertTrue(UNIFIED_FEATURE_SPECS.map { it.id }.containsAll(
             listOf("clipboard_write", "clipboard_read", "screenshot_capture",
                 "stopwatch", "file_operations", "device_power", "audio_recording",
@@ -39,7 +39,7 @@ class FeaturePickerCatalogModelTest {
             UNIFIED_FEATURE_SPECS.single { it.id == "clipboard_read" }.memberIds)
         assertEquals(listOf("android.screen.screenshot", "android.screenshot.capture"),
             UNIFIED_FEATURE_SPECS.single { it.id == "screenshot_capture" }.memberIds)
-        assertEquals(41, UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct().size)
+        assertEquals(53, UNIFIED_FEATURE_SPECS.flatMap { it.memberIds }.distinct().size)
     }
 
     @Test fun `independent MacroDroid volume actions are separate picker options`() {

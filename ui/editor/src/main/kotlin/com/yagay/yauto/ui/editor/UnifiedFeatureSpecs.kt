@@ -147,4 +147,46 @@ internal val UNIFIED_FEATURE_SPECS = listOf(
         TextR.string.verified_family_device_orientation_subtitle,
         listOf("android.state.orientation", "android.state.reference.orientation"),
     ),
+    // Same Android API BatteryManager.EXTRA_STATUS; select the implementation as a parameter.
+    UnifiedFeatureSpec(
+        "battery_status_condition",
+        TextR.string.verified_family_battery_status,
+        TextR.string.verified_family_battery_status_subtitle,
+        listOf("android.condition.battery_status", "android.condition.reference.battery_status"),
+    ),
+    // Same Android API BatteryManager.EXTRA_STATUS; select the implementation as a parameter.
+    UnifiedFeatureSpec(
+        "battery_status_state",
+        TextR.string.verified_family_battery_status,
+        TextR.string.verified_family_battery_status_subtitle,
+        listOf("android.state.battery_status", "android.state.reference.battery_status"),
+    ),
+    // Same Android API BatteryManager.EXTRA_VOLTAGE; select the implementation as a parameter.
+    UnifiedFeatureSpec(
+        "battery_voltage_condition",
+        TextR.string.verified_family_battery_voltage,
+        TextR.string.verified_family_battery_voltage_subtitle,
+        listOf("android.condition.battery_voltage", "android.condition.reference.battery_voltage_mv"),
+    ),
+    // Same Android API BatteryManager.EXTRA_VOLTAGE; select the implementation as a parameter.
+    UnifiedFeatureSpec(
+        "battery_voltage_state",
+        TextR.string.verified_family_battery_voltage,
+        TextR.string.verified_family_battery_voltage_subtitle,
+        listOf("android.state.battery_voltage", "android.state.reference.battery_voltage_mv"),
+    ),
+    // Same Android API context.resources.configuration.fontScale; select the implementation as a parameter.
+    UnifiedFeatureSpec(
+        "font_scale_condition",
+        TextR.string.verified_family_font_scale,
+        TextR.string.verified_family_font_scale_subtitle,
+        listOf("android.condition.font_scale", "android.condition.reference.font_scale"),
+    ),
+    // Same Android API context.resources.configuration.fontScale; select the implementation as a parameter.
+    UnifiedFeatureSpec(
+        "font_scale_state",
+        TextR.string.verified_family_font_scale,
+        TextR.string.verified_family_font_scale_subtitle,
+        listOf("android.state.font_scale", "android.state.reference.font_scale"),
+    ),
 )

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variant_android_condition_battery_status">系统电池状态</string>
+    <string name="feature_variant_android_condition_reference_battery_status">扩展电池状态</string>
+    <string name="feature_variant_android_state_battery_status">系统电池状态</string>
+    <string name="feature_variant_android_state_reference_battery_status">扩展电池状态</string>
+    <string name="feature_variant_android_condition_battery_voltage">电压范围比较</string>
+    <string name="feature_variant_android_condition_reference_battery_voltage_mv">扩展毫伏比较</string>
+    <string name="feature_variant_android_state_battery_voltage">电压范围比较</string>
+    <string name="feature_variant_android_state_reference_battery_voltage_mv">扩展毫伏比较</string>
+    <string name="feature_variant_android_condition_font_scale">缩放范围检测</string>
+    <string name="feature_variant_android_condition_reference_font_scale">扩展缩放范围检测</string>
+    <string name="feature_variant_android_state_font_scale">缩放范围检测</string>
+    <string name="feature_variant_android_state_reference_font_scale">扩展缩放范围检测</string>
+</resources>

@@ -18,6 +18,14 @@ SPEC = ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/UnifiedFeatur
 APPROVED = ROOT / "tools/verified_picker_merges.csv"
 MACRO = ROOT / "tools/macrodroid_reviewed_names.csv"
 SHORTX = ROOT / "tools/shortx_verified_titles.csv"
+Y_AUTO_EQUIVALENT_SOURCE = (
+    ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidSystemPowerCoverageFeaturePack.kt",
+    ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidReferenceGapFeaturePack.kt",
+)
+Y_AUTO_SAME_ANDROID_VALUE = {
+    "BatteryManager.EXTRA_STATUS", "BatteryManager.EXTRA_VOLTAGE",
+    "context.resources.configuration.fontScale",
+}
 
 SPEC_RE = re.compile(
     r'UnifiedFeatureSpec\(\s*"([^"]+)"\s*,\s*'
@@ -64,7 +72,7 @@ def audit(spec: str, approval_rows: list[dict]) -> dict:
             errors.append(f"Invalid members for {group_id}")
         if row["kind"] not in {"action", "event", "condition", "state"}:
             errors.append(f"Unsupported picker kind in {group_id}: {row['kind']}")
-        if row["source"] not in {"macrodroid", "shortx", "macrodroid_apk"}:
+        if row["source"] not in {"macrodroid", "shortx", "macrodroid_apk", "yauto_code"}:
             errors.append(f"Invalid upstream source for {group_id}")
             continue
         if row["source"] == "macrodroid_apk":
@@ -72,9 +80,17 @@ def audit(spec: str, approval_rows: list[dict]) -> dict:
                 errors.append(f"Invalid MacroDroid asset in {group_id}")
             if not row.get("option_field"):
                 errors.append(f"Missing MacroDroid option field in {group_id}")
+        elif row["source"] == "yauto_code":
+            if row["source_key"] not in Y_AUTO_SAME_ANDROID_VALUE:
+                errors.append(f"Unreviewed YAuto API evidence for {group_id}")
+            elif not all(row["source_key"] in path.read_text(encoding="utf-8")
+                         for path in Y_AUTO_EQUIVALENT_SOURCE):
+                errors.append(f"YAuto source does not share Android API {row['source_key']}")
+            if row.get("option_field"):
+                errors.append(f"YAuto source should not contain MacroDroid option field: {group_id}")
         elif row.get("option_field"):
             errors.append(f"An upstream title key must not have an APK mode field: {group_id}")
-        sources = upstream_pairs(row["source"]) if row["source"] != "macrodroid_apk" else {}
+        sources = upstream_pairs(row["source"]) if row["source"] in {"macrodroid", "shortx"} else {}
         for member in member_ids:
             if member in all_mapped_ids:
                 errors.append(f"Feature merged into multiple picker entries: {member}")
@@ -83,7 +99,7 @@ def audit(spec: str, approval_rows: list[dict]) -> dict:
                             else "state" if ".state." in member else "action")
             if derived_kind != row["kind"]:
                 errors.append(f"Mixed feature kinds in {group_id}: {member}")
-            if row["source"] != "macrodroid_apk":
+            if row["source"] in {"macrodroid", "shortx"}:
                 upstream = sources.get(feature_key(member))
                 if upstream != row["source_key"]:
                     errors.append(

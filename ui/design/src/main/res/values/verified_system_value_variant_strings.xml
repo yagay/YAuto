@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_variant_android_condition_battery_status">System battery status</string>
+    <string name="feature_variant_android_condition_reference_battery_status">Extended battery status</string>
+    <string name="feature_variant_android_state_battery_status">System battery status</string>
+    <string name="feature_variant_android_state_reference_battery_status">Extended battery status</string>
+    <string name="feature_variant_android_condition_battery_voltage">Battery voltage range</string>
+    <string name="feature_variant_android_condition_reference_battery_voltage_mv">Extended millivolt range</string>
+    <string name="feature_variant_android_state_battery_voltage">Battery voltage range</string>
+    <string name="feature_variant_android_state_reference_battery_voltage_mv">Extended millivolt range</string>
+    <string name="feature_variant_android_condition_font_scale">Font scale range</string>
+    <string name="feature_variant_android_condition_reference_font_scale">Extended font scale range</string>
+    <string name="feature_variant_android_state_font_scale">Font scale range</string>
+    <string name="feature_variant_android_state_reference_font_scale">Extended font scale range</string>
+</resources>
