@@ -31,4 +31,12 @@
     <string name="feature_android_status_icon_control_field_iconsource_option_built_in">内置图标</string>
     <string name="feature_android_status_icon_control_field_iconsource_option_android_drawable">Android 系统 Drawable</string>
     <string name="feature_android_status_icon_control_field_drawable">Android Drawable 名称</string>
+    <string name="runtime_shortx_process_invalid_user_id">Android 用户 ID 无效。</string>
+    <string name="runtime_shortx_process_missing_package_set">应用集合变量不存在：%1$s。</string>
+    <string name="runtime_shortx_process_invalid_packages">需要 1 至 24 个有效的应用包名。</string>
+    <string name="runtime_shortx_chip_invalid_operation">状态栏 Chip 标识或操作无效。</string>
+    <string name="runtime_shortx_chip_invalid_text">Chip 文字长度必须为 1 至 48 个字符。</string>
+    <string name="runtime_shortx_chip_invalid_drawable">Android Drawable 名称无效。</string>
+    <string name="runtime_shortx_chip_invalid_png">PNG 不存在、过大或超过 128 像素限制。</string>
+    <string name="runtime_shortx_chip_unsupported_method">不支持的 Chip 图标实现方式。</string>
 </resources>

@@ -6,6 +6,7 @@ import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 import java.io.File
 
@@ -44,27 +45,27 @@ class AndroidShortXStatusChipFeaturePack : FeaturePack {
             val id = feature.config.string("chipId", "shortx").resolveVariables(context.variables).trim()
             val mode = feature.config.string("mode", "show")
             if (!statusChipIdValid(id) || mode !in setOf("show", "hide")) {
-                return@registerAction ActionExecutionResult(false, message = "Invalid status chip operation or ID")
+                return@registerAction ActionExecutionResult(false, message = userText("shortx.chip.invalid_operation"))
             }
             val title = feature.config.string("text").resolveVariables(context.variables).trim()
             if (mode == "show" && (title.isEmpty() || title.length > 48)) {
-                return@registerAction ActionExecutionResult(false, message = "Chip text must contain 1–48 characters")
+                return@registerAction ActionExecutionResult(false, message = userText("shortx.chip.invalid_text"))
             }
             val iconMode = feature.config.string("iconMode", "none")
             val iconName = feature.config.string("icon").trim()
             if (mode == "show" && iconMode == "android_drawable" && !statusChipDrawableValid(iconName)) {
-                return@registerAction ActionExecutionResult(false, message = "Invalid Android drawable name")
+                return@registerAction ActionExecutionResult(false, message = userText("shortx.chip.invalid_drawable"))
             }
             val encoded = if (mode == "show" && iconMode == "png_file") {
                 val path = feature.config.string("pngPath").resolveVariables(context.variables).trim()
                 val bytes = runCatching { File(path).takeIf { it.isFile && it.length() in 1L..65_536L }?.readBytes() }.getOrNull()
                 if (bytes == null || !statusChipImageValid(bytes)) {
-                    return@registerAction ActionExecutionResult(false, message = "PNG missing, larger than 64 KiB or exceeds 128 pixels")
+                    return@registerAction ActionExecutionResult(false, message = userText("shortx.chip.invalid_png"))
                 }
                 Base64.encodeToString(bytes, Base64.NO_WRAP)
             } else ""
             if (mode == "show" && iconMode !in setOf("none", "android_drawable", "png_file")) {
-                return@registerAction ActionExecutionResult(false, message = "Unsupported icon method")
+                return@registerAction ActionExecutionResult(false, message = userText("shortx.chip.unsupported_method"))
             }
             val result = context.capabilities.execute(CapabilityRequest(
                 capability = CapabilityIds.LSPOSED,

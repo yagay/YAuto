@@ -31,4 +31,12 @@
     <string name="feature_android_status_icon_control_field_iconsource_option_built_in">Built-in icon</string>
     <string name="feature_android_status_icon_control_field_iconsource_option_android_drawable">Android framework drawable</string>
     <string name="feature_android_status_icon_control_field_drawable">Android drawable name</string>
+    <string name="runtime_shortx_process_invalid_user_id">Invalid Android user ID.</string>
+    <string name="runtime_shortx_process_missing_package_set">Missing package-set variable: %1$s.</string>
+    <string name="runtime_shortx_process_invalid_packages">Expected 1 to 24 valid application package names.</string>
+    <string name="runtime_shortx_chip_invalid_operation">Invalid status-bar chip ID or operation.</string>
+    <string name="runtime_shortx_chip_invalid_text">Chip text must contain 1 to 48 characters.</string>
+    <string name="runtime_shortx_chip_invalid_drawable">Invalid Android drawable name.</string>
+    <string name="runtime_shortx_chip_invalid_png">PNG is missing, too large, or exceeds 128 pixels.</string>
+    <string name="runtime_shortx_chip_unsupported_method">Unsupported chip icon method.</string>
 </resources>

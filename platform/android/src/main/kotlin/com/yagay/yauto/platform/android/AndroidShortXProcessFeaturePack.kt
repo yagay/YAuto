@@ -5,6 +5,7 @@ import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 
 /**
@@ -42,7 +43,7 @@ class AndroidShortXProcessFeaturePack : FeaturePack {
         ) { feature, context ->
             val idNumber = feature.config["userId"].numberOrNull() ?: 0.0
             if (!idNumber.isFinite() || idNumber.toInt().toDouble() != idNumber || idNumber !in 0.0..99.0) {
-                return@registerAction ActionExecutionResult(false, message = "Invalid Android user ID")
+                return@registerAction ActionExecutionResult(false, message = userText("shortx.process.invalid_user_id"))
             }
             val names = mutableListOf<String>()
             names += feature.config.string("packages").resolveVariables(context.variables)
@@ -51,12 +52,12 @@ class AndroidShortXProcessFeaturePack : FeaturePack {
                 .lineSequence().map(String::trim).filter(String::isNotBlank).toList()
             for (setName in setNames) {
                 val item = context.variables.get(setName) as? ConfigValue.ListValue
-                    ?: return@registerAction ActionExecutionResult(false, message = "Missing package-set variable: $setName")
+                    ?: return@registerAction ActionExecutionResult(false, message = userText("shortx.process.missing_package_set", setName))
                 names += item.value.mapNotNull { (it as? ConfigValue.StringValue)?.value }
             }
             val packages = names.distinct()
             if (packages.isEmpty() || packages.size > 24 || packages.any { !processPackageNameValid(it) }) {
-                return@registerAction ActionExecutionResult(false, message = "Expected 1–24 valid package names")
+                return@registerAction ActionExecutionResult(false, message = userText("shortx.process.invalid_packages"))
             }
             var accepted = 0
             val errors = mutableListOf<String>()
