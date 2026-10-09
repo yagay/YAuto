@@ -37,6 +37,10 @@ jobs:
 
       - name: MacroDroid terminology audit
         run: python3 tools/audit_macrodroid_catalog.py
+      - name: AOSP bilingual terminology tests and audit
+        run: |
+          python3 -m unittest discover -s tools -p 'test_aosp_terms.py'
+          python3 tools/audit_aosp_terms.py --output build/reports/aosp_terminology_audit.json
       - name: Localization guard
         run: python3 .github/scripts/check-localization.py
       - name: Localization quality guard
@@ -79,6 +83,14 @@ jobs:
           --parallel
           --build-cache
           --stacktrace
+
+      - name: Publish AOSP terminology audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: YAuto-aosp-terminology-audit
+          path: build/reports/aosp_terminology_audit.json
+          if-no-files-found: warn
 
       - name: Normalize APK name
         run: cp app/build/outputs/apk/debug/app-debug.apk YAuto-debug.apk
