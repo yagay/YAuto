@@ -16,3 +16,11 @@ Base: `refactor/macrodroid-on-1003-20261008`, commit `2ea18bec`.
 Do not claim complete feature coverage or lossless task import without original exported rules and device-level verification. Important remaining work includes an actual arbitrary-process start mechanism, SystemUI icon/Chip controls, screenshot-content OCR trigger source, Spotify-specific filters, cropped screenshots, verified ShortX plug-in protocol, reversible 5G toggle and complete ShortX native protobuf decoding. Root/Shizuku/LSPosed capabilities require real-device verification.
 
 No existing stable feature ID or saved task is migrated or overwritten. Unsupported source variants keep their original compatibility payload.
+
+## Next batch: reversible 5G switch
+
+- New native action `android.telephony.5g.toggle` with toggle, enable and disable methods and SIM slot configuration.
+- Parse the allowed-network-types response returned by Android's phone shell service and change only the NR technology bit. Unknown technologies are rejected without changing modem settings.
+- Save the pre-disable mask for each SIM slot and restore it only if other network technologies remain unchanged.
+- Check the phone service's completion text, because the shell command can return exit status 0 while reporting failure.
+- ShortX `Toggle5G` now points to the dedicated action, but unverified source payloads remain as compatibility nodes. ROM and carrier capabilities need real-device verification.

@@ -129,12 +129,13 @@ class ShortXFeatureSuggestionsTest {
             "StartAppProcess", "StartAppProcessByPkg",
             "SetStatusBarIcon", "RemoveStatusBarIcon",
             "ShowStatusBarChip", "HideStatusBarClip",
-            "PluginAction", "Toggle5G",
+            "PluginAction",
         ).forEach { source ->
             assertNull("Unsafe import hint for " + source, ShortXFeatureSuggestions.target(source, path))
         }
         assertEquals("surface.gesture_recording.stop", ShortXFeatureSuggestions.target("StopGestureRecording", path))
         assertEquals("android.sms.send", ShortXFeatureSuggestions.target("SendSMS", path))
+        assertEquals("android.telephony.5g.toggle", ShortXFeatureSuggestions.target("Toggle5G", path))
     }
 
 }

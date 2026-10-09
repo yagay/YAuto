@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_telephony_5g_toggle_title">切换 5G</string>
+    <string name="feature_android_telephony_5g_toggle_description">保留当前 SIM 的其他网络类型，只切换 5G NR。需要 Root 或 Shizuku，部分系统或运营商可能限制修改。</string>
+    <string name="feature_android_telephony_5g_toggle_field_slotid">SIM 卡槽</string>
+    <string name="feature_android_telephony_5g_toggle_field_operation">5G 操作</string>
+    <string name="feature_android_telephony_5g_toggle_field_operation_option_toggle">切换</string>
+    <string name="feature_android_telephony_5g_toggle_field_operation_option_enable">开启</string>
+    <string name="feature_android_telephony_5g_toggle_field_operation_option_disable">关闭</string>
+    <string name="feature_android_telephony_5g_toggle_field_resultvariable">将结果掩码保存到变量</string>
+</resources>

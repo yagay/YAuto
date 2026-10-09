@@ -44,12 +44,17 @@ class SourceSemanticParityTests(unittest.TestCase):
         self.assertIn('"StartAppProcess", "StartAppProcessByPkg" -> null', hint)
         for source in (
             "SetStatusBarIcon", "RemoveStatusBarIcon",
-            "ShowStatusBarChip", "HideStatusBarClip", "PluginAction", "Toggle5G",
+            "ShowStatusBarChip", "HideStatusBarClip", "PluginAction",
         ):
             self.assertIn('"' + source + '" -> null', hint, source)
         self.assertNotIn('"StartAppProcess", "StartAppProcessByPkg" -> "android.app.launch"', hint)
         self.assertNotIn('"SetStatusBarIcon" -> "android.notification.ppn.show"', hint)
         self.assertIn('"AreaScreenshot" -> "accessibility.screenshot.capture"', hint)
+        self.assertIn('"Toggle5G" -> "android.telephony.5g.toggle"', hint)
+        native = (ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/Android5gToggleFeaturePack.kt").read_text(encoding="utf-8")
+        self.assertIn('FeatureId("android.telephony.5g.toggle")', native)
+        self.assertIn('parseAllowedNetworkTypes(', native)
+        self.assertIn('planFiveGMode(', native)
 
     def test_macro_screenshot_content_and_spotify_are_not_generic_triggers(self):
         macro = MACRO_HINTS.read_text(encoding="utf-8")

@@ -54,6 +54,7 @@ object AndroidFeaturePacks {
         AndroidReferenceCompletionEventFeaturePack(),
         AndroidRemainingParityFeaturePack(context),
         AndroidFinalParityFeaturePack(context),
+        Android5gToggleFeaturePack(context),
         AndroidPpnFeaturePack(context),
         AndroidShortXParityFeaturePack(context),
         AndroidShortXStateFeaturePack(),

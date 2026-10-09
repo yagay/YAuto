@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_telephony_5g_toggle_title">Toggle 5G</string>
+    <string name="feature_android_telephony_5g_toggle_description">Toggle 5G NR for a SIM while retaining other allowed network types. Root or Shizuku is required, and some ROMs/carriers may reject changes.</string>
+    <string name="feature_android_telephony_5g_toggle_field_slotid">SIM slot</string>
+    <string name="feature_android_telephony_5g_toggle_field_operation">5G operation</string>
+    <string name="feature_android_telephony_5g_toggle_field_operation_option_toggle">Toggle</string>
+    <string name="feature_android_telephony_5g_toggle_field_operation_option_enable">Enable</string>
+    <string name="feature_android_telephony_5g_toggle_field_operation_option_disable">Disable</string>
+    <string name="feature_android_telephony_5g_toggle_field_resultvariable">Save resulting bitmask to variable</string>
+</resources>

@@ -127,8 +127,8 @@ internal object ShortXFeatureSuggestions {
         "GetCurrentLocationInfo" -> "android.location.current.query"
         "GetCurrentLocationAddress" -> "android.location.reverse_geocode"
         "SetHotSpotEnabled", "ToggleHotSpot", "EnableHotSpot", "DisableHotSpot" -> "android.network.tether.set"
-        // Toggle5G must restore the original network mode; generic mode-setting is not equivalent.
-        "Toggle5G" -> null
+        // Route to the dedicated NR toggle rather than the generic network mode setter.
+        "Toggle5G" -> "android.telephony.5g.toggle"
         "SwitchMobileDataSlot" -> "android.sim.default_data.set"
         "TakePhoto" -> "android.camera.photo.capture"
         "ScreenFlash" -> "surface.screen_flash.show"
