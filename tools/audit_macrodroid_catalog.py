@@ -40,6 +40,27 @@ def main():
     args = parser.parse_args()
     zh, zh_files = strings(RES / "values-zh-rCN")
     en, en_files = strings(RES / "values")
+    # A present Chinese XML key may still have an English value, which the old
+    # missing-key audit did not catch. Compare values, not only names.
+    english_copy_titles = sorted(
+        key for key, (value, _) in zh.items()
+        if TITLE.match(key)
+        and key in en
+        and value == en[key][0]
+        and re.search(r"[A-Za-z]{3}", value)
+        and not re.search(r"[\\u4e00-\\u9fff]", value)
+    )
+    english_copy_phrases = sorted(
+        key for key, (value, _) in zh.items()
+        if key.startswith("feature_phrase_")
+        and key in en
+        and value == en[key][0]
+        and re.search(r"[A-Za-z]{3}", value)
+        and not re.search(r"[\\u4e00-\\u9fff]", value)
+    )
+    english_copy_by_file = defaultdict(int)
+    for key in english_copy_titles + english_copy_phrases:
+        english_copy_by_file[zh[key][1]] += 1
     feature_keys = sorted(k for k in set(zh) | set(en) if TITLE.match(k))
     missing_zh = sorted(set(feature_keys) - set(zh))
     missing_en = sorted(set(feature_keys) - set(en))
@@ -181,6 +202,9 @@ def main():
         "missing_picker_category_chinese": missing_category_zh,
         "chinese_xml_files_scanned": len(zh_files),
         "english_xml_files_scanned": len(en_files),
+        "feature_titles_identical_to_english": english_copy_titles,
+        "phrase_labels_identical_to_english": english_copy_phrases,
+        "english_copy_by_zh_resource_file": dict(sorted(english_copy_by_file.items(), key=lambda item: (-item[1], item[0]))),
         "feature_title_keys": len(feature_keys),
         "definition_ids_found_by_simple_pattern": len(definitions),
         "missing_chinese_titles": missing_zh,
@@ -192,6 +216,7 @@ def main():
             "A missing explicit string does not always mean a feature is untranslated: runtime fallback and phrase resources exist.",
             "Two distinct features sharing a title may be correct, especially state/condition counterparts.",
             "Classification needs checking against actual descriptor.kind and descriptor.id, not label alone.",
+            "An English string copied into values-zh-rCN is counted as untranslated even if its key exists.",
         ],
     }
     target = ROOT / args.output
@@ -201,6 +226,10 @@ def main():
           f"{len(feature_keys)} feature title resource keys")
     print(f"Missing: zh={len(missing_zh)}, en={len(missing_en)}; "
           f"shared labels={len(duplicated_labels)}; event/state collisions={len(event_names)}")
+    print(f"Chinese strings still identical to English: feature titles={len(english_copy_titles)}, "
+          f"phrase/field labels={len(english_copy_phrases)}")
+    print("Top files still requiring translation:",
+          sorted(english_copy_by_file.items(), key=lambda item: -item[1])[:8])
     print(f"Detailed report: {target}")
     if missing_verified_pairs or unreviewed_reference_pairs or mismatched_verified_labels:
         print("ERROR: MacroDroid localized titles differ from the approved APK reference", file=sys.stderr)
