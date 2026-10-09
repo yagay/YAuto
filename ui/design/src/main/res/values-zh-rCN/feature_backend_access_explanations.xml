@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Purpose and permission rationale is specialized by concrete feature description, kind, and backend. -->
+<resources>
+    <string name="feature_backend_auto_action_format">此功能要执行“%1$s”。自动方式会根据运行时可用的实现路径选择执行方式；自动选择本身不会授予 Root、Shizuku 或其他权限。</string>
+    <string name="feature_backend_auto_event_format">此触发器用于“%1$s”。自动方式会从已支持且运行时可用的监听路径中选择；仍需启用对应路径的权限。</string>
+    <string name="feature_backend_auto_condition_format">此条件用于“%1$s”。自动方式会使用可用的检查路径；实际读取范围受被选中路径的权限限制。</string>
+    <string name="feature_backend_auto_state_format">此状态用于“%1$s”。自动方式会使用可用的状态读取路径，并不会自动绕过 Android 的访问限制。</string>
+    <string name="feature_backend_root_action_format">针对“%1$s”，Root 方式通过 su 授权执行该功能所需的特权操作；需要在 Root 管理器内授权 YAuto。</string>
+    <string name="feature_backend_root_event_format">针对“%1$s”，Root 方式利用特权访问监听普通应用可能无法读取的事件来源；需要授予 su 权限。</string>
+    <string name="feature_backend_root_condition_format">针对“%1$s”，Root 方式使用 su 权限读取或判断受限制的系统信息；不能仅靠普通应用权限替代。</string>
+    <string name="feature_backend_root_state_format">针对“%1$s”，Root 方式通过特权访问读取相关系统状态；需要 Root 管理器授权。</string>
+    <string name="feature_backend_shizuku_action_format">针对“%1$s”，Shizuku 方式以其服务提供的 shell 身份执行该功能涉及的系统命令，而不是直接获得完整 Root 权限。</string>
+    <string name="feature_backend_shizuku_event_format">针对“%1$s”，Shizuku 方式利用 shell 身份访问该触发器所需的系统事件来源；需要服务保持运行。</string>
+    <string name="feature_backend_shizuku_condition_format">针对“%1$s”，Shizuku 方式通过 shell 身份查询该条件所需的系统信息；不能执行超出 shell 权限的操作。</string>
+    <string name="feature_backend_shizuku_state_format">针对“%1$s”，Shizuku 方式通过 shell 身份读取相应系统状态；读取能力取决于当前 Android 的 shell 权限。</string>
+    <string name="feature_backend_lsposed_action_format">针对“%1$s”，LSPosed 方式由已启用的 Hook 在目标进程内参与执行相关系统或应用调用；必须设置正确的作用域。</string>
+    <string name="feature_backend_lsposed_event_format">针对“%1$s”，LSPosed 方式通过作用域内的 Hook 观察目标进程中的事件；必须启用模块并选择正确进程。</string>
+    <string name="feature_backend_lsposed_condition_format">针对“%1$s”，LSPosed 方式借助目标进程中的 Hook 判断对应内部状态；依赖模块作用域和系统版本。</string>
+    <string name="feature_backend_lsposed_state_format">针对“%1$s”，LSPosed 方式从作用域内 Hook 可访问的进程状态读取数据；不是直接读取所有应用的数据。</string>
+    <string name="feature_backend_accessibility_action_format">针对“%1$s”，无障碍方式通过可访问的界面节点或系统无障碍动作完成操作；需要开启 YAuto 无障碍服务。</string>
+    <string name="feature_backend_accessibility_event_format">针对“%1$s”，无障碍方式监听 Android 向服务提供的界面事件；没有可访问事件时可能无法触发。</string>
+    <string name="feature_backend_accessibility_condition_format">针对“%1$s”，无障碍方式检查当前可访问的界面状态；无法保证识别被应用隐藏的控件。</string>
+    <string name="feature_backend_accessibility_state_format">针对“%1$s”，无障碍方式读取服务可以访问的当前界面信息；不等于拥有系统级读取权限。</string>
+    <string name="feature_backend_usage_stats_action_format">针对“%1$s”，使用情况访问权限只提供应用使用记录或前台活动相关信息，不能单独执行受保护的系统操作。</string>
+    <string name="feature_backend_usage_stats_event_format">针对“%1$s”，使用情况访问方式根据系统使用情况记录识别变化；它不提供无障碍界面事件。</string>
+    <string name="feature_backend_usage_stats_condition_format">针对“%1$s”，使用情况访问方式查询 Android 的应用使用记录来检查条件；可能受记录延迟影响。</string>
+    <string name="feature_backend_usage_stats_state_format">针对“%1$s”，使用情况访问方式查询 Android 允许读取的应用使用状态，不包含所有应用的内部状态。</string>
+    <string name="feature_backend_root_limitation">注意：Root 授权的影响范围较大，执行效果仍受设备、系统版本及具体命令限制。</string>
+    <string name="feature_backend_shizuku_limitation">注意：Shizuku 的 shell 权限低于 Root，部分操作仍会被拒绝；设备重启后可能需要重新启动服务。</string>
+    <string name="feature_backend_lsposed_limitation">注意：Hook 的作用域和 Android／厂商版本会影响结果；新增或变更 Hook 可能需要重启目标进程。</string>
+    <string name="feature_backend_accessibility_limitation">注意：无障碍依赖可访问界面，在熄屏、应用隐藏控件或自绘界面时可能无法完成操作。</string>
+    <string name="feature_backend_usage_stats_limitation">注意：使用情况访问可能有更新延迟，且不提供完整的界面内容或特权控制能力.</string>
+    <string name="feature_backend_auto_paths_format">支持的可选权限路径（只需授权实际使用的方式）：%1$s</string>
+    <string name="feature_backend_additional_requirements_format">此功能另行声明的权限：%1$s</string>
+</resources>
