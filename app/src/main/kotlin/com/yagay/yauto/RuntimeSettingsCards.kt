@@ -36,10 +36,6 @@ import com.yagay.yauto.ui.design.PageBackButton
 import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.launch
 
-private enum class RuntimeSettingsPage {
-    OVERVIEW, PERMISSIONS, BACKENDS, RUNTIME, EDITOR, LOGGING, ENGINE, HEALTH
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun LanguageCard(selectedTag: String, onSelect: (String) -> Unit) {
