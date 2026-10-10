@@ -21,8 +21,6 @@ import com.yagay.yauto.core.registry.AccessRequirement
 import com.yagay.yauto.core.registry.FeaturePickerCategory
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
-import com.yagay.yauto.core.registry.mandatoryAccessRequirements
-import com.yagay.yauto.core.registry.requiresRootToRun
 import com.yagay.yauto.ui.design.MacroPalette
 import com.yagay.yauto.ui.design.localizedList
 import com.yagay.yauto.ui.design.R as TextR
@@ -411,14 +409,14 @@ private fun FeaturePickerRow(
 
 @Composable
 private fun featureAccessTags(descriptor: FeatureDescriptor): String {
-    // Use the same resolved requirements as the configuration editor. Reading only
-    // accessRequirements/implementationOptions hides permissions inferred from capabilities.
-    val requirements = remember(descriptor) { descriptor.mandatoryAccessRequirements() }
-    val permissionGroup = stringResource(
-        if (descriptor.requiresRootToRun()) TextR.string.implementation_group_root_required
-        else TextR.string.implementation_group_no_root,
-    )
-    val permissions = requirements.sortedBy { it.ordinal }.map { requirement ->
+    // Keep the picker and configuration editor consistent: list only the
+    // actual requirements of the preferred available method. In particular,
+    // "No Root required" is not a permission and should never be displayed.
+    val requirements = remember(descriptor) {
+        permissionsForFeature(descriptor, null) { PermissionAvailability.UNKNOWN }
+    }
+    if (requirements.isEmpty()) return ""
+    val permissions = requirements.map { requirement ->
         stringResource(when (requirement) {
         AccessRequirement.ROOT -> TextR.string.access_root
         AccessRequirement.SHIZUKU -> TextR.string.access_shizuku
@@ -444,7 +442,7 @@ private fun featureAccessTags(descriptor: FeatureDescriptor): String {
         AccessRequirement.ACTIVITY_RECOGNITION -> TextR.string.access_activity_recognition
         })
     }
-    return localizedList(listOf(permissionGroup) + permissions)
+    return localizedList(permissions)
 }
 
 @Composable

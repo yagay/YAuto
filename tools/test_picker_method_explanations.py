@@ -60,6 +60,15 @@ class FeatureMethodExplanationsTests(unittest.TestCase):
         self.assertIn("rememberLauncherForActivityResult", bridge)
         self.assertIn("graph.shizuku.requestPermission", bridge)
 
+    def test_feature_picker_does_not_show_no_root_as_permission(self):
+        catalog = (GENERIC.parent / "FeaturePickerCatalog.kt").read_text(encoding="utf-8")
+        self.assertIn("permissionsForFeature(descriptor, null)", catalog)
+        self.assertNotIn("implementation_group_no_root", catalog)
+        self.assertNotIn("implementation_group_root_required", catalog)
+        self.assertIn("if (requirements.isEmpty()) return \"\"", catalog)
+        self.assertIn("return localizedList(permissions)", catalog)
+        self.assertIn("if (requirements.isEmpty()) return", (GENERIC.parent / "AutoImplementationSummary.kt").read_text(encoding="utf-8"))
+
     def test_backend_permission_explanations_cover_each_kind_in_both_locales(self):
         for locale in ("values", "values-zh-rCN"):
             strings = locale_strings(RES / locale)
