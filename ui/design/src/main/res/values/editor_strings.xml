@@ -317,4 +317,8 @@
     <string name="implementation_nonroot_preferred">Root is not required when a supported Android, Accessibility or Shizuku method is available.</string>
     <string name="implementation_path_permission_format">%1$s: %2$s</string>
     <string name="implementation_legacy_conversion">This task has a saved manual implementation. Saving will switch it to automatic selection; existing tasks stay unchanged until edited.</string>
+    <string name="feature_permission_title">Required permissions</string>
+    <string name="feature_permission_granted">Granted · Manage</string>
+    <string name="feature_permission_grant">Grant</string>
+    <string name="feature_permission_check">Check / Enable</string>
 </resources>

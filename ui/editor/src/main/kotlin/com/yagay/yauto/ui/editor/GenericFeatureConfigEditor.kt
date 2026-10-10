@@ -200,7 +200,6 @@ private fun FeatureSummaryCard(descriptor: FeatureDescriptor, accent: Color) {
                     style = MaterialTheme.typography.labelSmall,
                 )
             }
-            AccessRequirementBadges(descriptor)
             if (descriptor.capabilities.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     descriptor.capabilities.take(4).forEach {
@@ -209,18 +208,6 @@ private fun FeatureSummaryCard(descriptor: FeatureDescriptor, accent: Color) {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun AccessRequirementBadges(descriptor: FeatureDescriptor) {
-    val requirements = descriptor.mandatoryAccessRequirements()
-    if (requirements.isEmpty()) return
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        requirements.forEach { CapabilityBadge(accessRequirementLabel(it)) }
     }
 }
 

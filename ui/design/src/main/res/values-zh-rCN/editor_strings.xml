@@ -316,4 +316,8 @@
     <string name="implementation_nonroot_preferred">有可用的 Android、无障碍或 Shizuku 方式时，不需要 Root。</string>
     <string name="implementation_path_permission_format">%1$s：%2$s</string>
     <string name="implementation_legacy_conversion">此任务以前指定过实现方式；重新保存会改为自动选择，未编辑的旧任务保持原样。</string>
+    <string name="feature_permission_title">所需权限</string>
+    <string name="feature_permission_granted">已授权 · 管理</string>
+    <string name="feature_permission_grant">去授权</string>
+    <string name="feature_permission_check">检查／启用</string>
 </resources>
