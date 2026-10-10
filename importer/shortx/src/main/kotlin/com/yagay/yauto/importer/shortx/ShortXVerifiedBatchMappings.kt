@@ -80,8 +80,8 @@ internal object ShortXVerifiedBatchMappings {
         feature(any, importerId, "accessibility.global_action", mapOf(text("action", "lock_screen")))
 
     /** Protobuf defaults are accepted only when the message has no unknown business fields. */
-    fun binary(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? =
-        when (sourceName(any)) {
+    fun binary(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        return when (sourceName(any)) {
             "LockDeviceNow" ->
                 if (fields.onlyBusinessFields()) lock(any, importerId) else null
             "ScrollViewTo" ->
@@ -111,6 +111,7 @@ internal object ShortXVerifiedBatchMappings {
             // including packed variants, before it can be mapped without discarding selections.
             else -> null
         }
+    }
 
     private fun enumNumber(value: JsonPrimitive?): Int? = value?.intOrNull
         ?: value?.contentOrNull?.substringAfterLast('_')?.let { name ->
