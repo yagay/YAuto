@@ -493,6 +493,17 @@ internal fun YAutoAppScreen(graph: AppGraph) {
                     )
                 )
             },
+            onTestSavedAutomation = { automationId ->
+                operation {
+                    val result = featureTester.testSavedAutomation(automationId)
+                    runtimeSummary = context.getString(
+                        if (result.success) TextR.string.test_center_run_passed
+                        else TextR.string.test_center_run_failed,
+                        result.message,
+                        result.elapsedMs,
+                    )
+                }
+            },
             onRunManual = {
                 operation {
                     val result = graph.runtime.dispatch(
