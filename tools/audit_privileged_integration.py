@@ -55,7 +55,16 @@ def collect_inventory() -> dict:
     operations = {
         op: {
             "declared": bool(re.search(r"const val " + op + r"\s*=", protocol)),
-            "handled": ("SystemBridgeProtocol." + op) in module,
+            # Chip requests use a separate, authenticated SystemUI receiver.
+            # Their operation names are checked by ShortXStatusChipController,
+            # not listed as case labels in YAutoXposedModule.
+            "handled": (
+                ("SystemBridgeProtocol." + op) in module or
+                (op in {"STATUS_CHIP_SHOW", "STATUS_CHIP_HIDE"} and
+                 "SystemBridgeProtocol.CHIP_ACTION" in module and
+                 ("SystemBridgeProtocol." + op) in
+                 (XPOSED / "ShortXStatusChipController.kt").read_text(encoding="utf-8"))
+            ),
             "backend": ("SystemBridgeProtocol." + op) in backend,
         }
         for op in BRIDGE_OPERATIONS
