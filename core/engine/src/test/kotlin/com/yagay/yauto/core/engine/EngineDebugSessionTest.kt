@@ -39,4 +39,29 @@ class EngineDebugSessionTest {
         assertEquals(ConfigValue.StringValue("before"), steps.single().variablesBefore["counter"])
         assertEquals(ConfigValue.StringValue("after"), steps.single().variablesAfter["counter"])
     }
+    @Test fun concurrentIdenticalNodeInvocationsAreNotOverwritten() = runBlocking {
+        val debugger = EngineDebugSession()
+        val node = ActionNode.Label(NodeId("shared-node"), "loop")
+        val first = async {
+            debugger.beforeNode(10L, node, mapOf("iteration" to ConfigValue.StringValue("one")))
+            debugger.afterNode(10L, node, emptyMap(), true, 12L)
+        }
+        val second = async {
+            debugger.beforeNode(11L, node, mapOf("iteration" to ConfigValue.StringValue("two")))
+            debugger.afterNode(11L, node, emptyMap(), true, 14L)
+        }
+        repeat(100) { yield() }
+        assertNotNull(debugger.pausedAt())
+        debugger.step()
+        repeat(100) { yield() }
+        assertNotNull(debugger.pausedAt())
+        debugger.step()
+        first.await()
+        second.await()
+        val steps = debugger.snapshot().associateBy { it.invocationId }
+        assertEquals(2, steps.size)
+        assertEquals(ConfigValue.StringValue("one"), steps[10L]?.variablesBefore?.get("iteration"))
+        assertEquals(ConfigValue.StringValue("two"), steps[11L]?.variablesBefore?.get("iteration"))
+    }
+
 }
