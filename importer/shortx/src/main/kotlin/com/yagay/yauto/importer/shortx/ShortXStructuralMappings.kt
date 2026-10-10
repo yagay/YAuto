@@ -97,15 +97,15 @@ internal object ShortXStructuralMappings {
                     val conditions = jsonActionList(obj, "_if") ?: return null
                     if (conditions.isEmpty()) return null
                     val conditionsNative = conditions.mapIndexed { i, child ->
-                        predicate(child, "$" + "{path}.if.condition[$" + "i]")
+                        predicate(child, path + ".if.condition[" + i + "]")
                     }
                     val op = jsonConditionOperator(obj["_ifCondOp"]) ?: return null
                     val cond = combine(conditionsNative, op) ?: return null
                     val thenList = jsonActionList(obj, "_ifActions") ?: return null
                     val elseList = jsonActionList(obj, "_elseActions") ?: return null
                     ActionNode.If(nodeId(), cond,
-                        thenList.mapIndexed { i, child -> action(child, "$" + "{path}.if.action[$" + "i]") },
-                        elseList.mapIndexed { i, child -> action(child, "$" + "{path}.else.action[$" + "i]") })
+                        thenList.mapIndexed { i, child -> action(child, path + ".if.action[" + i + "]") },
+                        elseList.mapIndexed { i, child -> action(child, path + ".else.action[" + i + "]") })
                 }
             }
             "WhileLoop" -> {
@@ -119,11 +119,11 @@ internal object ShortXStructuralMappings {
                     val conditions = jsonActionList(obj, "conditions") ?: return null
                     if (conditions.isEmpty()) return null
                     val cond = combine(conditions.mapIndexed { i, child ->
-                        predicate(child, "$" + "{path}.while.condition[$" + "i]")
+                        predicate(child, path + ".while.condition[" + i + "]")
                     }, jsonConditionOperator(obj["condOp"]) ?: return null) ?: return null
                     val children = jsonActionList(obj, "actions") ?: return null
                     ActionNode.While(nodeId(), cond,
-                        children.mapIndexed { i, child -> action(child, "$" + "{path}.while.action[$" + "i]") })
+                        children.mapIndexed { i, child -> action(child, path + ".while.action[" + i + "]") })
                 }
             }
             else -> null
