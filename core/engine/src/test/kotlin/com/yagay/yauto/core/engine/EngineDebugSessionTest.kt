@@ -169,4 +169,21 @@ class EngineDebugSessionTest {
         assertTrue(debugger.snapshot().isEmpty())
     }
 
+    @Test fun externallyCancelledPausedInvocationIsRemoved() = runBlocking {
+        val debugger = EngineDebugSession()
+        val node = ActionNode.Label(NodeId("external-cancel"), "cancel")
+        val job = async {
+            debugger.beforeNode(301L, node, mapOf("secret" to ConfigValue.StringValue("temporary")))
+        }
+        repeat(100) {
+            if (debugger.pausedAt() != null) return@repeat
+            yield()
+        }
+        assertEquals(node.id, debugger.pausedAt()?.nodeId)
+        job.cancel()
+        try { job.await() } catch (_: CancellationException) { }
+        assertNull(debugger.pausedAt())
+        assertTrue(debugger.snapshot().isEmpty())
+    }
+
 }
