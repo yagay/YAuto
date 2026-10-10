@@ -4,6 +4,7 @@ import android.content.Context
 import com.yagay.yauto.core.engine.AutomationEngine
 import com.yagay.yauto.core.engine.AutomationPhase
 import com.yagay.yauto.core.engine.EngineDebugSession
+import com.yagay.yauto.core.engine.FlowResolver
 import com.yagay.yauto.core.model.Automation
 import com.yagay.yauto.core.model.NodeId
 import com.yagay.yauto.ui.editor.EngineDebugRun
@@ -52,6 +53,9 @@ internal class RuntimeFeatureTester(
             graph.features,
             graph.capabilities,
             graph.tracer,
+            flowResolver = FlowResolver { id ->
+                graph.workspace.load().flows.firstOrNull { it.id == id }
+            },
         )
         return object : EngineDebugRun {
             override suspend fun execute(): FeatureTestResult {
