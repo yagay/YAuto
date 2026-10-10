@@ -303,4 +303,5 @@
     <string name="debug_step_failed">失败（%1$d 毫秒）：%2$s</string>
     <string name="debug_next_step">下一步</string>
     <string name="debug_run_to_breakpoint">检查下一断点</string>
+    <string name="debug_copy_report">复制步骤报告</string>
 </resources>
