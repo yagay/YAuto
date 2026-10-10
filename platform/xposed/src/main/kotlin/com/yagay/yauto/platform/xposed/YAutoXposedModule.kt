@@ -1627,6 +1627,7 @@ class YAutoXposedModule : XposedModule() {
             .setPackage(YAUTO_PACKAGE)
             .putExtra("type", type)
             .putExtra("bridgeSource", "lsposed.package")
+            .putExtra("package", context.packageName)
             .putExtra("timestampEpochMs", System.currentTimeMillis())
         extras.forEach { (key, value) ->
             when (value) {

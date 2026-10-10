@@ -3,6 +3,8 @@ package com.yagay.yauto.platform.xposed
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.os.Process
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.RuntimeEvent
 import kotlinx.coroutines.CompletableDeferred
@@ -79,8 +81,33 @@ object XposedSystemEventRuntimeBridge {
     }
 }
 
+/**
+ * System-event receiver is public because hooked system_server and other app
+ * processes use distinct UIDs. Verify the actual sender UID on Android 14+;
+ * trusting only intent extras would allow an arbitrary app to spoof a trigger.
+ */
 class XposedSystemEventReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
-        if (intent != null) XposedSystemEventRuntimeBridge.dispatch(intent)
+        if (context == null || intent?.action != SystemBridgeProtocol.SYSTEM_EVENT_ACTION) return
+        if (Build.VERSION.SDK_INT >= 34) {
+            val uid = getSentFromUid()
+            val packages = context.packageManager.getPackagesForUid(uid)?.toList().orEmpty()
+            if (!XposedEventSenderVerifier.accept(
+                    uid = uid,
+                    source = intent.getStringExtra("bridgeSource").orEmpty()
+                        .ifBlank { "lsposed.system_server" },
+                    claimedPackage = intent.getStringExtra("package").orEmpty(),
+                    senderPackages = packages,
+                )) return
+        }
+        XposedSystemEventRuntimeBridge.dispatch(intent)
+    }
+}
+
+internal object XposedEventSenderVerifier {
+    fun accept(uid: Int, source: String, claimedPackage: String, senderPackages: List<String>): Boolean {
+        if (uid == Process.SYSTEM_UID) return true
+        if (uid < 0 || source != "lsposed.package") return false
+        return claimedPackage.isNotBlank() && claimedPackage in senderPackages
     }
 }
