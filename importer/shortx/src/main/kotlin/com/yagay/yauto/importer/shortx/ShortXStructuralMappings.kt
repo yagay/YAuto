@@ -6,6 +6,7 @@ import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.model.NodeId
 import com.yagay.yauto.core.model.PredicateNode
 import java.util.UUID
+import kotlinx.serialization.json.*
 
 /**
  * Converts ShortX control-flow Any payloads into YAuto's native ActionNode tree.
@@ -20,7 +21,7 @@ internal object ShortXStructuralMappings {
         action: (AnyStub, String) -> ActionNode,
         path: String,
     ): ActionNode? {
-        if (any.isJson) return null
+        if (any.isJson) return convertJson(any, predicate, action, path)
         val type = shortName(any.typeUrl)
         val fields = runCatching { ProtoFields(any.value) }.getOrNull() ?: return null
         // Structured ActionNode variants cannot store ShortX disabled state, error policy,
@@ -53,6 +54,156 @@ internal object ShortXStructuralMappings {
         }
     }
 
+
+
+    /**
+     * JSON ShortX export uses the same documented control-flow action types as protobuf.
+     * Convert only modes whose effects YAuto can represent. In particular, ActionNode's
+     * structural variants have no metadata field, so do not discard source IDs, annotations,
+     * non-default failure policy, async execution, MVEL payloads or unknown JSON properties.
+     */
+    private fun convertJson(
+        any: AnyStub,
+        predicate: (AnyStub, String) -> PredicateNode,
+        action: (AnyStub, String) -> ActionNode,
+        path: String,
+    ): ActionNode? {
+        val obj = runCatching {
+            Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject
+        }.getOrNull() ?: return null
+        return when (shortName(any.typeUrl)) {
+            "StopAllActions" -> if (safeJsonFields(obj)) ActionNode.Return(nodeId()) else null
+            "BreakActionExecute", "Brk" -> {
+                if (!safeJsonFields(obj, "scope")) null
+                else if (obj["scope"] == null || jsonEnumNumber(obj["scope"],
+                        "BreakActionExecuteScope_Current", "Current") == 0L) ActionNode.Break(nodeId())
+                else null
+            }
+            "SetFunctionReturnValue" -> {
+                if (!safeJsonFields(obj, "value")) null
+                else jsonString(obj["value"])?.let { ActionNode.Return(nodeId(), ConfigValue.StringValue(it)) }
+            }
+            "ExecuteFunction", "FromDA" -> {
+                val idField = if (shortName(any.typeUrl) == "FromDA") "daId" else "functionId"
+                if (!safeJsonFields(obj, idField, "funcParameterInputs")) null
+                else jsonFlowCall(obj, idField, if (idField == "daId") "da" else "function")
+            }
+            "IfThenElse" -> {
+                if (!safeJsonFields(obj, "_if", "_ifCondOp", "_ifCondOpPayload", "_ifActions",
+                        "_elseActions", "_ifActionAsyncMode", "_elseActionAsyncMode") ||
+                    !jsonEmptyOperatorPayload(obj["_ifCondOpPayload"]) ||
+                    !jsonSync(obj["_ifActionAsyncMode"]) || !jsonSync(obj["_elseActionAsyncMode"])) null
+                else {
+                    val conditions = jsonActionList(obj, "_if") ?: return null
+                    if (conditions.isEmpty()) return null
+                    val conditionsNative = conditions.mapIndexed { i, child ->
+                        predicate(child, "$" + "{path}.if.condition[$" + "i]")
+                    }
+                    val op = jsonConditionOperator(obj["_ifCondOp"]) ?: return null
+                    val cond = combine(conditionsNative, op) ?: return null
+                    val thenList = jsonActionList(obj, "_ifActions") ?: return null
+                    val elseList = jsonActionList(obj, "_elseActions") ?: return null
+                    ActionNode.If(nodeId(), cond,
+                        thenList.mapIndexed { i, child -> action(child, "$" + "{path}.if.action[$" + "i]") },
+                        elseList.mapIndexed { i, child -> action(child, "$" + "{path}.else.action[$" + "i]") })
+                }
+            }
+            "WhileLoop" -> {
+                if (!safeJsonFields(obj, "conditions", "actions", "condOp", "condOpPayload",
+                        "delay", "repeatTimes", "actionAsyncMode") ||
+                    !jsonEmptyOperatorPayload(obj["condOpPayload"]) ||
+                    jsonNonnegativeZero(obj["delay"]) != true ||
+                    jsonNonnegativeZero(obj["repeatTimes"]) != true ||
+                    !jsonSync(obj["actionAsyncMode"])) null
+                else {
+                    val conditions = jsonActionList(obj, "conditions") ?: return null
+                    if (conditions.isEmpty()) return null
+                    val cond = combine(conditions.mapIndexed { i, child ->
+                        predicate(child, "$" + "{path}.while.condition[$" + "i]")
+                    }, jsonConditionOperator(obj["condOp"]) ?: return null) ?: return null
+                    val children = jsonActionList(obj, "actions") ?: return null
+                    ActionNode.While(nodeId(), cond,
+                        children.mapIndexed { i, child -> action(child, "$" + "{path}.while.action[$" + "i]") })
+                }
+            }
+            else -> null
+        }
+    }
+
+    private fun jsonFlowCall(obj: JsonObject, idField: String, kind: String): ActionNode? {
+        val sourceId = jsonString(obj[idField])?.trim()?.takeIf(String::isNotEmpty) ?: return null
+        val params = obj["funcParameterInputs"] ?: JsonArray(emptyList())
+        val array = params as? JsonArray ?: return null
+        if (array.size > 100) return null
+        val input = linkedMapOf<String, ConfigValue>()
+        array.forEach { element ->
+            val param = element as? JsonObject ?: return null
+            if (param.keys.any { it !in setOf("name", "value") }) return null
+            val name = jsonString(param["name"])?.takeIf(String::isNotBlank) ?: return null
+            val value = jsonString(param["value"]) ?: return null
+            if (name in input) return null
+            input[name] = ConfigValue.StringValue(value)
+        }
+        return ActionNode.CallFlow(nodeId(), shortXFlowId(kind, sourceId), input)
+    }
+
+    private fun safeJsonFields(obj: JsonObject, vararg business: String): Boolean {
+        val allowed = setOf("@type", "typeUrl", "type_url", "type", "className",
+            "id", "note", "isDisabled", "actionOnError") + business
+        if (obj.keys.any { it !in allowed }) return false
+        if (obj["id"] != null && !jsonString(obj["id"]).isNullOrEmpty()) return false
+        if (obj["note"] != null && !jsonString(obj["note"]).isNullOrEmpty()) return false
+        if (obj["isDisabled"] != null && (obj["isDisabled"] as? JsonPrimitive)?.booleanOrNull != false) return false
+        if (obj["actionOnError"] != null &&
+            jsonEnumNumber(obj["actionOnError"], "Continue", "ActionOnError_Continue") != 0L) return false
+        return true
+    }
+
+    private fun jsonString(value: JsonElement?): String? =
+        (value as? JsonPrimitive)?.takeIf { it.isString }?.content
+
+    private fun jsonEnumNumber(value: JsonElement?, vararg zeroNames: String): Long? {
+        if (value == null) return 0L
+        val raw = (value as? JsonPrimitive)?.content ?: return null
+        return raw.toLongOrNull() ?: if (zeroNames.any { raw.equals(it, ignoreCase = true) }) 0L else null
+    }
+
+    private fun jsonConditionOperator(value: JsonElement?): Long? {
+        if (value == null) return 0L
+        val raw = (value as? JsonPrimitive)?.content ?: return null
+        return when (raw.substringAfterLast('_').uppercase()) {
+            "ALL", "0" -> 0L
+            "ANY", "1" -> 1L
+            "NONE", "2" -> 2L
+            else -> null // MVEL requires a different evaluator and source context.
+        }
+    }
+
+    private fun jsonSync(value: JsonElement?): Boolean = value == null ||
+        jsonEnumNumber(value, "Sync", "ActionAsyncMode_Sync") == 0L
+
+    private fun jsonNonnegativeZero(value: JsonElement?): Boolean =
+        jsonEnumNumber(value) == 0L
+
+    private fun jsonEmptyOperatorPayload(value: JsonElement?): Boolean {
+        if (value == null) return true
+        val payload = value as? JsonObject ?: return false
+        return payload.isEmpty() || (payload.keys == setOf("expression") &&
+            jsonString(payload["expression"]) == "")
+    }
+
+    private fun jsonActionList(obj: JsonObject, key: String): List<AnyStub>? {
+        val array = obj[key] ?: return emptyList()
+        val elements = array as? JsonArray ?: return null
+        if (elements.size > 1000) return null
+        return elements.map { item ->
+            val anyObj = item as? JsonObject ?: return null
+            val type = sequenceOf("@type", "typeUrl", "type_url", "type", "className")
+                .mapNotNull { jsonString(anyObj[it]) }.firstOrNull()
+                ?.takeIf(String::isNotBlank) ?: return null
+            AnyStub(type, anyObj.toString().toByteArray(Charsets.UTF_8), isJson = true)
+        }
+    }
 
     private fun convertFlowCall(fields: ProtoFields, kind: String): ActionNode? {
         val sourceId = fields.string(1)?.trim().orEmpty()
@@ -224,6 +375,7 @@ internal object ShortXStructuralMappings {
     private fun combine(nodes: List<PredicateNode>, operator: Long): PredicateNode? = when (operator) {
         0L -> if (nodes.size == 1) nodes.first() else PredicateNode.All(nodes)
         1L -> if (nodes.size == 1) nodes.first() else PredicateNode.Any(nodes)
+        2L -> PredicateNode.None(nodes) // ShortX ConditionOperator.NONE: none of the conditions may match.
         else -> null
     }
 
