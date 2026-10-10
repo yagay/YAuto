@@ -128,7 +128,7 @@ internal fun missingRuntimePermissions(
     isGranted: (String) -> Boolean,
 ): List<String> = group.permissions.filterNot(isGranted)
 
-private fun applicationDetailsIntent(context: Context): Intent =
+internal fun applicationDetailsIntent(context: Context): Intent =
     Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
         Uri.parse("package:" + context.packageName))
 
@@ -154,7 +154,7 @@ internal fun openPermissionSettings(
 internal fun grantedPermissionGroupCount(context: Context): Int =
     permissionGrantGroups(Build.VERSION.SDK_INT).count { permissionStatus(context, it) }
 
-private fun permissionStatus(context: Context, group: PermissionGrantGroup): Boolean {
+internal fun permissionStatus(context: Context, group: PermissionGrantGroup): Boolean {
     val granted: (String) -> Boolean = {
         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
     }
@@ -184,7 +184,7 @@ private fun permissionStatus(context: Context, group: PermissionGrantGroup): Boo
     }
 }
 
-private fun permissionSettingsIntent(context: Context, group: PermissionGrantGroup): Intent =
+internal fun permissionSettingsIntent(context: Context, group: PermissionGrantGroup): Intent =
     if (group.deviceAdmin) {
         Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
             putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN,
