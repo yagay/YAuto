@@ -148,4 +148,6 @@
     <string name="feature_android_qs_tile_custom_label_field_operation">操作</string>
     <string name="feature_android_qs_tile_custom_label_field_operation_option_set">替换</string>
     <string name="feature_android_qs_tile_custom_label_field_operation_option_clear">恢复原样</string>
+    <string name="runtime_shortx_tile_invalid_component">快捷设置磁贴组件无效。</string>
+    <string name="runtime_shortx_tile_invalid_operation">磁贴标签或操作无效。</string>
 </resources>

@@ -5,6 +5,7 @@ import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 
 /** Scoped CustomTile label customization; stock tiles and icons are untouched. */
@@ -40,12 +41,12 @@ class AndroidShortXTileLabelFeaturePack : FeaturePack {
         ) { item, ctx ->
             val raw = item.config.string("component").resolveVariables(ctx.variables).trim()
             val component = ComponentName.unflattenFromString(raw)
-                ?: return@registerAction ActionExecutionResult(false, message = "Invalid tile component")
+                ?: return@registerAction ActionExecutionResult(false, message = userText("shortx.tile.invalid_component"))
             val operation = item.config.string("operation", "set")
             val label = item.config.string("label").resolveVariables(ctx.variables).trim()
             if (operation !in setOf("set", "clear") ||
                 (operation == "set" && (label.isEmpty() || label.length > 64 || '\n' in label))) {
-                return@registerAction ActionExecutionResult(false, message = "Invalid tile label or operation")
+                return@registerAction ActionExecutionResult(false, message = userText("shortx.tile.invalid_operation"))
             }
             val result = ctx.capabilities.execute(
                 CapabilityRequest(

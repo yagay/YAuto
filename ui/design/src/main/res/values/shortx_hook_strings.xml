@@ -148,4 +148,6 @@
     <string name="feature_android_qs_tile_custom_label_field_operation">Operation</string>
     <string name="feature_android_qs_tile_custom_label_field_operation_option_set">Override</string>
     <string name="feature_android_qs_tile_custom_label_field_operation_option_clear">Restore original</string>
+    <string name="runtime_shortx_tile_invalid_component">Invalid Quick Settings tile component.</string>
+    <string name="runtime_shortx_tile_invalid_operation">Invalid tile label or operation.</string>
 </resources>
