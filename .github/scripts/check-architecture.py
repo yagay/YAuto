@@ -35,6 +35,13 @@ size_budgets = {
     "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/AutomationEditorScreen.kt": 33_000,
     "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FlowEditorScreen.kt": 22_000,
     "ui/home/src/main/kotlin/com/yagay/yauto/ui/home/HomeScreen.kt": 22_000,
+    # Domain registrars should stay separate from public feature-pack facades.
+    "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidPersonalDataFeaturePack.kt": 8_000,
+    "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidRemainingParityFeaturePack.kt": 20_000,
+    "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidFinalParityFeaturePack.kt": 20_000,
+    "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidSurfaceFeaturePack.kt": 8_000,
+    "platform/accessibility/src/main/kotlin/com/yagay/yauto/platform/accessibility/AccessibilityFeaturePack.kt": 28_000,
+    "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/OverlaySurfaceController.kt": 44_000,
 }
 for rel, maximum in size_budgets.items():
     path = ROOT / rel
