@@ -248,36 +248,31 @@ class AutomationRuntime(
         }
         var changedAutomation: Automation? = null
         var newEnabled = false
-        val result = workspaceMutationLock.withLock {
-            val workspace = workspaceRepository.load()
+        var result = ActionExecutionResult(false, message = userText("runtime.automation_not_found", trimmed))
+        updateWorkspace { workspace ->
             val automation = RuntimeSelectionPolicy.resolveAutomation(workspace, trimmed)
-                ?: return@withLock ActionExecutionResult(
-                    false,
-                    message = userText("runtime.automation_not_found", trimmed),
-                )
-            val enabled = when (mode) {
-                AutomationEnableMode.ENABLE -> true
-                AutomationEnableMode.DISABLE -> false
-                AutomationEnableMode.TOGGLE -> !automation.enabled
-            }
-            newEnabled = enabled
-            if (enabled != automation.enabled) {
-                workspaceRepository.save(
+            if (automation == null) workspace else {
+                newEnabled = when (mode) {
+                    AutomationEnableMode.ENABLE -> true
+                    AutomationEnableMode.DISABLE -> false
+                    AutomationEnableMode.TOGGLE -> !automation.enabled
+                }
+                result = ActionExecutionResult(true, ConfigValue.BooleanValue(newEnabled))
+                if (newEnabled == automation.enabled) workspace else {
+                    changedAutomation = automation
                     workspace.copy(
                         automations = workspace.automations.map {
-                            if (it.id == automation.id) it.copy(enabled = enabled) else it
-                        }
+                            if (it.id == automation.id) it.copy(enabled = newEnabled) else it
+                        },
                     )
-                )
-                changedAutomation = automation
-                if (!enabled) {
-                    executionJobs.cancel(automation.id.value)
-                    resetState(automation.id)
                 }
             }
-            ActionExecutionResult(true, ConfigValue.BooleanValue(enabled))
         }
         changedAutomation?.let { automation ->
+            if (!newEnabled) {
+                executionJobs.cancel(automation.id.value)
+                resetState(automation.id)
+            }
             dispatch(
                 RuntimeEvent(
                     typeId = "core.event.automation_enabled_changed",
