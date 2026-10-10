@@ -103,8 +103,10 @@ if not (xposed_dir / "XposedProviderInstallers.kt").exists():
     errors.append("XposedProviderInstallers must own provider and input hooks")
 if not xposed_installers.exists():
     errors.append("XposedHookInstallers must own package installation logic")
-if xposed_installers.exists() and "routeXposedPackageHooks(" not in xposed_installers.read_text(encoding="utf-8"):
-    errors.append("XposedHookInstallers must delegate package routing to the shared router")
+if xposed_installers.exists() and not any(marker in xposed_installers.read_text(encoding="utf-8") for marker in ("routeXposedPackageHooks(", "XposedPackageHookDispatcher(")):
+    errors.append("XposedHookInstallers must delegate package routing to the shared dispatcher")
+if not (xposed_dir / "XposedInstallationState.kt").exists():
+    errors.append("XposedInstallationState must own shared hook state")
 
 # Third-party compatibility parsers must stay behind the lazy compatibility catalog rather than
 # becoming direct AppGraph dependencies.
