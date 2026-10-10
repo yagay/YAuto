@@ -62,6 +62,7 @@ fun MacroAutomationEditorScreen(
     var request by remember { mutableStateOf<MacroEditRequest?>(null) }
     var menu by remember { mutableStateOf<Pair<String, Int>?>(null) }
     var quickTest by remember { mutableStateOf<Pair<FeatureRef, FeatureKind>?>(null) }
+    var macroTest by remember { mutableStateOf(false) }
     var treePhase by remember { mutableStateOf<MacroActionPhase?>(null) }
     var advanced by remember { mutableStateOf(false) }
     var variableEdit by remember { mutableStateOf<Pair<String?, String>?>(null) }
@@ -82,6 +83,7 @@ fun MacroAutomationEditorScreen(
             treePhase != null -> treePhase = null
             menu != null -> menu = null
             quickTest != null -> quickTest = null
+            macroTest -> macroTest = false
             variableEdit != null -> variableEdit = null
             else -> onBack()
         }
@@ -151,6 +153,17 @@ fun MacroAutomationEditorScreen(
                     label = { Text(stringResource(TextR.string.automation_name)) },
                     singleLine = true,
                 )
+            }
+
+            if (initial != null) {
+                item {
+                    OutlinedButton(
+                        onClick = { macroTest = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(TextR.string.feature_test_automation))
+                    }
+                }
             }
 
             item {
@@ -540,6 +553,9 @@ fun MacroAutomationEditorScreen(
 
     quickTest?.let { (feature, kind) ->
         FeatureQuickTestDialog(feature, kind) { quickTest = null }
+    }
+    if (macroTest && initial != null) {
+        SavedAutomationTestDialog(initial.id.value) { macroTest = false }
     }
 
     CompositionLocalProvider(LocalEditorVariableNames provides editorVariableNames) {
