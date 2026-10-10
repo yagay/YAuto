@@ -448,54 +448,6 @@ private fun FieldEditor(
 }
 
 
-@Composable
-private fun capabilityLabel(capabilityId: String): String = stringResource(
-    when (capabilityId) {
-        "privileged.shell" -> TextR.string.capability_privileged_shell
-        "android.app.launch" -> TextR.string.capability_app_launch
-        "android.toast" -> TextR.string.capability_toast
-        "android.accessibility" -> TextR.string.capability_accessibility
-        "android.notification_listener" -> TextR.string.capability_notification_listener
-        "android.systemui" -> TextR.string.capability_system_ui
-        "android.lsposed" -> TextR.string.capability_lsposed
-        else -> TextR.string.capability_other
-    }
-)
-
-@Composable
-private fun accessRequirementLabel(requirement: AccessRequirement): String =
-    stringResource(accessRequirementResource(requirement))
-
-@Composable
-internal fun accessRequirementLabelNonComposable(requirement: AccessRequirement): String =
-    stringResource(accessRequirementResource(requirement))
-
-@StringRes
-private fun accessRequirementResource(requirement: AccessRequirement): Int = when (requirement) {
-    AccessRequirement.ROOT -> TextR.string.access_root
-    AccessRequirement.SHIZUKU -> TextR.string.access_shizuku
-    AccessRequirement.LSPOSED -> TextR.string.access_lsposed
-    AccessRequirement.ZYGISK -> TextR.string.access_zygisk
-    AccessRequirement.ACCESSIBILITY -> TextR.string.access_accessibility
-    AccessRequirement.USAGE_STATS -> TextR.string.access_usage_stats
-    AccessRequirement.NOTIFICATION_LISTENER -> TextR.string.access_notification_listener
-    AccessRequirement.POST_NOTIFICATIONS -> TextR.string.access_post_notifications
-    AccessRequirement.OVERLAY -> TextR.string.access_overlay
-    AccessRequirement.WRITE_SETTINGS -> TextR.string.access_write_settings
-    AccessRequirement.CAMERA -> TextR.string.access_camera
-    AccessRequirement.LOCATION -> TextR.string.access_location
-    AccessRequirement.BLUETOOTH_CONNECT -> TextR.string.access_bluetooth
-    AccessRequirement.DND_POLICY -> TextR.string.access_dnd_policy
-    AccessRequirement.DEVICE_ADMIN -> TextR.string.access_device_admin
-    AccessRequirement.CALENDAR -> TextR.string.access_calendar
-    AccessRequirement.CONTACTS -> TextR.string.access_contacts
-    AccessRequirement.CALL_LOG -> TextR.string.access_call_log
-    AccessRequirement.SMS -> TextR.string.access_sms
-    AccessRequirement.PHONE -> TextR.string.access_phone
-    AccessRequirement.RECORD_AUDIO -> TextR.string.access_record_audio
-    AccessRequirement.ACTIVITY_RECOGNITION -> TextR.string.access_activity_recognition
-}
-
 private fun HardwareKeyCaptureResult.toHiddenHardwareIdentity(): ConfigValue.ObjectValue =
     ConfigValue.ObjectValue(
         buildMap {
