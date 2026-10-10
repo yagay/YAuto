@@ -94,6 +94,8 @@ internal fun ImplementationPermissionLine(option: FeatureImplementationOption) {
     val requirements = option.requirements.map { accessRequirementLabelNonComposable(it) }
     val label = when {
         option.backendId == "shizuku" -> stringResource(TextR.string.implementation_shizuku_setup)
+        option.backendId == "root" -> stringResource(TextR.string.implementation_root_setup)
+        option.backendId == "lsposed" -> stringResource(TextR.string.implementation_lsposed_setup)
         requirements.isEmpty() -> stringResource(TextR.string.implementation_no_special_access)
         else -> stringResource(TextR.string.implementation_requirements_format, localizedList(requirements))
     }

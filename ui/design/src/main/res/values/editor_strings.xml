@@ -296,4 +296,17 @@
     <string name="runtime_feature_dual_method_invalid_action">Unsupported global action.</string>
     <string name="runtime_feature_dual_method_no_shortx">ShortX has no verified equivalent for %1$s on this device.</string>
     <string name="runtime_feature_dual_method_no_macro">MacroDroid method does not support %1$s without elevated privileges.</string>
+    <string name="implementation_group_no_root">No Root required</string>
+    <string name="implementation_group_root_required">Root / LSPosed required</string>
+    <string name="implementation_group_no_root_detail">Android API, Accessibility or Shizuku (wireless debugging). Required access varies by implementation.</string>
+    <string name="implementation_group_root_required_detail">Only Root and LSPosed. Never falls back to Shizuku or Accessibility.</string>
+    <string name="implementation_backend_in_group">Implementation and required access</string>
+    <string name="implementation_android_title">Android API</string>
+    <string name="implementation_shizuku_setup">Shizuku service must be running (e.g. wireless debugging) and YAuto must be authorised; device Root is optional.</string>
+    <string name="implementation_root_setup">Root access: grant YAuto superuser permission.</string>
+    <string name="implementation_lsposed_setup">LSPosed: enable the YAuto module, configure its scope and restart affected processes if needed.</string>
+    <string name="implementation_no_special_access">No additional special permission</string>
+    <string name="implementation_unique_method">Only implementation available</string>
+    <string name="runtime_feature_dual_method_backend_mismatch">The backend belongs to a different Root-permission group. Select a supported method.</string>
+    <string name="runtime_feature_dual_method_backend_not_supported">No equivalent implementation of %1$s is available for the selected backend.</string>
 </resources>

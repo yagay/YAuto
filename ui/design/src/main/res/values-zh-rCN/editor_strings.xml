@@ -295,4 +295,17 @@
     <string name="runtime_feature_dual_method_invalid_action">不支持的全局操作。</string>
     <string name="runtime_feature_dual_method_no_shortx">ShortX 在此设备上没有经过验证的 %1$s 对应实现。</string>
     <string name="runtime_feature_dual_method_no_macro">MacroDroid 普通权限方法不支持 %1$s；需要使用特权实现。</string>
+    <string name="implementation_group_no_root">无需 Root</string>
+    <string name="implementation_group_root_required">需要 Root / LSPosed</string>
+    <string name="implementation_group_no_root_detail">可使用 Android API、无障碍或 Shizuku（无线调试）；每种实现的权限要求不同。</string>
+    <string name="implementation_group_root_required_detail">仅使用 Root 或 LSPosed，不会回退到 Shizuku 或无障碍。</string>
+    <string name="implementation_backend_in_group">实现方式与所需权限</string>
+    <string name="implementation_android_title">Android 原生 API</string>
+    <string name="implementation_shizuku_setup">需要运行 Shizuku 服务（例如无线调试启动）并授权 YAuto；手机不必 Root。</string>
+    <string name="implementation_root_setup">Root：需要为 YAuto 授予超级用户权限。</string>
+    <string name="implementation_lsposed_setup">LSPosed：启用 YAuto 模块、设置作用域，必要时重启目标进程。</string>
+    <string name="implementation_no_special_access">无需额外特殊权限</string>
+    <string name="implementation_unique_method">唯一可用实现方式</string>
+    <string name="runtime_feature_dual_method_backend_mismatch">所选执行后端与当前 Root 权限分组不匹配，请重新选择。</string>
+    <string name="runtime_feature_dual_method_backend_not_supported">当前执行后端不支持 %1$s 的等价实现。</string>
 </resources>
