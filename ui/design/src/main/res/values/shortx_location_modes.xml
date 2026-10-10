@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_android_location_current_query_field_timeout_millis">Location timeout (ms)</string>
-    <string name="feature_android_location_current_query_field_shortx_context_output">Populate ShortX coordinate variables</string>
+    <string name="feature_android_location_current_query_field_timeoutmillis">Location timeout (ms)</string>
+    <string name="feature_android_location_current_query_field_shortxcontextoutput">Populate ShortX coordinate variables</string>
 </resources>
