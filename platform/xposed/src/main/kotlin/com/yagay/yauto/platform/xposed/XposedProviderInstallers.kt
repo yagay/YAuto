@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 /** Installs NFC, media, SMS and application input provider hooks. */
 abstract class XposedProviderInstallers : XposedModule() {
-    protected val sharedState = XposedInstallationState()
+    internal val sharedState = XposedInstallationState()
     protected val installedHooks get() = sharedState.installedHooks
     protected fun installShortXNfcHooks(context: Context, classLoader: ClassLoader) {
         val clazz = runCatching {
