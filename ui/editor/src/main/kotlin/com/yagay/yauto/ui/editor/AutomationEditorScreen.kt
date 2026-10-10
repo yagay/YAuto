@@ -61,6 +61,7 @@ fun MacroAutomationEditorScreen(
     var actionPhase by remember { mutableStateOf(MacroActionPhase.EVENT) }
     var request by remember { mutableStateOf<MacroEditRequest?>(null) }
     var menu by remember { mutableStateOf<Pair<String, Int>?>(null) }
+    var quickTest by remember { mutableStateOf<Pair<FeatureRef, FeatureKind>?>(null) }
     var treePhase by remember { mutableStateOf<MacroActionPhase?>(null) }
     var advanced by remember { mutableStateOf(false) }
     var variableEdit by remember { mutableStateOf<Pair<String?, String>?>(null) }
@@ -80,6 +81,7 @@ fun MacroAutomationEditorScreen(
             request != null -> request = null
             treePhase != null -> treePhase = null
             menu != null -> menu = null
+            quickTest != null -> quickTest = null
             variableEdit != null -> variableEdit = null
             else -> onBack()
         }
@@ -387,6 +389,26 @@ fun MacroAutomationEditorScreen(
     }
 
     menu?.let { (section, index) ->
+        val candidate: FeatureRef? = when {
+            section == "event" -> events.getOrNull(index)
+            section == "state" -> states.getOrNull(index)
+            section == "condition" -> conditions.getOrNull(index)
+            section.startsWith("action:") -> {
+                val nodes = when (MacroActionPhase.valueOf(section.substringAfter(':'))) {
+                    MacroActionPhase.EVENT -> onEvent
+                    MacroActionPhase.ENTER -> onEnter
+                    MacroActionPhase.EXIT -> onExit
+                }
+                (nodes.getOrNull(index) as? ActionNode.Action)?.feature
+            }
+            else -> null
+        }
+        val candidateKind = when (section) {
+            "event" -> FeatureKind.EVENT
+            "state" -> FeatureKind.STATE
+            "condition" -> FeatureKind.CONDITION
+            else -> FeatureKind.ACTION
+        }
         val size = when {
             section == "event" -> events.size
             section == "state" -> states.size
@@ -403,6 +425,57 @@ fun MacroAutomationEditorScreen(
             title = { Text(stringResource(TextR.string.automation_item_operations)) },
             text = {
                 Column {
+                    TextButton(
+                        enabled = candidate != null,
+                        onClick = {
+                            candidate?.let { quickTest = it to candidateKind }
+                            menu = null
+                        },
+                    ) {
+                        Text(stringResource(when (candidateKind) {
+                            FeatureKind.ACTION -> TextR.string.feature_test_action
+                            FeatureKind.STATE -> TextR.string.feature_test_state
+                            FeatureKind.CONDITION -> TextR.string.feature_test_constraint
+                            FeatureKind.EVENT -> TextR.string.feature_test_trigger
+                        }))
+                    }
+                    TextButton(
+                        enabled = candidate != null,
+                        onClick = {
+                            when {
+                                section == "event" -> events = events.toMutableList().apply {
+                                    getOrNull(index)?.let { add(index + 1, it) }
+                                }
+                                section == "state" -> states = states.toMutableList().apply {
+                                    getOrNull(index)?.let { add(index + 1, it) }
+                                }
+                                section == "condition" -> conditions = conditions.toMutableList().apply {
+                                    getOrNull(index)?.let { add(index + 1, it) }
+                                }
+                                section.startsWith("action:") -> {
+                                    val phase = MacroActionPhase.valueOf(section.substringAfter(':'))
+                                    val source = when (phase) {
+                                        MacroActionPhase.EVENT -> onEvent
+                                        MacroActionPhase.ENTER -> onEnter
+                                        MacroActionPhase.EXIT -> onExit
+                                    }
+                                    val copy = (source.getOrNull(index) as? ActionNode.Action)
+                                        ?.copy(id = NodeId(UUID.randomUUID().toString()))
+                                    if (copy != null) {
+                                        val updated = source.toMutableList().apply {
+                                            add(index + 1, copy)
+                                        }
+                                        when (phase) {
+                                            MacroActionPhase.EVENT -> onEvent = updated
+                                            MacroActionPhase.ENTER -> onEnter = updated
+                                            MacroActionPhase.EXIT -> onExit = updated
+                                        }
+                                    }
+                                }
+                            }
+                            menu = null
+                        },
+                    ) { Text(stringResource(TextR.string.feature_test_duplicate)) }
                     TextButton(
                         enabled = index > 0,
                         onClick = {
@@ -463,6 +536,10 @@ fun MacroAutomationEditorScreen(
                 TextButton(onClick = { menu = null }) { Text(stringResource(TextR.string.common_cancel)) }
             },
         )
+    }
+
+    quickTest?.let { (feature, kind) ->
+        FeatureQuickTestDialog(feature, kind) { quickTest = null }
     }
 
     CompositionLocalProvider(LocalEditorVariableNames provides editorVariableNames) {
