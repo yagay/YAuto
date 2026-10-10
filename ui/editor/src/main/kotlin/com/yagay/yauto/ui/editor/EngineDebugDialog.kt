@@ -8,7 +8,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.model.Automation
-import com.yagay.yauto.core.model.ActionNode
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -26,6 +25,7 @@ internal fun EngineDebugDialog(automation: Automation, onDismiss: () -> Unit) {
     var breakpoints by remember { mutableStateOf(setOf<String>()) }
     val ids = remember(automation) { automation.onEvent.map { it.id.value } }
     val active = job?.isActive == true
+    val currentJob by rememberUpdatedState(job)
 
     LaunchedEffect(session, active) {
         while (active && session != null) {
@@ -35,7 +35,7 @@ internal fun EngineDebugDialog(automation: Automation, onDismiss: () -> Unit) {
         session?.let { report = it.snapshot() }
     }
     DisposableEffect(session) {
-        onDispose { job?.cancel() }
+        onDispose { currentJob?.cancel() }
     }
     AlertDialog(
         onDismissRequest = { job?.cancel(); onDismiss() },
