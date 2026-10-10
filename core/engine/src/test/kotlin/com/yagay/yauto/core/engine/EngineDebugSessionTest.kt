@@ -140,4 +140,33 @@ class EngineDebugSessionTest {
         assertTrue(debugger.snapshot().isEmpty())
     }
 
+    @Test fun cancelPauseReleasesAllConcurrentWaiters() = runBlocking {
+        val debugger = EngineDebugSession()
+        val firstNode = ActionNode.Label(NodeId("cancel-first"), "first")
+        val secondNode = ActionNode.Label(NodeId("cancel-second"), "second")
+        val first = async {
+            try {
+                debugger.beforeNode(201L, firstNode, emptyMap())
+                false
+            } catch (_: CancellationException) {
+                true
+            }
+        }
+        val second = async {
+            try {
+                debugger.beforeNode(202L, secondNode, emptyMap())
+                false
+            } catch (_: CancellationException) {
+                true
+            }
+        }
+        repeat(100) { yield() }
+        assertNotNull(debugger.pausedAt())
+        debugger.cancelPause()
+        assertTrue(first.await())
+        assertTrue(second.await())
+        assertNull(debugger.pausedAt())
+        assertTrue(debugger.snapshot().isEmpty())
+    }
+
 }
