@@ -303,4 +303,5 @@
     <string name="debug_step_failed">Failed (%1$d ms): %2$s</string>
     <string name="debug_next_step">Next step</string>
     <string name="debug_run_to_breakpoint">Check next breakpoint</string>
+    <string name="debug_copy_report">Copy report</string>
 </resources>
