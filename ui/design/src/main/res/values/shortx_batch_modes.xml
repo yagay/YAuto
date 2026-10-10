@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_phrase_toggle_current_state">Toggle current state</string>
+    <string name="feature_phrase_adjust_active_audio_stream">Adjust active audio stream</string>
+    <string name="feature_android_display_dark_mode_set_field_mode_option_toggle">Toggle light/dark theme</string>
+    <string name="feature_android_audio_volume_adjust_field_direction_option_same">Keep current volume (show UI)</string>
+</resources>

@@ -27,6 +27,64 @@ internal object ShortXVerifiedBatchMappings {
         )
 
     private fun text(key: String, value: String) = key to ConfigValue.StringValue(value)
+    private fun bool(key: String, value: Boolean) = key to ConfigValue.BooleanValue(value)
+
+    private fun toggle(any: AnyStub, importerId: String, target: String): FeatureRef =
+        feature(any, importerId, target, mapOf(bool("toggleCurrent", true)))
+
+    private fun sourceNumber(raw: String): Double? {
+        val n = raw.toDoubleOrNull() ?: return null
+        return n.takeIf { it.isFinite() && it >= 0.0 && it <= 100_000.0 }
+    }
+
+    private fun inputTap(any: AnyStub, importerId: String, xs: String, ys: String): FeatureRef? {
+        val x = sourceNumber(xs) ?: return null
+        val y = sourceNumber(ys) ?: return null
+        return feature(any, importerId, "accessibility.gesture.tap", mapOf(
+            "x" to ConfigValue.NumberValue(x), "y" to ConfigValue.NumberValue(y)
+        ))
+    }
+
+    private fun inputSwipe(any: AnyStub, importerId: String, v: List<String>): FeatureRef? {
+        if (v.size != 5) return null
+        val coordinates = v.take(4).map { sourceNumber(it) ?: return null }
+        val duration = v[4].toLongOrNull() ?: return null
+        if (duration !in 1L..60_000L) return null
+        return feature(any, importerId, "accessibility.gesture.swipe", mapOf(
+            "x1" to ConfigValue.NumberValue(coordinates[0]),
+            "y1" to ConfigValue.NumberValue(coordinates[1]),
+            "x2" to ConfigValue.NumberValue(coordinates[2]),
+            "y2" to ConfigValue.NumberValue(coordinates[3]),
+            "durationMs" to ConfigValue.NumberValue(duration.toDouble()),
+        ))
+    }
+
+    private fun volumeDirection(n: Int): String? = when (n) {
+        0 -> "same"; 1 -> "raise"; -1 -> "lower"; -100 -> "mute"; 100 -> "unmute"; 101 -> "toggle_mute"
+        else -> null
+    }
+
+    private fun volume(any: AnyStub, importerId: String, raw: Int, showUi: Boolean): FeatureRef? =
+        volumeDirection(raw)?.let { direction ->
+            feature(any, importerId, "android.audio.volume.adjust", mapOf(
+                text("direction", direction),
+                bool("showUi", showUi),
+                bool("global", true),
+            ))
+        }
+
+    private fun sourceRegexReplace(any: AnyStub, importerId: String,
+                                   source: String, pattern: String, replacement: String): FeatureRef? {
+        if (pattern.isEmpty()) return null
+        return feature(any, importerId, "data.regex.replace", mapOf(
+            text("text", source), text("pattern", pattern), text("replacement", replacement),
+            text("resultVariable", "replaceResult"),
+        ))
+    }
+
+    private fun writeClipboard(any: AnyStub, importerId: String, value: String): FeatureRef =
+        feature(any, importerId, "android.clipboard.write", mapOf(text("text", value)))
+
     private fun number(key: String, value: Int) = key to ConfigValue.NumberValue(value.toDouble())
 
     private fun scrollLocation(value: Int): String? = when (value) {
@@ -181,6 +239,44 @@ internal object ShortXVerifiedBatchMappings {
     /** Protobuf defaults are accepted only when the message has no unknown business fields. */
     fun binary(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         return when (sourceName(any)) {
+            "ToggleWifi" -> if (fields.onlyBusinessFields()) toggle(any, importerId, "android.wifi.set") else null
+            "ToggleBT" -> if (fields.onlyBusinessFields()) toggle(any, importerId, "android.bluetooth.set") else null
+            "ToggleNFC" -> if (fields.onlyBusinessFields()) toggle(any, importerId, "android.nfc.set") else null
+            "ToggleLocation" -> if (fields.onlyBusinessFields()) toggle(any, importerId, "android.location.enabled.set") else null
+            "ToggleDarkMode" -> if (fields.onlyBusinessFields()) feature(any, importerId, "android.display.dark_mode.set",
+                mapOf(text("mode", "toggle"))) else null
+            "SetHotSpotEnabled" -> if (fields.onlyBusinessFields(1)) {
+                val state = fields.varint(1) ?: if (!fields.has(1)) 0L else return null
+                if (state in 0L..1L) feature(any, importerId, "android.network.tether.set",
+                    mapOf(text("type", "wifi"), bool("enabled", state == 1L))) else null
+            } else null
+            "InputText" -> if (fields.onlyBusinessFields(1)) fields.string(1)?.let {
+                feature(any, importerId, "accessibility.input_text", mapOf(text("text", it)))
+            } else null else null
+            "InputTap" -> if (fields.onlyBusinessFields(1, 2)) {
+                val x = fields.string(1) ?: return null
+                val y = fields.string(2) ?: return null
+                inputTap(any, importerId, x, y)
+            } else null
+            "InputSwipe" -> if (fields.onlyBusinessFields(1, 2, 3, 4, 5)) {
+                val coords = (1..5).map { fields.string(it) ?: return null }
+                inputSwipe(any, importerId, coords)
+            } else null
+            "WriteClipboard" -> if (fields.onlyBusinessFields(1, 2) && !fields.has(2)) {
+                fields.string(1)?.let { writeClipboard(any, importerId, it) }
+            } else null
+            "ReplaceRegex" -> if (fields.onlyBusinessFields(1, 2, 3)) {
+                val input = fields.string(1) ?: return null
+                val pattern = fields.string(2) ?: return null
+                val replacement = fields.string(3) ?: return null
+                sourceRegexReplace(any, importerId, input, pattern, replacement)
+            } else null
+            "AdjustVolume" -> if (fields.onlyBusinessFields(1, 2)) {
+                val direction = fields.varint(1) ?: if (!fields.has(1)) 0L else return null
+                val ui = fields.varint(2) ?: if (!fields.has(2)) 0L else return null
+                if (direction !in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong() || ui !in 0L..1L) null
+                else volume(any, importerId, direction.toInt(), ui == 1L)
+            } else null
             "ReadClipboard" ->
                 if (fields.onlyBusinessFields()) feature(any, importerId, "android.clipboard.read",
                     mapOf(text("resultVariable", "clipboardContent"))) else null
@@ -271,6 +367,51 @@ internal object ShortXVerifiedBatchMappings {
             obj.keys.all { it in sourceMetadata || it in keys }
         fun field(name: String): Int? = (obj[name] as? JsonPrimitive)?.intOrNull
         return when (sourceName(any)) {
+            "ToggleWifi" -> if (allowed()) toggle(any, importerId, "android.wifi.set") else null
+            "ToggleBT" -> if (allowed()) toggle(any, importerId, "android.bluetooth.set") else null
+            "ToggleNFC" -> if (allowed()) toggle(any, importerId, "android.nfc.set") else null
+            "ToggleLocation" -> if (allowed()) toggle(any, importerId, "android.location.enabled.set") else null
+            "ToggleDarkMode" -> if (allowed()) feature(any, importerId, "android.display.dark_mode.set",
+                mapOf(text("mode", "toggle"))) else null
+            "SetHotSpotEnabled" -> if (allowed("enable")) {
+                val enabled = (obj["enable"] as? JsonPrimitive)?.booleanOrNull
+                    ?: if ("enable" in obj) return null else false
+                feature(any, importerId, "android.network.tether.set",
+                    mapOf(text("type", "wifi"), bool("enabled", enabled)))
+            } else null
+            "InputText" -> if (allowed("text")) {
+                (obj["text"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.let {
+                    feature(any, importerId, "accessibility.input_text", mapOf(text("text", it)))
+                }
+            } else null
+            "InputTap" -> if (allowed("xs", "ys")) {
+                val x = (obj["xs"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+                val y = (obj["ys"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+                inputTap(any, importerId, x, y)
+            } else null
+            "InputSwipe" -> if (allowed("startXS", "startYS", "endXS", "endYS", "swipeTimeS")) {
+                val values = listOf("startXS", "startYS", "endXS", "endYS", "swipeTimeS").map {
+                    (obj[it] as? JsonPrimitive)?.takeIf { p -> p.isString }?.content ?: return null
+                }
+                inputSwipe(any, importerId, values)
+            } else null
+            "WriteClipboard" -> if (allowed("text", "filePath") &&
+                (obj["filePath"] == null || (obj["filePath"] as? JsonPrimitive)?.contentOrNull == "")) {
+                (obj["text"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.let {
+                    writeClipboard(any, importerId, it)
+                }
+            } else null
+            "ReplaceRegex" -> if (allowed("string", "regex", "replacement")) {
+                val input = (obj["string"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+                val pattern = (obj["regex"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+                val replacement = (obj["replacement"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+                sourceRegexReplace(any, importerId, input, pattern, replacement)
+            } else null
+            "AdjustVolume" -> if (allowed("direction", "showUI")) {
+                val d = (obj["direction"] as? JsonPrimitive)?.intOrNull ?: if ("direction" in obj) return null else 0
+                val ui = (obj["showUI"] as? JsonPrimitive)?.booleanOrNull ?: if ("showUI" in obj) return null else false
+                volume(any, importerId, d, ui)
+            } else null
             "ReadClipboard" -> if (allowed()) feature(any, importerId, "android.clipboard.read",
                 mapOf(text("resultVariable", "clipboardContent"))) else null
             "DisconnectCurrentWifi" -> if (allowed()) feature(any, importerId, "android.wifi.network.disconnect", emptyMap()) else null

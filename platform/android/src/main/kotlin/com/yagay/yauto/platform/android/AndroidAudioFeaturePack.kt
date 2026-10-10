@@ -66,8 +66,9 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.AUDIO,
                 fields = listOf(
                     streamField(),
-                    FieldSchema.Choice("direction", "Adjustment", true, listOf("raise", "lower", "mute", "unmute", "toggle_mute")),
+                    FieldSchema.Choice("direction", "Adjustment", true, listOf("raise", "lower", "mute", "unmute", "toggle_mute", "same")),
                     FieldSchema.Toggle("showUi", "Show system volume UI"),
+                    FieldSchema.Toggle("global", "Adjust active audio stream"),
                 ), keywords = setOf("volume up", "volume down", "mute"), ownerPackId = id,
             )
         ) { feature, _ ->
@@ -76,11 +77,13 @@ class AndroidAudioFeaturePack(context: Context) : FeaturePack {
                 "mute" -> AudioManager.ADJUST_MUTE
                 "unmute" -> AudioManager.ADJUST_UNMUTE
                 "toggle_mute" -> AudioManager.ADJUST_TOGGLE_MUTE
+                "same" -> AudioManager.ADJUST_SAME
                 else -> AudioManager.ADJUST_RAISE
             }
             runCatching {
-                audio.adjustStreamVolume(stream(feature.config.string("stream", "media")), adjustment,
-                    if (feature.config.boolean("showUi")) AudioManager.FLAG_SHOW_UI else 0)
+                val flags = if (feature.config.boolean("showUi")) AudioManager.FLAG_SHOW_UI else 0
+                if (feature.config.boolean("global")) audio.adjustVolume(adjustment, flags)
+                else audio.adjustStreamVolume(stream(feature.config.string("stream", "media")), adjustment, flags)
                 ActionExecutionResult(true)
             }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }
