@@ -423,7 +423,7 @@ class OverlaySurfaceController(context: Context) {
         autoHideMs: Long,
     ): Boolean {
         if (!canDraw() || id.isBlank() || source.isBlank()) return false
-        val bitmap = loadOverlayBitmap(source) ?: return false
+        val bitmap = loadOverlayBitmap(context, source) ?: return false
         main.post {
             hideInternal(id)
             val density = context.resources.displayMetrics.density
@@ -786,7 +786,7 @@ class OverlaySurfaceController(context: Context) {
                     "image" -> content.addView(ImageView(context).apply {
                         adjustViewBounds = true
                         value.takeIf(String::isNotBlank)?.let { source ->
-                            loadOverlayBitmap(source)?.let(::setImageBitmap)
+                            loadOverlayBitmap(context, source)?.let(::setImageBitmap)
                         }
                         if (clickTask.isNotBlank()) setOnClickListener { emitTask(clickTask, "scene_click") }
                         if (longClickTask.isNotBlank()) setOnLongClickListener {
@@ -863,14 +863,6 @@ class OverlaySurfaceController(context: Context) {
         hide(id)
         return existed
     }
-
-    private fun loadOverlayBitmap(source: String): Bitmap? = runCatching {
-        when {
-            source.startsWith("content://") -> context.contentResolver.openInputStream(android.net.Uri.parse(source))?.use(BitmapFactory::decodeStream)
-            source.startsWith("file://") -> BitmapFactory.decodeFile(android.net.Uri.parse(source).path)
-            else -> BitmapFactory.decodeFile(source)
-        }
-    }.getOrNull()
 
     fun showEdgeLighting(
         id: String,
@@ -989,18 +981,6 @@ class OverlaySurfaceController(context: Context) {
             SurfaceRuntimeBridge.emit(id, "shown")
             if (autoHideMs > 0) main.postDelayed({ hide(id) }, autoHideMs.coerceAtMost(86_400_000))
         }
-    }
-
-    private fun gravityValue(gravity: String): Int = when (gravity) {
-        "top" -> Gravity.TOP or Gravity.CENTER_HORIZONTAL
-        "bottom" -> Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-        "left" -> Gravity.CENTER_VERTICAL or Gravity.START
-        "right" -> Gravity.CENTER_VERTICAL or Gravity.END
-        "top_left" -> Gravity.TOP or Gravity.START
-        "top_right" -> Gravity.TOP or Gravity.END
-        "bottom_left" -> Gravity.BOTTOM or Gravity.START
-        "bottom_right" -> Gravity.BOTTOM or Gravity.END
-        else -> Gravity.CENTER
     }
 
     fun hide(id: String): Boolean {
