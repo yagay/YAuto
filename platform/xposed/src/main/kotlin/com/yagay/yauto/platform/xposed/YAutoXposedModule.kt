@@ -66,7 +66,7 @@ class YAutoXposedModule : XposedModule() {
     }
 
     override fun onPackageReady(param: PackageReadyParam) {
-        if (!param.isFirstPackage || param.packageName == "android" || param.packageName == YAUTO_PACKAGE) return
+        if (!XposedPackageInitPolicy.shouldInitialize(param.packageName, param.isFirstPackage, YAUTO_PACKAGE)) return
         runCatching {
             val attach = Application::class.java.getDeclaredMethod("attach", Context::class.java)
             hook(attach).intercept { chain ->
