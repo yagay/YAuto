@@ -181,6 +181,14 @@ internal object ShortXVerifiedBatchMappings {
     /** Protobuf defaults are accepted only when the message has no unknown business fields. */
     fun binary(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         return when (sourceName(any)) {
+            "ReadClipboard" ->
+                if (fields.onlyBusinessFields()) feature(any, importerId, "android.clipboard.read",
+                    mapOf(text("resultVariable", "clipboardContent"))) else null
+            "DisconnectCurrentWifi" ->
+                if (fields.onlyBusinessFields()) feature(any, importerId, "android.wifi.network.disconnect", emptyMap()) else null
+            "ToggleAutoBrightness" ->
+                if (fields.onlyBusinessFields()) feature(any, importerId, "android.display.brightness.set",
+                    mapOf(text("mode", "toggle_auto"))) else null
             "StopApp" -> binaryApp(any, importerId, fields, false, "stop")
             "StopAppByPkg" -> binaryApp(any, importerId, fields, true, "stop")
             "SetAppEnabled" -> binaryApp(any, importerId, fields, false, "enable")
@@ -263,6 +271,11 @@ internal object ShortXVerifiedBatchMappings {
             obj.keys.all { it in sourceMetadata || it in keys }
         fun field(name: String): Int? = (obj[name] as? JsonPrimitive)?.intOrNull
         return when (sourceName(any)) {
+            "ReadClipboard" -> if (allowed()) feature(any, importerId, "android.clipboard.read",
+                mapOf(text("resultVariable", "clipboardContent"))) else null
+            "DisconnectCurrentWifi" -> if (allowed()) feature(any, importerId, "android.wifi.network.disconnect", emptyMap()) else null
+            "ToggleAutoBrightness" -> if (allowed()) feature(any, importerId, "android.display.brightness.set",
+                mapOf(text("mode", "toggle_auto"))) else null
             "StopApp" -> jsonApp(any, importerId, obj, false, "stop")
             "StopAppByPkg" -> jsonApp(any, importerId, obj, true, "stop")
             "SetAppEnabled" -> jsonApp(any, importerId, obj, false, "enable")

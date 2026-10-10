@@ -524,6 +524,55 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals(ConfigValue.NumberValue(10.0), actions[0].config["userId"])
     }
 
+    @Test fun `ShortX clipboard and Wi-Fi disconnect are native only without unexpected parameters`() {
+        val clip = importAction("ReadClipboard", byteArrayOf())
+        assertEquals("android.clipboard.read", clip.typeId)
+        assertEquals(ConfigValue.StringValue("clipboardContent"), clip.config["resultVariable"])
+        assertEquals("android.wifi.network.disconnect", importAction("DisconnectCurrentWifi", byteArrayOf()).typeId)
+        assertEquals("compat.source.action", importAction("ReadClipboard", message(varintField(1, 1))).typeId)
+        assertEquals("compat.source.action", importAction("DisconnectCurrentWifi", message(field(1, "other"))).typeId)
+    }
+
+    @Test fun `ShortX auto brightness toggles and disabling never set an invented manual level`() {
+        val toggle = importAction("ToggleAutoBrightness", byteArrayOf())
+        assertEquals("android.display.brightness.set", toggle.typeId)
+        assertEquals(ConfigValue.StringValue("toggle_auto"), toggle.config["mode"])
+        val off = importAction("SetAutoBrightness", message(varintField(1, 0)))
+        assertEquals("android.display.brightness.set", off.typeId)
+        assertEquals(ConfigValue.StringValue("manual_keep"), off.config["mode"])
+        assertEquals(null, off.config["percent"])
+        val on = importAction("SetAutoBrightness", message(varintField(1, 1)))
+        assertEquals(ConfigValue.StringValue("auto"), on.config["mode"])
+        assertEquals("compat.source.action", importAction("SetAutoBrightness", message(varintField(1, 2))).typeId)
+        assertEquals("compat.source.action", importAction("ToggleAutoBrightness", message(varintField(1, 1))).typeId)
+    }
+
+    @Test fun `ShortX exact parameterless JSON controls and brightness modes are safe`() {
+        val json = """{"title":"native","actions":[
+            {"@type":"type.googleapis.com/shortx.ReadClipboard"},
+            {"@type":"type.googleapis.com/shortx.DisconnectCurrentWifi"},
+            {"@type":"type.googleapis.com/shortx.ToggleAutoBrightness"},
+            {"@type":"type.googleapis.com/shortx.SetAutoBrightness","enable":false},
+            {"@type":"type.googleapis.com/shortx.SetAutoBrightness","enable":true},
+            {"@type":"type.googleapis.com/shortx.ReadClipboard","unexpected":"data"},
+            {"@type":"type.googleapis.com/shortx.ToggleAutoBrightness","enable":true},
+            {"@type":"type.googleapis.com/shortx.SetAutoBrightness","enable":"invalid"},
+            {"@type":"type.googleapis.com/shortx.DisconnectCurrentWifi","networkId":3}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("native.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        val actions = result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature }
+        assertEquals(listOf(
+            "android.clipboard.read", "android.wifi.network.disconnect", "android.display.brightness.set",
+            "android.display.brightness.set", "android.display.brightness.set",
+            "compat.source.action", "compat.source.action", "compat.source.action", "compat.source.action",
+        ), actions.map { it.typeId })
+        assertEquals(ConfigValue.StringValue("clipboardContent"), actions[0].config["resultVariable"])
+        assertEquals(ConfigValue.StringValue("toggle_auto"), actions[2].config["mode"])
+        assertEquals(ConfigValue.StringValue("manual_keep"), actions[3].config["mode"])
+        assertEquals(ConfigValue.StringValue("auto"), actions[4].config["mode"])
+    }
+
     private fun assertBoolean(source: String, target: String, key: String, value: Boolean) {
         val feature = importAction(source, message(varintField(1, if (value) 1 else 0)))
         assertEquals(target, feature.typeId)

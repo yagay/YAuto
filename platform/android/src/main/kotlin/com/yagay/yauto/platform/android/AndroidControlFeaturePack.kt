@@ -46,10 +46,10 @@ class AndroidControlFeaturePack(
         registry.registerAction(
             FeatureDescriptor(
                 FeatureId("android.display.brightness.set"), FeatureKind.ACTION,
-                "Set brightness", "Set manual brightness or enable automatic brightness",
+                "Set brightness", "Set manual brightness, enable or disable auto-brightness without changing the level, or toggle auto-brightness",
                 FeatureCategory.DISPLAY,
                 fields = listOf(
-                    FieldSchema.Choice("mode", "Mode", true, listOf("manual", "auto")),
+                    FieldSchema.Choice("mode", "Mode", true, listOf("manual", "auto", "manual_keep", "toggle_auto")),
                     FieldSchema.Number("percent", "Brightness percent", min = 0.0, max = 100.0),
                 ),
                 accessRequirements = setOf(AccessRequirement.WRITE_SETTINGS),
@@ -62,24 +62,47 @@ class AndroidControlFeaturePack(
             }
             runCatching {
                 when (feature.config.string("mode", "manual")) {
-                    "auto" -> Settings.System.putInt(
+                    "auto" -> check(Settings.System.putInt(
                         context.contentResolver,
                         Settings.System.SCREEN_BRIGHTNESS_MODE,
                         Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC,
-                    )
-                    else -> {
-                        val percent = (feature.config["percent"].numberOrNull() ?: 50.0).coerceIn(0.0, 100.0)
-                        Settings.System.putInt(
+                    )) { "Unable to enable automatic brightness" }
+                    "manual_keep" -> check(Settings.System.putInt(
+                        context.contentResolver,
+                        Settings.System.SCREEN_BRIGHTNESS_MODE,
+                        Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
+                    )) { "Unable to disable automatic brightness" }
+                    "toggle_auto" -> {
+                        val mode = Settings.System.getInt(
                             context.contentResolver,
                             Settings.System.SCREEN_BRIGHTNESS_MODE,
                             Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
                         )
-                        Settings.System.putInt(
+                        val next = if (mode == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC) {
+                            Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL
+                        } else {
+                            Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC
+                        }
+                        check(Settings.System.putInt(
+                            context.contentResolver,
+                            Settings.System.SCREEN_BRIGHTNESS_MODE,
+                            next,
+                        )) { "Unable to toggle automatic brightness" }
+                    }
+                    "manual" -> {
+                        val percent = (feature.config["percent"].numberOrNull() ?: 50.0).coerceIn(0.0, 100.0)
+                        check(Settings.System.putInt(
+                            context.contentResolver,
+                            Settings.System.SCREEN_BRIGHTNESS_MODE,
+                            Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
+                        )) { "Unable to set manual brightness mode" }
+                        check(Settings.System.putInt(
                             context.contentResolver,
                             Settings.System.SCREEN_BRIGHTNESS,
                             (255.0 * percent / 100.0).roundToInt().coerceIn(0, 255),
-                        )
+                        )) { "Unable to set brightness level" }
                     }
+                    else -> return@registerAction ActionExecutionResult(false)
                 }
                 ActionExecutionResult(true)
             }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }

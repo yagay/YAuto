@@ -637,10 +637,11 @@ internal object ShortXMappings {
                     ))
             }
             "SetAutoBrightness" -> {
-                val enable = (obj["enable"] as? JsonPrimitive)?.booleanOrNull ?: return null
-                if (!enable) return null
+                if (!jsonBusinessKeysOnly(obj, "enable")) return null
+                val enable = (obj["enable"] as? JsonPrimitive)?.booleanOrNull
+                    ?: if ("enable" in obj) return null else false
                 sourceFeature("android.display.brightness.set", importerId, any.typeUrl, raw,
-                    extra = mapOf("mode" to ConfigValue.StringValue("auto")))
+                    extra = mapOf("mode" to ConfigValue.StringValue(if (enable) "auto" else "manual_keep")))
             }
             "ExpandNotification" -> sourceFeature(
                 "android.status_bar.control", importerId, any.typeUrl, raw,
@@ -1557,10 +1558,10 @@ internal object ShortXMappings {
 
     private fun setAutoBrightness(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
-        val enabled = fields.varint(1)?.let { it != 0L } ?: return null
-        if (!enabled) return null // Disabling auto without a source brightness value is not lossless.
+        val state = fields.varint(1) ?: if (!fields.has(1)) 0L else return null
+        if (state !in 0L..1L) return null
         return binaryFeature(any, importerId, "android.display.brightness.set",
-            mapOf("mode" to ConfigValue.StringValue("auto")))
+            mapOf("mode" to ConfigValue.StringValue(if (state == 1L) "auto" else "manual_keep")))
     }
 
     private fun jsonToggle(obj: JsonObject, any: AnyStub, importerId: String, target: String, key: String): FeatureRef? {

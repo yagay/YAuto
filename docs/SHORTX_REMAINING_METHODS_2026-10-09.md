@@ -37,3 +37,11 @@ Shared `ShortXVerifiedBatchMappings` converts ShortX binary and JSON modes only 
 Additional verified conversions: `SetBrightness` maps the documented 0–255 value into existing YAuto percent with exact 8-bit round-trip; `ClickTile` maps only non-long-click custom tile components, never a system tile name or long-press that the YAuto shell command cannot represent; protobuf `ShowHideInsets` handles strict unpacked and packed status/navigation enum subsets, while JSON Show modes affecting only some system bars are retained as raw source. Repeated enum decoding is shared in ProtoFields.
 
 Application-management parity batch: Source-typed `StopApp/StopAppByPkg`, `SetAppEnabled/*ByPkg`, `SetAppSuspend/*ByPkg`, and `SetAppInactive/*ByPkg` now map **single explicit package targets** with user IDs through YAuto's existing native actions. These actions have an optional `userId` parameter; existing YAuto tasks still use `current`, while an imported ShortX user ID is carried to `am`/`pm --user`. Multitarget apps, package-set references, unknown profile IDs or unsupported fields remain lossless source compatibility nodes instead of silently dropping target apps.
+
+## 2026-10-10: clipboard, Wi-Fi disconnect, and exact auto-brightness behavior
+
+- No-field ShortX ReadClipboard imports into YAuto `android.clipboard.read` with `resultVariable=clipboardContent`, preserving its documented context key. Android clipboard privacy restrictions still apply.
+- No-field DisconnectCurrentWifi imports into the existing privileged `android.wifi.network.disconnect` action, not a Wi-Fi disable action.
+- ToggleAutoBrightness imports into the *same* `android.display.brightness.set` picker using `mode=toggle_auto` and live Android Settings.System brightness mode.
+- SetAutoBrightness false uses `mode=manual_keep`, preserving the existing screen brightness level rather than silently changing it to a fixed percentage. True continues to use `mode=auto`. Invalid protobuf bool values or unknown JSON business fields stay compatibility nodes.
+- The brightness executor now detects unsuccessful Android Settings writes rather than blindly reporting success. Device settings policy and OEM behavior still require device validation.
