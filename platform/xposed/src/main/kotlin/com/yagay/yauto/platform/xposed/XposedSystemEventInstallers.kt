@@ -105,8 +105,8 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
             }
             ?.forEach { method ->
                 val key = "system-task-removed|" + method.toGenericString()
-                if (!installedHooks.add(key)) return@forEach
-                method.isAccessible = true
+                val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                    method.isAccessible = true
                 hook(method).intercept { chain ->
                     val task = chain.args.firstOrNull { it?.javaClass?.name == "com.android.server.wm.Task" }
                     val snapshot = taskSnapshot(task)
@@ -124,6 +124,10 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                     )
                     result
                 }
+                }
+                installation.exceptionOrNull()?.let { error ->
+                    log(Log.ERROR, "YAuto", "Hook installation failed: system-task-removed", error)
+                }
             }
 
         val taskClass = runCatching { classLoader.loadClass("com.android.server.wm.Task") }.getOrNull() ?: return
@@ -131,8 +135,8 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
             .filter { it.name in setOf("removeImmediately", "removeIfPossible") }
             .forEach { method ->
                 val key = "system-task-direct-remove|" + method.toGenericString()
-                if (!installedHooks.add(key)) return@forEach
-                method.isAccessible = true
+                val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                    method.isAccessible = true
                 hook(method).intercept { chain ->
                     val snapshot = taskSnapshot(chain.thisObject)
                     val result = chain.proceed()
@@ -148,6 +152,10 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                         ),
                     )
                     result
+                }
+                }
+                installation.exceptionOrNull()?.let { error ->
+                    log(Log.ERROR, "YAuto", "Hook installation failed: system-task-direct-remove", error)
                 }
             }
     }
@@ -167,8 +175,8 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
             .forEach { method ->
                 val started = method.name == "startBackNavigation"
                 val key = "system-back-nav|" + method.toGenericString()
-                if (!installedHooks.add(key)) return@forEach
-                method.isAccessible = true
+                val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                    method.isAccessible = true
                 hook(method).intercept { chain ->
                     if (started) {
                         emitSystemRuntimeEvent(
@@ -190,6 +198,10 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                         )
                     }
                     result
+                }
+                }
+                installation.exceptionOrNull()?.let { error ->
+                    log(Log.ERROR, "YAuto", "Hook installation failed: system-back-nav", error)
                 }
             }
     }
@@ -225,8 +237,8 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
         }.getOrNull() ?: return
         clazz.declaredConstructors.forEach { constructor ->
             val key = "shortx-accessibility-user-state|" + constructor.toGenericString()
-            if (!installedHooks.add(key)) return@forEach
-            constructor.isAccessible = true
+            val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                constructor.isAccessible = true
             hook(constructor).intercept { chain ->
                 val result = chain.proceed()
                 emitSystemRuntimeEvent(
@@ -237,6 +249,10 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                     dedupWindowMs = 100L,
                 )
                 result
+            }
+            }
+            installation.exceptionOrNull()?.let { error ->
+                log(Log.ERROR, "YAuto", "Hook installation failed: shortx-accessibility-user-state", error)
             }
         }
     }
@@ -275,8 +291,8 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                 }
                 .forEach { method ->
                     val key = "shortx-behavior-accessibility|" + method.toGenericString()
-                    if (!installedHooks.add(key)) return@forEach
-                    method.isAccessible = true
+                    val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                        method.isAccessible = true
                     hook(method).intercept { chain ->
                         if (
                             SystemBridgeProtocol.SHORTX_BEHAVIOR_ACCESSIBILITY in enabledShortXBehaviors.get() &&
@@ -286,6 +302,10 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                         } else {
                             chain.proceed()
                         }
+                    }
+                    }
+                    installation.exceptionOrNull()?.let { error ->
+                        log(Log.ERROR, "YAuto", "Hook installation failed: shortx-behavior-accessibility", error)
                     }
                 }
         }
@@ -303,8 +323,8 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
             }
             .forEach { method ->
                 val key = "shortx-behavior-clipboard|" + method.toGenericString()
-                if (!installedHooks.add(key)) return@forEach
-                method.isAccessible = true
+                val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                    method.isAccessible = true
                 hook(method).intercept { chain ->
                     if (
                         SystemBridgeProtocol.SHORTX_BEHAVIOR_CLIPBOARD in enabledShortXBehaviors.get() &&
@@ -314,6 +334,10 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                     } else {
                         chain.proceed()
                     }
+                }
+                }
+                installation.exceptionOrNull()?.let { error ->
+                    log(Log.ERROR, "YAuto", "Hook installation failed: shortx-behavior-clipboard", error)
                 }
             }
     }
@@ -328,8 +352,8 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
             }
             .forEach { method ->
                 val key = "shortx-behavior-permission|" + method.toGenericString()
-                if (!installedHooks.add(key)) return@forEach
-                method.isAccessible = true
+                val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                    method.isAccessible = true
                 hook(method).intercept { chain ->
                     val permission = chain.args.firstOrNull() as? String
                     if (
@@ -341,6 +365,10 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                     } else {
                         chain.proceed()
                     }
+                }
+                }
+                installation.exceptionOrNull()?.let { error ->
+                    log(Log.ERROR, "YAuto", "Hook installation failed: shortx-behavior-permission", error)
                 }
             }
     }
@@ -556,8 +584,8 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                 }
                 .forEach { method ->
                     val key = "shortx-input|" + method.toGenericString()
-                    if (!installedHooks.add(key)) return@forEach
-                    method.isAccessible = true
+                    val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                        method.isAccessible = true
                     hook(method).intercept { chain ->
                         val event = chain.args.firstOrNull { it is KeyEvent } as? KeyEvent
                         if (event != null) {
@@ -566,6 +594,10 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                             }
                         }
                         chain.proceed()
+                    }
+                    }
+                    installation.exceptionOrNull()?.let { error ->
+                        log(Log.ERROR, "YAuto", "Hook installation failed: shortx-input", error)
                     }
                 }
         }
@@ -587,8 +619,8 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
             }
             .forEach { method ->
                 val key = "shortx-input-filter-state|" + method.toGenericString()
-                if (!installedHooks.add(key)) return@forEach
-                method.isAccessible = true
+                val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                    method.isAccessible = true
                 hook(method).intercept { chain ->
                     val enabled = chain.args.firstOrNull { it is Boolean } as? Boolean
                     emitSystemRuntimeEvent(
@@ -602,6 +634,10 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                         dedupWindowMs = 100L,
                     )
                     chain.proceed()
+                }
+                }
+                installation.exceptionOrNull()?.let { error ->
+                    log(Log.ERROR, "YAuto", "Hook installation failed: shortx-input-filter-state", error)
                 }
             }
     }
@@ -723,8 +759,8 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                 }
                 .forEach { method ->
                     val key = "system-assistant|" + method.toGenericString()
-                    if (!installedHooks.add(key)) return@forEach
-                    method.isAccessible = true
+                    val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                        method.isAccessible = true
                     hook(method).intercept { chain ->
                         val component = chain.args.filterIsInstance<android.content.ComponentName>().firstOrNull()
                         val info = reflectedValue(
@@ -748,6 +784,10 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                             dedupWindowMs = 350L,
                         )
                         chain.proceed()
+                    }
+                    }
+                    installation.exceptionOrNull()?.let { error ->
+                        log(Log.ERROR, "YAuto", "Hook installation failed: system-assistant", error)
                     }
                 }
         }
