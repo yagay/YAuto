@@ -1,6 +1,5 @@
 package com.yagay.yauto.ui.home
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,6 +9,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.yagay.yauto.ui.design.PageBackHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -55,11 +56,12 @@ fun MacroHomeScreen(
     onBackup: () -> Unit = {},
     onRestore: () -> Unit = {},
 ) {
-    var tab by remember { mutableStateOf(HomeTab.HOME) }
+    var tab by rememberSaveable { mutableStateOf(HomeTab.HOME) }
     var automationToDelete by remember { mutableStateOf<Automation?>(null) }
     var flowToDelete by remember { mutableStateOf<Flow?>(null) }
 
-    BackHandler(
+    // The previous visited tab is a destination, not an alias for the dashboard.
+    PageBackHandler(
         enabled = tab != HomeTab.HOME && automationToDelete == null && flowToDelete == null,
     ) {
         tab = HomeTab.HOME

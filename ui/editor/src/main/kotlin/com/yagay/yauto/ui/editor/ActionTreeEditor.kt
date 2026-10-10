@@ -32,13 +32,22 @@ fun ActionTreeDialog(
     var editing by remember { mutableStateOf<ActionNode?>(null) }
     val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
 
-    NavigationDialog(onBack = onDismiss) {
+    fun navigateBack() {
+        when {
+            editing != null -> editing = null
+            picker -> picker = false
+            adding -> adding = false
+            else -> onDismiss()
+        }
+    }
+
+    NavigationDialog(onBack = ::navigateBack) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { Text(title) },
                     navigationIcon = {
-                        TextButton(onClick = onDismiss) { Text(stringResource(TextR.string.common_cancel)) }
+                        TextButton(onClick = ::navigateBack) { Text(stringResource(TextR.string.common_cancel)) }
                     },
                     actions = {
                         TextButton(onClick = { onSave(nodes) }) { Text(stringResource(TextR.string.common_save)) }

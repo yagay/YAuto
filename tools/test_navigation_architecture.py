@@ -44,6 +44,22 @@ class SharedNavigationArchitectureTest(unittest.TestCase):
             self.assertIn("PageBackHandler(onBack = ::navigateBack)", value, path)
             self.assertIn("PageBackButton(onBack = ::navigateBack)", value, path)
 
+    def test_home_tab_survives_round_trip_to_editor(self):
+        app = source("app/src/main/kotlin/com/yagay/yauto/YAutoAppScreen.kt")
+        home = source("ui/home/src/main/kotlin/com/yagay/yauto/ui/home/HomeScreen.kt")
+        self.assertIn("rememberSaveableStateHolder()", app)
+        self.assertIn("pageStates.SaveableStateProvider(page.name)", app)
+        self.assertIn("var tab by rememberSaveable", home)
+        self.assertIn("PageBackHandler(", home)
+
+    def test_tree_back_first_closes_its_children(self):
+        tree = source("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/ActionTreeEditor.kt")
+        self.assertIn("editing != null -> editing = null", tree)
+        self.assertIn("picker -> picker = false", tree)
+        self.assertIn("adding -> adding = false", tree)
+        self.assertIn("NavigationDialog(onBack = ::navigateBack)", tree)
+        self.assertIn("onClick = ::navigateBack", tree)
+
     def test_fullscreen_selection_dialogs_use_shared_back_policy(self):
         for path in (
             "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FeaturePicker.kt",

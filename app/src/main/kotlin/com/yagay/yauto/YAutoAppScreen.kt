@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -81,6 +82,9 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     val context = LocalContext.current
     var navigation by rememberPageNavigation(AppPage.HOME)
     val page = navigation.current
+    // Keep each route's SaveableStateRegistry alive while another screen is shown.
+    // In particular, returning from an editor restores its originating Home tab.
+    val pageStates = rememberSaveableStateHolder()
     // Store selected IDs instead of stale editor instances across language changes.
     var editingAutomationId by rememberSaveable { mutableStateOf<String?>(null) }
     var editingFlowId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -334,6 +338,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
         )
     }
 
+    pageStates.SaveableStateProvider(page.name) {
     when (page) {
         AppPage.AUTOMATION -> CompositionLocalProvider(
             LocalFeatureAvailability provides featureAvailability,
@@ -502,6 +507,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
                 }
             },
         )
+    }
     }
 }
 
