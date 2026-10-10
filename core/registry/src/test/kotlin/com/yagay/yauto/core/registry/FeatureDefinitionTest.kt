@@ -134,4 +134,20 @@ class FeatureDefinitionTest {
         description = id,
         category = FeatureCategory.CORE,
     )
+    @Test
+    fun `legacy source aliases must resolve to exactly one feature`() {
+        val left = descriptor("test.left").copy(aliases = setOf("legacy.operation"))
+        val right = descriptor("test.right").copy(aliases = setOf("legacy.operation"))
+        val issues = validateFeatureDescriptors(listOf(left, right))
+        assertTrue(issues.any { it.code == "duplicate_feature_alias" })
+    }
+
+    @Test
+    fun `aliases must not shadow canonical feature ids`() {
+        val canonical = descriptor("test.canonical")
+        val alias = descriptor("test.alias").copy(aliases = setOf("test.canonical"))
+        val issues = validateFeatureDescriptors(listOf(canonical, alias))
+        assertTrue(issues.any { it.code == "alias_matches_feature_id" })
+    }
+
 }
