@@ -395,12 +395,12 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                                 if (spec.after) {
                                     val result = chain.proceed()
                                     runCatching {
-                                        emitShortXObserverEvent(context, spec, className, method.name, chain.thisObject, chain.args)
+                                        observerEvents.emit(context, spec, className, method.name, chain.thisObject, chain.args)
                                     }
                                     result
                                 } else {
                                     runCatching {
-                                        emitShortXObserverEvent(context, spec, className, method.name, chain.thisObject, chain.args)
+                                        observerEvents.emit(context, spec, className, method.name, chain.thisObject, chain.args)
                                     }
                                     chain.proceed()
                                 }
@@ -414,127 +414,10 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
         }
     }
 
-    private fun emitShortXObserverEvent(
-        context: Context,
-        spec: ShortXObserverHookSpec,
-        className: String,
-        methodName: String,
-        thisObject: Any?,
-        args: List<Any?>,
-    ) {
-        if (spec.eventType !in subscribedSystemEvents.get()) return
-        val extras = linkedMapOf<String, Any?>(
-            "hookId" to spec.id,
-            "className" to className,
-            "method" to methodName,
-        )
-        if (spec.id == "clipboard-read") {
-            extras["callingUid"] = Binder.getCallingUid()
+    private val observerEvents by lazy {
+        XposedObserverEventEmitter(sharedState) { context, type, identity, extras, windowMs ->
+            emitSystemRuntimeEvent(context, type, identity, extras, windowMs)
         }
-        args.take(8).forEachIndexed { index, value ->
-            when (value) {
-                is String -> extras["arg$index"] = value.take(512)
-                is Int -> extras["arg$index"] = value
-                is Long -> extras["arg$index"] = value
-                is Boolean -> extras["arg$index"] = value
-                is Enum<*> -> extras["arg$index"] = value.name
-            }
-        }
-
-        when (spec.payloadKind) {
-            ShortXHookPayloadKind.PROCESS -> {
-                val target = args.firstOrNull { it?.javaClass?.name?.contains("ProcessRecord") == true } ?: thisObject
-                val snapshot = processSnapshot(target)
-                extras["package"] = snapshot.packageName
-                extras["processName"] = snapshot.processName
-                extras["uid"] = snapshot.uid
-                extras["pid"] = snapshot.pid
-            }
-            ShortXHookPayloadKind.ACTIVITY -> {
-                val target = args.firstOrNull { it?.javaClass?.name?.contains("ActivityRecord") == true } ?: thisObject
-                val snapshot = activitySnapshot(target)
-                extras["package"] = snapshot.packageName
-                extras["activity"] = snapshot.activityName
-                extras["taskId"] = snapshot.taskId
-            }
-            ShortXHookPayloadKind.TASK -> {
-                val target = args.firstOrNull { it?.javaClass?.name == "com.android.server.wm.Task" }
-                    ?: args.firstOrNull { it?.javaClass?.name?.contains("Task") == true }
-                val snapshot = taskSnapshot(target)
-                extras["package"] = snapshot.packageName
-                extras["activity"] = snapshot.activityName
-                extras["taskId"] = snapshot.taskId
-            }
-            ShortXHookPayloadKind.NOTIFICATION -> {
-                val target = args.firstOrNull { it?.javaClass?.name?.contains("NotificationRecord") == true } ?: thisObject
-                val snapshot = notificationSnapshot(target)
-                extras["package"] = snapshot.packageName
-                extras["notificationKey"] = snapshot.key
-                extras["notificationId"] = snapshot.id
-                extras["channel"] = snapshot.channelId
-            }
-            ShortXHookPayloadKind.VPN -> {
-                extras["state"] = args.firstOrNull { it is Enum<*> || it is String }?.toString().orEmpty()
-                extras["reason"] = args.drop(1).firstOrNull { it is String }?.toString().orEmpty()
-            }
-            ShortXHookPayloadKind.IME -> {
-                val editor = args.firstOrNull { it?.javaClass?.name == "android.view.inputmethod.EditorInfo" }
-                extras["package"] = reflectedString(editor, "packageName")
-                extras["fieldId"] = reflectedInt(editor, "fieldId")
-            }
-            ShortXHookPayloadKind.WINDOW -> {
-                val target = args.firstOrNull { it?.javaClass?.name?.contains("WindowState") == true } ?: thisObject
-                extras["package"] = reflectedString(target, "mOwningPackage", "owningPackage")
-                val attrs = reflectedValue(target, "mAttrs", "attrs")
-                extras["title"] = reflectedValue(attrs, "title")?.toString().orEmpty()
-            }
-            ShortXHookPayloadKind.ROTATION -> {
-                extras["rotation"] = args.firstOrNull { it is Int } as? Int ?: -1
-            }
-            ShortXHookPayloadKind.WIDGET -> {
-                extras["package"] = args.firstOrNull { it is String }?.toString().orEmpty()
-                extras["hostId"] = args.firstOrNull { it is Int } as? Int ?: -1
-            }
-            ShortXHookPayloadKind.SHORTCUT -> {
-                val strings = args.filterIsInstance<String>()
-                extras["package"] = strings.firstOrNull().orEmpty()
-                extras["shortcutId"] = strings.getOrNull(1).orEmpty()
-            }
-            ShortXHookPayloadKind.STATUS_BAR_ICON -> {
-                extras["slot"] = args.firstOrNull { it is String }?.toString().orEmpty()
-            }
-            ShortXHookPayloadKind.INTENT_START -> {
-                val intent = args.firstOrNull { it is Intent } as? Intent
-                    ?: args.asSequence().mapNotNull { reflectedValue(it, "intent", "mIntent") as? Intent }.firstOrNull()
-                extras["package"] = intent?.component?.packageName.orEmpty()
-                extras["activity"] = intent?.component?.className.orEmpty()
-                extras["action"] = intent?.action.orEmpty()
-            }
-            ShortXHookPayloadKind.SCREEN_STATE -> {
-                extras["screenOn"] = args.firstOrNull { it is Boolean } as? Boolean ?: false
-            }
-            ShortXHookPayloadKind.BACK_PRESS,
-            ShortXHookPayloadKind.NONE -> Unit
-        }
-
-        val identity = buildString {
-            append(spec.id)
-            append(':')
-            append(extras["package"]?.toString().orEmpty())
-            append(':')
-            append(extras["activity"]?.toString().orEmpty())
-            append(':')
-            append(extras["processName"]?.toString().orEmpty())
-            append(':')
-            append(extras["state"]?.toString().orEmpty())
-        }
-        emitSystemRuntimeEvent(
-            context = context,
-            type = spec.eventType,
-            dedupKey = identity,
-            extras = extras,
-            dedupWindowMs = 150L,
-        )
     }
 
     /**
