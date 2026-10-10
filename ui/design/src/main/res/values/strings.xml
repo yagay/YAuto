@@ -277,4 +277,10 @@
     <string name="access_activity_recognition">Activity recognition</string>
     <string name="feature_picker_no_matches">No matching features. Try another keyword.</string>
     <string name="feature_picker_empty_category">There are no features in this list.</string>
+    <string name="test_center_title">Testing centre</string>
+    <string name="test_center_description">Test a manual trigger, review execution diagnostics, or check permissions. Manual tests execute real actions in matching automations.</string>
+    <string name="test_center_manual_run">Fire manual test trigger</string>
+    <string name="test_center_diagnostics">View execution diagnostics</string>
+    <string name="test_center_permissions">Check permissions and services</string>
+    <string name="test_center_close">Close</string>
 </resources>
