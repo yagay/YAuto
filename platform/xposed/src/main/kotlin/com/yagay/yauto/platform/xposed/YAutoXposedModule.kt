@@ -851,30 +851,16 @@ class YAutoXposedModule : XposedModule() {
         packageName: String,
         classLoader: ClassLoader,
     ) {
-        val infrastructurePackage = when {
-            packageName == "com.android.systemui" -> {
-                installShortXSystemUiHooks(context, classLoader)
-                installShortXStatusChipHooks(context, classLoader)
-                installShortXTileLabelHooks(context, classLoader)
-                true
-            }
-            packageName == "com.android.nfc" -> {
-                installShortXNfcHooks(context, classLoader)
-                true
-            }
-            packageName.contains("providers.media") -> {
-                installShortXMediaProviderHooks(context, classLoader)
-                true
-            }
-            packageName == "com.android.providers.telephony" -> {
-                installShortXTelephonyProviderHooks(context, classLoader)
-                true
-            }
-            else -> false
-        }
-        if (!infrastructurePackage) {
-            installShortXInputConnectionHook(context, packageName, classLoader)
-        }
+        routeXposedPackageHooks(
+            packageName = packageName,
+            installSystemUi = { installShortXSystemUiHooks(context, classLoader) },
+            installStatusChip = { installShortXStatusChipHooks(context, classLoader) },
+            installTileLabel = { installShortXTileLabelHooks(context, classLoader) },
+            installNfc = { installShortXNfcHooks(context, classLoader) },
+            installMediaProvider = { installShortXMediaProviderHooks(context, classLoader) },
+            installTelephonyProvider = { installShortXTelephonyProviderHooks(context, classLoader) },
+            installInputConnection = { installShortXInputConnectionHook(context, packageName, classLoader) },
+        )
     }
 
     private fun installShortXRuntimeInitHook(
