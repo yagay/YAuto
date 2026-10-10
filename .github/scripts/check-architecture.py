@@ -163,6 +163,37 @@ if runtime_entry.exists():
 if not (runtime_dir / "RuntimeEventWaitRegistry.kt").exists():
     errors.append("RuntimeEventWaitRegistry must own event waiting and cleanup")
 
+
+# Canonical runtime mutation and selection policies must remain shared after refactoring.
+if runtime_entry.exists():
+    runtime_text = runtime_entry.read_text(encoding="utf-8")
+    for owner in ("RuntimeLastRunStore", "RuntimeVariableStore", "RuntimeSelectionPolicy"):
+        if owner not in runtime_text:
+            errors.append(f"AutomationRuntime must use shared {owner}")
+    if "unexecutionJobs" in runtime_text:
+        errors.append("AutomationRuntime contains a broken execution-jobs reference")
+for owner in ("RuntimeLastRunStore.kt", "RuntimeVariableStore.kt", "RuntimeSelectionPolicy.kt"):
+    if not (runtime_dir / owner).exists():
+        errors.append(f"Missing canonical runtime component {owner}")
+
+# Privileged capability support metadata is defined once and consumed by both backends.
+privileged_contract = ROOT / "core/capability/src/main/kotlin/com/yagay/yauto/core/capability/PrivilegedOperationContract.kt"
+if not privileged_contract.exists():
+    errors.append("PrivilegedOperationContract is required")
+for rel in (
+    "platform/root/src/main/kotlin/com/yagay/yauto/platform/root/RootBackend.kt",
+    "platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedBackend.kt",
+):
+    path = ROOT / rel
+    if path.exists() and "PrivilegedOperationContract" not in path.read_text(encoding="utf-8"):
+        errors.append(f"{rel} must use the shared privileged operation contract")
+
+xposed_init_policy = xposed_dir / "XposedPackageInitPolicy.kt"
+if not xposed_init_policy.exists():
+    errors.append("XposedPackageInitPolicy is required")
+if xposed_entry.exists() and "XposedPackageInitPolicy.shouldInitialize(" not in xposed_entry.read_text(encoding="utf-8"):
+    errors.append("YAutoXposedModule must delegate package initialization policy")
+
 if errors:
     print("Architecture guard failed:")
     for error in errors:
