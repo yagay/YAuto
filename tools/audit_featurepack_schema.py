@@ -27,10 +27,10 @@ def inventory() -> dict:
         for path in sorted(folder.rglob("*FeaturePack.kt")):
             source = path.read_text(encoding="utf-8")
             rel = path.relative_to(ROOT).as_posix()
-            direct = len(re.findall(r"registry\\.register(?:Action|Condition|Event|State)\\s*\\(", source))
-            descriptors = len(re.findall(r"FeatureDescriptor\\s*\\(", source))
-            schema = len(re.findall(r"FieldSchema\\.", source))
-            compose = bool(re.search(r"@Composable\\b|import\\s+androidx\\.compose\\.", source))
+            direct = len(re.findall(r"registry\.register(?:Action|Condition|Event|State)\s*\(", source))
+            descriptors = len(re.findall(r"FeatureDescriptor\s*\(", source))
+            schema = len(re.findall(r"FieldSchema\.", source))
+            compose = bool(re.search(r"@Composable\b|import\s+androidx\.compose\.", source))
             if compose:
                 violations.append(f"{rel}: feature packs cannot implement Compose UI; use the shared editor")
             packs.append({
