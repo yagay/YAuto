@@ -56,9 +56,9 @@ class ShortXJsonFlowTest {
     @Test fun `unrepresentable source context remains compatible and preserves original action`() {
         val cases = listOf(
           """"@type":"type.googleapis.com/IfThenElse","_if":[{"@type":"type.googleapis.com/TRUE"}],"_ifCondOp":"MVEL","_ifActions":[]""",
-          """"@type":"type.googleapis.com/IfThenElse","_if":[{"@type":"type.googleapis.com/TRUE"}],"_ifActionAsyncMode":"ActionAsyncMode_Async""",
+          """"@type":"type.googleapis.com/IfThenElse","_if":[{"@type":"type.googleapis.com/TRUE"}],"_ifActionAsyncMode":"ActionAsyncMode_Async"""",
           """"@type":"type.googleapis.com/WhileLoop","conditions":[{"@type":"type.googleapis.com/TRUE"}],"delay":100""",
-          """"@type":"type.googleapis.com/StopAllActions","note":"please preserve""",
+          """"@type":"type.googleapis.com/StopAllActions","note":"please preserve"""",
           """"@type":"type.googleapis.com/BreakActionExecute","scope":"BreakActionExecuteScope_Root"""",
           """"@type":"type.googleapis.com/ExecuteFunction","functionId":"f","funcParameterInputs":[{"name":"a","value":"1"},{"name":"a","value":"2"}]""",
           """"@type":"type.googleapis.com/IfThenElse","_if":[{"@type":"type.googleapis.com/TRUE"}],"_ifCondOp":"NONE","futureOption":1""",
