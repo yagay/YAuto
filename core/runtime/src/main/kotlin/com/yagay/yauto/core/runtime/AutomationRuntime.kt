@@ -111,7 +111,7 @@ class AutomationRuntime(
         for (automation in workspace.automations.filter {
             it.enabled &&
                 it.id.value !in callStack &&
-                categoryEnabled(it.category, workspace.disabledCategories)
+                RuntimeSelectionPolicy.categoryEnabled(it.category, workspace.disabledCategories)
         }) {
             if (statesOnly && automation.activation.states.isEmpty()) continue
             try {
@@ -216,9 +216,9 @@ class AutomationRuntime(
         val trimmed = target.trim()
         if (trimmed.isEmpty()) return ActionExecutionResult(false, message = userText("runtime.automation_target_required"))
         val workspace = workspaceRepository.load()
-        val automation = resolveAutomation(workspace, trimmed)
+        val automation = RuntimeSelectionPolicy.resolveAutomation(workspace, trimmed)
             ?: return ActionExecutionResult(false, message = userText("runtime.automation_not_found", trimmed))
-        if ((!automation.enabled || !categoryEnabled(automation.category, workspace.disabledCategories)) && !allowDisabled) {
+        if ((!automation.enabled || !RuntimeSelectionPolicy.categoryEnabled(automation.category, workspace.disabledCategories)) && !allowDisabled) {
             return ActionExecutionResult(false, message = userText("runtime.automation_disabled", automation.name))
         }
 
@@ -258,7 +258,7 @@ class AutomationRuntime(
         var newEnabled = false
         val result = workspaceMutationLock.withLock {
             val workspace = workspaceRepository.load()
-            val automation = resolveAutomation(workspace, trimmed)
+            val automation = RuntimeSelectionPolicy.resolveAutomation(workspace, trimmed)
                 ?: return@withLock ActionExecutionResult(
                     false,
                     message = userText("runtime.automation_not_found", trimmed),
@@ -305,7 +305,7 @@ class AutomationRuntime(
         val trimmed = target.trim()
         if (trimmed.isEmpty()) return ActionExecutionResult(false, message = userText("runtime.automation_target_required"))
         val workspace = workspaceRepository.load()
-        val automation = resolveAutomation(workspace, trimmed)
+        val automation = RuntimeSelectionPolicy.resolveAutomation(workspace, trimmed)
             ?: return ActionExecutionResult(false, message = userText("runtime.automation_not_found", trimmed))
         val stack = currentCoroutineContext()[AutomationCallStack]?.ids.orEmpty()
         if (automation.id.value in stack) {
@@ -318,13 +318,13 @@ class AutomationRuntime(
     override suspend fun isEnabled(target: String): Boolean? {
         val trimmed = target.trim()
         if (trimmed.isEmpty()) return null
-        return resolveAutomation(workspaceRepository.load(), trimmed)?.enabled
+        return RuntimeSelectionPolicy.resolveAutomation(workspaceRepository.load(), trimmed)?.enabled
     }
 
     override suspend fun isRunning(target: String): Boolean? {
         val trimmed = target.trim()
         if (trimmed.isEmpty()) return null
-        val automation = resolveAutomation(workspaceRepository.load(), trimmed) ?: return null
+        val automation = RuntimeSelectionPolicy.resolveAutomation(workspaceRepository.load(), trimmed) ?: return null
         return executionJobs.isRunning(automation.id.value)
     }
 
@@ -376,7 +376,7 @@ class AutomationRuntime(
         }
         return workspaceMutationLock.withLock {
             val workspace = workspaceRepository.load()
-            val resolved = resolveAutomation(workspace, target)
+            val resolved = RuntimeSelectionPolicy.resolveAutomation(workspace, target)
                 ?: return@withLock ActionExecutionResult(
                     false,
                     message = userText("runtime.automation_not_found", target),
@@ -411,7 +411,7 @@ class AutomationRuntime(
         tag: String,
     ): Boolean? {
         val workspace = workspaceRepository.load()
-        val resolved = resolveAutomation(workspace, automation.trim()) ?: return null
+        val resolved = RuntimeSelectionPolicy.resolveAutomation(workspace, automation.trim()) ?: return null
         val type = triggerType.trim()
         val triggerTag = tag.trim()
         val candidates = resolved.activation.events.filter { feature ->
@@ -476,7 +476,7 @@ class AutomationRuntime(
         val trimmed = target.trim()
         if (trimmed.isEmpty()) return null
         val workspace = workspaceRepository.load()
-        val automation = resolveAutomation(workspace, trimmed) ?: return null
+        val automation = RuntimeSelectionPolicy.resolveAutomation(workspace, trimmed) ?: return null
         return lastRunStore.get(automation.id)
     }
 
@@ -673,11 +673,6 @@ class AutomationRuntime(
     private suspend fun recordLastRun(automationId: AutomationId, timestamp: Long) =
         lastRunStore.record(automationId, timestamp)
 
-    private fun categoryEnabled(category: String?, disabledCategories: Set<String>): Boolean {
-        val name = category?.trim().orEmpty()
-        return name.isBlank() || name !in disabledCategories
-    }
-
     private suspend fun waitForRuntimeEvent(
         events: List<FeatureRef>,
         baseVariables: Map<String, ConfigValue>,
@@ -725,12 +720,6 @@ class AutomationRuntime(
         automation: Automation,
         feature: FeatureRef,
     ): Boolean = triggerKey(automation, feature) !in workspace.disabledTriggerKeys
-
-    private fun resolveAutomation(workspace: WorkspaceData, target: String): Automation? {
-        workspace.automations.firstOrNull { it.id.value == target }?.let { return it }
-        val matches = workspace.automations.filter { it.name.equals(target, ignoreCase = true) }
-        return matches.singleOrNull()
-    }
 
     private class MapVariableAccess(initial: Map<String, ConfigValue>) : VariableAccess {
         private val values = initial.toMutableMap()
