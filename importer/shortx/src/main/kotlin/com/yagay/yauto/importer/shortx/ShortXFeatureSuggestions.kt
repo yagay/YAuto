@@ -1,7 +1,7 @@
 package com.yagay.yauto.importer.shortx
 
 /** Central source-name hints. Hints are not native import support. */
-internal object ShortXFeatureSuggestions {
+internal object ShortXNativeSuggestionCatalog {
     fun suggestedConditionFeature(typeUrl: String): String? = when (ShortXMappings.shortName(typeUrl)) {
         "CurrentPkgList", "CurrentPkgListByPkg", "CurrentActivity" -> "android.condition.app_foreground"
         "BatteryPercent" -> "android.condition.battery_level"
