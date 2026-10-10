@@ -136,4 +136,5 @@
     <string name="feature_android_lsposed_hook_install_session_field_capturevalues">Capture primitive arguments and return values (sensitive; off by default)</string>
     <string name="feature_android_event_lsposed_method_called_field_arg0contains">First argument contains</string>
     <string name="feature_android_event_lsposed_method_called_field_resultcontains">Return value contains</string>
+    <string name="feature_android_lsposed_hook_install_session_field_mode_option_override_result">Override return value after original call</string>
 </resources>

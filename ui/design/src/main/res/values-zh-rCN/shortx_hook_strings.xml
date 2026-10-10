@@ -136,4 +136,5 @@
     <string name="feature_android_lsposed_hook_install_session_field_capturevalues">捕获基础类型参数和返回值（可能涉及隐私，默认关闭）</string>
     <string name="feature_android_event_lsposed_method_called_field_arg0contains">首个参数包含</string>
     <string name="feature_android_event_lsposed_method_called_field_resultcontains">返回值包含</string>
+    <string name="feature_android_lsposed_hook_install_session_field_mode_option_override_result">执行原方法后覆盖返回值</string>
 </resources>

@@ -39,7 +39,7 @@ class AndroidLsposedFeaturePack : FeaturePack {
                     FieldSchema.Text("parameterTypes", "Parameter types (comma-separated Java names)"),
                     FieldSchema.Text("returnType", "Return type (Java name)"),
                     FieldSchema.Choice("lifecycle", "Observe lifecycle", true, listOf("before", "after")),
-                    FieldSchema.Choice("mode", "Hook mode", true, listOf("observe", "replace")),
+                    FieldSchema.Choice("mode", "Hook mode", true, listOf("observe", "replace", "override_result")),
                     FieldSchema.Choice("replacementType", "Replacement type", options = listOf("null", "boolean", "int", "long", "float", "double", "string")),
                     FieldSchema.Text("replacementValue", "Replacement value"),
                     FieldSchema.Text("sessionId", "Session ID (blank = generated)"),
@@ -55,10 +55,10 @@ class AndroidLsposedFeaturePack : FeaturePack {
                     ),
                     "replacementValue" to FieldBehavior(
                         supportsVariables = true,
-                        visibleWhen = FieldRule.Equals("mode", ConfigValue.StringValue("replace")),
+                        visibleWhen = FieldRule.NotEquals("mode", ConfigValue.StringValue("observe")),
                     ),
                     "replacementType" to FieldBehavior(
-                        visibleWhen = FieldRule.Equals("mode", ConfigValue.StringValue("replace")),
+                        visibleWhen = FieldRule.NotEquals("mode", ConfigValue.StringValue("observe")),
                     ),
                 ),
                 capabilities = setOf(CapabilityIds.LSPOSED_HOOK),
@@ -85,7 +85,7 @@ class AndroidLsposedFeaturePack : FeaturePack {
                 memberKind !in setOf("method", "constructor") ||
                 (memberKind == "method" && !METHOD_NAME.matches(methodName)) ||
                 (memberKind == "constructor" && mode != "observe") ||
-                parameterCount !in -1..64 || mode !in setOf("observe", "replace")
+                parameterCount !in -1..64 || mode !in setOf("observe", "replace", "override_result")
             ) {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.lsposed_hook_input_invalid"))
             }

@@ -1698,7 +1698,7 @@ class YAutoXposedModule : XposedModule() {
                     }
                     require(parameterCount in -1..64) { "Invalid parameter count" }
                     require(lifecycle in setOf("before", "after")) { "Invalid hook lifecycle" }
-                    require(mode in setOf("observe", "replace")) { "Invalid hook mode" }
+                    require(mode in setOf("observe", "replace", "override_result")) { "Invalid hook mode" }
 
                     val targetClass = classLoader.loadClass(className)
                     val wantedParams = parameterTypes.split(',').map { it.trim() }.filter { it.isNotBlank() }
@@ -1734,7 +1734,7 @@ class YAutoXposedModule : XposedModule() {
                             if (member is Method) {
                                 // Check type compatibility before installing the interceptor,
                                 // not when the target process first calls this method.
-                                if (mode == "replace") parseReplacement(member.returnType, replacementType, replacementValue)
+                                if (mode != "observe") parseReplacement(member.returnType, replacementType, replacementValue)
                                 installMethodHook(
                                     context, packageName, processName, className, member,
                                     sessionId, eventToken, lifecycle, mode, replacementType, replacementValue, captureValues,
@@ -1882,6 +1882,15 @@ class YAutoXposedModule : XposedModule() {
                 val result = parseReplacement(method.returnType, replacementType, replacementValue)
                 emitMethodCalled(context, sessionId, eventToken, packageName, processName,
                     chain.thisObject?.javaClass?.name ?: className, method.name, "before",
+                    if (captureValues) MethodHookValueSnapshot.capture(chain.args, result, true) else emptyMap())
+                result
+            } else if (mode == "override_result") {
+                // Unlike replace, run the original method first; only its returned
+                // value is overridden. Side effects of the method are preserved.
+                chain.proceed()
+                val result = parseReplacement(method.returnType, replacementType, replacementValue)
+                emitMethodCalled(context, sessionId, eventToken, packageName, processName,
+                    chain.thisObject?.javaClass?.name ?: className, method.name, "after",
                     if (captureValues) MethodHookValueSnapshot.capture(chain.args, result, true) else emptyMap())
                 result
             } else if (lifecycle == "after") {
