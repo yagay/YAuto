@@ -10,7 +10,7 @@ internal fun ImportResult.validateImporterIdentity(expectedImporterId: String, f
         issues = issues + CompatibilityIssue(
             severity = ImportSeverity.ERROR,
             sourcePath = fileName ?: "input",
-            message = "Importer identity mismatch: expected $expectedImporterId, received $importerId",
+            message = userText("import.no_compatible_importer"),
         ),
     )
 }
