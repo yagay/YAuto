@@ -105,6 +105,7 @@ jobs:
           :importer:tasker:test
           :plugin:api:test
           :platform:accessibility:testDebugUnitTest
+          :platform:root:test
           :platform:android:testDebugUnitTest
           :platform:xposed:testDebugUnitTest
           :ui:editor:testDebugUnitTest

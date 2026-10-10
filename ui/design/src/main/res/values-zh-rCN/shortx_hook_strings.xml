@@ -150,4 +150,5 @@
     <string name="feature_android_qs_tile_custom_label_field_operation_option_clear">恢复原样</string>
     <string name="runtime_shortx_tile_invalid_component">快捷设置磁贴组件无效。</string>
     <string name="runtime_shortx_tile_invalid_operation">磁贴标签或操作无效。</string>
+    <string name="runtime_capability_root_exit_code">Root 命令执行失败，退出码 %1$s。</string>
 </resources>

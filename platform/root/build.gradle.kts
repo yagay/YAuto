@@ -5,4 +5,5 @@ dependencies {
     implementation(project(":core:capability"))
     implementation(project(":core:diagnostics"))
     implementation(libs.kotlinx.coroutines.core)
+    testImplementation(libs.junit)
 }

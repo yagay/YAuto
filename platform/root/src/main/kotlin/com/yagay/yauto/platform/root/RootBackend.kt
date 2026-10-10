@@ -1,6 +1,7 @@
 package com.yagay.yauto.platform.root
 
 import com.yagay.yauto.core.capability.*
+import com.yagay.yauto.core.diagnostics.CommandOutput
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.long
 import com.yagay.yauto.core.model.string
@@ -29,7 +30,7 @@ class RootBackend(
                 "stderr" to ConfigValue.StringValue(out.stderr),
                 "exitCode" to ConfigValue.NumberValue(out.exitCode.toDouble()),
             )),
-            message = if (out.timedOut) userText("capability.timed_out") else out.stderr.takeIf { it.isNotBlank() },
+            message = rootCommandFailureMessage(out),
         )
     }
 
@@ -37,4 +38,13 @@ class RootBackend(
         const val DEFAULT_TIMEOUT_MS = 10_000L
         const val MAX_TIMEOUT_MS = 300_000L
     }
+}
+
+/** Never report a failed su command as success with an empty diagnostic. */
+internal fun rootCommandFailureMessage(output: CommandOutput): String? = when {
+    output.timedOut -> userText("capability.timed_out")
+    output.exitCode == 0 -> null
+    output.stderr.isNotBlank() -> output.stderr.trim().take(1024)
+    output.stdout.isNotBlank() -> output.stdout.trim().take(1024)
+    else -> userText("capability.root_exit_code", output.exitCode)
 }

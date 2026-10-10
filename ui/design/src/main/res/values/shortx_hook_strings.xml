@@ -150,4 +150,5 @@
     <string name="feature_android_qs_tile_custom_label_field_operation_option_clear">Restore original</string>
     <string name="runtime_shortx_tile_invalid_component">Invalid Quick Settings tile component.</string>
     <string name="runtime_shortx_tile_invalid_operation">Invalid tile label or operation.</string>
+    <string name="runtime_capability_root_exit_code">Root command failed with exit code %1$s.</string>
 </resources>
