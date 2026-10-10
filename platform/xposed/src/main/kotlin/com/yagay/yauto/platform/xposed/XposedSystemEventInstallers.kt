@@ -574,11 +574,9 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
             val clazz = runCatching { classLoader.loadClass(target.className) }.getOrNull() ?: return@forEach
             clazz.declaredMethods
                 .filter { method ->
-                    method.name in target.methodNames &&
-                        method.parameterTypes.any {
-                            KeyEvent::class.java.isAssignableFrom(it) ||
-                                InputEvent::class.java.isAssignableFrom(it)
-                        }
+                    XposedInputHookMethodPolicy.matches(
+                        method, target.methodNames, target.matchAnyKeyEventMethod,
+                    )
                 }
                 .forEach { method ->
                     val key = "shortx-input|" + method.toGenericString()

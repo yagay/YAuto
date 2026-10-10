@@ -110,5 +110,5 @@ internal class XposedHardwareKeyEventHandler(
 /** Stable identity across the distinct OEM input-hook entrypoints. */
 internal object XposedHardwareKeyIdentity {
     fun from(deviceId: Int, keyCode: Int, scanCode: Int, action: Int, eventTime: Long): String =
-        "$" + "{deviceId}:$" + "{keyCode}:$" + "{scanCode}:$" + "{action}:$" + "{eventTime}"
+        listOf(deviceId, keyCode, scanCode, action, eventTime).joinToString(":")
 }
