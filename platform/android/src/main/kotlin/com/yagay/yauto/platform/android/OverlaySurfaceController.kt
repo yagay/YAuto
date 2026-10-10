@@ -43,6 +43,7 @@ class OverlaySurfaceController(context: Context) {
     private val windowManager = context.applicationContext.getSystemService(WindowManager::class.java)
     private val main = Handler(Looper.getMainLooper())
     private val surfaces = ConcurrentHashMap<String, android.view.View>()
+    private val autoHideCallbacks = ConcurrentHashMap<String, Runnable>()
     private val recordedGestures = ConcurrentHashMap<String, String>()
     private val taskerSceneModels = ConcurrentHashMap<String, String>()
 
@@ -970,10 +971,16 @@ class OverlaySurfaceController(context: Context) {
 
     /** A delayed hide belongs to the specific window instance, not a recycled surface ID. */
     private fun scheduleAutoHide(id: String, view: View, timeoutMs: Long) {
+        autoHideCallbacks.remove(id)?.let(main::removeCallbacks)
         if (timeoutMs <= 0) return
-        main.postDelayed({
-            if (surfaces[id] === view) hideInternal(id)
-        }, timeoutMs.coerceAtMost(86_400_000))
+        val callback = object : Runnable {
+            override fun run() {
+                autoHideCallbacks.remove(id, this)
+                if (surfaces[id] === view) hideInternal(id)
+            }
+        }
+        autoHideCallbacks[id] = callback
+        main.postDelayed(callback, timeoutMs.coerceAtMost(86_400_000))
     }
 
     fun hide(id: String): Boolean {
@@ -990,6 +997,7 @@ class OverlaySurfaceController(context: Context) {
     fun isShown(id: String): Boolean = surfaces.containsKey(id)
 
     private fun hideInternal(id: String) {
+        autoHideCallbacks.remove(id)?.let(main::removeCallbacks)
         val view = surfaces.remove(id) ?: return
         runCatching { windowManager.removeView(view) }
         SurfaceRuntimeBridge.emit(id, "hidden")
