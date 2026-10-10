@@ -1807,6 +1807,13 @@ internal class ProtoFields(bytes: ByteArray) {
     fun varint(number: Int): Long? = fields
         .firstOrNull { it.number == number && it.wire == 0 }
         ?.varint
+
+    /** Repeated protobuf enum values may be unpacked or packed. */
+    fun allVarints(number: Int): List<Long> = fields
+        .asSequence()
+        .filter { it.number == number && it.wire == 0 }
+        .mapNotNull { it.varint }
+        .toList()
 }
 
 internal data class ShortXChipInteractionMapping(

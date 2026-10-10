@@ -443,6 +443,39 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals(ConfigValue.StringValue("hide_all"), actions[3].config["mode"])
     }
 
+
+    @Test fun `ShortX brightness byte level is preserved through YAuto percent executor`() {
+        listOf(0, 1, 40, 128, 254, 255).forEach { level ->
+            val feature = importAction("SetBrightness", message(varintField(1, level.toLong())))
+            assertEquals("android.display.brightness.set", feature.typeId)
+            val percent = (feature.config["percent"] as ConfigValue.NumberValue).value
+            assertEquals(level, kotlin.math.round(255.0 * percent / 100.0).toInt())
+            assertEquals(ConfigValue.StringValue("manual"), feature.config["mode"])
+        }
+        assertEquals("compat.source.action", importAction("SetBrightness", message(varintField(1, 256))).typeId)
+    }
+
+    @Test fun `ShortX system bars use only exactly representable subsets`() {
+        val hideStatus = importAction("ShowHideInsets", message(varintField(1, 1), varintField(2, 0)))
+        assertEquals("android.insets.immersive.set", hideStatus.typeId)
+        assertEquals(ConfigValue.StringValue("hide_status"), hideStatus.config["mode"])
+        val both = importAction("ShowHideInsets", message(varintField(1, 1), field(2, byteArrayOf(0, 1))))
+        assertEquals("android.insets.immersive.set", both.typeId)
+        assertEquals(ConfigValue.StringValue("hide_all"), both.config["mode"])
+        assertEquals("compat.source.action", importAction("ShowHideInsets", message(varintField(1, 0), varintField(2, 0))).typeId)
+        assertEquals("compat.source.action", importAction("ShowHideInsets", message(varintField(1, 1), varintField(2, 2))).typeId)
+    }
+
+    @Test fun `ShortX Quick Settings clicks import only explicit custom tile components and short click`() {
+        val component = "com.example.app/com.example.app.TileService"
+        val tile = message(field(1, component), field(2, "My Tile"))
+        val click = importAction("ClickTile", message(field(1, tile), varintField(2, 0)))
+        assertEquals("android.qs_tile.click", click.typeId)
+        assertEquals(ConfigValue.StringValue(component), click.config["component"])
+        assertEquals("compat.source.action", importAction("ClickTile", message(field(1, tile), varintField(2, 1))).typeId)
+        assertEquals("compat.source.action", importAction("ClickTile", message(field(1, message(field(1, "wifi"))))).typeId)
+    }
+
     private fun assertBoolean(source: String, target: String, key: String, value: Boolean) {
         val feature = importAction(source, message(varintField(1, if (value) 1 else 0)))
         assertEquals(target, feature.typeId)

@@ -66,7 +66,7 @@ internal object ShortXVerifiedBatchMappings {
 
     private fun insets(any: AnyStub, importerId: String, hide: Boolean, types: List<Int>): FeatureRef? {
         if (types.isEmpty() || types.distinct().size != types.size ||
-            types.any { it !in 0..1 }) return null
+            types.any { it !in 0..1 } || (!hide && types.toSet() != setOf(0, 1))) return null
         val mode = if (!hide) "show_all" else when (types.toSet()) {
             setOf(0, 1) -> "hide_all"
             setOf(0) -> "hide_status"
@@ -79,9 +79,52 @@ internal object ShortXVerifiedBatchMappings {
     private fun lock(any: AnyStub, importerId: String) =
         feature(any, importerId, "accessibility.global_action", mapOf(text("action", "lock_screen")))
 
+    private fun brightness(any: AnyStub, importerId: String, value: Int): FeatureRef? {
+        if (value !in 0..255) return null
+        // Native YAuto executor rounds 255 * percent / 100 to an integer.
+        // Passing the exact fraction round-trips all 256 ShortX brightness levels.
+        return feature(any, importerId, "android.display.brightness.set", mapOf(
+            text("mode", "manual"),
+            "percent" to ConfigValue.NumberValue(value.toDouble() * 100.0 / 255.0),
+        ))
+    }
+
+    private val componentName = Regex("[A-Za-z_][A-Za-z0-9_.]*/[A-Za-z_.$][A-Za-z0-9_.$]*")
+    private fun clickTile(any: AnyStub, importerId: String, target: String, longClick: Boolean): FeatureRef? {
+        if (longClick || !componentName.matches(target)) return null
+        return feature(any, importerId, "android.qs_tile.click", mapOf(text("component", target)))
+    }
+
+    private fun decodePackedInsets(bytes: ByteArray): List<Int>? =
+        if (bytes.size in 1..10 && bytes.all { it == 0.toByte() || it == 1.toByte() }) {
+            bytes.map { it.toInt() }
+        } else null
+
     /** Protobuf defaults are accepted only when the message has no unknown business fields. */
     fun binary(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         return when (sourceName(any)) {
+            "SetBrightness" -> if (fields.onlyBusinessFields(1)) {
+                val raw = fields.varint(1) ?: if (!fields.has(1)) 0L else return null
+                if (raw in 0L..255L) brightness(any, importerId, raw.toInt()) else null
+            } else null
+            "ClickTile" -> if (fields.onlyBusinessFields(1, 2)) {
+                val tile = fields.bytes(1)?.let { runCatching { ProtoFields(it) }.getOrNull() } ?: return null
+                if (!tile.onlyBusinessFields(1, 2)) return null
+                val spec = tile.string(1) ?: return null
+                val long = fields.varint(2) ?: if (!fields.has(2)) 0L else return null
+                if (long !in 0L..1L) null else clickTile(any, importerId, spec, long == 1L)
+            } else null
+            "ShowHideInsets" -> if (fields.onlyBusinessFields(1, 2)) {
+                val hide = fields.varint(1) ?: if (!fields.has(1)) 0L else return null
+                if (hide !in 0L..1L) return null
+                val direct = fields.allVarints(2)
+                val packed = fields.allBytes(2).flatMap { bytes ->
+                    decodePackedInsets(bytes) ?: return null
+                }
+                val types = direct + packed
+                if (types.any { it !in 0L..1L }) null
+                else insets(any, importerId, hide == 1L, types.map(Long::toInt))
+            } else null
             "LockDeviceNow" ->
                 if (fields.onlyBusinessFields()) lock(any, importerId) else null
             "ScrollViewTo" ->
@@ -134,6 +177,18 @@ internal object ShortXVerifiedBatchMappings {
             obj.keys.all { it in sourceMetadata || it in keys }
         fun field(name: String): Int? = (obj[name] as? JsonPrimitive)?.intOrNull
         return when (sourceName(any)) {
+            "SetBrightness" -> if (allowed("value")) {
+                val value = if ("value" in obj) field("value") else 0
+                value?.let { brightness(any, importerId, it) }
+            } else null
+            "ClickTile" -> if (allowed("tile", "isLongClick")) {
+                val tile = obj["tile"] as? JsonObject ?: return null
+                if (tile.keys.any { it !in setOf("tileSpec", "label") }) return null
+                val spec = (tile["tileSpec"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+                val long = (obj["isLongClick"] as? JsonPrimitive)?.booleanOrNull
+                    ?: if ("isLongClick" in obj) return null else false
+                clickTile(any, importerId, spec, long)
+            } else null
             "LockDeviceNow" -> if (allowed()) lock(any, importerId) else null
             "ScrollViewTo" ->
                 if (allowed("location")) {
