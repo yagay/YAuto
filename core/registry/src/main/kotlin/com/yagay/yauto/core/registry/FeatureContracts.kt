@@ -1,0 +1,173 @@
+package com.yagay.yauto.core.registry
+
+import com.yagay.yauto.core.capability.CapabilityClient
+import com.yagay.yauto.core.capability.CapabilityId
+import com.yagay.yauto.core.capability.preferBackend
+import com.yagay.yauto.core.logging.ExecutionTracer
+import com.yagay.yauto.core.model.ConfigMap
+import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.ExecutionId
+import com.yagay.yauto.core.model.FeatureRef
+import com.yagay.yauto.core.model.NodeId
+import com.yagay.yauto.core.model.RuntimeEvent
+import com.yagay.yauto.core.model.Stability
+import java.util.concurrent.ConcurrentHashMap
+
+@JvmInline value class FeatureId(val value: String)
+
+enum class FeatureKind { EVENT, STATE, CONDITION, ACTION }
+
+enum class FeatureCategory {
+    CORE, APP, DEVICE, NETWORK, DISPLAY, AUDIO, NOTIFICATION, FILE,
+    VARIABLE, FLOW, UI_AUTOMATION, SYSTEM, SCRIPT, ADVANCED, COMPATIBILITY,
+}
+
+sealed interface FieldSchema {
+    val key: String
+    val label: String
+    val required: Boolean
+    data class Text(override val key: String, override val label: String, override val required: Boolean = false, val multiline: Boolean = false) : FieldSchema
+    data class Number(override val key: String, override val label: String, override val required: Boolean = false, val min: Double? = null, val max: Double? = null) : FieldSchema
+    data class Toggle(override val key: String, override val label: String, override val required: Boolean = false) : FieldSchema
+    data class Duration(override val key: String, override val label: String, override val required: Boolean = false) : FieldSchema
+    data class AppPicker(override val key: String, override val label: String, override val required: Boolean = false) : FieldSchema
+    data class Variable(override val key: String, override val label: String, override val required: Boolean = false) : FieldSchema
+    data class Choice(override val key: String, override val label: String, override val required: Boolean = false, val options: List<String>) : FieldSchema
+}
+
+/** Stable machine requirements. Human-readable labels live in Android resources. */
+enum class AccessRequirement(val id: String) {
+    ROOT("root"),
+    SHIZUKU("shizuku"),
+    LSPOSED("lsposed"),
+    ZYGISK("zygisk"),
+    ACCESSIBILITY("accessibility"),
+    USAGE_STATS("usage_stats"),
+    NOTIFICATION_LISTENER("notification_listener"),
+    POST_NOTIFICATIONS("post_notifications"),
+    OVERLAY("overlay"),
+    WRITE_SETTINGS("write_settings"),
+    CAMERA("camera"),
+    LOCATION("location"),
+    BLUETOOTH_CONNECT("bluetooth_connect"),
+    DND_POLICY("dnd_policy"),
+    DEVICE_ADMIN("device_admin"),
+    CALENDAR("calendar"),
+    CONTACTS("contacts"),
+    CALL_LOG("call_log"),
+    SMS("sms"),
+    PHONE("phone"),
+    RECORD_AUDIO("record_audio"),
+    ACTIVITY_RECOGNITION("activity_recognition"),
+}
+
+/** Language-neutral implementation metadata. UI copy is resolved by backendId in the Android layer. */
+data class FeatureImplementationOption(
+    val backendId: String?,
+    val requirements: Set<AccessRequirement> = emptySet(),
+    val restartRequired: Boolean = false,
+)
+
+data class FeatureDescriptor(
+    val id: FeatureId,
+    val kind: FeatureKind,
+    val title: String,
+    val description: String,
+    val category: FeatureCategory,
+    val schemaVersion: Int = 1,
+    val minSdk: Int = 31,
+    val capabilities: Set<CapabilityId> = emptySet(),
+    val fields: List<FieldSchema> = emptyList(),
+    val stability: Stability = Stability.STABLE,
+    val keywords: Set<String> = emptySet(),
+    val ownerPackId: String = "core",
+    val accessRequirements: Set<AccessRequirement> = emptySet(),
+    val implementationOptions: List<FeatureImplementationOption> = emptyList(),
+    /** Historical IDs accepted when restoring older workspaces. New code must use [id]. */
+    val aliases: Set<String> = emptySet(),
+    /** Presentation and default-value metadata keyed by [FieldSchema.key]. */
+    val fieldBehaviors: Map<String, FieldBehavior> = emptyMap(),
+    /** User-facing semantic domain; kept near the end to preserve positional constructor compatibility. */
+    val domain: FeatureDomain = inferFeatureDomain(id.value, category),
+    /**
+     * Declarative config defaults applied only when a historical alias is restored.
+     * Existing config wins over these values. This is appended to preserve all older positional
+     * constructor call sites.
+     */
+    val aliasConfigDefaults: Map<String, ConfigMap> = emptyMap(),
+    /**
+     * Optional historical config-key migrations keyed by alias ID.
+     * A direct canonical key already present in saved config wins over its renamed legacy key.
+     */
+    val aliasConfigKeyRenames: Map<String, Map<String, String>> = emptyMap(),
+    /**
+     * User-facing MacroDroid-style picker category. Kept separate from [category]/[domain] so
+     * execution buckets and compatibility metadata are not coupled to navigation.
+     */
+    val pickerCategory: FeaturePickerCategory =
+        inferFeaturePickerCategory(id.value, kind, category),
+)
+
+sealed interface FeatureResolution {
+    val requestedId: String
+
+    data class Available(
+        override val requestedId: String,
+        val descriptor: FeatureDescriptor,
+    ) : FeatureResolution
+
+    data class Aliased(
+        override val requestedId: String,
+        val canonicalId: String,
+        val descriptor: FeatureDescriptor,
+    ) : FeatureResolution
+
+    data class Missing(
+        override val requestedId: String,
+    ) : FeatureResolution
+
+    data class Incompatible(
+        override val requestedId: String,
+        val expectedKind: FeatureKind,
+        val actualKind: FeatureKind,
+        val descriptor: FeatureDescriptor,
+    ) : FeatureResolution
+}
+
+interface VariableAccess {
+    fun get(name: String): ConfigValue?
+    fun set(name: String, value: ConfigValue)
+    fun snapshot(): Map<String, ConfigValue>
+}
+
+data class FeatureExecutionContext(
+    val executionId: ExecutionId,
+    val nodeId: NodeId?,
+    val variables: VariableAccess,
+    val capabilities: CapabilityClient,
+    val tracer: ExecutionTracer,
+)
+
+data class EventMatchContext(
+    val executionId: ExecutionId,
+    val event: RuntimeEvent,
+    val variables: VariableAccess,
+    val capabilities: CapabilityClient,
+    val tracer: ExecutionTracer,
+)
+
+data class ActionExecutionResult(
+    val success: Boolean,
+    val value: ConfigValue = ConfigValue.NullValue,
+    val message: String? = null,
+)
+
+fun interface ActionExecutor { suspend fun execute(feature: FeatureRef, context: FeatureExecutionContext): ActionExecutionResult }
+fun interface ConditionEvaluator { suspend fun evaluate(feature: FeatureRef, context: FeatureExecutionContext): Boolean }
+fun interface EventMatcher { suspend fun matches(feature: FeatureRef, context: EventMatchContext): Boolean }
+
+interface FeaturePack {
+    val id: String
+    fun install(registry: FeatureRegistry)
+}
+
