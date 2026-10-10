@@ -343,4 +343,8 @@
     <string name="feature_test_copied">Current configuration copied.</string>
     <string name="feature_test_reset">Reset</string>
     <string name="feature_test_reset_warning">Reset all current parameters to their defaults? This will not change the saved automation unless you save.</string>
+    <string name="feature_test_duplicate">Duplicate</string>
+    <string name="feature_test_unsaved_warning">This check uses the current unsaved feature settings. It does not modify the saved automation.</string>
+    <string name="feature_test_automation">Test saved automation</string>
+    <string name="feature_test_saved_warning">This will execute the currently SAVED automation actions now (not unsaved edits), without simulating its triggers. The actions may have real effects on the device. Continue?</string>
 </resources>
