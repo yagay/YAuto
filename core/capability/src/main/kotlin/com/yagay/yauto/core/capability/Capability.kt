@@ -77,6 +77,12 @@ data class CapabilityAttempt(
     val message: String? = null,
 )
 
+/** Machine-readable backend failure categories; localized copy stays in the message field. */
+@Serializable
+enum class CapabilityFailureKind {
+    UNSUPPORTED, BACKEND_UNAVAILABLE, EXECUTION_FAILED,
+}
+
 @Serializable
 data class CapabilityResult(
     val success: Boolean,
@@ -84,6 +90,7 @@ data class CapabilityResult(
     val value: ConfigValue = ConfigValue.NullValue,
     val message: String? = null,
     val attempts: List<CapabilityAttempt> = emptyList(),
+    val failureKind: CapabilityFailureKind? = null,
 )
 
 fun interface CapabilityClient {
@@ -155,7 +162,8 @@ class CapabilityBroker(
             val message = request.preferredBackendId?.let {
                 userText("capability.selected_backend_unavailable", it, request.capability.value)
             } ?: userText("capability.no_backend_available", request.capability.value)
-            return CapabilityResult(false, message = message)
+            return CapabilityResult(false, message = message, failureKind =
+                if (supported.isEmpty()) CapabilityFailureKind.UNSUPPORTED else CapabilityFailureKind.BACKEND_UNAVAILABLE)
         }
 
         val attempts = mutableListOf<CapabilityAttempt>()
@@ -163,7 +171,8 @@ class CapabilityBroker(
             val result = try { backend.execute(request, environment) } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                CapabilityResult(false, message = userText("capability.backend_error", error.message ?: error::class.simpleName.orEmpty()))
+                CapabilityResult(false, message = userText("capability.backend_error", error.message ?: error::class.simpleName.orEmpty()),
+                    failureKind = CapabilityFailureKind.EXECUTION_FAILED)
             }
             attempts += CapabilityAttempt(backend.id, result.success, result.message)
             if (result.success || !request.allowFallback || request.preferredBackendId != null) {
@@ -174,6 +183,7 @@ class CapabilityBroker(
             success = false,
             message = userText("capability.all_backends_failed", request.operationId),
             attempts = attempts,
+            failureKind = CapabilityFailureKind.EXECUTION_FAILED,
         )
     }
 }
