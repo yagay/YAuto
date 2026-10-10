@@ -33,4 +33,25 @@ class RuntimeConflictCoordinatorTest {
         gate.complete(Unit)
         waiting.await()
     } }
+    @Test fun cancelPreviousWaitsForOldExecutionCleanup() { runBlocking {
+        val registry = ExecutionJobRegistry()
+        val coordinator = RuntimeConflictCoordinator(registry)
+        val cleaned = CompletableDeferred<Unit>()
+        val first = async {
+            coordinator.execute("same", ConflictPolicy.PARALLEL) {
+                val running = kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job]!!
+                registry.track("same", running)
+                try { kotlinx.coroutines.awaitCancellation() }
+                finally { registry.untrack("same", running); cleaned.complete(Unit) }
+            }
+        }
+        repeat(100) { yield() }
+        val replacement = coordinator.execute("same", ConflictPolicy.CANCEL_PREVIOUS) {
+            assertTrue(cleaned.isCompleted)
+            "replacement"
+        }
+        assertEquals("replacement", replacement)
+        first.cancel()
+    } }
+
 }

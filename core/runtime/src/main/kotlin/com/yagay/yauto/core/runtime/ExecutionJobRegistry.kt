@@ -1,6 +1,7 @@
 package com.yagay.yauto.core.runtime
 
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
 
 /** One owner for active execution tracking; removes empty buckets after completion. */
@@ -26,6 +27,17 @@ internal class ExecutionJobRegistry {
         val active = jobs[key]?.toList().orEmpty().filter { it.isActive }
         active.forEach(Job::cancel)
         return active.isNotEmpty()
+    }
+
+    /** Cooperative cancellation is awaited so a replacement cannot overlap a running job. */
+    suspend fun cancelAndAwait(key: String, timeoutMs: Long = 5_000L): Boolean {
+        val previous = jobs[key]?.toList().orEmpty().filter { it.isActive }
+        previous.forEach(Job::cancel)
+        val finished = withTimeoutOrNull(timeoutMs) {
+            previous.forEach { it.join() }
+            true
+        } ?: false
+        return finished
     }
 
     fun cancelAll() {

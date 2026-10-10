@@ -14,6 +14,11 @@ internal class RuntimeEventState {
 
     fun isActive(id: String): Boolean = active[id] ?: false
     fun setActive(id: String, enabled: Boolean) { active[id] = enabled }
+    fun remove(id: String) {
+        active.remove(id)
+        locks.remove(id)
+    }
+
     fun reset(id: String? = null) {
         if (id == null) active.clear() else active.remove(id)
     }

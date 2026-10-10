@@ -17,9 +17,8 @@ internal class RuntimeConflictCoordinator(private val jobs: ExecutionJobRegistry
                 val lock = locks.computeIfAbsent(key) { Mutex() }
                 if (!lock.tryLock()) null else try { block() } finally { lock.unlock() }
             }
-            ConflictPolicy.CANCEL_PREVIOUS -> {
-                jobs.cancel(key)
-                block()
+            ConflictPolicy.CANCEL_PREVIOUS -> locks.computeIfAbsent(key) { Mutex() }.withLock {
+                if (!jobs.cancelAndAwait(key)) null else block()
             }
         }
 }
