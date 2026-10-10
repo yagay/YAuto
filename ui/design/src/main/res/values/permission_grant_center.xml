@@ -1,0 +1,33 @@
+<resources>
+    <string name="permission_background_location_title">Background location</string>
+    <string name="permission_background_location_detail">Allow location access at all times only if background geofencing is needed. Android requires foreground location access first.</string>
+    <string name="permission_background_location_settings">On Android 11 and above, choose Allow all the time from the app location permission settings.</string>
+    <string name="permission_background_location_first">Grant foreground location permission first, then return to background location.</string>
+    <string name="permission_nearby_wifi_title">Nearby Wi-Fi devices</string>
+    <string name="permission_nearby_wifi_detail">Required for supported nearby Wi-Fi discovery and connections on Android 13+.</string>
+    <string name="permission_microphone_title">Microphone</string>
+    <string name="permission_microphone_detail">Required for voice recording and speech actions.</string>
+    <string name="permission_contacts_title">Contacts</string>
+    <string name="permission_contacts_detail">Access contact lists only for configured contact-related tasks.</string>
+    <string name="permission_calendar_title">Calendar</string>
+    <string name="permission_calendar_detail">Read and add calendar entries for calendar automations.</string>
+    <string name="permission_phone_title">Phone and calls</string>
+    <string name="permission_phone_detail">Phone status and call actions require different phone permissions. Android may restrict some operations.</string>
+    <string name="permission_sms_title">Text messages (SMS)</string>
+    <string name="permission_sms_detail">Read, receive or send SMS. Some operations require default SMS app status or other Android restrictions.</string>
+    <string name="permission_call_log_title">Call history</string>
+    <string name="permission_call_log_detail">Allows supported actions to read call history; device policy may restrict this permission.</string>
+    <string name="permission_media_title">Photos and videos</string>
+    <string name="permission_media_detail">Android 14+ can grant access to selected photos instead of the whole library.</string>
+    <string name="permission_activity_title">Physical activity</string>
+    <string name="permission_activity_detail">Needed for step count and physical activity detection.</string>
+    <string name="permission_device_admin_title">Device administrator</string>
+    <string name="permission_device_admin_detail">Required for supported screen locking and device-administration actions; activate manually in system settings.</string>
+    <string name="permission_center_help">Grant permissions individually only as required by your automations. System settings may be necessary for special access; on return the status updates automatically.</string>
+    <string name="permission_accessibility_restricted_hint">If Accessibility cannot be enabled for a sideloaded APK, open Android App info, choose the menu and Allow restricted settings, then return to Accessibility. This option depends on the device.</string>
+    <string name="permission_open_app_settings">Open app settings</string>
+    <string name="permission_request_now">Request permission / Open system settings</string>
+    <string name="permission_request_denied">Authorization was not granted. Try App settings if Android no longer displays the prompt.</string>
+    <string name="permission_settings_fallback">The direct permission screen was unavailable. Opened app settings instead.</string>
+    <string name="permission_settings_unavailable">Unable to open system settings. Check app restrictions or device policy.</string>
+</resources>

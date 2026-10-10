@@ -1,0 +1,33 @@
+<resources>
+    <string name="permission_background_location_title">后台定位</string>
+    <string name="permission_background_location_detail">仅在需要后台地理围栏时允许始终访问位置；Android 要求先授予前台定位权限。</string>
+    <string name="permission_background_location_settings">Android 11 及以上版本请在应用定位权限设置中选择「始终允许」。</string>
+    <string name="permission_background_location_first">请先授予前台定位权限，再设置后台定位。</string>
+    <string name="permission_nearby_wifi_title">附近 Wi-Fi 设备</string>
+    <string name="permission_nearby_wifi_detail">Android 13 及以上版本搜索或连接附近 Wi-Fi 设备时可能需要此权限。</string>
+    <string name="permission_microphone_title">麦克风</string>
+    <string name="permission_microphone_detail">录音和语音功能需要使用麦克风。</string>
+    <string name="permission_contacts_title">联系人</string>
+    <string name="permission_contacts_detail">仅在相关联系人任务需要时读取通讯录。</string>
+    <string name="permission_calendar_title">日历</string>
+    <string name="permission_calendar_detail">用于日历事件读取及写入。</string>
+    <string name="permission_phone_title">电话与通话</string>
+    <string name="permission_phone_detail">电话状态和拨号功能分别需要对应权限；部分操作可能受系统限制。</string>
+    <string name="permission_sms_title">短信</string>
+    <string name="permission_sms_detail">读取、接收和发送短信；部分操作还可能受默认短信应用要求等系统限制。</string>
+    <string name="permission_call_log_title">通话记录</string>
+    <string name="permission_call_log_detail">允许支持的功能读取通话历史；设备政策可能限制授权。</string>
+    <string name="permission_media_title">照片与视频</string>
+    <string name="permission_media_detail">Android 14 及以上可仅授予选定照片访问权限，无须开放全部媒体。</string>
+    <string name="permission_activity_title">身体活动识别</string>
+    <string name="permission_activity_detail">计步与身体活动识别需要此权限。</string>
+    <string name="permission_device_admin_title">设备管理员</string>
+    <string name="permission_device_admin_detail">部分锁屏和设备管理功能需要在系统设置中手动启用设备管理员。</string>
+    <string name="permission_center_help">只需为实际使用的自动化授权。特殊权限需要在系统设置中开启，返回后授权状态会自动刷新。</string>
+    <string name="permission_accessibility_restricted_hint">如果侧载 APK 的无障碍无法开启，可尝试进入系统「应用信息」菜单，允许受限设置后再开启无障碍；具体入口取决于系统。</string>
+    <string name="permission_open_app_settings">打开应用设置</string>
+    <string name="permission_request_now">申请授权／打开系统设置</string>
+    <string name="permission_request_denied">权限尚未全部授予。如果系统不再弹出授权窗口，可从应用设置中手动开启。</string>
+    <string name="permission_settings_fallback">无法打开对应授权页面，已改为打开应用设置。</string>
+    <string name="permission_settings_unavailable">无法打开系统设置，请检查应用限制或设备管理策略。</string>
+</resources>
