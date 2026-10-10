@@ -150,4 +150,23 @@ class FeatureDefinitionTest {
         assertTrue(issues.any { it.code == "alias_matches_feature_id" })
     }
 
+    @Test
+    fun `generic editors share descriptor field visibility`() {
+        val definition = descriptor("test.visibility").copy(
+            fields = listOf(
+                FieldSchema.Toggle("enabled", "Enabled"),
+                FieldSchema.Text("detail", "Detail"),
+                FieldSchema.Text("advanced", "Advanced"),
+            ),
+            fieldBehaviors = mapOf(
+                "detail" to FieldBehavior(visibleWhen = FieldRule.Truthy("enabled")),
+                "advanced" to FieldBehavior(advanced = true),
+            ),
+        )
+        val hidden = definition.visibleEditorFields(mapOf("enabled" to ConfigValue.BooleanValue(false)), false)
+        assertEquals(listOf("enabled"), hidden.map { it.key })
+        val shown = definition.visibleEditorFields(mapOf("enabled" to ConfigValue.BooleanValue(true)), true)
+        assertEquals(listOf("enabled", "detail", "advanced"), shown.map { it.key })
+    }
+
 }
