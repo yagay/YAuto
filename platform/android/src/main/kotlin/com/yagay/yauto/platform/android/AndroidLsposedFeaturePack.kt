@@ -15,6 +15,7 @@ class AndroidLsposedFeaturePack : FeaturePack {
 
     override fun install(registry: FeatureRegistry) {
         registerMethodHook(registry)
+        registerDisableSession(registry)
         registerMethodCalled(registry)
         registerSystemOperation(registry)
         registerSensorsOff(registry)
@@ -115,6 +116,49 @@ class AndroidLsposedFeaturePack : FeaturePack {
             )
             feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
             ActionExecutionResult(true, output)
+        }
+    }
+
+    private fun registerDisableSession(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.lsposed.hook.disable_session"),
+                FeatureKind.ACTION,
+                "Disable LSPosed hook session",
+                "Stop observing or replacing methods in a running scoped app without rebooting; the physical hook remains until the app process restarts",
+                FeatureCategory.ADVANCED,
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "Target app / package", true),
+                    FieldSchema.Text("sessionId", "Session ID", true),
+                ),
+                fieldBehaviors = mapOf(
+                    "package" to FieldBehavior(supportsVariables = true),
+                    "sessionId" to FieldBehavior(supportsVariables = true),
+                ),
+                capabilities = setOf(CapabilityIds.LSPOSED_HOOK),
+                accessRequirements = setOf(AccessRequirement.LSPOSED),
+                keywords = setOf("lsposed", "hook", "disable", "stop", "session", "ShortX"),
+                ownerPackId = id,
+            )
+        ) { item, ctx ->
+            val pkg = item.config.string("package").resolveVariables(ctx.variables).trim()
+            val session = item.config.string("sessionId").resolveVariables(ctx.variables).trim()
+            if (!PACKAGE_NAME.matches(pkg) || !Regex("[A-Za-z0-9_.:-]{1,96}").matches(session)) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.lsposed_hook_input_invalid"))
+            }
+            val result = ctx.capabilities.execute(
+                CapabilityRequest(
+                    capability = CapabilityIds.LSPOSED_HOOK,
+                    operationId = "lsposed.hook.disable_session",
+                    payload = mapOf(
+                        "package" to ConfigValue.StringValue(pkg),
+                        "sessionId" to ConfigValue.StringValue(session),
+                    ),
+                    preferredBackendId = "lsposed",
+                    allowFallback = false,
+                )
+            )
+            ActionExecutionResult(result.success, result.value, result.message)
         }
     }
 

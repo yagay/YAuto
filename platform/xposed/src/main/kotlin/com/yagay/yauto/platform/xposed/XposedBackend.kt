@@ -87,6 +87,7 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                 request.operationId in setOf(
                     SystemBridgeProtocol.HOOK_INSTALL_SESSION,
                     SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_SET,
+                    SystemBridgeProtocol.HOOK_DISABLE_SESSION,
                 ))
 
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
@@ -106,6 +107,9 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
             request.capability == CapabilityIds.LSPOSED_HOOK && result != null -> ConfigValue.ObjectValue(
                 mapOf(
                     "hookedCount" to ConfigValue.NumberValue(result.getInt("hookedCount", 0).toDouble()),
+                    "newHookedCount" to ConfigValue.NumberValue(result.getInt("newHookedCount", 0).toDouble()),
+                    "failedHookCount" to ConfigValue.NumberValue(result.getInt("failedHookCount", 0).toDouble()),
+                    "disabled" to ConfigValue.BooleanValue(result.getBoolean("disabled", false)),
                     "targetPackage" to ConfigValue.StringValue(request.payload.string("package")),
                     "sessionId" to ConfigValue.StringValue(request.payload.string("sessionId")),
                 )
@@ -167,7 +171,23 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
             putBoolean("success", false)
             putString("error", "Invalid target package")
         }
-        val sessionId = request.payload.string("sessionId")
+        val sessionId = request.payload.string("sessionId").trim()
+        if (request.operationId == SystemBridgeProtocol.HOOK_DISABLE_SESSION) {
+            if (!sessionId.matches(Regex("[A-Za-z0-9_.:-]{1,96}"))) return Bundle().apply {
+                putInt("version", protocolVersion)
+                putBoolean("success", false)
+                putString("error", "Invalid session ID")
+            }
+            val response = orderedRequest(
+                Intent(SystemBridgeProtocol.HOOK_ACTION)
+                    .setPackage(targetPackage)
+                    .putExtra("version", protocolVersion)
+                    .putExtra("operation", SystemBridgeProtocol.HOOK_DISABLE_SESSION)
+                    .putExtra("sessionId", sessionId)
+            )
+            if (response?.getBoolean("success") == true) XposedHookRuntimeBridge.unregisterSession(sessionId)
+            return response
+        }
         val eventToken = request.payload.string("eventToken")
         XposedHookRuntimeBridge.registerSession(sessionId, eventToken)
         val intent = Intent(SystemBridgeProtocol.HOOK_ACTION)

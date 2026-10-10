@@ -1,0 +1,20 @@
+# YAuto privileged implementation audit — 2026-10-10
+
+Target: `refactor/macrodroid-on-1003-20261008`.
+
+## Runtime inventory
+- Root: `platform/root` owns the bounded `su -c` shell backend; privileged feature packs live in `feature/standard/privileged` and `platform/android/AndroidPrivileged*FeaturePack`.
+- LSPosed API 102: `platform/xposed` owns system_server, SystemUI, package-process observers, event bridges, and dynamic method hooks. Android pickers and capability executors live in `platform/android/AndroidLsposed*FeaturePack` and `AndroidShortX*FeaturePack`.
+- ShortX observer catalog has 37 system_server specs. Most describe *observation*, not behavioral parity; ROM class/method names must be verified on the device.
+- Privileged methods require the declared LSPosed scopes. Hook success in CI does not imply installation on every OEM ROM. Root/shizuku fallback only applies to actions whose capability/operation explicitly supports it.
+
+## Fixed in this batch
+- Added `android.lsposed.hook.disable_session` to stop a previously installed method interception without restarting the app process. A disabled replacement must run the original method. The physical hook remains installed until process restart.
+- Installation now validates replacement return types before registering, isolates failures per overload, records successful vs failed overload counts, and cannot report success when no method is active. Session/token collisions are refused.
+- Added JVM regression tests for active vs disabled sessions and token ownership.
+
+## Still not equivalent to every ShortX/Tasker/MacroDroid privileged function
+- Hooks catalogued without behavior replacement (e.g. third-party QS customization, `PROCESS_TEXT` injection, widget/service rewrites) remain intentionally observational/native alternatives. Global unsafe mutations are not enabled by default.
+- ShortX plugins and undocumented Any/ParamsData are not implemented.
+- Dynamic method Hook installation applies to *running* scoped app processes; boot, package scope changes, and OEM SystemUI often require process restart and device-specific testing.
+- Root, LSPosed, Shizuku differ in UID, permissions and Android hidden-API behavior. Treat feature-picker presence, successful CI compilation and observer registration as distinct states.

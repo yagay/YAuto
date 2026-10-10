@@ -35,6 +35,7 @@ class YAutoXposedModule : XposedModule() {
     private val subscribedSystemEvents = AtomicReference<Set<String>>(emptySet())
     private val enabledShortXBehaviors = AtomicReference<Set<String>>(emptySet())
     private val enabledPackageBehaviors = AtomicReference<Set<String>>(emptySet())
+    private val methodSessions = MethodHookSessionRegistry()
     private val yAutoUid = AtomicLong(-1L)
     private val systemUiChipRegistered = AtomicBoolean(false)
     @Volatile private var systemUiChipController: ShortXStatusChipController? = null
@@ -1663,6 +1664,13 @@ class YAutoXposedModule : XposedModule() {
                         response.putBoolean("success", true)
                         response.putString("behavior", behavior)
                         response.putBoolean("enabled", enabled)
+                    } else if (operation == SystemBridgeProtocol.HOOK_DISABLE_SESSION) {
+                        val sessionId = intent.getStringExtra("sessionId").orEmpty().trim()
+                        require(sessionId.matches(Regex("[A-Za-z0-9_.:-]{1,96}"))) { "Invalid session ID" }
+                        val disabled = methodSessions.disable(sessionId)
+                        response.putBoolean("success", disabled)
+                        response.putBoolean("disabled", disabled)
+                        if (!disabled) response.putString("error", "Session is not active in this process")
                     } else {
                     require(operation == SystemBridgeProtocol.HOOK_INSTALL_SESSION) { "Unsupported hook operation" }
                     val sessionId = intent.getStringExtra("sessionId").orEmpty().trim()
@@ -1695,18 +1703,44 @@ class YAutoXposedModule : XposedModule() {
                     }
                     require(methods.isNotEmpty()) { "No matching method" }
 
+                    require(methodSessions.canActivate(sessionId, eventToken)) {
+                        "Session ID is already active with a different token"
+                    }
+                    val alreadyActive = methodSessions.isActive(sessionId, eventToken)
                     var hookedCount = 0
+                    var newlyHooked = 0
+                    val failures = mutableListOf<String>()
                     methods.forEach { method ->
                         val key = "$receiverKey|$sessionId|${method.toGenericString()}"
-                        if (!installedHooks.add(key)) return@forEach
-                        installMethodHook(
-                            context, packageName, processName, className, method,
-                            sessionId, eventToken, lifecycle, mode, replacementType, replacementValue,
-                        )
-                        hookedCount++
+                        if (!installedHooks.add(key)) {
+                            if (alreadyActive) hookedCount++
+                            else failures += "${method.name}: inactive hook cannot be reattached without process restart"
+                            return@forEach
+                        }
+                        try {
+                            // Check type compatibility before installing the interceptor, not when
+                            // the target application first executes this method.
+                            if (mode == "replace") parseReplacement(method.returnType, replacementType, replacementValue)
+                            installMethodHook(
+                                context, packageName, processName, className, method,
+                                sessionId, eventToken, lifecycle, mode, replacementType, replacementValue,
+                            )
+                            hookedCount++
+                            newlyHooked++
+                        } catch (error: Exception) {
+                            installedHooks.remove(key)
+                            failures += "${method.name}: ${error.message.orEmpty().take(120)}"
+                            log(Log.WARN, "YAuto", "Method hook unavailable: $key", error)
+                        }
                     }
-                    response.putBoolean("success", true)
+                    if (hookedCount > 0) methodSessions.activate(sessionId, eventToken)
+                    response.putBoolean("success", hookedCount > 0)
                     response.putInt("hookedCount", hookedCount)
+                    response.putInt("newHookedCount", newlyHooked)
+                    response.putInt("failedHookCount", failures.size)
+                    if (failures.isNotEmpty()) response.putString("warning", failures.take(3).joinToString("; "))
+                    if (hookedCount == 0) response.putString("error",
+                        failures.take(2).joinToString("; ").ifBlank { "No new or active hook was installed" })
                     }
                 } catch (error: Exception) {
                     response.putBoolean("success", false)
@@ -1791,7 +1825,9 @@ class YAutoXposedModule : XposedModule() {
     ) {
         method.isAccessible = true
         hook(method).intercept { chain ->
-            if (mode == "replace") {
+            if (!methodSessions.isActive(sessionId, eventToken)) {
+                chain.proceed()
+            } else if (mode == "replace") {
                 emitMethodCalled(context, sessionId, eventToken, packageName, processName, chain.thisObject?.javaClass?.name ?: className, method.name, "before")
                 parseReplacement(method.returnType, replacementType, replacementValue)
             } else if (lifecycle == "after") {
