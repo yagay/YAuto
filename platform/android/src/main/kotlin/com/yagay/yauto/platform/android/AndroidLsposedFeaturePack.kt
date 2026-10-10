@@ -32,7 +32,8 @@ class AndroidLsposedFeaturePack : FeaturePack {
                 fields = listOf(
                     FieldSchema.AppPicker("package", "Target app / package", true),
                     FieldSchema.Text("className", "Class name", true),
-                    FieldSchema.Text("methodName", "Method name", true),
+                    FieldSchema.Choice("memberKind", "Hook target", options = listOf("method", "constructor")),
+                    FieldSchema.Text("methodName", "Method name"),
                     FieldSchema.Number("parameterCount", "Parameter count (-1 = any overload)", min = -1.0, max = 64.0),
                     FieldSchema.Text("parameterTypes", "Parameter types (comma-separated Java names)"),
                     FieldSchema.Text("returnType", "Return type (Java name)"),
@@ -46,7 +47,11 @@ class AndroidLsposedFeaturePack : FeaturePack {
                 fieldBehaviors = mapOf(
                     "package" to FieldBehavior(supportsVariables = true),
                     "className" to FieldBehavior(supportsVariables = true),
-                    "methodName" to FieldBehavior(supportsVariables = true),
+                    "memberKind" to FieldBehavior(defaultValue = ConfigValue.StringValue("method")),
+                    "methodName" to FieldBehavior(
+                        supportsVariables = true,
+                        visibleWhen = FieldRule.Equals("memberKind", ConfigValue.StringValue("method")),
+                    ),
                     "replacementValue" to FieldBehavior(
                         supportsVariables = true,
                         visibleWhen = FieldRule.Equals("mode", ConfigValue.StringValue("replace")),
@@ -64,6 +69,7 @@ class AndroidLsposedFeaturePack : FeaturePack {
             val pkg = feature.config.string("package").resolveVariables(ctx.variables).trim()
             val className = feature.config.string("className").resolveVariables(ctx.variables).trim()
             val methodName = feature.config.string("methodName").resolveVariables(ctx.variables).trim()
+            val memberKind = feature.config.string("memberKind", "method")
             val parameterCount = (feature.config["parameterCount"].numberOrNull() ?: -1.0).toInt()
             val parameterTypes = feature.config.string("parameterTypes").resolveVariables(ctx.variables).trim()
             val returnType = feature.config.string("returnType").resolveVariables(ctx.variables).trim()
@@ -73,7 +79,10 @@ class AndroidLsposedFeaturePack : FeaturePack {
             val replacementValue = feature.config.string("replacementValue").resolveVariables(ctx.variables)
             val requestedSession = feature.config.string("sessionId").resolveVariables(ctx.variables).trim()
             val sessionId = requestedSession.ifBlank { "hook-" + UUID.randomUUID().toString().replace("-", "") }
-            if (!PACKAGE_NAME.matches(pkg) || !CLASS_NAME.matches(className) || !METHOD_NAME.matches(methodName) ||
+            if (!PACKAGE_NAME.matches(pkg) || !CLASS_NAME.matches(className) ||
+                memberKind !in setOf("method", "constructor") ||
+                (memberKind == "method" && !METHOD_NAME.matches(methodName)) ||
+                (memberKind == "constructor" && mode != "observe") ||
                 parameterCount !in -1..64 || mode !in setOf("observe", "replace")
             ) {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.lsposed_hook_input_invalid"))
@@ -86,7 +95,8 @@ class AndroidLsposedFeaturePack : FeaturePack {
                     payload = mapOf(
                         "package" to ConfigValue.StringValue(pkg),
                         "className" to ConfigValue.StringValue(className),
-                        "methodName" to ConfigValue.StringValue(methodName),
+                        "memberKind" to ConfigValue.StringValue(memberKind),
+                        "methodName" to ConfigValue.StringValue(if (memberKind == "constructor") "<init>" else methodName),
                         "parameterCount" to ConfigValue.NumberValue(parameterCount.toDouble()),
                         "parameterTypes" to ConfigValue.StringValue(parameterTypes),
                         "returnType" to ConfigValue.StringValue(returnType),
@@ -109,7 +119,8 @@ class AndroidLsposedFeaturePack : FeaturePack {
                     "sessionId" to ConfigValue.StringValue(sessionId),
                     "package" to ConfigValue.StringValue(pkg),
                     "className" to ConfigValue.StringValue(className),
-                    "methodName" to ConfigValue.StringValue(methodName),
+                    "methodName" to ConfigValue.StringValue(if (memberKind == "constructor") "<init>" else methodName),
+                    "memberKind" to ConfigValue.StringValue(memberKind),
                     "hookedCount" to ConfigValue.NumberValue(hookedCount),
                     "mode" to ConfigValue.StringValue(mode),
                 )

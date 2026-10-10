@@ -1677,6 +1677,7 @@ class YAutoXposedModule : XposedModule() {
                     val eventToken = intent.getStringExtra("eventToken").orEmpty()
                     val className = intent.getStringExtra("className").orEmpty().trim()
                     val methodName = intent.getStringExtra("methodName").orEmpty().trim()
+                    val memberKind = intent.getStringExtra("memberKind").orEmpty().ifBlank { "method" }
                     val parameterCount = intent.getIntExtra("parameterCount", -1)
                     val parameterTypes = intent.getStringExtra("parameterTypes").orEmpty().trim()
                     val returnType = intent.getStringExtra("returnType").orEmpty().trim()
@@ -1688,20 +1689,30 @@ class YAutoXposedModule : XposedModule() {
                     require(sessionId.matches(Regex("[A-Za-z0-9_.:-]{1,96}"))) { "Invalid session ID" }
                     require(eventToken.length in 16..128) { "Invalid event token" }
                     require(className.matches(CLASS_NAME)) { "Invalid class name" }
-                    require(methodName.matches(METHOD_NAME)) { "Invalid method name" }
+                    require(memberKind in setOf("method", "constructor")) { "Invalid hook target" }
+                    require(memberKind != "method" || methodName.matches(METHOD_NAME)) { "Invalid method name" }
+                    require(memberKind != "constructor" || mode == "observe") {
+                        "Constructor hooks only support observation, not replacement"
+                    }
                     require(parameterCount in -1..64) { "Invalid parameter count" }
                     require(lifecycle in setOf("before", "after")) { "Invalid hook lifecycle" }
                     require(mode in setOf("observe", "replace")) { "Invalid hook mode" }
 
                     val targetClass = classLoader.loadClass(className)
                     val wantedParams = parameterTypes.split(',').map { it.trim() }.filter { it.isNotBlank() }
-                    val methods = targetClass.declaredMethods.filter { method ->
-                        method.name == methodName &&
-                            (parameterCount < 0 || method.parameterCount == parameterCount) &&
-                            (wantedParams.isEmpty() || method.parameterTypes.map { it.name } == wantedParams) &&
-                            (returnType.isBlank() || method.returnType.name == returnType)
+                    val members: List<java.lang.reflect.Executable> = if (memberKind == "constructor") {
+                        targetClass.declaredConstructors.toList()
+                    } else {
+                        targetClass.declaredMethods.toList()
                     }
-                    require(methods.isNotEmpty()) { "No matching method" }
+                    val matchingMembers = members.filter { member ->
+                        (memberKind == "constructor" || member.name == methodName) &&
+                            (parameterCount < 0 || member.parameterCount == parameterCount) &&
+                            (wantedParams.isEmpty() || member.parameterTypes.map { it.name } == wantedParams) &&
+                            (memberKind == "constructor" || returnType.isBlank() ||
+                                (member as Method).returnType.name == returnType)
+                    }
+                    require(matchingMembers.isNotEmpty()) { "No matching Hook target" }
 
                     require(methodSessions.canActivate(sessionId, eventToken)) {
                         "Session ID is already active with a different token"
@@ -1710,27 +1721,34 @@ class YAutoXposedModule : XposedModule() {
                     var hookedCount = 0
                     var newlyHooked = 0
                     val failures = mutableListOf<String>()
-                    methods.forEach { method ->
-                        val key = "$receiverKey|$sessionId|${method.toGenericString()}"
+                    matchingMembers.forEach { member ->
+                        val key = "$receiverKey|$sessionId|${member.toGenericString()}"
                         if (!installedHooks.add(key)) {
                             if (alreadyActive) hookedCount++
-                            else failures += "${method.name}: inactive hook cannot be reattached without process restart"
+                            else failures += "${member.name}: inactive hook cannot be reattached without process restart"
                             return@forEach
                         }
                         try {
-                            // Check type compatibility before installing the interceptor, not when
-                            // the target application first executes this method.
-                            if (mode == "replace") parseReplacement(method.returnType, replacementType, replacementValue)
-                            installMethodHook(
-                                context, packageName, processName, className, method,
-                                sessionId, eventToken, lifecycle, mode, replacementType, replacementValue,
-                            )
+                            if (member is Method) {
+                                // Check type compatibility before installing the interceptor,
+                                // not when the target process first calls this method.
+                                if (mode == "replace") parseReplacement(member.returnType, replacementType, replacementValue)
+                                installMethodHook(
+                                    context, packageName, processName, className, member,
+                                    sessionId, eventToken, lifecycle, mode, replacementType, replacementValue,
+                                )
+                            } else {
+                                installConstructorHook(
+                                    context, packageName, processName, className,
+                                    member as java.lang.reflect.Constructor<*>, sessionId, eventToken, lifecycle,
+                                )
+                            }
                             hookedCount++
                             newlyHooked++
                         } catch (error: Exception) {
                             installedHooks.remove(key)
-                            failures += "${method.name}: ${error.message.orEmpty().take(120)}"
-                            log(Log.WARN, "YAuto", "Method hook unavailable: $key", error)
+                            failures += "${member.name}: ${error.message.orEmpty().take(120)}"
+                            log(Log.WARN, "YAuto", "Hook target unavailable: $key", error)
                         }
                     }
                     if (hookedCount > 0) methodSessions.activate(sessionId, eventToken)
@@ -1808,6 +1826,33 @@ class YAutoXposedModule : XposedModule() {
                     }
                 }
             }
+    }
+
+    private fun installConstructorHook(
+        context: Context,
+        packageName: String,
+        processName: String,
+        className: String,
+        constructor: java.lang.reflect.Constructor<*>,
+        sessionId: String,
+        eventToken: String,
+        lifecycle: String,
+    ) {
+        constructor.isAccessible = true
+        hook(constructor).intercept { chain ->
+            if (!methodSessions.isActive(sessionId, eventToken)) {
+                chain.proceed()
+            } else if (lifecycle == "after") {
+                val result = chain.proceed()
+                emitMethodCalled(context, sessionId, eventToken, packageName, processName,
+                    className, "<init>", "after")
+                result
+            } else {
+                emitMethodCalled(context, sessionId, eventToken, packageName, processName,
+                    className, "<init>", "before")
+                chain.proceed()
+            }
+        }
     }
 
     private fun installMethodHook(

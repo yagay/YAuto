@@ -18,3 +18,7 @@ Target: `refactor/macrodroid-on-1003-20261008`.
 - ShortX plugins and undocumented Any/ParamsData are not implemented.
 - Dynamic method Hook installation applies to *running* scoped app processes; boot, package scope changes, and OEM SystemUI often require process restart and device-specific testing.
 - Root, LSPosed, Shizuku differ in UID, permissions and Android hidden-API behavior. Treat feature-picker presence, successful CI compilation and observer registration as distinct states.
+
+## Additional constructor observer integration
+- The existing `android.lsposed.hook.install_session` picker now selects **method** or **constructor** in one place. Constructor hooks only observe before/after, cannot replace constructor execution, and emit the existing `android.event.lsposed_method_called` event with `methodName=<init>`.
+- Scoped app and running-process requirements remain unchanged. Event token gating and session disabling apply equally to constructor hooks. Java constructor signatures may differ between OEMs and must be checked on device.

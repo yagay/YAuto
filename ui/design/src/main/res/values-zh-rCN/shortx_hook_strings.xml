@@ -130,4 +130,7 @@
     <string name="feature_android_lsposed_hook_disable_session_description">无需重启手机即可停用指定应用方法 Hook；已安装的拦截器将放行原始调用，进程重启后卸载</string>
     <string name="feature_android_lsposed_hook_disable_session_field_package">目标应用 / 包名</string>
     <string name="feature_android_lsposed_hook_disable_session_field_sessionid">会话 ID</string>
+    <string name="feature_android_lsposed_hook_install_session_field_memberkind">Hook 目标</string>
+    <string name="feature_android_lsposed_hook_install_session_field_memberkind_option_method">方法</string>
+    <string name="feature_android_lsposed_hook_install_session_field_memberkind_option_constructor">构造函数</string>
 </resources>

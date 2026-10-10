@@ -130,4 +130,7 @@
     <string name="feature_android_lsposed_hook_disable_session_description">Stop an installed app method hook without restarting the phone; the interceptor passes through until process restart</string>
     <string name="feature_android_lsposed_hook_disable_session_field_package">Target app / package</string>
     <string name="feature_android_lsposed_hook_disable_session_field_sessionid">Session ID</string>
+    <string name="feature_android_lsposed_hook_install_session_field_memberkind">Hook target</string>
+    <string name="feature_android_lsposed_hook_install_session_field_memberkind_option_method">Method</string>
+    <string name="feature_android_lsposed_hook_install_session_field_memberkind_option_constructor">Constructor</string>
 </resources>
