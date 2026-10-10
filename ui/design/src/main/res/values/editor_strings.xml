@@ -292,7 +292,7 @@
     <string name="implementation_family_macro_detail">Android API / Accessibility only. Never uses Root or LSPosed.</string>
     <string name="implementation_family_shortx_detail">Use the selected LSPosed, Root or Shizuku backend. Does not silently switch to Accessibility.</string>
     <string name="implementation_family_auto_detail">Try MacroDroid's non-root route first; if unsupported or unsuccessful, try the ShortX privileged route.</string>
-    <string name="implementation_family_accessibility_required">MacroDroid route requires enabled Accessibility; some operations only support the ShortX method.</string>
+    <string name="implementation_family_accessibility_required">MacroDroid method uses available Android APIs or Accessibility as required by this action.</string>
     <string name="runtime_feature_dual_method_invalid_action">Unsupported global action.</string>
     <string name="runtime_feature_dual_method_no_shortx">ShortX has no verified equivalent for %1$s on this device.</string>
     <string name="runtime_feature_dual_method_no_macro">MacroDroid method does not support %1$s without elevated privileges.</string>

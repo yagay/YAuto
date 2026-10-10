@@ -6,6 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import com.yagay.yauto.core.capability.CapabilityIds
+import com.yagay.yauto.core.capability.CapabilityRequest
+import com.yagay.yauto.core.capability.CapabilityResult
+import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.core.model.userText
@@ -30,19 +34,58 @@ class AndroidFeaturePack(
 
         registry.registerAction(
             FeatureDescriptor(
-                FeatureId("android.app.launch"), FeatureKind.ACTION, "Launch app", "Launch an installed application",
+                FeatureId("android.app.launch"), FeatureKind.ACTION, "Launch app",
+                "Launch using the public Android API or the ShortX Root/Shizuku shell method",
                 FeatureCategory.APP,
+                capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
+                implementationOptions = listOf(
+                    FeatureImplementationOption("android"),
+                    FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+                    FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+                ),
                 fields = listOf(FieldSchema.AppPicker("package", "App", true)),
                 ownerPackId = id,
             )
         ) { feature, ctx ->
             val pkg = feature.config.string("package").resolveVariables(ctx.variables)
             val intent = context.packageManager.getLaunchIntentForPackage(pkg)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            if (intent == null) ActionExecutionResult(false, message = userText("feature.no_launch_intent", pkg))
-            else {
-                context.startActivity(intent)
-                ActionExecutionResult(true)
-            }
+            if (intent == null) return@registerAction ActionExecutionResult(
+                false, message = userText("feature.no_launch_intent", pkg),
+            )
+            val result = routeFeatureMethod(
+                method = feature.preferredMethod(),
+                macroSupported = true,
+                macrodroid = {
+                    runCatching {
+                        context.startActivity(intent)
+                        CapabilityResult(true)
+                    }.getOrElse { error ->
+                        CapabilityResult(false, message = userText(
+                            "feature.operation_failed", error.message ?: error.javaClass.simpleName,
+                        ))
+                    }
+                },
+                shortx = {
+                    val component = intent.component?.flattenToString().orEmpty()
+                    if (component.isBlank()) {
+                        CapabilityResult(false, message = userText("feature.no_launch_intent", pkg))
+                    } else {
+                        val quotedComponent = "'" + component.replace("'", "'\\''") + "'"
+                        val command = "am start -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n $quotedComponent"
+                        val backend = feature.preferredBackendId()
+                        ctx.executeCapability(feature.typeId, CapabilityRequest(
+                            capability = CapabilityIds.PRIVILEGED_SHELL,
+                            operationId = feature.typeId,
+                            payload = mapOf("command" to ConfigValue.StringValue(command)),
+                            preferredBackendId = backend,
+                            allowFallback = backend == null,
+                        ))
+                    }
+                },
+                succeeded = { it.success },
+            )
+            ActionExecutionResult(result?.success == true, result?.value ?: ConfigValue.NullValue,
+                result?.message)
         }
 
         registry.registerAction(

@@ -30,7 +30,8 @@ fun FeatureRef.preferredMethod(): FeatureMethod {
 fun FeatureDescriptor.hasDualMethodRoutes(): Boolean {
     if (kind != FeatureKind.ACTION) return false
     val backends = resolvedImplementationOptions().mapNotNull { it.backendId }.toSet()
-    return "accessibility" in backends && backends.any { it in PRIVILEGED_BACKENDS }
+    return backends.any { it == "accessibility" || it == "android" } &&
+        backends.any { it in PRIVILEGED_BACKENDS }
 }
 
 fun FeatureRef.preferredBackendId(): String? =

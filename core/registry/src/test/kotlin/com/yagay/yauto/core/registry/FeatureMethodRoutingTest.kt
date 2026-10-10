@@ -45,6 +45,18 @@ class FeatureMethodRoutingTest {
         assertEquals(FeatureMethod.SHORTX, old.preferredMethod())
     }
 
+    @Test fun publicAndroidAndRootCanUseSameLogicalFeature() {
+        val options = listOf(
+            FeatureImplementationOption("android"),
+            FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+        )
+        val descriptor = FeatureDescriptor(FeatureId("android.app.launch"), FeatureKind.ACTION,
+            "Launch app", "Open application", FeatureCategory.APP, implementationOptions = options)
+        assertTrue(descriptor.hasDualMethodRoutes())
+        val keys = descriptor.withAccessEditorMetadata().fields.map { it.key }
+        assertTrue("__method" in keys)
+    }
+
     @Test fun onlyGenuineDualRoutesExposeMethod() {
         val options = listOf(
             FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),

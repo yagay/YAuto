@@ -291,7 +291,7 @@
     <string name="implementation_family_macro_detail">仅使用 Android API / 无障碍，不调用 Root 或 LSPosed。</string>
     <string name="implementation_family_shortx_detail">使用所选的 LSPosed、Root 或 Shizuku 后端，不会暗中切换到无障碍。</string>
     <string name="implementation_family_auto_detail">优先尝试 MacroDroid 普通权限方式，不支持或失败时才尝试 ShortX 特权方式。</string>
-    <string name="implementation_family_accessibility_required">MacroDroid 方式需要开启无障碍，部分系统操作只能使用 ShortX 方法。</string>
+    <string name="implementation_family_accessibility_required">MacroDroid 方法根据具体功能使用 Android API 或无障碍服务。</string>
     <string name="runtime_feature_dual_method_invalid_action">不支持的全局操作。</string>
     <string name="runtime_feature_dual_method_no_shortx">ShortX 在此设备上没有经过验证的 %1$s 对应实现。</string>
     <string name="runtime_feature_dual_method_no_macro">MacroDroid 普通权限方法不支持 %1$s；需要使用特权实现。</string>
