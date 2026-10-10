@@ -362,35 +362,33 @@ class AutomationRuntime(
         if (target.isEmpty() || (type.isEmpty() && triggerTag.isEmpty())) {
             return ActionExecutionResult(false, message = userText("runtime.trigger_target_required"))
         }
-        return workspaceMutationLock.withLock {
-            val workspace = workspaceRepository.load()
+        var result = ActionExecutionResult(false, message = userText("runtime.automation_not_found", target))
+        updateWorkspace { workspace ->
             val resolved = RuntimeSelectionPolicy.resolveAutomation(workspace, target)
-                ?: return@withLock ActionExecutionResult(
-                    false,
-                    message = userText("runtime.automation_not_found", target),
-                )
-            val candidates = resolved.activation.events.filter { feature ->
-                (type.isBlank() || feature.typeId == type || feature.config["source.type"]?.asTraceText() == type) &&
-                    (triggerTag.isBlank() || feature.config.string("tag") == triggerTag)
+            if (resolved == null) workspace else {
+                val candidates = resolved.activation.events.filter { feature ->
+                    (type.isBlank() || feature.typeId == type || feature.config["source.type"]?.asTraceText() == type) &&
+                        (triggerTag.isBlank() || feature.config.string("tag") == triggerTag)
+                }
+                if (candidates.isEmpty()) {
+                    result = ActionExecutionResult(false, message = userText("runtime.trigger_not_found"))
+                    workspace
+                } else {
+                    val keys = candidates.map { RuntimeTriggerPolicy.key(resolved, it) }.toSet()
+                    val currentlyEnabled = keys.any { it !in workspace.disabledTriggerKeys }
+                    val enable = when (mode) {
+                        AutomationEnableMode.ENABLE -> true
+                        AutomationEnableMode.DISABLE -> false
+                        AutomationEnableMode.TOGGLE -> !currentlyEnabled
+                    }
+                    val disabled = if (enable) workspace.disabledTriggerKeys - keys
+                        else workspace.disabledTriggerKeys + keys
+                    result = ActionExecutionResult(true, ConfigValue.BooleanValue(enable))
+                    workspace.copy(disabledTriggerKeys = disabled)
+                }
             }
-            if (candidates.isEmpty()) {
-                return@withLock ActionExecutionResult(
-                    false,
-                    message = userText("runtime.trigger_not_found"),
-                )
-            }
-            val keys = candidates.map { RuntimeTriggerPolicy.key(resolved, it) }.toSet()
-            val currentlyEnabled = keys.any { it !in workspace.disabledTriggerKeys }
-            val enable = when (mode) {
-                AutomationEnableMode.ENABLE -> true
-                AutomationEnableMode.DISABLE -> false
-                AutomationEnableMode.TOGGLE -> !currentlyEnabled
-            }
-            val disabled = if (enable) workspace.disabledTriggerKeys - keys
-            else workspace.disabledTriggerKeys + keys
-            workspaceRepository.save(workspace.copy(disabledTriggerKeys = disabled))
-            ActionExecutionResult(true, ConfigValue.BooleanValue(enable))
         }
+        return result
     }
 
     override suspend fun isTriggerEnabled(
