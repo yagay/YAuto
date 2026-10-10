@@ -1,0 +1,33 @@
+<resources>
+    <string name="settings_runtime_background">运行与后台</string>
+    <string name="settings_runtime_background_description">开机启动与后台省电限制</string>
+    <string name="settings_editor_defaults">功能列表与编辑</string>
+    <string name="settings_editor_defaults_description">功能显示与编辑页面默认选项</string>
+    <string name="settings_logs_title">执行日志</string>
+    <string name="settings_logs_description">日志详细程度、容量及清理</string>
+    <string name="settings_boot_autostart">开机后启动自动化服务</string>
+    <string name="settings_boot_autostart_description">关闭后，开机广播不会启动自动化服务；不会立即停止已运行的服务，也不影响其他启动方式。</string>
+    <string name="settings_battery_optimization">电池优化</string>
+    <string name="settings_battery_unrestricted">当前状态：不受电池优化限制</string>
+    <string name="settings_battery_restricted">当前状态：可能受到电池优化限制</string>
+    <string name="settings_battery_description">可在系统电池设置中检查后台限制。部分厂商另有自启动与省电限制，可能需要单独调整。</string>
+    <string name="settings_open_battery_options">打开电池设置</string>
+    <string name="settings_advanced_default">默认展开高级参数</string>
+    <string name="settings_advanced_default_description">打开新功能配置页时默认展开高级字段；仍可在页面内收起。</string>
+    <string name="settings_system_apps_default">默认显示系统应用</string>
+    <string name="settings_system_apps_default_description">选择应用时默认包含预装或系统应用，仍可在应用选择器中临时隐藏。</string>
+    <string name="settings_log_verbosity">日志详细程度</string>
+    <string name="settings_log_verbosity_description">选择记录新执行日志的详细程度。级别越高记录越少，错误始终保留。</string>
+    <string name="settings_log_debug">详细（调试）</string>
+    <string name="settings_log_info">标准（信息）</string>
+    <string name="settings_log_warn">警告与错误</string>
+    <string name="settings_log_error">仅错误</string>
+    <string name="settings_log_storage">日志文件容量</string>
+    <string name="settings_log_storage_description">每个日志文件的容量上限，最多保留当前文件和轮转文件各一份；下次写入时生效。</string>
+    <string name="settings_log_megabytes">%1$d MB</string>
+    <string name="settings_logs_clear_title">清空执行日志</string>
+    <string name="settings_logs_clear_description">清除内存与文件中的当前和历史执行日志；不会删除已保存的自动化。</string>
+    <string name="settings_logs_clear_action">清空日志</string>
+    <string name="settings_logs_clear_confirmation">确定清空所有执行日志吗？此操作无法撤销。</string>
+    <string name="settings_logs_cleared">执行日志已清空</string>
+</resources>

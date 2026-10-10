@@ -1,0 +1,33 @@
+<resources>
+    <string name="settings_runtime_background">运行与后台</string>
+    <string name="settings_runtime_background_description">Start on boot and battery optimization guidance</string>
+    <string name="settings_editor_defaults">功能列表与编辑</string>
+    <string name="settings_editor_defaults_description">Feature visibility and default editor choices</string>
+    <string name="settings_logs_title">执行日志</string>
+    <string name="settings_logs_description">Log details, file size and clearing logs</string>
+    <string name="settings_boot_autostart">Start automation service after boot</string>
+    <string name="settings_boot_autostart_description">When disabled, the boot receiver will not start the runtime. Existing running services and other triggers are not switched off.</string>
+    <string name="settings_battery_optimization">Battery optimization</string>
+    <string name="settings_battery_unrestricted">Current status: unrestricted</string>
+    <string name="settings_battery_restricted">Current status: battery optimization applies</string>
+    <string name="settings_battery_description">Open Android battery settings to review background restrictions. Device manufacturers may also have separate auto-start and power settings.</string>
+    <string name="settings_open_battery_options">Open battery settings</string>
+    <string name="settings_advanced_default">Show advanced parameters by default</string>
+    <string name="settings_advanced_default_description">New feature configuration pages initially show advanced fields. Each page can still collapse them.</string>
+    <string name="settings_system_apps_default">Include system apps by default</string>
+    <string name="settings_system_apps_default_description">Include preinstalled/system apps when choosing an application. The app picker can still hide them temporarily.</string>
+    <string name="settings_log_verbosity">Logging detail level</string>
+    <string name="settings_log_verbosity_description">Choose which new execution records are stored. Higher levels keep fewer events; errors are always retained.</string>
+    <string name="settings_log_debug">Detailed (Debug)</string>
+    <string name="settings_log_info">Standard (Info)</string>
+    <string name="settings_log_warn">Warnings and errors</string>
+    <string name="settings_log_error">Errors only</string>
+    <string name="settings_log_storage">Log file capacity</string>
+    <string name="settings_log_storage_description">Maximum size per log file. There can be one current file and one rotated file. Changes apply to new writes.</string>
+    <string name="settings_log_megabytes">%1$d MB</string>
+    <string name="settings_logs_clear_title">Clear execution logs</string>
+    <string name="settings_logs_clear_description">Clear in-memory and current/rotated execution logs. Does not delete saved automations.</string>
+    <string name="settings_logs_clear_action">Clear logs</string>
+    <string name="settings_logs_clear_confirmation">Delete all stored execution logs? This cannot be undone.</string>
+    <string name="settings_logs_cleared">Execution logs cleared</string>
+</resources>
