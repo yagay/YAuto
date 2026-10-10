@@ -304,4 +304,16 @@
     <string name="debug_next_step">下一步</string>
     <string name="debug_run_to_breakpoint">检查下一断点</string>
     <string name="debug_copy_report">复制步骤报告</string>
+    <string name="engine_debug_title">执行引擎调试</string>
+    <string name="engine_debug_warning">调试会真实执行动作并可能修改设备数据。开始后将在第一步前暂停。</string>
+    <string name="engine_debug_allow">允许执行真实动作</string>
+    <string name="engine_debug_paused">当前暂停节点：%1$s</string>
+    <string name="engine_debug_breakpoint">%1$s — %2$s</string>
+    <string name="engine_debug_step">%1$s [%2$s] %3$s（%4$d 毫秒）</string>
+    <string name="engine_debug_before">执行前：%1$s</string>
+    <string name="engine_debug_after">执行后：%1$s</string>
+    <string name="engine_debug_result">结果：%1$s（%2$d 毫秒）</string>
+    <string name="engine_debug_start">暂停启动</string>
+    <string name="engine_debug_next">下一步</string>
+    <string name="engine_debug_continue">继续运行</string>
 </resources>
