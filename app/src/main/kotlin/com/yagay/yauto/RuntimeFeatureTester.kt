@@ -56,8 +56,9 @@ internal class RuntimeFeatureTester(
             }
             override suspend fun step() = debug.step()
             override suspend fun resume() = debug.continueExecution()
-            override suspend fun setBreakpoint(id: String, enabled: Boolean) =
+            override suspend fun setBreakpoint(id: String, enabled: Boolean) {
                 debug.setBreakpoint(NodeId(id), enabled)
+            }
             override suspend fun snapshot(): EngineDebugSnapshotUi {
                 val paused = debug.pausedAt()
                 val rows = debug.snapshot().map {
