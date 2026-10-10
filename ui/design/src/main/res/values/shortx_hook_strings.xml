@@ -126,4 +126,8 @@
     <string name="feature_android_state_ime_visible_title">Input method visible</string>
     <string name="feature_android_state_ime_visible_description">Check whether Android currently reports the software input method as shown or requested</string>
     <string name="feature_android_state_ime_visible_field_value">Visible</string>
+    <string name="feature_android_lsposed_hook_disable_session_title">Disable LSPosed hook session</string>
+    <string name="feature_android_lsposed_hook_disable_session_description">Stop an installed app method hook without restarting the phone; the interceptor passes through until process restart</string>
+    <string name="feature_android_lsposed_hook_disable_session_field_package">Target app / package</string>
+    <string name="feature_android_lsposed_hook_disable_session_field_session_id">Session ID</string>
 </resources>
