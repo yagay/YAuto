@@ -40,6 +40,8 @@ interface EngineDebugRun {
 }
 
 interface FeatureTestGateway {
+    fun savedDebugBreakpoints(automationId: String): Set<String> = emptySet()
+    fun saveDebugBreakpoints(automationId: String, ids: Set<String>) {}
     fun newDebugRun(automation: Automation): EngineDebugRun? = null
     suspend fun test(feature: FeatureRef, kind: FeatureKind): FeatureTestResult
 
