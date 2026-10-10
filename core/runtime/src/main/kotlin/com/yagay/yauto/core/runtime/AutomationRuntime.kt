@@ -116,14 +116,7 @@ class AutomationRuntime(
         }) {
             if (statesOnly && automation.activation.states.isEmpty()) continue
             try {
-                val variables = MapVariableAccess(buildMap {
-                    workspace.globalVariables.forEach { (key, value) -> put(key, ConfigValue.StringValue(value)) }
-                    putAll(workspace.persistentVariables)
-                    putAll(automation.variables)
-                    event.payload.forEach { (key, value) -> put("event.$key", value) }
-                    put("event.type", ConfigValue.StringValue(event.typeId))
-                    put("event.source", ConfigValue.StringValue(event.source))
-                })
+                val variables = MapVariableAccess(RuntimeEventContext.variables(workspace, automation.variables, event))
 
                 val phases = evaluationLocks.getOrPut(automation.id.value) { Mutex() }.withLock {
                     var matchedEventFeature: FeatureRef? = null
