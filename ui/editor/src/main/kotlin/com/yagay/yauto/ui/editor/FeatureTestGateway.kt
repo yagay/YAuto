@@ -20,6 +20,7 @@ data class FeatureTestResult(
 )
 
 data class EngineDebugStepUi(
+    val invocationId: Long,
     val id: String,
     val kind: String,
     val success: Boolean,
