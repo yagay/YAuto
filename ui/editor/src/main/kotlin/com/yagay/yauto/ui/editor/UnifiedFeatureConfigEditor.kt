@@ -27,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.registry.FeatureKind
+import com.yagay.yauto.core.registry.isRootExclusiveFeature
 import com.yagay.yauto.ui.design.R as TextR
 
 /**
@@ -44,12 +45,10 @@ internal fun UnifiedFeatureConfigEditor(
     accent: Color,
     onSave: (FeatureRef) -> Unit,
 ) {
-    val initialSelection = remember(group.spec.id, initial?.typeId, initialMemberId) {
-        resolveUnifiedMemberId(
-            group = group,
-            initialTypeId = initial?.typeId,
-            requestedMemberId = initialMemberId,
-        )
+    val automatic = group.spec.isAutomaticImplementationGroup()
+    val initialSelection = remember(group, initial?.typeId, initialMemberId, automatic) {
+        if (automatic) autoUnifiedMemberId(group, initial?.typeId)
+        else resolveUnifiedMemberId(group, initial?.typeId, initialMemberId)
     }
     var selectedMemberId by remember(group.spec.id, initialSelection) {
         mutableStateOf(initialSelection)
@@ -64,13 +63,13 @@ internal fun UnifiedFeatureConfigEditor(
             descriptor = selectedItem.descriptor,
             initial = initial?.takeIf { it.typeId == selectedItem.descriptor.id.value },
             accent = accent,
-            leadingContent = {
+            leadingContent = if (automatic) null else ({
                 UnifiedFeatureSelector(
                     group = group,
                     selectedItem = selectedItem,
                     onSelect = { selectedMemberId = it.descriptor.id.value },
                 )
-            },
+            }),
             onSave = onSave,
         )
     }
@@ -190,4 +189,30 @@ internal fun unifiedSelectorHintRes(kind: FeatureKind): Int = when (kind) {
     FeatureKind.ACTION -> TextR.string.unified_selector_action_hint
     FeatureKind.EVENT -> TextR.string.unified_selector_event_hint
     FeatureKind.STATE, FeatureKind.CONDITION -> TextR.string.unified_selector_check_hint
+}
+
+/**
+ * Equivalent implementations are chosen automatically. Distinct operations
+ * (start/stop, copy/move, Wi-Fi set/connect) still require an operation choice.
+ */
+internal fun UnifiedFeatureSpec.isAutomaticImplementationGroup(): Boolean = id in setOf(
+    "clipboard_write", "clipboard_read", "screenshot_capture",
+    "music_activity_condition", "music_activity_state",
+    "device_orientation_condition", "device_orientation_state",
+    "battery_status_condition", "battery_status_state",
+    "battery_voltage_condition", "battery_voltage_state",
+    "font_scale_condition", "font_scale_state",
+    "audio_mode_condition", "audio_mode_state",
+    "dnd_filter_condition", "dnd_filter_state",
+    "camera_flash_condition", "camera_flash_state",
+    "app_language", "torch_status_state", "torch_status_condition",
+    "power_menu_access_method",
+)
+
+/** Prefer non-root when creating; preserve the concrete implementation of saved tasks. */
+internal fun autoUnifiedMemberId(group: UnifiedFeatureGroup, initialId: String?): String {
+    val members = group.members
+    return members.firstOrNull { it.descriptor.id.value == initialId }?.descriptor?.id?.value
+        ?: members.firstOrNull { !it.descriptor.isRootExclusiveFeature() }?.descriptor?.id?.value
+        ?: members.first().descriptor.id.value
 }

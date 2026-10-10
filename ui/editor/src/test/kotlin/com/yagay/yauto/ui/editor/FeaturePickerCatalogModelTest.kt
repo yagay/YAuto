@@ -27,6 +27,26 @@ class FeaturePickerCatalogModelTest {
         assertTrue(!descriptor.copy(stability = Stability.DEPRECATED).isPickerSelectable())
     }
 
+    @Test fun `automatic equivalent methods prefer non-root while operation choices remain`() {
+        val root = item("android.device.power_menu.show", app)
+        val privileged = root.copy(descriptor = root.descriptor.copy(
+            accessRequirements = setOf(com.yagay.yauto.core.registry.AccessRequirement.ROOT),
+        ))
+        val public = item("android.global_actions.show", app)
+        val group = UnifiedFeatureGroup(
+            UNIFIED_FEATURE_SPECS.single { it.id == "power_menu_access_method" },
+            listOf(privileged, public),
+        )
+        assertTrue(group.spec.isAutomaticImplementationGroup())
+        assertEquals("android.global_actions.show", autoUnifiedMemberId(group, null))
+        assertEquals("android.device.power_menu.show",
+            autoUnifiedMemberId(group, "android.device.power_menu.show"))
+        assertTrue(!UNIFIED_FEATURE_SPECS.single { it.id == "file_operations" }
+            .isAutomaticImplementationGroup())
+        assertTrue(!UNIFIED_FEATURE_SPECS.single { it.id == "stopwatch" }
+            .isAutomaticImplementationGroup())
+    }
+
     @Test fun `verified merges use upstream identical feature names and stable IDs`() {
         assertEquals(34, UNIFIED_FEATURE_SPECS.size)
         assertTrue(UNIFIED_FEATURE_SPECS.map { it.id }.containsAll(
