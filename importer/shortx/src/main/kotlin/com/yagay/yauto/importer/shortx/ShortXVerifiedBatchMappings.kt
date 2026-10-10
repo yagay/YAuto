@@ -22,13 +22,13 @@ internal object ShortXVerifiedBatchMappings {
     )
     fun ownsSource(name: String): Boolean = name in batchOwnedSources
 
-    private val sourceMetadata = setOf(
+    internal val sourceMetadata = setOf(
         "@type", "type", "typeUrl", "type_url", "id", "isDisabled", "note", "actionOnError",
     )
-    private fun sourceName(any: AnyStub): String =
+    internal fun sourceName(any: AnyStub): String =
         any.typeUrl.substringAfterLast('/').substringAfterLast('.').substringAfterLast('$')
 
-    private fun feature(any: AnyStub, importerId: String, target: String, extras: Map<String, ConfigValue>): FeatureRef =
+    internal fun feature(any: AnyStub, importerId: String, target: String, extras: Map<String, ConfigValue>): FeatureRef =
         sourceFeature(
             targetTypeId = target, importerId = importerId, sourceType = any.typeUrl,
             raw = if (any.isJson) any.value.toString(Charsets.UTF_8)
@@ -36,13 +36,13 @@ internal object ShortXVerifiedBatchMappings {
             extra = extras,
         )
 
-    private fun text(key: String, value: String) = key to ConfigValue.StringValue(value)
-    private fun bool(key: String, value: Boolean) = key to ConfigValue.BooleanValue(value)
+    internal fun text(key: String, value: String) = key to ConfigValue.StringValue(value)
+    internal fun bool(key: String, value: Boolean) = key to ConfigValue.BooleanValue(value)
 
-    private fun toggle(any: AnyStub, importerId: String, target: String): FeatureRef =
+    internal fun toggle(any: AnyStub, importerId: String, target: String): FeatureRef =
         feature(any, importerId, target, mapOf(bool("toggleCurrent", true)))
 
-    private fun targetsBinary(fields: ProtoFields, byPair: Boolean, allowSets: Boolean = false): List<String>? {
+    internal fun targetsBinary(fields: ProtoFields, byPair: Boolean, allowSets: Boolean = false): List<String>? {
         if (!fields.onlyBusinessFields(*(if (allowSets) intArrayOf(1, 2) else intArrayOf(1)))) return null
         if (allowSets && fields.has(2)) return null
         val items = fields.allBytes(1)
@@ -60,7 +60,7 @@ internal object ShortXVerifiedBatchMappings {
         return result
     }
 
-    private fun targetsJson(obj: JsonObject, byPair: Boolean, allowSets: Boolean = false): List<String>? {
+    internal fun targetsJson(obj: JsonObject, byPair: Boolean, allowSets: Boolean = false): List<String>? {
         val key = if (byPair) "pkgAndUsers" else "appPkg"
         if (obj.keys.any { it !in sourceMetadata && it != key && (!allowSets || it != "pkgSets") }) return null
         if (allowSets && obj["pkgSets"] != null) {
@@ -83,40 +83,40 @@ internal object ShortXVerifiedBatchMappings {
         return result
     }
 
-    private fun taskRemove(any: AnyStub, importerId: String, packages: List<String>?): FeatureRef? =
+    internal fun taskRemove(any: AnyStub, importerId: String, packages: List<String>?): FeatureRef? =
         packages?.takeIf { it.isNotEmpty() }?.let {
             feature(any, importerId, "android.tasks.remove",
                 mapOf(text("packages", it.joinToString("\n")), bool("allMatching", true)))
         }
 
-    private fun launchSingle(any: AnyStub, importerId: String, packages: List<String>?): FeatureRef? =
+    internal fun launchSingle(any: AnyStub, importerId: String, packages: List<String>?): FeatureRef? =
         packages?.singleOrNull()?.let {
             feature(any, importerId, "android.app.launch", mapOf(text("package", it)))
         }
 
-    private fun noTheme(any: AnyStub, importerId: String, fields: ProtoFields, target: String): FeatureRef? {
+    internal fun noTheme(any: AnyStub, importerId: String, fields: ProtoFields, target: String): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val theme = fields.varint(1) ?: if (!fields.has(1)) 0L else return null
         if (theme != 0L) return null
         return feature(any, importerId, target, emptyMap())
     }
 
-    private fun noThemeJson(any: AnyStub, importerId: String, obj: JsonObject, target: String): FeatureRef? {
+    internal fun noThemeJson(any: AnyStub, importerId: String, obj: JsonObject, target: String): FeatureRef? {
         if (obj.keys.any { it !in sourceMetadata && it != "themeMode" }) return null
         val mode = (obj["themeMode"] as? JsonPrimitive)?.intOrNull
             ?: if ("themeMode" in obj) return null else 0
         return if (mode == 0) feature(any, importerId, target, emptyMap()) else null
     }
 
-    private fun sourceNumber(raw: String): Double? {
+    internal fun sourceNumber(raw: String): Double? {
         val n = raw.toDoubleOrNull() ?: return null
         return n.takeIf { it.isFinite() && it >= 0.0 && it <= 100_000.0 }
     }
 
-    private fun coordinateField(fields: ProtoFields, number: Int): String? =
+    internal fun coordinateField(fields: ProtoFields, number: Int): String? =
         fields.string(number) ?: fields.varint(number)?.toString()
 
-    private fun inputTap(any: AnyStub, importerId: String, xs: String, ys: String): FeatureRef? {
+    internal fun inputTap(any: AnyStub, importerId: String, xs: String, ys: String): FeatureRef? {
         val x = sourceNumber(xs) ?: return null
         val y = sourceNumber(ys) ?: return null
         return feature(any, importerId, "accessibility.gesture.tap", mapOf(
@@ -124,7 +124,7 @@ internal object ShortXVerifiedBatchMappings {
         ))
     }
 
-    private fun inputSwipe(any: AnyStub, importerId: String, v: List<String>): FeatureRef? {
+    internal fun inputSwipe(any: AnyStub, importerId: String, v: List<String>): FeatureRef? {
         if (v.size != 5) return null
         val coordinates = v.take(4).map { sourceNumber(it) ?: return null }
         val duration = v[4].toLongOrNull() ?: return null
@@ -138,12 +138,12 @@ internal object ShortXVerifiedBatchMappings {
         ))
     }
 
-    private fun volumeDirection(n: Int): String? = when (n) {
+    internal fun volumeDirection(n: Int): String? = when (n) {
         0 -> "same"; 1 -> "raise"; -1 -> "lower"; -100 -> "mute"; 100 -> "unmute"; 101 -> "toggle_mute"
         else -> null
     }
 
-    private fun volume(any: AnyStub, importerId: String, raw: Int, showUi: Boolean): FeatureRef? =
+    internal fun volume(any: AnyStub, importerId: String, raw: Int, showUi: Boolean): FeatureRef? =
         volumeDirection(raw)?.let { direction ->
             feature(any, importerId, "android.audio.volume.adjust", mapOf(
                 text("direction", direction),
@@ -152,7 +152,7 @@ internal object ShortXVerifiedBatchMappings {
             ))
         }
 
-    private fun sourceRegexReplace(any: AnyStub, importerId: String,
+    internal fun sourceRegexReplace(any: AnyStub, importerId: String,
                                    source: String, pattern: String, replacement: String): FeatureRef? {
         if (pattern.isEmpty()) return null
         return feature(any, importerId, "data.regex.replace", mapOf(
@@ -161,7 +161,7 @@ internal object ShortXVerifiedBatchMappings {
         ))
     }
 
-    private fun locationInfo(any: AnyStub, importerId: String, preference: Int, timeout: Long): FeatureRef? {
+    internal fun locationInfo(any: AnyStub, importerId: String, preference: Int, timeout: Long): FeatureRef? {
         if (preference !in 0..2 || timeout !in 1000L..120000L) return null
         val provider = when (preference) { 0 -> "best"; 1 -> "network"; else -> "gps" }
         return feature(any, importerId, "android.location.current.query", mapOf(
@@ -171,7 +171,7 @@ internal object ShortXVerifiedBatchMappings {
         ))
     }
 
-    private fun regexMatch(any: AnyStub, importerId: String, value: String,
+    internal fun regexMatch(any: AnyStub, importerId: String, value: String,
                            pattern: String, mode: Int): FeatureRef? {
         if (mode !in 0..1 || pattern.isEmpty()) return null
         return feature(any, importerId, "data.regex.matches", mapOf(
@@ -181,12 +181,12 @@ internal object ShortXVerifiedBatchMappings {
         ))
     }
 
-    private fun writeClipboard(any: AnyStub, importerId: String, value: String): FeatureRef =
+    internal fun writeClipboard(any: AnyStub, importerId: String, value: String): FeatureRef =
         feature(any, importerId, "android.clipboard.write", mapOf(text("text", value)))
 
-    private fun number(key: String, value: Int) = key to ConfigValue.NumberValue(value.toDouble())
+    internal fun number(key: String, value: Int) = key to ConfigValue.NumberValue(value.toDouble())
 
-    private fun scrollLocation(value: Int): String? = when (value) {
+    internal fun scrollLocation(value: Int): String? = when (value) {
         0 -> "top"
         1 -> "bottom"
         2 -> "top_force"
@@ -196,12 +196,12 @@ internal object ShortXVerifiedBatchMappings {
         else -> null
     }
 
-    private fun scroll(any: AnyStub, importerId: String, mode: Int): FeatureRef? =
+    internal fun scroll(any: AnyStub, importerId: String, mode: Int): FeatureRef? =
         scrollLocation(mode)?.let {
             feature(any, importerId, "accessibility.scroll_to", mapOf(text("location", it)))
         }
 
-    private fun fiveG(any: AnyStub, importerId: String, state: Int, slot: Int): FeatureRef? {
+    internal fun fiveG(any: AnyStub, importerId: String, state: Int, slot: Int): FeatureRef? {
         if (slot !in 0..1) return null
         val operation = when (state) {
             0 -> "enable"
@@ -213,7 +213,7 @@ internal object ShortXVerifiedBatchMappings {
             mapOf(text("operation", operation), number("slotId", slot)))
     }
 
-    private fun vibrate(any: AnyStub, importerId: String, first: Int, gap: Int, last: Int): FeatureRef? {
+    internal fun vibrate(any: AnyStub, importerId: String, first: Int, gap: Int, last: Int): FeatureRef? {
         // Android's VibrationEffect waveform alternates OFF, ON, OFF, ON.
         if (first !in 1..60_000 || gap !in 0..60_000 || last !in 1..60_000 ||
             first.toLong() + gap + last > 120_000L) return null
@@ -221,7 +221,7 @@ internal object ShortXVerifiedBatchMappings {
             mapOf(text("timings", "0,$first,$gap,$last")))
     }
 
-    private fun insets(any: AnyStub, importerId: String, hide: Boolean, types: List<Int>): FeatureRef? {
+    internal fun insets(any: AnyStub, importerId: String, hide: Boolean, types: List<Int>): FeatureRef? {
         if (types.isEmpty() || types.distinct().size != types.size ||
             types.any { it !in 0..1 } || (!hide && types.toSet() != setOf(0, 1))) return null
         val mode = if (!hide) "show_all" else when (types.toSet()) {
@@ -233,10 +233,10 @@ internal object ShortXVerifiedBatchMappings {
         return feature(any, importerId, "android.insets.immersive.set", mapOf(text("mode", mode)))
     }
 
-    private fun lock(any: AnyStub, importerId: String) =
+    internal fun lock(any: AnyStub, importerId: String) =
         feature(any, importerId, "accessibility.global_action", mapOf(text("action", "lock_screen")))
 
-    private fun brightness(any: AnyStub, importerId: String, value: Int): FeatureRef? {
+    internal fun brightness(any: AnyStub, importerId: String, value: Int): FeatureRef? {
         if (value !in 0..255) return null
         // Native YAuto executor rounds 255 * percent / 100 to an integer.
         // Passing the exact fraction round-trips all 256 ShortX brightness levels.
@@ -247,13 +247,13 @@ internal object ShortXVerifiedBatchMappings {
     }
 
     private val componentName = Regex("[A-Za-z_][A-Za-z0-9_.]*/[A-Za-z_.$][A-Za-z0-9_.$]*")
-    private fun clickTile(any: AnyStub, importerId: String, target: String, longClick: Boolean): FeatureRef? {
+    internal fun clickTile(any: AnyStub, importerId: String, target: String, longClick: Boolean): FeatureRef? {
         if (longClick || !componentName.matches(target)) return null
         return feature(any, importerId, "android.qs_tile.click", mapOf(text("component", target)))
     }
 
     private val pkgName = Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)+")
-    private fun appAction(any: AnyStub, importerId: String, pkg: String, user: Int, op: String,
+    internal fun appAction(any: AnyStub, importerId: String, pkg: String, user: Int, op: String,
                           enabled: Boolean?): FeatureRef? {
         if (!pkgName.matches(pkg) || user !in 0..99) return null
         val (target, option) = when (op) {
@@ -268,7 +268,7 @@ internal object ShortXVerifiedBatchMappings {
         return feature(any, importerId, target, extra)
     }
 
-    private fun binaryApp(any: AnyStub, importerId: String, fields: ProtoFields,
+    internal fun binaryApp(any: AnyStub, importerId: String, fields: ProtoFields,
                           byPkg: Boolean, op: String): FeatureRef? {
         val boolField = when (op) { "enable", "suspend" -> 3; else -> null }
         val pairBoolField = when (op) { "enable", "suspend" -> 2; else -> null }
@@ -300,7 +300,7 @@ internal object ShortXVerifiedBatchMappings {
         return appAction(any, importerId, pkg, user, op, enabled)
     }
 
-    private fun jsonApp(any: AnyStub, importerId: String, obj: JsonObject,
+    internal fun jsonApp(any: AnyStub, importerId: String, obj: JsonObject,
                         byPkg: Boolean, op: String): FeatureRef? {
         val listKey = if (byPkg) "pkgAndUsers" else "appPkg"
         val boolKey = when (op) { "enable" -> "enable"; "suspend" -> "suspend"; else -> null }
@@ -330,7 +330,7 @@ internal object ShortXVerifiedBatchMappings {
         return appAction(any, importerId, pkg, user, op, enabled)
     }
 
-    private fun decodePackedInsets(bytes: ByteArray): List<Long>? =
+    internal fun decodePackedInsets(bytes: ByteArray): List<Long>? =
         if (bytes.size in 1..10 && bytes.all { it == 0.toByte() || it == 1.toByte() }) {
             bytes.map { it.toLong() }
         } else null
@@ -502,7 +502,7 @@ internal object ShortXVerifiedBatchMappings {
         }
     }
 
-    private fun enumNumber(value: JsonPrimitive?): Int? = value?.intOrNull
+    internal fun enumNumber(value: JsonPrimitive?): Int? = value?.intOrNull
         ?: value?.contentOrNull?.substringAfterLast('_')?.let { name ->
             when (name.lowercase()) {
                 "top" -> 0; "bottom" -> 1; "topforce" -> 2
@@ -511,182 +511,12 @@ internal object ShortXVerifiedBatchMappings {
             }
         }
 
-    private fun toggleState(value: JsonPrimitive?): Int? =
+    internal fun toggleState(value: JsonPrimitive?): Int? =
         if (value == null) 0 else value.intOrNull ?: when (value.contentOrNull?.substringAfterLast('_')?.lowercase()) {
             "on" -> 0; "off" -> 1; "toggle" -> 2
             else -> null
         }
 
-    /** Ignore neither unknown business properties nor malformed enum values. */
-    fun json(any: AnyStub, importerId: String, obj: JsonObject): FeatureRef? {
-        fun allowed(vararg keys: String): Boolean =
-            obj.keys.all { it in sourceMetadata || it in keys }
-        fun field(name: String): Int? = (obj[name] as? JsonPrimitive)?.intOrNull
-        return when (sourceName(any)) {
-            "LaunchAppByPkg" -> launchSingle(any, importerId, targetsJson(obj, byPair = true))
-            "RemoveTasks" -> taskRemove(any, importerId, targetsJson(obj, byPair = false, allowSets = true))
-            "RemoveTasksByPkg" -> taskRemove(any, importerId, targetsJson(obj, byPair = true))
-            "StartActivityUrlSchema" -> if (allowed("urlSchema", "userId")) {
-                val uid = (obj["userId"] as? JsonPrimitive)?.intOrNull ?: if ("userId" in obj) return null else 0
-                val raw = (obj["urlSchema"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
-                if (uid != 0 || ':' !in raw) null else feature(any, importerId,
-                    "android.intent_uri.launch", mapOf(text("intentUri", raw), bool("urlSchemeMode", true)))
-            } else null
-            "GetCurrentLocationInfo" -> if (allowed("providerPreference", "timeoutMillis")) {
-                val prefRaw = (obj["providerPreference"] as? JsonPrimitive)?.content
-                val preference = when (prefRaw) {
-                    null, "0", "Auto", "CurrentLocationProviderPreference_Auto" -> 0
-                    "1", "NetworkFirst", "CurrentLocationProviderPreference_NetworkFirst" -> 1
-                    "2", "GpsFirst", "CurrentLocationProviderPreference_GpsFirst" -> 2
-                    else -> return null
-                }
-                val timeout = (obj["timeoutMillis"] as? JsonPrimitive)?.longOrNull ?: return null
-                locationInfo(any, importerId, preference, timeout)
-            } else null
-            "ShowDrawBoard" -> noThemeJson(any, importerId, obj, "surface.draw_board.show")?.let {
-                it.copy(config = it.config + mapOf(
-                    text("surfaceId", "shortx.draw_board"), text("gravity", "center")))
-            }
-            "MatchRegex" -> if (allowed("string", "regex", "matchOptions")) {
-                val value = (obj["string"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
-                val pattern = (obj["regex"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
-                val raw = (obj["matchOptions"] as? JsonPrimitive)
-                val mode = when (raw?.content) {
-                    null, "0", "Match", "RegexMatchOptions_Match" -> 0
-                    "1", "ContainsMatchIn", "RegexMatchOptions_ContainsMatchIn" -> 1
-                    else -> return null
-                }
-                regexMatch(any, importerId, value, pattern, mode)
-            } else null
-            "StartActivityIntentUri" -> if (allowed("intentUri")) {
-                (obj["intentUri"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.takeIf(String::isNotBlank)?.let {
-                    feature(any, importerId, "android.intent_uri.launch", mapOf(text("intentUri", it)))
-                }
-            } else null
-            "EnableUniversalCopy" -> noThemeJson(any, importerId, obj, "accessibility.universal_copy.show")
-            "EnableViewIdViewer" -> noThemeJson(any, importerId, obj, "accessibility.view_id_viewer.show")
-            "ParseQRCode" -> if (allowed("imagePath")) {
-                (obj["imagePath"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.takeIf(String::isNotBlank)?.let {
-                    feature(any, importerId, "android.qr.decode", mapOf(
-                        text("image", it), text("resultVariable", "qrCodeText"), bool("textOnly", true)))
-                }
-            } else null
-            "ShowDanmu" -> if (allowed("text", "icon") &&
-                (obj["icon"] == null || (obj["icon"] as? JsonPrimitive)?.contentOrNull == "")) {
-                (obj["text"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.takeIf(String::isNotBlank)?.let {
-                    feature(any, importerId, "surface.danmu.show", mapOf(
-                        text("surfaceId", "shortx.danmu"), text("text", it), text("gravity", "top")))
-                }
-            } else null
-            "ToggleData" -> if (allowed("hasSpecificSlotId", "slotId")) {
-                val specific = (obj["hasSpecificSlotId"] as? JsonPrimitive)?.booleanOrNull
-                    ?: if ("hasSpecificSlotId" in obj) return null else false
-                val slot = (obj["slotId"] as? JsonPrimitive)?.intOrNull
-                    ?: if ("slotId" in obj) return null else 0
-                if (!specific && slot == 0) toggle(any, importerId, "android.mobile_data.set") else null
-            } else null
-            "ToggleWifi" -> if (allowed()) toggle(any, importerId, "android.wifi.set") else null
-            "ToggleBT" -> if (allowed()) toggle(any, importerId, "android.bluetooth.set") else null
-            "ToggleNFC" -> if (allowed()) toggle(any, importerId, "android.nfc.set") else null
-            "ToggleLocation" -> if (allowed()) toggle(any, importerId, "android.location.enabled.set") else null
-            "ToggleDarkMode" -> if (allowed()) feature(any, importerId, "android.display.dark_mode.set",
-                mapOf(text("mode", "toggle"))) else null
-            "SetHotSpotEnabled" -> if (allowed("enable")) {
-                val enabled = (obj["enable"] as? JsonPrimitive)?.booleanOrNull
-                    ?: if ("enable" in obj) return null else false
-                feature(any, importerId, "android.network.tether.set",
-                    mapOf(text("type", "wifi"), bool("enabled", enabled)))
-            } else null
-            "InputText" -> if (allowed("text")) {
-                (obj["text"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.let {
-                    feature(any, importerId, "accessibility.input_text", mapOf(text("text", it)))
-                }
-            } else null
-            "InputTap" -> if (allowed("xs", "ys")) {
-                val x = (obj["xs"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
-                val y = (obj["ys"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
-                inputTap(any, importerId, x, y)
-            } else null
-            "InputSwipe" -> if (allowed("startXS", "startYS", "endXS", "endYS", "swipeTimeS")) {
-                val values = listOf("startXS", "startYS", "endXS", "endYS", "swipeTimeS").map {
-                    (obj[it] as? JsonPrimitive)?.takeIf { p -> p.isString }?.content ?: return null
-                }
-                inputSwipe(any, importerId, values)
-            } else null
-            "WriteClipboard" -> if (allowed("text", "filePath") &&
-                (obj["filePath"] == null || (obj["filePath"] as? JsonPrimitive)?.contentOrNull == "")) {
-                (obj["text"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.let {
-                    writeClipboard(any, importerId, it)
-                }
-            } else null
-            "ReplaceRegex" -> if (allowed("string", "regex", "replacement")) {
-                val input = (obj["string"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
-                val pattern = (obj["regex"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
-                val replacement = (obj["replacement"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
-                sourceRegexReplace(any, importerId, input, pattern, replacement)
-            } else null
-            "AdjustVolume" -> if (allowed("direction", "showUI")) {
-                val d = (obj["direction"] as? JsonPrimitive)?.intOrNull ?: if ("direction" in obj) return null else 0
-                val ui = (obj["showUI"] as? JsonPrimitive)?.booleanOrNull ?: if ("showUI" in obj) return null else false
-                volume(any, importerId, d, ui)
-            } else null
-            "ReadClipboard" -> if (allowed()) feature(any, importerId, "android.clipboard.read",
-                mapOf(text("resultVariable", "clipboardContent"))) else null
-            "DisconnectCurrentWifi" -> if (allowed()) feature(any, importerId, "android.wifi.network.disconnect", emptyMap()) else null
-            "ToggleAutoBrightness" -> if (allowed()) feature(any, importerId, "android.display.brightness.set",
-                mapOf(text("mode", "toggle_auto"))) else null
-            "StopApp" -> jsonApp(any, importerId, obj, false, "stop")
-            "StopAppByPkg" -> jsonApp(any, importerId, obj, true, "stop")
-            "SetAppEnabled" -> jsonApp(any, importerId, obj, false, "enable")
-            "SetAppEnabledByPkg" -> jsonApp(any, importerId, obj, true, "enable")
-            "SetAppSuspend" -> jsonApp(any, importerId, obj, false, "suspend")
-            "SetAppSuspendByPkg" -> jsonApp(any, importerId, obj, true, "suspend")
-            "SetAppInactive" -> jsonApp(any, importerId, obj, false, "inactive")
-            "SetAppInactiveByPkg" -> jsonApp(any, importerId, obj, true, "inactive")
-            "SetBrightness" -> if (allowed("value")) {
-                val value = if ("value" in obj) field("value") else 0
-                value?.let { brightness(any, importerId, it) }
-            } else null
-            "ClickTile" -> if (allowed("tile", "isLongClick")) {
-                val tile = obj["tile"] as? JsonObject ?: return null
-                if (tile.keys.any { it !in setOf("tileSpec", "label") }) return null
-                val spec = (tile["tileSpec"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
-                val long = (obj["isLongClick"] as? JsonPrimitive)?.booleanOrNull
-                    ?: if ("isLongClick" in obj) return null else false
-                clickTile(any, importerId, spec, long)
-            } else null
-            "LockDeviceNow" -> if (allowed()) lock(any, importerId) else null
-            "ScrollViewTo" ->
-                if (allowed("location")) {
-                    val location = if ("location" in obj) enumNumber(obj["location"] as? JsonPrimitive) else 0
-                    location?.let { scroll(any, importerId, it) }
-                } else null
-            "Toggle5G" ->
-                if (allowed("onOff", "slotId")) {
-                    val state = toggleState(obj["onOff"] as? JsonPrimitive)
-                    val slot = if ("slotId" in obj) field("slotId") else 0
-                    if (state != null && slot != null) fiveG(any, importerId, state, slot) else null
-                } else null
-            "Vibrate" ->
-                if (allowed("vib1", "vib2", "vib3")) {
-                    val a = field("vib1")
-                    val b = field("vib2")
-                    val c = field("vib3")
-                    if (a != null && b != null && c != null) vibrate(any, importerId, a, b, c) else null
-                } else null
-            "ShowHideInsets" ->
-                if (allowed("isHide", "type")) {
-                    val hidden = (obj["isHide"] as? JsonPrimitive)?.booleanOrNull ?: if ("isHide" in obj) return null else false
-                    val types = obj["type"] as? JsonArray ?: return null
-                    val values = types.map { type ->
-                        val p = type as? JsonPrimitive ?: return null
-                        p.intOrNull ?: when (p.contentOrNull?.substringAfterLast('_')?.lowercase()) {
-                            "statusbar" -> 0; "navbar" -> 1; else -> return null
-                        }
-                    }
-                    insets(any, importerId, hidden, values)
-                } else null
-            else -> null
-        }
-    }
+    fun json(any: AnyStub, importerId: String, obj: JsonObject): FeatureRef? = jsonImpl(any, importerId, obj)
+
 }
