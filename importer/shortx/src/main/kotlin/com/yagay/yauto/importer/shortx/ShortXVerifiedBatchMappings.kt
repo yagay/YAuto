@@ -121,7 +121,7 @@ internal object ShortXVerifiedBatchMappings {
             } else {
                 if (fieldNumber == null) intArrayOf(1, 2) else intArrayOf(1, 2, fieldNumber)
             }))) return null
-        if (!byPkg && fields.allBytes(2).isNotEmpty()) return null // package set cannot fit single target
+        if (!byPkg && fields.has(2)) return null // no package set, even malformed entries
         val items = fields.allBytes(1)
         if (items.size != 1) return null // do not silently drop other target apps
         val app = runCatching { ProtoFields(items.single()) }.getOrNull() ?: return null
@@ -150,7 +150,10 @@ internal object ShortXVerifiedBatchMappings {
         val keys = setOf(listKey) + (if (byPkg) emptySet() else setOf("pkgSets")) +
             (if (boolKey == null) emptySet() else setOf(boolKey))
         if (obj.keys.any { it !in sourceMetadata && it !in keys }) return null
-        if (!byPkg && (obj["pkgSets"] as? JsonArray)?.isNotEmpty() == true) return null
+        if (!byPkg && "pkgSets" in obj) {
+            val sets = obj["pkgSets"] as? JsonArray ?: return null
+            if (sets.isNotEmpty()) return null
+        }
         val items = obj[listKey] as? JsonArray ?: return null
         if (items.size != 1) return null
         val item = items.single() as? JsonObject ?: return null
