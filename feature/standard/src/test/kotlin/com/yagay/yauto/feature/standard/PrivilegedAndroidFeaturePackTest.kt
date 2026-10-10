@@ -38,10 +38,8 @@ class PrivilegedAndroidFeaturePackTest {
     @Test fun `privileged descriptors expose language neutral backend choices`() {
         val registry = FeatureRegistry().apply { install(PrivilegedAndroidFeaturePack()) }
         val descriptor = requireNotNull(registry.descriptor("android.app.clear_data"))
-        val backend = descriptor.fields.filterIsInstance<FieldSchema.Choice>()
-            .first { it.key == FEATURE_BACKEND_CONFIG_KEY }
-        assertEquals(listOf("auto", "root", "shizuku"), backend.options)
-        assertEquals(FEATURE_BACKEND_CONFIG_KEY, backend.label)
+        assertTrue(descriptor.fields.none { it.key == FEATURE_BACKEND_CONFIG_KEY })
+        assertTrue(descriptor.fields.none { it.key == FEATURE_METHOD_CONFIG_KEY })
         assertEquals(
             listOf("root", "shizuku"),
             descriptor.resolvedImplementationOptions().mapNotNull { it.backendId },
@@ -55,9 +53,8 @@ class PrivilegedAndroidFeaturePackTest {
     @Test fun `system ui exposes LSPosed Root and Shizuku implementations`() {
         val registry = FeatureRegistry().apply { install(SystemFeaturePack()) }
         val descriptor = requireNotNull(registry.descriptor(SystemOperations.SLEEP))
-        val backend = descriptor.fields.filterIsInstance<FieldSchema.Choice>()
-            .first { it.key == FEATURE_BACKEND_CONFIG_KEY }
-        assertEquals(listOf("auto", "lsposed", "root", "shizuku"), backend.options)
+        assertTrue(descriptor.fields.none { it.key == FEATURE_BACKEND_CONFIG_KEY })
+        assertTrue(descriptor.fields.none { it.key == FEATURE_METHOD_CONFIG_KEY })
         val implementations = descriptor.resolvedImplementationOptions()
         assertEquals(listOf("lsposed", "root", "shizuku"), implementations.mapNotNull { it.backendId })
         assertTrue(implementations.first { it.backendId == "lsposed" }.restartRequired)
@@ -121,7 +118,7 @@ class PrivilegedAndroidFeaturePackTest {
         val auto = broker.execute(CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "test"))
         assertTrue(auto.success)
         assertEquals("shizuku", auto.backendId)
-        assertEquals(listOf("root", "shizuku"), auto.attempts.map { it.backendId })
+        assertEquals(listOf("shizuku"), auto.attempts.map { it.backendId })
 
         val rootOnly = broker.execute(CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "test", preferredBackendId = "root"))
         assertFalse(rootOnly.success)

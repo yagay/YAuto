@@ -308,8 +308,8 @@
     <string name="implementation_unique_method">唯一可用实现方式</string>
     <string name="runtime_feature_dual_method_backend_mismatch">所选执行后端与当前 Root 权限分组不匹配，请重新选择。</string>
     <string name="runtime_feature_dual_method_backend_not_supported">当前执行后端不支持 %1$s 的等价实现。</string>
-    <string name="runtime_show_root_exclusive_title">显示 Root / LSPosed 功能及实现方式</string>
-    <string name="runtime_show_root_exclusive_detail">关闭后，隐藏 Root／LSPosed 专属功能，并在多种实现的功能里隐藏 Root／LSPosed 方式；保留 Android API、无障碍及 Shizuku。已有任务的配置不会被改变。</string>
+    <string name="runtime_show_root_exclusive_title">显示仅 Root / LSPosed 可用的功能</string>
+    <string name="runtime_show_root_exclusive_detail">关闭后，隐藏必须依靠 Root 或 LSPosed 的功能。其他功能自动选择可用实现，已有任务不会被停用。</string>
     <string name="implementation_hidden_saved_root">已在设置中隐藏 Root 和 LSPosed 实现方式。原有任务中已保存的特权实现不会自动更改，选择其他方式后才会替换。</string>
     <string name="implementation_optimal_automatic">执行方式：自动选择最优方案</string>
     <string name="implementation_root_mandatory">此功能必须使用 Root 或 LSPosed。</string>
