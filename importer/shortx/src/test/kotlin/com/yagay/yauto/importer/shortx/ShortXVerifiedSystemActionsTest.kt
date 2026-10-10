@@ -204,11 +204,14 @@ class ShortXVerifiedSystemActionsTest {
             result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature.typeId })
     }
 
-    @Test fun `auto brightness only converts lossless enable case`() {
+    @Test fun `auto brightness conversion preserves current manual brightness on disable`() {
         val enabled = importAction("SetAutoBrightness", message(varintField(1, 1)))
         assertEquals("android.display.brightness.set", enabled.typeId)
         assertEquals(ConfigValue.StringValue("auto"), enabled.config["mode"])
-        assertEquals("compat.source.action", importAction("SetAutoBrightness", message(varintField(1, 0))).typeId)
+        val disabled = importAction("SetAutoBrightness", message(varintField(1, 0)))
+        assertEquals("android.display.brightness.set", disabled.typeId)
+        assertEquals(ConfigValue.StringValue("manual_keep"), disabled.config["mode"])
+        assertEquals(null, disabled.config["percent"])
     }
 
     @Test fun `json verified system actions map through same canonical features`() {
