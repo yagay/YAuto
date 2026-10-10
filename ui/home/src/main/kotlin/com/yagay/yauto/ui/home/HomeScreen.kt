@@ -63,6 +63,7 @@ fun MacroHomeScreen(
     var automationToDelete by remember { mutableStateOf<Automation?>(null) }
     var flowToDelete by remember { mutableStateOf<Flow?>(null) }
     var showTestCenter by rememberSaveable { mutableStateOf(false) }
+    var pendingAutomationTest by rememberSaveable { mutableStateOf<String?>(null) }
 
     // The previous visited tab is a destination, not an alias for the dashboard.
     PageBackHandler(
@@ -186,7 +187,7 @@ fun MacroHomeScreen(
                             OutlinedButton(
                                 onClick = {
                                     showTestCenter = false
-                                    onTestSavedAutomation(automation.id.value)
+                                    pendingAutomationTest = automation.id.value
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
@@ -226,6 +227,25 @@ fun MacroHomeScreen(
             confirmButton = {
                 TextButton(onClick = { showTestCenter = false }) {
                     Text(stringResource(R.string.test_center_close))
+                }
+            },
+        )
+    }
+
+    pendingAutomationTest?.let { automationId ->
+        AlertDialog(
+            onDismissRequest = { pendingAutomationTest = null },
+            title = { Text(stringResource(R.string.test_center_confirm_title)) },
+            text = { Text(stringResource(R.string.test_center_confirm_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingAutomationTest = null
+                    onTestSavedAutomation(automationId)
+                }) { Text(stringResource(R.string.test_center_execute)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingAutomationTest = null }) {
+                    Text(stringResource(R.string.common_cancel))
                 }
             },
         )
