@@ -54,7 +54,7 @@ for rel, maximum in size_budgets.items():
 # Shared feature configuration and access labels have a single canonical source.
 editor_dir = ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor"
 shared_contracts = {
-    "buildEditedFeatureConfig(": "FeatureConfigSerialization.kt",
+    "fun buildEditedFeatureConfig(": "FeatureConfigSerialization.kt",
     "fun fieldValid(": "FeatureConfigSerialization.kt",
     "fun accessRequirementResource(": "FeatureAccessLabels.kt",
 }
