@@ -283,4 +283,5 @@
     <string name="test_center_diagnostics">View execution diagnostics</string>
     <string name="test_center_permissions">Check permissions and services</string>
     <string name="test_center_close">Close</string>
+    <string name="test_center_settings_subtitle">Manual trigger test, runtime logs, permissions and services</string>
 </resources>
