@@ -1,9 +1,9 @@
 <resources>
-    <string name="settings_runtime_background">运行与后台</string>
+    <string name="settings_runtime_background">Runtime and background</string>
     <string name="settings_runtime_background_description">Start on boot and battery optimization guidance</string>
-    <string name="settings_editor_defaults">功能列表与编辑</string>
+    <string name="settings_editor_defaults">Features and editor</string>
     <string name="settings_editor_defaults_description">Feature visibility and default editor choices</string>
-    <string name="settings_logs_title">执行日志</string>
+    <string name="settings_logs_title">Execution logs</string>
     <string name="settings_logs_description">Log details, file size and clearing logs</string>
     <string name="settings_boot_autostart">Start automation service after boot</string>
     <string name="settings_boot_autostart_description">When disabled, the boot receiver will not start the runtime. Existing running services and other triggers are not switched off.</string>
