@@ -630,48 +630,6 @@ class TaskerImporter : AutomationImporter {
             }
     }
 
-    private fun taskerJsonValue(value: String, type: String): String = when (type) {
-        "java.lang.Boolean", "boolean" ->
-            if (value.equals("true", true) || value == "1") "true" else "false"
-        "java.lang.Integer", "java.lang.Long", "java.lang.Short", "java.lang.Byte",
-        "int", "long", "short", "byte" -> value.trim().toLongOrNull()?.toString() ?: jsonString(value)
-        "java.lang.Float", "java.lang.Double", "float", "double" ->
-            value.trim().toDoubleOrNull()?.toString() ?: jsonString(value)
-        else -> jsonString(value)
-    }
-
-    private fun jsonString(value: String): String = buildString(value.length + 2) {
-        append('"')
-        value.forEach { ch ->
-            when (ch) {
-                '\\' -> append("\\\\")
-                '"' -> append("\\\"")
-                '\n' -> append("\\n")
-                '\r' -> append("\\r")
-                '\t' -> append("\\t")
-                else -> if (ch.code < 0x20) append("\\u%04x".format(ch.code)) else append(ch)
-            }
-        }
-        append('"')
-    }
-
-    private fun Element.argElement(index: Int): Element? =
-        elementChildren().firstOrNull { it.getAttribute("sr") == "arg" + index }
-
-    private fun Element.stringArg(index: Int): String? {
-        val arg = argElement(index) ?: return null
-        return when {
-            arg.hasAttribute("val") -> arg.getAttribute("val")
-            else -> arg.textContent?.trim()
-        }?.takeIf(String::isNotEmpty)
-    }
-
-    private fun Element.intArg(index: Int): Long? {
-        val arg = argElement(index) ?: return null
-        return arg.getAttribute("val").takeIf(String::isNotBlank)?.toLongOrNull()
-            ?: arg.textContent?.trim()?.toLongOrNull()
-    }
-
     private companion object {
         val TASKER_PACKAGE = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
     }
@@ -688,14 +646,5 @@ class TaskerImporter : AutomationImporter {
         val flowId: FlowId,
     )
 
-    private fun Element.childText(name: String): String? = elementChildren().firstOrNull { it.tagName == name }?.textContent?.trim()?.takeIf { it.isNotEmpty() }
-    private fun Element.children(name: String): List<Element> = elementChildren().filter { it.tagName == name }
-    private fun Element.elementChildren(): List<Element> = (0 until childNodes.length).mapNotNull { childNodes.item(it) as? Element }
-    private fun Element.toCompactXml(): String {
-        val writer = StringWriter()
-        TransformerFactory.newInstance().newTransformer().apply {
-            setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes")
-        }.transform(DOMSource(this), StreamResult(writer))
-        return writer.toString()
-    }
+
 }
