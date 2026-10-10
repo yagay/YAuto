@@ -35,8 +35,8 @@ abstract class XposedProviderInstallers : XposedModule() {
         }.getOrNull() ?: return
         clazz.declaredMethods.filter { it.name == "dispatchTagEndpoint" }.forEach { method ->
             val key = "shortx-nfc|" + method.toGenericString()
-            if (!installedHooks.add(key)) return@forEach
-            method.isAccessible = true
+            val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                method.isAccessible = true
             hook(method).intercept { chain ->
                 val endpoint = chain.args.firstOrNull {
                     it?.javaClass?.name?.contains("TagEndpoint") == true
@@ -56,6 +56,10 @@ abstract class XposedProviderInstallers : XposedModule() {
                 emitPackageRuntimeEvent(context, "android.event.nfc_tag", payload)
                 chain.proceed()
             }
+            }
+            installation.exceptionOrNull()?.let { error ->
+                log(android.util.Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+            }
         }
     }
 
@@ -66,8 +70,8 @@ abstract class XposedProviderInstallers : XposedModule() {
             ?.filter { it.name == "onCreate" }
             ?.forEach { method ->
                 val key = "shortx-media-provider-ready|" + method.toGenericString()
-                if (!installedHooks.add(key)) return@forEach
-                method.isAccessible = true
+                val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                    method.isAccessible = true
                 hook(method).intercept { chain ->
                     val result = chain.proceed()
                     emitPackageRuntimeEvent(
@@ -76,6 +80,10 @@ abstract class XposedProviderInstallers : XposedModule() {
                         mapOf("method" to method.name),
                     )
                     result
+                }
+                }
+                installation.exceptionOrNull()?.let { error ->
+                    log(android.util.Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
                 }
             }
 
@@ -95,8 +103,8 @@ abstract class XposedProviderInstallers : XposedModule() {
                         else -> "android.event.media_store_changed"
                     }
                     val key = "shortx-media-provider|" + method.toGenericString()
-                    if (!installedHooks.add(key)) return@forEach
-                    method.isAccessible = true
+                    val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                        method.isAccessible = true
                     hook(method).intercept { chain ->
                         val uri = chain.args.firstOrNull { it is android.net.Uri } as? android.net.Uri
                         val result = chain.proceed()
@@ -119,6 +127,10 @@ abstract class XposedProviderInstallers : XposedModule() {
                         emitPackageRuntimeEvent(context, "android.event.media_provider_changed", genericPayload)
                         result
                     }
+                    }
+                    installation.exceptionOrNull()?.let { error ->
+                        log(android.util.Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+                    }
                 }
         }
     }
@@ -128,8 +140,8 @@ abstract class XposedProviderInstallers : XposedModule() {
             ?: return
         clazz.declaredMethods.filter { it.name == "onCreate" }.forEach { method ->
             val key = "shortx-sms-provider-ready|" + method.toGenericString()
-            if (!installedHooks.add(key)) return@forEach
-            method.isAccessible = true
+            val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                method.isAccessible = true
             hook(method).intercept { chain ->
                 val result = chain.proceed()
                 emitPackageRuntimeEvent(
@@ -139,13 +151,17 @@ abstract class XposedProviderInstallers : XposedModule() {
                 )
                 result
             }
+            }
+            installation.exceptionOrNull()?.let { error ->
+                log(android.util.Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+            }
         }
         clazz.declaredMethods
             .filter { it.name in setOf("insert", "delete", "update") }
             .forEach { method ->
                 val key = "shortx-sms-provider|" + method.toGenericString()
-                if (!installedHooks.add(key)) return@forEach
-                method.isAccessible = true
+                val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                    method.isAccessible = true
                 hook(method).intercept { chain ->
                     val uri = chain.args.firstOrNull { it is android.net.Uri } as? android.net.Uri
                     val result = chain.proceed()
@@ -160,6 +176,10 @@ abstract class XposedProviderInstallers : XposedModule() {
                     )
                     result
                 }
+                }
+                installation.exceptionOrNull()?.let { error ->
+                    log(android.util.Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+                }
             }
     }
 
@@ -168,8 +188,8 @@ abstract class XposedProviderInstallers : XposedModule() {
             ?: return
         clazz.declaredMethods.filter { it.name == "commitText" }.forEach { method ->
             val key = "shortx-input-connection|" + packageName + "|" + method.toGenericString()
-            if (!installedHooks.add(key)) return@forEach
-            method.isAccessible = true
+            val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                method.isAccessible = true
             hook(method).intercept { chain ->
                 val text = chain.args.firstOrNull { it is CharSequence }?.toString().orEmpty()
                 emitPackageRuntimeEvent(
@@ -182,6 +202,10 @@ abstract class XposedProviderInstallers : XposedModule() {
                     ),
                 )
                 chain.proceed()
+            }
+            }
+            installation.exceptionOrNull()?.let { error ->
+                log(android.util.Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
             }
         }
     }
