@@ -15,6 +15,7 @@ import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.qrcode.QRCodeWriter
 import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
@@ -93,6 +94,7 @@ class AndroidVisionFeaturePack(context: Context) : FeaturePack {
                 fields = listOf(
                     FieldSchema.Text("image", "Image path or content URI", true),
                     FieldSchema.Variable("resultVariable", "Store decoded object", true),
+                    FieldSchema.Toggle("textOnly", "Return decoded text only"),
                 ),
                 fieldBehaviors = mapOf("image" to FieldBehavior(supportsVariables = true)),
                 keywords = setOf("qr", "barcode", "decode", "scan", "image"),
@@ -108,7 +110,9 @@ class AndroidVisionFeaturePack(context: Context) : FeaturePack {
                     val result = MultiFormatReader().decode(
                         BinaryBitmap(HybridBinarizer(RGBLuminanceSource(bitmap.width, bitmap.height, pixels)))
                     )
-                    ConfigValue.ObjectValue(
+                    if (feature.config.boolean("textOnly")) {
+                        ConfigValue.StringValue(result.text.orEmpty())
+                    } else ConfigValue.ObjectValue(
                         mapOf(
                             "text" to ConfigValue.StringValue(result.text.orEmpty()),
                             "format" to ConfigValue.StringValue(result.barcodeFormat.name),

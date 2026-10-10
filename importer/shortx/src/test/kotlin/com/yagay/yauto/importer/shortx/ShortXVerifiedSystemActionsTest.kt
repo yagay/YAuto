@@ -671,6 +671,56 @@ class ShortXVerifiedSystemActionsTest {
             result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature.typeId })
     }
 
+    @Test fun `ShortX explicit package actions retain exact target and default Android user`() {
+        val pair = message(field(1, "com.example.app"), field(2, "0"))
+        val launch = importAction("LaunchAppByPkg", message(field(1, pair)))
+        assertEquals("android.app.launch", launch.typeId)
+        assertEquals(ConfigValue.StringValue("com.example.app"), launch.config["package"])
+        val remove = importAction("RemoveTasksByPkg", message(field(1, pair)))
+        assertEquals("android.tasks.remove", remove.typeId)
+        assertEquals(ConfigValue.StringValue("com.example.app"), remove.config["packages"])
+        assertEquals(ConfigValue.BooleanValue(true), remove.config["allMatching"])
+        val user10 = message(field(1, "com.example.app"), field(2, "10"))
+        assertEquals("compat.source.action", importAction("RemoveTasksByPkg", message(field(1, user10))).typeId)
+        assertEquals("compat.source.action", importAction("LaunchAppByPkg", message(field(1, pair), field(1, pair))).typeId)
+        val app = message(field(1, "com.example.app"), varintField(2, 0))
+        assertEquals("android.tasks.remove", importAction("RemoveTasks", message(field(1, app))).typeId)
+        assertEquals("compat.source.action", importAction("RemoveTasks", message(field(1, app), field(2, "my_set"))).typeId)
+    }
+
+    @Test fun `ShortX simple intent, inspector, QR and text Danmu are native only for representable choices`() {
+        assertEquals("android.intent_uri.launch",
+            importAction("StartActivityIntentUri", message(field(1, "intent:#Intent;action=android.intent.action.VIEW;end"))).typeId)
+        assertEquals("accessibility.universal_copy.show", importAction("EnableUniversalCopy", byteArrayOf()).typeId)
+        assertEquals("accessibility.view_id_viewer.show", importAction("EnableViewIdViewer", message(varintField(1, 0))).typeId)
+        assertEquals("compat.source.action", importAction("EnableViewIdViewer", message(varintField(1, 2))).typeId)
+        val qr = importAction("ParseQRCode", message(field(1, "/sdcard/img.png")))
+        assertEquals("android.qr.decode", qr.typeId)
+        assertEquals(ConfigValue.BooleanValue(true), qr.config["textOnly"])
+        assertEquals(ConfigValue.StringValue("qrCodeText"), qr.config["resultVariable"])
+        val banner = importAction("ShowDanmu", message(field(1, "hello")))
+        assertEquals("surface.danmu.show", banner.typeId)
+        assertEquals(ConfigValue.StringValue("top"), banner.config["gravity"])
+        assertEquals("compat.source.action", importAction("ShowDanmu", message(field(1, "hello"), field(2, "wifi"))).typeId)
+    }
+
+    @Test fun `ShortX extra batch JSON rejects explicit users, package sets and styling it cannot retain`() {
+        val json = """{"title":"expanded","actions":[
+            {"@type":"type.googleapis.com/shortx.LaunchAppByPkg","pkgAndUsers":[{"first":"com.example.app","second":"0"}]},
+            {"@type":"type.googleapis.com/shortx.RemoveTasks","appPkg":[{"pkgName":"com.example.app","userId":0}],"pkgSets":[]},
+            {"@type":"type.googleapis.com/shortx.EnableUniversalCopy","themeMode":0},
+            {"@type":"type.googleapis.com/shortx.ParseQRCode","imagePath":"/sdcard/pic.png"},
+            {"@type":"type.googleapis.com/shortx.ShowDanmu","text":"hello"},
+            {"@type":"type.googleapis.com/shortx.ShowDanmu","text":"hello","icon":"wifi"},
+            {"@type":"type.googleapis.com/shortx.RemoveTasksByPkg","pkgAndUsers":[{"first":"com.example.app","second":"10"}]}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("expanded.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        assertEquals(listOf("android.app.launch", "android.tasks.remove", "accessibility.universal_copy.show",
+            "android.qr.decode", "surface.danmu.show", "compat.source.action", "compat.source.action"),
+            result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature.typeId })
+    }
+
     private fun assertBoolean(source: String, target: String, key: String, value: Boolean) {
         val feature = importAction(source, message(varintField(1, if (value) 1 else 0)))
         assertEquals(target, feature.typeId)

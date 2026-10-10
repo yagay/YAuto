@@ -16,6 +16,8 @@ internal object ShortXVerifiedBatchMappings {
         "ToggleWifi", "ToggleBT", "ToggleNFC", "ToggleLocation", "ToggleDarkMode", "ToggleData",
         "SetHotSpotEnabled", "InputText", "InputTap", "InputSwipe",
         "WriteClipboard", "ReplaceRegex", "AdjustVolume",
+        "LaunchAppByPkg", "RemoveTasks", "RemoveTasksByPkg",
+        "StartActivityIntentUri", "EnableUniversalCopy", "EnableViewIdViewer", "ParseQRCode", "ShowDanmu",
     )
     fun ownsSource(name: String): Boolean = name in batchOwnedSources
 
@@ -38,6 +40,72 @@ internal object ShortXVerifiedBatchMappings {
 
     private fun toggle(any: AnyStub, importerId: String, target: String): FeatureRef =
         feature(any, importerId, target, mapOf(bool("toggleCurrent", true)))
+
+    private fun targetsBinary(fields: ProtoFields, byPair: Boolean, allowSets: Boolean = false): List<String>? {
+        if (!fields.onlyBusinessFields(*(if (allowSets) intArrayOf(1, 2) else intArrayOf(1)))) return null
+        if (allowSets && fields.has(2)) return null
+        val items = fields.allBytes(1)
+        if (items.isEmpty() || items.size > 32) return null
+        val result = items.map { bytes ->
+            val child = runCatching { ProtoFields(bytes) }.getOrNull() ?: return null
+            if (!child.onlyBusinessFields(1, 2)) return null
+            val pkg = child.string(1) ?: return null
+            val user = if (byPair) child.string(2)?.toIntOrNull() ?: return null
+            else if (!child.has(2)) 0 else child.varint(2)?.toInt() ?: return null
+            if (user != 0 || !pkgName.matches(pkg)) return null
+            pkg
+        }
+        if (result.distinct().size != result.size) return null
+        return result
+    }
+
+    private fun targetsJson(obj: JsonObject, byPair: Boolean, allowSets: Boolean = false): List<String>? {
+        val key = if (byPair) "pkgAndUsers" else "appPkg"
+        if (obj.keys.any { it !in sourceMetadata && it != key && (!allowSets || it != "pkgSets") }) return null
+        if (allowSets && obj["pkgSets"] != null) {
+            if ((obj["pkgSets"] as? JsonArray)?.isNotEmpty() != false) return null
+        }
+        val items = obj[key] as? JsonArray ?: return null
+        if (items.isEmpty() || items.size > 32) return null
+        val result = items.map { value ->
+            val child = value as? JsonObject ?: return null
+            val legalKeys = if (byPair) setOf("first", "second") else setOf("pkgName", "userId")
+            if (child.keys.any { it !in legalKeys }) return null
+            val pkgKey = if (byPair) "first" else "pkgName"
+            val pkg = (child[pkgKey] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+            val user = if (byPair) (child["second"] as? JsonPrimitive)?.contentOrNull?.toIntOrNull() ?: return null
+            else if ("userId" in child) (child["userId"] as? JsonPrimitive)?.intOrNull ?: return null else 0
+            if (user != 0 || !pkgName.matches(pkg)) return null
+            pkg
+        }
+        if (result.distinct().size != result.size) return null
+        return result
+    }
+
+    private fun taskRemove(any: AnyStub, importerId: String, packages: List<String>?): FeatureRef? =
+        packages?.takeIf { it.isNotEmpty() }?.let {
+            feature(any, importerId, "android.tasks.remove",
+                mapOf(text("packages", it.joinToString("\n")), bool("allMatching", true)))
+        }
+
+    private fun launchSingle(any: AnyStub, importerId: String, packages: List<String>?): FeatureRef? =
+        packages?.singleOrNull()?.let {
+            feature(any, importerId, "android.app.launch", mapOf(text("package", it)))
+        }
+
+    private fun noTheme(any: AnyStub, importerId: String, fields: ProtoFields, target: String): FeatureRef? {
+        if (!fields.onlyBusinessFields(1)) return null
+        val theme = fields.varint(1) ?: if (!fields.has(1)) 0L else return null
+        if (theme != 0L) return null
+        return feature(any, importerId, target, emptyMap())
+    }
+
+    private fun noThemeJson(any: AnyStub, importerId: String, obj: JsonObject, target: String): FeatureRef? {
+        if (obj.keys.any { it !in sourceMetadata && it != "themeMode" }) return null
+        val mode = (obj["themeMode"] as? JsonPrimitive)?.intOrNull
+            ?: if ("themeMode" in obj) return null else 0
+        return if (mode == 0) feature(any, importerId, target, emptyMap()) else null
+    }
 
     private fun sourceNumber(raw: String): Double? {
         val n = raw.toDoubleOrNull() ?: return null
@@ -249,6 +317,28 @@ internal object ShortXVerifiedBatchMappings {
     /** Protobuf defaults are accepted only when the message has no unknown business fields. */
     fun binary(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         return when (sourceName(any)) {
+            "LaunchAppByPkg" -> launchSingle(any, importerId, targetsBinary(fields, byPair = true))
+            "RemoveTasks" -> taskRemove(any, importerId, targetsBinary(fields, byPair = false, allowSets = true))
+            "RemoveTasksByPkg" -> taskRemove(any, importerId, targetsBinary(fields, byPair = true))
+            "StartActivityIntentUri" -> if (fields.onlyBusinessFields(1)) {
+                fields.string(1)?.takeIf(String::isNotBlank)?.let {
+                    feature(any, importerId, "android.intent_uri.launch", mapOf(text("intentUri", it)))
+                }
+            } else null
+            "EnableUniversalCopy" -> noTheme(any, importerId, fields, "accessibility.universal_copy.show")
+            "EnableViewIdViewer" -> noTheme(any, importerId, fields, "accessibility.view_id_viewer.show")
+            "ParseQRCode" -> if (fields.onlyBusinessFields(1)) {
+                fields.string(1)?.takeIf(String::isNotBlank)?.let {
+                    feature(any, importerId, "android.qr.decode", mapOf(
+                        text("image", it), text("resultVariable", "qrCodeText"), bool("textOnly", true)))
+                }
+            } else null
+            "ShowDanmu" -> if (fields.onlyBusinessFields(1, 2) && !fields.has(2)) {
+                fields.string(1)?.takeIf(String::isNotBlank)?.let {
+                    feature(any, importerId, "surface.danmu.show", mapOf(
+                        text("surfaceId", "shortx.danmu"), text("text", it), text("gravity", "top")))
+                }
+            } else null
             "ToggleData" -> if (fields.onlyBusinessFields(1, 2)) {
                 val specific = fields.varint(1) ?: if (!fields.has(1)) 0L else return null
                 val slot = fields.varint(2) ?: if (!fields.has(2)) 0L else return null
@@ -389,6 +479,29 @@ internal object ShortXVerifiedBatchMappings {
             obj.keys.all { it in sourceMetadata || it in keys }
         fun field(name: String): Int? = (obj[name] as? JsonPrimitive)?.intOrNull
         return when (sourceName(any)) {
+            "LaunchAppByPkg" -> launchSingle(any, importerId, targetsJson(obj, byPair = true))
+            "RemoveTasks" -> taskRemove(any, importerId, targetsJson(obj, byPair = false, allowSets = true))
+            "RemoveTasksByPkg" -> taskRemove(any, importerId, targetsJson(obj, byPair = true))
+            "StartActivityIntentUri" -> if (allowed("intentUri")) {
+                (obj["intentUri"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.takeIf(String::isNotBlank)?.let {
+                    feature(any, importerId, "android.intent_uri.launch", mapOf(text("intentUri", it)))
+                }
+            } else null
+            "EnableUniversalCopy" -> noThemeJson(any, importerId, obj, "accessibility.universal_copy.show")
+            "EnableViewIdViewer" -> noThemeJson(any, importerId, obj, "accessibility.view_id_viewer.show")
+            "ParseQRCode" -> if (allowed("imagePath")) {
+                (obj["imagePath"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.takeIf(String::isNotBlank)?.let {
+                    feature(any, importerId, "android.qr.decode", mapOf(
+                        text("image", it), text("resultVariable", "qrCodeText"), bool("textOnly", true)))
+                }
+            } else null
+            "ShowDanmu" -> if (allowed("text", "icon") &&
+                (obj["icon"] == null || (obj["icon"] as? JsonPrimitive)?.contentOrNull == "")) {
+                (obj["text"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.takeIf(String::isNotBlank)?.let {
+                    feature(any, importerId, "surface.danmu.show", mapOf(
+                        text("surfaceId", "shortx.danmu"), text("text", it), text("gravity", "top")))
+                }
+            } else null
             "ToggleData" -> if (allowed("hasSpecificSlotId", "slotId")) {
                 val specific = (obj["hasSpecificSlotId"] as? JsonPrimitive)?.booleanOrNull
                     ?: if ("hasSpecificSlotId" in obj) return null else false

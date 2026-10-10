@@ -56,3 +56,10 @@ The ShortX source reference defines StartLastApp as recent-task fast switching a
 - The Wi-Fi/Bluetooth/NFC shell toggles now read current Android global setting and fail when state cannot be proven; the location toggle uses `cmd location is-location-enabled`, and dark-theme toggle uses `cmd uimode night` only if explicit light/dark state can be read, never guesses while automatic night mode is active. Existing on/off and mode values stay backward compatible.
 - InputTap/InputSwipe accept only finite, non-negative numeric literal coordinates, protecting variable-expression payloads for future source-aware execution. WriteClipboard file-path payloads remain raw compatibility. `AdjustVolume` now uses global AudioManager.adjustVolume rather than silently acting on the media stream.
 - Native conversions remain incomplete for many advanced ShortX actions, particularly stateful UI / SystemUI Hook functionality. Do not interpret decoder count as complete behavior parity.
+
+## 2026-10-10: explicit app targets and simple UI conversions
+
+- Converted `LaunchAppByPkg`, `RemoveTasks`, `RemoveTasksByPkg`, `StartActivityIntentUri`, `EnableUniversalCopy`, `EnableViewIdViewer`, `ParseQRCode`, and text-only `ShowDanmu` using existing YAuto runtime features.
+- The app and task converters preserve default Android user only, reject unresolved package sets or duplicate/foreign users, and retain all source data in compatibility nodes otherwise.
+- `ParseQRCode` now uses a small `textOnly` option in the existing QR decoder to write ShortX's documented `qrCodeText` context variable without altering YAuto's existing structured-object output defaults.
+- Inspector themes other than default, special Danmu icons and unsupported source metadata are not silently dropped.
