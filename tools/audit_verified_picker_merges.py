@@ -36,7 +36,7 @@ Y_AUTO_EVIDENCE_TOKENS = {
         ("AndroidPrivilegedParityFeaturePack.kt", '"android.locale.app.set"'),
     ),
     "yauto.torch_status": (
-        ("AndroidRemainingParityFeaturePack.kt", 'FeatureId("android.state.torch_on")'),
+        ("AndroidRemainingIntegrationRegistrations.kt", 'FeatureId("android.state.torch_on")'),
         ("AndroidReferenceSignalFeaturePack.kt", '"torch_enabled"'),
     ),
     "camera_flash_hardware": (
