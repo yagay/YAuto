@@ -5,6 +5,33 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.FeatureRef
 
 const val FEATURE_BACKEND_CONFIG_KEY = "__backend"
+const val FEATURE_METHOD_CONFIG_KEY = "__method"
+private val PRIVILEGED_BACKENDS = setOf("lsposed", "root", "shizuku")
+
+/** Method family is independent from privilege backend. Only explicitly dual-routed features expose it. */
+enum class FeatureMethod(val id: String) {
+    AUTO("auto"),
+    MACRODROID("macrodroid"),
+    SHORTX("shortx"),
+}
+
+fun FeatureRef.preferredMethod(): FeatureMethod {
+    val saved = (config[FEATURE_METHOD_CONFIG_KEY] as? ConfigValue.StringValue)?.value
+        ?.trim()?.lowercase()
+    return when (saved) {
+        FeatureMethod.MACRODROID.id -> FeatureMethod.MACRODROID
+        FeatureMethod.SHORTX.id -> FeatureMethod.SHORTX
+        // Old workspaces that explicitly chose a privileged backend keep that route.
+        null, "" -> if (preferredBackendId() in PRIVILEGED_BACKENDS) FeatureMethod.SHORTX else FeatureMethod.AUTO
+        else -> FeatureMethod.AUTO
+    }
+}
+
+fun FeatureDescriptor.hasDualMethodRoutes(): Boolean {
+    if (kind != FeatureKind.ACTION) return false
+    val backends = resolvedImplementationOptions().mapNotNull { it.backendId }.toSet()
+    return "accessibility" in backends && backends.any { it in PRIVILEGED_BACKENDS }
+}
 
 fun FeatureRef.preferredBackendId(): String? =
     (config[FEATURE_BACKEND_CONFIG_KEY] as? ConfigValue.StringValue)?.value
@@ -64,18 +91,34 @@ fun FeatureDescriptor.withAccessEditorMetadata(): FeatureDescriptor {
     val options = resolvedImplementationOptions()
     if (requirements.isEmpty() && options.isEmpty()) return this
 
-    val selectableBackends = options.mapNotNull { it.backendId }.distinct()
+    val dual = hasDualMethodRoutes()
+    val selectableBackends = options.mapNotNull { it.backendId }
+        .filter { !dual || it in PRIVILEGED_BACKENDS }.distinct()
+    val methodField = if (dual && fields.none { it.key == FEATURE_METHOD_CONFIG_KEY }) {
+        FieldSchema.Choice(
+            key = FEATURE_METHOD_CONFIG_KEY,
+            label = FEATURE_METHOD_CONFIG_KEY,
+            options = FeatureMethod.entries.map { it.id },
+        )
+    } else null
     val backendField = if (selectableBackends.size > 1 && fields.none { it.key == FEATURE_BACKEND_CONFIG_KEY }) {
         FieldSchema.Choice(
             key = FEATURE_BACKEND_CONFIG_KEY,
             label = FEATURE_BACKEND_CONFIG_KEY,
-            required = false,
             options = listOf("auto") + selectableBackends,
         )
     } else null
 
     return copy(
-        fields = if (backendField == null) fields else listOf(backendField) + fields,
-        keywords = keywords + requirements.map { it.id } + options.mapNotNull { it.backendId },
+        fields = listOfNotNull(methodField, backendField) + fields,
+        fieldBehaviors = if (dual && backendField != null) fieldBehaviors + (
+            FEATURE_BACKEND_CONFIG_KEY to FieldBehavior(
+                visibleWhen = FieldRule.Equals(
+                    FEATURE_METHOD_CONFIG_KEY, ConfigValue.StringValue(FeatureMethod.SHORTX.id),
+                ),
+            )
+        ) else fieldBehaviors,
+        keywords = keywords + requirements.map { it.id } + options.mapNotNull { it.backendId } +
+            if (dual) setOf("macrodroid", "shortx", "implementation method") else emptySet(),
     )
 }

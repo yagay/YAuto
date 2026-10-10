@@ -54,7 +54,9 @@ internal fun GenericFeatureConfigEditor(
     }
     val initialTexts = remember(descriptor, initialWithDefaults, locale) {
         descriptor.fields.associate { field ->
-            field.key to editorConfigValueText(initialWithDefaults.config[field.key], locale)
+            field.key to if (field.key == FEATURE_METHOD_CONFIG_KEY)
+                initialWithDefaults.preferredMethod().id
+            else editorConfigValueText(initialWithDefaults.config[field.key], locale)
         }
     }
     var values by remember(descriptor.id.value, initial, locale) { mutableStateOf(initialTexts) }
@@ -101,6 +103,7 @@ internal fun GenericFeatureConfigEditor(
                     descriptor,
                     if (backends.size == 1) backends.first().backendId.orEmpty()
                     else values[FEATURE_BACKEND_CONFIG_KEY].orEmpty().ifBlank { "auto" },
+                    values[FEATURE_METHOD_CONFIG_KEY].orEmpty().ifBlank { "auto" },
                 )
             }
         }
@@ -130,7 +133,13 @@ internal fun GenericFeatureConfigEditor(
         items(displayedFields, key = { it.key }) { field ->
             val behavior = descriptor.fieldBehavior(field.key)
             val enabled = behavior.enabledWhen?.matches(typedValues) != false
-            if (field.key == FEATURE_BACKEND_CONFIG_KEY && field is FieldSchema.Choice) {
+            if (field.key == FEATURE_METHOD_CONFIG_KEY && field is FieldSchema.Choice) {
+                MethodChoiceEditor(
+                    selected = values[field.key].orEmpty().ifBlank { "auto" },
+                    enabled = enabled,
+                    onValue = { values = values + (field.key to it) },
+                )
+            } else if (field.key == FEATURE_BACKEND_CONFIG_KEY && field is FieldSchema.Choice) {
                 BackendChoiceEditor(
                     descriptor = descriptor,
                     field = field,
@@ -246,7 +255,11 @@ private fun AccessRequirementBadges(descriptor: FeatureDescriptor) {
 }
 
 @Composable
-private fun ImplementationGuide(descriptor: FeatureDescriptor, requestedBackendId: String) {
+private fun ImplementationGuide(
+    descriptor: FeatureDescriptor,
+    requestedBackendId: String,
+    requestedMethod: String,
+) {
     val options = descriptor.resolvedImplementationOptions()
     val selected = options.firstOrNull { it.backendId == requestedBackendId }
     val backendId = selected?.backendId ?: "auto"
@@ -257,13 +270,32 @@ private fun ImplementationGuide(descriptor: FeatureDescriptor, requestedBackendI
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(TextR.string.implementation_method), fontWeight = FontWeight.SemiBold)
-            Text(implementationTitle(backendId), style = MaterialTheme.typography.titleSmall)
-            Text(
-                resolver.backendPermissionExplanation(descriptor, backendId),
-                style = MaterialTheme.typography.bodySmall,
-            )
+            if (descriptor.hasDualMethodRoutes()) {
+                Text(
+                    when (requestedMethod) {
+                        "macrodroid" -> stringResource(TextR.string.implementation_family_macro_detail)
+                        "shortx" -> stringResource(TextR.string.implementation_family_shortx_detail)
+                        else -> stringResource(TextR.string.implementation_family_auto_detail)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            if (!descriptor.hasDualMethodRoutes() || requestedMethod == "shortx") {
+                Text(implementationTitle(backendId), style = MaterialTheme.typography.titleSmall)
+            }
+            if (!descriptor.hasDualMethodRoutes() || requestedMethod == "shortx") {
+                Text(
+                    resolver.backendPermissionExplanation(descriptor, backendId),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
 
-            if (selected != null) {
+            if (descriptor.hasDualMethodRoutes() && requestedMethod != "shortx") {
+                Text(
+                    stringResource(TextR.string.implementation_family_accessibility_required),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            } else if (selected != null) {
                 if (selected.requirements.isNotEmpty()) {
                     Text(
                         stringResource(
@@ -320,6 +352,31 @@ private fun ImplementationGuide(descriptor: FeatureDescriptor, requestedBackendI
 }
 
 @Composable
+private fun MethodChoiceEditor(
+    selected: String,
+    enabled: Boolean,
+    onValue: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(stringResource(TextR.string.implementation_method), fontWeight = FontWeight.Medium)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                "auto" to TextR.string.implementation_auto_title,
+                "macrodroid" to TextR.string.implementation_family_macro_title,
+                "shortx" to TextR.string.implementation_family_shortx_title,
+            ).forEach { (value, label) ->
+                FilterChip(
+                    selected = selected == value,
+                    onClick = { onValue(value) },
+                    enabled = enabled,
+                    label = { Text(stringResource(label)) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun BackendChoiceEditor(
     descriptor: FeatureDescriptor,
     field: FieldSchema.Choice,
@@ -329,7 +386,14 @@ private fun BackendChoiceEditor(
 ) {
     val selected = value.ifBlank { "auto" }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(stringResource(TextR.string.implementation_method), fontWeight = FontWeight.Medium)
+        Text(
+            stringResource(
+                if (descriptor.hasDualMethodRoutes())
+                    TextR.string.implementation_family_shortx_backend
+                else TextR.string.implementation_method,
+            ),
+            fontWeight = FontWeight.Medium,
+        )
         field.options.forEach { option ->
             val supported = option == "auto" || descriptor.resolvedImplementationOptions().any { it.backendId == option }
             if (supported) {

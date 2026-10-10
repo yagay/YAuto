@@ -286,4 +286,11 @@
     <string name="feature_picker_search_value">Search values</string>
     <string name="feature_picker_no_values">No selectable values are available. You can still enter a value manually when supported.</string>
     <string name="feature_picker_select_or_enter_hint">Choose from detected values, or enter a value manually.</string>
+    <string name="implementation_family_macro_title">MacroDroid method</string>
+    <string name="implementation_family_shortx_title">ShortX method</string>
+    <string name="implementation_family_shortx_backend">ShortX privilege backend</string>
+    <string name="implementation_family_macro_detail">Android API / Accessibility only. Never uses Root or LSPosed.</string>
+    <string name="implementation_family_shortx_detail">Use the selected LSPosed, Root or Shizuku backend. Does not silently switch to Accessibility.</string>
+    <string name="implementation_family_auto_detail">Try MacroDroid's non-root route first; if unsupported or unsuccessful, try the ShortX privileged route.</string>
+    <string name="implementation_family_accessibility_required">MacroDroid route requires enabled Accessibility; some operations only support the ShortX method.</string>
 </resources>

@@ -285,4 +285,11 @@
     <string name="feature_picker_search_value">搜索选项</string>
     <string name="feature_picker_no_values">当前没有检测到可选择的值；支持时仍可手动输入。</string>
     <string name="feature_picker_select_or_enter_hint">优先从检测到的选项中选择，也可手动输入。</string>
+    <string name="implementation_family_macro_title">MacroDroid 方法</string>
+    <string name="implementation_family_shortx_title">ShortX 方法</string>
+    <string name="implementation_family_shortx_backend">ShortX 特权执行后端</string>
+    <string name="implementation_family_macro_detail">仅使用 Android API / 无障碍，不调用 Root 或 LSPosed。</string>
+    <string name="implementation_family_shortx_detail">使用所选的 LSPosed、Root 或 Shizuku 后端，不会暗中切换到无障碍。</string>
+    <string name="implementation_family_auto_detail">优先尝试 MacroDroid 普通权限方式，不支持或失败时才尝试 ShortX 特权方式。</string>
+    <string name="implementation_family_accessibility_required">MacroDroid 方式需要开启无障碍，部分系统操作只能使用 ShortX 方法。</string>
 </resources>
