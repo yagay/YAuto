@@ -109,7 +109,7 @@ fun normalizeMacroDroidPickerCategory(
     }
 }
 
-private fun fallbackPickerCategory(
+internal fun fallbackPickerCategory(
     kind: FeatureKind,
     legacyCategory: FeatureCategory,
 ): FeaturePickerCategory = when (legacyCategory) {
