@@ -12,6 +12,13 @@ import kotlinx.serialization.json.*
  * and fields so the original ShortX action remains a compatibility node.
  */
 internal object ShortXVerifiedBatchMappings {
+    private val batchOwnedSources = setOf(
+        "ToggleWifi", "ToggleBT", "ToggleNFC", "ToggleLocation", "ToggleDarkMode", "ToggleData",
+        "SetHotSpotEnabled", "InputText", "InputTap", "InputSwipe",
+        "WriteClipboard", "ReplaceRegex", "AdjustVolume",
+    )
+    fun ownsSource(name: String): Boolean = name in batchOwnedSources
+
     private val sourceMetadata = setOf(
         "@type", "type", "typeUrl", "type_url", "id", "isDisabled", "note", "actionOnError",
     )
@@ -36,6 +43,9 @@ internal object ShortXVerifiedBatchMappings {
         val n = raw.toDoubleOrNull() ?: return null
         return n.takeIf { it.isFinite() && it >= 0.0 && it <= 100_000.0 }
     }
+
+    private fun coordinateField(fields: ProtoFields, number: Int): String? =
+        fields.string(number) ?: fields.varint(number)?.toString()
 
     private fun inputTap(any: AnyStub, importerId: String, xs: String, ys: String): FeatureRef? {
         val x = sourceNumber(xs) ?: return null
@@ -259,13 +269,19 @@ internal object ShortXVerifiedBatchMappings {
             "InputText" -> if (fields.onlyBusinessFields(1)) fields.string(1)?.let {
                 feature(any, importerId, "accessibility.input_text", mapOf(text("text", it)))
             } else null
-            "InputTap" -> if (fields.onlyBusinessFields(1, 2)) {
-                val x = fields.string(1) ?: return null
-                val y = fields.string(2) ?: return null
+            "InputTap" -> if (fields.onlyBusinessFields(1, 2, 3, 4)) {
+                val extended = fields.has(3) || fields.has(4)
+                if (extended && (fields.has(1) || fields.has(2))) return null
+                val (a, b) = if (extended) 3 to 4 else 1 to 2
+                val x = coordinateField(fields, a) ?: return null
+                val y = coordinateField(fields, b) ?: return null
                 inputTap(any, importerId, x, y)
             } else null
-            "InputSwipe" -> if (fields.onlyBusinessFields(1, 2, 3, 4, 5)) {
-                val coords = (1..5).map { fields.string(it) ?: return null }
+            "InputSwipe" -> if (fields.onlyBusinessFields(1, 2, 3, 4, 5, 11, 12, 13, 14, 15)) {
+                val extended = (11..15).any(fields::has)
+                if (extended && (1..5).any(fields::has)) return null
+                val indices = if (extended) 11..15 else 1..5
+                val coords = indices.map { coordinateField(fields, it) ?: return null }
                 inputSwipe(any, importerId, coords)
             } else null
             "WriteClipboard" -> if (fields.onlyBusinessFields(1, 2) && !fields.has(2)) {

@@ -80,7 +80,7 @@ class ShortXImporterTest {
     @Test fun `maps text WriteClipboard but preserves file clipboard`() {
         val textResult = ShortXImporter().import(ImportInput("clip.rule", null,
             rule("clip", "Clipboard", any("WriteClipboard", message(field(1, "hello"))))))
-        assertEquals("android.clipboard.set", actionFeature(textResult).typeId)
+        assertEquals("android.clipboard.write", actionFeature(textResult).typeId)
         assertEquals("hello", (actionFeature(textResult).config["text"] as ConfigValue.StringValue).value)
 
         val fileResult = ShortXImporter().import(ImportInput("clip-file.rule", null,

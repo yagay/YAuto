@@ -20,6 +20,9 @@ internal object ShortXMappings {
         val type = shortName(any.typeUrl)
         val fields = runCatching { ProtoFields(any.value) }.getOrNull() ?: return null
         if (fields.has(96)) return null
+        if (ShortXVerifiedBatchMappings.ownsSource(type)) {
+            return ShortXVerifiedBatchMappings.binary(any, importerId, fields)
+        }
         ShortXVerifiedBatchMappings.binary(any, importerId, fields)?.let { return it }
         return when (type) {
             "NoAction" -> noAction(any, importerId, fields)
@@ -430,6 +433,9 @@ internal object ShortXMappings {
         val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return null
         if (obj["customContextDataKey"] != null && obj["customContextDataKey"] !is JsonNull) return null
         val raw = any.value.toString(Charsets.UTF_8)
+        if (ShortXVerifiedBatchMappings.ownsSource(shortName(any.typeUrl))) {
+            return ShortXVerifiedBatchMappings.json(any, importerId, obj)
+        }
         ShortXVerifiedBatchMappings.json(any, importerId, obj)?.let { return it }
         return when (shortName(any.typeUrl)) {
             "NoAction" -> {
