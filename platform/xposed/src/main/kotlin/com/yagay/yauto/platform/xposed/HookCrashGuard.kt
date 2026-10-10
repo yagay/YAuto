@@ -13,12 +13,15 @@ internal class HookCrashGuard(context: Context) {
     private val prefs: SharedPreferences = context.createDeviceProtectedStorageContext()
         .getSharedPreferences("yauto_lsposed_crash_guard", Context.MODE_PRIVATE)
     @Volatile private var armed = false
-    @Volatile private var quarantined = prefs.getBoolean("quarantined", false)
+    private val quarantinedAtProcessStart = prefs.getBoolean("quarantined", false)
+    @Volatile private var quarantined = quarantinedAtProcessStart
 
-    fun isQuarantined(): Boolean = quarantined
+    // A reset clears persistent protection, but never hot-enables code in the
+    // same process that booted in safe mode; that requires a process restart.
+    fun isQuarantined(): Boolean = quarantined || quarantinedAtProcessStart
 
     fun arm(family: String) {
-        if (quarantined) return
+        if (isQuarantined()) return
         armed = true
         prefs.edit().putString("lastFamily", family.take(96)).apply()
     }
@@ -46,12 +49,12 @@ internal class HookCrashGuard(context: Context) {
     }
 
     fun status(out: Bundle) {
-        out.putBoolean("quarantined", quarantined)
+        out.putBoolean("quarantined", isQuarantined())
         out.putInt("crashCount", prefs.getInt("strikes", 0))
         out.putLong("lastCrash", prefs.getLong("lastCrash", 0))
         out.putString("lastException", prefs.getString("lastException", "").orEmpty())
         out.putString("lastFamily", prefs.getString("lastFamily", "").orEmpty())
-        out.putBoolean("restartRequired", quarantined)
+        out.putBoolean("restartRequired", quarantinedAtProcessStart || quarantined)
     }
 
     @Synchronized
