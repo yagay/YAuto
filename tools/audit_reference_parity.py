@@ -14,6 +14,7 @@ MAPPINGS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shor
 JSON_MAPPINGS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXJsonMappings.kt"
 STRUCTURAL = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXStructuralMappings.kt"
 BATCH = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXVerifiedBatchMappings.kt"
+BATCH_JSON = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXVerifiedJsonMappings.kt"
 HINTS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/EnhancedShortXImporter.kt"
 MACRO = ROOT / "tools/macrodroid_reviewed_names.csv"
 MERGES = ROOT / "tools/verified_picker_merges.csv"
@@ -35,12 +36,13 @@ def inventory() -> dict:
     native_json = JSON_MAPPINGS.read_text(encoding="utf-8")
     structural = STRUCTURAL.read_text(encoding="utf-8")
     batch = BATCH.read_text(encoding="utf-8")
+    batch_json_source = BATCH_JSON.read_text(encoding="utf-8")
     hints = HINTS.read_text(encoding="utf-8")
     binary = names_in_branches(native.split("fun nativeAction(", 1)[1].split("fun nativeFact(", 1)[0])
     json_actions = names_in_branches(native_json.split("fun ShortXMappings.nativeJsonAction(", 1)[1].split("fun ShortXMappings.nativeJsonCondition(", 1)[0])
     structure_names = names_in_branches(structural.split("fun convert(", 1)[1])
     batch_binary = names_in_branches(batch.split("fun binary(", 1)[1].split("private fun enumNumber", 1)[0])
-    batch_json = names_in_branches(batch.split("fun json(", 1)[1])
+    batch_json = names_in_branches(batch_json_source.split("fun ShortXVerifiedBatchMappings.jsonImpl(", 1)[1])
     # Hints can be helpful to guide manual migration but are not executable imports.
     hint_names = set(re.findall(r'"([A-Za-z][A-Za-z0-9_]*)"', hints.split("private fun action(name", 1)[1].split("private fun fact(name", 1)[0]))
     with MACRO.open(encoding="utf-8", newline="") as f:
