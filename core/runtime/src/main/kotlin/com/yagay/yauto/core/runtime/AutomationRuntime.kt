@@ -416,42 +416,41 @@ class AutomationRuntime(
     ): ActionExecutionResult {
         val name = category.trim()
         if (name.isEmpty()) return ActionExecutionResult(false)
-        val changed = workspaceMutationLock.withLock {
-            val workspace = workspaceRepository.load()
-            val currentlyEnabled = name !in workspace.disabledCategories
-            val enabled = when (mode) {
+        var previouslyEnabled = true
+        var enabled = true
+        var affectedIds = emptyList<AutomationId>()
+        updateWorkspace { workspace ->
+            previouslyEnabled = name !in workspace.disabledCategories
+            enabled = when (mode) {
                 AutomationEnableMode.ENABLE -> true
                 AutomationEnableMode.DISABLE -> false
-                AutomationEnableMode.TOGGLE -> !currentlyEnabled
+                AutomationEnableMode.TOGGLE -> !previouslyEnabled
             }
-            if (enabled != currentlyEnabled) {
+            if (enabled == previouslyEnabled) workspace else {
+                if (!enabled) affectedIds = workspace.automations
+                    .filter { it.category?.trim() == name }.map { it.id }
                 val disabled = if (enabled) workspace.disabledCategories - name
-                else workspace.disabledCategories + name
-                workspaceRepository.save(workspace.copy(disabledCategories = disabled))
-                if (!enabled) {
-                    workspace.automations
-                        .filter { it.category?.trim() == name }
-                        .forEach {
-                            executionJobs.cancel(it.id.value)
-                            resetState(it.id)
-                        }
-                }
+                    else workspace.disabledCategories + name
+                workspace.copy(disabledCategories = disabled)
             }
-            currentlyEnabled to enabled
         }
-        if (changed.first != changed.second) {
+        if (previouslyEnabled != enabled) {
+            if (!enabled) affectedIds.forEach {
+                executionJobs.cancel(it.value)
+                resetState(it)
+            }
             dispatch(
                 RuntimeEvent(
                     typeId = "core.event.category_enabled_changed",
                     payload = mapOf(
                         "category" to ConfigValue.StringValue(name),
-                        "enabled" to ConfigValue.BooleanValue(changed.second),
+                        "enabled" to ConfigValue.BooleanValue(enabled),
                     ),
                     source = "runtime.category",
                 )
             )
         }
-        return ActionExecutionResult(true, ConfigValue.BooleanValue(changed.second))
+        return ActionExecutionResult(true, ConfigValue.BooleanValue(enabled))
     }
 
     override suspend fun isCategoryEnabled(category: String): Boolean? {
