@@ -465,7 +465,7 @@ private fun SettingsPage(
         }
         item { SettingsRow(stringResource(R.string.settings_backup_workspace), stringResource(R.string.settings_backup_workspace_subtitle), onBackup) }
         item { SettingsRow(stringResource(R.string.settings_restore_workspace), stringResource(R.string.settings_restore_workspace_subtitle), onRestore) }
-        item { SettingsRow(stringResource(R.string.settings_manual_test_event), stringResource(R.string.settings_manual_test_event_subtitle), onManual) }
+        item { SettingsRow(stringResource(R.string.test_center_title), stringResource(R.string.test_center_settings_subtitle), onManual) }
     }
 }
 
