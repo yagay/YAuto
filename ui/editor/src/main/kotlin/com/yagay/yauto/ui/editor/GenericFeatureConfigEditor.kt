@@ -55,7 +55,9 @@ internal fun GenericFeatureConfigEditor(
     val initialTexts = remember(descriptor, initialWithDefaults, locale) {
         descriptor.fields.associate { field ->
             field.key to if (field.key == FEATURE_METHOD_CONFIG_KEY)
-                initialWithDefaults.preferredMethod().id
+                initialWithDefaults.preferredMethod().let {
+                    if (it == FeatureMethod.AUTO) FeatureMethod.NO_ROOT.id else it.id
+                }
             else editorConfigValueText(initialWithDefaults.config[field.key], locale)
         }
     }
@@ -103,7 +105,7 @@ internal fun GenericFeatureConfigEditor(
                     descriptor,
                     if (backends.size == 1) backends.first().backendId.orEmpty()
                     else values[FEATURE_BACKEND_CONFIG_KEY].orEmpty().ifBlank { "auto" },
-                    values[FEATURE_METHOD_CONFIG_KEY].orEmpty().ifBlank { "auto" },
+                    values[FEATURE_METHOD_CONFIG_KEY].orEmpty().ifBlank { "no_root" },
                 )
             }
         }
@@ -135,15 +137,20 @@ internal fun GenericFeatureConfigEditor(
             val enabled = behavior.enabledWhen?.matches(typedValues) != false
             if (field.key == FEATURE_METHOD_CONFIG_KEY && field is FieldSchema.Choice) {
                 MethodChoiceEditor(
-                    selected = values[field.key].orEmpty().ifBlank { "auto" },
+                    selected = values[field.key].orEmpty().ifBlank { "no_root" },
                     enabled = enabled,
-                    onValue = { values = values + (field.key to it) },
+                    onValue = { next ->
+                        // Stale backends must never cross permission families.
+                        values = values + (field.key to next) + (FEATURE_BACKEND_CONFIG_KEY to "auto")
+                    },
                 )
             } else if (field.key == FEATURE_BACKEND_CONFIG_KEY && field is FieldSchema.Choice) {
                 BackendChoiceEditor(
                     descriptor = descriptor,
                     field = field,
                     value = values[field.key].orEmpty(),
+                    method = if (values[FEATURE_METHOD_CONFIG_KEY] == "root_required")
+                        FeatureMethod.ROOT_REQUIRED else FeatureMethod.NO_ROOT,
                     enabled = enabled,
                     onValue = { values = values + (field.key to it) },
                 )
@@ -260,7 +267,11 @@ private fun ImplementationGuide(
     requestedBackendId: String,
     requestedMethod: String,
 ) {
-    val options = descriptor.resolvedImplementationOptions()
+    val dual = descriptor.hasDualMethodRoutes()
+    val method = if (requestedMethod == "root_required")
+        FeatureMethod.ROOT_REQUIRED else FeatureMethod.NO_ROOT
+    val options = if (dual) descriptor.methodBackends(method)
+        else descriptor.resolvedImplementationOptions()
     val selected = options.firstOrNull { it.backendId == requestedBackendId }
     val backendId = selected?.backendId ?: "auto"
     val resolver = rememberFeatureTextResolver()
@@ -270,32 +281,28 @@ private fun ImplementationGuide(
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(TextR.string.implementation_method), fontWeight = FontWeight.SemiBold)
-            if (descriptor.hasDualMethodRoutes()) {
+            if (dual) {
                 Text(
-                    when (requestedMethod) {
-                        "macrodroid" -> stringResource(TextR.string.implementation_family_macro_detail)
-                        "shortx" -> stringResource(TextR.string.implementation_family_shortx_detail)
-                        else -> stringResource(TextR.string.implementation_family_auto_detail)
-                    },
+                    stringResource(
+                        if (method == FeatureMethod.NO_ROOT)
+                            TextR.string.implementation_group_no_root_detail
+                        else TextR.string.implementation_group_root_required_detail,
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            if (!descriptor.hasDualMethodRoutes() || requestedMethod == "shortx") {
-                Text(implementationTitle(backendId), style = MaterialTheme.typography.titleSmall)
+            if (options.size == 1) {
+                Text(stringResource(TextR.string.implementation_unique_method),
+                    style = MaterialTheme.typography.labelMedium)
             }
-            if (!descriptor.hasDualMethodRoutes() || requestedMethod == "shortx") {
+            if (!dual || selected != null) {
+                Text(implementationTitle(backendId), style = MaterialTheme.typography.titleSmall)
                 Text(
                     resolver.backendPermissionExplanation(descriptor, backendId),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-
-            if (descriptor.hasDualMethodRoutes() && requestedMethod != "shortx") {
-                Text(
-                    stringResource(TextR.string.implementation_family_accessibility_required),
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            } else if (selected != null) {
+            if (selected != null) {
                 if (selected.requirements.isNotEmpty()) {
                     Text(
                         stringResource(
@@ -526,7 +533,7 @@ private fun accessRequirementLabel(requirement: AccessRequirement): String =
     stringResource(accessRequirementResource(requirement))
 
 @Composable
-private fun accessRequirementLabelNonComposable(requirement: AccessRequirement): String =
+internal fun accessRequirementLabelNonComposable(requirement: AccessRequirement): String =
     stringResource(accessRequirementResource(requirement))
 
 @StringRes
