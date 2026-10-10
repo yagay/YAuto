@@ -429,328 +429,6 @@ internal object ShortXMappings {
         (Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)).jsonObject["note"] as? JsonPrimitive)?.contentOrNull
     } else ProtoFields(any.value).string(99)
 
-    private fun nativeJsonAction(any: AnyStub, importerId: String): FeatureRef? {
-        val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return null
-        if (obj["customContextDataKey"] != null && obj["customContextDataKey"] !is JsonNull) return null
-        val raw = any.value.toString(Charsets.UTF_8)
-        if (ShortXVerifiedBatchMappings.ownsSource(shortName(any.typeUrl))) {
-            return ShortXVerifiedBatchMappings.json(any, importerId, obj)
-        }
-        ShortXVerifiedBatchMappings.json(any, importerId, obj)?.let { return it }
-        return when (shortName(any.typeUrl)) {
-            "NoAction" -> {
-                if (!jsonBusinessKeysOnly(obj, "icon")) return null
-                sourceFeature("core.noop", importerId, any.typeUrl, raw)
-            }
-            "MediaPlayback" -> {
-                if (!jsonBusinessKeysOnly(obj, "action")) return null
-                val mode = (obj["action"] as? JsonPrimitive)?.let {
-                    it.intOrNull ?: shortXMediaPlaybackNameToNumber(it.contentOrNull.orEmpty())
-                } ?: 0
-                val cmd = shortXMediaPlaybackCommand(mode) ?: return null
-                sourceFeature("android.media.transport", importerId, any.typeUrl, raw,
-                    extra = mapOf("command" to ConfigValue.StringValue(cmd)))
-            }
-            "SetVolume" -> {
-                if (!jsonBusinessKeysOnly(obj, "type", "index")) return null
-                val type = (obj["type"] as? JsonPrimitive)?.intOrNull ?: return null
-                val level = (obj["index"] as? JsonPrimitive)?.intOrNull ?: return null
-                val stream = shortXStreamFromAndroidType(type) ?: return null
-                if (level !in 0..1000) return null
-                sourceFeature("android.audio.volume.set", importerId, any.typeUrl, raw,
-                    extra = mapOf(
-                        "stream" to ConfigValue.StringValue(stream),
-                        "unit" to ConfigValue.StringValue("index"),
-                        "index" to ConfigValue.NumberValue(level.toDouble()),
-                    ))
-            }
-            "ShowToast" -> {
-                val message = (obj["message"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
-                sourceFeature("android.toast.show", importerId, any.typeUrl, raw,
-                    extra = mapOf("text" to ConfigValue.StringValue(message)))
-            }
-            "Delay" -> {
-                val value = (obj["timeString"] as? JsonPrimitive)?.contentOrNull?.toDoubleOrNull()
-                    ?: (obj["time"] as? JsonPrimitive)?.doubleOrNull
-                    ?: return null
-                val unit = jsonTimeUnit(obj["timeUnit"] as? JsonPrimitive) ?: 0L
-                val millis = durationMs(value, unit) ?: return null
-                sourceFeature("core.delay", importerId, any.typeUrl, raw,
-                    extra = mapOf("durationMs" to ConfigValue.NumberValue(millis)))
-            }
-            "LaunchApp" -> {
-                val appPkg = obj["appPkg"] as? JsonObject ?: return null
-                val pkg = (appPkg["pkgName"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() } ?: return null
-                val user = (appPkg["userId"] as? JsonPrimitive)?.intOrNull ?: 0
-                if (user != 0) return null
-                sourceFeature("android.app.launch", importerId, any.typeUrl, raw,
-                    extra = mapOf("package" to ConfigValue.StringValue(pkg)))
-            }
-            "WriteClipboard" -> {
-                val filePath = (obj["filePath"] as? JsonPrimitive)?.contentOrNull.orEmpty()
-                if (filePath.isNotBlank()) return null
-                val text = (obj["text"] as? JsonPrimitive)?.contentOrNull ?: return null
-                sourceFeature("android.clipboard.set", importerId, any.typeUrl, raw,
-                    extra = mapOf("text" to ConfigValue.StringValue(text)))
-            }
-            "InputText" -> {
-                val text = (obj["text"] as? JsonPrimitive)?.contentOrNull ?: return null
-                sourceFeature("accessibility.input_text", importerId, any.typeUrl, raw,
-                    extra = mapOf("text" to ConfigValue.StringValue(text)))
-            }
-            "InputTap" -> {
-                val x = jsonNumeric(obj, "xs", "x") ?: return null
-                val y = jsonNumeric(obj, "ys", "y") ?: return null
-                if (x < 0 || y < 0) return null
-                sourceFeature("accessibility.gesture.tap", importerId, any.typeUrl, raw,
-                    extra = mapOf(
-                        "x" to ConfigValue.NumberValue(x),
-                        "y" to ConfigValue.NumberValue(y),
-                        "durationMs" to ConfigValue.NumberValue(40.0),
-                    ))
-            }
-            "InputSwipe" -> {
-                val x1 = jsonNumeric(obj, "startXS", "startX") ?: return null
-                val y1 = jsonNumeric(obj, "startYS", "startY") ?: return null
-                val x2 = jsonNumeric(obj, "endXS", "endX") ?: return null
-                val y2 = jsonNumeric(obj, "endYS", "endY") ?: return null
-                val duration = jsonNumeric(obj, "swipeTimeS", "swipeTime") ?: return null
-                if (listOf(x1, y1, x2, y2).any { it < 0 } || duration <= 0) return null
-                sourceFeature("accessibility.gesture.swipe", importerId, any.typeUrl, raw,
-                    extra = mapOf(
-                        "x1" to ConfigValue.NumberValue(x1), "y1" to ConfigValue.NumberValue(y1),
-                        "x2" to ConfigValue.NumberValue(x2), "y2" to ConfigValue.NumberValue(y2),
-                        "durationMs" to ConfigValue.NumberValue(duration),
-                    ))
-            }
-            "FindAndClickViewById" -> {
-                val viewId = (obj["viewId"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() } ?: return null
-                if ((obj["isRegex"] as? JsonPrimitive)?.booleanOrNull == true) return null
-                val timeout = (obj["timeout"] as? JsonPrimitive)?.longOrNull ?: 0L
-                if (timeout != 0L) return null
-                sourceFeature("accessibility.click_view_id", importerId, any.typeUrl, raw,
-                    extra = mapOf("viewId" to ConfigValue.StringValue(viewId)))
-            }
-            "SetWifiEnabled" -> jsonToggle(obj, any, importerId, "android.wifi.set", "enable")
-            "SetBTEnabled" -> jsonToggle(obj, any, importerId, "android.bluetooth.set", "enable")
-            "SetNFCEnabled" -> jsonToggle(obj, any, importerId, "android.nfc.set", "enable")
-            "SetLocationEnabled" -> jsonToggle(obj, any, importerId, "android.location.enabled.set", "enable")
-            "SetAPMModeEnabled" -> jsonToggle(obj, any, importerId, "android.airplane_mode.set", "isEnable")
-            "SetFlashLightEnabled" -> jsonToggle(obj, any, importerId, "android.torch.set", "enable")
-            "SetDataEnabled" -> {
-                if ((obj["hasSpecificSlotId"] as? JsonPrimitive)?.booleanOrNull == true) return null
-                jsonToggle(obj, any, importerId, "android.mobile_data.set", "enable")
-            }
-            "SetDarkModeEnabled" -> {
-                val enabled = (obj["enable"] as? JsonPrimitive)?.booleanOrNull ?: return null
-                sourceFeature("android.display.dark_mode.set", importerId, any.typeUrl, raw,
-                    extra = mapOf("mode" to ConfigValue.StringValue(if (enabled) "dark" else "light")))
-            }
-            "SetMasterSync" -> {
-                val value = jsonOnOffToggle(obj["sync"] as? JsonPrimitive) ?: return null
-                if (value == 2) return null
-                sourceFeature("android.sync.master.set", importerId, any.typeUrl, raw,
-                    extra = mapOf("enabled" to ConfigValue.BooleanValue(value == 0)))
-            }
-            "SetRingerMode" -> {
-                val mode = jsonRingerMode(obj["mode"] as? JsonPrimitive) ?: return null
-                if (mode !in 0..2) return null
-                sourceFeature("android.audio.ringer_mode.set", importerId, any.typeUrl, raw,
-                    extra = mapOf("mode" to ConfigValue.StringValue(listOf("silent", "vibrate", "normal")[mode])))
-            }
-            "SetScreenRotate" -> {
-                val degree = jsonRotation(obj["degree"] as? JsonPrimitive) ?: return null
-                if (degree !in 0..3) return null
-                val rotation = listOf("0", "90", "180", "270")[degree]
-                sourceFeature("android.display.rotation.set", importerId, any.typeUrl, raw,
-                    extra = mapOf("rotation" to ConfigValue.StringValue(rotation)))
-            }
-            "SetScreenTimeout" -> {
-                val timeout = (obj["timeoutMillis"] as? JsonPrimitive)?.longOrNull ?: return null
-                if (timeout <= 0) return null
-                sourceFeature("android.display.screen_timeout.set", importerId, any.typeUrl, raw,
-                    extra = mapOf("timeoutMs" to ConfigValue.NumberValue(timeout.toDouble())))
-            }
-            "SetStatusBarIcon" -> nativeJsonStatusBarIcon(obj, any, importerId, raw, "show")
-            "RemoveStatusBarIcon" -> nativeJsonStatusBarIcon(obj, any, importerId, raw, "remove")
-            "StopService" -> nativeJsonStopServices(obj, any, importerId, raw)
-            "StartService" -> nativeJsonStartService(obj, any, importerId, raw)
-            "GetScreenOnTime" -> nativeJsonGetScreenOnTime(obj, any, importerId, raw)
-            "StartAppProcess" -> nativeJsonStartAppProcess(obj, any, importerId, raw)
-            "StartAppProcessByPkg" -> nativeJsonStartAppProcessByPkg(obj, any, importerId, raw)
-            "ShowStatusBarChip" -> nativeJsonShowStatusChip(obj, any, importerId, raw)
-            "HideStatusBarClip" -> if (jsonBusinessKeysSafe(obj, emptySet()))
-                sourceFeature("android.status_chip.control", importerId, any.typeUrl, raw,
-                    extra = mapOf(
-                        "mode" to ConfigValue.StringValue("hide"),
-                        "chipId" to ConfigValue.StringValue("shortx"),
-                    ))
-                else null
-            "ShowRecentApps" -> {
-                // ShortX uses OnOffToggle: 0=open, 1=close, 2=toggle.
-                // An Accessibility RECENTS action only opens the overview.
-                // Unsupported modes must remain source-preserving compatibility actions.
-                if (!jsonBusinessKeysOnly(obj, "state")) null
-                else {
-                    val state = (obj["state"] as? JsonPrimitive)?.let { value ->
-                        value.intOrNull ?: when (value.contentOrNull?.substringAfterLast('_')?.lowercase()) {
-                            "on" -> 0
-                            "off" -> 1
-                            "toggle" -> 2
-                            else -> null
-                        }
-                    } ?: 0
-                    if (state == 0) sourceFeature("accessibility.recents.show", importerId, any.typeUrl, raw)
-                    else null
-                }
-            }
-            "ShowGlobalActionsMenu" -> if (jsonBusinessKeysSafe(obj, emptySet()))
-                sourceFeature("android.global_actions.show", importerId, any.typeUrl, raw)
-                else null
-            "StopAudioRecording" -> if (jsonBusinessKeysSafe(obj, emptySet()))
-                sourceFeature("android.audio.record.stop", importerId, any.typeUrl, raw)
-                else null
-            "AreaScreenshot" -> if (obj.keys.all { it in setOf("@type", "type", "typeUrl", "type_url", "id", "isDisabled", "note", "actionOnError") })
-                sourceFeature("android.screenshot.area_select", importerId, any.typeUrl, raw)
-                else null
-            "WakeupScreen" -> sourceFeature("android.screen.wake", importerId, any.typeUrl, raw)
-            "SleepScreen" -> sourceFeature("system.screen.sleep", importerId, any.typeUrl, raw)
-            "TTS" -> {
-                val text = (obj["text"] as? JsonPrimitive)?.contentOrNull ?: return null
-                sourceFeature("android.tts.speak", importerId, any.typeUrl, raw,
-                    extra = mapOf("text" to ConfigValue.StringValue(text)))
-            }
-            "OpenUrl" -> {
-                if (!(obj["browserPkg"] as? JsonPrimitive)?.contentOrNull.isNullOrBlank()) return null
-                val url = (obj["url"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() } ?: return null
-                sourceFeature("android.uri.open", importerId, any.typeUrl, raw,
-                    extra = mapOf("uri" to ConfigValue.StringValue(url)))
-            }
-            "ShellCommand" -> {
-                val command = (obj["command"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() } ?: return null
-                sourceFeature("android.shell.execute", importerId, any.typeUrl, raw,
-                    extra = mapOf("command" to ConfigValue.StringValue(command)))
-            }
-            "InjectKeyCode" -> {
-                if ((obj["doublePress"] as? JsonPrimitive)?.booleanOrNull == true) return null
-                val keyCode = (obj["keyCode"] as? JsonPrimitive)?.intOrNull?.takeIf { it in 0..1000 } ?: return null
-                val longPress = (obj["longPress"] as? JsonPrimitive)?.booleanOrNull == true
-                sourceFeature("android.input.keyevent", importerId, any.typeUrl, raw,
-                    extra = mapOf(
-                        "key" to ConfigValue.StringValue("custom"),
-                        "customKeyCode" to ConfigValue.NumberValue(keyCode.toDouble()),
-                        "longPress" to ConfigValue.BooleanValue(longPress),
-                    ))
-            }
-            "SetAutoBrightness" -> {
-                if (!jsonBusinessKeysOnly(obj, "enable")) return null
-                val enable = (obj["enable"] as? JsonPrimitive)?.booleanOrNull
-                    ?: if ("enable" in obj) return null else false
-                sourceFeature("android.display.brightness.set", importerId, any.typeUrl, raw,
-                    extra = mapOf("mode" to ConfigValue.StringValue(if (enable) "auto" else "manual_keep")))
-            }
-            "ExpandNotification" -> sourceFeature(
-                "android.status_bar.control", importerId, any.typeUrl, raw,
-                extra = mapOf("mode" to ConfigValue.StringValue("notifications")),
-            )
-            "RequestAudioFocus" -> {
-                val request = (obj["isRequest"] as? JsonPrimitive)?.booleanOrNull ?: return null
-                sourceFeature(
-                    if (request) "android.audio.focus.request" else "android.audio.focus.abandon",
-                    importerId,
-                    any.typeUrl,
-                    raw,
-                    extra = if (request) mapOf("gain" to ConfigValue.StringValue("gain")) else emptyMap(),
-                )
-            }
-            "PlayRingtone" -> {
-                val ringtone = obj["ringtone"] as? JsonObject ?: return null
-                val uri = (ringtone["uri"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() } ?: return null
-                sourceFeature(
-                    "android.audio.play", importerId, any.typeUrl, raw,
-                    extra = mapOf(
-                        "source" to ConfigValue.StringValue(uri),
-                        "volume" to ConfigValue.NumberValue(100.0),
-                        "loop" to ConfigValue.BooleanValue(false),
-                        "waitForCompletion" to ConfigValue.BooleanValue(false),
-                    ),
-                )
-            }
-            else -> null
-        }
-    }
-
-    private fun nativeJsonCondition(any: AnyStub, importerId: String): FeatureRef? {
-        val obj = Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)) as? JsonObject ?: return null
-        if (obj["customContextDataKey"] != null && obj["customContextDataKey"] !is JsonNull) return null
-        val raw = any.value.toString(Charsets.UTF_8)
-        return when (shortName(any.typeUrl)) {
-            "RequireFactTag" -> (obj["tag"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() }?.let { tag ->
-                sourceFeature("core.condition.event_tag", importerId, any.typeUrl, raw, extra = mapOf("tag" to ConfigValue.StringValue(tag)))
-            }
-            "TRUE", "True" -> sourceFeature("core.boolean", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(true)))
-            "FALSE", "False" -> sourceFeature("core.boolean", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(false)))
-            "ScreenIsOn" -> sourceFeature("android.condition.screen", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(true)))
-            "VPNIsConnected" -> sourceFeature(
-                "android.condition.network_profile", importerId, any.typeUrl, raw,
-                extra = mapOf(
-                    "connected" to ConfigValue.BooleanValue(true),
-                    "transport" to ConfigValue.StringValue("vpn"),
-                    "validated" to ConfigValue.StringValue("any"),
-                    "metered" to ConfigValue.StringValue("any"),
-                ),
-            )
-            "ChargeState" -> (obj["requireIsCharge"] as? JsonPrimitive)?.booleanOrNull?.let {
-                sourceFeature("android.condition.charging", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(it)))
-            }
-            "RequireWifiConnected" -> sourceFeature(
-                "android.condition.wifi_network", importerId, any.typeUrl, raw,
-                extra = mapOf(
-                    "connected" to ConfigValue.StringValue("connected"),
-                    "ssid" to ConfigValue.StringValue((obj["requiredSSID"] as? JsonPrimitive)?.contentOrNull.orEmpty()),
-                ),
-            )
-            "RequireWifiDisconnected" -> sourceFeature(
-                "android.condition.wifi_network", importerId, any.typeUrl, raw,
-                extra = mapOf("connected" to ConfigValue.StringValue("disconnected")),
-            )
-            "KeyguardIsLocked" -> sourceFeature("android.condition.keyguard_locked", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(true)))
-            "ScreenOrientationIsPort" -> sourceFeature("android.condition.orientation", importerId, any.typeUrl, raw, extra = mapOf("orientation" to ConfigValue.StringValue("portrait")))
-            "IsInCall" -> sourceFeature("android.condition.phone_call_state", importerId, any.typeUrl, raw, extra = mapOf("state" to ConfigValue.StringValue("offhook")))
-            "IsRinging" -> sourceFeature("android.condition.phone_call_state", importerId, any.typeUrl, raw, extra = mapOf("state" to ConfigValue.StringValue("ringing")))
-            "IsHeadsetPlug" -> (obj["isPlug"] as? JsonPrimitive)?.booleanOrNull?.let {
-                sourceFeature("android.condition.headset_connected", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(it)))
-            }
-            "RequireAPMMode" -> (obj["isAPMEnable"] as? JsonPrimitive)?.booleanOrNull?.let {
-                sourceFeature("android.condition.airplane_mode", importerId, any.typeUrl, raw, extra = mapOf("value" to ConfigValue.BooleanValue(it)))
-            }
-            "RequireRingerMode" -> {
-                val mode = jsonRingerMode(obj["mode"] as? JsonPrimitive)
-                val name = when (mode) { 0 -> "silent"; 1 -> "vibrate"; 2 -> "normal"; else -> null }
-                name?.let { sourceFeature("android.condition.ringer_mode", importerId, any.typeUrl, raw, extra = mapOf("mode" to ConfigValue.StringValue(it))) }
-            }
-            "RequireIMEVisibility" -> (obj["isShown"] as? JsonPrimitive)?.booleanOrNull?.let {
-                sourceFeature(
-                    "android.condition.ime_visible",
-                    importerId,
-                    any.typeUrl,
-                    raw,
-                    extra = mapOf("value" to ConfigValue.BooleanValue(it)),
-                )
-            }
-            "RequireNotificationPanelExpanded" -> (obj["isExpand"] as? JsonPrimitive)?.booleanOrNull?.let {
-                sourceFeature(
-                    "android.condition.notification_panel_expanded",
-                    importerId,
-                    any.typeUrl,
-                    raw,
-                    extra = mapOf("value" to ConfigValue.BooleanValue(it)),
-                )
-            }
-            else -> null
-        }
-    }
-
     fun suggestedConditionFeature(typeUrl: String): String? = when (shortName(typeUrl)) {
         "CurrentPkgList", "CurrentPkgListByPkg", "CurrentActivity" -> "android.condition.app_foreground"
         "BatteryPercent" -> "android.condition.battery_level"
@@ -871,7 +549,7 @@ internal object ShortXMappings {
         else -> null
     }
 
-    private fun expandNotification(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun expandNotification(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields()) return null
         return binaryFeature(
             any,
@@ -881,7 +559,7 @@ internal object ShortXMappings {
         )
     }
 
-    private fun requestAudioFocus(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun requestAudioFocus(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val request = fields.varint(1)?.let { it != 0L } ?: return null
         return binaryFeature(
@@ -892,7 +570,7 @@ internal object ShortXMappings {
         )
     }
 
-    private fun playRingtone(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun playRingtone(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val ringtone = fields.bytes(1)?.let(::ProtoFields) ?: return null
         val uri = ringtone.string(2)?.takeIf { it.isNotBlank() } ?: return null
@@ -909,7 +587,7 @@ internal object ShortXMappings {
         )
     }
 
-    private fun noBusinessFact(
+    internal fun noBusinessFact(
         any: AnyStub,
         importerId: String,
         fields: ProtoFields,
@@ -920,7 +598,7 @@ internal object ShortXMappings {
         return binaryFeature(any, importerId, target, extra)
     }
 
-    private fun onOffAnyFact(
+    internal fun onOffAnyFact(
         any: AnyStub,
         importerId: String,
         fields: ProtoFields,
@@ -937,7 +615,7 @@ internal object ShortXMappings {
         return binaryFeature(any, importerId, target, mapOf("state" to ConfigValue.StringValue(mode)))
     }
 
-    private fun noBusinessCondition(
+    internal fun noBusinessCondition(
         any: AnyStub,
         importerId: String,
         fields: ProtoFields,
@@ -948,15 +626,15 @@ internal object ShortXMappings {
         return binaryFeature(any, importerId, target, extra)
     }
 
-    private fun jsonArrayEmpty(obj: JsonObject, key: String): Boolean =
+    internal fun jsonArrayEmpty(obj: JsonObject, key: String): Boolean =
         (obj[key] as? JsonArray)?.isEmpty() != false
 
-    private fun noAction(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun noAction(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         return binaryFeature(any, importerId, "core.noop", emptyMap())
     }
 
-    private fun mediaPlayback(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun mediaPlayback(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val mode = (fields.varint(1) ?: 0L).takeIf { it in 0L..6L }?.toInt() ?: return null
         val command = shortXMediaPlaybackCommand(mode) ?: return null
@@ -964,7 +642,7 @@ internal object ShortXMappings {
             mapOf("command" to ConfigValue.StringValue(command)))
     }
 
-    private fun setVolume(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun setVolume(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1, 2)) return null
         val type = fields.varint(1)?.takeIf { it in 0L..5L }?.toInt() ?: return null
         val index = fields.varint(2)?.takeIf { it in 0L..1000L }?.toInt() ?: return null
@@ -977,16 +655,16 @@ internal object ShortXMappings {
         ))
     }
 
-    private fun jsonBusinessKeysOnly(obj: JsonObject, vararg allowed: String): Boolean =
+    internal fun jsonBusinessKeysOnly(obj: JsonObject, vararg allowed: String): Boolean =
         obj.keys.all { it in SOURCE_METADATA_KEYS || it in allowed }
 
-    private fun showToast(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun showToast(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         val message = fields.string(1) ?: return null
         return binaryFeature(any, importerId, "android.toast.show",
             mapOf("text" to ConfigValue.StringValue(message)))
     }
 
-    private fun delay(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun delay(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         val value = fields.string(2)?.toDoubleOrNull() ?: fields.varint(1)?.toDouble() ?: return null
         val unit = fields.varint(5) ?: 0L
         val millis = durationMs(value, unit) ?: return null
@@ -994,7 +672,7 @@ internal object ShortXMappings {
             mapOf("durationMs" to ConfigValue.NumberValue(millis)))
     }
 
-    private fun launchApp(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun launchApp(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         val appPkg = fields.bytes(1)?.let(::ProtoFields) ?: return null
         val packageName = appPkg.string(1)?.takeIf { it.isNotBlank() } ?: return null
         val userId = appPkg.varint(2) ?: 0L
@@ -1003,20 +681,20 @@ internal object ShortXMappings {
             mapOf("package" to ConfigValue.StringValue(packageName)))
     }
 
-    private fun writeClipboard(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun writeClipboard(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.string(2).isNullOrBlank()) return null
         val text = fields.string(1) ?: return null
         return binaryFeature(any, importerId, "android.clipboard.set",
             mapOf("text" to ConfigValue.StringValue(text)))
     }
 
-    private fun inputText(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun inputText(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         val text = fields.string(1) ?: return null
         return binaryFeature(any, importerId, "accessibility.input_text",
             mapOf("text" to ConfigValue.StringValue(text)))
     }
 
-    private fun inputTap(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun inputTap(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         val x = protoNumber(fields, 3, 1) ?: return null
         val y = protoNumber(fields, 4, 2) ?: return null
         if (x < 0 || y < 0) return null
@@ -1028,7 +706,7 @@ internal object ShortXMappings {
             ))
     }
 
-    private fun inputSwipe(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun inputSwipe(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         val x1 = protoNumber(fields, 11, 1) ?: return null
         val y1 = protoNumber(fields, 12, 2) ?: return null
         val x2 = protoNumber(fields, 13, 3) ?: return null
@@ -1043,7 +721,7 @@ internal object ShortXMappings {
             ))
     }
 
-    private fun clickViewId(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun clickViewId(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         val viewId = fields.string(1)?.takeIf { it.isNotBlank() } ?: return null
         if ((fields.varint(2) ?: 0L) != 0L) return null
         if ((fields.varint(3) ?: 0L) != 0L) return null
@@ -1051,27 +729,27 @@ internal object ShortXMappings {
             mapOf("viewId" to ConfigValue.StringValue(viewId)))
     }
 
-    private fun booleanToggle(any: AnyStub, importerId: String, fields: ProtoFields, target: String): FeatureRef? {
+    internal fun booleanToggle(any: AnyStub, importerId: String, fields: ProtoFields, target: String): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val enabled = fields.varint(1)?.let { it != 0L } ?: return null
         return binaryFeature(any, importerId, target, mapOf("enabled" to ConfigValue.BooleanValue(enabled)))
     }
 
-    private fun setDataEnabled(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun setDataEnabled(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1, 2, 3)) return null
         if ((fields.varint(2) ?: 0L) != 0L) return null
         val enabled = fields.varint(1)?.let { it != 0L } ?: return null
         return binaryFeature(any, importerId, "android.mobile_data.set", mapOf("enabled" to ConfigValue.BooleanValue(enabled)))
     }
 
-    private fun setDarkMode(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun setDarkMode(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val enabled = fields.varint(1)?.let { it != 0L } ?: return null
         return binaryFeature(any, importerId, "android.display.dark_mode.set",
             mapOf("mode" to ConfigValue.StringValue(if (enabled) "dark" else "light")))
     }
 
-    private fun setMasterSync(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun setMasterSync(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val mode = fields.varint(1)?.toInt() ?: return null
         if (mode !in 0..1) return null
@@ -1079,7 +757,7 @@ internal object ShortXMappings {
             mapOf("enabled" to ConfigValue.BooleanValue(mode == 0)))
     }
 
-    private fun setRingerMode(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun setRingerMode(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val mode = fields.varint(1)?.toInt() ?: return null
         if (mode !in 0..2) return null
@@ -1087,7 +765,7 @@ internal object ShortXMappings {
             mapOf("mode" to ConfigValue.StringValue(listOf("silent", "vibrate", "normal")[mode])))
     }
 
-    private fun setScreenRotate(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun setScreenRotate(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val degree = fields.varint(1)?.toInt() ?: return null
         if (degree !in 0..3) return null
@@ -1095,7 +773,7 @@ internal object ShortXMappings {
             mapOf("rotation" to ConfigValue.StringValue(listOf("0", "90", "180", "270")[degree])))
     }
 
-    private fun setScreenTimeout(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun setScreenTimeout(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val timeout = fields.varint(1)?.takeIf { it > 0L } ?: return null
         return binaryFeature(any, importerId, "android.display.screen_timeout.set",
@@ -1174,7 +852,7 @@ internal object ShortXMappings {
         )
     }
 
-    private fun chipDisplayConfig(chipId: String, title: String, drawable: String?) = mapOf(
+    internal fun chipDisplayConfig(chipId: String, title: String, drawable: String?) = mapOf(
         "mode" to ConfigValue.StringValue("show"),
         "chipId" to ConfigValue.StringValue(chipId),
         "text" to ConfigValue.StringValue(title),
@@ -1183,7 +861,7 @@ internal object ShortXMappings {
     )
 
     /** ShortX AppPkg repeated #1 and package-set references #2. No UI launch. */
-    private fun nativeStartAppProcess(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun nativeStartAppProcess(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1, 2)) return null
         val values = fields.allBytes(1).map { raw ->
             val nested = runCatching { ProtoFields(raw) }.getOrNull() ?: return null
@@ -1206,7 +884,7 @@ internal object ShortXMappings {
     }
 
     /** ShortX pkgAndUsers repeated StringPair; different user IDs stay lossless source nodes. */
-    private fun nativeStartAppProcessByPkg(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun nativeStartAppProcessByPkg(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val targets = fields.allBytes(1).map { raw ->
             val nested = runCatching { ProtoFields(raw) }.getOrNull() ?: return null
@@ -1223,7 +901,7 @@ internal object ShortXMappings {
     }
 
     /** Preserve embedded click/long-click Any action chains until their execution is identical. */
-    private fun nativeShowStatusChip(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun nativeShowStatusChip(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1, 2, 3, 4) || fields.has(3) || fields.has(4)) return null
         val text = fields.string(1)?.takeIf { it.isNotBlank() && it.length <= 48 } ?: return null
         val icon = fields.string(2).orEmpty()
@@ -1238,7 +916,7 @@ internal object ShortXMappings {
         ))
     }
 
-    private fun nativeJsonStartAppProcess(
+    internal fun nativeJsonStartAppProcess(
         obj: JsonObject, any: AnyStub, importerId: String, raw: String,
     ): FeatureRef? {
         if (!jsonBusinessKeysSafe(obj, setOf("appPkg", "pkgSets"))) return null
@@ -1265,7 +943,7 @@ internal object ShortXMappings {
         ))
     }
 
-    private fun nativeJsonStartAppProcessByPkg(
+    internal fun nativeJsonStartAppProcessByPkg(
         obj: JsonObject, any: AnyStub, importerId: String, raw: String,
     ): FeatureRef? {
         if (!jsonBusinessKeysSafe(obj, setOf("pkgAndUsers"))) return null
@@ -1285,7 +963,7 @@ internal object ShortXMappings {
         ))
     }
 
-    private fun nativeJsonShowStatusChip(obj: JsonObject, any: AnyStub, importerId: String, raw: String): FeatureRef? {
+    internal fun nativeJsonShowStatusChip(obj: JsonObject, any: AnyStub, importerId: String, raw: String): FeatureRef? {
         if (!jsonBusinessKeysSafe(obj, setOf("text", "icon", "clickAction", "longClickAction")) ||
             (obj["clickAction"] as? JsonArray)?.isNotEmpty() == true ||
             (obj["longClickAction"] as? JsonArray)?.isNotEmpty() == true) return null
@@ -1303,7 +981,7 @@ internal object ShortXMappings {
         ))
     }
 
-    private fun nativeStatusBarIcon(
+    internal fun nativeStatusBarIcon(
         any: AnyStub, importerId: String, fields: ProtoFields, mode: String,
     ): FeatureRef? {
         if (!fields.onlyBusinessFields(*(if (mode == "show") intArrayOf(1, 2) else intArrayOf(1)))) return null
@@ -1321,7 +999,7 @@ internal object ShortXMappings {
         ))
     }
 
-    private fun nativeJsonStatusBarIcon(
+    internal fun nativeJsonStatusBarIcon(
         obj: JsonObject, any: AnyStub, importerId: String, raw: String, mode: String,
     ): FeatureRef? {
         if (!jsonBusinessKeysSafe(obj, if (mode == "show") setOf("slot", "icon") else setOf("slot"))) return null
@@ -1345,7 +1023,7 @@ internal object ShortXMappings {
      * Support only an unambiguous flattened service component. Other AppComponent layouts,
      * selectors and unknown business fields remain raw compatibility nodes.
      */
-    private fun nativeStopServices(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun nativeStopServices(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val components = fields.allBytes(1).map { bytes ->
             val nested = runCatching { ProtoFields(bytes) }.getOrNull() ?: return null
@@ -1367,7 +1045,7 @@ internal object ShortXMappings {
      * }. We only flatten explicit components whose user IDs agree.
      * Legacy flattened test fixtures are still accepted.
      */
-    private fun nativeJsonStopServices(
+    internal fun nativeJsonStopServices(
         obj: JsonObject, any: AnyStub, importerId: String, raw: String,
     ): FeatureRef? {
         if (!jsonBusinessKeysSafe(obj, setOf("services"))) return null
@@ -1405,7 +1083,7 @@ internal object ShortXMappings {
     }
 
     /** Direct service Intent subset: reject implicit targets, unknown keys and unsupported extras. */
-    private fun nativeJsonGetScreenOnTime(
+    internal fun nativeJsonGetScreenOnTime(
         obj: JsonObject, any: AnyStub, importerId: String, raw: String,
     ): FeatureRef? {
         if (!jsonBusinessKeysSafe(obj, setOf("from"))) return null
@@ -1423,7 +1101,7 @@ internal object ShortXMappings {
             ))
     }
 
-    private fun nativeGetScreenOnTime(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun nativeGetScreenOnTime(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val from = when (fields.varint(1) ?: 0L) {
             0L -> "last_screen_off"
@@ -1437,7 +1115,7 @@ internal object ShortXMappings {
             ))
     }
 
-    private fun nativeJsonStartService(
+    internal fun nativeJsonStartService(
         obj: JsonObject, any: AnyStub, importerId: String, raw: String,
     ): FeatureRef? {
         if (!jsonBusinessKeysSafe(obj, setOf("intent", "userId", "isForegroundService"))) return null
@@ -1481,7 +1159,7 @@ internal object ShortXMappings {
         )
     }
 
-    private fun shortXServiceExtraSafe(item: JsonElement): Boolean {
+    internal fun shortXServiceExtraSafe(item: JsonElement): Boolean {
         val obj = item as? JsonObject ?: return false
         if (obj.keys != setOf("key", "type", "value")) return false
         val key = (obj["key"] as? JsonPrimitive)?.contentOrNull ?: return false
@@ -1500,10 +1178,10 @@ internal object ShortXMappings {
         }
     }
 
-    private fun jsonBusinessKeysSafe(obj: JsonObject, keys: Set<String>): Boolean =
+    internal fun jsonBusinessKeysSafe(obj: JsonObject, keys: Set<String>): Boolean =
         obj.keys.all { key -> key in keys || key in SOURCE_METADATA_KEYS }
 
-    private fun nativeShowRecentApps(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun nativeShowRecentApps(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         // The default protobuf enum value is On=0; reject malformed/non-varint fields.
         val state = fields.varint(1) ?: if (fields.has(1)) return null else 0L
@@ -1511,25 +1189,25 @@ internal object ShortXMappings {
         return binaryFeature(any, importerId, "accessibility.recents.show", emptyMap())
     }
 
-    private fun noFieldAction(any: AnyStub, importerId: String, fields: ProtoFields, target: String): FeatureRef? {
+    internal fun noFieldAction(any: AnyStub, importerId: String, fields: ProtoFields, target: String): FeatureRef? {
         if (!fields.onlyBusinessFields()) return null
         return binaryFeature(any, importerId, target, emptyMap())
     }
 
-    private fun tts(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun tts(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val text = fields.string(1) ?: return null
         return binaryFeature(any, importerId, "android.tts.speak", mapOf("text" to ConfigValue.StringValue(text)))
     }
 
-    private fun openUrl(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun openUrl(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1, 2)) return null
         if (!fields.string(2).isNullOrBlank()) return null
         val url = fields.string(1)?.takeIf { it.isNotBlank() } ?: return null
         return binaryFeature(any, importerId, "android.uri.open", mapOf("uri" to ConfigValue.StringValue(url)))
     }
 
-    private fun clickText(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun clickText(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val text = fields.string(1)?.takeIf(String::isNotBlank) ?: return null
         return binaryFeature(
@@ -1543,13 +1221,13 @@ internal object ShortXMappings {
         )
     }
 
-    private fun shellCommand(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun shellCommand(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1, 2)) return null
         val command = fields.string(1)?.takeIf { it.isNotBlank() } ?: return null
         return binaryFeature(any, importerId, "android.shell.execute", mapOf("command" to ConfigValue.StringValue(command)))
     }
 
-    private fun injectKeyCode(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun injectKeyCode(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1, 2, 3)) return null
         if ((fields.varint(3) ?: 0L) != 0L) return null
         val keyCode = fields.varint(1)?.toInt()?.takeIf { it in 0..1000 } ?: return null
@@ -1562,7 +1240,7 @@ internal object ShortXMappings {
             ))
     }
 
-    private fun setAutoBrightness(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+    internal fun setAutoBrightness(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
         val state = fields.varint(1) ?: if (!fields.has(1)) 0L else return null
         if (state !in 0L..1L) return null
@@ -1570,13 +1248,13 @@ internal object ShortXMappings {
             mapOf("mode" to ConfigValue.StringValue(if (state == 1L) "auto" else "manual_keep")))
     }
 
-    private fun jsonToggle(obj: JsonObject, any: AnyStub, importerId: String, target: String, key: String): FeatureRef? {
+    internal fun jsonToggle(obj: JsonObject, any: AnyStub, importerId: String, target: String, key: String): FeatureRef? {
         val enabled = (obj[key] as? JsonPrimitive)?.booleanOrNull ?: return null
         return sourceFeature(target, importerId, any.typeUrl, any.value.toString(Charsets.UTF_8),
             extra = mapOf("enabled" to ConfigValue.BooleanValue(enabled)))
     }
 
-    private fun jsonOnOffAny(value: JsonPrimitive?): String? {
+    internal fun jsonOnOffAny(value: JsonPrimitive?): String? {
         value ?: return "any"
         value.intOrNull?.let {
             return when (it) { 0 -> "on"; 1 -> "off"; 2 -> "any"; else -> null }
@@ -1589,7 +1267,7 @@ internal object ShortXMappings {
         }
     }
 
-    private fun jsonOnOffToggle(value: JsonPrimitive?): Int? {
+    internal fun jsonOnOffToggle(value: JsonPrimitive?): Int? {
         value ?: return null
         value.intOrNull?.let { return it }
         return when (value.contentOrNull?.substringAfterLast('_')?.lowercase()) {
@@ -1600,7 +1278,7 @@ internal object ShortXMappings {
         }
     }
 
-    private fun jsonRingerMode(value: JsonPrimitive?): Int? {
+    internal fun jsonRingerMode(value: JsonPrimitive?): Int? {
         value ?: return null
         value.intOrNull?.let { return it }
         val text = value.contentOrNull?.lowercase().orEmpty()
@@ -1613,7 +1291,7 @@ internal object ShortXMappings {
         }
     }
 
-    private fun jsonRotation(value: JsonPrimitive?): Int? {
+    internal fun jsonRotation(value: JsonPrimitive?): Int? {
         value ?: return null
         value.intOrNull?.let { return it }
         val text = value.contentOrNull?.uppercase().orEmpty()
@@ -1627,27 +1305,27 @@ internal object ShortXMappings {
         }
     }
 
-    private fun protoNumber(fields: ProtoFields, stringField: Int, deprecatedField: Int): Double? {
+    internal fun protoNumber(fields: ProtoFields, stringField: Int, deprecatedField: Int): Double? {
         fields.string(stringField)?.let { return it.toDoubleOrNull()?.takeIf(Double::isFinite) }
         return (fields.varint(deprecatedField) ?: 0L).toDouble()
     }
 
-    private fun jsonNumeric(obj: JsonObject, preferred: String, deprecated: String): Double? {
+    internal fun jsonNumeric(obj: JsonObject, preferred: String, deprecated: String): Double? {
         val preferredValue = (obj[preferred] as? JsonPrimitive)?.contentOrNull
         if (!preferredValue.isNullOrBlank()) return preferredValue.toDoubleOrNull()?.takeIf(Double::isFinite)
         return (obj[deprecated] as? JsonPrimitive)?.doubleOrNull?.takeIf(Double::isFinite) ?: 0.0
     }
 
-    private fun withFactTag(feature: FeatureRef, tag: String?): FeatureRef {
+    internal fun withFactTag(feature: FeatureRef, tag: String?): FeatureRef {
         val value = tag?.trim().orEmpty()
         if (value.isBlank()) return feature
         return feature.copy(config = feature.config + ("tag" to ConfigValue.StringValue(value)))
     }
 
-    private fun jsonFactTag(obj: JsonObject): String? =
+    internal fun jsonFactTag(obj: JsonObject): String? =
         (obj["tag"] as? JsonPrimitive)?.contentOrNull?.trim()?.takeIf(String::isNotBlank)
 
-    private fun binaryFeature(any: AnyStub, importerId: String, target: String, extra: Map<String, ConfigValue>) =
+    internal fun binaryFeature(any: AnyStub, importerId: String, target: String, extra: Map<String, ConfigValue>) =
         sourceFeature(
             targetTypeId = target,
             importerId = importerId,
@@ -1656,7 +1334,7 @@ internal object ShortXMappings {
             extra = extra,
         )
 
-    private fun durationMs(value: Double, unit: Long): Double? {
+    internal fun durationMs(value: Double, unit: Long): Double? {
         if (!value.isFinite() || value < 0) return null
         val factor = when (unit) {
             0L -> 1.0
@@ -1670,7 +1348,7 @@ internal object ShortXMappings {
         return result.takeIf { it.isFinite() && it <= Long.MAX_VALUE.toDouble() }
     }
 
-    private fun jsonTimeUnit(value: JsonPrimitive?): Long? {
+    internal fun jsonTimeUnit(value: JsonPrimitive?): Long? {
         value ?: return 0L
         value.longOrNull?.let { return it.takeIf { unit -> unit in 0L..4L } }
         return when (value.contentOrNull?.substringAfterLast('_')?.uppercase()) {
@@ -1683,7 +1361,7 @@ internal object ShortXMappings {
         }
     }
 
-    private fun shortXKeyGesture(value: Int): String? = when (value) {
+    internal fun shortXKeyGesture(value: Int): String? = when (value) {
         0 -> "single_press"
         1 -> "double_press"
         2 -> "triple_press"
@@ -1691,7 +1369,7 @@ internal object ShortXMappings {
         else -> null
     }
 
-    private fun shortName(typeUrl: String): String = typeUrl
+    internal fun shortName(typeUrl: String): String = typeUrl
         .substringAfterLast('/')
         .substringAfterLast('.')
         .substringAfterLast('$')
