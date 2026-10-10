@@ -151,4 +151,11 @@
     <string name="runtime_shortx_tile_invalid_component">快捷设置磁贴组件无效。</string>
     <string name="runtime_shortx_tile_invalid_operation">磁贴标签或操作无效。</string>
     <string name="runtime_capability_root_exit_code">Root 命令执行失败，退出码 %1$s。</string>
+    <string name="feature_android_lsposed_hook_crash_guard_title">LSPosed Hook 崩溃保护</string>
+    <string name="feature_android_lsposed_hook_crash_guard_description">应用进程反复发生 Java 崩溃后自动进入 Hook 安全模式；可查询或重置，恢复 Hook 需要重启目标应用</string>
+    <string name="feature_android_lsposed_hook_crash_guard_field_package">目标应用 / 包名</string>
+    <string name="feature_android_lsposed_hook_crash_guard_field_operation">操作</string>
+    <string name="feature_android_lsposed_hook_crash_guard_field_operation_option_status">查看保护状态</string>
+    <string name="feature_android_lsposed_hook_crash_guard_field_operation_option_reset">解除安全模式</string>
+    <string name="feature_android_lsposed_hook_crash_guard_field_resultvariable">保存崩溃保护信息</string>
 </resources>

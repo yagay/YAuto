@@ -151,4 +151,11 @@
     <string name="runtime_shortx_tile_invalid_component">Invalid Quick Settings tile component.</string>
     <string name="runtime_shortx_tile_invalid_operation">Invalid tile label or operation.</string>
     <string name="runtime_capability_root_exit_code">Root command failed with exit code %1$s.</string>
+    <string name="feature_android_lsposed_hook_crash_guard_title">LSPosed Hook crash protection</string>
+    <string name="feature_android_lsposed_hook_crash_guard_description">Query or reset automatic Hook safe mode after repeated Java process crashes; restart the app to re-enable hooks</string>
+    <string name="feature_android_lsposed_hook_crash_guard_field_package">Target app / package</string>
+    <string name="feature_android_lsposed_hook_crash_guard_field_operation">Operation</string>
+    <string name="feature_android_lsposed_hook_crash_guard_field_operation_option_status">View protection status</string>
+    <string name="feature_android_lsposed_hook_crash_guard_field_operation_option_reset">Reset safe mode</string>
+    <string name="feature_android_lsposed_hook_crash_guard_field_resultvariable">Store crash protection details</string>
 </resources>

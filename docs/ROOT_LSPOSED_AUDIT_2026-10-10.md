@@ -22,3 +22,9 @@ Target: `refactor/macrodroid-on-1003-20261008`.
 ## Additional constructor observer integration
 - The existing `android.lsposed.hook.install_session` picker now selects **method** or **constructor** in one place. Constructor hooks only observe before/after, cannot replace constructor execution, and emit the existing `android.event.lsposed_method_called` event with `methodName=<init>`.
 - Scoped app and running-process requirements remain unchanged. Event token gating and session disabling apply equally to constructor hooks. Java constructor signatures may differ between OEMs and must be checked on device.
+
+## Persistent Hook crash-loop safe mode (2026-10-10)
+
+The scoped app-process YAuto LSPosed runtime now persists Java fatal exceptions in the *target app's device-protected preferences*. Three fatal Java crashes in 120 seconds while its YAuto package hooks are armed quarantine those hooks at the next app launch. The signed management receiver stays available, and `android.lsposed.hook.crash_guard` can query or reset the strike count, exception class, and last Hook family. Re-enabling hooks requires restarting the target app after a reset. The original fatal exception is never swallowed.
+
+Crash-loop correlation does **not** establish Hook causation: three unrelated fatal Java errors can also quarantine hooks. Native SIGSEGV/SIGABRT, SIGKILL, system_server startup crashes, and failures before Application.attach are not covered. This is a preventive opt-out, not an assurance that every OEM crash can be automatically rescued. OEM real-device testing is still required.
