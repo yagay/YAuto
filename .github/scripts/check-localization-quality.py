@@ -349,8 +349,15 @@ def main() -> int:
         failures.append(f"{config_editor}: missing schema-driven feature configuration editor")
     else:
         source = config_editor.read_text(encoding="utf-8")
-        if "parseLocalizedDouble(" not in source:
-            failures.append(f"{config_editor}: numeric editor input must use locale-aware parsing")
+        config_serializer = ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FeatureConfigSerialization.kt"
+        serializer_source = config_serializer.read_text(encoding="utf-8") if config_serializer.exists() else ""
+        if not (
+            "valuesAsConfig(" in source
+            and "fieldValid(" in source
+            and "parseLocalizedDouble(" in serializer_source
+            and "parseFieldValue(" in serializer_source
+        ):
+            failures.append(f"{config_editor}: numeric editor input must use the shared locale-aware serializer")
 
     picker_shell = ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/MacroFeaturePicker.kt"
     if picker_shell.exists() and "FieldSchema." in picker_shell.read_text(encoding="utf-8"):
