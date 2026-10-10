@@ -304,4 +304,16 @@
     <string name="debug_next_step">Next step</string>
     <string name="debug_run_to_breakpoint">Check next breakpoint</string>
     <string name="debug_copy_report">Copy report</string>
+    <string name="engine_debug_title">Engine debugger</string>
+    <string name="engine_debug_warning">Debugging executes real actions and may change device data. Starts paused before the first step.</string>
+    <string name="engine_debug_allow">Allow real actions</string>
+    <string name="engine_debug_paused">Paused node: %1$s</string>
+    <string name="engine_debug_breakpoint">%1$s — %2$s</string>
+    <string name="engine_debug_step">%1$s [%2$s] %3$s (%4$d ms)</string>
+    <string name="engine_debug_before">Before: %1$s</string>
+    <string name="engine_debug_after">After: %1$s</string>
+    <string name="engine_debug_result">Result: %1$s (%2$d ms)</string>
+    <string name="engine_debug_start">Start paused</string>
+    <string name="engine_debug_next">Next step</string>
+    <string name="engine_debug_continue">Continue</string>
 </resources>
