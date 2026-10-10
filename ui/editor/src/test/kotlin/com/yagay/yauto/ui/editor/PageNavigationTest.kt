@@ -1,6 +1,10 @@
 package com.yagay.yauto.ui.editor
 
 import com.yagay.yauto.ui.design.PageNavigation
+import com.yagay.yauto.core.registry.FeatureDescriptor
+import com.yagay.yauto.core.registry.FeatureId
+import com.yagay.yauto.core.registry.FeatureKind
+import com.yagay.yauto.core.registry.FeatureCategory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -22,6 +26,18 @@ class PageNavigationTest {
         assertEquals(Page.HOME, home.current)
         assertFalse(home.canGoBack)
         assertNull(home.back())
+    }
+
+    @Test fun `editing existing feature returns to containing category`() {
+        val category = CatalogCategory("app", 0, 0, 10)
+        val descriptor = FeatureDescriptor(FeatureId("android.app.launch"),
+            FeatureKind.ACTION, "Launch app", "", FeatureCategory.APP)
+        val navigation = FeaturePickerNavState.initial(descriptor, category)
+        assertEquals(3, navigation.stack.size)
+        assertEquals(descriptor, (navigation.current as PickerPage.Configure).descriptor)
+        val list = navigation.pop()!!
+        assertEquals(category, (list.current as PickerPage.Features).category)
+        assertEquals(PickerPage.Categories, list.pop()!!.current)
     }
 
     @Test fun `separate navigation trails do not accidentally dismiss ancestor`() {

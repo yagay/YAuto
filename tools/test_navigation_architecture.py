@@ -44,6 +44,14 @@ class SharedNavigationArchitectureTest(unittest.TestCase):
             self.assertIn("PageBackHandler(onBack = ::navigateBack)", value, path)
             self.assertIn("PageBackButton(onBack = ::navigateBack)", value, path)
 
+    def test_existing_picker_feature_has_a_category_parent(self):
+        picker = source("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FeaturePicker.kt")
+        navigator = source("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FeaturePickerNavigator.kt")
+        self.assertIn("val initialCategory =", picker)
+        self.assertIn("initial(initialDescriptor, initialCategory)", picker)
+        self.assertIn("initialUnified(initialGroup, initialDescriptor.id.value, initialCategory)", picker)
+        self.assertIn("trail.forward(PickerPage.Features(it))", navigator)
+
     def test_home_tab_survives_round_trip_to_editor(self):
         app = source("app/src/main/kotlin/com/yagay/yauto/YAutoAppScreen.kt")
         home = source("ui/home/src/main/kotlin/com/yagay/yauto/ui/home/HomeScreen.kt")

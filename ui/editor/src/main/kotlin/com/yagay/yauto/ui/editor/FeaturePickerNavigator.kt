@@ -34,18 +34,27 @@ internal data class FeaturePickerNavState private constructor(
     fun pop(): FeaturePickerNavState? = navigation.back()?.let(::FeaturePickerNavState)
 
     companion object {
-        fun initial(initialDescriptor: FeatureDescriptor?): FeaturePickerNavState {
+        fun initial(
+            initialDescriptor: FeatureDescriptor?,
+            category: CatalogCategory? = null,
+        ): FeaturePickerNavState {
             var trail = com.yagay.yauto.ui.design.PageNavigation.root<PickerPage>(PickerPage.Categories)
-            initialDescriptor?.let { trail = trail.forward(PickerPage.Configure(it)) }
+            if (initialDescriptor != null) {
+                category?.let { trail = trail.forward(PickerPage.Features(it)) }
+                trail = trail.forward(PickerPage.Configure(initialDescriptor))
+            }
             return FeaturePickerNavState(trail)
         }
 
         fun initialUnified(
             group: UnifiedFeatureGroup,
             selectedMemberId: String? = null,
-        ): FeaturePickerNavState = FeaturePickerNavState(
-            com.yagay.yauto.ui.design.PageNavigation.root<PickerPage>(PickerPage.Categories)
-                .forward(PickerPage.Unified(group, selectedMemberId))
-        )
+            category: CatalogCategory? = null,
+        ): FeaturePickerNavState {
+            var trail = com.yagay.yauto.ui.design.PageNavigation.root<PickerPage>(PickerPage.Categories)
+            category?.let { trail = trail.forward(PickerPage.Features(it)) }
+            trail = trail.forward(PickerPage.Unified(group, selectedMemberId))
+            return FeaturePickerNavState(trail)
+        }
     }
 }

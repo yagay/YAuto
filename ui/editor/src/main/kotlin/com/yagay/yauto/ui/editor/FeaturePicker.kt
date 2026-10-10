@@ -56,12 +56,16 @@ fun MacroFeaturePickerDialog(
     }
     val initialDescriptor = initial?.let { ref -> catalog.item(ref.typeId)?.descriptor }
     val initialGroup = initialDescriptor?.let { catalog.unifiedGroupForMember(it.id.value) }
+    // Restored editing starts from the containing category, not the dashboard.
+    val initialCategory = initialDescriptor?.let { descriptor ->
+        (initialGroup?.members?.firstOrNull() ?: catalog.item(descriptor.id.value))?.category
+    }
     var navigation by remember(initial?.typeId, catalog) {
         mutableStateOf(
             if (initialGroup != null && initialDescriptor != null) {
-                FeaturePickerNavState.initialUnified(initialGroup, initialDescriptor.id.value)
+                FeaturePickerNavState.initialUnified(initialGroup, initialDescriptor.id.value, initialCategory)
             } else {
-                FeaturePickerNavState.initial(initialDescriptor)
+                FeaturePickerNavState.initial(initialDescriptor, initialCategory)
             }
         )
     }
