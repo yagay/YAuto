@@ -42,8 +42,11 @@ fun MacroFeaturePickerDialog(
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("yauto_feature_picker", Context.MODE_PRIVATE) }
-    val editable = remember(descriptors, kind) {
-        descriptors.filter { it.kind == kind && it.isPickerSelectable() }
+    val showRootExclusive = remember(context) {
+        FeatureVisibilityPreferences.showRootExclusive(context)
+    }
+    val editable = remember(descriptors, kind, showRootExclusive, initial?.typeId) {
+        filterPickerFeatures(descriptors, kind, showRootExclusive, initial)
     }
     val textResolver = rememberFeatureTextResolver()
     val locale = currentEditorLocale()

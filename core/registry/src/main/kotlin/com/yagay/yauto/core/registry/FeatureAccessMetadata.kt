@@ -154,3 +154,25 @@ fun FeatureDescriptor.withAccessEditorMetadata(): FeatureDescriptor {
             if (dual) setOf("macrodroid", "shortx", "implementation method") else emptySet(),
     )
 }
+
+/**
+ * Picker visibility only: conservative metadata check. Never infer Root-only status
+ * from the feature name or the mere presence of a privileged-capability option,
+ * because Shizuku and public Android methods can satisfy the same operation.
+ *
+ * This does not disable an existing automation or unregister its executor.
+ */
+fun FeatureDescriptor.isRootExclusiveFeature(): Boolean {
+    val privileged = setOf(AccessRequirement.ROOT, AccessRequirement.LSPOSED, AccessRequirement.ZYGISK)
+    val options = resolvedImplementationOptions()
+    if (options.isNotEmpty()) {
+        return options.all { option ->
+            when (option.backendId) {
+                "root", "lsposed", "zygisk" -> true
+                "android", "accessibility", "shizuku", "usage_stats" -> false
+                else -> option.requirements.any { it in privileged }
+            }
+        }
+    }
+    return accessRequirements.any { it in privileged }
+}

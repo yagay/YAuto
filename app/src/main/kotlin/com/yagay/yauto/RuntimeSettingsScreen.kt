@@ -25,6 +25,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.yagay.yauto.platform.accessibility.YAutoAccessibilityService
+import com.yagay.yauto.ui.editor.FeatureVisibilityPreferences
 import com.yagay.yauto.platform.android.isUsageStatsAccessGranted
 import com.yagay.yauto.ui.design.MacroItemRow
 import com.yagay.yauto.ui.design.MacroPalette
@@ -45,6 +46,9 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     val notChecked = stringResource(TextR.string.common_not_checked)
     val checking = stringResource(TextR.string.common_checking)
     var refresh by remember { mutableIntStateOf(0) }
+    var showRootExclusive by remember(context) {
+        mutableStateOf(FeatureVisibilityPreferences.showRootExclusive(context))
+    }
     var backendMessage by remember(notChecked) { mutableStateOf(notChecked) }
     var lsposedScopeMessage by remember { mutableStateOf<String?>(null) }
     var navigation by rememberPageNavigation(RuntimeSettingsPage.OVERVIEW)
@@ -179,6 +183,34 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         MacroPalette.Flow,
                         onClick = { navigateTo(RuntimeSettingsPage.BACKENDS) },
                     )
+                }
+                item {
+                    Card(Modifier.fillMaxWidth()) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(14.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(
+                                    stringResource(TextR.string.runtime_show_root_exclusive_title),
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                Text(
+                                    stringResource(TextR.string.runtime_show_root_exclusive_detail),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Switch(
+                                checked = showRootExclusive,
+                                onCheckedChange = { checked ->
+                                    FeatureVisibilityPreferences.setShowRootExclusive(context, checked)
+                                    showRootExclusive = checked
+                                },
+                            )
+                        }
+                    }
                 }
                 item {
                     MacroItemRow(

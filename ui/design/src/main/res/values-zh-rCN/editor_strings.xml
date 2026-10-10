@@ -308,4 +308,6 @@
     <string name="implementation_unique_method">唯一可用实现方式</string>
     <string name="runtime_feature_dual_method_backend_mismatch">所选执行后端与当前 Root 权限分组不匹配，请重新选择。</string>
     <string name="runtime_feature_dual_method_backend_not_supported">当前执行后端不支持 %1$s 的等价实现。</string>
+    <string name="runtime_show_root_exclusive_title">显示仅 Root / LSPosed 可用的功能</string>
+    <string name="runtime_show_root_exclusive_detail">关闭后，在新增动作、触发器和约束的列表中隐藏仅支持 Root／LSPosed 的功能。支持 Android、无障碍或 Shizuku 的功能仍会显示；已有任务继续运行，也可以编辑。</string>
 </resources>
