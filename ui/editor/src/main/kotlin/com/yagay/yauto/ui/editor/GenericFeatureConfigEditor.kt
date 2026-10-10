@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.Context
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import androidx.compose.ui.res.stringResource
