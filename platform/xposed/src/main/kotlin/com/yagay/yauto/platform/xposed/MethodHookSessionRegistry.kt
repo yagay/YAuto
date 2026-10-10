@@ -18,5 +18,7 @@ internal class MethodHookSessionRegistry {
 
     fun isActive(sessionId: String, token: String): Boolean = tokens[sessionId] == token
 
+    fun hasActiveSession(sessionId: String): Boolean = tokens.containsKey(sessionId)
+
     fun disable(sessionId: String): Boolean = tokens.remove(sessionId) != null
 }

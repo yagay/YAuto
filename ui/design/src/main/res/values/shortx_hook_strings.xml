@@ -126,8 +126,8 @@
     <string name="feature_android_state_ime_visible_title">Input method visible</string>
     <string name="feature_android_state_ime_visible_description">Check whether Android currently reports the software input method as shown or requested</string>
     <string name="feature_android_state_ime_visible_field_value">Visible</string>
-    <string name="feature_android_lsposed_hook_disable_session_title">Disable LSPosed hook session</string>
-    <string name="feature_android_lsposed_hook_disable_session_description">Stop an installed app method hook without restarting the phone; the interceptor passes through until process restart</string>
+    <string name="feature_android_lsposed_hook_disable_session_title">Manage LSPosed hook session</string>
+    <string name="feature_android_lsposed_hook_disable_session_description">Disable a Hook session or query whether its running scoped process has active hooks</string>
     <string name="feature_android_lsposed_hook_disable_session_field_package">Target app / package</string>
     <string name="feature_android_lsposed_hook_disable_session_field_sessionid">Session ID</string>
     <string name="feature_android_lsposed_hook_install_session_field_memberkind">Hook target</string>
@@ -137,4 +137,8 @@
     <string name="feature_android_event_lsposed_method_called_field_arg0contains">First argument contains</string>
     <string name="feature_android_event_lsposed_method_called_field_resultcontains">Return value contains</string>
     <string name="feature_android_lsposed_hook_install_session_field_mode_option_override_result">Override return value after original call</string>
+    <string name="feature_android_lsposed_hook_disable_session_field_operation">Session operation</string>
+    <string name="feature_android_lsposed_hook_disable_session_field_operation_option_disable">Disable session</string>
+    <string name="feature_android_lsposed_hook_disable_session_field_operation_option_query">Query session</string>
+    <string name="feature_android_lsposed_hook_disable_session_field_resultvariable">Store session status</string>
 </resources>

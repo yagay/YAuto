@@ -25,4 +25,5 @@ object SystemBridgeProtocol {
     const val SYSTEM_EVENT_ACTION = "com.yagay.yauto.LSPOSED_SYSTEM_EVENT"
     const val HOOK_INSTALL_SESSION = "lsposed.hook.install_session"
     const val HOOK_DISABLE_SESSION = "lsposed.hook.disable_session"
+    const val HOOK_QUERY_SESSION = "lsposed.hook.query_session"
 }

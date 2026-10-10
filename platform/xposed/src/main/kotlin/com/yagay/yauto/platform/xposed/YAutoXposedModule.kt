@@ -1672,6 +1672,14 @@ class YAutoXposedModule : XposedModule() {
                         response.putBoolean("success", disabled)
                         response.putBoolean("disabled", disabled)
                         if (!disabled) response.putString("error", "Session is not active in this process")
+                    } else if (operation == SystemBridgeProtocol.HOOK_QUERY_SESSION) {
+                        val sessionId = intent.getStringExtra("sessionId").orEmpty().trim()
+                        require(sessionId.matches(Regex("[A-Za-z0-9_.:-]{1,96}"))) { "Invalid session ID" }
+                        response.putBoolean("active", methodSessions.hasActiveSession(sessionId))
+                        response.putInt("hookedCount", installedHooks.count {
+                            it.startsWith("$receiverKey|$sessionId|")
+                        })
+                        response.putBoolean("success", true)
                     } else {
                     require(operation == SystemBridgeProtocol.HOOK_INSTALL_SESSION) { "Unsupported hook operation" }
                     val sessionId = intent.getStringExtra("sessionId").orEmpty().trim()

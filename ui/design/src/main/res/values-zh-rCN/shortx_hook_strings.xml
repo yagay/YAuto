@@ -126,8 +126,8 @@
     <string name="feature_android_state_ime_visible_title">输入法可见</string>
     <string name="feature_android_state_ime_visible_description">检查 Android 当前是否报告软键盘已显示或已请求显示</string>
     <string name="feature_android_state_ime_visible_field_value">可见</string>
-    <string name="feature_android_lsposed_hook_disable_session_title">停用 LSPosed Hook 会话</string>
-    <string name="feature_android_lsposed_hook_disable_session_description">无需重启手机即可停用指定应用方法 Hook；已安装的拦截器将放行原始调用，进程重启后卸载</string>
+    <string name="feature_android_lsposed_hook_disable_session_title">管理 LSPosed Hook 会话</string>
+    <string name="feature_android_lsposed_hook_disable_session_description">停用 Hook 会话，或查询已作用域应用进程中的 Hook 是否仍然启用</string>
     <string name="feature_android_lsposed_hook_disable_session_field_package">目标应用 / 包名</string>
     <string name="feature_android_lsposed_hook_disable_session_field_sessionid">会话 ID</string>
     <string name="feature_android_lsposed_hook_install_session_field_memberkind">Hook 目标</string>
@@ -137,4 +137,8 @@
     <string name="feature_android_event_lsposed_method_called_field_arg0contains">首个参数包含</string>
     <string name="feature_android_event_lsposed_method_called_field_resultcontains">返回值包含</string>
     <string name="feature_android_lsposed_hook_install_session_field_mode_option_override_result">执行原方法后覆盖返回值</string>
+    <string name="feature_android_lsposed_hook_disable_session_field_operation">会话操作</string>
+    <string name="feature_android_lsposed_hook_disable_session_field_operation_option_disable">停用会话</string>
+    <string name="feature_android_lsposed_hook_disable_session_field_operation_option_query">查询会话</string>
+    <string name="feature_android_lsposed_hook_disable_session_field_resultvariable">保存会话状态变量</string>
 </resources>
