@@ -8,13 +8,16 @@ class FullReferenceParityInventoryTests(unittest.TestCase):
         self.assertEqual(report["shortx_source_types"],
                          report["shortx_field_decoder_present"] +
                          report["shortx_hint_only"] + report["shortx_unmapped_or_nonaction"])
-        self.assertGreaterEqual(report["shortx_hint_only"], 100)
+        self.assertGreaterEqual(report["shortx_hint_only"], 60)
+        self.assertGreater(report["verified_batch_source_types"], 5)
 
     def test_hints_are_not_treated_as_native_implementations(self):
         rows = {row["source_type"]: row for row in inventory()["rows"]}
         self.assertEqual(rows["ToggleWifi"]["status"], "hint_only")
         self.assertEqual(rows["ActionAsyncMode"]["status"], "unmapped_or_nonaction")
         self.assertEqual(rows["NoAction"]["status"], "field_decoder_present")
+        self.assertEqual(rows["SetBrightness"]["status"], "field_decoder_present")
+        self.assertTrue(rows["SetBrightness"]["verified_batch_binary"])
         self.assertEqual(rows["IfThenElse"]["status"], "field_decoder_present")
 
     def test_shortx_hook_specs_are_registered_picker_events(self):

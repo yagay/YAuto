@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "tools/shortx_reference_actions.csv"
 MAPPINGS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXMappings.kt"
 STRUCTURAL = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXStructuralMappings.kt"
+BATCH = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXVerifiedBatchMappings.kt"
 HINTS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/EnhancedShortXImporter.kt"
 MACRO = ROOT / "tools/macrodroid_reviewed_names.csv"
 MERGES = ROOT / "tools/verified_picker_merges.csv"
@@ -31,10 +32,13 @@ def inventory() -> dict:
     types = [row["source_type"] for row in catalog]
     native = MAPPINGS.read_text(encoding="utf-8")
     structural = STRUCTURAL.read_text(encoding="utf-8")
+    batch = BATCH.read_text(encoding="utf-8")
     hints = HINTS.read_text(encoding="utf-8")
     binary = names_in_branches(native.split("fun nativeAction(", 1)[1].split("fun nativeFact(", 1)[0])
     json_actions = names_in_branches(native.split("private fun nativeJsonAction(", 1)[1].split("private fun jsonFact", 1)[0])
     structure_names = names_in_branches(structural.split("fun convert(", 1)[1])
+    batch_binary = names_in_branches(batch.split("fun binary(", 1)[1].split("private fun enumNumber", 1)[0])
+    batch_json = names_in_branches(batch.split("fun json(", 1)[1])
     # Hints can be helpful to guide manual migration but are not executable imports.
     hint_names = set(re.findall(r'"([A-Za-z][A-Za-z0-9_]*)"', hints.split("private fun action(name", 1)[1].split("private fun fact(name", 1)[0]))
     with MACRO.open(encoding="utf-8", newline="") as f:
@@ -50,8 +54,8 @@ def inventory() -> dict:
     unknown_hooks = sorted(set(hooks.values()) - declared_hooks)
     rows = []
     for name in types:
-        binary_native = name in binary
-        json_native = name in json_actions
+        binary_native = name in binary or name in batch_binary
+        json_native = name in json_actions or name in batch_json
         structural_native = name in structure_names
         hint = name in hint_names
         if binary_native or json_native or structural_native:
@@ -65,6 +69,8 @@ def inventory() -> dict:
             "binary_decoder_declared": binary_native,
             "json_decoder_declared": json_native,
             "structural_decoder_declared": structural_native,
+            "verified_batch_binary": name in batch_binary,
+            "verified_batch_json": name in batch_json,
             "has_suggestion_only": hint and status == "hint_only",
             "status": status,
         })
@@ -75,6 +81,7 @@ def inventory() -> dict:
         "shortx_json_decoder_branches": sum(r["json_decoder_declared"] for r in rows),
         "shortx_structural_decoder_branches": sum(r["structural_decoder_declared"] for r in rows),
         "shortx_field_decoder_present": sum(r["status"] == "field_decoder_present" for r in rows),
+        "verified_batch_source_types": sum(r["verified_batch_binary"] or r["verified_batch_json"] for r in rows),
         "shortx_hint_only": sum(r["status"] == "hint_only" for r in rows),
         "shortx_unmapped_or_nonaction": sum(r["status"] == "unmapped_or_nonaction" for r in rows),
         "macrodroid_reviewed_name_pairs": len(macro_rows),
