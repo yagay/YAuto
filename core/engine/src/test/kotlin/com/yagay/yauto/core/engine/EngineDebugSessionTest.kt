@@ -17,9 +17,9 @@ class EngineDebugSessionTest {
             name = "mark",
         )
         val waiting = async {
-            debugger.beforeNode(node, mapOf("counter" to ConfigValue.StringValue("before")))
+            debugger.beforeNode(1L, node, mapOf("counter" to ConfigValue.StringValue("before")))
             debugger.afterNode(
-                node, mapOf("counter" to ConfigValue.StringValue("after")),
+                1L, node, mapOf("counter" to ConfigValue.StringValue("after")),
                 true, 17L,
             )
         }
@@ -33,6 +33,7 @@ class EngineDebugSessionTest {
         waiting.await()
         val steps = debugger.snapshot()
         assertEquals(1, steps.size)
+        assertEquals(1L, steps.single().invocationId)
         assertTrue(steps.single().success)
         assertEquals(17L, steps.single().elapsedMs)
         assertEquals(ConfigValue.StringValue("before"), steps.single().variablesBefore["counter"])
