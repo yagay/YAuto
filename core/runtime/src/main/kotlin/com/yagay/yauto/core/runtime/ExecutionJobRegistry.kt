@@ -31,7 +31,7 @@ internal class ExecutionJobRegistry {
 
     /** Cooperative cancellation is awaited so a replacement cannot overlap a running job. */
     suspend fun cancelAndAwait(key: String, timeoutMs: Long = 5_000L): Boolean {
-        val previous = jobs[key]?.toList().orEmpty().filter { it.isActive }
+        val previous = jobs[key]?.toList().orEmpty().filterNot { it.isCompleted }
         previous.forEach(Job::cancel)
         val finished = withTimeoutOrNull(timeoutMs) {
             previous.forEach { it.join() }
