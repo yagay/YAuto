@@ -23,6 +23,7 @@ import com.yagay.yauto.core.registry.PersistentVariableControl
 import com.yagay.yauto.core.registry.VariableAccess
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.WorkspaceRepository
+import com.yagay.yauto.core.storage.WorkspaceMutationRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -85,6 +86,16 @@ class AutomationRuntime(
     private val lastRunStore = RuntimeLastRunStore(workspaceRepository, workspaceMutationLock)
     private val persistentVariableStore = RuntimeVariableStore(workspaceRepository, workspaceMutationLock)
     private val expressions = SimpleExpressionEngine()
+
+    /** Shared transaction boundary for runtime controls and persistent metadata. */
+    private suspend fun updateWorkspace(transform: (WorkspaceData) -> WorkspaceData): WorkspaceData =
+        if (workspaceRepository is WorkspaceMutationRepository) workspaceRepository.update(transform)
+        else workspaceMutationLock.withLock {
+            val updated = transform(workspaceRepository.load())
+            workspaceRepository.save(updated)
+            updated
+        }
+
 
     suspend fun dispatch(event: RuntimeEvent, statesOnly: Boolean = false): RuntimeDispatchResult = coroutineScope {
         val dispatchId = ExecutionId(UUID.randomUUID().toString())
@@ -312,24 +323,20 @@ class AutomationRuntime(
     override suspend fun setRuntimeEnabled(mode: AutomationEnableMode): ActionExecutionResult {
         var previous = true
         var enabled = true
-        val result = workspaceMutationLock.withLock {
-            val workspace = workspaceRepository.load()
+        updateWorkspace { workspace ->
             previous = workspace.runtimeEnabled
             enabled = when (mode) {
                 AutomationEnableMode.ENABLE -> true
                 AutomationEnableMode.DISABLE -> false
                 AutomationEnableMode.TOGGLE -> !workspace.runtimeEnabled
             }
-            if (enabled != workspace.runtimeEnabled) {
-                workspaceRepository.save(workspace.copy(runtimeEnabled = enabled))
-                if (!enabled) {
-                    executionJobs.cancelAll()
-                    eventState.reset()
-                }
-            }
-            ActionExecutionResult(true, ConfigValue.BooleanValue(enabled))
+            if (previous == enabled) workspace else workspace.copy(runtimeEnabled = enabled)
         }
         if (previous != enabled) {
+            if (!enabled) {
+                executionJobs.cancelAll()
+                eventState.reset()
+            }
             dispatch(
                 RuntimeEvent(
                     typeId = "core.event.runtime_enabled_changed",
@@ -338,7 +345,7 @@ class AutomationRuntime(
                 )
             )
         }
-        return result
+        return ActionExecutionResult(true, ConfigValue.BooleanValue(enabled))
     }
 
     override suspend fun isRuntimeEnabled(): Boolean = workspaceRepository.load().runtimeEnabled
