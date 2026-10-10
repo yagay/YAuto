@@ -73,10 +73,17 @@ class EngineDebugSession : EngineDebugObserver {
             paused = Paused(node.id, node.javaClass.simpleName, variables.toMap())
             CompletableDeferred<Unit>().also { pending = it }
         }
-        wait?.await()
-        mutex.withLock {
-            if (pending === wait) pending = null
-            paused = null
+        try {
+            wait?.await()
+        } finally {
+            mutex.withLock {
+                if (pending === wait) {
+                    pending = null
+                    paused = null
+                } else if (paused?.nodeId == node.id) {
+                    paused = null
+                }
+            }
         }
     }
 
