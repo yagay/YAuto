@@ -402,152 +402,24 @@ fun MacroAutomationEditorScreen(
     }
 
     menu?.let { (section, index) ->
-        val candidate: FeatureRef? = when {
-            section == "event" -> events.getOrNull(index)
-            section == "state" -> states.getOrNull(index)
-            section == "condition" -> conditions.getOrNull(index)
-            section.startsWith("action:") -> {
-                val nodes = when (MacroActionPhase.valueOf(section.substringAfter(':'))) {
-                    MacroActionPhase.EVENT -> onEvent
-                    MacroActionPhase.ENTER -> onEnter
-                    MacroActionPhase.EXIT -> onExit
-                }
-                (nodes.getOrNull(index) as? ActionNode.Action)?.feature
-            }
-            else -> null
-        }
-        val candidateKind = when (section) {
-            "event" -> FeatureKind.EVENT
-            "state" -> FeatureKind.STATE
-            "condition" -> FeatureKind.CONDITION
-            else -> FeatureKind.ACTION
-        }
-        val size = when {
-            section == "event" -> events.size
-            section == "state" -> states.size
-            section == "condition" -> conditions.size
-            section.startsWith("action:") -> when (MacroActionPhase.valueOf(section.substringAfter(':'))) {
-                MacroActionPhase.EVENT -> onEvent.size
-                MacroActionPhase.ENTER -> onEnter.size
-                MacroActionPhase.EXIT -> onExit.size
-            }
-            else -> 0
-        }
-        AlertDialog(
-            onDismissRequest = { menu = null },
-            title = { Text(stringResource(TextR.string.automation_item_operations)) },
-            text = {
-                Column {
-                    TextButton(
-                        enabled = candidate != null,
-                        onClick = {
-                            candidate?.let { quickTest = it to candidateKind }
-                            menu = null
-                        },
-                    ) {
-                        Text(stringResource(when (candidateKind) {
-                            FeatureKind.ACTION -> TextR.string.feature_test_action
-                            FeatureKind.STATE -> TextR.string.feature_test_state
-                            FeatureKind.CONDITION -> TextR.string.feature_test_constraint
-                            FeatureKind.EVENT -> TextR.string.feature_test_trigger
-                        }))
-                    }
-                    TextButton(
-                        enabled = candidate != null,
-                        onClick = {
-                            when {
-                                section == "event" -> events = events.toMutableList().apply {
-                                    getOrNull(index)?.let { add(index + 1, it) }
-                                }
-                                section == "state" -> states = states.toMutableList().apply {
-                                    getOrNull(index)?.let { add(index + 1, it) }
-                                }
-                                section == "condition" -> conditions = conditions.toMutableList().apply {
-                                    getOrNull(index)?.let { add(index + 1, it) }
-                                }
-                                section.startsWith("action:") -> {
-                                    val phase = MacroActionPhase.valueOf(section.substringAfter(':'))
-                                    val source = when (phase) {
-                                        MacroActionPhase.EVENT -> onEvent
-                                        MacroActionPhase.ENTER -> onEnter
-                                        MacroActionPhase.EXIT -> onExit
-                                    }
-                                    val copy = (source.getOrNull(index) as? ActionNode.Action)
-                                        ?.copy(id = NodeId(UUID.randomUUID().toString()))
-                                    if (copy != null) {
-                                        val updated = source.toMutableList().apply {
-                                            add(index + 1, copy)
-                                        }
-                                        when (phase) {
-                                            MacroActionPhase.EVENT -> onEvent = updated
-                                            MacroActionPhase.ENTER -> onEnter = updated
-                                            MacroActionPhase.EXIT -> onExit = updated
-                                        }
-                                    }
-                                }
-                            }
-                            menu = null
-                        },
-                    ) { Text(stringResource(TextR.string.feature_test_duplicate)) }
-                    TextButton(
-                        enabled = index > 0,
-                        onClick = {
-                            when {
-                                section == "event" -> events = events.moveItem(index, index - 1)
-                                section == "state" -> states = states.moveItem(index, index - 1)
-                                section == "condition" -> conditions = conditions.moveItem(index, index - 1)
-                                section.startsWith("action:") -> when (
-                                    MacroActionPhase.valueOf(section.substringAfter(':'))
-                                ) {
-                                    MacroActionPhase.EVENT -> onEvent = onEvent.moveItem(index, index - 1)
-                                    MacroActionPhase.ENTER -> onEnter = onEnter.moveItem(index, index - 1)
-                                    MacroActionPhase.EXIT -> onExit = onExit.moveItem(index, index - 1)
-                                }
-                            }
-                            menu = null
-                        },
-                    ) { Text(stringResource(TextR.string.flow_move_up)) }
-                    TextButton(
-                        enabled = index < size - 1,
-                        onClick = {
-                            when {
-                                section == "event" -> events = events.moveItem(index, index + 1)
-                                section == "state" -> states = states.moveItem(index, index + 1)
-                                section == "condition" -> conditions = conditions.moveItem(index, index + 1)
-                                section.startsWith("action:") -> when (
-                                    MacroActionPhase.valueOf(section.substringAfter(':'))
-                                ) {
-                                    MacroActionPhase.EVENT -> onEvent = onEvent.moveItem(index, index + 1)
-                                    MacroActionPhase.ENTER -> onEnter = onEnter.moveItem(index, index + 1)
-                                    MacroActionPhase.EXIT -> onExit = onExit.moveItem(index, index + 1)
-                                }
-                            }
-                            menu = null
-                        },
-                    ) { Text(stringResource(TextR.string.flow_move_down)) }
-                    TextButton(
-                        onClick = {
-                            when {
-                                section == "event" -> events = events.removeItem(index)
-                                section == "state" -> states = states.removeItem(index)
-                                section == "condition" -> conditions = conditions.removeItem(index)
-                                section.startsWith("action:") -> when (
-                                    MacroActionPhase.valueOf(section.substringAfter(':'))
-                                ) {
-                                    MacroActionPhase.EVENT -> onEvent = onEvent.removeItem(index)
-                                    MacroActionPhase.ENTER -> onEnter = onEnter.removeItem(index)
-                                    MacroActionPhase.EXIT -> onExit = onExit.removeItem(index)
-                                }
-                            }
-                            menu = null
-                        },
-                    ) { Text(stringResource(TextR.string.common_delete)) }
-                }
+        AutomationItemOperationsDialog(
+            section = section,
+            index = index,
+            items = EditableAutomationSections(events, states, conditions, onEvent, onEnter, onExit),
+            onChange = { updated ->
+                events = updated.events
+                states = updated.states
+                conditions = updated.conditions
+                onEvent = updated.onEvent
+                onEnter = updated.onEnter
+                onExit = updated.onExit
+                menu = null
             },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { menu = null }) { Text(stringResource(TextR.string.common_cancel)) }
+            onTest = { feature, kind ->
+                menu = null
+                quickTest = feature to kind
             },
+            onDismiss = { menu = null },
         )
     }
 
