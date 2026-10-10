@@ -322,4 +322,24 @@
     <string name="feature_permission_check">检查／启用</string>
     <string name="feature_permission_lsposed_hint">请在 LSPosed 管理器中启用模块并授予所需作用域，目标进程可能需要重启。</string>
     <string name="feature_permission_zygisk_hint">请在 Root 管理器中启用 Zygisk 并重启设备。Android 无法通过普通权限弹窗授予 Zygisk。</string>
+    <string name="feature_test_action">测试动作</string>
+    <string name="feature_test_constraint">测试约束</string>
+    <string name="feature_test_state">检查状态</string>
+    <string name="feature_test_trigger">检查触发器</string>
+    <string name="feature_test_running">测试中…</string>
+    <string name="feature_test_run_now">执行测试</string>
+    <string name="feature_test_success">测试完成</string>
+    <string name="feature_test_failed">测试失败</string>
+    <string name="feature_test_true">当前结果：真（符合）</string>
+    <string name="feature_test_false">当前结果：假（不符合）</string>
+    <string name="feature_test_timeout">测试超时</string>
+    <string name="feature_test_unavailable">此功能暂时没有可用的测试执行器。</string>
+    <string name="feature_test_action_completed">动作已执行。</string>
+    <string name="feature_test_event_check_only">触发器配置检查完成。本操作不会伪造系统事件或运行自动化；请通过真实事件验证触发。</string>
+    <string name="feature_test_duration">耗时：%1$d 毫秒</string>
+    <string name="feature_test_action_warning">将立即使用当前未保存的参数真实执行此动作，可能修改设备设置、发送消息、删除文件或产生其他实际影响。确定继续吗？</string>
+    <string name="feature_test_copy">复制</string>
+    <string name="feature_test_copied">当前配置已复制。</string>
+    <string name="feature_test_reset">重置</string>
+    <string name="feature_test_reset_warning">将当前参数恢复默认值吗？不会修改已保存的自动化，除非随后保存。</string>
 </resources>

@@ -21,6 +21,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -88,6 +93,45 @@ internal fun GenericFeatureConfigEditor(
         !enabled || fieldValid(field, values[field.key].orEmpty(), locale)
     }
 
+    val tester = LocalFeatureTestGateway.current
+    val coroutineScope = rememberCoroutineScope()
+    var testing by remember(descriptor.id.value) { mutableStateOf(false) }
+    var confirmationRequested by remember(descriptor.id.value) { mutableStateOf(false) }
+    var resetRequested by remember(descriptor.id.value) { mutableStateOf(false) }
+    var testResult by remember(descriptor.id.value) { mutableStateOf<FeatureTestResult?>(null) }
+    var copied by remember(descriptor.id.value) { mutableStateOf(false) }
+
+    fun currentDraft(): FeatureRef = FeatureRef(
+        descriptor.id.value,
+        descriptor.schemaVersion,
+        buildEditedFeatureConfig(
+            descriptor, initial, initialWithDefaults, values, locale, hardwareIdentityConfig,
+        ),
+    )
+
+    fun runTest() {
+        if (!valid || testing || tester == null) return
+        val draft = currentDraft()
+        testing = true
+        testResult = null
+        coroutineScope.launch {
+            try {
+                testResult = tester.test(draft, descriptor.kind)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                testResult = FeatureTestResult(
+                    success = false,
+                    detail = error.message ?: error.javaClass.simpleName,
+                    elapsedMs = 0,
+                    kind = descriptor.kind,
+                )
+            } finally {
+                testing = false
+            }
+        }
+    }
+
     LazyColumn(
         modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -153,26 +197,86 @@ internal fun GenericFeatureConfigEditor(
         }
 
         item {
-            Button(
-                onClick = {
-                    onSave(
-                        FeatureRef(
-                            descriptor.id.value,
-                            descriptor.schemaVersion,
-                            buildEditedFeatureConfig(
-                                descriptor,
-                                initial,
-                                initialWithDefaults,
-                                values,
-                                locale,
-                                hardwareIdentityConfig,
-                            ),
-                        )
-                    )
-                },
-                enabled = valid,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            if (descriptor.kind == FeatureKind.ACTION) {
+                                confirmationRequested = true
+                            } else runTest()
+                        },
+                        enabled = valid && !testing && tester != null,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(when {
+                            testing -> TextR.string.feature_test_running
+                            descriptor.kind == FeatureKind.ACTION -> TextR.string.feature_test_action
+                            descriptor.kind == FeatureKind.CONDITION -> TextR.string.feature_test_constraint
+                            descriptor.kind == FeatureKind.STATE -> TextR.string.feature_test_state
+                            else -> TextR.string.feature_test_trigger
+                        }))
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            val manager = editorContext.getSystemService(Context.CLIPBOARD_SERVICE)
+                                as? ClipboardManager
+                            if (manager != null) {
+                                manager.setPrimaryClip(ClipData.newPlainText(
+                                    "YAuto feature", Json.encodeToString(
+                                        FeatureRef.serializer(), currentDraft(),
+                                    ),
+                                ))
+                                copied = true
+                            }
+                        },
+                        enabled = valid,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(TextR.string.feature_test_copy))
+                    }
+                    OutlinedButton(
+                        onClick = { resetRequested = true },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(TextR.string.feature_test_reset))
+                    }
+                }
+                if (copied) {
+                    Text(stringResource(TextR.string.feature_test_copied),
+                        style = MaterialTheme.typography.labelSmall)
+                }
+                testResult?.let { result ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                stringResource(if (result.success)
+                                    TextR.string.feature_test_success
+                                else TextR.string.feature_test_failed),
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (result.success) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.error,
+                            )
+                            Text(result.detail, style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                stringResource(TextR.string.feature_test_duration,
+                                    result.elapsedMs),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                            result.executionId?.let { id ->
+                                Text(id, style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                }
+                Button(
+                    onClick = { onSave(currentDraft()) },
+                    enabled = valid && !testing,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                 Text(
                     if (initial == null) {
                         stringResource(TextR.string.editor_add_kind_format, kindLabel(descriptor.kind))
@@ -180,8 +284,55 @@ internal fun GenericFeatureConfigEditor(
                         stringResource(TextR.string.common_save)
                     }
                 )
+                }
             }
         }
+    }
+
+    if (confirmationRequested) {
+        AlertDialog(
+            onDismissRequest = { confirmationRequested = false },
+            title = { Text(stringResource(TextR.string.feature_test_action)) },
+            text = { Text(stringResource(TextR.string.feature_test_action_warning)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmationRequested = false
+                    runTest()
+                }) { Text(stringResource(TextR.string.feature_test_run_now)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmationRequested = false }) {
+                    Text(stringResource(TextR.string.common_cancel))
+                }
+            },
+        )
+    }
+    if (resetRequested) {
+        AlertDialog(
+            onDismissRequest = { resetRequested = false },
+            title = { Text(stringResource(TextR.string.feature_test_reset)) },
+            text = { Text(stringResource(TextR.string.feature_test_reset_warning)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    // Reset only the draft, not the persisted automation.
+                    val defaults = descriptor.applyDefaults(
+                        FeatureRef(descriptor.id.value, descriptor.schemaVersion),
+                    )
+                    values = descriptor.fields.associate { field ->
+                        field.key to editorConfigValueText(defaults.config[field.key], locale)
+                    }
+                    hardwareIdentityConfig = emptyMap()
+                    testResult = null
+                    copied = false
+                    resetRequested = false
+                }) { Text(stringResource(TextR.string.feature_test_reset)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { resetRequested = false }) {
+                    Text(stringResource(TextR.string.common_cancel))
+                }
+            },
+        )
     }
 }
 

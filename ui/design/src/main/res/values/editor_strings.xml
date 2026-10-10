@@ -323,4 +323,24 @@
     <string name="feature_permission_check">Check / Enable</string>
     <string name="feature_permission_lsposed_hint">Open LSPosed Manager, enable this module and grant its required scope. A restart of the target process may be needed.</string>
     <string name="feature_permission_zygisk_hint">Enable Zygisk in your Root manager and restart the device. Android cannot grant Zygisk through a regular permission prompt.</string>
+    <string name="feature_test_action">Test action</string>
+    <string name="feature_test_constraint">Test constraint</string>
+    <string name="feature_test_state">Check state</string>
+    <string name="feature_test_trigger">Check trigger</string>
+    <string name="feature_test_running">Testing…</string>
+    <string name="feature_test_run_now">Run test</string>
+    <string name="feature_test_success">Test complete</string>
+    <string name="feature_test_failed">Test failed</string>
+    <string name="feature_test_true">Current result: true (matches)</string>
+    <string name="feature_test_false">Current result: false (not matched)</string>
+    <string name="feature_test_timeout">Test timed out</string>
+    <string name="feature_test_unavailable">This feature has no available test executor.</string>
+    <string name="feature_test_action_completed">Action completed.</string>
+    <string name="feature_test_event_check_only">Trigger configuration found. This does not fire a real system event or run any automation; use a real event to verify the trigger.</string>
+    <string name="feature_test_duration">Elapsed: %1$d ms</string>
+    <string name="feature_test_action_warning">The test will execute this action now using the current unsaved parameters and may change device settings, send messages, delete files or cause other real effects. Continue?</string>
+    <string name="feature_test_copy">Copy</string>
+    <string name="feature_test_copied">Current configuration copied.</string>
+    <string name="feature_test_reset">Reset</string>
+    <string name="feature_test_reset_warning">Reset all current parameters to their defaults? This will not change the saved automation unless you save.</string>
 </resources>
