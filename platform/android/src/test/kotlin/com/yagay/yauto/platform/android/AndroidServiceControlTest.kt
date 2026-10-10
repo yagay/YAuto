@@ -34,6 +34,24 @@ class AndroidServiceControlTest {
         )
     }
 
+    @Test fun `service supports complete flags and strictly typed extras`() {
+        assertEquals(
+            "am start-foreground-service --user 10 -n 'com.example/.Service' -f 0x10000000 --es 'note' 'don'\\''t touch' --ei 'count' '3'",
+            serviceControlCommand(
+                "com.example/.Service", 10, "start_foreground", flags = 0x10000000,
+                extrasJson = """[{"key":"note","type":2,"value":"don't touch"},{"key":"count","type":0,"value":"3"}]""",
+            )
+        )
+        assertNull(serviceControlCommand("com.example/.Service", 0, "start", flags = -1))
+        assertNull(serviceControlCommand("com.example/.Service", 0, "stop", flags = 1))
+        assertNull(serviceControlCommand("com.example/.Service", 0, "start",
+            extrasJson = """[{"key":"x","type":2,"value":"a"},{"key":"x","type":2,"value":"b"}]"""))
+        assertNull(serviceControlCommand("com.example/.Service", 0, "start",
+            extrasJson = """[{"key":"a","type":3,"value":"maybe"}]"""))
+        assertNull(serviceControlCommand("com.example/.Service", 0, "start",
+            extrasJson = """[{"key":"a","type":5,"value":"NaN"}]"""))
+    }
+
     @Test fun `am service text errors do not masquerade as successful operations`() {
         assertTrue(serviceControlFailed("Error: Not found; no service started."))
         assertTrue(serviceControlFailed("java.lang.SecurityException: Permission Denial"))

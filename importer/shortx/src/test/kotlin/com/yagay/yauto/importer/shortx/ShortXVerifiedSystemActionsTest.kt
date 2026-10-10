@@ -128,6 +128,82 @@ class ShortXVerifiedSystemActionsTest {
             result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature.typeId })
     }
 
+    @Test fun `ShortX documented structured JSON stop service imports explicit targets`() {
+        val json = """{"title":"stop","actions":[{"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.StopService",
+            "services":[{"pkg":{"pkgName":"com.example.app","userId":10},"className":"com.example.app.Worker"},
+                        {"pkg":{"pkgName":"com.example.app","userId":10},"className":".OtherWorker"}]}]}"""
+        val result = ShortXImporter().import(ImportInput("stop.json","application/json",json.toByteArray()))
+        assertTrue(result.success)
+        val action = (result.bundle.automations.single().onEvent.single() as ActionNode.Action).feature
+        assertEquals("android.service.control", action.typeId)
+        assertEquals(ConfigValue.StringValue("stop"), action.config["mode"])
+        assertEquals(ConfigValue.NumberValue(10.0), action.config["userId"])
+        assertEquals(ConfigValue.StringValue("com.example.app/com.example.app.Worker\ncom.example.app/.OtherWorker"),
+            action.config["components"])
+    }
+
+    @Test fun `ShortX JSON StartService maps explicit Intent including flags and typed extras`() {
+        val json = """{"title":"start","actions":[{"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.StartService",
+            "intent":{"pkgName":"com.example.app","className":".Worker",
+                "action":"com.example.action.RUN","data":"example://job/1","flags":16,
+                "extras":[{"key":"label","type":2,"value":"it's running"},{"key":"retries","type":0,"value":"3"}]},
+            "userId":10,"isForegroundService":true}]}"""
+        val result = ShortXImporter().import(ImportInput("start.json","application/json",json.toByteArray()))
+        assertTrue(result.success)
+        val action = (result.bundle.automations.single().onEvent.single() as ActionNode.Action).feature
+        assertEquals("android.service.control", action.typeId)
+        assertEquals(ConfigValue.StringValue("start_foreground"), action.config["mode"])
+        assertEquals(ConfigValue.StringValue("com.example.app/.Worker"), action.config["component"])
+        assertEquals(ConfigValue.NumberValue(10.0), action.config["userId"])
+        assertEquals(ConfigValue.NumberValue(16.0), action.config["intentFlags"])
+        assertTrue((action.config["intentExtrasJson"] as ConfigValue.StringValue).value.contains("retries"))
+    }
+
+    @Test fun `ShortX unknown or implicit Service Intent stays original compatibility node`() {
+        fun imported(any: String): String {
+            val json = """{"title":"safety","actions":[$any]}"""
+            val result = ShortXImporter().import(ImportInput("safety.json","application/json",json.toByteArray()))
+            return (result.bundle.automations.single().onEvent.single() as ActionNode.Action).feature.typeId
+        }
+        val prefix = """"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.StartService","""
+        assertEquals("compat.source.action", imported("{$prefix\"intent\":{\"action\":\"android.intent.action.VIEW\"}}"))
+        assertEquals("compat.source.action", imported("{$prefix\"intent\":{\"pkgName\":\"com.example\",\"className\":\".Worker\",\"categories\":[\"default\"]}}"))
+        assertEquals("compat.source.action", imported("{$prefix\"intent\":{\"pkgName\":\"com.example\",\"className\":\".Worker\",\"flags\":-1}}"))
+        assertEquals("compat.source.action", imported("{$prefix\"intent\":{\"pkgName\":\"com.example\",\"className\":\".Worker\",\"extras\":[{\"key\":\"x\",\"type\":99,\"value\":\"bad\"}]}}"))
+        val stopPrefix = """"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.StopService","""
+        assertEquals("compat.source.action", imported("{$stopPrefix\"services\":[{\"pkg\":{\"pkgName\":\"com.example\",\"userId\":0},\"className\":\".A\"},{\"pkg\":{\"pkgName\":\"com.example\",\"userId\":10},\"className\":\".B\"}]}"))
+    }
+
+    @Test fun `verified no-field ShortX system and recording actions map directly`() {
+        assertEquals("android.global_actions.show", importAction("ShowGlobalActionsMenu", byteArrayOf()).typeId)
+        assertEquals("android.audio.record.stop", importAction("StopAudioRecording", byteArrayOf()).typeId)
+        assertEquals("compat.source.action", importAction("ShowGlobalActionsMenu", message(varintField(1, 2))).typeId)
+        assertEquals("compat.source.action", importAction("StopAudioRecording", message(field(1, "unknown"))).typeId)
+    }
+
+    @Test fun `GetScreenOnTime protobuf matches official source enum and variable`() {
+        val fromScreenOff = importAction("GetScreenOnTime", message(varintField(1, 0)))
+        assertEquals("android.screen_on_time.get", fromScreenOff.typeId)
+        assertEquals(ConfigValue.StringValue("last_screen_off"), fromScreenOff.config["from"])
+        assertEquals(ConfigValue.StringValue("screenOnTime"), fromScreenOff.config["resultVariable"])
+        val fromBoot = importAction("GetScreenOnTime", message(varintField(1, 1)))
+        assertEquals("android.screen_on_time.get", fromBoot.typeId)
+        assertEquals(ConfigValue.StringValue("system_ready"), fromBoot.config["from"])
+        assertEquals("compat.source.action", importAction("GetScreenOnTime", message(varintField(1, 2))).typeId)
+        assertEquals("compat.source.action", importAction("GetScreenOnTime", message(varintField(1, 0), varintField(2, 1))).typeId)
+    }
+
+    @Test fun `GetScreenOnTime JSON respects verified start-mode enum`() {
+        val raw = """{"title":"screen time","actions":[
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.GetScreenOnTime","from":1},
+            {"@type":"type.googleapis.com/tornaco.apps.shortx.core.proto.action.GetScreenOnTime","from":3}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("screen.json", "application/json", raw.toByteArray()))
+        assertTrue(result.success)
+        assertEquals(listOf("android.screen_on_time.get", "compat.source.action"),
+            result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature.typeId })
+    }
+
     @Test fun `auto brightness only converts lossless enable case`() {
         val enabled = importAction("SetAutoBrightness", message(varintField(1, 1)))
         assertEquals("android.display.brightness.set", enabled.typeId)

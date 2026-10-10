@@ -34,3 +34,14 @@ Primary contracts:
 - https://shortx-repo.github.io/ShortX-Pages/javadoc/tornaco/apps/shortx/core/proto/action/StartAppProcessByPkg.html
 - https://shortx-repo.github.io/ShortX-Pages/javadoc/tornaco/apps/shortx/core/proto/action/ShowStatusBarChip.html
 - https://shortx-repo.github.io/ShortX-Pages/javadoc/tornaco/apps/shortx/core/proto/action/HideStatusBarClip.html
+
+## One-batch completion: non-plugin source decoder and service Intent extensions
+
+- Native ShortX JSON StartService now maps documented explicit component, action, data URI, foreground start, Android user ID, 32-bit flags, and typed Intent extras. Unknown fields, implicit targets and unsupported payload types preserve the original compatibility node.
+- StopService JSON now understands the actual documented `services[].pkg.pkgName/userId + className` representation. Services for different Android users in one source action are not silently merged; such actions stay lossless compatibility nodes.
+- Existing `android.service.control` now emits typed Android `am startservice` parameters `--ei`, `--el`, `--es`, `--ez`, `--ef`, `--ed`, and `-f` flags, all with bounded JSON validation, safe shell quoting, and rejection of unsupported values.
+- ShortX GetScreenOnTime numeric `from` (0 LastScreenOff; 1 SystemReady) now converts to existing `android.screen_on_time.get` and sets `resultVariable=screenOnTime`, matching the documented ShortX output key. Unrecognized enum values remain raw.
+- Binary AndroidIntent and complex AppComponent protobuf schemas remain source-preserved unless exact verified layout is available. Imported screen time still depends on Android Usage Access and may be unavailable if history is incomplete.
+- Reference: https://github.com/ShortX-Repo/ShortX-Files/blob/main/skills/references/actions.md
+
+- Official ShortX protobuf actions `ShowGlobalActionsMenu` and `StopAudioRecording` have no business fields; import them directly into existing native YAuto actions when the source payload contains no unknown fields. Stopping only affects a YAuto-owned active audio recording.

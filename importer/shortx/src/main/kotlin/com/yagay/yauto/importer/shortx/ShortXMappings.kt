@@ -54,6 +54,9 @@ internal object ShortXMappings {
             "SetAutoBrightness" -> setAutoBrightness(any, importerId, fields)
             "ExpandNotification" -> expandNotification(any, importerId, fields)
             "AreaScreenshot" -> noFieldAction(any, importerId, fields, "android.screenshot.area_select")
+            "ShowGlobalActionsMenu" -> noFieldAction(any, importerId, fields, "android.global_actions.show")
+            "StopAudioRecording" -> noFieldAction(any, importerId, fields, "android.audio.record.stop")
+            "GetScreenOnTime" -> nativeGetScreenOnTime(any, importerId, fields)
             "SetStatusBarIcon" -> nativeStatusBarIcon(any, importerId, fields, "show")
             "RemoveStatusBarIcon" -> nativeStatusBarIcon(any, importerId, fields, "remove")
             "StopService" -> nativeStopServices(any, importerId, fields)
@@ -562,6 +565,8 @@ internal object ShortXMappings {
             "SetStatusBarIcon" -> nativeJsonStatusBarIcon(obj, any, importerId, raw, "show")
             "RemoveStatusBarIcon" -> nativeJsonStatusBarIcon(obj, any, importerId, raw, "remove")
             "StopService" -> nativeJsonStopServices(obj, any, importerId, raw)
+            "StartService" -> nativeJsonStartService(obj, any, importerId, raw)
+            "GetScreenOnTime" -> nativeJsonGetScreenOnTime(obj, any, importerId, raw)
             "StartAppProcess" -> nativeJsonStartAppProcess(obj, any, importerId, raw)
             "StartAppProcessByPkg" -> nativeJsonStartAppProcessByPkg(obj, any, importerId, raw)
             "ShowStatusBarChip" -> nativeJsonShowStatusChip(obj, any, importerId, raw)
@@ -571,6 +576,12 @@ internal object ShortXMappings {
                         "mode" to ConfigValue.StringValue("hide"),
                         "chipId" to ConfigValue.StringValue("shortx"),
                     ))
+                else null
+            "ShowGlobalActionsMenu" -> if (jsonBusinessKeysSafe(obj, emptySet()))
+                sourceFeature("android.global_actions.show", importerId, any.typeUrl, raw)
+                else null
+            "StopAudioRecording" -> if (jsonBusinessKeysSafe(obj, emptySet()))
+                sourceFeature("android.audio.record.stop", importerId, any.typeUrl, raw)
                 else null
             "AreaScreenshot" -> if (obj.keys.all { it in setOf("@type", "type", "typeUrl", "type_url", "id", "isDisabled", "note", "actionOnError") })
                 sourceFeature("android.screenshot.area_select", importerId, any.typeUrl, raw)
@@ -1322,23 +1333,143 @@ internal object ShortXMappings {
         )
     }
 
+    /**
+     * ShortX's documented StopService JSON uses AppComponent {
+     *   pkg: {pkgName, userId}, className
+     * }. We only flatten explicit components whose user IDs agree.
+     * Legacy flattened test fixtures are still accepted.
+     */
     private fun nativeJsonStopServices(
         obj: JsonObject, any: AnyStub, importerId: String, raw: String,
     ): FeatureRef? {
         if (!jsonBusinessKeysSafe(obj, setOf("services"))) return null
-        val services = (obj["services"] as? JsonArray)?.map { item ->
+        val items = obj["services"] as? JsonArray ?: return null
+        if (items.isEmpty() || items.size > 32) return null
+        val targets = items.map { item ->
             val nested = item as? JsonObject ?: return null
-            if (nested.keys != setOf("component")) return null
-            (nested["component"] as? JsonPrimitive)?.contentOrNull
-                ?.takeIf(::importedServiceComponentValid) ?: return null
-        }?.distinct() ?: return null
-        if (services.isEmpty() || services.size > 32) return null
+            if (nested.keys == setOf("component")) {
+                val component = (nested["component"] as? JsonPrimitive)?.contentOrNull
+                    ?.takeIf(::importedServiceComponentValid) ?: return null
+                component to 0L
+            } else {
+                if (nested.keys != setOf("pkg", "className")) return null
+                val pkg = nested["pkg"] as? JsonObject ?: return null
+                if (!pkg.keys.all { it in setOf("pkgName", "userId") }) return null
+                val packageName = (pkg["pkgName"] as? JsonPrimitive)?.contentOrNull
+                    ?.takeIf(::nativeProcessPackageValid) ?: return null
+                val parsedUser = (pkg["userId"] as? JsonPrimitive)?.longOrNull
+                if ("userId" in pkg && parsedUser == null) return null
+                val userId = parsedUser ?: 0L
+                if (userId !in 0L..999L) return null
+                val className = (nested["className"] as? JsonPrimitive)?.contentOrNull ?: return null
+                val component = nativeServiceComponent(packageName, className) ?: return null
+                component to userId
+            }
+        }
+        if (targets.map { it.second }.distinct().size != 1) return null
         return sourceFeature("android.service.control", importerId, any.typeUrl, raw,
             extra = mapOf(
                 "mode" to ConfigValue.StringValue("stop"),
-                "components" to ConfigValue.StringValue(services.joinToString("\n")),
+                "components" to ConfigValue.StringValue(targets.map { it.first }.distinct().joinToString("\n")),
+                "userId" to ConfigValue.NumberValue(targets.first().second.toDouble()),
             ),
         )
+    }
+
+    /** Direct service Intent subset: reject implicit targets, unknown keys and unsupported extras. */
+    private fun nativeJsonGetScreenOnTime(
+        obj: JsonObject, any: AnyStub, importerId: String, raw: String,
+    ): FeatureRef? {
+        if (!jsonBusinessKeysSafe(obj, setOf("from"))) return null
+        val fromValue = (obj["from"] as? JsonPrimitive)?.intOrNull
+        if ("from" in obj && fromValue == null) return null
+        val from = when (fromValue ?: 0) {
+            0 -> "last_screen_off"
+            1 -> "system_ready"
+            else -> return null
+        }
+        return sourceFeature("android.screen_on_time.get", importerId, any.typeUrl, raw,
+            extra = mapOf(
+                "from" to ConfigValue.StringValue(from),
+                "resultVariable" to ConfigValue.StringValue("screenOnTime"),
+            ))
+    }
+
+    private fun nativeGetScreenOnTime(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields(1)) return null
+        val from = when (fields.varint(1) ?: 0L) {
+            0L -> "last_screen_off"
+            1L -> "system_ready"
+            else -> return null
+        }
+        return binaryFeature(any, importerId, "android.screen_on_time.get",
+            mapOf(
+                "from" to ConfigValue.StringValue(from),
+                "resultVariable" to ConfigValue.StringValue("screenOnTime"),
+            ))
+    }
+
+    private fun nativeJsonStartService(
+        obj: JsonObject, any: AnyStub, importerId: String, raw: String,
+    ): FeatureRef? {
+        if (!jsonBusinessKeysSafe(obj, setOf("intent", "userId", "isForegroundService"))) return null
+        val intent = obj["intent"] as? JsonObject ?: return null
+        if (!intent.keys.all { it in setOf("pkgName", "className", "action", "data", "flags", "extras") }) return null
+        val packageName = (intent["pkgName"] as? JsonPrimitive)?.contentOrNull
+            ?.takeIf(::nativeProcessPackageValid) ?: return null
+        val className = (intent["className"] as? JsonPrimitive)?.contentOrNull ?: return null
+        val component = nativeServiceComponent(packageName, className) ?: return null
+        val parsedUser = (obj["userId"] as? JsonPrimitive)?.longOrNull
+        if ("userId" in obj && parsedUser == null) return null
+        val userId = parsedUser ?: 0L
+        if (userId !in 0L..999L) return null
+        val parsedForeground = (obj["isForegroundService"] as? JsonPrimitive)?.booleanOrNull
+        if ("isForegroundService" in obj && parsedForeground == null) return null
+        val foreground = parsedForeground ?: false
+        val action = (intent["action"] as? JsonPrimitive)?.contentOrNull.orEmpty()
+        val dataUri = (intent["data"] as? JsonPrimitive)?.contentOrNull.orEmpty()
+        if (action.isNotBlank() && !Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*").matches(action)) return null
+        if (dataUri.isNotBlank() && (dataUri.length > 2_048 ||
+                !Regex("[A-Za-z][A-Za-z0-9+.-]*:.*").matches(dataUri))) return null
+        val parsedFlags = (intent["flags"] as? JsonPrimitive)?.longOrNull
+        if ("flags" in intent && parsedFlags == null) return null
+        val flags = parsedFlags ?: 0L
+        if (flags !in 0L..4294967295L) return null
+        val extras = intent["extras"] as? JsonArray
+        if (intent["extras"] != null && extras == null) return null
+        if (extras != null && (extras.size > 24 || !extras.all(::shortXServiceExtraSafe) ||
+                extras.map { ((it as JsonObject)["key"] as JsonPrimitive).content }.distinct().size != extras.size)) return null
+        val extrasJson = extras?.toString().orEmpty()
+        return sourceFeature("android.service.control", importerId, any.typeUrl, raw,
+            extra = mapOf(
+                "mode" to ConfigValue.StringValue(if (foreground) "start_foreground" else "start"),
+                "component" to ConfigValue.StringValue(component),
+                "userId" to ConfigValue.NumberValue(userId.toDouble()),
+                "intentAction" to ConfigValue.StringValue(action),
+                "dataUri" to ConfigValue.StringValue(dataUri),
+                "intentFlags" to ConfigValue.NumberValue(flags.toDouble()),
+                "intentExtrasJson" to ConfigValue.StringValue(extrasJson),
+            ),
+        )
+    }
+
+    private fun shortXServiceExtraSafe(item: JsonElement): Boolean {
+        val obj = item as? JsonObject ?: return false
+        if (obj.keys != setOf("key", "type", "value")) return false
+        val key = (obj["key"] as? JsonPrimitive)?.contentOrNull ?: return false
+        val type = (obj["type"] as? JsonPrimitive)?.intOrNull ?: return false
+        val value = (obj["value"] as? JsonPrimitive)?.contentOrNull ?: return false
+        if (!Regex("[A-Za-z_][A-Za-z0-9_.-]{0,127}").matches(key) || value.length > 4096 ||
+            value.contains('\n') || value.contains('\r') || value.contains('\u0000')) return false
+        return when (type) {
+            0 -> value.toIntOrNull() != null
+            1 -> value.toLongOrNull() != null
+            2 -> true
+            3 -> value == "true" || value == "false"
+            4 -> value.toFloatOrNull()?.isFinite() == true
+            5 -> value.toDoubleOrNull()?.isFinite() == true
+            else -> false
+        }
     }
 
     private fun jsonBusinessKeysSafe(obj: JsonObject, keys: Set<String>): Boolean =
@@ -1588,6 +1719,16 @@ internal fun importedStatusIcon(value: String?): String? = when (value) {
     "android:drawable/ic_menu_upload" -> "upload"
     "android:drawable/ic_menu_save" -> "save"
     else -> null
+}
+
+internal fun nativeServiceComponent(packageName: String, className: String): String? {
+    val cls = when {
+        className.startsWith(".") -> className
+        className.startsWith(packageName + ".") -> className
+        else -> return null
+    }
+    val flattened = packageName + "/" + cls
+    return flattened.takeIf(::importedServiceComponentValid)
 }
 
 internal fun importedServiceComponentValid(value: String): Boolean =

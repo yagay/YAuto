@@ -113,6 +113,21 @@ class SourceSemanticParityTests(unittest.TestCase):
         self.assertIn('"HideStatusBarClip" -> null', shortx)
         self.assertNotIn('TYPE_APPLICATION_OVERLAY', pack)
 
+    def test_shortx_service_intents_and_screen_time_convert_known_schema_only(self):
+        mapper = SHORTX_PARSER.read_text(encoding="utf-8")
+        pack = (ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidShortXParityFeaturePack.kt").read_text(encoding="utf-8")
+        self.assertIn('"StartService" -> nativeJsonStartService(', mapper)
+        self.assertIn('private fun nativeJsonStopServices(', mapper)
+        self.assertIn('private fun shortXServiceExtraSafe(', mapper)
+        self.assertIn('"intentExtrasJson" to ConfigValue.StringValue(extrasJson)', mapper)
+        self.assertIn('"GetScreenOnTime" -> nativeGetScreenOnTime(', mapper)
+        self.assertIn('"GetScreenOnTime" -> nativeJsonGetScreenOnTime(', mapper)
+        self.assertIn('"resultVariable" to ConfigValue.StringValue("screenOnTime")', mapper)
+        self.assertIn('FieldSchema.Text("intentExtrasJson"', pack)
+        self.assertIn('serviceExtrasCommand(', pack)
+        self.assertIn('"ShowGlobalActionsMenu" -> noFieldAction(', mapper)
+        self.assertIn('"StopAudioRecording" -> noFieldAction(', mapper)
+
     def test_macro_screenshot_content_and_spotify_are_not_generic_triggers(self):
         macro = MACRO_HINTS.read_text(encoding="utf-8")
         self.assertIn('"ScreenshotContentTrigger" -> "android.event.screenshot_content"', macro)

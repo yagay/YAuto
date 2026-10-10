@@ -16,6 +16,7 @@ import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.serialization.json.*
 import kotlin.coroutines.resume
 
 class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
@@ -74,6 +75,8 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
                     FieldSchema.Number("userId", "Android user ID", min = 0.0, max = 999.0),
                     FieldSchema.Text("intentAction", "Start Intent action"),
                     FieldSchema.Text("dataUri", "Start Intent data URI"),
+                    FieldSchema.Number("intentFlags", "Intent flags", min = 0.0, max = 4294967295.0),
+                    FieldSchema.Text("intentExtrasJson", "Typed Intent extras JSON (array of key/type/value)", multiline = true),
                 ),
                 capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
                 implementationOptions = privilegedOptions(),
@@ -100,8 +103,13 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
             }
             val intentAction = feature.config.string("intentAction").resolveVariables(ctx.variables).trim()
             val dataUri = feature.config.string("dataUri").resolveVariables(ctx.variables).trim()
+            val rawFlags = feature.config["intentFlags"].numberOrNull() ?: 0.0
+            if (!rawFlags.isFinite() || rawFlags < 0.0 || rawFlags > 4294967295.0 || rawFlags % 1.0 != 0.0) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.service_invalid_command"))
+            }
+            val extrasJson = feature.config.string("intentExtrasJson").resolveVariables(ctx.variables)
             val commands = names.map { name ->
-                serviceControlCommand(name, user, mode, intentAction, dataUri)
+                serviceControlCommand(name, user, mode, intentAction, dataUri, rawFlags.toLong(), extrasJson)
                     ?: return@registerAction ActionExecutionResult(false, message = userText("feature.service_invalid_command"))
             }
             var completed = 0
@@ -477,7 +485,10 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
 }
 
 /** Restrict privileged commands to an explicit Android component and numeric user ID. */
-internal fun serviceControlCommand(component: String, userId: Int, mode: String, action: String = "", dataUri: String = ""): String? {
+internal fun serviceControlCommand(
+    component: String, userId: Int, mode: String, action: String = "", dataUri: String = "",
+    flags: Long = 0, extrasJson: String = "",
+): String? {
     if (userId !in 0..999) return null
     if (!Regex("""[A-Za-z_][A-Za-z0-9_.]*\/[A-Za-z_.$][A-Za-z0-9_.$]*""").matches(component)) return null
     val verb = when (mode) {
@@ -486,12 +497,16 @@ internal fun serviceControlCommand(component: String, userId: Int, mode: String,
         "start_foreground" -> "start-foreground-service"
         else -> return null
     }
-    if (mode == "stop" && (action.isNotBlank() || dataUri.isNotBlank())) return null
+    if (mode == "stop" && (action.isNotBlank() || dataUri.isNotBlank() || flags != 0L || extrasJson.isNotBlank())) return null
+    if (flags !in 0L..4294967295L) return null
+    val extras = serviceExtrasCommand(extrasJson) ?: return null
     if (action.isNotBlank() && !Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*").matches(action)) return null
     if (dataUri.isNotBlank() && (!Regex("[A-Za-z][A-Za-z0-9+.-]*:.*").matches(dataUri) || dataUri.length > 2_048)) return null
     val options = buildString {
         if (action.isNotBlank()) append(" -a " + shellServiceArg(action))
         if (dataUri.isNotBlank()) append(" -d " + shellServiceArg(dataUri))
+        if (flags != 0L) append(" -f 0x" + flags.toString(16))
+        append(extras)
     }
     return "am " + verb + " --user " + userId + " -n " + shellServiceArg(component) + options
 }
@@ -504,3 +519,42 @@ internal fun serviceControlFailed(output: String): Boolean {
 }
 
 private fun shellServiceArg(value: String): String = "'" + value.replace("'", "'\\''") + "'"
+
+/** The Android am shell supports explicit typed Intent extras. Invalid values fail closed. */
+internal fun serviceExtrasCommand(json: String): String? {
+    if (json.isBlank()) return ""
+    val data = runCatching { Json.parseToJsonElement(json) as? JsonArray }.getOrNull() ?: return null
+    if (data.size > 24) return null
+    val keys = mutableSetOf<String>()
+    val args = ArrayList<String>(data.size)
+    for (item in data) {
+        val obj = item as? JsonObject ?: return null
+        if (obj.keys != setOf("key", "type", "value")) return null
+        val key = (obj["key"] as? JsonPrimitive)?.contentOrNull ?: return null
+        val type = (obj["type"] as? JsonPrimitive)?.intOrNull ?: return null
+        val value = (obj["value"] as? JsonPrimitive)?.contentOrNull ?: return null
+        if (!Regex("[A-Za-z_][A-Za-z0-9_.-]{0,127}").matches(key) || !keys.add(key) ||
+            value.length > 4096 || value.any { it == '\u0000' || it == '\n' || it == '\r' }) return null
+        val flag: String
+        val normalized: String
+        when (type) {
+            0 -> { flag = "--ei"; normalized = value.toIntOrNull()?.toString() ?: return null }
+            1 -> { flag = "--el"; normalized = value.toLongOrNull()?.toString() ?: return null }
+            2 -> { flag = "--es"; normalized = value }
+            3 -> { flag = "--ez"; normalized = value.takeIf { it == "true" || it == "false" } ?: return null }
+            4 -> {
+                flag = "--ef"
+                val number = value.toFloatOrNull()?.takeIf(Float::isFinite) ?: return null
+                normalized = number.toString()
+            }
+            5 -> {
+                flag = "--ed"
+                val number = value.toDoubleOrNull()?.takeIf(Double::isFinite) ?: return null
+                normalized = number.toString()
+            }
+            else -> return null
+        }
+        args += " " + flag + " " + shellServiceArg(key) + " " + shellServiceArg(normalized)
+    }
+    return args.joinToString("")
+}

@@ -10,6 +10,8 @@
     <string name="feature_android_service_control_field_components">其他要停止的服务（每行一个）</string>
     <string name="feature_android_service_control_field_intentaction">启动 Intent 动作</string>
     <string name="feature_android_service_control_field_datauri">启动 Intent 数据 URI</string>
+    <string name="feature_android_service_control_field_intentflags">Intent 标志位</string>
+    <string name="feature_android_service_control_field_intentextrasjson">带类型的 Intent 附加参数（JSON 数组）</string>
     <string name="feature_android_service_control_field_userid">Android 用户 ID</string>
     <string name="runtime_feature_service_invalid_component">请选择明确的 Android 服务组件，例如 com.example.app/.SyncService。</string>
     <string name="runtime_feature_service_invalid_user">请选择有效的 Android 用户 ID。</string>
