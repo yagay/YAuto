@@ -8,6 +8,7 @@ SHORTX_PARSER = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer
 SHORTX_NATIVE_SUPPORT = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXNativeSupport.kt"
 SHORTX_JSON_MAPPINGS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXJsonMappings.kt"
 SHORTX_SYSTEM_MAPPINGS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXSystemMappings.kt"
+SHORTX_SUGGESTIONS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXFeatureSuggestions.kt"
 MACRO_HINTS = ROOT / "importer/macrodroid/src/main/kotlin/com/yagay/yauto/importer/macrodroid/MacroDroidFeatureSuggestions.kt"
 COMMUNICATION = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidCommunicationFeaturePack.kt"
 SMS_IMPLEMENTATION = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidMessagingRegistration.kt"
@@ -23,7 +24,7 @@ class SourceSemanticParityTests(unittest.TestCase):
         native = SMS_IMPLEMENTATION.read_text(encoding="utf-8")
         compose = COMMUNICATION.read_text(encoding="utf-8")
         shortx = SHORTX_HINTS.read_text(encoding="utf-8")
-        parser = SHORTX_PARSER.read_text(encoding="utf-8")
+        parser = SHORTX_PARSER.read_text(encoding="utf-8") + SHORTX_SUGGESTIONS.read_text(encoding="utf-8")
         self.assertIn('FeatureId("android.sms.send")', native)
         self.assertIn('Manifest.permission.SEND_SMS', native)
         self.assertIn('sendTextMessage(', native)
