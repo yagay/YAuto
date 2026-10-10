@@ -38,8 +38,14 @@ def collect_inventory() -> dict:
     xposed_sources = list(sources(XPOSED))
     catalog = (XPOSED / "ShortXCompatHookCatalog.kt").read_text(encoding="utf-8")
     backend = (XPOSED / "XposedBackend.kt").read_text(encoding="utf-8")
-    module = (XPOSED / "YAutoXposedModule.kt").read_text(encoding="utf-8")
-    module += (XPOSED / "XposedSystemBridgeRegistration.kt").read_text(encoding="utf-8")
+    # Inspect the actual installer family, not only the thin entry point:
+    # implementation was migrated into SystemServer/SystemUI/provider layers.
+    module = "\\n".join(
+        src for name, src in xposed_sources
+        if name.rsplit("/", 1)[-1] not in {
+            "XposedBackend.kt", "SystemBridgeProtocol.kt", "ShortXStatusChipController.kt"
+        }
+    )
     protocol = (XPOSED / "SystemBridgeProtocol.kt").read_text(encoding="utf-8")
     android_events = set().union(*(set(EVENT.findall(src)) for _, src in android_sources))
     subscribed_events = set(CATALOG_EVENT.findall(catalog))
