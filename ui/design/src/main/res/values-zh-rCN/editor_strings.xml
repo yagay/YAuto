@@ -320,4 +320,6 @@
     <string name="feature_permission_granted">已授权 · 管理</string>
     <string name="feature_permission_grant">去授权</string>
     <string name="feature_permission_check">检查／启用</string>
+    <string name="feature_permission_lsposed_hint">请在 LSPosed 管理器中启用模块并授予所需作用域，目标进程可能需要重启。</string>
+    <string name="feature_permission_zygisk_hint">请在 Root 管理器中启用 Zygisk 并重启设备。Android 无法通过普通权限弹窗授予 Zygisk。</string>
 </resources>

@@ -200,13 +200,6 @@ private fun FeatureSummaryCard(descriptor: FeatureDescriptor, accent: Color) {
                     style = MaterialTheme.typography.labelSmall,
                 )
             }
-            if (descriptor.capabilities.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    descriptor.capabilities.take(4).forEach {
-                        CapabilityBadge(capabilityLabel(it.value))
-                    }
-                }
-            }
         }
     }
 }

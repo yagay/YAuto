@@ -321,4 +321,6 @@
     <string name="feature_permission_granted">Granted · Manage</string>
     <string name="feature_permission_grant">Grant</string>
     <string name="feature_permission_check">Check / Enable</string>
+    <string name="feature_permission_lsposed_hint">Open LSPosed Manager, enable this module and grant its required scope. A restart of the target process may be needed.</string>
+    <string name="feature_permission_zygisk_hint">Enable Zygisk in your Root manager and restart the device. Android cannot grant Zygisk through a regular permission prompt.</string>
 </resources>
