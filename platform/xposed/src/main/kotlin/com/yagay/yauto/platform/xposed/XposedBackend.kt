@@ -25,20 +25,7 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
 
     override fun isConnected() = connected
 
-    override fun supportedOperations() = setOf(
-        SystemOperations.SLEEP,
-        SystemOperations.WAKE,
-        SystemOperations.EXPAND_NOTIFICATIONS,
-        SystemOperations.EXPAND_QUICK_SETTINGS,
-        SystemOperations.COLLAPSE_PANELS,
-        SystemOperations.REBOOT,
-        SystemOperations.REBOOT_RECOVERY,
-        SystemOperations.REBOOT_BOOTLOADER,
-        SystemOperations.SHUTDOWN,
-        SystemOperations.SENSORS_OFF_ENABLE,
-        SystemOperations.SENSORS_OFF_DISABLE,
-        SystemOperations.SENSORS_OFF_QUERY,
-    )
+    override fun supportedOperations() = PrivilegedOperationContract.lsposedSystemUiOperations
 
     override suspend fun isAvailable(environment: RuntimeEnvironment): Boolean =
         requestSystem(SystemBridgeProtocol.PING)?.getBoolean("success") == true
