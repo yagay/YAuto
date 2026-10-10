@@ -61,7 +61,7 @@ class FeatureMethodExplanationsTests(unittest.TestCase):
         self.assertIn("graph.shizuku.requestPermission", bridge)
 
     def test_feature_picker_does_not_show_no_root_as_permission(self):
-        catalog = (GENERIC.parent / "FeaturePickerCatalog.kt").read_text(encoding="utf-8")
+        catalog = (GENERIC.parent / "FeaturePickerRows.kt").read_text(encoding="utf-8")
         self.assertIn("permissionsForFeature(descriptor, null)", catalog)
         self.assertNotIn("implementation_group_no_root", catalog)
         self.assertNotIn("implementation_group_root_required", catalog)
