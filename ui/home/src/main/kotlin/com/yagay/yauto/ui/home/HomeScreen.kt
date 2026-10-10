@@ -1,6 +1,8 @@
 package com.yagay.yauto.ui.home
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -171,7 +173,7 @@ fun MacroHomeScreen(
             onDismissRequest = { showTestCenter = false },
             title = { Text(stringResource(R.string.test_center_title)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(modifier = Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         stringResource(R.string.test_center_description),
                         style = MaterialTheme.typography.bodySmall,
@@ -180,7 +182,7 @@ fun MacroHomeScreen(
                     if (automations.isEmpty()) {
                         Text(stringResource(R.string.test_center_no_automations), style = MaterialTheme.typography.bodySmall)
                     } else {
-                        automations.take(12).forEach { automation ->
+                        automations.forEach { automation ->
                             OutlinedButton(
                                 onClick = {
                                     showTestCenter = false
