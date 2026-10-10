@@ -102,4 +102,19 @@ class EngineDebugSessionTest {
         assertEquals(1, debugger.snapshot().size)
     }
 
+    @Test fun historyKeepsOnlyMostRecentThousandSteps() = runBlocking {
+        val debugger = EngineDebugSession()
+        val node = ActionNode.Label(NodeId("history-node"), "history")
+        debugger.continueExecution()
+        repeat(1_005) { index ->
+            val invocation = index.toLong()
+            debugger.beforeNode(invocation, node, emptyMap())
+            debugger.afterNode(invocation, node, emptyMap(), true, 1L)
+        }
+        val steps = debugger.snapshot()
+        assertEquals(1_000, steps.size)
+        assertEquals(5L, steps.first().invocationId)
+        assertEquals(1_004L, steps.last().invocationId)
+    }
+
 }
