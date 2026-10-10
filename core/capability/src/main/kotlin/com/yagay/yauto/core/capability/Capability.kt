@@ -133,7 +133,7 @@ class CapabilityBroker(
         val environment = environmentProvider()
         val supported = backendSnapshot.filter { backend ->
             (request.preferredBackendId == null || backend.id == request.preferredBackendId) &&
-                backend.supports(request, environment)
+                try { backend.supports(request, environment) } catch (_: Exception) { false }
         }.let { applicable ->
             // Automatic requests prefer a non-root supported route. Explicit saved
             // backend selections are left untouched for backwards compatibility.
