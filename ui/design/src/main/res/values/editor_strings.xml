@@ -347,4 +347,6 @@
     <string name="feature_test_unsaved_warning">This check uses the current unsaved feature settings. It does not modify the saved automation.</string>
     <string name="feature_test_automation">Test saved automation</string>
     <string name="feature_test_saved_warning">This will execute the currently SAVED automation actions now (not unsaved edits), without simulating its triggers. The actions may have real effects on the device. Continue?</string>
+    <string name="feature_test_enable_action">Enable action</string>
+    <string name="feature_test_disable_action">Disable action</string>
 </resources>

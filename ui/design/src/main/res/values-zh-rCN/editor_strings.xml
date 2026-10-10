@@ -346,4 +346,6 @@
     <string name="feature_test_unsaved_warning">本次检查使用当前未保存的功能参数，不修改已保存的自动化。</string>
     <string name="feature_test_automation">测试已保存的自动化</string>
     <string name="feature_test_saved_warning">将立即执行当前已保存版本的自动化动作（不会使用未保存的修改），不模拟触发器。动作可能对设备产生实际影响。确定继续吗？</string>
+    <string name="feature_test_enable_action">启用动作</string>
+    <string name="feature_test_disable_action">停用动作</string>
 </resources>
