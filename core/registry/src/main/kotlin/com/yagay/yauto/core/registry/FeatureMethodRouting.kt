@@ -31,7 +31,7 @@ suspend fun <T> routeBackendCandidates(
     succeeded: (T) -> Boolean,
 ): T? {
     if (preferred != null && preferred !in candidates) return null
-    val choices = preferred?.let(::listOf) ?: candidates
+    val choices = preferred?.let { listOf(it) } ?: candidates
     var last: T? = null
     for (backend in choices) {
         val result = execute(backend)

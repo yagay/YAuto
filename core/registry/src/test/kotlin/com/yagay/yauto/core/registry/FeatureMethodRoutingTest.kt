@@ -54,6 +54,17 @@ class FeatureMethodRoutingTest {
         assertFalse(wrong.methodBackendIsCompatible())
     }
 
+    @Test fun genericShellGroupsNeverChooseRootByAccident() {
+        val regular = FeatureRef("android.wifi.set", 1,
+            mapOf("__method" to ConfigValue.StringValue("no_root")))
+        val privileged = regular.copy(config =
+            mapOf("__method" to ConfigValue.StringValue("root_required")))
+        assertEquals("shizuku", regular.effectiveMethodBackendId())
+        assertEquals("root", privileged.effectiveMethodBackendId())
+        val old = FeatureRef("android.wifi.set", 1)
+        assertNull(old.effectiveMethodBackendId())
+    }
+
     @Test fun explicitNoRootCanSelectShizukuOnly() = runBlocking {
         var called = mutableListOf<String>()
         val result = routeBackendCandidates("shizuku", listOf("android", "shizuku"),

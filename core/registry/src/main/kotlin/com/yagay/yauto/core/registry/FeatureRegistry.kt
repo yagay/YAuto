@@ -346,9 +346,9 @@ class FeatureRegistry {
 }
 
 private fun FeatureExecutionContext.withFeatureBackend(feature: FeatureRef): FeatureExecutionContext =
-    copy(capabilities = capabilities.preferBackend(feature.preferredBackendId()))
+    copy(capabilities = capabilities.preferBackend(feature.effectiveMethodBackendId()))
 
 private fun EventMatchContext.withFeatureBackend(feature: FeatureRef): EventMatchContext =
-    copy(capabilities = capabilities.preferBackend(feature.preferredBackendId()))
+    copy(capabilities = capabilities.preferBackend(feature.effectiveMethodBackendId()))
 
 private fun containsCjk(value: String): Boolean = value.any { it.code in 0x3400..0x4DBF || it.code in 0x4E00..0x9FFF }

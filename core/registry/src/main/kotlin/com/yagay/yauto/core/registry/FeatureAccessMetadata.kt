@@ -44,6 +44,22 @@ fun FeatureRef.preferredMethod(): FeatureMethod {
 fun FeatureRef.methodBackendIsCompatible(): Boolean =
     preferredBackendId()?.let { preferredMethod().allowsBackend(it) } ?: true
 
+/**
+ * Generic shell features must obey the selected permission family.
+ * Tasks without a saved method retain their historic backend routing.
+ */
+fun FeatureRef.effectiveMethodBackendId(): String? {
+    val selected = preferredBackendId()
+    if (config[FEATURE_METHOD_CONFIG_KEY] !is ConfigValue.StringValue) return selected
+    if (!methodBackendIsCompatible()) return "__invalid_method_backend__"
+    if (selected != null) return selected
+    return when (preferredMethod()) {
+        FeatureMethod.NO_ROOT -> "shizuku"
+        FeatureMethod.ROOT_REQUIRED -> "root"
+        FeatureMethod.AUTO -> null
+    }
+}
+
 fun FeatureDescriptor.hasDualMethodRoutes(): Boolean {
     if (kind != FeatureKind.ACTION) return false
     val backends = resolvedImplementationOptions().mapNotNull { it.backendId }.toSet()
