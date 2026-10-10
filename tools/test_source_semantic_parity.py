@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SHORTX_HINTS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/EnhancedShortXImporter.kt"
 SHORTX_PARSER = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXMappings.kt"
 SHORTX_NATIVE_SUPPORT = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXNativeSupport.kt"
+SHORTX_JSON_MAPPINGS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXJsonMappings.kt"
 MACRO_HINTS = ROOT / "importer/macrodroid/src/main/kotlin/com/yagay/yauto/importer/macrodroid/MacroDroidFeatureSuggestions.kt"
 COMMUNICATION = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidCommunicationFeaturePack.kt"
 SMS_IMPLEMENTATION = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidMessagingRegistration.kt"
@@ -119,7 +120,7 @@ class SourceSemanticParityTests(unittest.TestCase):
         self.assertNotIn('TYPE_APPLICATION_OVERLAY', pack)
 
     def test_shortx_service_intents_and_screen_time_convert_known_schema_only(self):
-        mapper = SHORTX_PARSER.read_text(encoding="utf-8")
+        mapper = SHORTX_PARSER.read_text(encoding="utf-8") + SHORTX_JSON_MAPPINGS.read_text(encoding="utf-8")
         pack = (ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidShortXParityFeaturePack.kt").read_text(encoding="utf-8")
         self.assertIn('"StartService" -> nativeJsonStartService(', mapper)
         self.assertIn('private fun nativeJsonStopServices(', mapper)
