@@ -80,11 +80,11 @@ internal fun GenericFeatureConfigEditor(
             descriptor.fieldBehavior(field.key).visibleWhen?.matches(typedValues) != false
         }
     }
-    val displayedFields = remember(descriptor, semanticallyVisible, showAdvanced) {
-        semanticallyVisible.filter { field ->
-            field.key != FEATURE_METHOD_CONFIG_KEY && field.key != FEATURE_BACKEND_CONFIG_KEY &&
-                (showAdvanced || !descriptor.fieldBehavior(field.key).advanced)
-        }
+    val displayedFields = remember(descriptor, typedValues, showAdvanced) {
+        descriptor.visibleEditorFields(
+            typedValues, showAdvanced,
+            setOf(FEATURE_METHOD_CONFIG_KEY, FEATURE_BACKEND_CONFIG_KEY),
+        )
     }
     val valid = semanticallyVisible.filterNot { it.key == FEATURE_METHOD_CONFIG_KEY ||
         it.key == FEATURE_BACKEND_CONFIG_KEY }.all { field ->
