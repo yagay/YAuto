@@ -57,6 +57,29 @@ class AutomationRuntime(
     private val capabilities: CapabilityClient,
     private val tracer: ExecutionTracer,
 ) : AutomationControl, PersistentVariableControl {
+    /** Shared engine configuration for scheduled runs and interactive debugging. */
+    suspend fun createDebugEngine(): AutomationEngine {
+        val flows = workspaceRepository.load().flows.associateBy { it.id }
+        return createExecutionEngine(flows)
+    }
+
+    private fun createExecutionEngine(flows: Map<FlowId, Flow>): AutomationEngine =
+        AutomationEngine(
+            registry = registry,
+            capabilities = capabilities,
+            tracer = tracer,
+            flowResolver = FlowResolver { id -> flows[id] },
+            eventWaiter = RuntimeEventWaiter { events, baseVariables, timeoutMs, waitExecutionId, nodeId ->
+                waitForRuntimeEvent(
+                    events = events,
+                    baseVariables = baseVariables,
+                    timeoutMs = timeoutMs,
+                    executionId = waitExecutionId,
+                    nodeId = nodeId,
+                )
+            },
+        )
+
     private val activeStates = ConcurrentHashMap<String, Boolean>()
     private val locks = ConcurrentHashMap<String, Mutex>()
     private val evaluationLocks = ConcurrentHashMap<String, Mutex>()
@@ -611,21 +634,7 @@ class AutomationRuntime(
                             )
                         )
                     }
-                    val engine = AutomationEngine(
-                        registry = registry,
-                        capabilities = capabilities,
-                        tracer = tracer,
-                        flowResolver = FlowResolver { id -> flows[id] },
-                        eventWaiter = RuntimeEventWaiter { events, baseVariables, timeoutMs, waitExecutionId, nodeId ->
-                            waitForRuntimeEvent(
-                                events = events,
-                                baseVariables = baseVariables,
-                                timeoutMs = timeoutMs,
-                                executionId = waitExecutionId,
-                                nodeId = nodeId,
-                            )
-                        },
-                    )
+                    val engine = createExecutionEngine(flows)
                     val results = phases.map { phase -> engine.execute(automation, phase, variables) }
                     val finishedAt = System.currentTimeMillis()
                     recordLastRun(automation.id, finishedAt)
