@@ -476,7 +476,7 @@ class AutomationRuntime(
     }
 
     fun resetState(automationId: AutomationId? = null) {
-        if (automationId == null) activeStates.clear() else activeStates.remove(automationId.value)
+        eventState.reset(automationId?.value)
     }
 
     private suspend fun matchEvent(
