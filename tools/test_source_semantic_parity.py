@@ -123,7 +123,7 @@ class SourceSemanticParityTests(unittest.TestCase):
         mapper = SHORTX_PARSER.read_text(encoding="utf-8") + SHORTX_JSON_MAPPINGS.read_text(encoding="utf-8")
         pack = (ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidShortXParityFeaturePack.kt").read_text(encoding="utf-8")
         self.assertIn('"StartService" -> nativeJsonStartService(', mapper)
-        self.assertIn('private fun nativeJsonStopServices(', mapper)
+        self.assertIn('internal fun nativeJsonStopServices(', mapper)
         self.assertIn('private fun shortXServiceExtraSafe(', mapper)
         self.assertIn('"intentExtrasJson" to ConfigValue.StringValue(extrasJson)', mapper)
         self.assertIn('"GetScreenOnTime" -> nativeGetScreenOnTime(', mapper)
