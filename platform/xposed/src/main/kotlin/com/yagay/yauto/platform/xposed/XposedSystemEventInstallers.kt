@@ -390,8 +390,7 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                     .filter { it.name in spec.methodNames }
                     .forEach { method ->
                         val key = "shortx-observer|" + spec.id + "|" + method.toGenericString()
-                        if (!installedHooks.add(key)) return@forEach
-                        try {
+                        val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                             method.isAccessible = true
                             hook(method).intercept { chain ->
                                 if (spec.after) {
@@ -407,8 +406,8 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                                     chain.proceed()
                                 }
                             }
-                        } catch (error: Exception) {
-                            installedHooks.remove(key)
+                        }
+                        installation.exceptionOrNull()?.let { error ->
                             log(Log.WARN, "YAuto", "ShortX observer unavailable: " + key, error)
                         }
                     }
