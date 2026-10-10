@@ -352,7 +352,18 @@ class AutomationRuntimeService : Service() {
         return START_STICKY
     }
 
-    override fun onDestroy() { workspaceSubscription?.close(); workspaceSubscription = null; hardwareKeyGestureEngine?.clear(); hardwareKeyGestureEngine = null; AccessibilityRuntimeBridge.configureUiRuntimeEvents(emptySet()); AccessibilityRuntimeBridge.setListener(null); AccessibilityRuntimeBridge.setKeyListener(null); AccessibilityRuntimeBridge.setUiEventListener(null); AccessibilityRuntimeBridge.setFingerprintGestureListener(null); SurfaceRuntimeBridge.attach(null); AdvancedParityRuntimeBridge.attach(null); ModeRuntimeBridge.attach(null); WearRuntimeBridge.attach(null); VendorBridgeRuntime.attach(null); XposedHookRuntimeBridge.attach(null); XposedSystemEventRuntimeBridge.attach(null); eventSources.stopAll().forEach(::reportSourceFailure); eventSources.clear(); graph = null; scope.cancel(); super.onDestroy() }
+    override fun onDestroy() {
+        workspaceSubscription?.close()
+        workspaceSubscription = null
+        hardwareKeyGestureEngine?.clear()
+        hardwareKeyGestureEngine = null
+        RuntimeBridgeLifecycle.detachAll()
+        eventSources.stopAll().forEach(::reportSourceFailure)
+        eventSources.clear()
+        graph = null
+        scope.cancel()
+        super.onDestroy()
+    }
     private fun dispatchHardwareKeyEvent(
         dispatcher: RuntimeEventDispatcher,
         event: RuntimeEvent,
