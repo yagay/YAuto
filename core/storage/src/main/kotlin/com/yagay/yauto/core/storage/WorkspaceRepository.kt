@@ -29,6 +29,11 @@ interface WorkspaceRepository {
     suspend fun save(data: WorkspaceData)
 }
 
+/** Atomic read-modify-write capability shared by runtime metadata and editor changes. */
+interface WorkspaceMutationRepository : WorkspaceRepository {
+    suspend fun update(transform: (WorkspaceData) -> WorkspaceData): WorkspaceData
+}
+
 interface ObservableWorkspaceRepository : WorkspaceRepository {
     fun snapshotOrNull(): WorkspaceData?
     fun addListener(listener: (WorkspaceData) -> Unit): AutoCloseable

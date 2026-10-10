@@ -2,6 +2,7 @@ package com.yagay.yauto.core.runtime
 
 import com.yagay.yauto.core.model.AutomationId
 import com.yagay.yauto.core.storage.WorkspaceRepository
+import com.yagay.yauto.core.storage.WorkspaceMutationRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -11,13 +12,14 @@ internal class RuntimeLastRunStore(
     private val mutationLock: Mutex,
 ) {
     suspend fun record(id: AutomationId, timestamp: Long) {
-        mutationLock.withLock {
-            val workspace = repository.load()
-            if (workspace.automationLastRunEpochMs[id.value] == timestamp) return@withLock
-            repository.save(workspace.copy(
+        val mutate: (com.yagay.yauto.core.storage.WorkspaceData) -> com.yagay.yauto.core.storage.WorkspaceData = { workspace ->
+            if (workspace.automationLastRunEpochMs[id.value] == timestamp) workspace
+            else workspace.copy(
                 automationLastRunEpochMs = workspace.automationLastRunEpochMs + (id.value to timestamp),
-            ))
+            )
         }
+        if (repository is WorkspaceMutationRepository) repository.update(mutate)
+        else mutationLock.withLock { repository.save(mutate(repository.load())) }
     }
 
     suspend fun get(id: AutomationId): Long? =

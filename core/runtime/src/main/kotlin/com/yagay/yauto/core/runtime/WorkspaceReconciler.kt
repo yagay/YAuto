@@ -11,6 +11,7 @@ import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.ObservableWorkspaceRepository
 import com.yagay.yauto.core.storage.WorkspaceRepository
+import com.yagay.yauto.core.storage.WorkspaceMutationRepository
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -103,7 +104,7 @@ class WorkspaceReconciler(
 class ReconcilingWorkspaceRepository(
     private val delegate: WorkspaceRepository,
     registry: FeatureRegistry,
-) : ObservableWorkspaceRepository {
+) : ObservableWorkspaceRepository, WorkspaceMutationRepository {
     private val reconciler = WorkspaceReconciler(registry)
     private val cacheLock = Mutex()
     private val listeners = CopyOnWriteArrayList<(WorkspaceData) -> Unit>()
@@ -126,6 +127,18 @@ class ReconcilingWorkspaceRepository(
             cached = reconciled
         }
         notifyListeners(reconciled)
+    }
+
+    override suspend fun update(transform: (WorkspaceData) -> WorkspaceData): WorkspaceData {
+        val updated = cacheLock.withLock {
+            val current = cached ?: reconciler.reconcile(delegate.load())
+            val next = reconciler.reconcile(transform(current))
+            delegate.save(next)
+            cached = next
+            next
+        }
+        notifyListeners(updated)
+        return updated
     }
 
     override fun snapshotOrNull(): WorkspaceData? = cached
