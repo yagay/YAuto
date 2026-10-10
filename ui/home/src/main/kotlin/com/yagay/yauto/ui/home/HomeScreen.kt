@@ -1,8 +1,6 @@
 package com.yagay.yauto.ui.home
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -169,87 +167,33 @@ fun MacroHomeScreen(
         }
     }
 
-    if (showTestCenter) {
-        AlertDialog(
-            onDismissRequest = { showTestCenter = false },
-            title = { Text(stringResource(R.string.test_center_title)) },
-            text = {
-                Column(modifier = Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.test_center_description),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    Text(stringResource(R.string.test_center_saved_heading), style = MaterialTheme.typography.titleSmall)
-                    if (automations.isEmpty()) {
-                        Text(stringResource(R.string.test_center_no_automations), style = MaterialTheme.typography.bodySmall)
-                    } else {
-                        automations.forEach { automation ->
-                            OutlinedButton(
-                                onClick = {
-                                    showTestCenter = false
-                                    pendingAutomationTest = automation.id.value
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Text(automation.name.ifBlank { automation.id.value }, maxLines = 1)
-                            }
-                        }
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            showTestCenter = false
-                            onRunManual()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(stringResource(R.string.test_center_manual_run))
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            showTestCenter = false
-                            onOpenDiagnostics()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(stringResource(R.string.test_center_diagnostics))
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            showTestCenter = false
-                            onOpenSettings()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(stringResource(R.string.test_center_permissions))
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showTestCenter = false }) {
-                    Text(stringResource(R.string.test_center_close))
-                }
-            },
-        )
-    }
-
-    pendingAutomationTest?.let { automationId ->
-        AlertDialog(
-            onDismissRequest = { pendingAutomationTest = null },
-            title = { Text(stringResource(R.string.test_center_confirm_title)) },
-            text = { Text(stringResource(R.string.test_center_confirm_message)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    pendingAutomationTest = null
-                    onTestSavedAutomation(automationId)
-                }) { Text(stringResource(R.string.test_center_execute)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingAutomationTest = null }) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-        )
-    }
+    HomeTestCenterDialogs(
+        visible = showTestCenter,
+        pendingAutomationId = pendingAutomationTest,
+        automations = automations,
+        onDismiss = { showTestCenter = false },
+        onChooseAutomation = { id ->
+            showTestCenter = false
+            pendingAutomationTest = id
+        },
+        onDismissConfirmation = { pendingAutomationTest = null },
+        onTestAutomation = { id ->
+            pendingAutomationTest = null
+            onTestSavedAutomation(id)
+        },
+        onRunManual = {
+            showTestCenter = false
+            onRunManual()
+        },
+        onOpenDiagnostics = {
+            showTestCenter = false
+            onOpenDiagnostics()
+        },
+        onOpenSettings = {
+            showTestCenter = false
+            onOpenSettings()
+        },
+    )
 
     automationToDelete?.let { automation ->
         ConfirmDeleteDialog(
