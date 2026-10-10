@@ -49,7 +49,9 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     var showRootExclusive by remember(context) {
         mutableStateOf(FeatureVisibilityPreferences.showRootExclusive(context))
     }
-    var backendMessage by remember(notChecked) { mutableStateOf(notChecked) }
+    var rootMessage by remember(notChecked) { mutableStateOf(notChecked) }
+    var shizukuMessage by remember(notChecked) { mutableStateOf(notChecked) }
+    var lsposedMessage by remember(notChecked) { mutableStateOf(notChecked) }
     var lsposedScopeMessage by remember { mutableStateOf<String?>(null) }
     var navigation by rememberPageNavigation(RuntimeSettingsPage.OVERVIEW)
     val page = navigation.current
@@ -66,7 +68,6 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     // Nested settings pages consume system/gesture back before the app shell.
     PageBackHandler(enabled = navigation.canGoBack, onBack = ::navigateBack)
     val scope = rememberCoroutineScope()
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refresh++ }
 
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) refresh++ }
@@ -111,10 +112,6 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
             ?.split(':')
             ?.any { it.equals(component, ignoreCase = true) } == true
     }
-    val grantedCount = listOf(
-        accessibility, usageStats, writeSettings, notificationAccess, notifications, camera,
-        location, bluetooth, overlay, dndPolicy,
-    ).count { it }
     val currentLanguageTag = remember(refresh) { AppLanguageManager.currentTag(context) }
 
     LaunchedEffect(page) {
@@ -171,7 +168,8 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 item {
                     MacroItemRow(
                         stringResource(TextR.string.runtime_settings_android_permissions),
-                        stringResource(TextR.string.runtime_settings_permission_count_format, grantedCount, 10),
+                        stringResource(TextR.string.runtime_settings_permission_count_format,
+                            grantedPermissionGroupCount(context), permissionGrantGroups(Build.VERSION.SDK_INT).size),
                         MacroPalette.Constraint,
                         onClick = { navigateTo(RuntimeSettingsPage.PERMISSIONS) },
                     )
@@ -291,94 +289,9 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 }
             }
 
-            RuntimeSettingsPage.PERMISSIONS -> LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                item {
-                    PermissionCard(
-                        stringResource(TextR.string.permission_accessibility_title), accessibility,
-                        stringResource(TextR.string.permission_accessibility_detail),
-                        stringResource(TextR.string.permission_accessibility_action),
-                    ) { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
-                }
-                item {
-                    PermissionCard(
-                        stringResource(TextR.string.permission_usage_stats_title), usageStats,
-                        stringResource(TextR.string.permission_usage_stats_detail),
-                        stringResource(TextR.string.permission_usage_stats_action),
-                    ) { context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
-                }
-                item {
-                    PermissionCard(
-                        stringResource(TextR.string.permission_write_settings_title), writeSettings,
-                        stringResource(TextR.string.permission_write_settings_detail),
-                        stringResource(TextR.string.permission_write_settings_action),
-                    ) {
-                        context.startActivity(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:${context.packageName}")))
-                    }
-                }
-                item {
-                    PermissionCard(
-                        stringResource(TextR.string.permission_notification_listener_title), notificationAccess,
-                        stringResource(TextR.string.permission_notification_listener_detail),
-                        stringResource(TextR.string.permission_notification_listener_action),
-                    ) { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
-                }
-                item {
-                    PermissionCard(
-                        stringResource(TextR.string.permission_notifications_title), notifications,
-                        stringResource(TextR.string.permission_notifications_detail),
-                        stringResource(TextR.string.permission_notifications_action),
-                    ) {
-                        if (!notifications && Build.VERSION.SDK_INT >= 33) {
-                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                    }
-                }
-                item {
-                    PermissionCard(
-                        stringResource(TextR.string.permission_camera_title), camera,
-                        stringResource(TextR.string.permission_camera_detail),
-                        stringResource(TextR.string.permission_camera_action),
-                    ) { if (!camera) permissionLauncher.launch(Manifest.permission.CAMERA) }
-                }
-                item {
-                    PermissionCard(
-                        stringResource(TextR.string.permission_location_title), location,
-                        stringResource(TextR.string.permission_location_detail),
-                        stringResource(TextR.string.permission_location_action),
-                    ) { if (!location) permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
-                }
-                item {
-                    PermissionCard(
-                        stringResource(TextR.string.permission_bluetooth_title), bluetooth,
-                        stringResource(TextR.string.permission_bluetooth_detail),
-                        stringResource(TextR.string.permission_bluetooth_action),
-                    ) {
-                        if (!bluetooth && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            permissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
-                        }
-                    }
-                }
-                item {
-                    PermissionCard(
-                        stringResource(TextR.string.permission_overlay_title), overlay,
-                        stringResource(TextR.string.permission_overlay_detail),
-                        stringResource(TextR.string.permission_overlay_action),
-                    ) {
-                        context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")))
-                    }
-                }
-                item {
-                    PermissionCard(
-                        stringResource(TextR.string.permission_dnd_title), dndPolicy,
-                        stringResource(TextR.string.permission_dnd_detail),
-                        stringResource(TextR.string.permission_dnd_action),
-                    ) { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)) }
-                }
-            }
+            RuntimeSettingsPage.PERMISSIONS -> PermissionGrantCenter(
+                modifier = Modifier.padding(padding),
+            )
 
             RuntimeSettingsPage.BACKENDS -> LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
@@ -391,30 +304,34 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                     BackendCard(
                         stringResource(TextR.string.backend_root_title),
                         stringResource(TextR.string.backend_root_detail),
-                        backendMessage,
+                        rootMessage,
                     ) {
-                        backendMessage = checking
+                        rootMessage = checking
                         scope.launch {
-                            backendMessage = if (graph.rootShell.isAvailable()) rootAvailable else rootUnavailable
+                            rootMessage = if (graph.rootShell.isAvailable()) rootAvailable else rootUnavailable
+                            refresh++
                         }
                     }
                 }
                 item {
                     val returnHint = stringResource(TextR.string.backend_shizuku_return_hint)
+                    val grantedText = stringResource(TextR.string.backend_shizuku_ready)
+                    val deniedText = stringResource(TextR.string.permission_request_denied)
+                    val missingText = stringResource(TextR.string.backend_shizuku_unavailable)
                     BackendCard(
                         stringResource(TextR.string.backend_shizuku_title),
                         stringResource(TextR.string.backend_shizuku_detail),
-                        if (graph.shizuku.hasPermission()) {
-                            stringResource(TextR.string.backend_shizuku_ready)
-                        } else {
-                            stringResource(TextR.string.backend_shizuku_unavailable)
-                        },
+                        if (graph.shizuku.hasPermission()) grantedText
+                        else shizukuMessage.takeUnless { it == notChecked } ?: missingText,
                         authorize = true,
                     ) {
-                        backendMessage = runCatching {
-                            graph.shizuku.requestPermission()
+                        shizukuMessage = runCatching {
+                            graph.shizuku.requestPermission { granted ->
+                                shizukuMessage = if (granted) grantedText else deniedText
+                                refresh++
+                            }
                             returnHint
-                        }.getOrElse { it.message.orEmpty() }
+                        }.getOrElse { it.message ?: missingText }
                         refresh++
                     }
                 }
@@ -422,10 +339,10 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                     BackendCard(
                         stringResource(TextR.string.backend_lsposed_title),
                         stringResource(TextR.string.backend_lsposed_detail),
-                        backendMessage,
+                        lsposedMessage,
                     ) {
                         scope.launch {
-                            backendMessage = graph.xposed.status().message.orEmpty()
+                            lsposedMessage = graph.xposed.status().message.orEmpty()
                             refresh++
                         }
                     }

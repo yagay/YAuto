@@ -151,6 +151,9 @@ internal fun openPermissionSettings(
     return false
 }
 
+internal fun grantedPermissionGroupCount(context: Context): Int =
+    permissionGrantGroups(Build.VERSION.SDK_INT).count { permissionStatus(context, it) }
+
 private fun permissionStatus(context: Context, group: PermissionGrantGroup): Boolean {
     val granted: (String) -> Boolean = {
         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED

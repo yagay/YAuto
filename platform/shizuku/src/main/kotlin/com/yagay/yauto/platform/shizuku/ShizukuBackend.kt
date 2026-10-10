@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.IBinder
+import android.os.Handler
+import android.os.Looper
+import java.util.concurrent.atomic.AtomicInteger
 import com.yagay.yauto.core.capability.*
 import com.yagay.yauto.core.diagnostics.*
 import com.yagay.yauto.core.model.*
@@ -35,7 +38,37 @@ class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContrac
 
     override fun isAvailable(): Boolean = Shizuku.pingBinder() && !Shizuku.isPreV11()
     override fun hasPermission(): Boolean = isAvailable() && runCatching { Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED }.getOrDefault(false)
-    fun requestPermission() { check(isAvailable()) { userText("capability.shizuku.not_running") }; Shizuku.requestPermission(1001) }
+    private val nextPermissionRequest = AtomicInteger(1001)
+
+    /** Deliver the Shizuku authorization result to the settings UI, including denial. */
+    fun requestPermission(onResult: ((Boolean) -> Unit)? = null) {
+        check(isAvailable()) { userText("capability.shizuku.not_running") }
+        if (hasPermission()) {
+            onResult?.invoke(true)
+            return
+        }
+        val requestCode = nextPermissionRequest.incrementAndGet()
+        if (onResult == null) {
+            Shizuku.requestPermission(requestCode)
+            return
+        }
+        val listener = object : Shizuku.OnRequestPermissionResultListener {
+            override fun onRequestPermissionResult(code: Int, grantResult: Int) {
+                if (code != requestCode) return
+                Shizuku.removeRequestPermissionResultListener(this)
+                Handler(Looper.getMainLooper()).post {
+                    onResult(grantResult == PackageManager.PERMISSION_GRANTED)
+                }
+            }
+        }
+        Shizuku.addRequestPermissionResultListener(listener)
+        try {
+            Shizuku.requestPermission(requestCode)
+        } catch (error: Exception) {
+            Shizuku.removeRequestPermissionResultListener(listener)
+            throw error
+        }
+    }
     override suspend fun isAvailable(environment: RuntimeEnvironment) = hasPermission()
     override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) =
         request.capability == CapabilityIds.PRIVILEGED_SHELL ||

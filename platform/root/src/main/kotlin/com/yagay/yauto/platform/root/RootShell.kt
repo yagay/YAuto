@@ -14,5 +14,5 @@ class RootShell : DiagnosticCommandRunner {
     } catch (cancelled: CancellationException) { throw cancelled }
     catch (error: Exception) { CommandOutput(-1, "", error.message.orEmpty()) }
 
-    suspend fun isAvailable(): Boolean = run("id", 3_000).let { it.exitCode == 0 && "uid=0" in it.stdout }
+    suspend fun isAvailable(): Boolean = run("id", 15_000).let { it.exitCode == 0 && "uid=0" in it.stdout }
 }
