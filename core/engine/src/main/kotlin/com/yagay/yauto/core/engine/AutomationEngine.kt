@@ -22,6 +22,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
 
 fun interface FlowResolver { suspend fun resolve(id: FlowId): Flow? }
 object EmptyFlowResolver : FlowResolver { override suspend fun resolve(id: FlowId): Flow? = null }
@@ -42,8 +43,9 @@ fun interface RuntimeEventWaiter {
  * of the shared variables at each boundary.
  */
 interface EngineDebugObserver {
-    suspend fun beforeNode(node: ActionNode, variables: Map<String, ConfigValue>)
+    suspend fun beforeNode(invocationId: Long, node: ActionNode, variables: Map<String, ConfigValue>)
     suspend fun afterNode(
+        invocationId: Long,
         node: ActionNode,
         variables: Map<String, ConfigValue>,
         success: Boolean,
@@ -125,7 +127,7 @@ class AutomationEngine(
         }
     }
 
-    private class EngineDebugContext(val observer: EngineDebugObserver?) :
+    private class EngineDebugContext(val observer: EngineDebugObserver?, val nextId: AtomicLong = AtomicLong()) :
         AbstractCoroutineContextElement(Key) {
         companion object Key : CoroutineContext.Key<EngineDebugContext>
     }
@@ -146,8 +148,10 @@ class AutomationEngine(
         while (index < nodes.size) {
             currentCoroutineContext().ensureActive()
             val node = nodes[index]
-            val observer = currentCoroutineContext()[EngineDebugContext]?.observer
-            observer?.beforeNode(node, variables.snapshot())
+            val debugContext = currentCoroutineContext()[EngineDebugContext]
+            val observer = debugContext?.observer
+            val invocationId = debugContext?.nextId?.incrementAndGet() ?: 0L
+            observer?.beforeNode(invocationId, node, variables.snapshot())
             val start = System.currentTimeMillis()
             trace(executionId, TraceKind.NODE_START, userText("engine.node_start"), automation, flow, node.id)
             val signal = try {
@@ -155,11 +159,11 @@ class AutomationEngine(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                observer?.afterNode(node, variables.snapshot(), false, System.currentTimeMillis() - start)
+                observer?.afterNode(invocationId, node, variables.snapshot(), false, System.currentTimeMillis() - start)
                 throw error
             }
             val elapsed = System.currentTimeMillis() - start
-            observer?.afterNode(node, variables.snapshot(), signal !is Signal.Failure, elapsed)
+            observer?.afterNode(invocationId, node, variables.snapshot(), signal !is Signal.Failure, elapsed)
             trace(executionId, TraceKind.NODE_END, userText("engine.node_end"), automation, flow, node.id, success = signal !is Signal.Failure, durationMs = elapsed)
             if (signal is Signal.Goto) {
                 val target = labels[signal.label]
