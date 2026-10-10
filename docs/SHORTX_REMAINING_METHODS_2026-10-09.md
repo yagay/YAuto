@@ -11,4 +11,4 @@ Source:
 - https://shortx-repo.github.io/ShortX-Pages/javadoc/tornaco/apps/shortx/core/proto/action/NoAction.html
 - https://shortx-repo.github.io/ShortX-Pages/javadoc/tornaco/apps/shortx/core/proto/action/SetVolume.html
 
-Not implemented or guaranteed: ShortXPluginAction/ParamsData execution, arbitrary process creation, arbitrary status-bar chips/icons, undocumented source context output semantics, some source rule/Any variants, and ROM-level device parity. These require separate verified implementation and real-device tests. A native mapping hint is not an execution guarantee.
+Updated 2026-10-10: non-plugin app-process requests and YAuto-scoped SystemUI chips/status icons now have native implementations (see SHORTX_NON_PLUGIN_IMPLEMENTATION_2026-10-09.md), but still need OEM device testing. Arbitrary third-party status slots, process lifetimes, undocumented art formats, source context side effects, unknown Any variants and ShortXPluginAction/ParamsData execution are not supported. Structure actions with source-only metadata, unrecognized fields or invalid timing remain lossless compatibility nodes instead of silently changing semantics.
