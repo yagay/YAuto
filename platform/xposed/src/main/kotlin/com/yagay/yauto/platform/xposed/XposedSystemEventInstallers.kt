@@ -585,22 +585,14 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
         }
     }
 
+    private val systemEventPublisher by lazy { XposedSystemEventPublisher(sharedState) }
+
     private fun emitSystemRuntimeEvent(
         context: Context,
         type: String,
         dedupKey: String,
         extras: Map<String, Any?>,
         dedupWindowMs: Long = 1_000L,
-    ) {
-        if (type !in subscribedSystemEvents.get()) return
-        val now = System.currentTimeMillis()
-        val previous = systemEventDedup.put(dedupKey, now)
-        if (previous != null && now - previous < dedupWindowMs) return
-        if (systemEventDedup.size > 256) {
-            systemEventDedup.entries.removeIf { now - it.value > 60_000L }
-        }
-        broadcastXposedRuntimeEvent(context, type, extras, now)
-
-    }
+    ) = systemEventPublisher.emit(context, type, dedupKey, extras, dedupWindowMs)
 
 }
