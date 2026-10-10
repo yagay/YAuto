@@ -35,7 +35,6 @@ internal val SHORTX_PERMISSION_ALLOWLIST = setOf(
         )
 
 abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
-    private val sharedState = XposedInstallationState()
     protected val systemRegistered get() = sharedState.systemRegistered
     protected val appReceivers get() = sharedState.appReceivers
     protected val systemEventDedup get() = sharedState.systemEventDedup

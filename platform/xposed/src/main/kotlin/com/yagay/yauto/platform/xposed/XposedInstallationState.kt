@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 /** Shared process-local state for all Hook installer families. */
 internal class XposedInstallationState {
+    val installedHooks = ConcurrentHashMap.newKeySet<String>()
     val systemRegistered = AtomicBoolean(false)
     val appReceivers = ConcurrentHashMap.newKeySet<String>()
     val systemEventDedup = ConcurrentHashMap<String, Long>()
