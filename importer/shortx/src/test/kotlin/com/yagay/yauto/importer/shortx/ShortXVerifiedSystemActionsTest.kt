@@ -767,6 +767,27 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals(ConfigValue.BooleanValue(true), actions[1].config["urlSchemeMode"])
     }
 
+    @Test fun `ShortX location preserves provider order timeout and documented context`() {
+        val native = importAction("GetCurrentLocationInfo", message(varintField(1, 1), varintField(2, 10000)))
+        assertEquals("android.location.current.query", native.typeId)
+        assertEquals(ConfigValue.StringValue("network"), native.config["provider"])
+        assertEquals(ConfigValue.NumberValue(10000.0), native.config["timeoutMillis"])
+        assertEquals(ConfigValue.BooleanValue(true), native.config["shortxContextOutput"])
+        assertEquals("compat.source.action", importAction("GetCurrentLocationInfo",
+            message(varintField(1, 1), varintField(2, 10))).typeId)
+        assertEquals("compat.source.action", importAction("GetCurrentLocationInfo",
+            message(varintField(1, 7), varintField(2, 10000))).typeId)
+        val json = """{"title":"loc","actions":[
+            {"@type":"type.googleapis.com/shortx.GetCurrentLocationInfo","providerPreference":"GpsFirst","timeoutMillis":15000},
+            {"@type":"type.googleapis.com/shortx.GetCurrentLocationInfo","providerPreference":"GpsFirst","timeoutMillis":0}
+        ]}"""
+        val imported = ShortXImporter().import(ImportInput("loc.json","application/json",json.toByteArray()))
+        assertTrue(imported.success)
+        val actions = imported.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature }
+        assertEquals(listOf("android.location.current.query","compat.source.action"), actions.map { it.typeId })
+        assertEquals(ConfigValue.StringValue("gps"), actions[0].config["provider"])
+    }
+
     private fun assertBoolean(source: String, target: String, key: String, value: Boolean) {
         val feature = importAction(source, message(varintField(1, if (value) 1 else 0)))
         assertEquals(target, feature.typeId)

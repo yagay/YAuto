@@ -18,7 +18,7 @@ internal object ShortXVerifiedBatchMappings {
         "WriteClipboard", "ReplaceRegex", "AdjustVolume",
         "LaunchAppByPkg", "RemoveTasks", "RemoveTasksByPkg",
         "StartActivityIntentUri", "StartActivityUrlSchema", "EnableUniversalCopy", "EnableViewIdViewer",
-        "ShowDrawBoard", "ParseQRCode", "ShowDanmu", "MatchRegex",
+        "ShowDrawBoard", "ParseQRCode", "ShowDanmu", "MatchRegex", "GetCurrentLocationInfo",
     )
     fun ownsSource(name: String): Boolean = name in batchOwnedSources
 
@@ -158,6 +158,16 @@ internal object ShortXVerifiedBatchMappings {
         return feature(any, importerId, "data.regex.replace", mapOf(
             text("text", source), text("pattern", pattern), text("replacement", replacement),
             text("resultVariable", "replaceResult"),
+        ))
+    }
+
+    private fun locationInfo(any: AnyStub, importerId: String, preference: Int, timeout: Long): FeatureRef? {
+        if (preference !in 0..2 || timeout !in 1000L..120000L) return null
+        val provider = when (preference) { 0 -> "best"; 1 -> "network"; else -> "gps" }
+        return feature(any, importerId, "android.location.current.query", mapOf(
+            text("provider", provider), text("resultVariable", "shortxLocation"),
+            bool("shortxContextOutput", true),
+            "timeoutMillis" to ConfigValue.NumberValue(timeout.toDouble())
         ))
     }
 
@@ -338,6 +348,12 @@ internal object ShortXVerifiedBatchMappings {
                         mapOf(text("intentUri", it), bool("urlSchemeMode", true)))
                 }
             } else null
+            "GetCurrentLocationInfo" -> if (fields.onlyBusinessFields(1, 2)) {
+                val preference = fields.varint(1) ?: if (!fields.has(1)) 0L else return null
+                val timeout = fields.varint(2) ?: return null
+                if (preference !in 0L..2L) null
+                else locationInfo(any, importerId, preference.toInt(), timeout)
+            } else null
             "ShowDrawBoard" -> noTheme(any, importerId, fields, "surface.draw_board.show")?.let {
                 it.copy(config = it.config + mapOf(
                     text("surfaceId", "shortx.draw_board"), text("gravity", "center")))
@@ -515,6 +531,17 @@ internal object ShortXVerifiedBatchMappings {
                 val raw = (obj["urlSchema"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
                 if (uid != 0 || ':' !in raw) null else feature(any, importerId,
                     "android.intent_uri.launch", mapOf(text("intentUri", raw), bool("urlSchemeMode", true)))
+            } else null
+            "GetCurrentLocationInfo" -> if (allowed("providerPreference", "timeoutMillis")) {
+                val prefRaw = (obj["providerPreference"] as? JsonPrimitive)?.content
+                val preference = when (prefRaw) {
+                    null, "0", "Auto", "CurrentLocationProviderPreference_Auto" -> 0
+                    "1", "NetworkFirst", "CurrentLocationProviderPreference_NetworkFirst" -> 1
+                    "2", "GpsFirst", "CurrentLocationProviderPreference_GpsFirst" -> 2
+                    else -> return null
+                }
+                val timeout = (obj["timeoutMillis"] as? JsonPrimitive)?.longOrNull ?: return null
+                locationInfo(any, importerId, preference, timeout)
             } else null
             "ShowDrawBoard" -> noThemeJson(any, importerId, obj, "surface.draw_board.show")?.let {
                 it.copy(config = it.config + mapOf(

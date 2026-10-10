@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_location_current_query_field_timeout_millis">定位超时（毫秒）</string>
+    <string name="feature_android_location_current_query_field_shortx_context_output">填充 ShortX 坐标变量</string>
+</resources>

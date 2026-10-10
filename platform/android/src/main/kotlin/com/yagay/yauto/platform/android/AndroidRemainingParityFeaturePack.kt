@@ -20,6 +20,7 @@ import android.media.MediaRecorder
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
+import android.os.CancellationSignal
 import android.os.LocaleList
 import android.os.PowerManager
 import android.os.storage.StorageManager
@@ -39,6 +40,7 @@ import com.yagay.yauto.core.registry.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.net.HttpURLConnection
 import java.net.NetworkInterface
 import java.net.URL
@@ -87,6 +89,8 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
                 fields = listOf(
                     FieldSchema.Choice("provider", "Provider", options = listOf("best", "gps", "network", "passive")),
                     FieldSchema.Variable("resultVariable", "Store location object", true),
+                    FieldSchema.Number("timeoutMillis", "Location timeout (ms)", min = 1000.0, max = 120000.0),
+                    FieldSchema.Toggle("shortxContextOutput", "Populate ShortX coordinate variables"),
                 ),
                 accessRequirements = setOf(AccessRequirement.LOCATION),
                 keywords = setOf("location", "current location", "gps", "tasker", "macrodroid"),
@@ -97,8 +101,16 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
             val manager = context.getSystemService(LocationManager::class.java)
             val provider = chooseProvider(manager, feature.config.string("provider", "best"))
                 ?: return@registerAction ActionExecutionResult(false, message = userText("feature.location_unavailable"))
-            val location = currentLocation(manager, provider)
+            val timeout = (feature.config["timeoutMillis"].numberOrNull()?.toLong() ?: 15000L)
+                .coerceIn(1000L, 120000L)
+            val location = withTimeoutOrNull(timeout) { currentLocation(manager, provider) }
                 ?: return@registerAction ActionExecutionResult(false, message = userText("feature.location_unavailable"))
+            if (feature.config.boolean("shortxContextOutput")) {
+                ctx.variables.set("latitude", ConfigValue.NumberValue(location.latitude))
+                ctx.variables.set("longitude", ConfigValue.NumberValue(location.longitude))
+                ctx.variables.set("provider", ConfigValue.StringValue(location.provider.orEmpty()))
+                ctx.variables.set("accuracy", ConfigValue.NumberValue(location.accuracy.toDouble()))
+            }
             store(feature, ctx, locationValue(location))
         }
 
@@ -1051,9 +1063,11 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
                 continuation.resume(null)
                 return@suspendCancellableCoroutine
             }
+            val signal = CancellationSignal()
+            continuation.invokeOnCancellation { signal.cancel() }
             @Suppress("MissingPermission")
             runCatching {
-                manager.getCurrentLocation(provider, null, context.mainExecutor) { location ->
+                manager.getCurrentLocation(provider, signal, context.mainExecutor) { location ->
                     if (continuation.isActive) continuation.resume(location)
                 }
             }.onFailure {
