@@ -36,14 +36,20 @@ class FeatureMethodExplanationsTests(unittest.TestCase):
         self.assertIn("onSelect(item)", source)
         self.assertIn("selectedMemberId = it.descriptor.id.value", source)
 
-    def test_backend_guide_uses_selected_feature_and_backend(self):
+    def test_auto_guide_preserves_specific_permissions_without_backend_switches(self):
         editor = GENERIC.read_text(encoding="utf-8")
+        summary = (GENERIC.parent / "AutoImplementationSummary.kt").read_text(encoding="utf-8")
+        registry = (ROOT / "core/registry/src/main/kotlin/com/yagay/yauto/core/registry/FeatureAccessMetadata.kt").read_text(encoding="utf-8")
         resolver = RESOLVER.read_text(encoding="utf-8")
-        self.assertIn("resolver.backendPermissionExplanation(descriptor, backendId)", editor)
-        self.assertIn("values[FEATURE_BACKEND_CONFIG_KEY]", editor)
-        self.assertIn("descriptor.accessRequirements - optionPermissions", editor)
-        self.assertIn("val optionOnly = options.flatMap { it.requirements }.toSet()", editor)
-        self.assertNotIn("implementationPros(backendId)", editor)
+        self.assertIn("AutoImplementationSummary(descriptor, initial)", editor)
+        self.assertNotIn("BackendChoiceEditor(", editor)
+        self.assertNotIn("MethodChoiceEditor(", editor)
+        self.assertIn("mandatoryAccessRequirements()", editor)
+        self.assertIn("mandatoryAccessRequirements()", summary)
+        self.assertIn("requiresRootToRun()", summary)
+        self.assertIn("option.requirements", summary)
+        self.assertIn("option.backendId", summary)
+        self.assertIn("fun FeatureDescriptor.mandatoryAccessRequirements()", registry)
         self.assertIn("implementationDescription(descriptor.id.value) ?: description(descriptor)", resolver)
         self.assertIn("feature_backend_${idKey}_${backendKey}_description", resolver)
 
