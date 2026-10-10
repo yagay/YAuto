@@ -265,4 +265,30 @@ class AutomationRuntimeTest {
             this.data = data
         }
     }
+    @Test
+    fun `runtime control writes use the shared atomic workspace repository`() = runBlocking {
+        val registry = FeatureRegistry()
+        val automation = Automation(
+            AutomationId("target"), "Target", category = "work",
+            activation = Activation(events = listOf(FeatureRef("test.event"))),
+        )
+        val delegate = object : WorkspaceRepository {
+            var data = WorkspaceData(automations = listOf(automation))
+            override suspend fun load(): WorkspaceData = data
+            override suspend fun save(data: WorkspaceData) { this.data = data }
+        }
+        val repository = ReconcilingWorkspaceRepository(delegate, registry)
+        val runtime = AutomationRuntime(
+            repository, registry, CapabilityClient { CapabilityResult(false) }, NoOpExecutionTracer,
+        )
+        assertTrue(runtime.setEnabled("target", AutomationEnableMode.DISABLE).success)
+        assertTrue(runtime.setTriggerEnabled("target", "test.event", "", AutomationEnableMode.DISABLE).success)
+        assertTrue(runtime.setCategoryEnabled("work", AutomationEnableMode.DISABLE).success)
+        assertTrue(runtime.setRuntimeEnabled(AutomationEnableMode.DISABLE).success)
+        assertFalse(delegate.data.automations.single().enabled)
+        assertTrue(delegate.data.disabledCategories.contains("work"))
+        assertTrue(delegate.data.disabledTriggerKeys.isNotEmpty())
+        assertFalse(delegate.data.runtimeEnabled)
+    }
+
 }
