@@ -37,6 +37,7 @@ fun MacroFlowEditorScreen(
     var tree by remember { mutableStateOf(false) }
     var paramEdit by remember { mutableStateOf<Triple<FlowParamSide, Int?, FlowParameter?>?>(null) }
     var actionMenu by remember { mutableStateOf<Int?>(null) }
+    var quickTest by remember { mutableStateOf<FeatureRef?>(null) }
     val descriptorById = remember(descriptors) { descriptors.associateBy { it.id.value } }
     val inheritedVariableNames = LocalEditorVariableNames.current
     val editorVariableNames = remember(inheritedVariableNames, inputs, outputs) {
@@ -49,6 +50,7 @@ fun MacroFlowEditorScreen(
             tree -> tree = false
             paramEdit != null -> paramEdit = null
             actionMenu != null -> actionMenu = null
+            quickTest != null -> quickTest = null
             else -> onBack()
         }
     }
@@ -251,11 +253,30 @@ fun MacroFlowEditorScreen(
     }
 
     actionMenu?.let { index ->
+        val testable = (actions.getOrNull(index) as? ActionNode.Action)?.feature
         AlertDialog(
             onDismissRequest = { actionMenu = null },
             title = { Text(stringResource(TextR.string.flow_action_menu_title)) },
             text = {
                 Column {
+                    TextButton(
+                        enabled = testable != null,
+                        onClick = {
+                            quickTest = testable
+                            actionMenu = null
+                        },
+                    ) { Text(stringResource(TextR.string.feature_test_action)) }
+                    TextButton(
+                        enabled = testable != null,
+                        onClick = {
+                            val copy = (actions.getOrNull(index) as? ActionNode.Action)
+                                ?.copy(id = NodeId(UUID.randomUUID().toString()))
+                            if (copy != null) {
+                                actions = actions.toMutableList().apply { add(index + 1, copy) }
+                            }
+                            actionMenu = null
+                        },
+                    ) { Text(stringResource(TextR.string.feature_test_duplicate)) }
                     TextButton(
                         enabled = index > 0,
                         onClick = {
@@ -283,6 +304,9 @@ fun MacroFlowEditorScreen(
                 TextButton(onClick = { actionMenu = null }) { Text(stringResource(TextR.string.common_cancel)) }
             },
         )
+    }
+    quickTest?.let { feature ->
+        FeatureQuickTestDialog(feature, FeatureKind.ACTION) { quickTest = null }
     }
 }
 
