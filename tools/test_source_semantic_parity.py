@@ -85,6 +85,7 @@ class SourceSemanticParityTests(unittest.TestCase):
 
     def test_real_status_bar_bridge_and_area_selection_not_notification_fallback(self):
         xposed = (ROOT / "platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/YAutoXposedModule.kt").read_text(encoding="utf-8")
+        xposed += (ROOT / "platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedSystemBridgeRegistration.kt").read_text(encoding="utf-8")
         backend = (ROOT / "platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedBackend.kt").read_text(encoding="utf-8")
         pack = (ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidStatusIconFeaturePack.kt").read_text(encoding="utf-8")
         surface = read_surface_registrations()
