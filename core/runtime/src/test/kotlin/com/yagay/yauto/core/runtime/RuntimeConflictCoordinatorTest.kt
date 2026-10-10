@@ -9,7 +9,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class RuntimeConflictCoordinatorTest {
-    @Test fun ignoreNewRejectsConcurrentRun() = runBlocking {
+    @Test fun ignoreNewRejectsConcurrentRun() { runBlocking {
         val coordinator = RuntimeConflictCoordinator(ExecutionJobRegistry())
         val gate = CompletableDeferred<Unit>()
         val first = async {
@@ -20,9 +20,9 @@ class RuntimeConflictCoordinatorTest {
         gate.complete(Unit)
         assertEquals("first", first.await())
         assertEquals("third", coordinator.execute("same", ConflictPolicy.IGNORE_NEW) { "third" })
-    }
+    } }
 
-    @Test fun distinctAutomationsUseIndependentLocks() = runBlocking {
+    @Test fun distinctAutomationsUseIndependentLocks() { runBlocking {
         val coordinator = RuntimeConflictCoordinator(ExecutionJobRegistry())
         val gate = CompletableDeferred<Unit>()
         val waiting = async {
@@ -32,5 +32,5 @@ class RuntimeConflictCoordinatorTest {
         assertEquals("done", coordinator.execute("b", ConflictPolicy.QUEUE) { "done" })
         gate.complete(Unit)
         waiting.await()
-    }
+    } }
 }
