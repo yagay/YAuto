@@ -84,6 +84,7 @@ class AutomationRuntime(
     private val eventWaitRegistry = RuntimeEventWaitRegistry()
     private val workspaceMutationLock = Mutex()
     private val lastRunStore = RuntimeLastRunStore(workspaceRepository, workspaceMutationLock)
+    private val persistentVariableStore = RuntimeVariableStore(workspaceRepository, workspaceMutationLock)
     private val expressions = SimpleExpressionEngine()
 
     suspend fun dispatch(event: RuntimeEvent, statesOnly: Boolean = false): RuntimeDispatchResult = coroutineScope {
@@ -480,53 +481,17 @@ class AutomationRuntime(
         return lastRunStore.get(automation.id)
     }
 
-    override suspend fun get(name: String): ConfigValue? {
-        val key = name.trim()
-        if (key.isEmpty()) return null
-        val workspace = workspaceRepository.load()
-        return workspace.persistentVariables[key]
-            ?: workspace.globalVariables[key]?.let(ConfigValue::StringValue)
-    }
+    override suspend fun get(name: String): ConfigValue? = persistentVariableStore.get(name)
 
     override suspend fun set(name: String, value: ConfigValue): PersistentVariableChange {
-        val key = name.trim()
-        if (key.isEmpty()) return PersistentVariableChange(false, key)
-        val change = workspaceMutationLock.withLock {
-            val workspace = workspaceRepository.load()
-            val previous = workspace.persistentVariables[key]
-                ?: workspace.globalVariables[key]?.let(ConfigValue::StringValue)
-            if (previous != value) {
-                workspaceRepository.save(
-                    workspace.copy(
-                        globalVariables = workspace.globalVariables - key,
-                        persistentVariables = workspace.persistentVariables + (key to value),
-                    )
-                )
-            }
-            PersistentVariableChange(true, key, previous, value)
-        }
-        if (change.previous != change.current) dispatch(variableChangedEvent(change))
+        val change = persistentVariableStore.set(name, value)
+        if (change.success && change.previous != change.current) dispatch(variableChangedEvent(change))
         return change
     }
 
     override suspend fun clear(name: String): PersistentVariableChange {
-        val key = name.trim()
-        if (key.isEmpty()) return PersistentVariableChange(false, key)
-        val change = workspaceMutationLock.withLock {
-            val workspace = workspaceRepository.load()
-            val previous = workspace.persistentVariables[key]
-                ?: workspace.globalVariables[key]?.let(ConfigValue::StringValue)
-            if (previous != null) {
-                workspaceRepository.save(
-                    workspace.copy(
-                        globalVariables = workspace.globalVariables - key,
-                        persistentVariables = workspace.persistentVariables - key,
-                    )
-                )
-            }
-            PersistentVariableChange(true, key, previous, null)
-        }
-        if (change.previous != null) dispatch(variableChangedEvent(change))
+        val change = persistentVariableStore.clear(name)
+        if (change.success && change.previous != null) dispatch(variableChangedEvent(change))
         return change
     }
 
