@@ -142,7 +142,15 @@ class CapabilityBroker(
                     .thenByDescending { it.priority },
             )
         }
-        val candidates = supported.filter { it.isAvailable(environment) }
+        val candidates = supported.filter { backend ->
+            try {
+                backend.isAvailable(environment)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                false
+            }
+        }
         if (candidates.isEmpty()) {
             val message = request.preferredBackendId?.let {
                 userText("capability.selected_backend_unavailable", it, request.capability.value)

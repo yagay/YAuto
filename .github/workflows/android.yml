@@ -92,6 +92,7 @@ jobs:
       - name: Verify core runtime, storage, importers, Android, accessibility and editor
         run: >
           gradle
+          :core:capability:test
           :core:diagnostics:test
           :core:engine:test
           :core:importer:test
