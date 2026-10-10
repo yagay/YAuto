@@ -20,6 +20,9 @@ data class FeatureTestResult(
 
 interface FeatureTestGateway {
     suspend fun test(feature: FeatureRef, kind: FeatureKind): FeatureTestResult
+
+    /** Runs only the currently saved automation's EVENT actions; never invokes triggers. */
+    suspend fun testSavedAutomation(id: String): FeatureTestResult
 }
 
 val LocalFeatureTestGateway = staticCompositionLocalOf<FeatureTestGateway?> { null }

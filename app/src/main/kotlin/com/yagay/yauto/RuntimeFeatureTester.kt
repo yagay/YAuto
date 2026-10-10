@@ -33,6 +33,36 @@ internal class RuntimeFeatureTester(
         override fun snapshot(): Map<String, ConfigValue> = values.toMap()
     }
 
+    override suspend fun testSavedAutomation(id: String): FeatureTestResult {
+        val start = System.currentTimeMillis()
+        val executionId = ExecutionId(UUID.randomUUID().toString())
+        val timeoutResult = FeatureTestResult(
+            false, context.getString(TextR.string.feature_test_timeout), 0L,
+            kind = FeatureKind.ACTION, executionId = executionId.value,
+        )
+        val result = try {
+            withTimeoutOrNull(120_000L) {
+                val action = graph.runtime.run(id, emptyMap(), allowDisabled = true)
+                FeatureTestResult(
+                    action.success,
+                    action.message?.takeIf { it.isNotBlank() }?.take(600)
+                        ?: context.getString(if (action.success)
+                            TextR.string.feature_test_action_completed
+                        else TextR.string.feature_test_failed),
+                    0L, kind = FeatureKind.ACTION,
+                )
+            } ?: timeoutResult
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            FeatureTestResult(false, error.message?.take(600)
+                ?: context.getString(TextR.string.feature_test_failed), 0L,
+                kind = FeatureKind.ACTION)
+        }
+        return result.copy(elapsedMs = System.currentTimeMillis() - start,
+            executionId = executionId.value)
+    }
+
     override suspend fun test(feature: FeatureRef, kind: FeatureKind): FeatureTestResult {
         val began = System.currentTimeMillis()
         val id = ExecutionId(UUID.randomUUID().toString())
