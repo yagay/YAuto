@@ -1684,34 +1684,6 @@ class YAutoXposedModule : XposedModule() {
         }
     }
 
-    private fun emitMethodCalled(
-        context: Context,
-        sessionId: String,
-        eventToken: String,
-        packageName: String,
-        processName: String,
-        className: String,
-        methodName: String,
-        lifecycle: String,
-        captured: Map<String, String> = emptyMap(),
-    ) {
-        runCatching {
-            context.sendBroadcast(
-                Intent(SystemBridgeProtocol.HOOK_EVENT_ACTION)
-                    .setPackage(YAUTO_PACKAGE)
-                    .putExtra("sessionId", sessionId)
-                    .putExtra("eventToken", eventToken)
-                    .putExtra("package", packageName)
-                    .putExtra("processName", processName)
-                    .putExtra("className", className)
-                    .putExtra("methodName", methodName)
-                    .putExtra("lifecycle", lifecycle)
-                    .putExtra("timestampEpochMs", System.currentTimeMillis())
-                    .apply { captured.forEach { (key, value) -> putExtra(key, value) } }
-            )
-        }
-    }
-
     private companion object {
         const val YAUTO_PACKAGE = "com.yagay.yauto"
         val CLASS_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]*(?:\\.[A-Za-z_$][A-Za-z0-9_$]*)+")
