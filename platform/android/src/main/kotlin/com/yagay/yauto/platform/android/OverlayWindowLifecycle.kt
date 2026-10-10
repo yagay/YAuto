@@ -42,6 +42,9 @@ internal class OverlayWindowLifecycle(
     }
 
     fun attach(id: String, view: View, params: WindowManager.LayoutParams, timeoutMs: Long) {
+        // A surface ID owns at most one attached View. Remove the previous window
+        // before installing its replacement to avoid orphaned WindowManager views.
+        if (surfaces.containsKey(id)) remove(id)
         runCatching {
             manager.addView(view, params)
             surfaces[id] = view
