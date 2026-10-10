@@ -18,18 +18,6 @@ import com.yagay.yauto.ui.design.PageBackButton
 import com.yagay.yauto.ui.design.PageBackHandler
 import java.util.UUID
 
-private enum class MacroActionPhase { EVENT, ENTER, EXIT }
-private enum class ActivationMode { EVENT, STATE }
-
-private data class MacroEditRequest(
-    val kind: FeatureKind,
-    val index: Int? = null,
-    val initial: FeatureRef? = null,
-    val actionPhase: MacroActionPhase? = null,
-)
-
-@OptIn(ExperimentalMaterial3Api::class)
-
 @Composable
 internal fun EmptyHint(text: String) {
     Box(Modifier.fillMaxWidth().padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
