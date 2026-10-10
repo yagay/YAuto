@@ -8,9 +8,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * A coroutine-friendly debugger that halts BEFORE a node is executed.
- * A single permit advances exactly one node across nested branches and loops.
- * Do not use in ordinary scheduled production executions.
+ * One debug session per execution. Invocation IDs distinguish repeated and concurrently running
+ * instances of the same node; a FIFO wait queue prevents parallel branches losing breakpoints.
  */
 class EngineDebugSession : EngineDebugObserver {
     data class Step(
@@ -29,62 +28,62 @@ class EngineDebugSession : EngineDebugObserver {
         val variables: Map<String, ConfigValue>,
     )
 
+    private data class Waiter(val invocationId: Long, val info: Paused, val deferred: CompletableDeferred<Unit>)
+    private enum class Mode { STEP, CONTINUE }
+
     private val mutex = Mutex()
-    private var pending: CompletableDeferred<Unit>? = null
-    private var mode: Mode = Mode.STEP
-    private var paused: Paused? = null
+    private var mode = Mode.STEP
+    private val waiting = ArrayDeque<Waiter>()
     private val history = mutableListOf<Step>()
     private val before = mutableMapOf<Long, Map<String, ConfigValue>>()
     private val breakpoints = mutableSetOf<NodeId>()
-    private enum class Mode { STEP, CONTINUE }
 
     suspend fun snapshot(): List<Step> = mutex.withLock { history.toList() }
-    suspend fun pausedAt(): Paused? = mutex.withLock { paused }
-    suspend fun setBreakpoint(id: NodeId, enabled: Boolean) = mutex.withLock {
-        if (enabled) breakpoints.add(id) else breakpoints.remove(id)
+    suspend fun pausedAt(): Paused? = mutex.withLock { waiting.firstOrNull()?.info }
+    suspend fun setBreakpoint(id: NodeId, enabled: Boolean) {
+        mutex.withLock {
+            if (enabled) breakpoints.add(id) else breakpoints.remove(id)
+        }
     }
 
     suspend fun step() {
         mutex.withLock {
             mode = Mode.STEP
-            pending?.complete(Unit)
-            pending = null
+            waiting.removeFirstOrNull()?.deferred?.complete(Unit)
         }
     }
 
     suspend fun continueExecution() {
         mutex.withLock {
             mode = Mode.CONTINUE
-            pending?.complete(Unit)
-            pending = null
+            while (waiting.isNotEmpty()) waiting.removeFirst().deferred.complete(Unit)
         }
     }
 
     suspend fun cancelPause() {
         mutex.withLock {
-            pending?.cancel()
-            pending = null
+            while (waiting.isNotEmpty()) waiting.removeFirst().deferred.cancel()
         }
     }
 
-    override suspend fun beforeNode(invocationId: Long, node: ActionNode, variables: Map<String, ConfigValue>) {
-        val wait = mutex.withLock {
+    override suspend fun beforeNode(
+        invocationId: Long,
+        node: ActionNode,
+        variables: Map<String, ConfigValue>,
+    ) {
+        val waiter = mutex.withLock {
             before[invocationId] = variables.toMap()
             if (mode == Mode.CONTINUE && node.id !in breakpoints) return@withLock null
-            paused = Paused(node.id, node.javaClass.simpleName, variables.toMap())
-            CompletableDeferred<Unit>().also { pending = it }
+            Waiter(
+                invocationId,
+                Paused(node.id, node.javaClass.simpleName, variables.toMap()),
+                CompletableDeferred(),
+            ).also(waiting::addLast)
         }
         try {
-            wait?.await()
+            waiter?.deferred?.await()
         } finally {
-            mutex.withLock {
-                if (pending === wait) {
-                    pending = null
-                    paused = null
-                } else if (paused?.nodeId == node.id) {
-                    paused = null
-                }
-            }
+            if (waiter != null) mutex.withLock { waiting.remove(waiter) }
         }
     }
 
