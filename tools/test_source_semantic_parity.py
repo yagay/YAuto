@@ -8,8 +8,11 @@ SHORTX_PARSER = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer
 SHORTX_NATIVE_SUPPORT = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXNativeSupport.kt"
 MACRO_HINTS = ROOT / "importer/macrodroid/src/main/kotlin/com/yagay/yauto/importer/macrodroid/MacroDroidFeatureSuggestions.kt"
 COMMUNICATION = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidCommunicationFeaturePack.kt"
-SMS_IMPLEMENTATION = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidPersonalDataFeaturePack.kt"
-SURFACE = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidSurfaceFeaturePack.kt"
+SMS_IMPLEMENTATION = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidMessagingRegistration.kt"
+SURFACE_DIR = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android"
+
+def read_surface_registrations():
+    return "\n".join((SURFACE_DIR / f"AndroidSurface{group}Registrations.kt").read_text(encoding="utf-8") for group in ("Core", "Interactive", "Events"))
 CONTROLLER = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/OverlaySurfaceController.kt"
 
 
@@ -32,7 +35,7 @@ class SourceSemanticParityTests(unittest.TestCase):
 
     def test_stop_recorder_finalizes_captured_points(self):
         shortx = SHORTX_HINTS.read_text(encoding="utf-8")
-        surface = SURFACE.read_text(encoding="utf-8")
+        surface = read_surface_registrations()
         controller = CONTROLLER.read_text(encoding="utf-8")
         self.assertIn('"StartGestureRecording", "StopGestureRecording", "ToggleGestureRecording",', shortx)
         self.assertNotIn('"StopGestureRecording" -> "surface.gesture_recording.stop"', shortx)
@@ -52,7 +55,7 @@ class SourceSemanticParityTests(unittest.TestCase):
         self.assertNotIn('"StartAppProcess", "StartAppProcessByPkg" -> "android.app.launch"', hint)
         self.assertNotIn('"SetStatusBarIcon" -> "android.notification.ppn.show"', hint)
         self.assertIn('"AreaScreenshot" -> "android.screenshot.area_select"', hint)
-        surface = SURFACE.read_text(encoding="utf-8")
+        surface = read_surface_registrations()
         self.assertIn('FeatureId("android.screenshot.area_select")', surface)
         self.assertIn('onSelected: ((Int, Int, Int, Int) -> Unit)? = null', CONTROLLER.read_text(encoding="utf-8"))
         self.assertIn('"AreaScreenshot" -> noFieldAction(', SHORTX_PARSER.read_text(encoding="utf-8"))
@@ -81,7 +84,7 @@ class SourceSemanticParityTests(unittest.TestCase):
         xposed = (ROOT / "platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/YAutoXposedModule.kt").read_text(encoding="utf-8")
         backend = (ROOT / "platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedBackend.kt").read_text(encoding="utf-8")
         pack = (ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidStatusIconFeaturePack.kt").read_text(encoding="utf-8")
-        surface = SURFACE.read_text(encoding="utf-8")
+        surface = read_surface_registrations()
         for operation in ("STATUS_ICON_SET", "STATUS_ICON_REMOVE"):
             self.assertIn("SystemBridgeProtocol." + operation, xposed)
             self.assertIn("SystemBridgeProtocol." + operation, backend)
