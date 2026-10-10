@@ -77,8 +77,7 @@ class AutomationRuntime(
             },
         )
 
-    private val activeStates = ConcurrentHashMap<String, Boolean>()
-    private val evaluationLocks = ConcurrentHashMap<String, Mutex>()
+    private val eventState = RuntimeEventState()
     private val executionJobs = ExecutionJobRegistry()
     private val conflictCoordinator = RuntimeConflictCoordinator(executionJobs)
     private val eventWaitRegistry = RuntimeEventWaitRegistry()
@@ -113,13 +112,13 @@ class AutomationRuntime(
             try {
                 val variables = MapVariableAccess(RuntimeEventContext.variables(workspace, automation.variables, event))
 
-                val phases = evaluationLocks.getOrPut(automation.id.value) { Mutex() }.withLock {
+                val phases = eventState.withEvaluationLock(automation.id.value) {
                     var matchedEventFeature: FeatureRef? = null
                     val eventMatches = if (statesOnly) {
                         false
                     } else {
                         for (candidate in automation.activation.events) {
-                            if (!triggerEnabled(workspace, automation, candidate)) continue
+                            if (!RuntimeTriggerPolicy.enabled(workspace, automation, candidate)) continue
                             if (matchEvent(candidate, event, variables, dispatchId)) {
                                 matchedEventFeature = candidate
                                 break
@@ -159,10 +158,10 @@ class AutomationRuntime(
                         evaluatePredicate(it, variables, dispatchId, automation.id)
                     } ?: true
                     val gateOpen = statesMatch && conditionMatches
-                    val wasActive = activeStates[automation.id.value] ?: false
+                    val wasActive = eventState.isActive(automation.id.value)
 
                     val phases = RuntimeEventDispatchPolicy.phases(stateful, gateOpen, wasActive, eventMatches, conditionMatches)
-                    if (stateful) activeStates[automation.id.value] = gateOpen
+                    if (stateful) eventState.setActive(automation.id.value, gateOpen)
                     phases
                 }
 
@@ -325,7 +324,7 @@ class AutomationRuntime(
                 workspaceRepository.save(workspace.copy(runtimeEnabled = enabled))
                 if (!enabled) {
                     executionJobs.cancelAll()
-                    activeStates.clear()
+                    eventState.reset()
                 }
             }
             ActionExecutionResult(true, ConfigValue.BooleanValue(enabled))
@@ -373,7 +372,7 @@ class AutomationRuntime(
                     message = userText("runtime.trigger_not_found"),
                 )
             }
-            val keys = candidates.map { triggerKey(resolved, it) }.toSet()
+            val keys = candidates.map { RuntimeTriggerPolicy.key(resolved, it) }.toSet()
             val currentlyEnabled = keys.any { it !in workspace.disabledTriggerKeys }
             val enable = when (mode) {
                 AutomationEnableMode.ENABLE -> true
@@ -401,7 +400,7 @@ class AutomationRuntime(
                 (triggerTag.isBlank() || feature.config.string("tag") == triggerTag)
         }
         if (candidates.isEmpty()) return null
-        return candidates.any { triggerKey(resolved, it) !in workspace.disabledTriggerKeys }
+        return candidates.any { RuntimeTriggerPolicy.key(resolved, it) !in workspace.disabledTriggerKeys }
     }
 
     override suspend fun setCategoryEnabled(
@@ -643,18 +642,6 @@ class AutomationRuntime(
             }
         }
     }
-
-    private fun triggerKey(automation: Automation, feature: FeatureRef): String {
-        val sourceType = feature.config["source.type"]?.asTraceText().orEmpty()
-        val tag = feature.config.string("tag").trim()
-        return automation.id.value + "|" + (if (sourceType.isNotBlank()) sourceType else feature.typeId) + "|" + tag
-    }
-
-    private fun triggerEnabled(
-        workspace: WorkspaceData,
-        automation: Automation,
-        feature: FeatureRef,
-    ): Boolean = triggerKey(automation, feature) !in workspace.disabledTriggerKeys
 
     private class MapVariableAccess(initial: Map<String, ConfigValue>) : VariableAccess {
         private val values = initial.toMutableMap()
