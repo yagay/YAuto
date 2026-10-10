@@ -423,7 +423,9 @@ private fun InstalledAppDialog(
     onPick: (String) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
-    var includeSystem by remember { mutableStateOf(false) }
+    var includeSystem by remember(context) {
+        mutableStateOf(EditorDisplayPreferences.showSystemAppsByDefault(context))
+    }
     val locale = currentEditorLocale()
     val apps = remember(context, locale) { installedApps(context, locale) }
     val filtered = remember(apps, query, includeSystem) {

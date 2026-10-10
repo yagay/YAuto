@@ -63,7 +63,10 @@ internal fun GenericFeatureConfigEditor(
             initial?.config.orEmpty().filterKeys { it.startsWith("hardwareIdentity") }
         )
     }
-    var showAdvanced by remember(descriptor.id.value) { mutableStateOf(false) }
+    val editorContext = LocalContext.current
+    var showAdvanced by remember(descriptor.id.value) {
+        mutableStateOf(EditorDisplayPreferences.showAdvancedByDefault(editorContext))
+    }
 
     val typedValues = remember(descriptor, values, locale) {
         valuesAsConfig(descriptor.fields, values, locale)

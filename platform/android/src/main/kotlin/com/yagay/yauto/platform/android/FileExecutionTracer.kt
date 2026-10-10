@@ -18,6 +18,7 @@ class FileExecutionTracer(
     context: Context,
     private val json: Json = Json { encodeDefaults = true },
     private val maxBytes: Long = 2L * 1024 * 1024,
+    private val maxBytesProvider: () -> Long = { maxBytes },
 ) : ExecutionTracer {
     private val dir = File(context.filesDir, "logs").apply { mkdirs() }
     private val file = File(dir, "execution.jsonl")
@@ -45,13 +46,25 @@ class FileExecutionTracer(
     }
 
     private fun rotateIfNeeded(incomingChars: Long) {
-        if (!file.exists() || file.length() + incomingChars < maxBytes) return
+        if (!file.exists() || file.length() + incomingChars <
+            maxBytesProvider().coerceIn(128L * 1024L, 32L * 1024L * 1024L)) return
         writer?.flush()
         writer?.close()
         writer = null
         pendingSinceFlush = 0
         old.delete()
         file.renameTo(old)
+    }
+
+    /** Clears both active and rotated logs without racing a concurrent trace append. */
+    suspend fun clear() = withContext(Dispatchers.IO) {
+        lock.withLock {
+            writer?.close()
+            writer = null
+            pendingSinceFlush = 0
+            file.delete()
+            old.delete()
+        }
     }
 
     private fun openWriter(): BufferedWriter =

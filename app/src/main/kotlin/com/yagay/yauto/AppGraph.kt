@@ -37,8 +37,25 @@ class AppGraph(context: Context) {
     val importers = ImporterRegistry()
     val diagnosticRegistry = DiagnosticRegistry()
     val traceStore = InMemoryExecutionTracer()
-    private val persistentTracer = FileExecutionTracer(appContext)
-    val tracer: ExecutionTracer = SequencedExecutionTracer(CompositeExecutionTracer(listOf(traceStore, persistentTracer)))
+    private val persistentTracer = FileExecutionTracer(
+        appContext,
+        maxBytesProvider = { RuntimeSettingsPreferences.logSizeMb(appContext).toLong() * 1024L * 1024L },
+    )
+    private val sequencedTracer: ExecutionTracer =
+        SequencedExecutionTracer(CompositeExecutionTracer(listOf(traceStore, persistentTracer)))
+    /** New severity preference takes effect on the next recorded event; errors are never lost. */
+    val tracer: ExecutionTracer = object : ExecutionTracer {
+        override suspend fun record(event: TraceEvent) {
+            if (event.level >= RuntimeSettingsPreferences.traceLevel(appContext)) {
+                sequencedTracer.record(event)
+            }
+        }
+    }
+
+    suspend fun clearExecutionLogs() {
+        persistentTracer.clear()
+        traceStore.clear()
+    }
 
     val rootShell by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { RootShell() }
     val hardwareKeys by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { DeviceHardwareKeyCatalog(rootShell) }
