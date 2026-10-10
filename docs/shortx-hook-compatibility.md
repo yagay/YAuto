@@ -71,3 +71,9 @@ ShortX also contains behavior that injects shortcuts/service info, mutates widge
 - `android.event.media_provider_changed` adds AOSP and Google MediaProvider package candidates.
 - `android.event.sms_provider_changed` adds `com.android.providers.telephony`.
 - Generic scoped app hooks such as input-text commit use the event's AppPicker target as the requested LSPosed scope.
+
+## Subscription-scoped ShortX observers (2026-10-10)
+
+The authenticated system_server bridge now installs its four core observer families only when their corresponding event types are subscribed. ShortX-derived catalog hooks also install only the requested observer specifications, instead of registering all reflected methods when one observer is needed. Subsequent subscriptions add hooks incrementally; unsubscription gates dispatch but physical unhook requires process restart. Original Android methods still execute without replacing their results.
+
+The LSPosed scope recommendation now ignores disabled automations, disabled categories and disabled action nodes. Named flows remain in the scope inventory for manually executed flows, and existing granted scopes are not automatically revoked. The Xposed module has a dedicated JVM unit test in the Fast Debug workflow. This is a clean-room YAuto lifecycle improvement based on ShortX hook categories, not guaranteed ROM parity.

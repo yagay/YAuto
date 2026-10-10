@@ -64,3 +64,7 @@ python3 tools/audit_verified_picker_merges.py --fail-on-unsafe \\
 
 这会核对每项在 APK 内的 YAML 是否真实存在，以及对应模式字段是否确实出现。
 没找到等价操作模式的功能继续独立展示；此项审计不改变保存的具体功能 ID。
+
+## Source-first merge review (2026-10-10)
+
+Verified MacroDroid same-kind duplicate action labels are already merged for clipboard write and screenshots; ShortX's remaining action-title duplicate is clipboard read. Same source label across STATE and CONDITION does not constitute a merge of those separate feature kinds. Hook observers for process, activity, notifications and window lifecycle are different events; they must not be merged simply because they share the LSPosed backend. Only a proven same operation with alternate settings/methods becomes one selectable feature.

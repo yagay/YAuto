@@ -32,7 +32,24 @@ internal data class ShortXObserverHookSpec(
     val after: Boolean = false,
 )
 
+internal enum class ShortXCoreRuntimeHook {
+    PROCESS_DEATH, TASK_REMOVAL, BACK_NAVIGATION, ASSISTANT
+}
+
 internal object ShortXCompatHookCatalog {
+    /** Install only the observed method families that have an active subscriber. */
+    fun subscribedObservers(eventTypes: Set<String>): List<ShortXObserverHookSpec> =
+        systemServerObservers.filter { it.eventType in eventTypes }
+
+    /** Existing system_server lifecycle hooks are also subscription-driven. */
+    fun subscribedCoreRuntimeHooks(eventTypes: Set<String>): Set<ShortXCoreRuntimeHook> = buildSet {
+        if ("android.event.app_process_stopped" in eventTypes) add(ShortXCoreRuntimeHook.PROCESS_DEATH)
+        if ("android.event.task_removed" in eventTypes) add(ShortXCoreRuntimeHook.TASK_REMOVAL)
+        if ("android.event.back_navigation_started" in eventTypes ||
+            "android.event.back_navigation_finished" in eventTypes) add(ShortXCoreRuntimeHook.BACK_NAVIGATION)
+        if ("android.event.assistant_activated" in eventTypes) add(ShortXCoreRuntimeHook.ASSISTANT)
+    }
+
     val systemServerObservers: List<ShortXObserverHookSpec> = listOf(
         ShortXObserverHookSpec(
             id = "ams-start",

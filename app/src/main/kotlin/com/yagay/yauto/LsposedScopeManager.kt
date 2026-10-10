@@ -194,7 +194,11 @@ fun recommendedLsposedScopes(
 private val PACKAGE_NAME = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
 
 private fun workspaceFeatureRefs(workspace: WorkspaceData): Sequence<FeatureRef> = sequence {
-    workspace.automations.forEach { automation ->
+    workspace.automations
+        .filter { automation ->
+            automation.enabled && (automation.category == null || automation.category !in workspace.disabledCategories)
+        }
+        .forEach { automation ->
         yieldAll(automation.activation.events)
         yieldAll(automation.activation.states)
         yieldAll(predicateFeatureRefs(automation.activation.condition))
@@ -223,7 +227,7 @@ private fun predicateFeatureRefs(node: PredicateNode?): Sequence<FeatureRef> = s
 private fun actionFeatureRefs(nodes: List<ActionNode>): Sequence<FeatureRef> = sequence {
     nodes.forEach { node ->
         when (node) {
-            is ActionNode.Action -> yield(node.feature)
+            is ActionNode.Action -> if (node.enabled) yield(node.feature)
             is ActionNode.If -> {
                 yieldAll(predicateFeatureRefs(node.condition))
                 yieldAll(actionFeatureRefs(node.thenActions))

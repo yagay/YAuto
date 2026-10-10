@@ -311,7 +311,7 @@ class YAutoXposedModule : XposedModule() {
             }.onSuccess { uid ->
                 yAutoUid.set(uid.toLong())
             }
-            installSystemRuntimeHooks(context, classLoader)
+            // Install event hook families on demand after the authenticated subscription update.
             log(Log.INFO, "YAuto", "System bridge ready")
         } catch (error: Exception) {
             systemRegistered.set(false)
@@ -321,11 +321,15 @@ class YAutoXposedModule : XposedModule() {
 
 
 
-    private fun installSystemRuntimeHooks(context: Context, classLoader: ClassLoader) {
-        installProcessDeathHooks(context, classLoader)
-        installTaskRemovedHooks(context, classLoader)
-        installBackNavigationHooks(context, classLoader)
-        installAssistantHooks(context, classLoader)
+    private fun installSystemRuntimeHooks(context: Context, classLoader: ClassLoader, eventTypes: Set<String>) {
+        ShortXCompatHookCatalog.subscribedCoreRuntimeHooks(eventTypes).forEach { family ->
+            when (family) {
+                ShortXCoreRuntimeHook.PROCESS_DEATH -> installProcessDeathHooks(context, classLoader)
+                ShortXCoreRuntimeHook.TASK_REMOVAL -> installTaskRemovedHooks(context, classLoader)
+                ShortXCoreRuntimeHook.BACK_NAVIGATION -> installBackNavigationHooks(context, classLoader)
+                ShortXCoreRuntimeHook.ASSISTANT -> installAssistantHooks(context, classLoader)
+            }
+        }
     }
 
     private fun installProcessDeathHooks(context: Context, classLoader: ClassLoader) {
@@ -471,12 +475,10 @@ class YAutoXposedModule : XposedModule() {
         ) {
             installShortXInputHooks(context, classLoader)
         }
-        val observerTypes = ShortXCompatHookCatalog.systemServerObservers
-            .asSequence()
-            .map { it.eventType }
-            .toSet()
-        if (eventTypes.any { it in observerTypes }) {
-            installShortXObserverHooks(context, classLoader)
+        installSystemRuntimeHooks(context, classLoader, eventTypes)
+        val observers = ShortXCompatHookCatalog.subscribedObservers(eventTypes)
+        if (observers.isNotEmpty()) {
+            installShortXObserverHooks(context, classLoader, observers)
         }
         if ("android.event.accessibility_user_state_created" in eventTypes) {
             installShortXAccessibilityUserStateConstructorHook(context, classLoader)
@@ -617,8 +619,12 @@ class YAutoXposedModule : XposedModule() {
         return uid >= 0 && Binder.getCallingUid() == uid
     }
 
-    private fun installShortXObserverHooks(context: Context, classLoader: ClassLoader) {
-        ShortXCompatHookCatalog.systemServerObservers.forEach { spec ->
+    private fun installShortXObserverHooks(
+        context: Context,
+        classLoader: ClassLoader,
+        requested: List<ShortXObserverHookSpec>,
+    ) {
+        requested.forEach { spec ->
             spec.classNames.forEach { className ->
                 val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
                 clazz.declaredMethods

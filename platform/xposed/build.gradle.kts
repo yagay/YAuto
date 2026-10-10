@@ -11,4 +11,5 @@ dependencies {
     implementation(project(":core:diagnostics"))
     implementation(libs.kotlinx.coroutines.android)
     compileOnly("io.github.libxposed:api:102.0.0")
+    testImplementation(libs.junit)
 }
