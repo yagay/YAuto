@@ -36,22 +36,29 @@ class FeatureMethodExplanationsTests(unittest.TestCase):
         self.assertIn("onSelect(item)", source)
         self.assertIn("selectedMemberId = it.descriptor.id.value", source)
 
-    def test_auto_guide_preserves_specific_permissions_without_backend_switches(self):
+    def test_feature_config_exposes_only_clickable_permissions(self):
         editor = GENERIC.read_text(encoding="utf-8")
         summary = (GENERIC.parent / "AutoImplementationSummary.kt").read_text(encoding="utf-8")
+        contract = (GENERIC.parent / "FeaturePermissionGateway.kt").read_text(encoding="utf-8")
         registry = (ROOT / "core/registry/src/main/kotlin/com/yagay/yauto/core/registry/FeatureAccessMetadata.kt").read_text(encoding="utf-8")
-        resolver = RESOLVER.read_text(encoding="utf-8")
+        app = (ROOT / "app/src/main/kotlin/com/yagay/yauto/YAutoAppScreen.kt").read_text(encoding="utf-8")
+        bridge = (ROOT / "app/src/main/kotlin/com/yagay/yauto/FeaturePermissionBridge.kt").read_text(encoding="utf-8")
         self.assertIn("AutoImplementationSummary(descriptor, initial)", editor)
+        self.assertNotIn("AccessRequirementBadges(descriptor)", editor)
         self.assertNotIn("BackendChoiceEditor(", editor)
         self.assertNotIn("MethodChoiceEditor(", editor)
-        self.assertIn("mandatoryAccessRequirements()", editor)
         self.assertIn("mandatoryAccessRequirements()", summary)
-        self.assertIn("requiresRootToRun()", summary)
-        self.assertIn("option.requirements", summary)
-        self.assertIn("option.backendId", summary)
+        self.assertIn("option.requirements.count", summary)
+        self.assertIn("permissionsForFeature(", summary)
+        self.assertIn("LocalFeaturePermissionGateway.current", summary)
+        self.assertIn("gateway?.request(permission)", summary)
+        self.assertNotIn("implementation_optimal_automatic", summary)
+        self.assertNotIn("implementation_path_permission_format", summary)
         self.assertIn("fun FeatureDescriptor.mandatoryAccessRequirements()", registry)
-        self.assertIn("implementationDescription(descriptor.id.value) ?: description(descriptor)", resolver)
-        self.assertIn("feature_backend_${idKey}_${backendKey}_description", resolver)
+        self.assertIn("FeaturePermissionGateway", contract)
+        self.assertIn("LocalFeaturePermissionGateway provides permissionGateway", app)
+        self.assertIn("rememberLauncherForActivityResult", bridge)
+        self.assertIn("graph.shizuku.requestPermission", bridge)
 
     def test_backend_permission_explanations_cover_each_kind_in_both_locales(self):
         for locale in ("values", "values-zh-rCN"):
