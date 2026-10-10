@@ -1,6 +1,10 @@
 package com.yagay.yauto.platform.root
 
 import com.yagay.yauto.core.diagnostics.CommandOutput
+import com.yagay.yauto.core.capability.PrivilegedOperationContract
+import com.yagay.yauto.core.capability.SystemOperations
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -17,5 +21,10 @@ class RootFailureResultTest {
     @Test fun failureNeverReturnsNullOrBlank() {
         assertNotNull(rootCommandFailureMessage(CommandOutput(77, "", "")))
         assertEquals("invalid argument", rootCommandFailureMessage(CommandOutput(2, "invalid argument", "")))
+    }
+    @Test fun privilegedOperationContractDoesNotOverclaimRootSupport() {
+        assertTrue(PrivilegedOperationContract.rootSystemUiSupported(SystemOperations.SLEEP))
+        assertFalse(PrivilegedOperationContract.rootSystemUiSupported(SystemOperations.SENSORS_OFF_QUERY))
+        assertTrue(PrivilegedOperationContract.lsposedSystemUiSupported(SystemOperations.SENSORS_OFF_QUERY))
     }
 }
