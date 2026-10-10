@@ -252,7 +252,7 @@ internal object ShortXVerifiedBatchMappings {
             } else null
             "InputText" -> if (fields.onlyBusinessFields(1)) fields.string(1)?.let {
                 feature(any, importerId, "accessibility.input_text", mapOf(text("text", it)))
-            } else null else null
+            } else null
             "InputTap" -> if (fields.onlyBusinessFields(1, 2)) {
                 val x = fields.string(1) ?: return null
                 val y = fields.string(2) ?: return null

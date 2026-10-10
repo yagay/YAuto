@@ -576,6 +576,85 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals(ConfigValue.StringValue("auto"), actions[4].config["mode"])
     }
 
+    @Test fun `network toggles preserve toggle-current rather than on semantics`() {
+        val expected = mapOf(
+            "ToggleWifi" to "android.wifi.set",
+            "ToggleBT" to "android.bluetooth.set",
+            "ToggleNFC" to "android.nfc.set",
+            "ToggleLocation" to "android.location.enabled.set",
+        )
+        expected.forEach { (source, target) ->
+            val native = importAction(source, byteArrayOf())
+            assertEquals(target, native.typeId)
+            assertEquals(ConfigValue.BooleanValue(true), native.config["toggleCurrent"])
+            assertEquals("compat.source.action", importAction(source, message(varintField(1, 1))).typeId)
+        }
+        val theme = importAction("ToggleDarkMode", byteArrayOf())
+        assertEquals("android.display.dark_mode.set", theme.typeId)
+        assertEquals(ConfigValue.StringValue("toggle"), theme.config["mode"])
+    }
+
+    @Test fun `ShortX source input and clipboard carry exact editable parameters`() {
+        val input = importAction("InputText", message(field(1, "Hello World")))
+        assertEquals("accessibility.input_text", input.typeId)
+        assertEquals(ConfigValue.StringValue("Hello World"), input.config["text"])
+        val tap = importAction("InputTap", message(field(1, "540"), field(2, "960")))
+        assertEquals("accessibility.gesture.tap", tap.typeId)
+        assertEquals(ConfigValue.NumberValue(540.0), tap.config["x"])
+        assertEquals("compat.source.action", importAction("InputTap", message(field(1, "{screenX}"), field(2, "2"))).typeId)
+        val swipe = importAction("InputSwipe", message(field(1, "540"), field(2, "1500"),
+            field(3, "540"), field(4, "500"), field(5, "300")))
+        assertEquals("accessibility.gesture.swipe", swipe.typeId)
+        assertEquals(ConfigValue.NumberValue(300.0), swipe.config["durationMs"])
+        assertEquals("compat.source.action", importAction("InputSwipe", message(field(1, "540"), field(2, "1500"),
+            field(3, "540"), field(4, "500"), field(5, "0"))).typeId)
+        val clip = importAction("WriteClipboard", message(field(1, "copied")))
+        assertEquals("android.clipboard.write", clip.typeId)
+        assertEquals(ConfigValue.StringValue("copied"), clip.config["text"])
+        assertEquals("compat.source.action", importAction("WriteClipboard", message(field(1, "copied"), field(2, "/sdcard/photo.png"))).typeId)
+    }
+
+    @Test fun `source hotspot regex replace and device volume use precise existing executors`() {
+        val hotspot = importAction("SetHotSpotEnabled", message(varintField(1, 1)))
+        assertEquals("android.network.tether.set", hotspot.typeId)
+        assertEquals(ConfigValue.StringValue("wifi"), hotspot.config["type"])
+        assertEquals(ConfigValue.BooleanValue(true), hotspot.config["enabled"])
+        val regex = importAction("ReplaceRegex", message(field(1, "abc123"), field(2, "[0-9]+"), field(3, "_")))
+        assertEquals("data.regex.replace", regex.typeId)
+        assertEquals(ConfigValue.StringValue("replaceResult"), regex.config["resultVariable"])
+        val volume = importAction("AdjustVolume", message(varintField(1, 1), varintField(2, 1)))
+        assertEquals("android.audio.volume.adjust", volume.typeId)
+        assertEquals(ConfigValue.StringValue("raise"), volume.config["direction"])
+        assertEquals(ConfigValue.BooleanValue(true), volume.config["global"])
+        assertEquals(ConfigValue.BooleanValue(true), volume.config["showUi"])
+        assertEquals("compat.source.action", importAction("AdjustVolume", message(varintField(1, 99))).typeId)
+    }
+
+    @Test fun `expanded ShortX JSON actions import only verified exact configurations`() {
+        val json = """{"title":"full-batch","actions":[
+            {"@type":"type.googleapis.com/shortx.ToggleWifi"},
+            {"@type":"type.googleapis.com/shortx.ToggleDarkMode"},
+            {"@type":"type.googleapis.com/shortx.SetHotSpotEnabled","enable":false},
+            {"@type":"type.googleapis.com/shortx.InputTap","xs":"30.5","ys":"60"},
+            {"@type":"type.googleapis.com/shortx.InputSwipe","startXS":"100","startYS":"200","endXS":"150","endYS":"250","swipeTimeS":"420"},
+            {"@type":"type.googleapis.com/shortx.WriteClipboard","text":"hello"},
+            {"@type":"type.googleapis.com/shortx.ReplaceRegex","string":"abc","regex":"a","replacement":"z"},
+            {"@type":"type.googleapis.com/shortx.AdjustVolume","direction":101,"showUI":true},
+            {"@type":"type.googleapis.com/shortx.ToggleNFC","enabled":true},
+            {"@type":"type.googleapis.com/shortx.InputTap","xs":"{x}","ys":"200"},
+            {"@type":"type.googleapis.com/shortx.WriteClipboard","filePath":"/sdcard/1.txt"}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("full-batch.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        val list = result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature }
+        assertEquals(listOf("android.wifi.set", "android.display.dark_mode.set", "android.network.tether.set",
+            "accessibility.gesture.tap", "accessibility.gesture.swipe", "android.clipboard.write",
+            "data.regex.replace", "android.audio.volume.adjust", "compat.source.action",
+            "compat.source.action", "compat.source.action"), list.map { it.typeId })
+        assertEquals(ConfigValue.NumberValue(30.5), list[3].config["x"])
+        assertEquals(ConfigValue.StringValue("toggle_mute"), list[7].config["direction"])
+    }
+
     private fun assertBoolean(source: String, target: String, key: String, value: Boolean) {
         val feature = importAction(source, message(varintField(1, if (value) 1 else 0)))
         assertEquals(target, feature.typeId)
