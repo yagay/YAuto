@@ -17,6 +17,7 @@ MACRO = ROOT / "tools/macrodroid_reviewed_names.csv"
 MERGES = ROOT / "tools/verified_picker_merges.csv"
 HOOKS = ROOT / "platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/ShortXCompatHookCatalog.kt"
 HOOK_EVENTS = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidShortXHookEventFeaturePack.kt"
+LIFECYCLE_EVENTS = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidLsposedLifecycleFeaturePack.kt"
 
 
 def names_in_branches(source: str) -> set[str]:
@@ -42,8 +43,11 @@ def inventory() -> dict:
         groups = list(csv.DictReader(f))
     hook_source = HOOKS.read_text(encoding="utf-8")
     hook_events = HOOK_EVENTS.read_text(encoding="utf-8")
+    lifecycle_events = LIFECYCLE_EVENTS.read_text(encoding="utf-8")
     hooks = dict(re.findall(r'id = "([^"]+)"[\s\S]*?eventType = "([^"]+)"', hook_source.split("val systemServerObservers:", 1)[1].split("val behaviorHooks:", 1)[0]))
-    unknown_hooks = sorted(set(hooks.values()) - set(re.findall(r'event\(registry, "([^"]+)"', hook_events)))
+    declared_hooks = set(re.findall(r'event\(registry, "([^"]+)"', hook_events))
+    declared_hooks.update(re.findall(r'FeatureId\("(android\.event\.[^"]+)"\)', lifecycle_events))
+    unknown_hooks = sorted(set(hooks.values()) - declared_hooks)
     rows = []
     for name in types:
         binary_native = name in binary

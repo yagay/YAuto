@@ -17,6 +17,7 @@ class AndroidShortXHookEventFeaturePack : FeaturePack {
         event(registry, "android.event.activity_manager_shell_command", "Activity manager shell command", "Run when ActivityManagerShellCommand receives a command", FeatureCategory.SYSTEM)
         event(registry, "android.event.input_manager_started", "Input manager started", "Run when InputManagerService starts", FeatureCategory.SYSTEM)
         event(registry, "android.event.window_manager_ready", "Window manager ready", "Run when WindowManagerService finishes systemReady", FeatureCategory.SYSTEM)
+        event(registry, "android.event.app_process_stopped", "App process stopped", "Run when system_server observes an application process stopping", FeatureCategory.APP)
         event(registry, "android.event.activity_started", "Activity started by system", "Run when ActivityTaskSupervisor starts an Activity", FeatureCategory.APP)
         event(registry, "android.event.task_cleanup", "Task cleanup", "Run when ActivityTaskSupervisor cleans up a removed task", FeatureCategory.APP)
         event(registry, "android.event.activity_resumed", "Activity resumed by system", "Run when system_server reports an Activity resumed", FeatureCategory.APP)
