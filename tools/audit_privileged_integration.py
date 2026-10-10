@@ -39,6 +39,7 @@ def collect_inventory() -> dict:
     catalog = (XPOSED / "ShortXCompatHookCatalog.kt").read_text(encoding="utf-8")
     backend = (XPOSED / "XposedBackend.kt").read_text(encoding="utf-8")
     module = (XPOSED / "YAutoXposedModule.kt").read_text(encoding="utf-8")
+    module += (XPOSED / "XposedSystemBridgeRegistration.kt").read_text(encoding="utf-8")
     protocol = (XPOSED / "SystemBridgeProtocol.kt").read_text(encoding="utf-8")
     android_events = set().union(*(set(EVENT.findall(src)) for _, src in android_sources))
     subscribed_events = set(CATALOG_EVENT.findall(catalog))
