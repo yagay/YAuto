@@ -162,7 +162,7 @@ fun MacroHomeScreen(
                 onSettings = onOpenSettings,
                 onBackup = onBackup,
                 onRestore = onRestore,
-                onManual = onRunManual,
+                onManual = { showTestCenter = true },
             )
         }
     }
