@@ -2,10 +2,13 @@ package com.yagay.yauto.platform.accessibility
 
 import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
+import com.yagay.yauto.core.capability.CapabilityResult
+import com.yagay.yauto.core.capability.SystemOperations
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.long
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 
 class AccessibilityFeaturePack(
@@ -51,7 +54,7 @@ class AccessibilityFeaturePack(
             ActionExecutionResult(result.success, result.value, result.message)
         }
 
-        action(registry, AccessibilityOperations.GLOBAL_ACTION, "Global UI action", "Perform an Android accessibility global action", listOf(FieldSchema.Choice("action", "Action", true, listOf("back", "home", "recents", "notifications", "quick_settings", "power_dialog", "lock_screen"))), setOf("back", "home", "recents", "quick settings", "accessibility"))
+        registerDualMethodGlobalAction(registry)
 
         registry.registerAction(
             FeatureDescriptor(
@@ -618,6 +621,100 @@ class AccessibilityFeaturePack(
         val classContains = feature.config.string("classContains").trim()
         return (expectedPackage.isBlank() || pkg == expectedPackage) &&
             (classContains.isBlank() || className.contains(classContains, ignoreCase = true))
+    }
+
+    private fun registerDualMethodGlobalAction(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId(AccessibilityOperations.GLOBAL_ACTION),
+                FeatureKind.ACTION,
+                "Global UI action",
+                "Choose MacroDroid (Accessibility) or ShortX (Root/LSPosed where supported)",
+                FeatureCategory.UI_AUTOMATION,
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY, CapabilityIds.SYSTEM_UI, CapabilityIds.PRIVILEGED_SHELL),
+                implementationOptions = listOf(
+                    FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+                    FeatureImplementationOption("lsposed", setOf(AccessRequirement.LSPOSED), restartRequired = true),
+                    FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+                    FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+                ),
+                fields = listOf(FieldSchema.Choice(
+                    "action", "Action", true,
+                    listOf("back", "home", "recents", "notifications", "quick_settings", "power_dialog", "lock_screen"),
+                )),
+                keywords = setOf("macro", "macrodroid", "shortx", "root", "lsposed", "back", "home", "quick settings"),
+                ownerPackId = id,
+            )
+        ) { feature, ctx ->
+            val action = feature.config.string("action")
+            val shortX = shortXGlobalActionRequest(action, feature.preferredBackendId())
+            if (action !in setOf("back", "home", "recents", "notifications", "quick_settings", "power_dialog", "lock_screen")) {
+                return@registerAction ActionExecutionResult(false, message = userText("feature.dual_method_invalid_action"))
+            }
+            val requested = feature.preferredMethod()
+            val effectiveMethod = if (shortX == null && requested == FeatureMethod.AUTO) {
+                FeatureMethod.MACRODROID
+            } else requested
+            val result = routeFeatureMethod(
+                method = effectiveMethod,
+                macroSupported = true,
+                macrodroid = {
+                    ctx.executeCapability(
+                        feature.typeId,
+                        CapabilityRequest(
+                            capability = CapabilityIds.ACCESSIBILITY,
+                            operationId = AccessibilityOperations.GLOBAL_ACTION,
+                            payload = mapOf("action" to ConfigValue.StringValue(action)),
+                            preferredBackendId = "accessibility",
+                            allowFallback = false,
+                        ),
+                    )
+                },
+                shortx = {
+                    if (shortX == null) CapabilityResult(
+                        false, message = userText("feature.dual_method_no_shortx", action),
+                    ) else ctx.executeCapability(feature.typeId, shortX)
+                },
+                succeeded = { it.success },
+            )
+            ActionExecutionResult(
+                result?.success == true,
+                result?.value ?: ConfigValue.NullValue,
+                result?.message ?: if (result == null) userText("feature.dual_method_no_macro", action) else null,
+            )
+        }
+    }
+
+    private fun shortXGlobalActionRequest(action: String, preferredBackend: String?): CapabilityRequest? {
+        val operation = when (action) {
+            "lock_screen" -> SystemOperations.SLEEP
+            "notifications" -> SystemOperations.EXPAND_NOTIFICATIONS
+            "quick_settings" -> SystemOperations.EXPAND_QUICK_SETTINGS
+            else -> null
+        }
+        if (operation != null) {
+            return CapabilityRequest(
+                capability = CapabilityIds.SYSTEM_UI,
+                operationId = operation,
+                preferredBackendId = preferredBackend,
+                allowFallback = preferredBackend == null,
+            )
+        }
+        // These public input key codes have a Root/Shizuku path but no verified
+        // system_server LSPosed injection route on every OEM.
+        val code = when (action) {
+            "back" -> 4
+            "home" -> 3
+            "recents" -> 187
+            else -> return null
+        }
+        return CapabilityRequest(
+            capability = CapabilityIds.PRIVILEGED_SHELL,
+            operationId = "android.input.keyevent",
+            payload = mapOf("command" to ConfigValue.StringValue("input keyevent $code")),
+            preferredBackendId = preferredBackend,
+            allowFallback = preferredBackend == null,
+        )
     }
 
     private fun action(registry: FeatureRegistry, typeId: String, title: String, description: String, fields: List<FieldSchema>, keywords: Set<String>) {

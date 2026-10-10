@@ -281,8 +281,8 @@ class AndroidLsposedFeaturePack : FeaturePack {
             FeatureDescriptor(
                 FeatureId("android.lsposed.system.operation"),
                 FeatureKind.ACTION,
-                "LSPosed system operation",
-                "Run a fixed system_server operation with LSPosed first and Root/Shizuku fallback",
+                "System controls",
+                "Switch between MacroDroid Accessibility methods and ShortX LSPosed/Root/Shizuku methods",
                 FeatureCategory.SYSTEM,
                 fields = listOf(
                     FieldSchema.Choice(
@@ -295,8 +295,14 @@ class AndroidLsposedFeaturePack : FeaturePack {
                         ),
                     )
                 ),
-                capabilities = setOf(CapabilityIds.SYSTEM_UI),
-                keywords = setOf("lsposed", "system server", "power", "status bar", "quick settings"),
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY, CapabilityIds.SYSTEM_UI),
+                implementationOptions = listOf(
+                    FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+                    FeatureImplementationOption("lsposed", setOf(AccessRequirement.LSPOSED), restartRequired = true),
+                    FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+                    FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+                ),
+                keywords = setOf("macrodroid", "shortx", "accessibility", "lsposed", "root", "system controls", "power", "quick settings"),
                 ownerPackId = id,
             )
         ) { feature, ctx ->
@@ -312,14 +318,42 @@ class AndroidLsposedFeaturePack : FeaturePack {
                 "shutdown" -> com.yagay.yauto.core.capability.SystemOperations.SHUTDOWN
                 else -> return@registerAction ActionExecutionResult(false, message = userText("feature.lsposed_system_operation_invalid"))
             }
-            val result = ctx.capabilities.execute(
-                CapabilityRequest(
-                    capability = CapabilityIds.SYSTEM_UI,
-                    operationId = operation,
-                    allowFallback = true,
-                )
+            val accessibleAction = when (operation) {
+                com.yagay.yauto.core.capability.SystemOperations.SLEEP -> "lock_screen"
+                com.yagay.yauto.core.capability.SystemOperations.EXPAND_NOTIFICATIONS -> "notifications"
+                com.yagay.yauto.core.capability.SystemOperations.EXPAND_QUICK_SETTINGS -> "quick_settings"
+                else -> null
+            }
+            val result = routeFeatureMethod(
+                method = feature.preferredMethod(),
+                macroSupported = accessibleAction != null,
+                macrodroid = {
+                    ctx.executeCapability(feature.typeId, CapabilityRequest(
+                        capability = CapabilityIds.ACCESSIBILITY,
+                        operationId = "accessibility.global_action",
+                        payload = mapOf("action" to ConfigValue.StringValue(accessibleAction.orEmpty())),
+                        preferredBackendId = "accessibility",
+                        allowFallback = false,
+                    ))
+                },
+                shortx = {
+                    val backend = feature.preferredBackendId()
+                    ctx.executeCapability(feature.typeId, CapabilityRequest(
+                        capability = CapabilityIds.SYSTEM_UI,
+                        operationId = operation,
+                        preferredBackendId = backend,
+                        allowFallback = backend == null,
+                    ))
+                },
+                succeeded = { it.success },
             )
-            ActionExecutionResult(result.success, result.value, result.message)
+            ActionExecutionResult(
+                result?.success == true,
+                result?.value ?: ConfigValue.NullValue,
+                result?.message ?: if (result == null)
+                    userText("feature.dual_method_no_macro", feature.config.string("operation"))
+                else null,
+            )
         }
     }
 
