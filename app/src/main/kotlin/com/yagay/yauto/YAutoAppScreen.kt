@@ -49,6 +49,7 @@ import com.yagay.yauto.ui.editor.FeatureAvailabilityTone
 import com.yagay.yauto.ui.editor.FeatureAvailabilityUi
 import com.yagay.yauto.ui.editor.LocalFeatureAvailability
 import com.yagay.yauto.ui.editor.LocalEditorVariableNames
+import com.yagay.yauto.ui.editor.LocalFeaturePermissionGateway
 import com.yagay.yauto.ui.editor.LocalHardwareKeyCatalogLoader
 import com.yagay.yauto.ui.editor.LocalHardwareKeyCapture
 import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
@@ -101,6 +102,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     var importSummary by remember { mutableStateOf<String?>(null) }
     var runtimeSummary by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val permissionGateway = rememberFeaturePermissionGateway(graph)
     val saveLock = remember { Mutex() }
     val featureDescriptors = remember(graph) { graph.features.allDescriptors() }
     val featureHealthSnapshot by graph.featureHealth.snapshot.collectAsState()
@@ -343,6 +345,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
         AppPage.AUTOMATION -> CompositionLocalProvider(
             LocalFeatureAvailability provides featureAvailability,
             LocalEditorVariableNames provides (workspace.globalVariables.keys + workspace.persistentVariables.keys),
+            LocalFeaturePermissionGateway provides permissionGateway,
             LocalHardwareKeyCatalogLoader provides { graph.hardwareKeys.load() },
             LocalHardwareKeyCapture provides { timeoutMs -> captureHardwareKey(graph, timeoutMs) },
         ) {
@@ -371,6 +374,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
         AppPage.FLOW -> CompositionLocalProvider(
             LocalFeatureAvailability provides featureAvailability,
             LocalEditorVariableNames provides (workspace.globalVariables.keys + workspace.persistentVariables.keys),
+            LocalFeaturePermissionGateway provides permissionGateway,
             LocalHardwareKeyCatalogLoader provides { graph.hardwareKeys.load() },
             LocalHardwareKeyCapture provides { timeoutMs -> captureHardwareKey(graph, timeoutMs) },
         ) {
