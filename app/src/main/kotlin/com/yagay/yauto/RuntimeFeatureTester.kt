@@ -9,6 +9,7 @@ import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.registry.FeatureExecutionContext
 import com.yagay.yauto.core.registry.FeatureKind
+import com.yagay.yauto.core.registry.applyDefaults
 import com.yagay.yauto.core.registry.VariableAccess
 import com.yagay.yauto.ui.design.R as TextR
 import com.yagay.yauto.ui.editor.FeatureTestGateway
