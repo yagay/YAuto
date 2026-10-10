@@ -89,13 +89,7 @@ abstract class XposedHookInstallers : XposedMethodHookInstallers() {
                     emitPackageRuntimeEvent(
                         context,
                         "android.event.process_uncaught_exception",
-                        mapOf(
-                            "package" to packageName,
-                            "thread" to thread?.name.orEmpty(),
-                            "exceptionClass" to error?.javaClass?.name.orEmpty(),
-                            "message" to error?.message.orEmpty().take(1024),
-                            "method" to method.name,
-                        ),
+                        XposedUncaughtExceptionSnapshot.create(packageName, thread, error, method.name),
                     )
                     chain.proceed()
                 }
