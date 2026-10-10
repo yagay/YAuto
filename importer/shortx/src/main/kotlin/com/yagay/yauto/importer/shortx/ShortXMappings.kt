@@ -429,9 +429,9 @@ internal object ShortXMappings {
         (Json.parseToJsonElement(any.value.toString(Charsets.UTF_8)).jsonObject["note"] as? JsonPrimitive)?.contentOrNull
     } else ProtoFields(any.value).string(99)
 
-    fun suggestedConditionFeature(typeUrl: String): String? = ShortXFeatureSuggestions.suggestedConditionFeature(typeUrl)
-    fun suggestedEventFeature(typeUrl: String): String? = ShortXFeatureSuggestions.suggestedEventFeature(typeUrl)
-    fun suggestedActionFeature(typeUrl: String): String? = ShortXFeatureSuggestions.suggestedActionFeature(typeUrl)
+    fun suggestedConditionFeature(typeUrl: String): String? = ShortXNativeSuggestionCatalog.suggestedConditionFeature(typeUrl)
+    fun suggestedEventFeature(typeUrl: String): String? = ShortXNativeSuggestionCatalog.suggestedEventFeature(typeUrl)
+    fun suggestedActionFeature(typeUrl: String): String? = ShortXNativeSuggestionCatalog.suggestedActionFeature(typeUrl)
 
     internal fun nativeShowRecentApps(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         if (!fields.onlyBusinessFields(1)) return null
