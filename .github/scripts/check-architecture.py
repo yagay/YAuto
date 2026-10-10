@@ -74,6 +74,27 @@ if capture_screen.exists() and "suspend fun captureHardwareKey(" in capture_scre
 if not capture_coordinator.exists():
     errors.append("HardwareKeyCaptureCoordinator.kt is required for unified key event capture")
 
+# Native Android overlays and Xposed package targeting each have one authoritative policy.
+android_surface_dir = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android"
+overlay_controller = android_surface_dir / "OverlaySurfaceController.kt"
+panel_factory = android_surface_dir / "OverlayPanelFactory.kt"
+if not panel_factory.exists() or "fun createOverlayBasePanel(" not in panel_factory.read_text(encoding="utf-8"):
+    errors.append("OverlayPanelFactory must own the shared overlay panel layout")
+if overlay_controller.exists():
+    controller_text = overlay_controller.read_text(encoding="utf-8")
+    if "fun basePanel(" in controller_text:
+        errors.append("OverlaySurfaceController must use the shared panel factory instead of a private panel implementation")
+    if "createOverlayBasePanel(context," not in controller_text:
+        errors.append("OverlaySurfaceController must delegate panel appearance to OverlayPanelFactory")
+
+xposed_dir = ROOT / "platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed"
+xposed_router = xposed_dir / "XposedPackageHookRouter.kt"
+xposed_entry = xposed_dir / "YAutoXposedModule.kt"
+if not xposed_router.exists() or "fun routeXposedPackageHooks(" not in xposed_router.read_text(encoding="utf-8"):
+    errors.append("XposedPackageHookRouter must own system package-to-Hook routing")
+if xposed_entry.exists() and "routeXposedPackageHooks(" not in xposed_entry.read_text(encoding="utf-8"):
+    errors.append("YAutoXposedModule must delegate package hook routing to the shared router")
+
 # Third-party compatibility parsers must stay behind the lazy compatibility catalog rather than
 # becoming direct AppGraph dependencies.
 app_graph = ROOT / "app/src/main/kotlin/com/yagay/yauto/AppGraph.kt"
