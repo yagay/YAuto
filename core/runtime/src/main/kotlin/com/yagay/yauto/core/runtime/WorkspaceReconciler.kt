@@ -130,14 +130,19 @@ class ReconcilingWorkspaceRepository(
     }
 
     override suspend fun update(transform: (WorkspaceData) -> WorkspaceData): WorkspaceData {
-        val updated = cacheLock.withLock {
+        val (updated, changed) = cacheLock.withLock {
             val current = cached ?: reconciler.reconcile(delegate.load())
             val next = reconciler.reconcile(transform(current))
-            delegate.save(next)
-            cached = next
-            next
+            if (next == current) {
+                cached = current
+                current to false
+            } else {
+                delegate.save(next)
+                cached = next
+                next to true
+            }
         }
-        notifyListeners(updated)
+        if (changed) notifyListeners(updated)
         return updated
     }
 

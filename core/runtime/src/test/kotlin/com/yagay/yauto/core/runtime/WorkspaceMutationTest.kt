@@ -29,4 +29,24 @@ class WorkspaceMutationTest {
         assertEquals(50, repository.load().persistentVariables.size)
         assertEquals(50, delegate.value.persistentVariables.size)
     }
+    @Test fun unchangedTransactionDoesNotWriteOrNotify() = runBlocking {
+        val delegate = object : WorkspaceRepository {
+            var data = WorkspaceData()
+            var writes = 0
+            override suspend fun load(): WorkspaceData = data
+            override suspend fun save(data: WorkspaceData) { this.data = data; writes++ }
+        }
+        val repository = ReconcilingWorkspaceRepository(delegate, FeatureRegistry())
+        var notifications = 0
+        repository.load()
+        val subscription = repository.addListener { notifications++ }
+        repository.update { it }
+        assertEquals(0, delegate.writes)
+        assertEquals(1, notifications)
+        repository.update { it.copy(runtimeEnabled = false) }
+        assertEquals(1, delegate.writes)
+        assertEquals(2, notifications)
+        subscription.close()
+    }
+
 }
