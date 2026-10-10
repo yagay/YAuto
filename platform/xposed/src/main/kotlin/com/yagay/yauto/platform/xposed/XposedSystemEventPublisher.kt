@@ -11,7 +11,9 @@ internal class XposedSystemEventPublisher(
     private val state: XposedInstallationState,
     private val clockMillis: () -> Long = System::currentTimeMillis,
     private val broadcast: (Context, String, Map<String, Any?>, Long) -> Unit =
-        ::broadcastXposedRuntimeEvent,
+        { context, type, extras, timestamp ->
+            broadcastXposedRuntimeEvent(context, type, extras, timestamp)
+        },
 ) {
     fun emit(
         context: Context,
