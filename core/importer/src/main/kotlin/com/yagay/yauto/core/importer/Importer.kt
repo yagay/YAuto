@@ -165,7 +165,7 @@ class ImporterRegistry {
     }.getOrNull()
 
     private fun importSafely(importer: AutomationImporter, input: ImportInput): ImportResult =
-        runCatching { importer.import(input) }.getOrElse { error ->
+        runCatching { importer.import(input).validateImporterIdentity(importer.id, input.fileName) }.getOrElse { error ->
             ImportResult(
                 importerId = importer.id,
                 success = false,
