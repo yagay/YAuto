@@ -46,6 +46,7 @@ fun MacroHomeScreen(
     onDeleteAutomation: (Automation) -> Unit,
     onImport: () -> Unit,
     onRunManual: () -> Unit,
+    onTestSavedAutomation: (String) -> Unit,
     onOpenDiagnostics: () -> Unit,
     flows: List<Flow> = emptyList(),
     onNewFlow: () -> Unit = {},
@@ -175,6 +176,22 @@ fun MacroHomeScreen(
                         stringResource(R.string.test_center_description),
                         style = MaterialTheme.typography.bodySmall,
                     )
+                    Text(stringResource(R.string.test_center_saved_heading), style = MaterialTheme.typography.titleSmall)
+                    if (automations.isEmpty()) {
+                        Text(stringResource(R.string.test_center_no_automations), style = MaterialTheme.typography.bodySmall)
+                    } else {
+                        automations.take(12).forEach { automation ->
+                            OutlinedButton(
+                                onClick = {
+                                    showTestCenter = false
+                                    onTestSavedAutomation(automation.id.value)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(automation.name.ifBlank { automation.id.value }, maxLines = 1)
+                            }
+                        }
+                    }
                     OutlinedButton(
                         onClick = {
                             showTestCenter = false
