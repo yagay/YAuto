@@ -29,4 +29,6 @@ object SystemBridgeProtocol {
     const val HOOK_INSTALL_SESSION = "lsposed.hook.install_session"
     const val HOOK_DISABLE_SESSION = "lsposed.hook.disable_session"
     const val HOOK_QUERY_SESSION = "lsposed.hook.query_session"
+    const val HOOK_CRASH_GUARD_STATUS = "lsposed.hook.crash_guard.status"
+    const val HOOK_CRASH_GUARD_RESET = "lsposed.hook.crash_guard.reset"
 }

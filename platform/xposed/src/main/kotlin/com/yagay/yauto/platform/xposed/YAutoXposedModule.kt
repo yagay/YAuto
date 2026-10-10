@@ -37,6 +37,7 @@ class YAutoXposedModule : XposedModule() {
     private val enabledShortXBehaviors = AtomicReference<Set<String>>(emptySet())
     private val enabledPackageBehaviors = AtomicReference<Set<String>>(emptySet())
     private val methodSessions = MethodHookSessionRegistry()
+    private val crashGuards = ConcurrentHashMap<String, HookCrashGuard>()
     private val systemUiTileLabels = ConcurrentHashMap<String, String>()
     private val systemUiTileReceiverRegistered = AtomicBoolean(false)
     private val yAutoUid = AtomicLong(-1L)
@@ -72,11 +73,20 @@ class YAutoXposedModule : XposedModule() {
                 val result = chain.proceed()
                 val application = chain.thisObject as? Application
                 if (application != null) {
-                    runCatching {
-                        installShortXPackageHooks(application, param.packageName, param.classLoader)
-                    }.onFailure {
-                        log(Log.ERROR, "YAuto", "ShortX package hooks failed for ${param.packageName}", it)
+                    val guard = runCatching { HookCrashGuard(application) }.getOrNull()
+                    if (guard != null) crashGuards[param.packageName] = guard
+                    if (guard?.isQuarantined() != true) {
+                        runCatching {
+                            installShortXRuntimeInitHook(application, param.packageName, param.classLoader)
+                            guard?.arm("package-hooks")
+                            installShortXPackageHooks(application, param.packageName, param.classLoader)
+                        }.onFailure {
+                            log(Log.ERROR, "YAuto", "ShortX package hooks failed for ${param.packageName}", it)
+                        }
+                    } else {
+                        log(Log.WARN, "YAuto", "Hook crash-loop safe mode: ${param.packageName}")
                     }
+                    // Keep the signature-protected management receiver available.
                     registerAppHookBridge(application, param.packageName, param.classLoader)
                 }
                 result
@@ -1172,7 +1182,6 @@ class YAutoXposedModule : XposedModule() {
         packageName: String,
         classLoader: ClassLoader,
     ) {
-        installShortXRuntimeInitHook(context, packageName, classLoader)
         val infrastructurePackage = when {
             packageName == "com.android.systemui" -> {
                 installShortXSystemUiHooks(context, classLoader)
@@ -1219,6 +1228,7 @@ class YAutoXposedModule : XposedModule() {
                 hook(method).intercept { chain ->
                     val thread = chain.args.firstOrNull { it is Thread } as? Thread
                     val error = chain.args.firstOrNull { it is Throwable } as? Throwable
+                    if (error != null) runCatching { crashGuards[packageName]?.recordFatal(error) }
                     emitPackageRuntimeEvent(
                         context,
                         "android.event.process_uncaught_exception",
@@ -1745,7 +1755,21 @@ class YAutoXposedModule : XposedModule() {
                 try {
                     require(intent.getIntExtra("version", -1) == SystemBridgeProtocol.VERSION) { "Protocol mismatch" }
                     val operation = intent.getStringExtra("operation").orEmpty()
-                    if (operation == SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_SET) {
+                    if (operation == SystemBridgeProtocol.HOOK_CRASH_GUARD_STATUS ||
+                        operation == SystemBridgeProtocol.HOOK_CRASH_GUARD_RESET) {
+                        val guard = crashGuards[packageName] ?: error("Hook crash guard storage unavailable")
+                        val ok = if (operation == SystemBridgeProtocol.HOOK_CRASH_GUARD_RESET)
+                            guard.reset() else true
+                        response.putBoolean("success", ok)
+                        guard.status(response)
+                        if (operation == SystemBridgeProtocol.HOOK_CRASH_GUARD_RESET) {
+                            response.putBoolean("restartRequired", true)
+                        }
+                        if (!ok) response.putString("error", "Could not reset Hook crash guard")
+                    } else if (operation == SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_SET) {
+                        require(crashGuards[packageName]?.isQuarantined() != true) {
+                            "Hook crash-loop safe mode: reset then restart the target app"
+                        }
                         val behavior = intent.getStringExtra("behavior").orEmpty()
                         require(
                             behavior == SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_RENDERNODE_GUARD
@@ -1775,6 +1799,9 @@ class YAutoXposedModule : XposedModule() {
                         response.putBoolean("success", true)
                     } else {
                     require(operation == SystemBridgeProtocol.HOOK_INSTALL_SESSION) { "Unsupported hook operation" }
+                    require(crashGuards[packageName]?.isQuarantined() != true) {
+                        "Hook crash-loop safe mode: reset then restart the target app"
+                    }
                     val sessionId = intent.getStringExtra("sessionId").orEmpty().trim()
                     val eventToken = intent.getStringExtra("eventToken").orEmpty()
                     val className = intent.getStringExtra("className").orEmpty().trim()
@@ -1854,7 +1881,10 @@ class YAutoXposedModule : XposedModule() {
                             log(Log.WARN, "YAuto", "Hook target unavailable: $key", error)
                         }
                     }
-                    if (hookedCount > 0) methodSessions.activate(sessionId, eventToken)
+                    if (hookedCount > 0) {
+                        methodSessions.activate(sessionId, eventToken)
+                        crashGuards[packageName]?.arm("session:$sessionId")
+                    }
                     response.putBoolean("success", hookedCount > 0)
                     response.putInt("hookedCount", hookedCount)
                     response.putInt("newHookedCount", newlyHooked)
