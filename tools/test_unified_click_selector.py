@@ -46,12 +46,16 @@ class UnifiedClickSelectorTests(unittest.TestCase):
 
     def test_existing_generic_choices_and_backend_are_clickable(self):
         code = GENERIC.read_text(encoding="utf-8")
-        self.assertIn("private fun BackendChoiceEditor(", code)
-        self.assertIn("Modifier.fillMaxWidth().clickable(enabled = enabled)", code)
+        selectors = (GENERIC.parent / "ImplementationMethodEditor.kt").read_text(encoding="utf-8")
+        self.assertIn("BackendChoiceEditor(", code)
+        self.assertIn("internal fun BackendChoiceEditor(", selectors)
+        self.assertIn("Modifier.fillMaxWidth().clickable(enabled = enabled)", selectors)
         self.assertIn("field is FieldSchema.Choice -> Column(", code)
-        self.assertIn("RadioButton(", code)
+        self.assertIn("RadioButton(", selectors)
         self.assertIn("field is FieldSchema.Toggle -> Row(", code)
         self.assertIn("Switch(", code)
+        self.assertIn("internal fun MethodChoiceEditor(", selectors)
+        self.assertIn("FilterChip(", selectors)
 
 
 if __name__ == "__main__":
