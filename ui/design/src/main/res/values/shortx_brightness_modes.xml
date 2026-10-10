@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_display_brightness_set_field_mode_option_manual_keep">Disable automatic brightness (keep current level)</string>
+    <string name="feature_android_display_brightness_set_field_mode_option_toggle_auto">Toggle automatic brightness</string>
+</resources>

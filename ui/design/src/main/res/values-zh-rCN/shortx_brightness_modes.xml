@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_display_brightness_set_field_mode_option_manual_keep">关闭自动亮度（保持当前亮度）</string>
+    <string name="feature_android_display_brightness_set_field_mode_option_toggle_auto">切换自动亮度</string>
+</resources>
