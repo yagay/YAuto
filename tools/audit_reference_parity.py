@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "tools/shortx_reference_actions.csv"
 MAPPINGS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXMappings.kt"
+JSON_MAPPINGS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXJsonMappings.kt"
 STRUCTURAL = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXStructuralMappings.kt"
 BATCH = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXVerifiedBatchMappings.kt"
 HINTS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/EnhancedShortXImporter.kt"
@@ -31,11 +32,12 @@ def inventory() -> dict:
         catalog = list(csv.DictReader(f))
     types = [row["source_type"] for row in catalog]
     native = MAPPINGS.read_text(encoding="utf-8")
+    native_json = JSON_MAPPINGS.read_text(encoding="utf-8")
     structural = STRUCTURAL.read_text(encoding="utf-8")
     batch = BATCH.read_text(encoding="utf-8")
     hints = HINTS.read_text(encoding="utf-8")
     binary = names_in_branches(native.split("fun nativeAction(", 1)[1].split("fun nativeFact(", 1)[0])
-    json_actions = names_in_branches(native.split("private fun nativeJsonAction(", 1)[1].split("private fun jsonFact", 1)[0])
+    json_actions = names_in_branches(native_json.split("fun ShortXMappings.nativeJsonAction(", 1)[1].split("fun ShortXMappings.nativeJsonCondition(", 1)[0])
     structure_names = names_in_branches(structural.split("fun convert(", 1)[1])
     batch_binary = names_in_branches(batch.split("fun binary(", 1)[1].split("private fun enumNumber", 1)[0])
     batch_json = names_in_branches(batch.split("fun json(", 1)[1])
