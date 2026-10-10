@@ -6,6 +6,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.model.ActionNode
@@ -28,6 +30,7 @@ internal fun StepDebugDialog(
 ) {
     val tester = LocalFeatureTestGateway.current
     val scope = rememberCoroutineScope()
+    val clipboard = LocalClipboardManager.current
     var cursor by remember(nodes) { mutableIntStateOf(0) }
     var busy by remember { mutableStateOf(false) }
     var armed by remember { mutableStateOf(false) }
@@ -142,6 +145,22 @@ internal fun StepDebugDialog(
         },
         dismissButton = {
             Row {
+                TextButton(
+                    enabled = !busy && report.isNotEmpty(),
+                    onClick = {
+                        val summary = buildString {
+                            appendLine("YAuto step debug report")
+                            appendLine("Completed: ${report.size}/${nodes.size}")
+                            report.toSortedMap().forEach { (index, result) ->
+                                appendLine("Step ${index + 1} | ${actions[index]?.typeId ?: "compound"} | " +
+                                    "${if (result.success) "PASS" else "FAIL"} | ${result.elapsedMs}ms")
+                                appendLine(result.detail)
+                                result.executionId?.let { appendLine("Trace: $it") }
+                            }
+                        }
+                        clipboard.setText(AnnotatedString(summary))
+                    },
+                ) { Text(stringResource(TextR.string.debug_copy_report)) }
                 TextButton(
                     enabled = !busy && armed && cursor < nodes.size && tester != null,
                     onClick = { runSteps(true) },
