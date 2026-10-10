@@ -78,7 +78,7 @@ class AutomationRuntime(
         )
 
     private val activeStates = ConcurrentHashMap<String, Boolean>()
-    private val locks = ConcurrentHashMap<String, Mutex>()
+    private val conflictCoordinator = RuntimeConflictCoordinator(executionJobs)
     private val evaluationLocks = ConcurrentHashMap<String, Mutex>()
     private val executionJobs = ExecutionJobRegistry()
     private val eventWaitRegistry = RuntimeEventWaitRegistry()
@@ -620,18 +620,7 @@ class AutomationRuntime(
             }
         }
 
-        return when (automation.executionPolicy.conflictPolicy) {
-            ConflictPolicy.PARALLEL -> runTracked()
-            ConflictPolicy.QUEUE -> locks.getOrPut(key) { Mutex() }.withLock { runTracked() }
-            ConflictPolicy.IGNORE_NEW -> {
-                val lock = locks.getOrPut(key) { Mutex() }
-                if (!lock.tryLock()) null else try { runTracked() } finally { lock.unlock() }
-            }
-            ConflictPolicy.CANCEL_PREVIOUS -> {
-                executionJobs.cancel(key)
-                runTracked()
-            }
-        }
+        return conflictCoordinator.execute(key, automation.executionPolicy.conflictPolicy, runTracked)
     }
 
 
