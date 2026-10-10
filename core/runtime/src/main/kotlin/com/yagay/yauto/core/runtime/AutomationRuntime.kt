@@ -24,14 +24,12 @@ import com.yagay.yauto.core.registry.VariableAccess
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.WorkspaceRepository
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.AbstractCoroutineContextElement
@@ -83,7 +81,7 @@ class AutomationRuntime(
     private val locks = ConcurrentHashMap<String, Mutex>()
     private val evaluationLocks = ConcurrentHashMap<String, Mutex>()
     private val executionJobs = ExecutionJobRegistry()
-    private val eventWaitRequests = ConcurrentHashMap<String, EventWaitRequest>()
+    private val eventWaitRegistry = RuntimeEventWaitRegistry()
     private val workspaceMutationLock = Mutex()
     private val expressions = SimpleExpressionEngine()
 
@@ -695,63 +693,32 @@ class AutomationRuntime(
         timeoutMs: Long?,
         executionId: ExecutionId,
         nodeId: NodeId,
-    ): Boolean {
-        if (events.isEmpty()) return false
-        val id = UUID.randomUUID().toString()
-        val deferred = CompletableDeferred<Boolean>()
-        val request = EventWaitRequest(
-            id = id,
-            events = events,
-            baseVariables = baseVariables,
-            executionId = executionId,
-            nodeId = nodeId,
-            deferred = deferred,
-        )
-        eventWaitRequests[id] = request
-        return try {
-            if (timeoutMs == null) {
-                deferred.await()
-            } else {
-                withTimeoutOrNull(timeoutMs.coerceAtLeast(1L)) { deferred.await() } ?: false
-            }
-        } finally {
-            eventWaitRequests.remove(id)
-        }
-    }
+    ): Boolean = eventWaitRegistry.await(events, baseVariables, timeoutMs, executionId, nodeId)
 
     private suspend fun notifyEventWaiters(event: RuntimeEvent) {
-        if (eventWaitRequests.isEmpty()) return
-        val snapshot = eventWaitRequests.values.toList()
-        for (request in snapshot) {
-            if (request.deferred.isCompleted) continue
+        eventWaitRegistry.notify(event) { request, incoming ->
             val variables = MapVariableAccess(buildMap {
                 putAll(request.baseVariables)
-                event.payload.forEach { (key, value) -> put("event.$key", value) }
-                put("event.type", ConfigValue.StringValue(event.typeId))
-                put("event.source", ConfigValue.StringValue(event.source))
+                incoming.payload.forEach { (key, value) -> put("event.$key", value) }
+                put("event.type", ConfigValue.StringValue(incoming.typeId))
+                put("event.source", ConfigValue.StringValue(incoming.source))
             })
-            val matched = request.events.any { feature ->
+            request.events.any { feature ->
                 val matcher = registry.eventMatcher(feature.typeId)
                 if (matcher != null) {
-                    runCatching {
+                    try {
                         matcher.matches(
                             feature,
                             EventMatchContext(
-                                request.executionId,
-                                event,
-                                variables,
-                                capabilities,
-                                tracer,
+                                request.executionId, incoming, variables, capabilities, tracer,
                             ),
                         )
-                    }.getOrDefault(false)
-                } else {
-                    feature.typeId == event.typeId
-                }
-            }
-            if (matched) {
-                eventWaitRequests.remove(request.id)
-                request.deferred.complete(true)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        false
+                    }
+                } else feature.typeId == incoming.typeId
             }
         }
     }
@@ -773,15 +740,6 @@ class AutomationRuntime(
         val matches = workspace.automations.filter { it.name.equals(target, ignoreCase = true) }
         return matches.singleOrNull()
     }
-
-    private data class EventWaitRequest(
-        val id: String,
-        val events: List<FeatureRef>,
-        val baseVariables: Map<String, ConfigValue>,
-        val executionId: ExecutionId,
-        val nodeId: NodeId,
-        val deferred: CompletableDeferred<Boolean>,
-    )
 
     private class MapVariableAccess(initial: Map<String, ConfigValue>) : VariableAccess {
         private val values = initial.toMutableMap()
