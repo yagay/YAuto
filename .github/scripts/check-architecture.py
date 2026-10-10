@@ -93,6 +93,8 @@ xposed_entry = xposed_dir / "YAutoXposedModule.kt"
 if not xposed_router.exists() or "fun routeXposedPackageHooks(" not in xposed_router.read_text(encoding="utf-8"):
     errors.append("XposedPackageHookRouter must own system package-to-Hook routing")
 xposed_installers = xposed_dir / "XposedHookInstallers.kt"
+if not (xposed_dir / "XposedSystemEventInstallers.kt").exists():
+    errors.append("XposedSystemEventInstallers must own SystemServer and input event hook installation")
 if not (xposed_dir / "XposedSystemUiInstallers.kt").exists():
     errors.append("XposedSystemUiInstallers must own SystemUI hook families")
 if not (xposed_dir / "XposedProviderInstallers.kt").exists():
