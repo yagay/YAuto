@@ -51,97 +51,13 @@ internal object PrivilegedDisplayPowerFeatures {
             )
         ) { feature, _ ->
             if (feature.config.string("mode", "auto") == "toggle") {
-                return@privilegedCommandFeature """current=${'
-                "dark" -> "yes"
-                "auto" -> "auto"
-                else -> error("Invalid dark theme mode")
+                return@privilegedCommandFeature """state=${'(cmd uimode night); case "__DOLLAR__state" in *"Night mode: yes"*) cmd uimode night no ;; *"Night mode: no"*) cmd uimode night yes ;; *) echo "Night mode state unavailable or automatic" >&2; exit 1 ;; esac"""
             }
-            "cmd uimode night $mode"
-        },
-        privilegedCommandFeature(
-            privilegedDescriptor(
-                "android.power.battery_saver.set",
-                "Battery saver",
-                "Turn Android low-power mode on or off",
-                FeatureCategory.DEVICE,
-                fields = listOf(FieldSchema.Toggle("enabled", "Enabled")),
-                keywords = setOf("battery saver", "power saver", "low power"),
-                behaviors = mapOf("enabled" to FieldBehavior(defaultValue = ConfigValue.BooleanValue(true))),
-            )
-        ) { feature, _ ->
-            "cmd power set-mode ${if (feature.config.boolean("enabled", true)) 1 else 0}"
-        },
-        privilegedCommandFeature(
-            privilegedDescriptor(
-                "android.power.stay_awake.set",
-                "Stay awake while charging",
-                "Control which charging sources keep the screen awake",
-                FeatureCategory.DEVICE,
-                fields = listOf(
-                    FieldSchema.Choice("mode", "Stay awake mode", true, listOf("off", "all", "usb", "ac", "wireless")),
-                ),
-                keywords = setOf("stay awake", "keep screen on", "charging"),
-                behaviors = mapOf("mode" to FieldBehavior(defaultValue = ConfigValue.StringValue("off"))),
-            )
-        ) { feature, _ ->
-            val argument = when (feature.config.string("mode", "off")) {
-                "off" -> "false"
-                "all" -> "true"
-                "usb" -> "usb"
-                "ac" -> "ac"
-                "wireless" -> "wireless"
-                else -> error("Invalid stay-awake mode")
+            val mode = when (feature.config.string("mode", "auto")) {
+                "light" -> "no"}(cmd uimode night); case "${'state" in *"Night mode: yes"*) cmd uimode night no ;; *"Night mode: no"*) cmd uimode night yes ;; *) echo "Night mode state unavailable or automatic" >&2; exit 1 ;; esac"""
             }
-            "svc power stayon $argument"
-        },
-    )
-}
-}(cmd uimode night); case "${'
-                "dark" -> "yes"
-                "auto" -> "auto"
-                else -> error("Invalid dark theme mode")
-            }
-            "cmd uimode night $mode"
-        },
-        privilegedCommandFeature(
-            privilegedDescriptor(
-                "android.power.battery_saver.set",
-                "Battery saver",
-                "Turn Android low-power mode on or off",
-                FeatureCategory.DEVICE,
-                fields = listOf(FieldSchema.Toggle("enabled", "Enabled")),
-                keywords = setOf("battery saver", "power saver", "low power"),
-                behaviors = mapOf("enabled" to FieldBehavior(defaultValue = ConfigValue.BooleanValue(true))),
-            )
-        ) { feature, _ ->
-            "cmd power set-mode ${if (feature.config.boolean("enabled", true)) 1 else 0}"
-        },
-        privilegedCommandFeature(
-            privilegedDescriptor(
-                "android.power.stay_awake.set",
-                "Stay awake while charging",
-                "Control which charging sources keep the screen awake",
-                FeatureCategory.DEVICE,
-                fields = listOf(
-                    FieldSchema.Choice("mode", "Stay awake mode", true, listOf("off", "all", "usb", "ac", "wireless")),
-                ),
-                keywords = setOf("stay awake", "keep screen on", "charging"),
-                behaviors = mapOf("mode" to FieldBehavior(defaultValue = ConfigValue.StringValue("off"))),
-            )
-        ) { feature, _ ->
-            val argument = when (feature.config.string("mode", "off")) {
-                "off" -> "false"
-                "all" -> "true"
-                "usb" -> "usb"
-                "ac" -> "ac"
-                "wireless" -> "wireless"
-                else -> error("Invalid stay-awake mode")
-            }
-            "svc power stayon $argument"
-        },
-    )
-}
-}current" in *"Night mode: yes"*) cmd uimode night no ;; *"Night mode: no"*) cmd uimode night yes ;; *) echo "Cannot safely toggle non-explicit night mode" >&2; exit 1 ;; esac"""
+            val mode = when (feature.config.string("mode", "auto")) {
+                "light" -> "no"}state" in *"Night mode: yes"*) cmd uimode night no ;; *"Night mode: no"*) cmd uimode night yes ;; *) echo "Night mode state unavailable or automatic" >&2; exit 1 ;; esac"""
             }
             val mode = when (feature.config.string("mode", "auto")) {
                 "light" -> "no"

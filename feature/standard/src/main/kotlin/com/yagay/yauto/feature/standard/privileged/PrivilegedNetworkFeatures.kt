@@ -71,8 +71,15 @@ internal object PrivilegedNetworkFeatures {
             )
         ) { feature, _ ->
             if (feature.config.boolean("toggleCurrent")) {
-                """current=${'
-                    
+                """state=${'(cmd location is-location-enabled); case "__DOLLAR__state" in true) cmd location set-location-enabled false ;; false) cmd location set-location-enabled true ;; *) echo "Location state unavailable" >&2; exit 1 ;; esac"""
+            } else {
+                "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
+            }
+        },}(cmd location is-location-enabled); case "${'state" in true) cmd location set-location-enabled false ;; false) cmd location set-location-enabled true ;; *) echo "Location state unavailable" >&2; exit 1 ;; esac"""
+            } else {
+                "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
+            }
+        },}state" in true) cmd location set-location-enabled false ;; false) cmd location set-location-enabled true ;; *) echo "Location state unavailable" >&2; exit 1 ;; esac"""
             } else {
                 "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
             }
@@ -101,181 +108,17 @@ internal object PrivilegedNetworkFeatures {
         )
     ) { feature, _ ->
         if (feature.config.boolean("toggleCurrent")) {
-            """state=${'
-}
-}(cmd location is-location-enabled); case "${'
-                    
-            } else {
-                "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
-            }
-        },
-    )
-
-    private fun toggleFeature(
-        id: String,
-        title: String,
-        description: String,
-        commandPrefix: String,
-        keywords: Set<String>,
-    ): FeatureDefinition = privilegedCommandFeature(
-        privilegedDescriptor(
-            id,
-            title,
-            description,
-            FeatureCategory.NETWORK,
-            fields = listOf(FieldSchema.Toggle("enabled", "Enabled")),
-            keywords = keywords,
-            behaviors = mapOf("enabled" to FieldBehavior(defaultValue = ConfigValue.BooleanValue(true))),
-        )
-    ) { feature, _ ->
-        "$commandPrefix ${if (feature.config.boolean("enabled", true)) "enable" else "disable"}"
-    }
-}
-}current" in true) cmd location set-location-enabled false ;; false) cmd location set-location-enabled true ;; *) echo "Cannot determine location state" >&2; exit 1 ;; esac"""
-                    
-            } else {
-                "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
-            }
-        },
-    )
-
-    private fun toggleFeature(
-        id: String,
-        title: String,
-        description: String,
-        commandPrefix: String,
-        keywords: Set<String>,
-    ): FeatureDefinition = privilegedCommandFeature(
-        privilegedDescriptor(
-            id,
-            title,
-            description,
-            FeatureCategory.NETWORK,
-            fields = listOf(FieldSchema.Toggle("enabled", "Enabled")),
-            keywords = keywords,
-            behaviors = mapOf("enabled" to FieldBehavior(defaultValue = ConfigValue.BooleanValue(true))),
-        )
-    ) { feature, _ ->
-        "$commandPrefix ${if (feature.config.boolean("enabled", true)) "enable" else "disable"}"
-    }
-}
-}(settings get global $stateKey); case "${'
-}
-}(cmd location is-location-enabled); case "${'
-                    
-            } else {
-                "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
-            }
-        },
-    )
-
-    private fun toggleFeature(
-        id: String,
-        title: String,
-        description: String,
-        commandPrefix: String,
-        keywords: Set<String>,
-    ): FeatureDefinition = privilegedCommandFeature(
-        privilegedDescriptor(
-            id,
-            title,
-            description,
-            FeatureCategory.NETWORK,
-            fields = listOf(FieldSchema.Toggle("enabled", "Enabled")),
-            keywords = keywords,
-            behaviors = mapOf("enabled" to FieldBehavior(defaultValue = ConfigValue.BooleanValue(true))),
-        )
-    ) { feature, _ ->
-        "$commandPrefix ${if (feature.config.boolean("enabled", true)) "enable" else "disable"}"
-    }
-}
-}current" in true) cmd location set-location-enabled false ;; false) cmd location set-location-enabled true ;; *) echo "Cannot determine location state" >&2; exit 1 ;; esac"""
-                    
-            } else {
-                "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
-            }
-        },
-    )
-
-    private fun toggleFeature(
-        id: String,
-        title: String,
-        description: String,
-        commandPrefix: String,
-        keywords: Set<String>,
-    ): FeatureDefinition = privilegedCommandFeature(
-        privilegedDescriptor(
-            id,
-            title,
-            description,
-            FeatureCategory.NETWORK,
-            fields = listOf(FieldSchema.Toggle("enabled", "Enabled")),
-            keywords = keywords,
-            behaviors = mapOf("enabled" to FieldBehavior(defaultValue = ConfigValue.BooleanValue(true))),
-        )
-    ) { feature, _ ->
-        "$commandPrefix ${if (feature.config.boolean("enabled", true)) "enable" else "disable"}"
-    }
-}
-}state" in 1) $commandPrefix disable ;; 0) $commandPrefix enable ;; *) echo "Cannot determine $stateKey" >&2; exit 1 ;; esac"""
+            """state=${'(settings get global $stateKey); case "__DOLLAR__state" in 1) $commandPrefix disable ;; 0) $commandPrefix enable ;; *) echo "State for $stateKey unavailable" >&2; exit 1 ;; esac"""
         } else {
             "$commandPrefix ${if (feature.config.boolean("enabled", true)) "enable" else "disable"}"
         }
-    }
-}
-}(cmd location is-location-enabled); case "${'
-                    
-            } else {
-                "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
-            }
-        },
-    )
-
-    private fun toggleFeature(
-        id: String,
-        title: String,
-        description: String,
-        commandPrefix: String,
-        keywords: Set<String>,
-    ): FeatureDefinition = privilegedCommandFeature(
-        privilegedDescriptor(
-            id,
-            title,
-            description,
-            FeatureCategory.NETWORK,
-            fields = listOf(FieldSchema.Toggle("enabled", "Enabled")),
-            keywords = keywords,
-            behaviors = mapOf("enabled" to FieldBehavior(defaultValue = ConfigValue.BooleanValue(true))),
-        )
-    ) { feature, _ ->
-        "$commandPrefix ${if (feature.config.boolean("enabled", true)) "enable" else "disable"}"
-    }
-}
-}current" in true) cmd location set-location-enabled false ;; false) cmd location set-location-enabled true ;; *) echo "Cannot determine location state" >&2; exit 1 ;; esac"""
-                    
-            } else {
-                "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
-            }
-        },
-    )
-
-    private fun toggleFeature(
-        id: String,
-        title: String,
-        description: String,
-        commandPrefix: String,
-        keywords: Set<String>,
-    ): FeatureDefinition = privilegedCommandFeature(
-        privilegedDescriptor(
-            id,
-            title,
-            description,
-            FeatureCategory.NETWORK,
-            fields = listOf(FieldSchema.Toggle("enabled", "Enabled")),
-            keywords = keywords,
-            behaviors = mapOf("enabled" to FieldBehavior(defaultValue = ConfigValue.BooleanValue(true))),
-        )
-    ) { feature, _ ->
-        "$commandPrefix ${if (feature.config.boolean("enabled", true)) "enable" else "disable"}"
+    }}(settings get global $stateKey); case "${'state" in 1) $commandPrefix disable ;; 0) $commandPrefix enable ;; *) echo "State for $stateKey unavailable" >&2; exit 1 ;; esac"""
+        } else {
+            "$commandPrefix ${if (feature.config.boolean("enabled", true)) "enable" else "disable"}"
+        }
+    }}state" in 1) $commandPrefix disable ;; 0) $commandPrefix enable ;; *) echo "State for $stateKey unavailable" >&2; exit 1 ;; esac"""
+        } else {
+            "$commandPrefix ${if (feature.config.boolean("enabled", true)) "enable" else "disable"}"
+        }
     }
 }
