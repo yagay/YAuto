@@ -78,9 +78,9 @@ class AutomationRuntime(
         )
 
     private val activeStates = ConcurrentHashMap<String, Boolean>()
-    private val conflictCoordinator = RuntimeConflictCoordinator(executionJobs)
     private val evaluationLocks = ConcurrentHashMap<String, Mutex>()
     private val executionJobs = ExecutionJobRegistry()
+    private val conflictCoordinator = RuntimeConflictCoordinator(executionJobs)
     private val eventWaitRegistry = RuntimeEventWaitRegistry()
     private val workspaceMutationLock = Mutex()
     private val lastRunStore = RuntimeLastRunStore(workspaceRepository, workspaceMutationLock)
