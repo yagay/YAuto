@@ -41,7 +41,7 @@ private fun flattenDebugNodes(nodes: List<ActionNode>): List<ActionNode> = build
 @Composable
 internal fun EngineDebugDialog(automation: Automation, onDismiss: () -> Unit) {
     val gateway = LocalFeatureTestGateway.current
-    val session = remember(automation.id) { gateway?.newDebugRun(automation) }
+    val session = remember(gateway, automation) { gateway?.newDebugRun(automation) }
     val scope = rememberCoroutineScope()
     val clipboard = LocalClipboardManager.current
     val nodes = remember(automation) { flattenDebugNodes(automation.onEvent) }
@@ -77,7 +77,7 @@ internal fun EngineDebugDialog(automation: Automation, onDismiss: () -> Unit) {
                 }
                 Text(stringResource(TextR.string.engine_debug_paused, report.pausedId ?: "—"))
                 LazyColumn(Modifier.heightIn(max = 310.dp)) {
-                    items(nodes, key = { it.id.value }) { node ->
+                    items(nodes) { node ->
                         val id = node.id.value
                         Row {
                             Checkbox(
