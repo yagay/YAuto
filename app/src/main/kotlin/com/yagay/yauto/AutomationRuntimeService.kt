@@ -29,7 +29,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -40,6 +44,7 @@ class AutomationRuntimeService : Service() {
     private var workspaceSubscription: AutoCloseable? = null
     private val hardwareKeyDedup = ConcurrentHashMap<String, Long>()
     private var hardwareKeyGestureEngine: HardwareKeyGestureEngine? = null
+    private val lsposedSubscriptions = Channel<Set<String>>(Channel.CONFLATED)
 
     override fun onCreate() {
         super.onCreate()
@@ -48,17 +53,28 @@ class AutomationRuntimeService : Service() {
             .onFailure { StartupFailureRecorder.record(this, "runtime:graph", it) }.getOrNull()
         if (appGraph == null) { stopSelf(); return }
         graph = appGraph
+        // Retry when LSPosed/system_server starts after the automation service.
+        // Periodic refresh recovers subscriptions after a hooked process restart.
+        scope.launch {
+            var desired = emptySet<String>()
+            while (isActive) {
+                withTimeoutOrNull(60_000L) { lsposedSubscriptions.receive() }?.let { desired = it }
+                val accepted = runCatching { appGraph.xposed.setSystemEventSubscriptions(desired) }
+                    .getOrDefault(false)
+                if (!accepted) delay(5_000L)
+            }
+        }
         workspaceSubscription = appGraph.workspace.addListener { data ->
             scope.launch {
                 configureAccessibilitySubscriptions(data)
-                configureLsposedSubscriptions(appGraph, data)
+                configureLsposedSubscriptions(data)
             }
         }
         scope.launch {
             runCatching { appGraph.workspace.load() }
                 .onSuccess { data ->
                     configureAccessibilitySubscriptions(data)
-                    configureLsposedSubscriptions(appGraph, data)
+                    configureLsposedSubscriptions(data)
                 }
         }
         val dispatcher = RuntimeEventDispatcher(appGraph, scope)
@@ -368,17 +384,15 @@ class AutomationRuntimeService : Service() {
         hardwareKeyGestureEngine?.accept(event)
     }
 
-    private suspend fun configureLsposedSubscriptions(appGraph: AppGraph, workspace: WorkspaceData) {
-        runCatching {
-            val eventTypes = workspace.runtimeEventFeatureIds().toMutableSet()
-            if (
-                "android.event.hardware_key_gesture" in eventTypes ||
-                "android.event.hardware_key_combo" in eventTypes
-            ) {
-                eventTypes += "android.event.hardware_key"
-            }
-            appGraph.xposed.setSystemEventSubscriptions(eventTypes)
+    private fun configureLsposedSubscriptions(workspace: WorkspaceData) {
+        val eventTypes = workspace.runtimeEventFeatureIds().toMutableSet()
+        if (
+            "android.event.hardware_key_gesture" in eventTypes ||
+            "android.event.hardware_key_combo" in eventTypes
+        ) {
+            eventTypes += "android.event.hardware_key"
         }
+        lsposedSubscriptions.trySend(eventTypes)
     }
 
     private fun configureAccessibilitySubscriptions(workspace: WorkspaceData) {
