@@ -68,6 +68,7 @@ internal class RuntimeFeatureTester(
                 val paused = debug.pausedAt()
                 val rows = debug.snapshot().map {
                     EngineDebugStepUi(
+                        invocationId = it.invocationId,
                         id = it.nodeId.value,
                         kind = it.nodeType,
                         success = it.success,
