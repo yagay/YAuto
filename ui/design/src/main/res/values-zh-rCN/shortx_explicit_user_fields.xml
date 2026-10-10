@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_app_enabled_set_field_userid">Android 用户 ID（可选）</string>
+    <string name="feature_android_app_suspended_set_field_userid">Android 用户 ID（可选）</string>
+    <string name="feature_android_app_inactive_set_field_userid">Android 用户 ID（可选）</string>
+    <string name="feature_android_app_force_stop_field_userid">Android 用户 ID（可选）</string>
+</resources>
