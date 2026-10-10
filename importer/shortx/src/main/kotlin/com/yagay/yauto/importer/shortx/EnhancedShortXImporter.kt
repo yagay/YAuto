@@ -50,6 +50,13 @@ internal object ShortXFeatureSuggestions {
     }
 
     private fun action(name: String): String? = when (name) {
+        // These source operations are not equivalent to the similarly named native features.
+        // Keep source.raw for a future exact implementation rather than suggesting a
+        // potentially destructive or semantically different replacement.
+        "StopCurrentApp", "FindAndClickMatchedView",
+        "StartGestureRecording", "StopGestureRecording", "ToggleGestureRecording",
+        "ShowClipboardView", "WaitForIdle",
+        "StartLastApp", "StartPreviousApp", "StartNextApp" -> null
         "SetNFCEnabled", "ToggleNFC", "EnableNFC", "DisableNFC" -> "android.nfc.set"
         "SetLocationEnabled", "ToggleLocation", "EnableLocation", "DisableLocation" -> "android.location.enabled.set"
         "SetScreenRotate" -> "android.display.rotation.set"
@@ -80,12 +87,12 @@ internal object ShortXFeatureSuggestions {
         "CreateLocalVar", "WriteLocalVar" -> "variable.set"
         "HttpRequest" -> "android.http.request"
         "LaunchApp", "LaunchAppByPkg" -> "android.app.launch"
-        "StopApp", "StopAppByPkg", "StopCurrentApp" -> "android.app.force_stop"
+        "StopApp", "StopAppByPkg" -> "android.app.force_stop"
         "ShellCommand" -> "android.shell.execute"
         "InputTap" -> "accessibility.gesture.tap"
         "InputSwipe" -> "accessibility.gesture.swipe"
         "InputText" -> "accessibility.input_text"
-        "FindAndClickViewByText", "FindAndClickMatchedView" -> "accessibility.click_text"
+        "FindAndClickViewByText" -> "accessibility.click_text"
         "FindAndClickViewById" -> "accessibility.click_view_id"
         "ShowToast" -> "android.toast.show"
         "OpenUrl" -> "android.uri.open"
@@ -119,8 +126,6 @@ internal object ShortXFeatureSuggestions {
         "HideAllOverlay" -> "surface.overlay.hide_all"
         "SelectScreenArea" -> "surface.region_selector.show"
         "InjectGestureRecording" -> "accessibility.gesture.path"
-        "StartGestureRecording", "ToggleGestureRecording" -> "surface.gesture_recorder.show"
-        "StopGestureRecording" -> "surface.gesture_recording.stop"
         "GetTextFromScreenNode" -> "accessibility.ui_nodes.get"
         "EnableViewIdViewer" -> "accessibility.view_id_viewer.show"
         "EnableUniversalCopy" -> "accessibility.universal_copy.show"
@@ -152,7 +157,6 @@ internal object ShortXFeatureSuggestions {
         "ShowAlertDialog" -> "surface.buttons.show"
         "ShowChoiceDialog", "ShowListDialog", "ShowMenuDialog" -> "surface.list.show"
         "ShowTextFieldDialog" -> "surface.input.show"
-        "ShowClipboardView" -> "accessibility.universal_copy.show"
         // A system status-bar chip is not a TYPE_APPLICATION_OVERLAY.
         "ShowStatusBarChip" -> null
         "HideStatusBarClip" -> null
@@ -167,12 +171,8 @@ internal object ShortXFeatureSuggestions {
         "ShowHideInsets" -> "android.insets.immersive.set"
         "CloseActivity" -> "android.activity.close"
         "RemoveTasks", "RemoveTasksByPkg" -> "android.tasks.remove"
-        "WaitForIdle" -> "android.ui.wait_for_idle"
         "ScrollViewTo" -> "accessibility.scroll_to"
         "ContinuousGesturePointer" -> "accessibility.pointer.show"
-        "StartLastApp" -> "android.app.last_used.launch"
-        "StartPreviousApp" -> "android.app.previous.launch"
-        "StartNextApp" -> "android.app.next.launch"
         "LaunchPinedItem", "AppShortcut" -> "android.intent_uri.launch"
         "StartActivity", "StartActivityIntent", "StartActivityIntentUri", "StartActivityUrlSchema" -> "android.external.intent.invoke"
         "StartService", "StopService" -> "android.service.control"

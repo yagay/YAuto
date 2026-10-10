@@ -36,7 +36,7 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("accessibility.gesture.tap", ShortXFeatureSuggestions.target("InputTap", path))
         assertEquals("accessibility.gesture.swipe", ShortXFeatureSuggestions.target("InputSwipe", path))
         assertEquals("accessibility.input_text", ShortXFeatureSuggestions.target("InputText", path))
-        assertEquals("accessibility.click_text", ShortXFeatureSuggestions.target("FindAndClickMatchedView", path))
+        assertNull(ShortXFeatureSuggestions.target("FindAndClickMatchedView", path))
         assertEquals("accessibility.click_view_id", ShortXFeatureSuggestions.target("FindAndClickViewById", path))
         assertEquals("android.toast.show", ShortXFeatureSuggestions.target("ShowToast", path))
         assertEquals("android.uri.open", ShortXFeatureSuggestions.target("OpenUrl", path))
@@ -60,8 +60,8 @@ class ShortXFeatureSuggestionsTest {
         assertEquals("variable.global.mutate", ShortXFeatureSuggestions.target("WriteGlobalVar", path))
         assertEquals("variable.global.mutate", ShortXFeatureSuggestions.target("AddToGlobalVar", path))
         assertEquals("variable.global.clear", ShortXFeatureSuggestions.target("DeleteGlobalVar", path))
-        assertEquals("android.app.previous.launch", ShortXFeatureSuggestions.target("StartPreviousApp", path))
-        assertEquals("android.app.next.launch", ShortXFeatureSuggestions.target("StartNextApp", path))
+        assertNull(ShortXFeatureSuggestions.target("StartPreviousApp", path))
+        assertNull(ShortXFeatureSuggestions.target("StartNextApp", path))
     }
 
     @Test fun `facts suggest matching runtime events`() {
@@ -130,10 +130,13 @@ class ShortXFeatureSuggestionsTest {
             "SetStatusBarIcon", "RemoveStatusBarIcon",
             "ShowStatusBarChip", "HideStatusBarClip",
             "PluginAction",
+            "StopCurrentApp", "FindAndClickMatchedView",
+            "StartGestureRecording", "StopGestureRecording", "ToggleGestureRecording",
+            "ShowClipboardView", "WaitForIdle",
+            "StartLastApp", "StartPreviousApp", "StartNextApp",
         ).forEach { source ->
             assertNull("Unsafe import hint for " + source, ShortXFeatureSuggestions.target(source, path))
         }
-        assertEquals("surface.gesture_recording.stop", ShortXFeatureSuggestions.target("StopGestureRecording", path))
         assertEquals("android.sms.send", ShortXFeatureSuggestions.target("SendSMS", path))
         assertEquals("android.telephony.5g.toggle", ShortXFeatureSuggestions.target("Toggle5G", path))
         assertEquals("android.service.control", ShortXFeatureSuggestions.target("StartService", path))
