@@ -95,7 +95,7 @@ internal fun EngineDebugDialog(automation: Automation, onDismiss: () -> Unit) {
                     items(report.steps) { step ->
                         Column {
                             Text(stringResource(TextR.string.engine_debug_step,
-                                step.kind, step.id,
+                                step.kind, "#${step.invocationId} ${step.id}",
                                 stringResource(if (step.success) TextR.string.feature_test_success else TextR.string.feature_test_failed),
                                 step.elapsedMs))
                             Text(stringResource(TextR.string.engine_debug_before, step.before),
@@ -147,7 +147,7 @@ internal fun EngineDebugDialog(automation: Automation, onDismiss: () -> Unit) {
                         appendLine("YAuto Engine Debug — ${automation.name}")
                         result?.let { appendLine("Result: ${it.detail}; Trace: ${it.executionId}") }
                         report.steps.forEachIndexed { index, step ->
-                            appendLine("${index + 1}. ${step.kind} ${step.id} ${if (step.success) "PASS" else "FAIL"} ${step.elapsedMs}ms")
+                            appendLine("${index + 1}. [#${step.invocationId}] ${step.kind} ${step.id} ${if (step.success) "PASS" else "FAIL"} ${step.elapsedMs}ms")
                             appendLine("Before: ${step.before}")
                             appendLine("After: ${step.after}")
                         }
