@@ -37,9 +37,16 @@ def registered_events(source: str) -> set[str]:
     # FeatureDescriptor contains FeatureId(typeId) rather than a literal. If a source file actually
     # registers events, every android.event.* literal in that registration file is part of its event
     # contract and is therefore considered a registered Trigger/Event ID.
+    # Domain registrars can be extracted into extension modules. In that case the
+    # FeaturePack's install() delegates via registerChangedEvent(registry, id, ...)
+    # while the actual registry.registerEvent call lives in a sibling file.
+    helper_ids = set(re.findall(
+        r'registerChangedEvent\\(registry,\\s*"(android\\.event\\.[^"]+)"',
+        source,
+    )) if 'FeaturePack' in source else set()
     if 'registerEvent(' not in source and 'FeatureKind.EVENT' not in source:
-        return set()
-    return literals(source)
+        return helper_ids
+    return literals(source) | helper_ids
 
 
 def emitted_events(source: str) -> set[str]:
