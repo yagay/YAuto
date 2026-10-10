@@ -49,26 +49,12 @@ internal fun GenericFeatureConfigEditor(
     onSave: (FeatureRef) -> Unit,
 ) {
     val locale = currentEditorLocale()
-    val context = LocalContext.current
-    val showRootOrLsposed = remember(context) {
-        FeatureVisibilityPreferences.showRootExclusive(context)
-    }
     val initialWithDefaults = remember(descriptor, initial) {
         descriptor.applyDefaults(initial ?: FeatureRef(descriptor.id.value, descriptor.schemaVersion))
     }
-    val initialTexts = remember(descriptor, initialWithDefaults, locale, showRootOrLsposed, initial) {
+    val initialTexts = remember(descriptor, initialWithDefaults, locale) {
         descriptor.fields.associate { field ->
-            field.key to if (field.key == FEATURE_METHOD_CONFIG_KEY)
-                initialWithDefaults.preferredMethod().let {
-                    if (it == FeatureMethod.AUTO) FeatureMethod.NO_ROOT.id else it.id
-                }
-            else if (field.key == FEATURE_BACKEND_CONFIG_KEY && initial == null &&
-                !showRootOrLsposed && !descriptor.hasDualMethodRoutes() &&
-                descriptor.resolvedImplementationOptions().any { it.requiresRootOrLsposed() }
-            ) {
-                // Non-dual capabilities would otherwise use automatic Root-first routing.
-                descriptor.visibleImplementationOptions(false).firstOrNull()?.backendId.orEmpty()
-            } else editorConfigValueText(initialWithDefaults.config[field.key], locale)
+            field.key to editorConfigValueText(initialWithDefaults.config[field.key], locale)
         }
     }
     var values by remember(descriptor.id.value, initial, locale) { mutableStateOf(initialTexts) }
@@ -89,10 +75,12 @@ internal fun GenericFeatureConfigEditor(
     }
     val displayedFields = remember(descriptor, semanticallyVisible, showAdvanced) {
         semanticallyVisible.filter { field ->
-            showAdvanced || !descriptor.fieldBehavior(field.key).advanced
+            field.key != FEATURE_METHOD_CONFIG_KEY && field.key != FEATURE_BACKEND_CONFIG_KEY &&
+                (showAdvanced || !descriptor.fieldBehavior(field.key).advanced)
         }
     }
-    val valid = semanticallyVisible.all { field ->
+    val valid = semanticallyVisible.filterNot { it.key == FEATURE_METHOD_CONFIG_KEY ||
+        it.key == FEATURE_BACKEND_CONFIG_KEY }.all { field ->
         val enabled = descriptor.fieldBehavior(field.key).enabledWhen?.matches(typedValues) != false
         !enabled || fieldValid(field, values[field.key].orEmpty(), locale)
     }
@@ -108,17 +96,9 @@ internal fun GenericFeatureConfigEditor(
 
         item { FeatureSummaryCard(descriptor, accent) }
 
-        val backends = descriptor.resolvedImplementationOptions()
-        if (backends.isNotEmpty()) {
-            item {
-                ImplementationGuide(
-                    descriptor,
-                    if (backends.size == 1) backends.first().backendId.orEmpty()
-                    else values[FEATURE_BACKEND_CONFIG_KEY].orEmpty().ifBlank { "auto" },
-                    values[FEATURE_METHOD_CONFIG_KEY].orEmpty().ifBlank { "no_root" },
-                    showRootOrLsposed,
-                )
-            }
+        if (descriptor.resolvedImplementationOptions().isNotEmpty() ||
+            descriptor.resolvedAccessRequirements().isNotEmpty()) {
+            item { AutoImplementationSummary(descriptor, initial) }
         }
 
         if (descriptor.fields.isEmpty()) {
@@ -146,28 +126,6 @@ internal fun GenericFeatureConfigEditor(
         items(displayedFields, key = { it.key }) { field ->
             val behavior = descriptor.fieldBehavior(field.key)
             val enabled = behavior.enabledWhen?.matches(typedValues) != false
-            if (field.key == FEATURE_METHOD_CONFIG_KEY && field is FieldSchema.Choice) {
-                MethodChoiceEditor(
-                    selected = values[field.key].orEmpty().ifBlank { "no_root" },
-                    showRootOrLsposed = showRootOrLsposed,
-                    enabled = enabled,
-                    onValue = { next ->
-                        // Stale backends must never cross permission families.
-                        values = values + (field.key to next) + (FEATURE_BACKEND_CONFIG_KEY to "auto")
-                    },
-                )
-            } else if (field.key == FEATURE_BACKEND_CONFIG_KEY && field is FieldSchema.Choice) {
-                BackendChoiceEditor(
-                    descriptor = descriptor,
-                    field = field,
-                    value = values[field.key].orEmpty(),
-                    method = if (values[FEATURE_METHOD_CONFIG_KEY] == "root_required")
-                        FeatureMethod.ROOT_REQUIRED else FeatureMethod.NO_ROOT,
-                    showRootOrLsposed = showRootOrLsposed,
-                    enabled = enabled,
-                    onValue = { values = values + (field.key to it) },
-                )
-            } else {
                 FieldEditor(
                     descriptor = descriptor,
                     field = field,
@@ -189,7 +147,6 @@ internal fun GenericFeatureConfigEditor(
                         )
                     },
                 )
-            }
         }
 
         item {
@@ -254,129 +211,13 @@ private fun FeatureSummaryCard(descriptor: FeatureDescriptor, accent: Color) {
 
 @Composable
 private fun AccessRequirementBadges(descriptor: FeatureDescriptor) {
-    val options = descriptor.resolvedImplementationOptions()
-    // Alternatives are NOT cumulative requirements: Root OR Shizuku must not appear
-    // as if both need granting. Each option's requirements appear in its own guide.
-    val optionOnly = options.flatMap { it.requirements }.toSet()
-    val requirements = if (options.size > 1) {
-        // Do not turn possible paths inferred from a broad capability into mandatory
-        // permissions; the implementation guide is the source of backend requirements.
-        descriptor.accessRequirements - optionOnly
-    } else {
-        descriptor.resolvedAccessRequirements()
-    }
+    val requirements = descriptor.mandatoryAccessRequirements()
     if (requirements.isEmpty()) return
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         requirements.forEach { CapabilityBadge(accessRequirementLabel(it)) }
-    }
-}
-
-@Composable
-private fun ImplementationGuide(
-    descriptor: FeatureDescriptor,
-    requestedBackendId: String,
-    requestedMethod: String,
-    showRootOrLsposed: Boolean,
-) {
-    val dual = descriptor.hasDualMethodRoutes()
-    val method = if (requestedMethod == "root_required")
-        FeatureMethod.ROOT_REQUIRED else FeatureMethod.NO_ROOT
-    val options = if (dual) descriptor.methodBackends(method)
-        .filter { showRootOrLsposed || !it.requiresRootOrLsposed() }
-        else descriptor.visibleImplementationOptions(showRootOrLsposed)
-    val selected = options.firstOrNull { it.backendId == requestedBackendId }
-    val backendId = selected?.backendId ?: "auto"
-    val resolver = rememberFeatureTextResolver()
-    val optionPermissions = options.flatMap { it.requirements }.toSet()
-    val additionalPermissions = (descriptor.accessRequirements - optionPermissions).filterTo(mutableSetOf()) {
-        showRootOrLsposed || it !in setOf(
-            AccessRequirement.ROOT, AccessRequirement.LSPOSED, AccessRequirement.ZYGISK)
-    }
-
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(TextR.string.implementation_method), fontWeight = FontWeight.SemiBold)
-            if (dual) {
-                Text(
-                    stringResource(
-                        if (method == FeatureMethod.NO_ROOT)
-                            TextR.string.implementation_group_no_root_detail
-                        else TextR.string.implementation_group_root_required_detail,
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            if (!showRootOrLsposed && requestedMethod == "root_required") {
-                Text(stringResource(TextR.string.implementation_hidden_saved_root),
-                    style = MaterialTheme.typography.labelSmall)
-            }
-            if (options.size == 1) {
-                Text(stringResource(TextR.string.implementation_unique_method),
-                    style = MaterialTheme.typography.labelMedium)
-            }
-            if (!dual || selected != null) {
-                Text(implementationTitle(backendId), style = MaterialTheme.typography.titleSmall)
-                Text(
-                    resolver.backendPermissionExplanation(descriptor, backendId),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            if (selected != null) {
-                if (selected.requirements.isNotEmpty()) {
-                    Text(
-                        stringResource(
-                            TextR.string.implementation_requirements_format,
-                            localizedList(selected.requirements.map { accessRequirementLabelNonComposable(it) }),
-                        ),
-                        style = MaterialTheme.typography.labelSmall,
-                    )
-                }
-                if (selected.restartRequired) {
-                    Text(
-                        stringResource(TextR.string.implementation_restart_note),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else if (options.isNotEmpty()) {
-                // Auto does not itself grant access; show the separate permission
-                // routes that the engine may choose, without suggesting they are all required.
-                val paths = options.map { option ->
-                    val title = implementationTitle(option.backendId.orEmpty())
-                    val requirementLabels = option.requirements.map { accessRequirementLabelNonComposable(it) }
-                    if (requirementLabels.isEmpty()) title
-                    else "$title: ${localizedList(requirementLabels)}"
-                }
-                Text(
-                    stringResource(
-                        TextR.string.feature_backend_auto_paths_format,
-                        localizedList(paths),
-                    ),
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            }
-
-            if (additionalPermissions.isNotEmpty()) {
-                Text(
-                    stringResource(
-                        TextR.string.feature_backend_additional_requirements_format,
-                        localizedList(additionalPermissions.map { accessRequirementLabelNonComposable(it) }),
-                    ),
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            }
-
-            resolver.backendLimitation(backendId)?.let { limitation ->
-                Text(
-                    limitation,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
     }
 }
 
@@ -489,6 +330,9 @@ internal fun buildEditedFeatureConfig(
 ): Map<String, ConfigValue> {
     val typedValues = valuesAsConfig(descriptor.fields, values, locale)
     val config = initial?.config.orEmpty().toMutableMap()
+    // Old steps keep their saved route until edited; saving migrates to auto.
+    config.remove(FEATURE_METHOD_CONFIG_KEY)
+    config.remove(FEATURE_BACKEND_CONFIG_KEY)
     descriptor.fields.forEach { field ->
         val prior = config.remove(field.key)
         val behavior = descriptor.fieldBehavior(field.key)

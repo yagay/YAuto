@@ -55,6 +55,22 @@ class FeatureEditorConfigTest {
     }
 
     @Test
+    fun `resaving a legacy fixed backend switches to automatic routing`() {
+        val old = FeatureRef("test.mode", config = mapOf(
+            "mode" to ConfigValue.StringValue("basic"),
+            "__method" to ConfigValue.StringValue("root_required"),
+            "__backend" to ConfigValue.StringValue("root"),
+        ))
+        val result = buildEditedFeatureConfig(
+            descriptor, old, descriptor.applyDefaults(old),
+            mapOf("mode" to "basic"), Locale.UK,
+        )
+        assertEquals(ConfigValue.StringValue("basic"), result["mode"])
+        assertFalse(result.containsKey("__method"))
+        assertFalse(result.containsKey("__backend"))
+    }
+
+    @Test
     fun `unchanged advanced values preserve original typed values and hidden hardware identity`() {
         val initial = FeatureRef("test.mode", config = mapOf(
             "mode" to ConfigValue.StringValue("advanced"),

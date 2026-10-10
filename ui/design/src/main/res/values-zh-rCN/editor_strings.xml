@@ -311,4 +311,9 @@
     <string name="runtime_show_root_exclusive_title">显示 Root / LSPosed 功能及实现方式</string>
     <string name="runtime_show_root_exclusive_detail">关闭后，隐藏 Root／LSPosed 专属功能，并在多种实现的功能里隐藏 Root／LSPosed 方式；保留 Android API、无障碍及 Shizuku。已有任务的配置不会被改变。</string>
     <string name="implementation_hidden_saved_root">已在设置中隐藏 Root 和 LSPosed 实现方式。原有任务中已保存的特权实现不会自动更改，选择其他方式后才会替换。</string>
+    <string name="implementation_optimal_automatic">执行方式：自动选择最优方案</string>
+    <string name="implementation_root_mandatory">此功能必须使用 Root 或 LSPosed。</string>
+    <string name="implementation_nonroot_preferred">有可用的 Android、无障碍或 Shizuku 方式时，不需要 Root。</string>
+    <string name="implementation_path_permission_format">%1$s：%2$s</string>
+    <string name="implementation_legacy_conversion">此任务以前指定过实现方式；重新保存会改为自动选择，未编辑的旧任务保持原样。</string>
 </resources>

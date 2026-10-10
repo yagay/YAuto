@@ -312,4 +312,9 @@
     <string name="runtime_show_root_exclusive_title">Show Root / LSPosed features and methods</string>
     <string name="runtime_show_root_exclusive_detail">When off, hide Root/LSPosed-only features and Root/LSPosed implementation choices inside mixed-method features. Android API, Accessibility and Shizuku choices remain. Saved tasks keep their configuration.</string>
     <string name="implementation_hidden_saved_root">Root and LSPosed methods are hidden by Settings. Any already saved privileged method remains unchanged until you choose a different one.</string>
+    <string name="implementation_optimal_automatic">Execution: automatically select the best available method</string>
+    <string name="implementation_root_mandatory">Root or LSPosed is required for this feature.</string>
+    <string name="implementation_nonroot_preferred">Root is not required when a supported Android, Accessibility or Shizuku method is available.</string>
+    <string name="implementation_path_permission_format">%1$s: %2$s</string>
+    <string name="implementation_legacy_conversion">This task has a saved manual implementation. Saving will switch it to automatic selection; existing tasks stay unchanged until edited.</string>
 </resources>
