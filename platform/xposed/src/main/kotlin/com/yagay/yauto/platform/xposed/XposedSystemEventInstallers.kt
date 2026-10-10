@@ -35,17 +35,18 @@ internal val SHORTX_PERMISSION_ALLOWLIST = setOf(
         )
 
 abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
-    protected val systemRegistered = AtomicBoolean(false)
-    protected val appReceivers = ConcurrentHashMap.newKeySet<String>()
-    protected val systemEventDedup = ConcurrentHashMap<String, Long>()
-    protected val hardwareKeyEventDedup = ConcurrentHashMap<String, Long>()
-    protected val hardwareKeyCaptureUntilElapsed = AtomicLong(0L)
-    protected val subscribedSystemEvents = AtomicReference<Set<String>>(emptySet())
-    protected val enabledShortXBehaviors = AtomicReference<Set<String>>(emptySet())
-    protected val enabledPackageBehaviors = AtomicReference<Set<String>>(emptySet())
-    internal val methodSessions = MethodHookSessionRegistry()
-    internal val crashGuards = ConcurrentHashMap<String, HookCrashGuard>()
-    protected val yAutoUid = AtomicLong(-1L)
+    private val sharedState = XposedInstallationState()
+    protected val systemRegistered get() = sharedState.systemRegistered
+    protected val appReceivers get() = sharedState.appReceivers
+    protected val systemEventDedup get() = sharedState.systemEventDedup
+    protected val hardwareKeyEventDedup get() = sharedState.hardwareKeyEventDedup
+    protected val hardwareKeyCaptureUntilElapsed get() = sharedState.hardwareKeyCaptureUntilElapsed
+    protected val subscribedSystemEvents get() = sharedState.subscribedSystemEvents
+    protected val enabledShortXBehaviors get() = sharedState.enabledShortXBehaviors
+    protected val enabledPackageBehaviors get() = sharedState.enabledPackageBehaviors
+    internal val methodSessions get() = sharedState.methodSessions
+    internal val crashGuards get() = sharedState.crashGuards
+    protected val yAutoUid get() = sharedState.yAutoUid
 
     protected fun installSystemRuntimeHooks(context: Context, classLoader: ClassLoader, eventTypes: Set<String>) {
         ShortXCompatHookCatalog.subscribedCoreRuntimeHooks(eventTypes).forEach { family ->
