@@ -1,6 +1,33 @@
 package com.yagay.yauto.platform.xposed
 
-/** The canonical process-to-hook routing policy shared by LSPosed package callbacks. */
+/** Compose independent Hook installers without using class inheritance for routing.
+ * Every callback runs in its target process and keeps the existing install order.
+ */
+internal class XposedPackageHookDispatcher(
+    private val systemUi: () -> Unit,
+    private val statusChip: () -> Unit,
+    private val tileLabel: () -> Unit,
+    private val nfc: () -> Unit,
+    private val mediaProvider: () -> Unit,
+    private val telephonyProvider: () -> Unit,
+    private val inputConnection: () -> Unit,
+) {
+    fun install(packageName: String) {
+        when {
+            packageName == "com.android.systemui" -> {
+                systemUi()
+                statusChip()
+                tileLabel()
+            }
+            packageName == "com.android.nfc" -> nfc()
+            packageName.contains("providers.media") -> mediaProvider()
+            packageName == "com.android.providers.telephony" -> telephonyProvider()
+            else -> inputConnection()
+        }
+    }
+}
+
+/** Compatibility entry for existing callers and tests; delegates to the composed dispatcher. */
 internal fun routeXposedPackageHooks(
     packageName: String,
     installSystemUi: () -> Unit,
@@ -11,15 +38,8 @@ internal fun routeXposedPackageHooks(
     installTelephonyProvider: () -> Unit,
     installInputConnection: () -> Unit,
 ) {
-    when {
-        packageName == "com.android.systemui" -> {
-            installSystemUi()
-            installStatusChip()
-            installTileLabel()
-        }
-        packageName == "com.android.nfc" -> installNfc()
-        packageName.contains("providers.media") -> installMediaProvider()
-        packageName == "com.android.providers.telephony" -> installTelephonyProvider()
-        else -> installInputConnection()
-    }
+    XposedPackageHookDispatcher(
+        installSystemUi, installStatusChip, installTileLabel, installNfc,
+        installMediaProvider, installTelephonyProvider, installInputConnection,
+    ).install(packageName)
 }

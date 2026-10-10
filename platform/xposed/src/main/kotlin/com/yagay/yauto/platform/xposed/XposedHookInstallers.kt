@@ -54,16 +54,15 @@ abstract class XposedHookInstallers : XposedMethodHookInstallers() {
         packageName: String,
         classLoader: ClassLoader,
     ) {
-        routeXposedPackageHooks(
-            packageName = packageName,
-            installSystemUi = { installShortXSystemUiHooks(context, classLoader) },
-            installStatusChip = { installShortXStatusChipHooks(context, classLoader) },
-            installTileLabel = { installShortXTileLabelHooks(context, classLoader) },
-            installNfc = { installShortXNfcHooks(context, classLoader) },
-            installMediaProvider = { installShortXMediaProviderHooks(context, classLoader) },
-            installTelephonyProvider = { installShortXTelephonyProviderHooks(context, classLoader) },
-            installInputConnection = { installShortXInputConnectionHook(context, packageName, classLoader) },
-        )
+        XposedPackageHookDispatcher(
+            systemUi = { installShortXSystemUiHooks(context, classLoader) },
+            statusChip = { installShortXStatusChipHooks(context, classLoader) },
+            tileLabel = { installShortXTileLabelHooks(context, classLoader) },
+            nfc = { installShortXNfcHooks(context, classLoader) },
+            mediaProvider = { installShortXMediaProviderHooks(context, classLoader) },
+            telephonyProvider = { installShortXTelephonyProviderHooks(context, classLoader) },
+            inputConnection = { installShortXInputConnectionHook(context, packageName, classLoader) },
+        ).install(packageName)
     }
 
     protected fun installShortXRuntimeInitHook(
