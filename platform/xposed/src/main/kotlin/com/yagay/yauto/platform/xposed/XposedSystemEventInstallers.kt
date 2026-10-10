@@ -43,8 +43,8 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
     protected val subscribedSystemEvents = AtomicReference<Set<String>>(emptySet())
     protected val enabledShortXBehaviors = AtomicReference<Set<String>>(emptySet())
     protected val enabledPackageBehaviors = AtomicReference<Set<String>>(emptySet())
-    protected val methodSessions = MethodHookSessionRegistry()
-    protected val crashGuards = ConcurrentHashMap<String, HookCrashGuard>()
+    internal val methodSessions = MethodHookSessionRegistry()
+    internal val crashGuards = ConcurrentHashMap<String, HookCrashGuard>()
     protected val yAutoUid = AtomicLong(-1L)
 
     protected fun installSystemRuntimeHooks(context: Context, classLoader: ClassLoader, eventTypes: Set<String>) {
@@ -345,7 +345,7 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
         return uid >= 0 && Binder.getCallingUid() == uid
     }
 
-    protected fun installShortXObserverHooks(
+    internal fun installShortXObserverHooks(
         context: Context,
         classLoader: ClassLoader,
         requested: List<ShortXObserverHookSpec>,
