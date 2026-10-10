@@ -175,21 +175,28 @@ class MacroDroidImporter(
             val sourceType = obj.string("m_classType", "classType", "type") ?: "Unknown"
             val path = parentPath + ".action[" + index + "]"
 
+            // Never silently discard disabled source actions. In particular, dropping a
+            // disabled IF/Loop opener while importing its children would execute the body
+            // outside its disabled parent. Preserve the complete balanced block as one
+            // non-executable compatibility node, including nested branches and metadata.
+            if (obj.bool("m_isDisabled") == true) {
+                val end = disabledControlBlockEnd(items, index)
+                val preserved = if (end != null) JsonArray(items.subList(index, end + 1)) else item
+                out += compatibilityAction(preserved, path, sourceType, issues).copy(
+                    enabled = false,
+                    comment = obj.string("m_comment", "comment"),
+                    failurePolicy = ActionFailurePolicy.CONTINUE,
+                )
+                index = (end ?: index) + 1
+                continue
+            }
+
             obj.string("m_label", "label")
                 ?.trim()
                 ?.takeIf(String::isNotBlank)
                 ?.let { label ->
                     out += ActionNode.Label(NodeId(UUID.randomUUID().toString()), label)
                 }
-
-            val disabled = obj.bool("m_isDisabled") == true
-            if (disabled && sourceType !in setOf(
-                    "ElseAction", "ElseIfConditionAction", "EndIfAction", "EndLoopAction",
-                )
-            ) {
-                index++
-                continue
-            }
 
             if (sourceType in setOf("IfConditionAction", "IfConfirmedThenAction") &&
                 obj.bool("m_isDisabled") != true
@@ -250,6 +257,30 @@ class MacroDroidImporter(
             index++
         }
         return out
+    }
+
+    /** Returns the matching closer of a disabled compound action, never just the next
+     * closer inside a nested block. Missing closers cause the remainder to stay inert.
+     */
+    private fun disabledControlBlockEnd(items: List<JsonElement>, start: Int): Int? {
+        val source = items.getOrNull(start) as? JsonObject ?: return null
+        val opening = source.string("m_classType", "classType", "type")
+        val ifStarts = setOf("IfConditionAction", "IfConfirmedThenAction")
+        val isIf = opening in ifStarts
+        if (!isIf && opening != "LoopAction") return null
+        val close = if (isIf) "EndIfAction" else "EndLoopAction"
+        var depth = 0
+        for (i in start + 1 until items.size) {
+            val entry = items[i] as? JsonObject ?: continue
+            val type = entry.string("m_classType", "classType", "type")
+            if ((isIf && type in ifStarts) || (!isIf && type == "LoopAction")) depth++
+            else if (type == close) {
+                if (depth == 0) return i
+                depth--
+            }
+        }
+        // An incomplete exported block is unsafe to flatten into live actions.
+        return items.lastIndex
     }
 
     private data class ParsedLoop(val node: ActionNode, val nextIndex: Int)

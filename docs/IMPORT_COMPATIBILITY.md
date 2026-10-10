@@ -9,3 +9,10 @@ YAuto registers the three compatibility importers lazily in the main app. They a
 Every unsupported or unsafe conversion creates a compatibility issue with its source path. Nothing is silently discarded.
 
 The Android CI runs the MacroDroid, ShortX and Tasker importer test suites in addition to core/platform tests so compatibility regressions fail the pull request.
+
+## 2026-10-10 MacroDroid disabled action and control block safety
+
+- Disabled MacroDroid actions are not discarded during import. They remain disabled compatibility actions retaining original JSON, notes, and intentional disabled state.
+- A disabled If/IfConfirmedThen or Loop start preserves the entire balanced block, including nested branches/loops, as a single inert compatibility node; unmatched closing markers keep the remaining input inert. This avoids inadvertently running children outside their disabled control structure.
+- Native behavior of enabled actions, existing feature IDs, method selection, and importer source-format mapping remain unchanged. Dedicated regression tests exercise disabled ordinary actions, nested control blocks, and truncated blocks.
+- Disabled constraints still follow MacroDroid's runtime filter and are not included as executable predicates; this is not a byte-for-byte re-export facility.
