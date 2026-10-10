@@ -1,10 +1,8 @@
 package com.yagay.yauto
 
 import android.content.Context
-import com.yagay.yauto.core.engine.AutomationEngine
 import com.yagay.yauto.core.engine.AutomationPhase
 import com.yagay.yauto.core.engine.EngineDebugSession
-import com.yagay.yauto.core.engine.FlowResolver
 import com.yagay.yauto.core.model.Automation
 import com.yagay.yauto.core.model.NodeId
 import com.yagay.yauto.ui.editor.EngineDebugRun
@@ -49,18 +47,10 @@ internal class RuntimeFeatureTester(
 
     override fun newDebugRun(automation: Automation): EngineDebugRun {
         val debug = EngineDebugSession()
-        val engine = AutomationEngine(
-            graph.features,
-            graph.capabilities,
-            graph.tracer,
-            flowResolver = FlowResolver { id ->
-                graph.workspace.load().flows.firstOrNull { it.id == id }
-            },
-        )
         return object : EngineDebugRun {
             override suspend fun execute(): FeatureTestResult {
                 val began = System.currentTimeMillis()
-                val result = engine.execute(automation, AutomationPhase.EVENT, debugObserver = debug)
+                val result = graph.runtime.createDebugEngine().execute(automation, AutomationPhase.EVENT, debugObserver = debug)
                 return FeatureTestResult(
                     success = result.success,
                     detail = result.error ?: if (result.success) "Completed" else "Failed",
