@@ -14,6 +14,7 @@ import kotlinx.coroutines.sync.withLock
  */
 class EngineDebugSession : EngineDebugObserver {
     data class Step(
+        val invocationId: Long,
         val nodeId: NodeId,
         val nodeType: String,
         val variablesBefore: Map<String, ConfigValue>,
@@ -33,7 +34,7 @@ class EngineDebugSession : EngineDebugObserver {
     private var mode: Mode = Mode.STEP
     private var paused: Paused? = null
     private val history = mutableListOf<Step>()
-    private val before = mutableMapOf<NodeId, Map<String, ConfigValue>>()
+    private val before = mutableMapOf<Long, Map<String, ConfigValue>>()
     private val breakpoints = mutableSetOf<NodeId>()
     private enum class Mode { STEP, CONTINUE }
 
@@ -66,9 +67,9 @@ class EngineDebugSession : EngineDebugObserver {
         }
     }
 
-    override suspend fun beforeNode(node: ActionNode, variables: Map<String, ConfigValue>) {
+    override suspend fun beforeNode(invocationId: Long, node: ActionNode, variables: Map<String, ConfigValue>) {
         val wait = mutex.withLock {
-            before[node.id] = variables.toMap()
+            before[invocationId] = variables.toMap()
             if (mode == Mode.CONTINUE && node.id !in breakpoints) return@withLock null
             paused = Paused(node.id, node.javaClass.simpleName, variables.toMap())
             CompletableDeferred<Unit>().also { pending = it }
@@ -88,6 +89,7 @@ class EngineDebugSession : EngineDebugObserver {
     }
 
     override suspend fun afterNode(
+        invocationId: Long,
         node: ActionNode,
         variables: Map<String, ConfigValue>,
         success: Boolean,
@@ -95,9 +97,10 @@ class EngineDebugSession : EngineDebugObserver {
     ) {
         mutex.withLock {
             history += Step(
+                invocationId = invocationId,
                 nodeId = node.id,
                 nodeType = node.javaClass.simpleName,
-                variablesBefore = before.remove(node.id).orEmpty(),
+                variablesBefore = before.remove(invocationId).orEmpty(),
                 variablesAfter = variables.toMap(),
                 success = success,
                 elapsedMs = elapsedMs,
