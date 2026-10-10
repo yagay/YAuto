@@ -189,4 +189,18 @@ class FeatureDefinitionTest {
         assertEquals(listOf("on", "dependent"), descriptor.editableEditorFields(on).map { it.key })
     }
 
+    @Test
+    fun `schema rejects cycles across conditional fields`() {
+        val candidate = descriptor("test.cycle").copy(
+            fields = listOf(FieldSchema.Toggle("first", "First"), FieldSchema.Toggle("second", "Second")),
+            fieldBehaviors = mapOf(
+                "first" to FieldBehavior(visibleWhen = FieldRule.Truthy("second")),
+                "second" to FieldBehavior(enabledWhen = FieldRule.Truthy("first")),
+            ),
+        )
+        assertTrue(validateFeatureDescriptors(listOf(candidate)).any {
+            it.code == "cyclic_field_rule_dependency"
+        })
+    }
+
 }

@@ -86,6 +86,32 @@ fun validateFeatureDescriptors(descriptors: Iterable<FeatureDescriptor>): List<F
             )
         }
 
+        // Conditional fields must not form dependency cycles: the generic editor
+        // cannot resolve mutually dependent visibility/enabled rules deterministically.
+        val dependencies = descriptor.fields.associate { field ->
+            val behavior = descriptor.fieldBehaviors[field.key]
+            field.key to listOfNotNull(
+                behavior?.visibleWhen?.fieldKey,
+                behavior?.enabledWhen?.fieldKey,
+            ).filter(fieldKeys::contains)
+        }
+        val visited = mutableSetOf<String>()
+        val visiting = mutableSetOf<String>()
+        fun visitsCycle(key: String): Boolean {
+            if (key in visiting) return true
+            if (!visited.add(key)) return false
+            visiting.add(key)
+            val cycle = dependencies[key].orEmpty().any(::visitsCycle)
+            visiting.remove(key)
+            return cycle
+        }
+        if (dependencies.keys.any(::visitsCycle)) {
+            issues += descriptor.error(
+                "cyclic_field_rule_dependency",
+                "Conditional field rules contain a dependency cycle",
+            )
+        }
+
         descriptor.fields.forEach { field ->
             if (field.key.isBlank() || field.key != field.key.trim()) {
                 issues += descriptor.error(
