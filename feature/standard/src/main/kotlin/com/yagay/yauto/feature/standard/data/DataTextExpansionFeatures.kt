@@ -20,11 +20,20 @@ internal object DataTextExpansionFeatures {
             fields = listOf(
                 FieldSchema.Text("text", "Text", true, multiline = true),
                 FieldSchema.Text("pattern", "Regular expression", true),
+                FieldSchema.Choice("matchMode", "Match mode", options = listOf("contains", "full")),
+                FieldSchema.Variable("matchedTextVariable", "Store matching text"),
                 resultField("Store match result in variable"),
             ),
         ) { feature, context ->
-            Regex(feature.config.string("pattern").resolveVariables(context.variables))
-                .containsMatchIn(feature.config.string("text").resolveVariables(context.variables))
+            val original = feature.config.string("text").resolveVariables(context.variables)
+            val regex = Regex(feature.config.string("pattern").resolveVariables(context.variables))
+            val mode = feature.config.string("matchMode", "contains")
+            require(mode == "contains" || mode == "full") { "Invalid regex mode" }
+            val found = if (mode == "full") regex.matchEntire(original) else regex.find(original)
+            feature.config.string("matchedTextVariable").takeIf(String::isNotBlank)?.let { variable ->
+                context.variables.set(variable, ConfigValue.StringValue(found?.value.orEmpty()))
+            }
+            found != null
         },
         actionFeature(
             dataDescriptor(

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_data_regex_matches_field_match_mode">匹配方式</string>
+    <string name="feature_data_regex_matches_field_match_mode_option_contains">包含匹配内容</string>
+    <string name="feature_data_regex_matches_field_match_mode_option_full">完整匹配全文</string>
+    <string name="feature_data_regex_matches_field_matched_text_variable">保存匹配文本</string>
+    <string name="feature_android_intent_uri_launch_field_url_scheme_mode">直接打开 URL 协议</string>
+</resources>

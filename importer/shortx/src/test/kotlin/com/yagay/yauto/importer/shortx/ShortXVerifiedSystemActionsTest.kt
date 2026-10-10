@@ -721,6 +721,52 @@ class ShortXVerifiedSystemActionsTest {
             result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature.typeId })
     }
 
+    @Test fun `ShortX regex matching preserves full versus partial matching and both context variables`() {
+        val full = importAction("MatchRegex", message(field(1, "abc123"), field(2, "[a-z]+"), varintField(3, 0)))
+        assertEquals("data.regex.matches", full.typeId)
+        assertEquals(ConfigValue.StringValue("full"), full.config["matchMode"])
+        assertEquals(ConfigValue.StringValue("isMatch"), full.config["resultVariable"])
+        assertEquals(ConfigValue.StringValue("matchResult"), full.config["matchedTextVariable"])
+        val partial = importAction("MatchRegex", message(field(1, "abc123"), field(2, "[a-z]+"), varintField(3, 1)))
+        assertEquals(ConfigValue.StringValue("contains"), partial.config["matchMode"])
+        assertEquals("compat.source.action", importAction("MatchRegex", message(field(1, "abc"), field(2, "a"), varintField(3, 5))).typeId)
+    }
+
+    @Test fun `ShortX URL schemes preserve current Android user and original URI`() {
+        val uri = "alipayqr://platformapi/startapp?appId=20000056"
+        val action = importAction("StartActivityUrlSchema", message(field(1, uri)))
+        assertEquals("android.intent_uri.launch", action.typeId)
+        assertEquals(ConfigValue.StringValue(uri), action.config["intentUri"])
+        assertEquals(ConfigValue.BooleanValue(true), action.config["urlSchemeMode"])
+        assertEquals("compat.source.action", importAction("StartActivityUrlSchema",
+            message(field(1, uri), varintField(2, 10))).typeId)
+    }
+
+    @Test fun `ShortX default-theme drawing surface uses shared native overlay`() {
+        val normal = importAction("ShowDrawBoard", message(varintField(1, 0)))
+        assertEquals("surface.draw_board.show", normal.typeId)
+        assertEquals(ConfigValue.StringValue("shortx.draw_board"), normal.config["surfaceId"])
+        assertEquals("compat.source.action", importAction("ShowDrawBoard", message(varintField(1, 2))).typeId)
+    }
+
+    @Test fun `ShortX XML-equivalent JSON conversions preserve exact modes and fallback`() {
+        val json = """{"title":"additional","actions":[
+            {"@type":"type.googleapis.com/shortx.MatchRegex","string":"abc123","regex":"[a-z]+","matchOptions":"ContainsMatchIn"},
+            {"@type":"type.googleapis.com/shortx.StartActivityUrlSchema","urlSchema":"weixin://open","userId":0},
+            {"@type":"type.googleapis.com/shortx.ShowDrawBoard","themeMode":0},
+            {"@type":"type.googleapis.com/shortx.MatchRegex","string":"x","regex":"x","matchOptions":99},
+            {"@type":"type.googleapis.com/shortx.StartActivityUrlSchema","urlSchema":"weixin://open","userId":10},
+            {"@type":"type.googleapis.com/shortx.ShowDrawBoard","themeMode":2}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("extra.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        val actions = result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature }
+        assertEquals(listOf("data.regex.matches", "android.intent_uri.launch", "surface.draw_board.show",
+            "compat.source.action", "compat.source.action", "compat.source.action"), actions.map { it.typeId })
+        assertEquals(ConfigValue.StringValue("contains"), actions[0].config["matchMode"])
+        assertEquals(ConfigValue.BooleanValue(true), actions[1].config["urlSchemeMode"])
+    }
+
     private fun assertBoolean(source: String, target: String, key: String, value: Boolean) {
         val feature = importAction(source, message(varintField(1, if (value) 1 else 0)))
         assertEquals(target, feature.typeId)

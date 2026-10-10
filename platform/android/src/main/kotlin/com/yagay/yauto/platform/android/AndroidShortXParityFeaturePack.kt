@@ -4,6 +4,7 @@ import android.app.usage.UsageStatsManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.MessageQueue
@@ -348,7 +349,10 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
                 "Launch serialized Intent URI",
                 "Parse and launch an Android Intent URI",
                 FeatureCategory.APP,
-                fields = listOf(FieldSchema.Text("intentUri", "Intent URI", true, multiline = true)),
+                fields = listOf(
+                    FieldSchema.Text("intentUri", "Intent URI", true, multiline = true),
+                    FieldSchema.Toggle("urlSchemeMode", "Open URL scheme directly"),
+                ),
                 keywords = setOf("intent uri", "pinned item", "app shortcut", "shortx"),
                 ownerPackId = id,
             )
@@ -356,8 +360,14 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
             val raw = feature.config.string("intentUri").resolveVariables(ctx.variables).trim()
             if (raw.isBlank() || raw.length > 100_000) return@registerAction ActionExecutionResult(false)
             runCatching {
-                val intent = Intent.parseUri(raw, Intent.URI_INTENT_SCHEME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(intent)
+                val intent = if (feature.config.boolean("urlSchemeMode")) {
+                    val uri = Uri.parse(raw)
+                    require(!uri.scheme.isNullOrBlank()) { "Missing URL scheme" }
+                    Intent(Intent.ACTION_VIEW, uri)
+                } else {
+                    Intent.parseUri(raw, Intent.URI_INTENT_SCHEME)
+                }
+                context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 ActionExecutionResult(true)
             }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
         }

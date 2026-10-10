@@ -17,7 +17,8 @@ internal object ShortXVerifiedBatchMappings {
         "SetHotSpotEnabled", "InputText", "InputTap", "InputSwipe",
         "WriteClipboard", "ReplaceRegex", "AdjustVolume",
         "LaunchAppByPkg", "RemoveTasks", "RemoveTasksByPkg",
-        "StartActivityIntentUri", "EnableUniversalCopy", "EnableViewIdViewer", "ParseQRCode", "ShowDanmu",
+        "StartActivityIntentUri", "StartActivityUrlSchema", "EnableUniversalCopy", "EnableViewIdViewer",
+        "ShowDrawBoard", "ParseQRCode", "ShowDanmu", "MatchRegex",
     )
     fun ownsSource(name: String): Boolean = name in batchOwnedSources
 
@@ -157,6 +158,16 @@ internal object ShortXVerifiedBatchMappings {
         return feature(any, importerId, "data.regex.replace", mapOf(
             text("text", source), text("pattern", pattern), text("replacement", replacement),
             text("resultVariable", "replaceResult"),
+        ))
+    }
+
+    private fun regexMatch(any: AnyStub, importerId: String, value: String,
+                           pattern: String, mode: Int): FeatureRef? {
+        if (mode !in 0..1 || pattern.isEmpty()) return null
+        return feature(any, importerId, "data.regex.matches", mapOf(
+            text("text", value), text("pattern", pattern),
+            text("matchMode", if (mode == 0) "full" else "contains"),
+            text("resultVariable", "isMatch"), text("matchedTextVariable", "matchResult"),
         ))
     }
 
@@ -320,6 +331,23 @@ internal object ShortXVerifiedBatchMappings {
             "LaunchAppByPkg" -> launchSingle(any, importerId, targetsBinary(fields, byPair = true))
             "RemoveTasks" -> taskRemove(any, importerId, targetsBinary(fields, byPair = false, allowSets = true))
             "RemoveTasksByPkg" -> taskRemove(any, importerId, targetsBinary(fields, byPair = true))
+            "StartActivityUrlSchema" -> if (fields.onlyBusinessFields(1, 2)) {
+                val uid = fields.varint(2) ?: if (!fields.has(2)) 0L else return null
+                if (uid != 0L) null else fields.string(1)?.takeIf { it.isNotBlank() && it.contains(':') }?.let {
+                    feature(any, importerId, "android.intent_uri.launch",
+                        mapOf(text("intentUri", it), bool("urlSchemeMode", true)))
+                }
+            } else null
+            "ShowDrawBoard" -> noTheme(any, importerId, fields, "surface.draw_board.show")?.let {
+                it.copy(config = it.config + mapOf(
+                    text("surfaceId", "shortx.draw_board"), text("gravity", "center")))
+            }
+            "MatchRegex" -> if (fields.onlyBusinessFields(1, 2, 3)) {
+                val value = fields.string(1) ?: return null
+                val regex = fields.string(2) ?: return null
+                val mode = fields.varint(3) ?: if (!fields.has(3)) 0L else return null
+                if (mode !in 0L..1L) null else regexMatch(any, importerId, value, regex, mode.toInt())
+            } else null
             "StartActivityIntentUri" -> if (fields.onlyBusinessFields(1)) {
                 fields.string(1)?.takeIf(String::isNotBlank)?.let {
                     feature(any, importerId, "android.intent_uri.launch", mapOf(text("intentUri", it)))
@@ -482,6 +510,27 @@ internal object ShortXVerifiedBatchMappings {
             "LaunchAppByPkg" -> launchSingle(any, importerId, targetsJson(obj, byPair = true))
             "RemoveTasks" -> taskRemove(any, importerId, targetsJson(obj, byPair = false, allowSets = true))
             "RemoveTasksByPkg" -> taskRemove(any, importerId, targetsJson(obj, byPair = true))
+            "StartActivityUrlSchema" -> if (allowed("urlSchema", "userId")) {
+                val uid = (obj["userId"] as? JsonPrimitive)?.intOrNull ?: if ("userId" in obj) return null else 0
+                val raw = (obj["urlSchema"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+                if (uid != 0 || ':' !in raw) null else feature(any, importerId,
+                    "android.intent_uri.launch", mapOf(text("intentUri", raw), bool("urlSchemeMode", true)))
+            } else null
+            "ShowDrawBoard" -> noThemeJson(any, importerId, obj, "surface.draw_board.show")?.let {
+                it.copy(config = it.config + mapOf(
+                    text("surfaceId", "shortx.draw_board"), text("gravity", "center")))
+            }
+            "MatchRegex" -> if (allowed("string", "regex", "matchOptions")) {
+                val value = (obj["string"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+                val pattern = (obj["regex"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+                val raw = (obj["matchOptions"] as? JsonPrimitive)
+                val mode = when (raw?.content) {
+                    null, "0", "Match", "RegexMatchOptions_Match" -> 0
+                    "1", "ContainsMatchIn", "RegexMatchOptions_ContainsMatchIn" -> 1
+                    else -> return null
+                }
+                regexMatch(any, importerId, value, pattern, mode)
+            } else null
             "StartActivityIntentUri" -> if (allowed("intentUri")) {
                 (obj["intentUri"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.takeIf(String::isNotBlank)?.let {
                     feature(any, importerId, "android.intent_uri.launch", mapOf(text("intentUri", it)))

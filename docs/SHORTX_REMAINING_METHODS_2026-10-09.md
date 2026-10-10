@@ -63,3 +63,9 @@ The ShortX source reference defines StartLastApp as recent-task fast switching a
 - The app and task converters preserve default Android user only, reject unresolved package sets or duplicate/foreign users, and retain all source data in compatibility nodes otherwise.
 - `ParseQRCode` now uses a small `textOnly` option in the existing QR decoder to write ShortX's documented `qrCodeText` context variable without altering YAuto's existing structured-object output defaults.
 - Inspector themes other than default, special Danmu icons and unsupported source metadata are not silently dropped.
+
+## 2026-10-10: shared regex, deep links and canvas
+
+- `MatchRegex` now imports `Match`/`ContainsMatchIn` into the existing `data.regex.matches` runtime without creating a duplicate action. Added exact `matchMode`, `isMatch` and `matchResult` support. Invalid regex modes remain raw compatibility nodes.
+- `StartActivityUrlSchema` supports the current Android user only and invokes ACTION_VIEW for a URI with a scheme by using the existing `android.intent_uri.launch` action's `urlSchemeMode` parameter. Existing serialized-Intent behavior is unchanged.
+- `ShowDrawBoard` with system/default theme reuses the existing `surface.draw_board.show` overlay. Explicit custom ShortX light/dark themes remain raw compatibility nodes.
