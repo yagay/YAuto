@@ -59,6 +59,7 @@ fun MacroHomeScreen(
     var tab by rememberSaveable { mutableStateOf(HomeTab.HOME) }
     var automationToDelete by remember { mutableStateOf<Automation?>(null) }
     var flowToDelete by remember { mutableStateOf<Flow?>(null) }
+    var showTestCenter by rememberSaveable { mutableStateOf(false) }
 
     // The previous visited tab is a destination, not an alias for the dashboard.
     PageBackHandler(
@@ -131,7 +132,7 @@ fun MacroHomeScreen(
                 onSettings = onOpenSettings,
                 onBackup = onBackup,
                 onRestore = onRestore,
-                onManual = onRunManual,
+                onManual = { showTestCenter = true },
                 onShowAutomations = { tab = HomeTab.AUTOMATIONS },
                 onShowFlows = { tab = HomeTab.FLOWS },
             )
@@ -162,6 +163,53 @@ fun MacroHomeScreen(
                 onManual = onRunManual,
             )
         }
+    }
+
+    if (showTestCenter) {
+        AlertDialog(
+            onDismissRequest = { showTestCenter = false },
+            title = { Text(stringResource(R.string.test_center_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.test_center_description),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            showTestCenter = false
+                            onRunManual()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(R.string.test_center_manual_run))
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            showTestCenter = false
+                            onOpenDiagnostics()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(R.string.test_center_diagnostics))
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            showTestCenter = false
+                            onOpenSettings()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(R.string.test_center_permissions))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTestCenter = false }) {
+                    Text(stringResource(R.string.test_center_close))
+                }
+            },
+        )
     }
 
     automationToDelete?.let { automation ->
