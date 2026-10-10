@@ -629,7 +629,7 @@ class AccessibilityFeaturePack(
                 FeatureId(AccessibilityOperations.GLOBAL_ACTION),
                 FeatureKind.ACTION,
                 "Global UI action",
-                "Choose MacroDroid (Accessibility) or ShortX (Root/LSPosed where supported)",
+                "No-root Android Accessibility/Shizuku or Root/LSPosed; required permissions vary by implementation",
                 FeatureCategory.UI_AUTOMATION,
                 capabilities = setOf(CapabilityIds.ACCESSIBILITY, CapabilityIds.SYSTEM_UI, CapabilityIds.PRIVILEGED_SHELL),
                 implementationOptions = listOf(
@@ -647,33 +647,59 @@ class AccessibilityFeaturePack(
             )
         ) { feature, ctx ->
             val action = feature.config.string("action")
-            val shortX = shortXGlobalActionRequest(action, feature.preferredBackendId())
             if (action !in setOf("back", "home", "recents", "notifications", "quick_settings", "power_dialog", "lock_screen")) {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.dual_method_invalid_action"))
             }
-            val requested = feature.preferredMethod()
-            val effectiveMethod = if (shortX == null && requested == FeatureMethod.AUTO) {
-                FeatureMethod.MACRODROID
-            } else requested
+            if (!feature.methodBackendIsCompatible()) {
+                return@registerAction ActionExecutionResult(false,
+                    message = userText("feature.dual_method_backend_mismatch"))
+            }
+            val backend = feature.preferredBackendId()
+            val rootSupported = action != "power_dialog"
+            val preferredMethod = if (!rootSupported && feature.preferredMethod() == FeatureMethod.AUTO)
+                FeatureMethod.NO_ROOT else feature.preferredMethod()
             val result = routeFeatureMethod(
-                method = effectiveMethod,
+                method = preferredMethod,
                 macroSupported = true,
                 macrodroid = {
-                    ctx.executeCapability(
-                        feature.typeId,
-                        CapabilityRequest(
-                            capability = CapabilityIds.ACCESSIBILITY,
-                            operationId = AccessibilityOperations.GLOBAL_ACTION,
-                            payload = mapOf("action" to ConfigValue.StringValue(action)),
-                            preferredBackendId = "accessibility",
-                            allowFallback = false,
-                        ),
-                    )
+                    routeBackendCandidates(
+                        backend,
+                        if (action == "power_dialog") listOf("accessibility")
+                            else listOf("accessibility", "shizuku"),
+                        execute = { selected ->
+                            if (selected == "accessibility") {
+                                ctx.executeCapability(feature.typeId, CapabilityRequest(
+                                    capability = CapabilityIds.ACCESSIBILITY,
+                                    operationId = AccessibilityOperations.GLOBAL_ACTION,
+                                    payload = mapOf("action" to ConfigValue.StringValue(action)),
+                                    preferredBackendId = "accessibility", allowFallback = false,
+                                ))
+                            } else {
+                                shortXGlobalActionRequest(action, "shizuku")?.let {
+                                    ctx.executeCapability(feature.typeId, it)
+                                } ?: CapabilityResult(false,
+                                    message = userText("feature.dual_method_no_shortx", action))
+                            }
+                        },
+                        succeeded = { it.success },
+                    ) ?: CapabilityResult(false,
+                        message = userText("feature.dual_method_backend_not_supported", action))
                 },
                 shortx = {
-                    if (shortX == null) CapabilityResult(
-                        false, message = userText("feature.dual_method_no_shortx", action),
-                    ) else ctx.executeCapability(feature.typeId, shortX)
+                    routeBackendCandidates(
+                        backend,
+                        if (action in setOf("lock_screen", "notifications", "quick_settings"))
+                            listOf("lsposed", "root")
+                        else if (rootSupported) listOf("root") else emptyList(),
+                        execute = { selected ->
+                            shortXGlobalActionRequest(action, selected)?.let {
+                                ctx.executeCapability(feature.typeId, it)
+                            } ?: CapabilityResult(false,
+                                message = userText("feature.dual_method_no_shortx", action))
+                        },
+                        succeeded = { it.success },
+                    ) ?: CapabilityResult(false,
+                        message = userText("feature.dual_method_backend_not_supported", action))
                 },
                 succeeded = { it.success },
             )

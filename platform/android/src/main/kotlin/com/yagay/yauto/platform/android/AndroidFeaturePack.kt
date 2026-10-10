@@ -35,7 +35,7 @@ class AndroidFeaturePack(
         registry.registerAction(
             FeatureDescriptor(
                 FeatureId("android.app.launch"), FeatureKind.ACTION, "Launch app",
-                "Launch using the public Android API or the ShortX Root/Shizuku shell method",
+                "Open using the Android API or Shizuku without Root, or an explicit Root shell method",
                 FeatureCategory.APP,
                 capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
                 implementationOptions = listOf(
@@ -52,35 +52,51 @@ class AndroidFeaturePack(
             if (intent == null) return@registerAction ActionExecutionResult(
                 false, message = userText("feature.no_launch_intent", pkg),
             )
+            if (!feature.methodBackendIsCompatible()) {
+                return@registerAction ActionExecutionResult(false,
+                    message = userText("feature.dual_method_backend_mismatch"))
+            }
+            val backend = feature.preferredBackendId()
+            val component = intent.component?.flattenToString().orEmpty()
+            val quotedComponent = "'" + component.replace("'", "'\\''") + "'"
+            val command = "am start -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n $quotedComponent"
+            val shellLaunch: suspend (String) -> CapabilityResult = { selected ->
+                if (component.isBlank()) CapabilityResult(false,
+                    message = userText("feature.no_launch_intent", pkg))
+                else ctx.executeCapability(feature.typeId, CapabilityRequest(
+                    capability = CapabilityIds.PRIVILEGED_SHELL,
+                    operationId = feature.typeId,
+                    payload = mapOf("command" to ConfigValue.StringValue(command)),
+                    preferredBackendId = selected, allowFallback = false,
+                ))
+            }
             val result = routeFeatureMethod(
                 method = feature.preferredMethod(),
                 macroSupported = true,
                 macrodroid = {
-                    runCatching {
-                        context.startActivity(intent)
-                        CapabilityResult(true)
-                    }.getOrElse { error ->
-                        CapabilityResult(false, message = userText(
-                            "feature.operation_failed", error.message ?: error.javaClass.simpleName,
-                        ))
-                    }
+                    routeBackendCandidates(
+                        backend, listOf("android", "shizuku"),
+                        execute = { selected ->
+                            if (selected == "shizuku") shellLaunch("shizuku")
+                            else runCatching {
+                                context.startActivity(intent)
+                                CapabilityResult(true)
+                            }.getOrElse { error ->
+                                CapabilityResult(false,
+                                    message = userText("feature.operation_failed",
+                                        error.message ?: error.javaClass.simpleName))
+                            }
+                        },
+                        succeeded = { it.success },
+                    ) ?: CapabilityResult(false,
+                        message = userText("feature.dual_method_backend_not_supported", pkg))
                 },
                 shortx = {
-                    val component = intent.component?.flattenToString().orEmpty()
-                    if (component.isBlank()) {
-                        CapabilityResult(false, message = userText("feature.no_launch_intent", pkg))
-                    } else {
-                        val quotedComponent = "'" + component.replace("'", "'\\''") + "'"
-                        val command = "am start -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n $quotedComponent"
-                        val backend = feature.preferredBackendId()
-                        ctx.executeCapability(feature.typeId, CapabilityRequest(
-                            capability = CapabilityIds.PRIVILEGED_SHELL,
-                            operationId = feature.typeId,
-                            payload = mapOf("command" to ConfigValue.StringValue(command)),
-                            preferredBackendId = backend,
-                            allowFallback = backend == null,
-                        ))
-                    }
+                    routeBackendCandidates(
+                        backend, listOf("root"), execute = shellLaunch,
+                        succeeded = { it.success },
+                    ) ?: CapabilityResult(false,
+                        message = userText("feature.dual_method_backend_not_supported", pkg))
                 },
                 succeeded = { it.success },
             )

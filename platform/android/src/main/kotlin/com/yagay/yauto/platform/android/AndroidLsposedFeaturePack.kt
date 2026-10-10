@@ -282,7 +282,7 @@ class AndroidLsposedFeaturePack : FeaturePack {
                 FeatureId("android.lsposed.system.operation"),
                 FeatureKind.ACTION,
                 "System controls",
-                "Switch between MacroDroid Accessibility methods and ShortX LSPosed/Root/Shizuku methods",
+                "Use Accessibility or Shizuku without Root, or select Root/LSPosed; each has distinct requirements",
                 FeatureCategory.SYSTEM,
                 fields = listOf(
                     FieldSchema.Choice(
@@ -324,26 +324,49 @@ class AndroidLsposedFeaturePack : FeaturePack {
                 com.yagay.yauto.core.capability.SystemOperations.EXPAND_QUICK_SETTINGS -> "quick_settings"
                 else -> null
             }
+            if (!feature.methodBackendIsCompatible()) {
+                return@registerAction ActionExecutionResult(false,
+                    message = userText("feature.dual_method_backend_mismatch"))
+            }
+            val backend = feature.preferredBackendId()
             val result = routeFeatureMethod(
                 method = feature.preferredMethod(),
-                macroSupported = accessibleAction != null,
+                macroSupported = true,
                 macrodroid = {
-                    ctx.executeCapability(feature.typeId, CapabilityRequest(
-                        capability = CapabilityIds.ACCESSIBILITY,
-                        operationId = "accessibility.global_action",
-                        payload = mapOf("action" to ConfigValue.StringValue(accessibleAction.orEmpty())),
-                        preferredBackendId = "accessibility",
-                        allowFallback = false,
-                    ))
+                    routeBackendCandidates(
+                        backend,
+                        if (accessibleAction != null) listOf("accessibility", "shizuku")
+                            else listOf("shizuku"),
+                        execute = { selected ->
+                            ctx.executeCapability(feature.typeId, CapabilityRequest(
+                                capability = if (selected == "accessibility") CapabilityIds.ACCESSIBILITY
+                                    else CapabilityIds.SYSTEM_UI,
+                                operationId = if (selected == "accessibility") "accessibility.global_action"
+                                    else operation,
+                                payload = if (selected == "accessibility")
+                                    mapOf("action" to ConfigValue.StringValue(accessibleAction.orEmpty()))
+                                    else emptyMap(),
+                                preferredBackendId = selected, allowFallback = false,
+                            ))
+                        },
+                        succeeded = { it.success },
+                    ) ?: com.yagay.yauto.core.capability.CapabilityResult(false,
+                        message = userText("feature.dual_method_backend_not_supported", operation))
                 },
                 shortx = {
-                    val backend = feature.preferredBackendId()
-                    ctx.executeCapability(feature.typeId, CapabilityRequest(
-                        capability = CapabilityIds.SYSTEM_UI,
-                        operationId = operation,
-                        preferredBackendId = backend,
-                        allowFallback = backend == null,
-                    ))
+                    routeBackendCandidates(
+                        backend, listOf("lsposed", "root"),
+                        execute = { selected ->
+                            ctx.executeCapability(feature.typeId, CapabilityRequest(
+                                capability = CapabilityIds.SYSTEM_UI,
+                                operationId = operation,
+                                preferredBackendId = selected,
+                                allowFallback = false,
+                            ))
+                        },
+                        succeeded = { it.success },
+                    ) ?: com.yagay.yauto.core.capability.CapabilityResult(false,
+                        message = userText("feature.dual_method_backend_not_supported", operation))
                 },
                 succeeded = { it.success },
             )
