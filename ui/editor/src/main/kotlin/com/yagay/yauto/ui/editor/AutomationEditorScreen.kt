@@ -63,6 +63,7 @@ fun MacroAutomationEditorScreen(
     var menu by remember { mutableStateOf<Pair<String, Int>?>(null) }
     var quickTest by remember { mutableStateOf<Pair<FeatureRef, FeatureKind>?>(null) }
     var macroTest by remember { mutableStateOf(false) }
+    var stepDebug by remember { mutableStateOf(false) }
     var treePhase by remember { mutableStateOf<MacroActionPhase?>(null) }
     var advanced by remember { mutableStateOf(false) }
     var variableEdit by remember { mutableStateOf<Pair<String?, String>?>(null) }
@@ -84,6 +85,7 @@ fun MacroAutomationEditorScreen(
             menu != null -> menu = null
             quickTest != null -> quickTest = null
             macroTest -> macroTest = false
+            stepDebug -> stepDebug = false
             variableEdit != null -> variableEdit = null
             else -> onBack()
         }
@@ -153,6 +155,15 @@ fun MacroAutomationEditorScreen(
                     label = { Text(stringResource(TextR.string.automation_name)) },
                     singleLine = true,
                 )
+            }
+
+            if (onEvent.isNotEmpty()) {
+                item {
+                    OutlinedButton(
+                        onClick = { stepDebug = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(stringResource(TextR.string.debug_steps_open)) }
+                }
             }
 
             if (initial != null) {
@@ -425,6 +436,13 @@ fun MacroAutomationEditorScreen(
 
     quickTest?.let { (feature, kind) ->
         FeatureQuickTestDialog(feature, kind) { quickTest = null }
+    }
+    if (stepDebug) {
+        StepDebugDialog(
+            nodes = onEvent,
+            descriptors = descriptorById,
+            onDismiss = { stepDebug = false },
+        )
     }
     if (macroTest && initial != null) {
         SavedAutomationTestDialog(initial.id.value) { macroTest = false }
