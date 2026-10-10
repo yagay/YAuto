@@ -291,4 +291,16 @@
     <string name="test_center_confirm_title">运行自动化测试？</string>
     <string name="test_center_confirm_message">测试会执行真实动作，可能修改设备设置或数据。是否继续？</string>
     <string name="test_center_execute">运行测试</string>
+    <string name="debug_steps_open">单步调试</string>
+    <string name="debug_steps_title">单步调试与结果报告</string>
+    <string name="debug_steps_warning">每一步独立执行真实动作。此模式不执行复合分支或循环，步骤之间不共享变量修改。</string>
+    <string name="debug_enable_real_actions">允许执行真实动作</string>
+    <string name="debug_progress">进度：%1$d / %2$d</string>
+    <string name="debug_compound_skipped">复合动作节点暂不支持单步执行，请使用完整自动化测试</string>
+    <string name="debug_breakpoint_reached">已到达断点，点击下一步继续</string>
+    <string name="debug_step_label">步骤 %1$d：%2$s</string>
+    <string name="debug_step_success">成功（%1$d 毫秒）：%2$s</string>
+    <string name="debug_step_failed">失败（%1$d 毫秒）：%2$s</string>
+    <string name="debug_next_step">下一步</string>
+    <string name="debug_run_to_breakpoint">检查下一断点</string>
 </resources>
