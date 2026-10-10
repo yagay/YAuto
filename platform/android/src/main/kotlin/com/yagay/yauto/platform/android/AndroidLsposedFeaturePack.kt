@@ -16,6 +16,7 @@ class AndroidLsposedFeaturePack : FeaturePack {
     override fun install(registry: FeatureRegistry) {
         registerMethodHook(registry)
         registerDisableSession(registry)
+        registerCrashGuard(registry)
         registerMethodCalled(registry)
         registerSystemOperation(registry)
         registerSensorsOff(registry)
@@ -183,6 +184,54 @@ class AndroidLsposedFeaturePack : FeaturePack {
                     ctx.variables.set(it, result.value)
                 }
             }
+            ActionExecutionResult(result.success, result.value, result.message)
+        }
+    }
+
+    private fun registerCrashGuard(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                FeatureId("android.lsposed.hook.crash_guard"),
+                FeatureKind.ACTION,
+                "LSPosed Hook crash protection",
+                "Query or reset automatic Hook safe mode after repeated Java process crashes; restart the app to re-enable hooks",
+                FeatureCategory.ADVANCED,
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "Target app / package", true),
+                    FieldSchema.Choice("operation", "Operation", true, listOf("status", "reset")),
+                    FieldSchema.Variable("resultVariable", "Store crash protection details"),
+                ),
+                fieldBehaviors = mapOf(
+                    "package" to FieldBehavior(supportsVariables = true),
+                    "operation" to FieldBehavior(defaultValue = ConfigValue.StringValue("status")),
+                ),
+                capabilities = setOf(CapabilityIds.LSPOSED_HOOK),
+                accessRequirements = setOf(AccessRequirement.LSPOSED),
+                implementationOptions = listOf(
+                    FeatureImplementationOption("lsposed", setOf(AccessRequirement.LSPOSED))
+                ),
+                keywords = setOf("lsposed", "hook", "crash", "safe mode", "ShortX"),
+                ownerPackId = id,
+            )
+        ) { item, ctx ->
+            val pkg = item.config.string("package").resolveVariables(ctx.variables).trim()
+            val mode = item.config.string("operation", "status")
+            if (!PACKAGE_NAME.matches(pkg) || mode !in setOf("status", "reset")) {
+                return@registerAction ActionExecutionResult(false,
+                    message = userText("feature.lsposed_hook_input_invalid"))
+            }
+            val result = ctx.capabilities.execute(
+                CapabilityRequest(
+                    capability = CapabilityIds.LSPOSED_HOOK,
+                    operationId = if (mode == "reset") "lsposed.hook.crash_guard.reset"
+                        else "lsposed.hook.crash_guard.status",
+                    payload = mapOf("package" to ConfigValue.StringValue(pkg)),
+                    preferredBackendId = "lsposed",
+                    allowFallback = false,
+                )
+            )
+            if (result.success) item.config.string("resultVariable").trim()
+                .takeIf(String::isNotBlank)?.let { ctx.variables.set(it, result.value) }
             ActionExecutionResult(result.success, result.value, result.message)
         }
     }

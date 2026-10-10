@@ -91,6 +91,8 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                     SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_SET,
                     SystemBridgeProtocol.HOOK_DISABLE_SESSION,
                     SystemBridgeProtocol.HOOK_QUERY_SESSION,
+                    SystemBridgeProtocol.HOOK_CRASH_GUARD_STATUS,
+                    SystemBridgeProtocol.HOOK_CRASH_GUARD_RESET,
                 ))
 
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
@@ -117,6 +119,12 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                     "failedHookCount" to ConfigValue.NumberValue(result.getInt("failedHookCount", 0).toDouble()),
                     "disabled" to ConfigValue.BooleanValue(result.getBoolean("disabled", false)),
                     "active" to ConfigValue.BooleanValue(result.getBoolean("active", false)),
+                    "quarantined" to ConfigValue.BooleanValue(result.getBoolean("quarantined", false)),
+                    "crashCount" to ConfigValue.NumberValue(result.getInt("crashCount", 0).toDouble()),
+                    "lastCrash" to ConfigValue.NumberValue(result.getLong("lastCrash", 0).toDouble()),
+                    "lastException" to ConfigValue.StringValue(result.getString("lastException").orEmpty()),
+                    "lastFamily" to ConfigValue.StringValue(result.getString("lastFamily").orEmpty()),
+                    "restartRequired" to ConfigValue.BooleanValue(result.getBoolean("restartRequired", false)),
                     "targetPackage" to ConfigValue.StringValue(request.payload.string("package")),
                     "sessionId" to ConfigValue.StringValue(request.payload.string("sessionId")),
                 )
@@ -182,8 +190,14 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
         if (request.operationId in setOf(
                 SystemBridgeProtocol.HOOK_DISABLE_SESSION,
                 SystemBridgeProtocol.HOOK_QUERY_SESSION,
+                SystemBridgeProtocol.HOOK_CRASH_GUARD_STATUS,
+                SystemBridgeProtocol.HOOK_CRASH_GUARD_RESET,
             )) {
-            if (!sessionId.matches(Regex("[A-Za-z0-9_.:-]{1,96}"))) return Bundle().apply {
+            val isCrashGuard = request.operationId in setOf(
+                SystemBridgeProtocol.HOOK_CRASH_GUARD_STATUS,
+                SystemBridgeProtocol.HOOK_CRASH_GUARD_RESET,
+            )
+            if (!isCrashGuard && !sessionId.matches(Regex("[A-Za-z0-9_.:-]{1,96}"))) return Bundle().apply {
                 putInt("version", protocolVersion)
                 putBoolean("success", false)
                 putString("error", "Invalid session ID")
