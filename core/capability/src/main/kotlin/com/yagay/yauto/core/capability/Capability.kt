@@ -133,6 +133,13 @@ class CapabilityBroker(
         val supported = backends.filter { backend ->
             (request.preferredBackendId == null || backend.id == request.preferredBackendId) &&
                 backend.supports(request, environment)
+        }.let { applicable ->
+            // Automatic requests prefer a non-root supported route. Explicit saved
+            // backend selections are left untouched for backwards compatibility.
+            if (request.preferredBackendId != null) applicable else applicable.sortedWith(
+                compareBy<CapabilityBackend> { it.id == "root" || it.id == "lsposed" }
+                    .thenByDescending { it.priority },
+            )
         }
         val candidates = supported.filter { it.isAvailable(environment) }
         if (candidates.isEmpty()) {

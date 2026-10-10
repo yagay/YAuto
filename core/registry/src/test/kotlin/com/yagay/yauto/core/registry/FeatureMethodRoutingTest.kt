@@ -82,6 +82,11 @@ class FeatureMethodRoutingTest {
         assertEquals(FeatureMethod.ROOT_REQUIRED, old.preferredMethod())
     }
 
+    @Test fun newTaskUsesAutomaticRoutingWithoutExtraConfig() {
+        assertEquals(FeatureMethod.AUTO, FeatureRef("android.app.launch").preferredMethod())
+        assertNull(FeatureRef("android.app.launch").effectiveMethodBackendId())
+    }
+
     @Test fun publicAndroidAndRootCanUseSameLogicalFeature() {
         val options = listOf(
             FeatureImplementationOption("android"),
@@ -91,7 +96,8 @@ class FeatureMethodRoutingTest {
             "Launch app", "Open application", FeatureCategory.APP, implementationOptions = options)
         assertTrue(descriptor.hasDualMethodRoutes())
         val keys = descriptor.withAccessEditorMetadata().fields.map { it.key }
-        assertTrue("__method" in keys)
+        assertFalse("__method" in keys)
+        assertFalse("__backend" in keys)
     }
 
     @Test fun onlyGenuineDualRoutesExposeMethod() {
@@ -104,10 +110,6 @@ class FeatureMethodRoutingTest {
             "Dual", "Both methods", FeatureCategory.SYSTEM, implementationOptions = options)
         val decorated = descriptor.withAccessEditorMetadata()
         assertTrue(decorated.hasDualMethodRoutes())
-        assertEquals(listOf("__method", "__backend"), decorated.fields.take(2).map { it.key })
-        assertEquals(listOf("no_root", "root_required"), (decorated.fields[0] as FieldSchema.Choice).options)
-        assertEquals(listOf("auto", "accessibility", "lsposed", "root"),
-            (decorated.fields[1] as FieldSchema.Choice).options)
-        assertNull(decorated.fieldBehavior("__backend").visibleWhen)
+        assertFalse(decorated.fields.any { it.key == FEATURE_METHOD_CONFIG_KEY || it.key == FEATURE_BACKEND_CONFIG_KEY })
     }
 }

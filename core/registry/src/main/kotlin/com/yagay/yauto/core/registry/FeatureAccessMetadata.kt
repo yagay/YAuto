@@ -35,7 +35,11 @@ fun FeatureRef.preferredMethod(): FeatureMethod {
         "shortx" -> if (backend == "shizuku") FeatureMethod.NO_ROOT else FeatureMethod.ROOT_REQUIRED
         FeatureMethod.ROOT_REQUIRED.id -> FeatureMethod.ROOT_REQUIRED
         FeatureMethod.AUTO.id -> FeatureMethod.AUTO
-        null, "" -> if (backend in ROOT_BACKENDS) FeatureMethod.ROOT_REQUIRED else FeatureMethod.NO_ROOT
+        // A new task without a method override uses automatic best-effort routing:
+        // public Android / Accessibility -> Shizuku -> Root or LSPosed if needed.
+        null, "" -> if (backend in ROOT_BACKENDS) FeatureMethod.ROOT_REQUIRED
+            else if (backend in NO_ROOT_BACKENDS) FeatureMethod.NO_ROOT
+            else FeatureMethod.AUTO
         else -> FeatureMethod.NO_ROOT
     }
 }
@@ -122,38 +126,11 @@ fun FeatureDescriptor.resolvedImplementationOptions(): List<FeatureImplementatio
 }
 
 /**
- * Core only injects a stable backend selector. Display labels, access summaries, descriptions and
- * implementation trade-offs are resolved by the Android UI resource layer.
+ * Public feature configuration only contains business parameters. Backend/method
+ * choices are an internal routing detail, not extra fields in the feature editor.
+ * Old `__method`/`__backend` values are still understood by the execution layer.
  */
-fun FeatureDescriptor.withAccessEditorMetadata(): FeatureDescriptor {
-    val requirements = resolvedAccessRequirements()
-    val options = resolvedImplementationOptions()
-    if (requirements.isEmpty() && options.isEmpty()) return this
-
-    val dual = hasDualMethodRoutes()
-    val selectableBackends = options.mapNotNull { it.backendId }.distinct()
-    val methodField = if (dual && fields.none { it.key == FEATURE_METHOD_CONFIG_KEY }) {
-        FieldSchema.Choice(
-            key = FEATURE_METHOD_CONFIG_KEY,
-            label = FEATURE_METHOD_CONFIG_KEY,
-            options = listOf(FeatureMethod.NO_ROOT.id, FeatureMethod.ROOT_REQUIRED.id),
-        )
-    } else null
-    val backendField = if (selectableBackends.size > 1 && fields.none { it.key == FEATURE_BACKEND_CONFIG_KEY }) {
-        FieldSchema.Choice(
-            key = FEATURE_BACKEND_CONFIG_KEY,
-            label = FEATURE_BACKEND_CONFIG_KEY,
-            options = listOf("auto") + selectableBackends,
-        )
-    } else null
-
-    return copy(
-        fields = listOfNotNull(methodField, backendField) + fields,
-        fieldBehaviors = fieldBehaviors,
-        keywords = keywords + requirements.map { it.id } + options.mapNotNull { it.backendId } +
-            if (dual) setOf("macrodroid", "shortx", "implementation method") else emptySet(),
-    )
-}
+fun FeatureDescriptor.withAccessEditorMetadata(): FeatureDescriptor = this
 
 /**
  * Picker visibility only: conservative metadata check. Never infer Root-only status
@@ -180,4 +157,16 @@ fun FeatureDescriptor.isRootExclusiveFeature(): Boolean {
     val options = resolvedImplementationOptions()
     return if (options.isNotEmpty()) options.all { it.requiresRootOrLsposed() }
         else accessRequirements.any { it in ROOT_ONLY_ACCESS }
+}
+
+/** Shared presentation metadata: root is required only when no verified non-root path exists. */
+fun FeatureDescriptor.requiresRootToRun(): Boolean = isRootExclusiveFeature()
+
+/** Common permissions, not the union of alternative backends' permissions. */
+fun FeatureDescriptor.mandatoryAccessRequirements(): Set<AccessRequirement> {
+    val options = resolvedImplementationOptions()
+    if (options.isEmpty()) return resolvedAccessRequirements()
+    val common = options.map { it.requirements }.reduceOrNull { a, b -> a intersect b }.orEmpty()
+    val alternativeRequirements = options.flatMap { it.requirements }.toSet()
+    return (accessRequirements - alternativeRequirements) + common
 }

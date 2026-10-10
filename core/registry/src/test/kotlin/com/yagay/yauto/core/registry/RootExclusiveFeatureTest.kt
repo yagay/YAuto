@@ -21,6 +21,16 @@ class RootExclusiveFeatureTest {
         accessRequirements = access,
     )
 
+    @Test fun alternativeRequirementsAreNotAllMandatory() {
+        val mixed = feature(implementations = listOf(
+            FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+            FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+        ))
+        assertFalse(mixed.requiresRootToRun())
+        assertTrue(mixed.mandatoryAccessRequirements().isEmpty())
+        assertTrue(feature(capabilities = setOf(CapabilityIds.LSPOSED)).requiresRootToRun())
+    }
+
     @Test fun lsposedOnlyIsRootExclusive() {
         assertTrue(feature(capabilities = setOf(CapabilityIds.LSPOSED)).isRootExclusiveFeature())
     }
