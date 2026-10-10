@@ -145,6 +145,20 @@ if home_screen.exists():
     if "onManual = onRunManual" in home_text:
         errors.append("settings must open the shared test centre, not bypass it with direct manual execution")
 
+
+# The runtime must have exactly one lifecycle owner for active jobs.
+runtime_dir = ROOT / "core/runtime/src/main/kotlin/com/yagay/yauto/core/runtime"
+runtime_entry = runtime_dir / "AutomationRuntime.kt"
+job_registry = runtime_dir / "ExecutionJobRegistry.kt"
+if not job_registry.exists():
+    errors.append("ExecutionJobRegistry is required for shared execution lifecycle ownership")
+if runtime_entry.exists():
+    runtime_text = runtime_entry.read_text(encoding="utf-8")
+    if "ExecutionJobRegistry()" not in runtime_text:
+        errors.append("AutomationRuntime must delegate job lifecycle to ExecutionJobRegistry")
+    if "runningExecutions = " in runtime_text or "private fun trackJob(" in runtime_text:
+        errors.append("AutomationRuntime must not reintroduce inline active-job tracking")
+
 if errors:
     print("Architecture guard failed:")
     for error in errors:
