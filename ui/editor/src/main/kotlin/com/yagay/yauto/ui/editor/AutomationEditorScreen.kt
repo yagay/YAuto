@@ -93,7 +93,9 @@ fun MacroAutomationEditorScreen(
 
     PageBackHandler(onBack = ::navigateBack)
 
-    fun save() {
+    val draftId = remember(initial?.id) { initial?.id ?: AutomationId(UUID.randomUUID().toString()) }
+
+    fun currentDraft(): Automation {
         val simple = conditions.map { PredicateNode.Condition(it) }
         val predicate = when {
             preservedComplex != null && simple.isEmpty() -> preservedComplex
@@ -102,9 +104,8 @@ fun MacroAutomationEditorScreen(
             simple.size == 1 -> simple.single()
             else -> PredicateNode.All(simple)
         }
-        onSave(
-            Automation(
-                id = initial?.id ?: AutomationId(UUID.randomUUID().toString()),
+        return Automation(
+                id = draftId,
                 name = name.trim().ifBlank { unnamedAutomation },
                 enabled = enabled,
                 workspaceId = initial?.workspaceId,
@@ -117,8 +118,9 @@ fun MacroAutomationEditorScreen(
                 description = description.trim().ifBlank { null },
                 source = initial?.source,
             )
-        )
     }
+
+    fun save() = onSave(currentDraft())
 
     Scaffold(
         topBar = {
@@ -438,18 +440,10 @@ fun MacroAutomationEditorScreen(
         FeatureQuickTestDialog(feature, kind) { quickTest = null }
     }
     if (stepDebug) {
-        if (initial != null) {
-            EngineDebugDialog(
-                automation = initial.copy(onEvent = onEvent),
-                onDismiss = { stepDebug = false },
-            )
-        } else {
-            StepDebugDialog(
-                nodes = onEvent,
-                descriptors = descriptorById,
-                onDismiss = { stepDebug = false },
-            )
-        }
+        EngineDebugDialog(
+            automation = currentDraft(),
+            onDismiss = { stepDebug = false },
+        )
     }
     if (macroTest && initial != null) {
         SavedAutomationTestDialog(initial.id.value) { macroTest = false }
