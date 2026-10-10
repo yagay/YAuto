@@ -64,4 +64,42 @@ class EngineDebugSessionTest {
         assertEquals(ConfigValue.StringValue("two"), steps[11L]?.variablesBefore?.get("iteration"))
     }
 
+    @Test fun continueRunsUntilConfiguredBreakpoint() = runBlocking {
+        val debugger = EngineDebugSession()
+        val regular = ActionNode.Label(NodeId("regular-node"), "regular")
+        val stop = ActionNode.Label(NodeId("breakpoint-node"), "stop")
+        debugger.setBreakpoint(stop.id, true)
+        debugger.continueExecution()
+
+        debugger.beforeNode(1L, regular, emptyMap())
+        debugger.afterNode(1L, regular, emptyMap(), true, 1L)
+
+        val stopped = async {
+            debugger.beforeNode(2L, stop, emptyMap())
+            debugger.afterNode(2L, stop, emptyMap(), true, 2L)
+        }
+        repeat(100) {
+            if (debugger.pausedAt() != null) return@repeat
+            yield()
+        }
+        assertEquals(stop.id, debugger.pausedAt()?.nodeId)
+        assertFalse(stopped.isCompleted)
+        debugger.continueExecution()
+        stopped.await()
+        assertNull(debugger.pausedAt())
+        assertEquals(2, debugger.snapshot().size)
+    }
+
+    @Test fun removingBreakpointLetsContinueRunWithoutPause() = runBlocking {
+        val debugger = EngineDebugSession()
+        val node = ActionNode.Label(NodeId("removed-breakpoint"), "removed")
+        debugger.setBreakpoint(node.id, true)
+        debugger.setBreakpoint(node.id, false)
+        debugger.continueExecution()
+        debugger.beforeNode(3L, node, emptyMap())
+        debugger.afterNode(3L, node, emptyMap(), true, 3L)
+        assertNull(debugger.pausedAt())
+        assertEquals(1, debugger.snapshot().size)
+    }
+
 }
