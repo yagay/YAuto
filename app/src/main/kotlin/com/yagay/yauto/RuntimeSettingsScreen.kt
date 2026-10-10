@@ -36,7 +36,9 @@ import com.yagay.yauto.ui.design.PageBackButton
 import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.launch
 
-private enum class RuntimeSettingsPage { OVERVIEW, PERMISSIONS, BACKENDS, ENGINE, HEALTH }
+private enum class RuntimeSettingsPage {
+    OVERVIEW, PERMISSIONS, BACKENDS, RUNTIME, EDITOR, LOGGING, ENGINE, HEALTH
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -129,6 +131,9 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                             RuntimeSettingsPage.OVERVIEW -> stringResource(TextR.string.runtime_settings_title_overview)
                             RuntimeSettingsPage.PERMISSIONS -> stringResource(TextR.string.runtime_settings_title_permissions)
                             RuntimeSettingsPage.BACKENDS -> stringResource(TextR.string.runtime_settings_title_backends)
+                            RuntimeSettingsPage.RUNTIME -> stringResource(TextR.string.settings_runtime_background)
+                            RuntimeSettingsPage.EDITOR -> stringResource(TextR.string.settings_editor_defaults)
+                            RuntimeSettingsPage.LOGGING -> stringResource(TextR.string.settings_logs_title)
                             RuntimeSettingsPage.ENGINE -> stringResource(TextR.string.runtime_settings_title_engine)
                             RuntimeSettingsPage.HEALTH -> stringResource(TextR.string.runtime_settings_title_health)
                         }
@@ -183,32 +188,28 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                     )
                 }
                 item {
-                    Card(Modifier.fillMaxWidth()) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(14.dp),
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                Text(
-                                    stringResource(TextR.string.runtime_show_root_exclusive_title),
-                                    fontWeight = FontWeight.Medium,
-                                )
-                                Text(
-                                    stringResource(TextR.string.runtime_show_root_exclusive_detail),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            Switch(
-                                checked = showRootExclusive,
-                                onCheckedChange = { checked ->
-                                    FeatureVisibilityPreferences.setShowRootExclusive(context, checked)
-                                    showRootExclusive = checked
-                                },
-                            )
-                        }
-                    }
+                    MacroItemRow(
+                        stringResource(TextR.string.settings_runtime_background),
+                        stringResource(TextR.string.settings_runtime_background_description),
+                        MacroPalette.State,
+                        onClick = { navigateTo(RuntimeSettingsPage.RUNTIME) },
+                    )
+                }
+                item {
+                    MacroItemRow(
+                        stringResource(TextR.string.settings_editor_defaults),
+                        stringResource(TextR.string.settings_editor_defaults_description),
+                        MacroPalette.Variable,
+                        onClick = { navigateTo(RuntimeSettingsPage.EDITOR) },
+                    )
+                }
+                item {
+                    MacroItemRow(
+                        stringResource(TextR.string.settings_logs_title),
+                        stringResource(TextR.string.settings_logs_description),
+                        MacroPalette.Diagnostics,
+                        onClick = { navigateTo(RuntimeSettingsPage.LOGGING) },
+                    )
                 }
                 item {
                     MacroItemRow(
@@ -292,6 +293,12 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
             RuntimeSettingsPage.PERMISSIONS -> PermissionGrantCenter(
                 modifier = Modifier.padding(padding),
             )
+
+            RuntimeSettingsPage.RUNTIME -> RuntimeBackgroundPreferencesPage(
+                context = context, refresh = refresh,
+            )
+            RuntimeSettingsPage.EDITOR -> EditorPreferencesPage(context)
+            RuntimeSettingsPage.LOGGING -> LogPreferencesPage(context, graph)
 
             RuntimeSettingsPage.BACKENDS -> LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
