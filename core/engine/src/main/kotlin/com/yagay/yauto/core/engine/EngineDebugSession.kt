@@ -81,13 +81,15 @@ class EngineDebugSession : EngineDebugObserver {
                 CompletableDeferred(),
             ).also(waiting::addLast)
         }
+        var passedPause = false
         try {
             waiter?.deferred?.await()
+            passedPause = true
         } finally {
             mutex.withLock {
                 if (waiter != null) waiting.remove(waiter)
-                // An invocation cancelled while paused will never reach afterNode.
-                if (waiter?.deferred?.isCancelled == true) before.remove(invocationId)
+                // Any cancellation before node execution skips afterNode; release its snapshot.
+                if (!passedPause) before.remove(invocationId)
             }
         }
     }
