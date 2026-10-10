@@ -9,17 +9,17 @@ import org.junit.Test
 class FeatureMethodRoutingTest {
     @Test fun explicitNormalModeNeverCallsPrivilege() = runBlocking {
         var elevated = 0
-        val result = routeFeatureMethod(FeatureMethod.MACRODROID, true, { false }, { elevated++; true }, { it })
+        val result = routeFeatureMethod(FeatureMethod.NO_ROOT, true, { false }, { elevated++; true }, { it })
         assertEquals(false, result)
         assertEquals(0, elevated)
-        val unsupported = routeFeatureMethod(FeatureMethod.MACRODROID, false, { true }, { elevated++; true }, { it })
+        val unsupported = routeFeatureMethod(FeatureMethod.NO_ROOT, false, { true }, { elevated++; true }, { it })
         assertNull(unsupported)
         assertEquals(0, elevated)
     }
 
     @Test fun explicitShortXNeverCallsNormalPath() = runBlocking {
         var normalCalls = 0
-        val result = routeFeatureMethod(FeatureMethod.SHORTX, true, { normalCalls++; true }, { false }, { it })
+        val result = routeFeatureMethod(FeatureMethod.ROOT_REQUIRED, true, { normalCalls++; true }, { false }, { it })
         assertEquals(false, result)
         assertEquals(0, normalCalls)
     }
@@ -39,10 +39,36 @@ class FeatureMethodRoutingTest {
         assertFalse(elevated)
     }
 
+    @Test fun savedShizukuIsNonRootEvenForLegacyShortX() {
+        val legacy = FeatureRef("accessibility.global_action", 1,
+            mapOf("__method" to ConfigValue.StringValue("shortx"),
+                "__backend" to ConfigValue.StringValue("shizuku")))
+        assertEquals(FeatureMethod.NO_ROOT, legacy.preferredMethod())
+        assertTrue(legacy.methodBackendIsCompatible())
+    }
+
+    @Test fun invalidCrossFamilyBackendIsRejected() {
+        val wrong = FeatureRef("accessibility.global_action", 1,
+            mapOf("__method" to ConfigValue.StringValue("no_root"),
+                "__backend" to ConfigValue.StringValue("root")))
+        assertFalse(wrong.methodBackendIsCompatible())
+    }
+
+    @Test fun explicitNoRootCanSelectShizukuOnly() = runBlocking {
+        var called = mutableListOf<String>()
+        val result = routeBackendCandidates("shizuku", listOf("android", "shizuku"),
+            { backend -> called.add(backend); true }, { it })
+        assertEquals(true, result)
+        assertEquals(listOf("shizuku"), called)
+        val notAllowed = routeBackendCandidates("root", listOf("android", "shizuku"),
+            { backend -> called.add(backend); true }, { it })
+        assertNull(notAllowed)
+    }
+
     @Test fun previousPrivilegedSelectionsRemainShortX() {
         val old = FeatureRef("android.lsposed.system.operation", 1,
             mapOf("__backend" to ConfigValue.StringValue("root")))
-        assertEquals(FeatureMethod.SHORTX, old.preferredMethod())
+        assertEquals(FeatureMethod.ROOT_REQUIRED, old.preferredMethod())
     }
 
     @Test fun publicAndroidAndRootCanUseSameLogicalFeature() {
@@ -68,9 +94,9 @@ class FeatureMethodRoutingTest {
         val decorated = descriptor.withAccessEditorMetadata()
         assertTrue(decorated.hasDualMethodRoutes())
         assertEquals(listOf("__method", "__backend"), decorated.fields.take(2).map { it.key })
-        assertEquals(listOf("auto", "lsposed", "root"),
+        assertEquals(listOf("no_root", "root_required"), (decorated.fields[0] as FieldSchema.Choice).options)
+        assertEquals(listOf("auto", "accessibility", "lsposed", "root"),
             (decorated.fields[1] as FieldSchema.Choice).options)
-        assertEquals(FieldRule.Equals("__method", ConfigValue.StringValue("shortx")),
-            decorated.fieldBehavior("__backend").visibleWhen)
+        assertNull(decorated.fieldBehavior("__backend").visibleWhen)
     }
 }

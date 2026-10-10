@@ -1,9 +1,9 @@
 package com.yagay.yauto.core.registry
 
 /**
- * Prefer public Android/accessibility in automatic mode, then fall back to the
- * privileged ShortX route only when the first attempt really failed.
- * Explicit selection is strict: never silently escalate MacroDroid to Root.
+ * No-root includes Shizuku (started via wireless debugging), Android and Accessibility.
+ * Root-required permits Root and LSPosed only. AUTO remains exclusively for historical tasks.
+ * A chosen family never falls into the other unless a legacy task explicitly requested AUTO.
  */
 suspend fun <T> routeFeatureMethod(
     method: FeatureMethod,
@@ -12,8 +12,8 @@ suspend fun <T> routeFeatureMethod(
     shortx: suspend () -> T,
     succeeded: (T) -> Boolean,
 ): T? = when (method) {
-    FeatureMethod.MACRODROID -> if (macroSupported) macrodroid() else null
-    FeatureMethod.SHORTX -> shortx()
+    FeatureMethod.NO_ROOT -> if (macroSupported) macrodroid() else null
+    FeatureMethod.ROOT_REQUIRED -> shortx()
     FeatureMethod.AUTO -> {
         if (!macroSupported) shortx()
         else {
@@ -21,4 +21,22 @@ suspend fun <T> routeFeatureMethod(
             if (succeeded(regular)) regular else shortx()
         }
     }
+}
+
+/** Try only the named backends, in order, never across no-root/root permission families. */
+suspend fun <T> routeBackendCandidates(
+    preferred: String?,
+    candidates: List<String>,
+    execute: suspend (String) -> T,
+    succeeded: (T) -> Boolean,
+): T? {
+    if (preferred != null && preferred !in candidates) return null
+    val choices = preferred?.let(::listOf) ?: candidates
+    var last: T? = null
+    for (backend in choices) {
+        val result = execute(backend)
+        last = result
+        if (succeeded(result)) return result
+    }
+    return last
 }
