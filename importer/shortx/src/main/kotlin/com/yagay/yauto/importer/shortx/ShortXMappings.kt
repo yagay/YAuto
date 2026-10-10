@@ -1747,6 +1747,17 @@ internal class ProtoFields(bytes: ByteArray) {
         return fields.asSequence().filter { it.number < 96 }.all { it.number in allowedSet }
     }
 
+    /** Strict control-flow check: unlike leaf actions, structural nodes cannot retain source
+     * metadata or future fields. Only explicitly defaulted control flags (97/98 = 0) are safe.
+     */
+    fun onlyStructuralFields(vararg allowed: Int): Boolean {
+        val accepted = allowed.toSet()
+        return fields.all { field ->
+            field.number in accepted ||
+                ((field.number == 97 || field.number == 98) && field.wire == 0 && field.varint == 0L)
+        }
+    }
+
     fun string(number: Int): String? = bytes(number)
         ?.toString(Charsets.UTF_8)
         ?.takeIf { it.isNotEmpty() }

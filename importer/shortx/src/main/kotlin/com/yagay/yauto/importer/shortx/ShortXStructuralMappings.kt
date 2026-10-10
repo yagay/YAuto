@@ -34,21 +34,21 @@ internal object ShortXStructuralMappings {
         return when (type) {
             // NoAction stays in ShortXMappings, which also checks its business fields.
             "BreakActionExecute", "Brk" ->
-                if (fields.onlyBusinessFields()) ActionNode.Break(nodeId()) else null
+                if (fields.onlyStructuralFields()) ActionNode.Break(nodeId()) else null
             "StopAllActions" ->
-                if (fields.onlyBusinessFields()) ActionNode.Return(nodeId(), ConfigValue.NullValue) else null
+                if (fields.onlyStructuralFields()) ActionNode.Return(nodeId(), ConfigValue.NullValue) else null
             "SetFunctionReturnValue" ->
-                if (!fields.onlyBusinessFields(1)) null else fields.string(1)?.let {
+                if (!fields.onlyStructuralFields(1)) null else fields.string(1)?.let {
                     ActionNode.Return(nodeId(), ConfigValue.StringValue(it))
                 }
-            "ExecuteFunction" -> if (fields.onlyBusinessFields(1, 2)) convertFlowCall(fields, "function") else null
-            "FromDA" -> if (fields.onlyBusinessFields(1, 2)) convertFlowCall(fields, "da") else null
-            "IfThenElse" -> if (fields.onlyBusinessFields(1, 2, 4, 5, 6, 7)) convertIf(fields, predicate, action, path) else null
-            "ForEach" -> if (fields.onlyBusinessFields(1, 2, 3, 4)) convertForEach(fields, action, path) else null
-            "ForEachPkgSet" -> if (fields.onlyBusinessFields(1, 2)) convertForEachPackageSet(fields, action, path) else null
-            "SwitchCase" -> if (fields.onlyBusinessFields(1, 2)) convertSwitchCases(fields, predicate, action, path) else null
-            "WaitUtilConditionMatch" -> if (fields.onlyBusinessFields(1, 2, 4, 5, 6, 9, 10)) convertWaitUntil(fields, predicate, path) else null
-            "WhileLoop" -> if (fields.onlyBusinessFields(1, 2, 3, 5, 6, 7)) convertWhile(fields, predicate, action, path) else null
+            "ExecuteFunction" -> if (fields.onlyStructuralFields(1, 2)) convertFlowCall(fields, "function") else null
+            "FromDA" -> if (fields.onlyStructuralFields(1, 2)) convertFlowCall(fields, "da") else null
+            "IfThenElse" -> if (fields.onlyStructuralFields(1, 2, 4, 5, 6, 7)) convertIf(fields, predicate, action, path) else null
+            "ForEach" -> if (fields.onlyStructuralFields(1, 2, 3, 4)) convertForEach(fields, action, path) else null
+            "ForEachPkgSet" -> if (fields.onlyStructuralFields(1, 2)) convertForEachPackageSet(fields, action, path) else null
+            "SwitchCase" -> if (fields.onlyStructuralFields(1, 2)) convertSwitchCases(fields, predicate, action, path) else null
+            "WaitUtilConditionMatch" -> if (fields.onlyStructuralFields(1, 2, 4, 5, 6, 9, 10)) convertWaitUntil(fields, predicate, path) else null
+            "WhileLoop" -> if (fields.onlyStructuralFields(1, 2, 3, 5, 6, 7)) convertWhile(fields, predicate, action, path) else null
             else -> null
         }
     }
@@ -61,7 +61,7 @@ internal object ShortXStructuralMappings {
         fields.allBytes(2).forEach { bytes ->
             val parameter = ProtoFields(bytes)
             val name = parameter.string(1)?.trim().orEmpty()
-            if (!parameter.onlyBusinessFields(1, 2) || name.isBlank() || name in input) return null
+            if (!parameter.onlyStructuralFields(1, 2) || name.isBlank() || name in input) return null
             input[name] = ConfigValue.StringValue(parameter.string(2).orEmpty())
         }
         return ActionNode.CallFlow(
@@ -152,10 +152,10 @@ internal object ShortXStructuralMappings {
         if (cases.isEmpty()) return null
         // A break-after-case ShortX switch is equivalent to a nested YAuto if/else chain.
         if (cases.any {
-                !it.onlyBusinessFields(1, 2, 4, 7, 8, 9) ||
+                !it.onlyStructuralFields(1, 2, 4, 7, 8, 9) ||
                     (it.varint(9) ?: 0L) != 0L || it.varint(8) == 1L || it.varint(7) != 1L
             }) return null
-        if (fields.bytes(2)?.let { !ProtoFields(it).onlyBusinessFields(4) } == true) return null
+        if (fields.bytes(2)?.let { !ProtoFields(it).onlyStructuralFields(4) } == true) return null
         val defaultActions = fields.bytes(2)?.let(::ProtoFields)?.allBytes(4).orEmpty()
             .mapIndexed { index, bytes -> action(decodeAny(bytes), path + ".switch.default[" + index + "]") }
 

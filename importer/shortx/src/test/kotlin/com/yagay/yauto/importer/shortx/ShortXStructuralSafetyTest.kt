@@ -37,6 +37,7 @@ class ShortXStructuralSafetyTest {
         assertEquals("keep note", noted.comment)
         assertCompat("BreakActionExecute", varintField(98, 2))
         assertCompat("BreakActionExecute", field(96, "future"))
+        assertCompat("BreakActionExecute", varintField(120, 1))
     }
 
     @Test fun `invalid wait duration and duplicate flow params remain source nodes`() {
