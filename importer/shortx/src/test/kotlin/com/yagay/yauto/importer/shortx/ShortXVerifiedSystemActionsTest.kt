@@ -384,6 +384,65 @@ class ShortXVerifiedSystemActionsTest {
             result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature.typeId })
     }
 
+
+    @Test fun `ShortX 5G mode and SIM slot preserve the documented enum exactly`() {
+        val enable = importAction("Toggle5G", byteArrayOf())
+        assertEquals("android.telephony.5g.toggle", enable.typeId)
+        assertEquals(ConfigValue.StringValue("enable"), enable.config["operation"])
+        assertEquals(ConfigValue.NumberValue(0.0), enable.config["slotId"])
+        val toggle = importAction("Toggle5G", message(varintField(1, 2), varintField(2, 1)))
+        assertEquals("android.telephony.5g.toggle", toggle.typeId)
+        assertEquals(ConfigValue.StringValue("toggle"), toggle.config["operation"])
+        assertEquals(ConfigValue.NumberValue(1.0), toggle.config["slotId"])
+        assertEquals("compat.source.action", importAction("Toggle5G", message(varintField(1, 3))).typeId)
+        assertEquals("compat.source.action", importAction("Toggle5G", message(varintField(2, 3))).typeId)
+    }
+
+    @Test fun `ShortX three phase vibration reuses YAuto pattern with no new feature id`() {
+        val a = importAction("Vibrate", message(varintField(1, 200), varintField(2, 100), varintField(3, 200)))
+        assertEquals("android.vibration.pattern", a.typeId)
+        assertEquals(ConfigValue.StringValue("0,200,100,200"), a.config["timings"])
+        assertEquals("compat.source.action", importAction("Vibrate", message(varintField(1, 0), varintField(2, 100), varintField(3, 200))).typeId)
+        assertEquals("compat.source.action", importAction("Vibrate", message(varintField(1, 200), varintField(3, 200))).typeId)
+    }
+
+    @Test fun `ShortX scroll location has six exact Android Accessibility positions`() {
+        val names = listOf("top", "bottom", "top_force", "bottom_force", "forward", "backward")
+        names.forEachIndexed { index, name ->
+            val value = importAction("ScrollViewTo", message(varintField(1, index.toLong())))
+            assertEquals("accessibility.scroll_to", value.typeId)
+            assertEquals(ConfigValue.StringValue(name), value.config["location"])
+        }
+        assertEquals("compat.source.action", importAction("ScrollViewTo", message(varintField(1, 9))).typeId)
+    }
+
+    @Test fun `ShortX lock uses actual lock screen not screen off`() {
+        val value = importAction("LockDeviceNow", byteArrayOf())
+        assertEquals("accessibility.global_action", value.typeId)
+        assertEquals(ConfigValue.StringValue("lock_screen"), value.config["action"])
+        assertEquals("compat.source.action", importAction("LockDeviceNow", message(varintField(1, 1))).typeId)
+    }
+
+    @Test fun `ShortX JSON source modes select existing native actions conservatively`() {
+        val json = """{"title":"safe","actions":[
+            {"@type":"type.googleapis.com/shortx.Toggle5G","onOff":"OnOffToggle_Toggle","slotId":1},
+            {"@type":"type.googleapis.com/shortx.Vibrate","vib1":100,"vib2":50,"vib3":100},
+            {"@type":"type.googleapis.com/shortx.ScrollViewTo","location":"ScrollViewToLocation_Backward"},
+            {"@type":"type.googleapis.com/shortx.ShowHideInsets","isHide":true,"type":["WindowInsetType_StatusBar","WindowInsetType_NavBar"]},
+            {"@type":"type.googleapis.com/shortx.LockDeviceNow"},
+            {"@type":"type.googleapis.com/shortx.ShowHideInsets","isHide":true,"type":["WindowInsetType_Ime"]},
+            {"@type":"type.googleapis.com/shortx.Toggle5G","onOff":8,"slotId":0},
+            {"@type":"type.googleapis.com/shortx.Vibrate","vib1":0,"vib2":50,"vib3":100}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("safe.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        val actions = result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature }
+        assertEquals(listOf("android.telephony.5g.toggle", "android.vibration.pattern",
+            "accessibility.scroll_to", "android.insets.immersive.set", "accessibility.global_action",
+            "compat.source.action", "compat.source.action", "compat.source.action"), actions.map { it.typeId })
+        assertEquals(ConfigValue.StringValue("hide_all"), actions[3].config["mode"])
+    }
+
     private fun assertBoolean(source: String, target: String, key: String, value: Boolean) {
         val feature = importAction(source, message(varintField(1, if (value) 1 else 0)))
         assertEquals(target, feature.typeId)
