@@ -138,12 +138,7 @@ abstract class XposedMethodHookInstallers : XposedSystemEventInstallers() {
                     val failures = mutableListOf<String>()
                     matchingMembers.forEach { member ->
                         val key = "$receiverKey|$sessionId|${member.toGenericString()}"
-                        if (!installedHooks.add(key)) {
-                            if (alreadyActive) hookedCount++
-                            else failures += "${member.name}: inactive hook cannot be reattached without process restart"
-                            return@forEach
-                        }
-                        try {
+                        val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                             if (member is Method) {
                                 // Check type compatibility before installing the interceptor,
                                 // not when the target process first calls this method.
@@ -158,12 +153,21 @@ abstract class XposedMethodHookInstallers : XposedSystemEventInstallers() {
                                     member as java.lang.reflect.Constructor<*>, sessionId, eventToken, lifecycle, captureValues,
                                 )
                             }
-                            hookedCount++
-                            newlyHooked++
-                        } catch (error: Exception) {
-                            installedHooks.remove(key)
-                            failures += "${member.name}: ${error.message.orEmpty().take(120)}"
-                            log(Log.WARN, "YAuto", "Hook target unavailable: $key", error)
+                        }
+                        when {
+                            installation.getOrNull() == true -> {
+                                hookedCount++
+                                newlyHooked++
+                            }
+                            installation.getOrNull() == false -> {
+                                if (alreadyActive) hookedCount++
+                                else failures += "${member.name}: inactive hook cannot be reattached without process restart"
+                            }
+                            else -> {
+                                val error = installation.exceptionOrNull()!!
+                                failures += "${member.name}: ${error.message.orEmpty().take(120)}"
+                                log(Log.WARN, "YAuto", "Hook target unavailable: $key", error)
+                            }
                         }
                     }
                     if (hookedCount > 0) {

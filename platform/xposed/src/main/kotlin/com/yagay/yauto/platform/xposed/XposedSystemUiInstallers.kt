@@ -116,8 +116,7 @@ abstract class XposedSystemUiInstallers : XposedProviderInstallers() {
             it.parameterCount == 0 && CharSequence::class.java.isAssignableFrom(it.returnType)
         }.forEach { method ->
             val key = "yauto-qs-label|" + method.toGenericString()
-            if (!installedHooks.add(key)) return@forEach
-            try {
+            val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                 method.isAccessible = true
                 hook(method).intercept { chain ->
                     val original = chain.proceed()
@@ -132,9 +131,9 @@ abstract class XposedSystemUiInstallers : XposedProviderInstallers() {
                     val label = component?.flattenToString()?.let(systemUiTileLabels::get)
                     label ?: original
                 }
-                hookCount++
-            } catch (error: Exception) {
-                installedHooks.remove(key)
+            }
+            if (installation.getOrNull() == true) hookCount++
+            installation.exceptionOrNull()?.let { error ->
                 log(Log.WARN, "YAuto", "External QS tile label hook unavailable", error)
             }
         }
