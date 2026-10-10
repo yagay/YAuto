@@ -82,6 +82,8 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                     SystemBridgeProtocol.APP_PROCESS_START,
                     SystemBridgeProtocol.STATUS_CHIP_SHOW,
                     SystemBridgeProtocol.STATUS_CHIP_HIDE,
+                    SystemBridgeProtocol.TILE_LABEL_SET,
+                    SystemBridgeProtocol.TILE_LABEL_CLEAR,
                 )) ||
             (request.capability == CapabilityIds.LSPOSED_HOOK &&
                 request.operationId in setOf(
@@ -100,6 +102,9 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
             request.capability == CapabilityIds.LSPOSED &&
                 request.operationId in setOf(SystemBridgeProtocol.STATUS_CHIP_SHOW, SystemBridgeProtocol.STATUS_CHIP_HIDE) ->
                 requestSystem(request.operationId, request.payload, "com.android.systemui", SystemBridgeProtocol.CHIP_ACTION)
+            request.capability == CapabilityIds.LSPOSED &&
+                request.operationId in setOf(SystemBridgeProtocol.TILE_LABEL_SET, SystemBridgeProtocol.TILE_LABEL_CLEAR) ->
+                requestSystem(request.operationId, request.payload, "com.android.systemui", SystemBridgeProtocol.TILE_LABEL_ACTION)
             request.capability == CapabilityIds.LSPOSED -> requestSystem(request.operationId, request.payload)
             else -> requestSystem(request.operationId)
         }

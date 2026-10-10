@@ -141,4 +141,11 @@
     <string name="feature_android_lsposed_hook_disable_session_field_operation_option_disable">Disable session</string>
     <string name="feature_android_lsposed_hook_disable_session_field_operation_option_query">Query session</string>
     <string name="feature_android_lsposed_hook_disable_session_field_resultvariable">Store session status</string>
+    <string name="feature_android_qs_tile_custom_label_title">Override external Quick Settings tile label</string>
+    <string name="feature_android_qs_tile_custom_label_description">Change or restore a selected third-party tile label with SystemUI LSPosed</string>
+    <string name="feature_android_qs_tile_custom_label_field_component">Tile service component (package/class)</string>
+    <string name="feature_android_qs_tile_custom_label_field_label">Replacement tile label</string>
+    <string name="feature_android_qs_tile_custom_label_field_operation">Operation</string>
+    <string name="feature_android_qs_tile_custom_label_field_operation_option_set">Override</string>
+    <string name="feature_android_qs_tile_custom_label_field_operation_option_clear">Restore original</string>
 </resources>

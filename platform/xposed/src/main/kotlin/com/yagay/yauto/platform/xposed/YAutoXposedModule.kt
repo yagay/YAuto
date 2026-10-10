@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.content.ComponentName
 import android.os.SystemClock
 import android.util.Log
 import android.view.InputEvent
@@ -36,6 +37,8 @@ class YAutoXposedModule : XposedModule() {
     private val enabledShortXBehaviors = AtomicReference<Set<String>>(emptySet())
     private val enabledPackageBehaviors = AtomicReference<Set<String>>(emptySet())
     private val methodSessions = MethodHookSessionRegistry()
+    private val systemUiTileLabels = ConcurrentHashMap<String, String>()
+    private val systemUiTileReceiverRegistered = AtomicBoolean(false)
     private val yAutoUid = AtomicLong(-1L)
     private val systemUiChipRegistered = AtomicBoolean(false)
     @Volatile private var systemUiChipController: ShortXStatusChipController? = null
@@ -1174,6 +1177,7 @@ class YAutoXposedModule : XposedModule() {
             packageName == "com.android.systemui" -> {
                 installShortXSystemUiHooks(context, classLoader)
                 installShortXStatusChipHooks(context, classLoader)
+                installShortXTileLabelHooks(context, classLoader)
                 true
             }
             packageName == "com.android.nfc" -> {
@@ -1297,6 +1301,95 @@ class YAutoXposedModule : XposedModule() {
         } catch (error: Exception) {
             systemUiChipRegistered.set(false)
             log(Log.ERROR, "YAuto", "Unable to register SystemUI chip receiver", error)
+        }
+    }
+
+
+    /**
+     * Opt-in replacement of a single external QS tile label. The real CustomTile
+     * still runs and retains its original behavior when no matching override exists.
+     * No system/stock tile labels or icons are changed.
+     */
+    private fun installShortXTileLabelHooks(context: Context, classLoader: ClassLoader) {
+        val clazz = runCatching {
+            classLoader.loadClass("com.android.systemui.qs.external.CustomTile")
+        }.getOrNull() ?: return
+        var hookCount = 0
+        clazz.declaredMethods.filter { it.name == "getTileLabel" &&
+            it.parameterCount == 0 && CharSequence::class.java.isAssignableFrom(it.returnType)
+        }.forEach { method ->
+            val key = "yauto-qs-label|" + method.toGenericString()
+            if (!installedHooks.add(key)) return@forEach
+            try {
+                method.isAccessible = true
+                hook(method).intercept { chain ->
+                    val original = chain.proceed()
+                    val tile = chain.thisObject
+                    val component = runCatching {
+                        generateSequence(tile?.javaClass) { it.superclass }
+                            .take(5).flatMap { it.declaredFields.asSequence() }
+                            .firstOrNull { it.name in setOf("mComponent", "mTileComponent", "component") }
+                            ?.also { it.isAccessible = true }
+                            ?.get(tile) as? ComponentName
+                    }.getOrNull()
+                    val label = component?.flattenToString()?.let(systemUiTileLabels::get)
+                    label ?: original
+                }
+                hookCount++
+            } catch (error: Exception) {
+                installedHooks.remove(key)
+                log(Log.WARN, "YAuto", "External QS tile label hook unavailable", error)
+            }
+        }
+        if (hookCount == 0 || !systemUiTileReceiverRegistered.compareAndSet(false, true)) return
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(received: Context?, intent: Intent?) {
+                if (intent?.action != SystemBridgeProtocol.TILE_LABEL_ACTION || !isOrderedBroadcast) return
+                val reply = Bundle().apply { putInt("version", SystemBridgeProtocol.VERSION) }
+                try {
+                    require(intent.getIntExtra("version", -1) == SystemBridgeProtocol.VERSION) {
+                        "Protocol mismatch"
+                    }
+                    val operation = intent.getStringExtra("operation").orEmpty()
+                    require(operation in setOf(
+                        SystemBridgeProtocol.TILE_LABEL_SET, SystemBridgeProtocol.TILE_LABEL_CLEAR
+                    )) { "Unsupported tile label operation" }
+                    val requested = intent.getStringExtra("component").orEmpty().trim()
+                    val component = ComponentName.unflattenFromString(requested)
+                        ?: error("Invalid component name")
+                    val key = component.flattenToString()
+                    if (operation == SystemBridgeProtocol.TILE_LABEL_CLEAR) {
+                        systemUiTileLabels.remove(key)
+                    } else {
+                        val label = intent.getStringExtra("label").orEmpty()
+                        require(label.isNotBlank() && label.length <= 64 && !label.contains('\n')) {
+                            "Tile label must be 1-64 characters"
+                        }
+                        systemUiTileLabels[key] = label
+                    }
+                    reply.putString("component", key)
+                    reply.putInt("activeOverrides", systemUiTileLabels.size)
+                    reply.putBoolean("success", true)
+                } catch (error: Exception) {
+                    reply.putBoolean("success", false)
+                    reply.putString("error", error.cause?.message ?: error.message)
+                    log(Log.WARN, "YAuto", "Custom tile label operation failed", error)
+                }
+                setResultExtras(reply)
+            }
+        }
+        try {
+            if (Build.VERSION.SDK_INT >= 33) {
+                context.registerReceiver(receiver, IntentFilter(SystemBridgeProtocol.TILE_LABEL_ACTION),
+                    SystemBridgeProtocol.PERMISSION, null, Context.RECEIVER_EXPORTED)
+            } else {
+                @Suppress("DEPRECATION")
+                context.registerReceiver(receiver, IntentFilter(SystemBridgeProtocol.TILE_LABEL_ACTION),
+                    SystemBridgeProtocol.PERMISSION, null)
+            }
+        } catch (error: Exception) {
+            systemUiTileReceiverRegistered.set(false)
+            log(Log.ERROR, "YAuto", "Custom tile label receiver unavailable", error)
         }
     }
 

@@ -58,6 +58,7 @@ object AndroidFeaturePacks {
         AndroidStatusIconFeaturePack(),
         AndroidShortXProcessFeaturePack(),
         AndroidShortXStatusChipFeaturePack(),
+        AndroidShortXTileLabelFeaturePack(),
         AndroidPpnFeaturePack(context),
         AndroidLiveUpdateFeaturePack(context),
         AndroidShortXParityFeaturePack(context),

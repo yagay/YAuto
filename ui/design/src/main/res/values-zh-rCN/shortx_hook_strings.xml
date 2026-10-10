@@ -141,4 +141,11 @@
     <string name="feature_android_lsposed_hook_disable_session_field_operation_option_disable">停用会话</string>
     <string name="feature_android_lsposed_hook_disable_session_field_operation_option_query">查询会话</string>
     <string name="feature_android_lsposed_hook_disable_session_field_resultvariable">保存会话状态变量</string>
+    <string name="feature_android_qs_tile_custom_label_title">替换外部快捷设置磁贴标签</string>
+    <string name="feature_android_qs_tile_custom_label_description">通过 SystemUI LSPosed 修改或恢复指定第三方磁贴的标签</string>
+    <string name="feature_android_qs_tile_custom_label_field_component">磁贴服务组件（包名/类名）</string>
+    <string name="feature_android_qs_tile_custom_label_field_label">替换后的磁贴标签</string>
+    <string name="feature_android_qs_tile_custom_label_field_operation">操作</string>
+    <string name="feature_android_qs_tile_custom_label_field_operation_option_set">替换</string>
+    <string name="feature_android_qs_tile_custom_label_field_operation_option_clear">恢复原样</string>
 </resources>
