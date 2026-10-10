@@ -41,7 +41,7 @@ def registered_events(source: str) -> set[str]:
     # FeaturePack's install() delegates via registerChangedEvent(registry, id, ...)
     # while the actual registry.registerEvent call lives in a sibling file.
     helper_ids = set(re.findall(
-        r'registerChangedEvent\\(registry,\\s*"(android\\.event\\.[^"]+)"',
+        r'registerChangedEvent\(registry,\s*"(android\.event\.[^"]+)"',
         source,
     )) if 'FeaturePack' in source else set()
     if 'registerEvent(' not in source and 'FeatureKind.EVENT' not in source:
