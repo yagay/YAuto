@@ -1,6 +1,8 @@
 package com.yagay.yauto.core.runtime
 
 import com.yagay.yauto.core.model.ConfigValue
+import com.yagay.yauto.core.model.RuntimeEvent
+import com.yagay.yauto.core.registry.PersistentVariableChange
 
 /** Canonical persistent-variable change event used by runtime dispatch. */
 internal fun variableChangedEvent(change: PersistentVariableChange): RuntimeEvent = RuntimeEvent(
