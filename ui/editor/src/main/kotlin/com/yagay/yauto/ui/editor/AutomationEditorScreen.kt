@@ -438,11 +438,18 @@ fun MacroAutomationEditorScreen(
         FeatureQuickTestDialog(feature, kind) { quickTest = null }
     }
     if (stepDebug) {
-        StepDebugDialog(
-            nodes = onEvent,
-            descriptors = descriptorById,
-            onDismiss = { stepDebug = false },
-        )
+        if (initial != null) {
+            EngineDebugDialog(
+                automation = initial.copy(onEvent = onEvent),
+                onDismiss = { stepDebug = false },
+            )
+        } else {
+            StepDebugDialog(
+                nodes = onEvent,
+                descriptors = descriptorById,
+                onDismiss = { stepDebug = false },
+            )
+        }
     }
     if (macroTest && initial != null) {
         SavedAutomationTestDialog(initial.id.value) { macroTest = false }
