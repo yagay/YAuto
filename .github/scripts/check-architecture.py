@@ -158,6 +158,10 @@ if runtime_entry.exists():
         errors.append("AutomationRuntime must delegate job lifecycle to ExecutionJobRegistry")
     if "runningExecutions = " in runtime_text or "private fun trackJob(" in runtime_text:
         errors.append("AutomationRuntime must not reintroduce inline active-job tracking")
+    if "RuntimeEventWaitRegistry()" not in runtime_text or "eventWaitRequests = " in runtime_text:
+        errors.append("AutomationRuntime must delegate event waiter lifetime to RuntimeEventWaitRegistry")
+if not (runtime_dir / "RuntimeEventWaitRegistry.kt").exists():
+    errors.append("RuntimeEventWaitRegistry must own event waiting and cleanup")
 
 if errors:
     print("Architecture guard failed:")
