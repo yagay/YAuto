@@ -76,9 +76,7 @@ internal fun GenericFeatureConfigEditor(
         valuesAsConfig(descriptor.fields, values, locale)
     }
     val semanticallyVisible = remember(descriptor, typedValues) {
-        descriptor.fields.filter { field ->
-            descriptor.fieldBehavior(field.key).visibleWhen?.matches(typedValues) != false
-        }
+        descriptor.visibleEditorFields(typedValues, showAdvanced = true)
     }
     val displayedFields = remember(descriptor, typedValues, showAdvanced) {
         descriptor.visibleEditorFields(
@@ -86,11 +84,9 @@ internal fun GenericFeatureConfigEditor(
             setOf(FEATURE_METHOD_CONFIG_KEY, FEATURE_BACKEND_CONFIG_KEY),
         )
     }
-    val valid = semanticallyVisible.filterNot { it.key == FEATURE_METHOD_CONFIG_KEY ||
-        it.key == FEATURE_BACKEND_CONFIG_KEY }.all { field ->
-        val enabled = descriptor.fieldBehavior(field.key).enabledWhen?.matches(typedValues) != false
-        !enabled || fieldValid(field, values[field.key].orEmpty(), locale)
-    }
+    val valid = descriptor.editableEditorFields(
+        typedValues, setOf(FEATURE_METHOD_CONFIG_KEY, FEATURE_BACKEND_CONFIG_KEY),
+    ).all { field -> fieldValid(field, values[field.key].orEmpty(), locale) }
 
     val tester = LocalFeatureTestGateway.current
     val coroutineScope = rememberCoroutineScope()

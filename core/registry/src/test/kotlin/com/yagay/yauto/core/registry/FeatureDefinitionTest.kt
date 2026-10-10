@@ -169,4 +169,24 @@ class FeatureDefinitionTest {
         assertEquals(listOf("enabled", "detail", "advanced"), shown.map { it.key })
     }
 
+    @Test
+    fun `schema active state is shared by editor rendering validation and saving`() {
+        val descriptor = descriptor("test.active").copy(
+            fields = listOf(
+                FieldSchema.Toggle("on", "Enabled"),
+                FieldSchema.Text("dependent", "Dependent"),
+            ),
+            fieldBehaviors = mapOf(
+                "dependent" to FieldBehavior(
+                    visibleWhen = FieldRule.Truthy("on"),
+                    enabledWhen = FieldRule.Truthy("on"),
+                ),
+            ),
+        )
+        val off = mapOf("on" to ConfigValue.BooleanValue(false))
+        assertEquals(listOf("on"), descriptor.editableEditorFields(off).map { it.key })
+        val on = mapOf("on" to ConfigValue.BooleanValue(true))
+        assertEquals(listOf("on", "dependent"), descriptor.editableEditorFields(on).map { it.key })
+    }
+
 }

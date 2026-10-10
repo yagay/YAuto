@@ -12,3 +12,20 @@ fun FeatureDescriptor.visibleEditorFields(
         fieldBehavior(field.key).visibleWhen?.matches(config) != false &&
         (showAdvanced || !fieldBehavior(field.key).advanced)
 }
+
+// The same rule must govern rendering, saving and validating each feature field.
+fun FeatureDescriptor.isEditorFieldActive(
+    field: FieldSchema,
+    config: Map<String, ConfigValue>,
+): Boolean {
+    val behavior = fieldBehavior(field.key)
+    return behavior.visibleWhen?.matches(config) != false &&
+        behavior.enabledWhen?.matches(config) != false
+}
+
+fun FeatureDescriptor.editableEditorFields(
+    config: Map<String, ConfigValue>,
+    excludedKeys: Set<String> = emptySet(),
+): List<FieldSchema> = fields.filter { field ->
+    field.key !in excludedKeys && isEditorFieldActive(field, config)
+}

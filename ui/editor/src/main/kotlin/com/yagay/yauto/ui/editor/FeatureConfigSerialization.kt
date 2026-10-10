@@ -62,12 +62,10 @@ internal fun buildEditedFeatureConfig(
     // Old steps keep their saved route until edited; saving migrates to auto.
     config.remove(FEATURE_METHOD_CONFIG_KEY)
     config.remove(FEATURE_BACKEND_CONFIG_KEY)
+    val editableKeys = descriptor.editableEditorFields(typedValues).mapTo(mutableSetOf()) { it.key }
     descriptor.fields.forEach { field ->
         val prior = config.remove(field.key)
-        val behavior = descriptor.fieldBehavior(field.key)
-        if (behavior.visibleWhen?.matches(typedValues) == false ||
-            behavior.enabledWhen?.matches(typedValues) == false
-        ) return@forEach
+        if (field.key !in editableKeys) return@forEach
 
         val raw = values[field.key].orEmpty()
         if (prior != null && raw == editorConfigValueText(initialWithDefaults.config[field.key], locale)) {
