@@ -35,6 +35,17 @@ internal class RuntimeFeatureTester(
     private val context: Context,
     private val graph: AppGraph,
 ) : FeatureTestGateway {
+    private val debugPreferences by lazy {
+        context.getSharedPreferences("yauto_debug_breakpoints", Context.MODE_PRIVATE)
+    }
+
+    override fun savedDebugBreakpoints(automationId: String): Set<String> =
+        debugPreferences.getStringSet(automationId, emptySet()).orEmpty().toSet()
+
+    override fun saveDebugBreakpoints(automationId: String, ids: Set<String>) {
+        debugPreferences.edit().putStringSet(automationId, ids.toSet()).apply()
+    }
+
     override fun newDebugRun(automation: Automation): EngineDebugRun {
         val debug = EngineDebugSession()
         val engine = AutomationEngine(
