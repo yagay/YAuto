@@ -71,6 +71,26 @@ if standard_dir.exists():
                 f"{path.relative_to(ROOT)} directly registers features; move descriptors/executors into self-contained definitions"
             )
 
+# Debug execution must share the production engine factory and the editor must
+# not reintroduce the former isolated step-runner with different semantics.
+tester = ROOT / "app/src/main/kotlin/com/yagay/yauto/RuntimeFeatureTester.kt"
+if tester.exists():
+    tester_text = tester.read_text(encoding="utf-8")
+    if "graph.runtime.createDebugEngine()" not in tester_text:
+        errors.append("RuntimeFeatureTester must construct its debugger through the shared AutomationRuntime factory")
+    if "AutomationEngine(" in tester_text:
+        errors.append("RuntimeFeatureTester cannot build a separate AutomationEngine configuration")
+
+old_debug = ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/StepDebugDialog.kt"
+if old_debug.exists():
+    errors.append("obsolete isolated StepDebugDialog must not coexist with EngineDebugDialog")
+
+home_screen = ROOT / "ui/home/src/main/kotlin/com/yagay/yauto/ui/home/HomeScreen.kt"
+if home_screen.exists():
+    home_text = home_screen.read_text(encoding="utf-8")
+    if "onManual = onRunManual" in home_text:
+        errors.append("settings must open the shared test centre, not bypass it with direct manual execution")
+
 if errors:
     print("Architecture guard failed:")
     for error in errors:
