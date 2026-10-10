@@ -3,6 +3,7 @@ package com.yagay.yauto.core.engine
 import com.yagay.yauto.core.model.ActionNode
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.NodeId
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
@@ -115,6 +116,28 @@ class EngineDebugSessionTest {
         assertEquals(1_000, steps.size)
         assertEquals(5L, steps.first().invocationId)
         assertEquals(1_004L, steps.last().invocationId)
+    }
+
+    @Test fun cancelPauseReleasesWaitingInvocationsWithoutRecordingSteps() = runBlocking {
+        val debugger = EngineDebugSession()
+        val node = ActionNode.Label(NodeId("cancelled-node"), "cancelled")
+        val pending = async {
+            try {
+                debugger.beforeNode(101L, node, emptyMap())
+                false
+            } catch (_: CancellationException) {
+                true
+            }
+        }
+        repeat(100) {
+            if (debugger.pausedAt() != null) return@repeat
+            yield()
+        }
+        assertEquals(node.id, debugger.pausedAt()?.nodeId)
+        debugger.cancelPause()
+        assertTrue(pending.await())
+        assertNull(debugger.pausedAt())
+        assertTrue(debugger.snapshot().isEmpty())
     }
 
 }
