@@ -30,10 +30,13 @@ else:
 
 # Keep large, domain-owned editors from silently turning into new monoliths.
 size_budgets = {
-    "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/ActionTreeEditor.kt": 36_000,
-    "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/GenericFeatureConfigEditor.kt": 28_000,
-    "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/AutomationEditorScreen.kt": 33_000,
+    "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/ActionTreeEditor.kt": 14_000,
+    "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/GenericFeatureConfigEditor.kt": 23_000,
+    "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/AutomationEditorScreen.kt": 27_000,
     "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FlowEditorScreen.kt": 22_000,
+    "app/src/main/kotlin/com/yagay/yauto/YAutoAppScreen.kt": 24_000,
+    "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXMappings.kt": 36_000,
+    "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXVerifiedBatchMappings.kt": 31_000,
     "ui/home/src/main/kotlin/com/yagay/yauto/ui/home/HomeScreen.kt": 22_000,
     # Domain registrars should stay separate from public feature-pack facades.
     "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidPersonalDataFeaturePack.kt": 8_000,
@@ -47,6 +50,29 @@ for rel, maximum in size_budgets.items():
     path = ROOT / rel
     if path.exists() and path.stat().st_size > maximum:
         errors.append(f"{rel} is {path.stat().st_size} bytes; budget is {maximum}. Split responsibilities before adding more.")
+
+# Shared feature configuration and access labels have a single canonical source.
+editor_dir = ROOT / "ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor"
+shared_contracts = {
+    "buildEditedFeatureConfig(": "FeatureConfigSerialization.kt",
+    "fun fieldValid(": "FeatureConfigSerialization.kt",
+    "fun accessRequirementResource(": "FeatureAccessLabels.kt",
+}
+for token, owner in shared_contracts.items():
+    matches = [
+        path.name for path in editor_dir.glob("*.kt")
+        if token in path.read_text(encoding="utf-8")
+    ] if editor_dir.exists() else []
+    if matches != [owner]:
+        errors.append(f"{token} must have exactly one implementation in {owner}; found {matches}")
+
+# All hardware-key capture sources must merge in one runtime-owned coordinator.
+capture_screen = ROOT / "app/src/main/kotlin/com/yagay/yauto/YAutoAppScreen.kt"
+capture_coordinator = ROOT / "app/src/main/kotlin/com/yagay/yauto/HardwareKeyCaptureCoordinator.kt"
+if capture_screen.exists() and "suspend fun captureHardwareKey(" in capture_screen.read_text(encoding="utf-8"):
+    errors.append("YAutoAppScreen must not duplicate hardware-key capture orchestration")
+if not capture_coordinator.exists():
+    errors.append("HardwareKeyCaptureCoordinator.kt is required for unified key event capture")
 
 # Third-party compatibility parsers must stay behind the lazy compatibility catalog rather than
 # becoming direct AppGraph dependencies.
