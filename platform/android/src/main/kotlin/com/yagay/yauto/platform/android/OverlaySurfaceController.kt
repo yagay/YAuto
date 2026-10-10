@@ -115,7 +115,7 @@ class OverlaySurfaceController(context: Context) {
                 windowManager.addView(root, params)
                 surfaces[id] = root
                 SurfaceRuntimeBridge.emit(id, "shown")
-                if (autoHideMs > 0) main.postDelayed({ hide(id) }, autoHideMs.coerceAtMost(86_400_000))
+                scheduleAutoHide(id, root, autoHideMs)
             }
         }
         return true
@@ -964,8 +964,16 @@ class OverlaySurfaceController(context: Context) {
             windowManager.addView(view, params)
             surfaces[id] = view
             SurfaceRuntimeBridge.emit(id, "shown")
-            if (autoHideMs > 0) main.postDelayed({ hide(id) }, autoHideMs.coerceAtMost(86_400_000))
+            scheduleAutoHide(id, view, autoHideMs)
         }
+    }
+
+    /** A delayed hide belongs to the specific window instance, not a recycled surface ID. */
+    private fun scheduleAutoHide(id: String, view: View, timeoutMs: Long) {
+        if (timeoutMs <= 0) return
+        main.postDelayed({
+            if (surfaces[id] === view) hideInternal(id)
+        }, timeoutMs.coerceAtMost(86_400_000))
     }
 
     fun hide(id: String): Boolean {
