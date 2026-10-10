@@ -54,7 +54,7 @@ abstract class XposedHookInstallers : XposedMethodHookInstallers() {
         packageName: String,
         classLoader: ClassLoader,
     ) {
-        XposedPackageHookDispatcher(
+        XposedPackageHookCoordinator(
             systemUi = { installShortXSystemUiHooks(context, classLoader) },
             statusChip = { installShortXStatusChipHooks(context, classLoader) },
             tileLabel = { installShortXTileLabelHooks(context, classLoader) },
