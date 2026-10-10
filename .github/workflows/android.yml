@@ -43,6 +43,10 @@ jobs:
         run: |
           python3 -m unittest discover -s tools -p 'test_aosp_terms.py'
           python3 tools/audit_aosp_terms.py --output build/reports/aosp_terminology_audit.json
+      - name: Complete MacroDroid-first and ShortX source parity inventory
+        run: |
+          python3 -m unittest discover -s tools -p 'test_reference_parity.py'
+          python3 tools/audit_reference_parity.py --fail-on-unsafe
       - name: Verified picker merge audit
         run: |
           python3 -m unittest discover -s tools -p 'test_verified_picker_merges.py'
@@ -123,6 +127,7 @@ jobs:
           name: YAuto-aosp-terminology-audit
           path: |
             build/reports/aosp_terminology_audit.json
+            build/reports/full_source_parity_inventory.json
             build/reports/feature_name_collisions.json
             build/reports/verified_picker_merges.json
             build/reports/picker_duplicate_title_inventory.json

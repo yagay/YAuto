@@ -632,20 +632,25 @@ class YAutoXposedModule : XposedModule() {
                     .forEach { method ->
                         val key = "shortx-observer|" + spec.id + "|" + method.toGenericString()
                         if (!installedHooks.add(key)) return@forEach
-                        method.isAccessible = true
-                        hook(method).intercept { chain ->
-                            if (spec.after) {
-                                val result = chain.proceed()
-                                runCatching {
-                                    emitShortXObserverEvent(context, spec, className, method.name, chain.thisObject, chain.args)
+                        try {
+                            method.isAccessible = true
+                            hook(method).intercept { chain ->
+                                if (spec.after) {
+                                    val result = chain.proceed()
+                                    runCatching {
+                                        emitShortXObserverEvent(context, spec, className, method.name, chain.thisObject, chain.args)
+                                    }
+                                    result
+                                } else {
+                                    runCatching {
+                                        emitShortXObserverEvent(context, spec, className, method.name, chain.thisObject, chain.args)
+                                    }
+                                    chain.proceed()
                                 }
-                                result
-                            } else {
-                                runCatching {
-                                    emitShortXObserverEvent(context, spec, className, method.name, chain.thisObject, chain.args)
-                                }
-                                chain.proceed()
                             }
+                        } catch (error: Exception) {
+                            installedHooks.remove(key)
+                            log(Log.WARN, "YAuto", "ShortX observer unavailable: " + key, error)
                         }
                     }
             }

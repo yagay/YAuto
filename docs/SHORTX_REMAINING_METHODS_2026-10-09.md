@@ -23,3 +23,9 @@ Updated 2026-10-10: non-plugin app-process requests and YAuto-scoped SystemUI ch
 ## 2026-10-10: ShowRecentApps source mode precision
 
 ShortX 1.11's `ShowRecentApps.state` uses OnOffToggle (On=0, Off=1, Toggle=2). The existing YAuto `accessibility.recents.show` opens the Android overview, so **only On=0** is a proven native mapping for JSON or protobuf. Off/Toggle, unknown fields or malformed mode encodings stay source-preserved; YAuto does not emulate Close/Toggle with Back, Home or a guessed global action. This preserves MacroDroid-first distinct function naming and avoids a duplicate action/ID.
+
+## Full source inventory, not incremental anecdotal checks (2026-10-10)
+
+`tools/shortx_reference_actions.csv` snapshots the 193 published ShortX 1.11 action-type headings. `tools/audit_reference_parity.py` records field-decoder branch presence for protobuf and JSON, structural converters, suggestion-only entries, and unmapped/non-action entries. The report also includes reviewed MacroDroid source-name pairs, evidence-backed picker groups, and whether each source-derived system_server observer has a picker event. It runs in the Fast Debug workflow and is published as `full_source_parity_inventory.json` alongside other audits. **A decoder branch is not proof of complete field mapping, permissions, run-time behavior or ROM compatibility.** This is the work queue for completing missing functionality in larger batches, not a declaration of feature parity.
+
+ShortX observer installation is now fail-isolated per method: one incompatible OEM hook no longer aborts remaining observer registration or falsely marks its hook as installed. The error is logged and the method can be retried at a later subscription update.
