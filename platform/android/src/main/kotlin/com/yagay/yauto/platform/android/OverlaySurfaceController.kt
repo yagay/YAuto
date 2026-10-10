@@ -142,7 +142,7 @@ class OverlaySurfaceController(context: Context) {
                 setHintTextColor(0xFF9AA0A6.toInt())
                 minWidth = (240 * density).toInt()
             }
-            val root = basePanel(title, density).apply {
+            val root = createOverlayBasePanel(context, title, density).apply {
                 addView(input)
                 addView(Button(context).apply {
                     text = submitLabel.ifBlank { "OK" }
@@ -177,7 +177,7 @@ class OverlaySurfaceController(context: Context) {
                     })
                 }
             }
-            val root = basePanel(title, density).apply {
+            val root = createOverlayBasePanel(context, title, density).apply {
                 addView(ScrollView(context).apply {
                     addView(list)
                     layoutParams = LinearLayout.LayoutParams(
@@ -227,7 +227,7 @@ class OverlaySurfaceController(context: Context) {
                     })
                 }
             }
-            val root = basePanel(title, density).apply {
+            val root = createOverlayBasePanel(context, title, density).apply {
                 addView(ScrollView(context).apply {
                     addView(grid)
                     layoutParams = LinearLayout.LayoutParams(
@@ -262,7 +262,7 @@ class OverlaySurfaceController(context: Context) {
                     })
                 }
             }
-            val root = basePanel(title, density).apply { addView(grid) }
+            val root = createOverlayBasePanel(context, title, density).apply { addView(grid) }
             addSurface(id, root, gravity, autoHideMs)
         }
         return true
@@ -380,7 +380,7 @@ class OverlaySurfaceController(context: Context) {
                     }
                 })
             }
-            val root = basePanel(title, density).apply {
+            val root = createOverlayBasePanel(context, title, density).apply {
                 addView(label)
                 addView(seek)
             }
@@ -401,7 +401,7 @@ class OverlaySurfaceController(context: Context) {
         main.post {
             hideInternal(id)
             val density = context.resources.displayMetrics.density
-            val root = basePanel("", density).apply {
+            val root = createOverlayBasePanel(context, "", density).apply {
                 addView(Switch(context).apply {
                     this.text = text
                     isChecked = checked
@@ -486,7 +486,7 @@ class OverlaySurfaceController(context: Context) {
             val board = DrawingBoardView(context).apply {
                 layoutParams = LinearLayout.LayoutParams((320 * density).toInt(), (320 * density).toInt())
             }
-            val root = basePanel(title, density).apply {
+            val root = createOverlayBasePanel(context, title, density).apply {
                 addView(board)
                 val actions = LinearLayout(context).apply {
                     orientation = LinearLayout.HORIZONTAL
@@ -843,7 +843,7 @@ class OverlaySurfaceController(context: Context) {
                     }
                 }
             }
-            val root = basePanel(title.ifBlank { model.optString("name") }, density).apply {
+            val root = createOverlayBasePanel(context, title.ifBlank { model.optString("name") }, density).apply {
                 addView(
                     ScrollView(context).apply { addView(content) },
                     LinearLayout.LayoutParams(
@@ -902,7 +902,7 @@ class OverlaySurfaceController(context: Context) {
         main.post {
             hideInternal(id)
             val density = context.resources.displayMetrics.density
-            val root = basePanel(title, density).apply {
+            val root = createOverlayBasePanel(context, title, density).apply {
                 if (text.isNotBlank()) addView(TextView(context).apply {
                     this.text = text
                     setTextColor(0xFFE8EAED.toInt())
@@ -933,21 +933,6 @@ class OverlaySurfaceController(context: Context) {
         gravity = if (side == "right") "top_right" else "top_left",
         autoHideMs = autoHideMs,
     )
-
-    private fun basePanel(title: String, density: Float): LinearLayout = LinearLayout(context).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding((16 * density).toInt(), (12 * density).toInt(), (16 * density).toInt(), (12 * density).toInt())
-        background = android.graphics.drawable.GradientDrawable().apply {
-            cornerRadius = 16 * density
-            setColor(0xEE202124.toInt())
-        }
-        if (title.isNotBlank()) addView(TextView(context).apply {
-            text = title
-            setTextColor(android.graphics.Color.WHITE)
-            textSize = 16f
-            setTypeface(typeface, Typeface.BOLD)
-        })
-    }
 
     private fun addSurface(
         id: String,
