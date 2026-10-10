@@ -34,6 +34,24 @@ fun validateFeatureDescriptors(descriptors: Iterable<FeatureDescriptor>): List<F
             )
         }
 
+    // Importers preserve legacy source identifiers as aliases; the editor and runtime must
+    // resolve each alias to one canonical descriptor, never to two different features.
+    val canonicalIds = list.map { it.id.value }.toSet()
+    val aliasOwners = mutableMapOf<String, String>()
+    list.forEach { descriptor ->
+        descriptor.aliases.forEach { alias ->
+            val id = descriptor.id.value
+            when {
+                alias.isBlank() || alias != alias.trim() ->
+                    issues += descriptor.error("invalid_feature_alias", "Alias must be non-blank and trimmed")
+                alias in canonicalIds && alias != id ->
+                    issues += descriptor.error("alias_matches_feature_id", "Alias '$alias' conflicts with a canonical feature ID")
+                aliasOwners.putIfAbsent(alias, id)?.let { it != id } == true ->
+                    issues += descriptor.error("duplicate_feature_alias", "Alias '$alias' belongs to multiple features")
+            }
+        }
+    }
+
     list.forEach { descriptor ->
         val id = descriptor.id.value
 
