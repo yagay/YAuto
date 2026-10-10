@@ -291,4 +291,16 @@
     <string name="test_center_confirm_title">Run automation test?</string>
     <string name="test_center_confirm_message">Testing runs real actions and may change device settings or data. Continue?</string>
     <string name="test_center_execute">Run test</string>
+    <string name="debug_steps_open">Step debugger</string>
+    <string name="debug_steps_title">Step-by-step debug report</string>
+    <string name="debug_steps_warning">Each step runs a real action independently. Compound branches/loops are not executed in this mode; variable changes are not shared between steps.</string>
+    <string name="debug_enable_real_actions">Allow real actions</string>
+    <string name="debug_progress">Step %1$d of %2$d</string>
+    <string name="debug_compound_skipped">Unsupported compound node: use full automation execution</string>
+    <string name="debug_breakpoint_reached">Breakpoint reached. Press Next step to continue.</string>
+    <string name="debug_step_label">Step %1$d: %2$s</string>
+    <string name="debug_step_success">Success (%1$d ms): %2$s</string>
+    <string name="debug_step_failed">Failed (%1$d ms): %2$s</string>
+    <string name="debug_next_step">Next step</string>
+    <string name="debug_run_to_breakpoint">Check next breakpoint</string>
 </resources>
