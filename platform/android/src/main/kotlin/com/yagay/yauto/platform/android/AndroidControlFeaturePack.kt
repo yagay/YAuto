@@ -207,7 +207,10 @@ class AndroidControlFeaturePack(
                 FeatureId("android.app.force_stop"), FeatureKind.ACTION,
                 "Force stop app", "Force stop a package through Root or Shizuku",
                 FeatureCategory.APP,
-                fields = listOf(FieldSchema.AppPicker("package", "App / package", true)),
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "App / package", true),
+                    FieldSchema.Number("userId", "Android user ID (optional)", min = 0.0, max = 99.0),
+                ),
                 capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
                 keywords = setOf("force stop", "kill", "root", "shizuku"),
                 ownerPackId = id,
@@ -217,11 +220,15 @@ class AndroidControlFeaturePack(
             if (!PACKAGE_NAME.matches(packageName)) {
                 return@registerAction ActionExecutionResult(false, message = userText("feature.invalid_package_name"))
             }
+            val user = appUserArgument(feature.config) ?: return@registerAction ActionExecutionResult(false)
             val result = ctx.capabilities.execute(
                 CapabilityRequest(
                     capability = CapabilityIds.PRIVILEGED_SHELL,
                     operationId = "android.app.force_stop",
-                    payload = mapOf("command" to ConfigValue.StringValue("am force-stop $packageName")),
+                    payload = mapOf("command" to ConfigValue.StringValue(
+                        if (user == "current") "am force-stop $packageName"
+                        else "am force-stop --user $user $packageName"
+                    )),
                 )
             )
             ActionExecutionResult(result.success, result.value, result.message)

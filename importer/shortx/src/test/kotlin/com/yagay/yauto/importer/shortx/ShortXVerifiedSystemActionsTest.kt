@@ -476,6 +476,54 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals("compat.source.action", importAction("ClickTile", message(field(1, message(field(1, "wifi"))))).typeId)
     }
 
+
+    @Test fun `ShortX exact single package controls preserve explicit Android user and switch`() {
+        val appPkg = message(field(1, "com.example.demo"), varintField(2, 10))
+        val disabled = importAction("SetAppEnabled", message(field(1, appPkg), varintField(3, 0)))
+        assertEquals("android.app.enabled.set", disabled.typeId)
+        assertEquals(ConfigValue.StringValue("com.example.demo"), disabled.config["package"])
+        assertEquals(ConfigValue.NumberValue(10.0), disabled.config["userId"])
+        assertEquals(ConfigValue.BooleanValue(false), disabled.config["enabled"])
+        val stopped = importAction("StopApp", message(field(1, appPkg)))
+        assertEquals("android.app.force_stop", stopped.typeId)
+        assertEquals(ConfigValue.NumberValue(10.0), stopped.config["userId"])
+        val suspended = importAction("SetAppSuspend", message(field(1, appPkg), varintField(3, 1)))
+        assertEquals("android.app.suspended.set", suspended.typeId)
+        assertEquals(ConfigValue.BooleanValue(true), suspended.config["suspended"])
+        val inactive = importAction("SetAppInactive", message(field(1, appPkg)))
+        assertEquals("android.app.inactive.set", inactive.typeId)
+        assertEquals(ConfigValue.BooleanValue(true), inactive.config["inactive"])
+        assertEquals("compat.source.action", importAction("StopApp", message(field(1, appPkg), field(1, appPkg))).typeId)
+        assertEquals("compat.source.action", importAction("StopApp", message(field(1, appPkg), field(2, "set"))).typeId)
+    }
+
+    @Test fun `ShortX StringPair supports only explicit single target and validated user`() {
+        val pair = message(field(1, "com.example.demo"), field(2, "9"))
+        val s = importAction("SetAppEnabledByPkg", message(field(1, pair), varintField(2, 1)))
+        assertEquals("android.app.enabled.set", s.typeId)
+        assertEquals(ConfigValue.NumberValue(9.0), s.config["userId"])
+        assertEquals(ConfigValue.BooleanValue(true), s.config["enabled"])
+        val stop = importAction("StopAppByPkg", message(field(1, pair)))
+        assertEquals("android.app.force_stop", stop.typeId)
+        assertEquals("compat.source.action", importAction("StopAppByPkg", message(field(1, message(field(1, "com.example.demo"), field(2, "all"))))).typeId)
+    }
+
+    @Test fun `ShortX app action JSON preserves metadata and explicit profile mapping`() {
+        val json = """{"title":"users","actions":[
+            {"@type":"type.googleapis.com/shortx.SetAppEnabledByPkg",
+                "pkgAndUsers":[{"first":"com.example.demo","second":"10"}],"enable":false},
+            {"@type":"type.googleapis.com/shortx.SetAppInactive",
+                "appPkg":[{"pkgName":"com.example.demo","userId":0}],"pkgSets":[]},
+            {"@type":"type.googleapis.com/shortx.SetAppSuspend",
+                "appPkg":[{"pkgName":"com.example.demo","userId":0},{"pkgName":"com.example.other","userId":0}],"suspend":true}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("users.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        val actions = result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature }
+        assertEquals(listOf("android.app.enabled.set", "android.app.inactive.set", "compat.source.action"), actions.map { it.typeId })
+        assertEquals(ConfigValue.NumberValue(10.0), actions[0].config["userId"])
+    }
+
     private fun assertBoolean(source: String, target: String, key: String, value: Boolean) {
         val feature = importAction(source, message(varintField(1, if (value) 1 else 0)))
         assertEquals(target, feature.typeId)

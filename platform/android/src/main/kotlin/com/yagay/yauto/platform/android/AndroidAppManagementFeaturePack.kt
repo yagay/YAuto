@@ -10,6 +10,7 @@ import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
+import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
@@ -45,6 +46,7 @@ class AndroidAppManagementFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.APP,
                 fields = listOf(
                     FieldSchema.AppPicker("package", "App / package", true),
+                    FieldSchema.Number("userId", "Android user ID (optional)", min = 0.0, max = 99.0),
                     FieldSchema.Toggle("enabled", "Enabled"),
                 ),
                 capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
@@ -56,7 +58,8 @@ class AndroidAppManagementFeaturePack(context: Context) : FeaturePack {
                 ?: return@registerAction invalidPackage()
             val enabled = feature.config.boolean("enabled", true)
             if (!enabled && packageName == selfPackage) return@registerAction selfBlocked()
-            executeShell("android.app.enabled.set", appEnabledCommand(packageName, enabled), ctx)
+            val user = appUserArgument(feature.config) ?: return@registerAction ActionExecutionResult(false)
+            executeShell("android.app.enabled.set", appEnabledCommand(packageName, enabled, user), ctx)
         }
     }
 
@@ -104,6 +107,7 @@ class AndroidAppManagementFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.APP,
                 fields = listOf(
                     FieldSchema.AppPicker("package", "App / package", true),
+                    FieldSchema.Number("userId", "Android user ID (optional)", min = 0.0, max = 99.0),
                     FieldSchema.Toggle("suspended", "Suspended"),
                 ),
                 capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
@@ -114,7 +118,8 @@ class AndroidAppManagementFeaturePack(context: Context) : FeaturePack {
             val packageName = resolvePackage(feature.config.string("package"), ctx) ?: return@registerAction invalidPackage()
             val suspended = feature.config.boolean("suspended", true)
             if (suspended && packageName == selfPackage) return@registerAction selfBlocked()
-            executeShell("android.app.suspended.set", appSuspendedCommand(packageName, suspended), ctx)
+            val user = appUserArgument(feature.config) ?: return@registerAction ActionExecutionResult(false)
+            executeShell("android.app.suspended.set", appSuspendedCommand(packageName, suspended, user), ctx)
         }
     }
 
@@ -213,6 +218,7 @@ class AndroidAppManagementFeaturePack(context: Context) : FeaturePack {
                 FeatureCategory.APP,
                 fields = listOf(
                     FieldSchema.AppPicker("package", "App / package", true),
+                    FieldSchema.Number("userId", "Android user ID (optional)", min = 0.0, max = 99.0),
                     FieldSchema.Toggle("inactive", "Inactive"),
                 ),
                 capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL),
@@ -221,7 +227,8 @@ class AndroidAppManagementFeaturePack(context: Context) : FeaturePack {
             )
         ) { feature, ctx ->
             val packageName = resolvePackage(feature.config.string("package"), ctx) ?: return@registerAction invalidPackage()
-            executeShell("android.app.inactive.set", "am set-inactive --user current $packageName ${feature.config.boolean("inactive", true)}", ctx)
+            val user = appUserArgument(feature.config) ?: return@registerAction ActionExecutionResult(false)
+            executeShell("android.app.inactive.set", "am set-inactive --user $user $packageName ${feature.config.boolean("inactive", true)}", ctx)
         }
     }
 
@@ -378,11 +385,17 @@ class AndroidAppManagementFeaturePack(context: Context) : FeaturePack {
 internal fun isValidPackageName(packageName: String): Boolean = PACKAGE_NAME.matches(packageName)
 internal fun isValidPermissionName(permission: String): Boolean = PERMISSION_NAME.matches(permission)
 
-internal fun appEnabledCommand(packageName: String, enabled: Boolean): String =
-    if (enabled) "pm enable --user current $packageName" else "pm disable-user --user current $packageName"
+internal fun appUserArgument(config: Map<String, ConfigValue>): String? {
+    if ("userId" !in config) return "current" // preserve all older YAuto rules
+    val value = config["userId"].numberOrNull() ?: return null
+    return value.takeIf { it.isFinite() && it in 0.0..99.0 && it == it.toInt().toDouble() }?.toInt()?.toString()
+}
 
-internal fun appSuspendedCommand(packageName: String, suspended: Boolean): String =
-    if (suspended) "pm suspend --user current $packageName" else "pm unsuspend --user current $packageName"
+internal fun appEnabledCommand(packageName: String, enabled: Boolean, user: String = "current"): String =
+    if (enabled) "pm enable --user $user $packageName" else "pm disable-user --user $user $packageName"
+
+internal fun appSuspendedCommand(packageName: String, suspended: Boolean, user: String = "current"): String =
+    if (suspended) "pm suspend --user $user $packageName" else "pm unsuspend --user $user $packageName"
 
 internal fun uninstallForUserCommand(packageName: String, keepData: Boolean): String =
     if (keepData) "pm uninstall -k --user current $packageName" else "pm uninstall --user current $packageName"

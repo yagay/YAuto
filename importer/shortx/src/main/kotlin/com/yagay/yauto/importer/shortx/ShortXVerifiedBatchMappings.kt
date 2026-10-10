@@ -95,6 +95,81 @@ internal object ShortXVerifiedBatchMappings {
         return feature(any, importerId, "android.qs_tile.click", mapOf(text("component", target)))
     }
 
+    private val pkgName = Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)+")
+    private fun appAction(any: AnyStub, importerId: String, pkg: String, user: Int, op: String,
+                          enabled: Boolean?): FeatureRef? {
+        if (!pkgName.matches(pkg) || user !in 0..99) return null
+        val (target, option) = when (op) {
+            "stop" -> "android.app.force_stop" to null
+            "enable" -> "android.app.enabled.set" to "enabled"
+            "suspend" -> "android.app.suspended.set" to "suspended"
+            "inactive" -> "android.app.inactive.set" to "inactive"
+            else -> return null
+        }
+        val extra = mapOf(text("package", pkg), number("userId", user)) +
+            (if (option == null) emptyMap() else mapOf(option to ConfigValue.BooleanValue(enabled ?: true)))
+        return feature(any, importerId, target, extra)
+    }
+
+    private fun binaryApp(any: AnyStub, importerId: String, fields: ProtoFields,
+                          byPkg: Boolean, op: String): FeatureRef? {
+        val boolField = when (op) { "enable", "suspend" -> 3; else -> null }
+        val pairBoolField = when (op) { "enable", "suspend" -> 2; else -> null }
+        val fieldNumber = if (byPkg) pairBoolField else boolField
+        if (!fields.onlyBusinessFields(*(if (byPkg) {
+                if (fieldNumber == null) intArrayOf(1) else intArrayOf(1, fieldNumber)
+            } else {
+                if (fieldNumber == null) intArrayOf(1, 2) else intArrayOf(1, 2, fieldNumber)
+            }))) return null
+        if (!byPkg && fields.allBytes(2).isNotEmpty()) return null // package set cannot fit single target
+        val items = fields.allBytes(1)
+        if (items.size != 1) return null // do not silently drop other target apps
+        val app = runCatching { ProtoFields(items.single()) }.getOrNull() ?: return null
+        if (!app.onlyBusinessFields(1, 2)) return null
+        val pkg = app.string(1) ?: return null
+        val user = if (byPkg) {
+            val userString = app.string(2) ?: return null
+            userString.toIntOrNull() ?: return null
+        } else {
+            val id = app.varint(2) ?: if (!app.has(2)) 0L else return null
+            if (id !in 0L..99L) return null
+            id.toInt()
+        }
+        val enabled = if (fieldNumber == null) true else {
+            val raw = fields.varint(fieldNumber) ?: if (!fields.has(fieldNumber)) 0L else return null
+            if (raw !in 0L..1L) return null
+            raw == 1L
+        }
+        return appAction(any, importerId, pkg, user, op, enabled)
+    }
+
+    private fun jsonApp(any: AnyStub, importerId: String, obj: JsonObject,
+                        byPkg: Boolean, op: String): FeatureRef? {
+        val listKey = if (byPkg) "pkgAndUsers" else "appPkg"
+        val boolKey = when (op) { "enable" -> "enable"; "suspend" -> "suspend"; else -> null }
+        val keys = setOf(listKey) + (if (byPkg) emptySet() else setOf("pkgSets")) +
+            (if (boolKey == null) emptySet() else setOf(boolKey))
+        if (obj.keys.any { it !in sourceMetadata && it !in keys }) return null
+        if (!byPkg && (obj["pkgSets"] as? JsonArray)?.isNotEmpty() == true) return null
+        val items = obj[listKey] as? JsonArray ?: return null
+        if (items.size != 1) return null
+        val item = items.single() as? JsonObject ?: return null
+        val pkg: String
+        val user: Int
+        if (byPkg) {
+            if (item.keys.any { it !in setOf("first", "second") }) return null
+            pkg = (item["first"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+            user = (item["second"] as? JsonPrimitive)?.contentOrNull?.toIntOrNull() ?: return null
+        } else {
+            if (item.keys.any { it !in setOf("pkgName", "userId") }) return null
+            pkg = (item["pkgName"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+            user = if ("userId" in item) (item["userId"] as? JsonPrimitive)?.intOrNull ?: return null else 0
+        }
+        val enabled = if (boolKey == null) true else
+            if (boolKey in obj) (obj[boolKey] as? JsonPrimitive)?.booleanOrNull ?: return null else false
+        return appAction(any, importerId, pkg, user, op, enabled)
+    }
+
     private fun decodePackedInsets(bytes: ByteArray): List<Long>? =
         if (bytes.size in 1..10 && bytes.all { it == 0.toByte() || it == 1.toByte() }) {
             bytes.map { it.toLong() }
@@ -103,6 +178,14 @@ internal object ShortXVerifiedBatchMappings {
     /** Protobuf defaults are accepted only when the message has no unknown business fields. */
     fun binary(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         return when (sourceName(any)) {
+            "StopApp" -> binaryApp(any, importerId, fields, false, "stop")
+            "StopAppByPkg" -> binaryApp(any, importerId, fields, true, "stop")
+            "SetAppEnabled" -> binaryApp(any, importerId, fields, false, "enable")
+            "SetAppEnabledByPkg" -> binaryApp(any, importerId, fields, true, "enable")
+            "SetAppSuspend" -> binaryApp(any, importerId, fields, false, "suspend")
+            "SetAppSuspendByPkg" -> binaryApp(any, importerId, fields, true, "suspend")
+            "SetAppInactive" -> binaryApp(any, importerId, fields, false, "inactive")
+            "SetAppInactiveByPkg" -> binaryApp(any, importerId, fields, true, "inactive")
             "SetBrightness" -> if (fields.onlyBusinessFields(1)) {
                 val raw = fields.varint(1) ?: if (!fields.has(1)) 0L else return null
                 if (raw in 0L..255L) brightness(any, importerId, raw.toInt()) else null
@@ -177,6 +260,14 @@ internal object ShortXVerifiedBatchMappings {
             obj.keys.all { it in sourceMetadata || it in keys }
         fun field(name: String): Int? = (obj[name] as? JsonPrimitive)?.intOrNull
         return when (sourceName(any)) {
+            "StopApp" -> jsonApp(any, importerId, obj, false, "stop")
+            "StopAppByPkg" -> jsonApp(any, importerId, obj, true, "stop")
+            "SetAppEnabled" -> jsonApp(any, importerId, obj, false, "enable")
+            "SetAppEnabledByPkg" -> jsonApp(any, importerId, obj, true, "enable")
+            "SetAppSuspend" -> jsonApp(any, importerId, obj, false, "suspend")
+            "SetAppSuspendByPkg" -> jsonApp(any, importerId, obj, true, "suspend")
+            "SetAppInactive" -> jsonApp(any, importerId, obj, false, "inactive")
+            "SetAppInactiveByPkg" -> jsonApp(any, importerId, obj, true, "inactive")
             "SetBrightness" -> if (allowed("value")) {
                 val value = if ("value" in obj) field("value") else 0
                 value?.let { brightness(any, importerId, it) }
