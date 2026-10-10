@@ -1,6 +1,14 @@
 package com.yagay.yauto
 
 import android.content.Context
+import com.yagay.yauto.core.engine.AutomationEngine
+import com.yagay.yauto.core.engine.AutomationPhase
+import com.yagay.yauto.core.engine.EngineDebugSession
+import com.yagay.yauto.core.model.Automation
+import com.yagay.yauto.core.model.NodeId
+import com.yagay.yauto.ui.editor.EngineDebugRun
+import com.yagay.yauto.ui.editor.EngineDebugSnapshotUi
+import com.yagay.yauto.ui.editor.EngineDebugStepUi
 import com.yagay.yauto.core.logging.TraceEvent
 import com.yagay.yauto.core.logging.TraceKind
 import com.yagay.yauto.core.logging.TraceLevel
@@ -27,6 +35,46 @@ internal class RuntimeFeatureTester(
     private val context: Context,
     private val graph: AppGraph,
 ) : FeatureTestGateway {
+    override fun newDebugRun(automation: Automation): EngineDebugRun {
+        val debug = EngineDebugSession()
+        val engine = AutomationEngine(
+            graph.features,
+            graph.capabilities,
+            graph.tracer,
+        )
+        return object : EngineDebugRun {
+            override suspend fun execute(): FeatureTestResult {
+                val began = System.currentTimeMillis()
+                val result = engine.execute(automation, AutomationPhase.EVENT, debugObserver = debug)
+                return FeatureTestResult(
+                    success = result.success,
+                    detail = result.error ?: if (result.success) "Completed" else "Failed",
+                    elapsedMs = System.currentTimeMillis() - began,
+                    kind = FeatureKind.ACTION,
+                    executionId = result.executionId.value,
+                )
+            }
+            override suspend fun step() = debug.step()
+            override suspend fun resume() = debug.continueExecution()
+            override suspend fun setBreakpoint(id: String, enabled: Boolean) =
+                debug.setBreakpoint(NodeId(id), enabled)
+            override suspend fun snapshot(): EngineDebugSnapshotUi {
+                val paused = debug.pausedAt()
+                val rows = debug.snapshot().map {
+                    EngineDebugStepUi(
+                        id = it.nodeId.value,
+                        kind = it.nodeType,
+                        success = it.success,
+                        elapsedMs = it.elapsedMs,
+                        before = it.variablesBefore.toString().take(1000),
+                        after = it.variablesAfter.toString().take(1000),
+                    )
+                }
+                return EngineDebugSnapshotUi(paused?.nodeId?.value, rows)
+            }
+        }
+    }
+
     private class SandboxVariables(initial: Map<String, ConfigValue>) : VariableAccess {
         private val values = initial.toMutableMap()
         override fun get(name: String): ConfigValue? = values[name]
