@@ -49,16 +49,26 @@ internal fun GenericFeatureConfigEditor(
     onSave: (FeatureRef) -> Unit,
 ) {
     val locale = currentEditorLocale()
+    val context = LocalContext.current
+    val showRootOrLsposed = remember(context) {
+        FeatureVisibilityPreferences.showRootExclusive(context)
+    }
     val initialWithDefaults = remember(descriptor, initial) {
         descriptor.applyDefaults(initial ?: FeatureRef(descriptor.id.value, descriptor.schemaVersion))
     }
-    val initialTexts = remember(descriptor, initialWithDefaults, locale) {
+    val initialTexts = remember(descriptor, initialWithDefaults, locale, showRootOrLsposed, initial) {
         descriptor.fields.associate { field ->
             field.key to if (field.key == FEATURE_METHOD_CONFIG_KEY)
                 initialWithDefaults.preferredMethod().let {
                     if (it == FeatureMethod.AUTO) FeatureMethod.NO_ROOT.id else it.id
                 }
-            else editorConfigValueText(initialWithDefaults.config[field.key], locale)
+            else if (field.key == FEATURE_BACKEND_CONFIG_KEY && initial == null &&
+                !showRootOrLsposed && !descriptor.hasDualMethodRoutes() &&
+                descriptor.resolvedImplementationOptions().any { it.requiresRootOrLsposed() }
+            ) {
+                // Non-dual capabilities would otherwise use automatic Root-first routing.
+                descriptor.visibleImplementationOptions(false).firstOrNull()?.backendId.orEmpty()
+            } else editorConfigValueText(initialWithDefaults.config[field.key], locale)
         }
     }
     var values by remember(descriptor.id.value, initial, locale) { mutableStateOf(initialTexts) }
@@ -106,6 +116,7 @@ internal fun GenericFeatureConfigEditor(
                     if (backends.size == 1) backends.first().backendId.orEmpty()
                     else values[FEATURE_BACKEND_CONFIG_KEY].orEmpty().ifBlank { "auto" },
                     values[FEATURE_METHOD_CONFIG_KEY].orEmpty().ifBlank { "no_root" },
+                    showRootOrLsposed,
                 )
             }
         }
@@ -138,6 +149,7 @@ internal fun GenericFeatureConfigEditor(
             if (field.key == FEATURE_METHOD_CONFIG_KEY && field is FieldSchema.Choice) {
                 MethodChoiceEditor(
                     selected = values[field.key].orEmpty().ifBlank { "no_root" },
+                    showRootOrLsposed = showRootOrLsposed,
                     enabled = enabled,
                     onValue = { next ->
                         // Stale backends must never cross permission families.
@@ -151,6 +163,7 @@ internal fun GenericFeatureConfigEditor(
                     value = values[field.key].orEmpty(),
                     method = if (values[FEATURE_METHOD_CONFIG_KEY] == "root_required")
                         FeatureMethod.ROOT_REQUIRED else FeatureMethod.NO_ROOT,
+                    showRootOrLsposed = showRootOrLsposed,
                     enabled = enabled,
                     onValue = { values = values + (field.key to it) },
                 )
@@ -266,17 +279,22 @@ private fun ImplementationGuide(
     descriptor: FeatureDescriptor,
     requestedBackendId: String,
     requestedMethod: String,
+    showRootOrLsposed: Boolean,
 ) {
     val dual = descriptor.hasDualMethodRoutes()
     val method = if (requestedMethod == "root_required")
         FeatureMethod.ROOT_REQUIRED else FeatureMethod.NO_ROOT
     val options = if (dual) descriptor.methodBackends(method)
-        else descriptor.resolvedImplementationOptions()
+        .filter { showRootOrLsposed || !it.requiresRootOrLsposed() }
+        else descriptor.visibleImplementationOptions(showRootOrLsposed)
     val selected = options.firstOrNull { it.backendId == requestedBackendId }
     val backendId = selected?.backendId ?: "auto"
     val resolver = rememberFeatureTextResolver()
     val optionPermissions = options.flatMap { it.requirements }.toSet()
-    val additionalPermissions = descriptor.accessRequirements - optionPermissions
+    val additionalPermissions = (descriptor.accessRequirements - optionPermissions).filterTo(mutableSetOf()) {
+        showRootOrLsposed || it !in setOf(
+            AccessRequirement.ROOT, AccessRequirement.LSPOSED, AccessRequirement.ZYGISK)
+    }
 
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -290,6 +308,10 @@ private fun ImplementationGuide(
                     ),
                     style = MaterialTheme.typography.bodySmall,
                 )
+            }
+            if (!showRootOrLsposed && requestedMethod == "root_required") {
+                Text(stringResource(TextR.string.implementation_hidden_saved_root),
+                    style = MaterialTheme.typography.labelSmall)
             }
             if (options.size == 1) {
                 Text(stringResource(TextR.string.implementation_unique_method),
@@ -319,7 +341,7 @@ private fun ImplementationGuide(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            } else {
+            } else if (options.isNotEmpty()) {
                 // Auto does not itself grant access; show the separate permission
                 // routes that the engine may choose, without suggesting they are all required.
                 val paths = options.map { option ->

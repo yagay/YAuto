@@ -162,17 +162,22 @@ fun FeatureDescriptor.withAccessEditorMetadata(): FeatureDescriptor {
  *
  * This does not disable an existing automation or unregister its executor.
  */
+private val ROOT_ONLY_ACCESS = setOf(AccessRequirement.ROOT, AccessRequirement.LSPOSED, AccessRequirement.ZYGISK)
+private val NON_ROOT_ACCESS = setOf(AccessRequirement.SHIZUKU, AccessRequirement.ACCESSIBILITY)
+
+/** Interpret only verified implementation metadata; unknown mixed methods remain visible. */
+fun FeatureImplementationOption.requiresRootOrLsposed(): Boolean = when (backendId) {
+    "root", "lsposed", "zygisk" -> true
+    "android", "accessibility", "shizuku", "usage_stats" -> false
+    else -> requirements.any { it in ROOT_ONLY_ACCESS } && requirements.none { it in NON_ROOT_ACCESS }
+}
+
+/** Filter implementation methods, not the logical feature containing alternatives. */
+fun FeatureDescriptor.visibleImplementationOptions(showRootOrLsposed: Boolean): List<FeatureImplementationOption> =
+    resolvedImplementationOptions().filter { showRootOrLsposed || !it.requiresRootOrLsposed() }
+
 fun FeatureDescriptor.isRootExclusiveFeature(): Boolean {
-    val privileged = setOf(AccessRequirement.ROOT, AccessRequirement.LSPOSED, AccessRequirement.ZYGISK)
     val options = resolvedImplementationOptions()
-    if (options.isNotEmpty()) {
-        return options.all { option ->
-            when (option.backendId) {
-                "root", "lsposed", "zygisk" -> true
-                "android", "accessibility", "shizuku", "usage_stats" -> false
-                else -> option.requirements.any { it in privileged }
-            }
-        }
-    }
-    return accessRequirements.any { it in privileged }
+    return if (options.isNotEmpty()) options.all { it.requiresRootOrLsposed() }
+        else accessRequirements.any { it in ROOT_ONLY_ACCESS }
 }

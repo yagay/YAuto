@@ -32,6 +32,27 @@ class RootExclusiveFeatureTest {
         )).isRootExclusiveFeature())
     }
 
+    @Test fun perImplementationFilterDropsOnlyRootAndLsposed() {
+        val implementations = listOf(
+            FeatureImplementationOption("android"),
+            FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+            FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+            FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+            FeatureImplementationOption("lsposed", setOf(AccessRequirement.LSPOSED)),
+        )
+        val feature = feature(implementations = implementations)
+        assertFalse(feature.isRootExclusiveFeature())
+        assertTrue(feature.visibleImplementationOptions(true) == implementations)
+        assertTrue(feature.visibleImplementationOptions(false).map { it.backendId } ==
+            listOf("android", "accessibility", "shizuku"))
+    }
+
+    @Test fun conservativeUnknownMethodDoesNotHideNonRootAlternative() {
+        val implementation = FeatureImplementationOption(
+            "custom", setOf(AccessRequirement.ROOT, AccessRequirement.SHIZUKU))
+        assertFalse(implementation.requiresRootOrLsposed())
+    }
+
     @Test fun shizukuAlternativeKeepsFeatureVisible() {
         assertFalse(feature(capabilities = setOf(CapabilityIds.PRIVILEGED_SHELL)).isRootExclusiveFeature())
         assertFalse(feature(implementations = listOf(

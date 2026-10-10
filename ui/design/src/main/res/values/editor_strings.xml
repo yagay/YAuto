@@ -309,6 +309,7 @@
     <string name="implementation_unique_method">Only implementation available</string>
     <string name="runtime_feature_dual_method_backend_mismatch">The backend belongs to a different Root-permission group. Select a supported method.</string>
     <string name="runtime_feature_dual_method_backend_not_supported">No equivalent implementation of %1$s is available for the selected backend.</string>
-    <string name="runtime_show_root_exclusive_title">Show Root / LSPosed-only features</string>
-    <string name="runtime_show_root_exclusive_detail">Hide Root/LSPosed-only actions, triggers and constraints from the feature picker when off. Features with an Android, Accessibility or Shizuku method remain visible. Existing tasks keep running and can still be edited.</string>
+    <string name="runtime_show_root_exclusive_title">Show Root / LSPosed features and methods</string>
+    <string name="runtime_show_root_exclusive_detail">When off, hide Root/LSPosed-only features and Root/LSPosed implementation choices inside mixed-method features. Android API, Accessibility and Shizuku choices remain. Saved tasks keep their configuration.</string>
+    <string name="implementation_hidden_saved_root">Root and LSPosed methods are hidden by Settings. Any already saved privileged method remains unchanged until you choose a different one.</string>
 </resources>

@@ -29,6 +29,7 @@ import com.yagay.yauto.ui.design.R as TextR
 @Composable
 internal fun MethodChoiceEditor(
     selected: String,
+    showRootOrLsposed: Boolean,
     enabled: Boolean,
     onValue: (String) -> Unit,
 ) {
@@ -38,7 +39,8 @@ internal fun MethodChoiceEditor(
             listOf(
                 "no_root" to TextR.string.implementation_group_no_root,
                 "root_required" to TextR.string.implementation_group_root_required,
-            ).forEach { (value, label) ->
+            ).filter { (value, _) -> value != "root_required" || showRootOrLsposed }
+                .forEach { (value, label) ->
                 FilterChip(
                     selected = selected == value,
                     onClick = { onValue(value) },
@@ -46,6 +48,12 @@ internal fun MethodChoiceEditor(
                     label = { Text(stringResource(label)) },
                 )
             }
+        }
+        if (!showRootOrLsposed && selected == "root_required") {
+            Text(
+                stringResource(TextR.string.implementation_hidden_saved_root),
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }
@@ -56,12 +64,19 @@ internal fun BackendChoiceEditor(
     field: FieldSchema.Choice,
     value: String,
     method: FeatureMethod,
+    showRootOrLsposed: Boolean,
     enabled: Boolean,
     onValue: (String) -> Unit,
 ) {
-    val options = if (descriptor.hasDualMethodRoutes()) descriptor.methodBackends(method)
-        else descriptor.resolvedImplementationOptions()
+    val dual = descriptor.hasDualMethodRoutes()
+    val options = if (dual) descriptor.methodBackends(method)
+        .filter { showRootOrLsposed || !it.requiresRootOrLsposed() }
+        else descriptor.visibleImplementationOptions(showRootOrLsposed)
     val selected = value.takeIf { candidate -> options.any { it.backendId == candidate } } ?: "auto"
+    // With mixed routes and no method field, "Auto" would choose Root by broker priority.
+    // Do not offer it when hiding Root paths; require an explicit non-Root backend.
+    val supportsAuto = showRootOrLsposed || dual ||
+        descriptor.resolvedImplementationOptions().none { it.requiresRootOrLsposed() }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             stringResource(
@@ -71,7 +86,8 @@ internal fun BackendChoiceEditor(
             ),
             fontWeight = FontWeight.Medium,
         )
-        (listOf("auto") + options.mapNotNull { it.backendId }).forEach { option ->
+        ((if (supportsAuto) listOf("auto") else emptyList()) +
+            options.mapNotNull { it.backendId }).forEach { option ->
             Row(
                 Modifier.fillMaxWidth().clickable(enabled = enabled) { onValue(option) },
                 verticalAlignment = Alignment.CenterVertically,
@@ -84,6 +100,12 @@ internal fun BackendChoiceEditor(
                     }
                 }
             }
+        }
+        if (!showRootOrLsposed && value in setOf("root", "lsposed", "zygisk")) {
+            Text(
+                stringResource(TextR.string.implementation_hidden_saved_root),
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }
