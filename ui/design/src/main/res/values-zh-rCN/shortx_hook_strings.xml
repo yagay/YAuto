@@ -133,4 +133,7 @@
     <string name="feature_android_lsposed_hook_install_session_field_memberkind">Hook 目标</string>
     <string name="feature_android_lsposed_hook_install_session_field_memberkind_option_method">方法</string>
     <string name="feature_android_lsposed_hook_install_session_field_memberkind_option_constructor">构造函数</string>
+    <string name="feature_android_lsposed_hook_install_session_field_capturevalues">捕获基础类型参数和返回值（可能涉及隐私，默认关闭）</string>
+    <string name="feature_android_event_lsposed_method_called_field_arg0contains">首个参数包含</string>
+    <string name="feature_android_event_lsposed_method_called_field_resultcontains">返回值包含</string>
 </resources>

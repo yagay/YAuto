@@ -198,6 +198,7 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
             .putExtra("eventToken", eventToken)
             .putExtra("className", request.payload.string("className"))
             .putExtra("memberKind", request.payload.string("memberKind", "method"))
+            .putExtra("captureValues", (request.payload["captureValues"] as? ConfigValue.BooleanValue)?.value ?: false)
             .putExtra("methodName", request.payload.string("methodName"))
             .putExtra("parameterCount", request.payload["parameterCount"].numberOrNull()?.toInt() ?: -1)
             .putExtra("parameterTypes", request.payload.string("parameterTypes"))

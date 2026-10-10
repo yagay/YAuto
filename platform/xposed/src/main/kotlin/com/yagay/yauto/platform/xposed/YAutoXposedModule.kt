@@ -1678,6 +1678,7 @@ class YAutoXposedModule : XposedModule() {
                     val className = intent.getStringExtra("className").orEmpty().trim()
                     val methodName = intent.getStringExtra("methodName").orEmpty().trim()
                     val memberKind = intent.getStringExtra("memberKind").orEmpty().ifBlank { "method" }
+                    val captureValues = intent.getBooleanExtra("captureValues", false)
                     val parameterCount = intent.getIntExtra("parameterCount", -1)
                     val parameterTypes = intent.getStringExtra("parameterTypes").orEmpty().trim()
                     val returnType = intent.getStringExtra("returnType").orEmpty().trim()
@@ -1735,12 +1736,12 @@ class YAutoXposedModule : XposedModule() {
                                 if (mode == "replace") parseReplacement(member.returnType, replacementType, replacementValue)
                                 installMethodHook(
                                     context, packageName, processName, className, member,
-                                    sessionId, eventToken, lifecycle, mode, replacementType, replacementValue,
+                                    sessionId, eventToken, lifecycle, mode, replacementType, replacementValue, captureValues,
                                 )
                             } else {
                                 installConstructorHook(
                                     context, packageName, processName, className,
-                                    member as java.lang.reflect.Constructor<*>, sessionId, eventToken, lifecycle,
+                                    member as java.lang.reflect.Constructor<*>, sessionId, eventToken, lifecycle, captureValues,
                                 )
                             }
                             hookedCount++
@@ -1837,6 +1838,7 @@ class YAutoXposedModule : XposedModule() {
         sessionId: String,
         eventToken: String,
         lifecycle: String,
+        captureValues: Boolean,
     ) {
         constructor.isAccessible = true
         hook(constructor).intercept { chain ->
@@ -1845,11 +1847,13 @@ class YAutoXposedModule : XposedModule() {
             } else if (lifecycle == "after") {
                 val result = chain.proceed()
                 emitMethodCalled(context, sessionId, eventToken, packageName, processName,
-                    className, "<init>", "after")
+                    className, "<init>", "after",
+                    if (captureValues) MethodHookValueSnapshot.capture(chain.args) else emptyMap())
                 result
             } else {
                 emitMethodCalled(context, sessionId, eventToken, packageName, processName,
-                    className, "<init>", "before")
+                    className, "<init>", "before",
+                    if (captureValues) MethodHookValueSnapshot.capture(chain.args) else emptyMap())
                 chain.proceed()
             }
         }
@@ -1867,20 +1871,28 @@ class YAutoXposedModule : XposedModule() {
         mode: String,
         replacementType: String,
         replacementValue: String,
+        captureValues: Boolean,
     ) {
         method.isAccessible = true
         hook(method).intercept { chain ->
             if (!methodSessions.isActive(sessionId, eventToken)) {
                 chain.proceed()
             } else if (mode == "replace") {
-                emitMethodCalled(context, sessionId, eventToken, packageName, processName, chain.thisObject?.javaClass?.name ?: className, method.name, "before")
-                parseReplacement(method.returnType, replacementType, replacementValue)
+                val result = parseReplacement(method.returnType, replacementType, replacementValue)
+                emitMethodCalled(context, sessionId, eventToken, packageName, processName,
+                    chain.thisObject?.javaClass?.name ?: className, method.name, "before",
+                    if (captureValues) MethodHookValueSnapshot.capture(chain.args, result, true) else emptyMap())
+                result
             } else if (lifecycle == "after") {
                 val result = chain.proceed()
-                emitMethodCalled(context, sessionId, eventToken, packageName, processName, chain.thisObject?.javaClass?.name ?: className, method.name, "after")
+                emitMethodCalled(context, sessionId, eventToken, packageName, processName,
+                    chain.thisObject?.javaClass?.name ?: className, method.name, "after",
+                    if (captureValues) MethodHookValueSnapshot.capture(chain.args, result, true) else emptyMap())
                 result
             } else {
-                emitMethodCalled(context, sessionId, eventToken, packageName, processName, chain.thisObject?.javaClass?.name ?: className, method.name, "before")
+                emitMethodCalled(context, sessionId, eventToken, packageName, processName,
+                    chain.thisObject?.javaClass?.name ?: className, method.name, "before",
+                    if (captureValues) MethodHookValueSnapshot.capture(chain.args) else emptyMap())
                 chain.proceed()
             }
         }
@@ -1895,6 +1907,7 @@ class YAutoXposedModule : XposedModule() {
         className: String,
         methodName: String,
         lifecycle: String,
+        captured: Map<String, String> = emptyMap(),
     ) {
         runCatching {
             context.sendBroadcast(
@@ -1908,6 +1921,7 @@ class YAutoXposedModule : XposedModule() {
                     .putExtra("methodName", methodName)
                     .putExtra("lifecycle", lifecycle)
                     .putExtra("timestampEpochMs", System.currentTimeMillis())
+                    .apply { captured.forEach { (key, value) -> putExtra(key, value) } }
             )
         }
     }

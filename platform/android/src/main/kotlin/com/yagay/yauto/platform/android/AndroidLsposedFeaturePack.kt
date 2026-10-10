@@ -34,6 +34,7 @@ class AndroidLsposedFeaturePack : FeaturePack {
                     FieldSchema.Text("className", "Class name", true),
                     FieldSchema.Choice("memberKind", "Hook target", options = listOf("method", "constructor")),
                     FieldSchema.Text("methodName", "Method name"),
+                    FieldSchema.Toggle("captureValues", "Capture primitive arguments and return values (sensitive; off by default)"),
                     FieldSchema.Number("parameterCount", "Parameter count (-1 = any overload)", min = -1.0, max = 64.0),
                     FieldSchema.Text("parameterTypes", "Parameter types (comma-separated Java names)"),
                     FieldSchema.Text("returnType", "Return type (Java name)"),
@@ -70,6 +71,7 @@ class AndroidLsposedFeaturePack : FeaturePack {
             val className = feature.config.string("className").resolveVariables(ctx.variables).trim()
             val methodName = feature.config.string("methodName").resolveVariables(ctx.variables).trim()
             val memberKind = feature.config.string("memberKind", "method")
+            val captureValues = feature.config.boolean("captureValues", false)
             val parameterCount = (feature.config["parameterCount"].numberOrNull() ?: -1.0).toInt()
             val parameterTypes = feature.config.string("parameterTypes").resolveVariables(ctx.variables).trim()
             val returnType = feature.config.string("returnType").resolveVariables(ctx.variables).trim()
@@ -96,6 +98,7 @@ class AndroidLsposedFeaturePack : FeaturePack {
                         "package" to ConfigValue.StringValue(pkg),
                         "className" to ConfigValue.StringValue(className),
                         "memberKind" to ConfigValue.StringValue(memberKind),
+                        "captureValues" to ConfigValue.BooleanValue(captureValues),
                         "methodName" to ConfigValue.StringValue(if (memberKind == "constructor") "<init>" else methodName),
                         "parameterCount" to ConfigValue.NumberValue(parameterCount.toDouble()),
                         "parameterTypes" to ConfigValue.StringValue(parameterTypes),
@@ -187,6 +190,8 @@ class AndroidLsposedFeaturePack : FeaturePack {
                     FieldSchema.Text("className", "Class name"),
                     FieldSchema.Text("methodName", "Method name"),
                     FieldSchema.Choice("lifecycle", "Lifecycle", options = listOf("any", "before", "after")),
+                    FieldSchema.Text("arg0Contains", "First argument contains"),
+                    FieldSchema.Text("resultContains", "Return value contains"),
                 ),
                 accessRequirements = setOf(AccessRequirement.LSPOSED),
                 keywords = setOf("lsposed", "xposed", "method called", "hook event", "ShortX"),
@@ -203,7 +208,11 @@ class AndroidLsposedFeaturePack : FeaturePack {
             val methodName = feature.config.string("methodName").trim()
             if (methodName.isNotBlank() && ctx.event.payload.string("methodName") != methodName) return@registerEvent false
             val lifecycle = feature.config.string("lifecycle", "any")
-            lifecycle == "any" || ctx.event.payload.string("lifecycle") == lifecycle
+            val argFilter = feature.config.string("arg0Contains").trim()
+            val resultFilter = feature.config.string("resultContains").trim()
+            (lifecycle == "any" || ctx.event.payload.string("lifecycle") == lifecycle) &&
+                (argFilter.isEmpty() || ctx.event.payload.string("arg0").contains(argFilter, ignoreCase = true)) &&
+                (resultFilter.isEmpty() || ctx.event.payload.string("result").contains(resultFilter, ignoreCase = true))
         }
     }
 

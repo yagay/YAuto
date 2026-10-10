@@ -133,4 +133,7 @@
     <string name="feature_android_lsposed_hook_install_session_field_memberkind">Hook target</string>
     <string name="feature_android_lsposed_hook_install_session_field_memberkind_option_method">Method</string>
     <string name="feature_android_lsposed_hook_install_session_field_memberkind_option_constructor">Constructor</string>
+    <string name="feature_android_lsposed_hook_install_session_field_capturevalues">Capture primitive arguments and return values (sensitive; off by default)</string>
+    <string name="feature_android_event_lsposed_method_called_field_arg0contains">First argument contains</string>
+    <string name="feature_android_event_lsposed_method_called_field_resultcontains">Return value contains</string>
 </resources>

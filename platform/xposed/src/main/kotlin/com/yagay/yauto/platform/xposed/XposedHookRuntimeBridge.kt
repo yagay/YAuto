@@ -15,6 +15,7 @@ data class XposedHookEvent(
     val processName: String,
     val lifecycle: String,
     val timestampEpochMs: Long,
+    val captured: Map<String, String> = emptyMap(),
 )
 
 object XposedHookRuntimeBridge {
@@ -47,6 +48,9 @@ object XposedHookRuntimeBridge {
                 processName = intent.getStringExtra("processName").orEmpty(),
                 lifecycle = intent.getStringExtra("lifecycle").orEmpty(),
                 timestampEpochMs = intent.getLongExtra("timestampEpochMs", System.currentTimeMillis()),
+                captured = MethodHookValueSnapshot.allowedKeys.mapNotNull { key ->
+                    intent.getStringExtra(key)?.take(256)?.let { key to it }
+                }.toMap(),
             )
         )
     }
@@ -60,7 +64,7 @@ object XposedHookRuntimeBridge {
             "methodName" to ConfigValue.StringValue(event.methodName),
             "processName" to ConfigValue.StringValue(event.processName),
             "lifecycle" to ConfigValue.StringValue(event.lifecycle),
-        ),
+        ) + event.captured.mapValues { ConfigValue.StringValue(it.value) },
         source = "lsposed.method_hook",
         timestampEpochMs = event.timestampEpochMs,
     )
