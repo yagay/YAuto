@@ -68,9 +68,9 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
             }
             .forEach { method ->
                 val key = "system-process-death|" + method.toGenericString()
-                if (!installedHooks.add(key)) return@forEach
-                method.isAccessible = true
-                hook(method).intercept { chain ->
+                val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                    method.isAccessible = true
+                    hook(method).intercept { chain ->
                     val process = processSnapshot(chain.thisObject)
                     val result = chain.proceed()
                     if (process.packageName.isNotBlank() || process.processName.isNotBlank()) {
@@ -88,6 +88,10 @@ abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
                         )
                     }
                     result
+                    }
+                }
+                installation.exceptionOrNull()?.let { error ->
+                    log(Log.ERROR, "YAuto", "Process death hook installation failed", error)
                 }
             }
     }
