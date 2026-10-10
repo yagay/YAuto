@@ -92,7 +92,10 @@ class AutomationEngine(
         return try {
             require(automation.executionPolicy.maxRuntimeMs > 0) { userText("engine.runtime_limit_positive") }
             require(automation.executionPolicy.maxLoopIterations > 0) { userText("engine.loop_limit_positive") }
-            val signal = withTimeoutOrNull(automation.executionPolicy.maxRuntimeMs) {
+            val debugRuntimeLimitMs = if (debugObserver != null)
+                maxOf(automation.executionPolicy.maxRuntimeMs, 3_600_000L)
+            else automation.executionPolicy.maxRuntimeMs
+            val signal = withTimeoutOrNull(debugRuntimeLimitMs) {
                 withContext(EngineDebugContext(debugObserver)) {
                     executeNodes(nodes, executionId, variables, automation, null, automation.executionPolicy.maxLoopIterations)
                 }
