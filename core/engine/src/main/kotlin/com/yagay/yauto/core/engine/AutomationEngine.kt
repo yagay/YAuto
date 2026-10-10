@@ -36,6 +36,21 @@ fun interface RuntimeEventWaiter {
     ): Boolean
 }
 
+/**
+ * Execution-level debugger hook. Unlike isolated UI action tests this receives
+ * nested branch, loop and flow nodes in their real execution order and a snapshot
+ * of the shared variables at each boundary.
+ */
+interface EngineDebugObserver {
+    suspend fun beforeNode(node: ActionNode, variables: Map<String, ConfigValue>)
+    suspend fun afterNode(
+        node: ActionNode,
+        variables: Map<String, ConfigValue>,
+        success: Boolean,
+        elapsedMs: Long,
+    )
+}
+
 enum class AutomationPhase { ENTER, EVENT, EXIT }
 
 data class EngineResult(
@@ -58,6 +73,7 @@ class AutomationEngine(
         automation: Automation,
         phase: AutomationPhase,
         eventVariables: Map<String, ConfigValue> = emptyMap(),
+        debugObserver: EngineDebugObserver? = null,
     ): EngineResult {
         val executionId = ExecutionId(UUID.randomUUID().toString())
         val variables = RuntimeVariables(automation.variables + eventVariables)
@@ -77,7 +93,9 @@ class AutomationEngine(
             require(automation.executionPolicy.maxRuntimeMs > 0) { userText("engine.runtime_limit_positive") }
             require(automation.executionPolicy.maxLoopIterations > 0) { userText("engine.loop_limit_positive") }
             val signal = withTimeoutOrNull(automation.executionPolicy.maxRuntimeMs) {
-                executeNodes(nodes, executionId, variables, automation, null, automation.executionPolicy.maxLoopIterations)
+                withContext(EngineDebugContext(debugObserver)) {
+                    executeNodes(nodes, executionId, variables, automation, null, automation.executionPolicy.maxLoopIterations)
+                }
             } ?: Signal.Failure(userText("engine.execution_timeout", automation.executionPolicy.maxRuntimeMs))
             val result = when (signal) {
                 is Signal.Failure -> EngineResult(false, executionId, variables = variables.snapshot(), error = signal.message)
@@ -104,6 +122,11 @@ class AutomationEngine(
         }
     }
 
+    private class EngineDebugContext(val observer: EngineDebugObserver?) :
+        AbstractCoroutineContextElement(Key) {
+        companion object Key : CoroutineContext.Key<EngineDebugContext>
+    }
+
     private suspend fun executeNodes(
         nodes: List<ActionNode>,
         executionId: ExecutionId,
@@ -120,10 +143,21 @@ class AutomationEngine(
         while (index < nodes.size) {
             currentCoroutineContext().ensureActive()
             val node = nodes[index]
+            val observer = currentCoroutineContext()[EngineDebugContext]?.observer
+            observer?.beforeNode(node, variables.snapshot())
             val start = System.currentTimeMillis()
             trace(executionId, TraceKind.NODE_START, userText("engine.node_start"), automation, flow, node.id)
-            val signal = executeNode(node, executionId, variables, automation, flow, maxLoopIterations)
-            trace(executionId, TraceKind.NODE_END, userText("engine.node_end"), automation, flow, node.id, success = signal !is Signal.Failure, durationMs = System.currentTimeMillis() - start)
+            val signal = try {
+                executeNode(node, executionId, variables, automation, flow, maxLoopIterations)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                observer?.afterNode(node, variables.snapshot(), false, System.currentTimeMillis() - start)
+                throw error
+            }
+            val elapsed = System.currentTimeMillis() - start
+            observer?.afterNode(node, variables.snapshot(), signal !is Signal.Failure, elapsed)
+            trace(executionId, TraceKind.NODE_END, userText("engine.node_end"), automation, flow, node.id, success = signal !is Signal.Failure, durationMs = elapsed)
             if (signal is Signal.Goto) {
                 val target = labels[signal.label]
                 if (target != null) {
