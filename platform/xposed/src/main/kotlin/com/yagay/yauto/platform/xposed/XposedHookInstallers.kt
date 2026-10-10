@@ -74,12 +74,9 @@ abstract class XposedHookInstallers : XposedMethodHookInstallers() {
             classLoader.loadClass("com.android.internal.os.RuntimeInit\$LoggingHandler")
         }.getOrNull() ?: return
         clazz.declaredMethods
-            .filter { method ->
-                method.name == "uncaughtException" &&
-                    method.parameterTypes.any { Throwable::class.java.isAssignableFrom(it) }
-            }
+            .filter(XposedRuntimeInitHookPolicy::isCrashHandler)
             .forEach { method ->
-                val key = "shortx-runtime-init|" + packageName + "|" + method.toGenericString()
+                val key = XposedRuntimeInitHookPolicy.installationKey(packageName, method)
                 if (!installedHooks.add(key)) return@forEach
                 method.isAccessible = true
                 hook(method).intercept { chain ->
