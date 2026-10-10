@@ -352,64 +352,6 @@ private fun ImplementationGuide(
 }
 
 @Composable
-private fun MethodChoiceEditor(
-    selected: String,
-    enabled: Boolean,
-    onValue: (String) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(stringResource(TextR.string.implementation_method), fontWeight = FontWeight.Medium)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(
-                "auto" to TextR.string.implementation_auto_title,
-                "macrodroid" to TextR.string.implementation_family_macro_title,
-                "shortx" to TextR.string.implementation_family_shortx_title,
-            ).forEach { (value, label) ->
-                FilterChip(
-                    selected = selected == value,
-                    onClick = { onValue(value) },
-                    enabled = enabled,
-                    label = { Text(stringResource(label)) },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun BackendChoiceEditor(
-    descriptor: FeatureDescriptor,
-    field: FieldSchema.Choice,
-    value: String,
-    enabled: Boolean,
-    onValue: (String) -> Unit,
-) {
-    val selected = value.ifBlank { "auto" }
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            stringResource(
-                if (descriptor.hasDualMethodRoutes())
-                    TextR.string.implementation_family_shortx_backend
-                else TextR.string.implementation_method,
-            ),
-            fontWeight = FontWeight.Medium,
-        )
-        field.options.forEach { option ->
-            val supported = option == "auto" || descriptor.resolvedImplementationOptions().any { it.backendId == option }
-            if (supported) {
-                Row(
-                    Modifier.fillMaxWidth().clickable(enabled = enabled) { onValue(option) },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    RadioButton(selected = selected == option, onClick = { onValue(option) }, enabled = enabled)
-                    Text(implementationTitle(option))
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun FieldEditor(
     descriptor: FeatureDescriptor,
     field: FieldSchema,
@@ -612,19 +554,6 @@ private fun accessRequirementResource(requirement: AccessRequirement): Int = whe
     AccessRequirement.RECORD_AUDIO -> TextR.string.access_record_audio
     AccessRequirement.ACTIVITY_RECOGNITION -> TextR.string.access_activity_recognition
 }
-
-@Composable
-private fun implementationTitle(backendId: String): String = stringResource(
-    when (backendId) {
-        "auto" -> TextR.string.implementation_auto_title
-        "root" -> TextR.string.implementation_root_title
-        "shizuku" -> TextR.string.implementation_shizuku_title
-        "lsposed" -> TextR.string.implementation_lsposed_title
-        "accessibility" -> TextR.string.implementation_accessibility_title
-        "usage_stats" -> TextR.string.implementation_usage_stats_title
-        else -> TextR.string.implementation_method
-    }
-)
 
 private fun HardwareKeyCaptureResult.toHiddenHardwareIdentity(): ConfigValue.ObjectValue =
     ConfigValue.ObjectValue(
