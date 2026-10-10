@@ -649,7 +649,7 @@ class AutomationRuntime(
                         )
                     )
                 } finally {
-                    unexecutionJobs.track(key, job)
+                    executionJobs.untrack(key, job)
                 }
             }
         }
