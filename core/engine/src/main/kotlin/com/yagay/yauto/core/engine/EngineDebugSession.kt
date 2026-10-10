@@ -12,6 +12,7 @@ import kotlinx.coroutines.sync.withLock
  * instances of the same node; a FIFO wait queue prevents parallel branches losing breakpoints.
  */
 class EngineDebugSession : EngineDebugObserver {
+    private companion object { const val MAX_HISTORY_STEPS = 1_000 }
     data class Step(
         val invocationId: Long,
         val nodeId: NodeId,
@@ -34,7 +35,7 @@ class EngineDebugSession : EngineDebugObserver {
     private val mutex = Mutex()
     private var mode = Mode.STEP
     private val waiting = ArrayDeque<Waiter>()
-    private val history = mutableListOf<Step>()
+    private val history = ArrayDeque<Step>()
     private val before = mutableMapOf<Long, Map<String, ConfigValue>>()
     private val breakpoints = mutableSetOf<NodeId>()
 
@@ -83,7 +84,11 @@ class EngineDebugSession : EngineDebugObserver {
         try {
             waiter?.deferred?.await()
         } finally {
-            if (waiter != null) mutex.withLock { waiting.remove(waiter) }
+            mutex.withLock {
+                if (waiter != null) waiting.remove(waiter)
+                // An invocation cancelled while paused will never reach afterNode.
+                if (waiter?.deferred?.isCancelled == true) before.remove(invocationId)
+            }
         }
     }
 
@@ -95,7 +100,8 @@ class EngineDebugSession : EngineDebugObserver {
         elapsedMs: Long,
     ) {
         mutex.withLock {
-            history += Step(
+            if (history.size == MAX_HISTORY_STEPS) history.removeFirst()
+            history.addLast(Step(
                 invocationId = invocationId,
                 nodeId = node.id,
                 nodeType = node.javaClass.simpleName,
@@ -103,7 +109,7 @@ class EngineDebugSession : EngineDebugObserver {
                 variablesAfter = variables.toMap(),
                 success = success,
                 elapsedMs = elapsedMs,
-            )
+            ))
         }
     }
 }
