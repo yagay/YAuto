@@ -38,45 +38,51 @@ internal fun StepDebugDialog(
     val unsupported = stringResource(TextR.string.debug_compound_skipped)
     val reached = stringResource(TextR.string.debug_breakpoint_reached)
 
-    fun runStep() {
-        if (busy || !armed || cursor !in actions.indices) return
-        val index = cursor
+    suspend fun executeStep(index: Int): Boolean {
         val feature = actions[index]
         if (feature == null) {
             message = unsupported
             cursor = index + 1
-            return
+            return true
         }
-        val gateway = tester ?: return
+        val gateway = tester ?: return false
+        val outcome = try {
+            gateway.test(feature, FeatureKind.ACTION)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            FeatureTestResult(
+                success = false,
+                detail = error.message ?: error.javaClass.simpleName,
+                elapsedMs = 0,
+                kind = FeatureKind.ACTION,
+            )
+        }
+        report = report + (index to outcome)
+        cursor = index + 1
+        return outcome.success
+    }
+
+    fun runSteps(continuous: Boolean) {
+        if (busy || !armed || cursor !in actions.indices || tester == null) return
         busy = true
         message = null
         scope.launch {
             try {
-                val result = gateway.test(feature, FeatureKind.ACTION)
-                report = report + (index to result)
-                cursor = index + 1
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                report = report + (index to FeatureTestResult(
-                    success = false,
-                    detail = error.message ?: error.javaClass.simpleName,
-                    elapsedMs = 0,
-                    kind = FeatureKind.ACTION,
-                ))
-                cursor = index + 1
+                var first = true
+                while (cursor < actions.size) {
+                    if (continuous && !first && cursor in breakpoints) {
+                        message = reached
+                        break
+                    }
+                    val index = cursor
+                    val success = executeStep(index)
+                    if (!continuous || !success) break
+                    first = false
+                }
             } finally {
                 busy = false
             }
-        }
-    }
-
-    fun runUntilBreakpoint() {
-        // A single step per explicit user interaction: no background execution beyond a breakpoint.
-        if (cursor in breakpoints) {
-            message = reached
-        } else {
-            runStep()
         }
     }
 
@@ -131,14 +137,14 @@ internal fun StepDebugDialog(
         confirmButton = {
             TextButton(
                 enabled = !busy && armed && cursor < nodes.size && tester != null,
-                onClick = ::runStep,
+                onClick = { runSteps(false) },
             ) { Text(stringResource(TextR.string.debug_next_step)) }
         },
         dismissButton = {
             Row {
                 TextButton(
                     enabled = !busy && armed && cursor < nodes.size && tester != null,
-                    onClick = ::runUntilBreakpoint,
+                    onClick = { runSteps(true) },
                 ) { Text(stringResource(TextR.string.debug_run_to_breakpoint)) }
                 TextButton(enabled = !busy, onClick = onDismiss) {
                     Text(stringResource(TextR.string.common_close))
