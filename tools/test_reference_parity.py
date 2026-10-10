@@ -13,7 +13,9 @@ class FullReferenceParityInventoryTests(unittest.TestCase):
 
     def test_hints_are_not_treated_as_native_implementations(self):
         rows = {row["source_type"]: row for row in inventory()["rows"]}
-        self.assertEqual(rows["ToggleWifi"]["status"], "hint_only")
+        self.assertEqual(rows["ToggleWifi"]["status"], "field_decoder_present")
+        self.assertTrue(rows["ToggleWifi"]["verified_batch_binary"])
+        self.assertTrue(rows["InputSwipe"]["verified_batch_json"])
         self.assertEqual(rows["ActionAsyncMode"]["status"], "unmapped_or_nonaction")
         self.assertEqual(rows["NoAction"]["status"], "field_decoder_present")
         self.assertEqual(rows["SetBrightness"]["status"], "field_decoder_present")
