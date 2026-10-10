@@ -284,4 +284,8 @@
     <string name="test_center_permissions">检查权限与服务</string>
     <string name="test_center_close">关闭</string>
     <string name="test_center_settings_subtitle">手动触发测试、运行日志、权限与服务检查</string>
+    <string name="test_center_saved_heading">测试已保存的自动化</string>
+    <string name="test_center_no_automations">暂无已保存的自动化</string>
+    <string name="test_center_run_passed">测试完成：%1$s（%2$d 毫秒）</string>
+    <string name="test_center_run_failed">测试失败：%1$s（%2$d 毫秒）</string>
 </resources>
