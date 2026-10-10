@@ -288,5 +288,5 @@ class AndroidRemainingParityFeaturePack(context: Context) : FeaturePack {
             put(key, line.substring(index + 1))
         }
     }
-    private fun Double?.orZero(): Double = this ?: 0.0
+    internal fun Double?.orZero(): Double = this ?: 0.0
 }
