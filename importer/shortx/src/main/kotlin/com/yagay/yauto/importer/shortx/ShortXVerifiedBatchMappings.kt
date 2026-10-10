@@ -95,9 +95,9 @@ internal object ShortXVerifiedBatchMappings {
         return feature(any, importerId, "android.qs_tile.click", mapOf(text("component", target)))
     }
 
-    private fun decodePackedInsets(bytes: ByteArray): List<Int>? =
+    private fun decodePackedInsets(bytes: ByteArray): List<Long>? =
         if (bytes.size in 1..10 && bytes.all { it == 0.toByte() || it == 1.toByte() }) {
-            bytes.map { it.toInt() }
+            bytes.map { it.toLong() }
         } else null
 
     /** Protobuf defaults are accepted only when the message has no unknown business fields. */
