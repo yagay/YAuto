@@ -77,23 +77,21 @@ abstract class XposedHookInstallers : XposedMethodHookInstallers() {
             .filter(XposedRuntimeInitHookPolicy::isCrashHandler)
             .forEach { method ->
                 val key = XposedRuntimeInitHookPolicy.installationKey(packageName, method)
-                if (!installedHooks.add(key)) return@forEach
-                try {
+                val installed = XposedHookInstallationGuard.install(installedHooks, key) {
                     method.isAccessible = true
                     hook(method).intercept { chain ->
-                    val thread = chain.args.firstOrNull { it is Thread } as? Thread
-                    val error = chain.args.firstOrNull { it is Throwable } as? Throwable
-                    if (error != null) runCatching { crashGuards[packageName]?.recordFatal(error) }
-                    emitPackageRuntimeEvent(
-                        context,
-                        "android.event.process_uncaught_exception",
-                        XposedUncaughtExceptionSnapshot.create(packageName, thread, error, method.name),
-                    )
-                    chain.proceed()
+                        val thread = chain.args.firstOrNull { it is Thread } as? Thread
+                        val error = chain.args.firstOrNull { it is Throwable } as? Throwable
+                        if (error != null) runCatching { crashGuards[packageName]?.recordFatal(error) }
+                        emitPackageRuntimeEvent(
+                            context,
+                            "android.event.process_uncaught_exception",
+                            XposedUncaughtExceptionSnapshot.create(packageName, thread, error, method.name),
+                        )
+                        chain.proceed()
                     }
-                } catch (error: Exception) {
-                    // A failed install must not permanently poison deduplication.
-                    installedHooks.remove(key)
+                }
+                installed.exceptionOrNull()?.let { error ->
                     log(Log.ERROR, "YAuto", "RuntimeInit hook installation failed for $packageName", error)
                 }
             }
