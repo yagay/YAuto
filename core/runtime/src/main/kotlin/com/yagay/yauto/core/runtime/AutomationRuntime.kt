@@ -83,6 +83,7 @@ class AutomationRuntime(
     private val executionJobs = ExecutionJobRegistry()
     private val eventWaitRegistry = RuntimeEventWaitRegistry()
     private val workspaceMutationLock = Mutex()
+    private val lastRunStore = RuntimeLastRunStore(workspaceRepository, workspaceMutationLock)
     private val expressions = SimpleExpressionEngine()
 
     suspend fun dispatch(event: RuntimeEvent, statesOnly: Boolean = false): RuntimeDispatchResult = coroutineScope {
@@ -476,7 +477,7 @@ class AutomationRuntime(
         if (trimmed.isEmpty()) return null
         val workspace = workspaceRepository.load()
         val automation = resolveAutomation(workspace, trimmed) ?: return null
-        return workspace.automationLastRunEpochMs[automation.id.value]
+        return lastRunStore.get(automation.id)
     }
 
     override suspend fun get(name: String): ConfigValue? {
@@ -669,18 +670,8 @@ class AutomationRuntime(
     }
 
 
-    private suspend fun recordLastRun(automationId: AutomationId, timestamp: Long) {
-        workspaceMutationLock.withLock {
-            val workspace = workspaceRepository.load()
-            if (workspace.automationLastRunEpochMs[automationId.value] == timestamp) return@withLock
-            workspaceRepository.save(
-                workspace.copy(
-                    automationLastRunEpochMs =
-                        workspace.automationLastRunEpochMs + (automationId.value to timestamp),
-                )
-            )
-        }
-    }
+    private suspend fun recordLastRun(automationId: AutomationId, timestamp: Long) =
+        lastRunStore.record(automationId, timestamp)
 
     private fun categoryEnabled(category: String?, disabledCategories: Set<String>): Boolean {
         val name = category?.trim().orEmpty()
