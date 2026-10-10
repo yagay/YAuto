@@ -831,19 +831,8 @@ class YAutoXposedModule : XposedModule() {
         if (systemEventDedup.size > 256) {
             systemEventDedup.entries.removeIf { now - it.value > 60_000L }
         }
-        val intent = Intent(SystemBridgeProtocol.SYSTEM_EVENT_ACTION)
-            .setPackage(YAUTO_PACKAGE)
-            .putExtra("type", type)
-            .putExtra("timestampEpochMs", now)
-        extras.forEach { (key, value) ->
-            when (value) {
-                is String -> intent.putExtra(key, value)
-                is Int -> intent.putExtra(key, value)
-                is Long -> intent.putExtra(key, value)
-                is Boolean -> intent.putExtra(key, value)
-            }
-        }
-        runCatching { context.sendBroadcast(intent) }
+        broadcastXposedRuntimeEvent(context, type, extras, now)
+
     }
 
     private fun installShortXPackageHooks(
@@ -1364,28 +1353,6 @@ class YAutoXposedModule : XposedModule() {
                 chain.proceed()
             }
         }
-    }
-
-    private fun emitPackageRuntimeEvent(
-        context: Context,
-        type: String,
-        extras: Map<String, Any?>,
-    ) {
-        val intent = Intent(SystemBridgeProtocol.SYSTEM_EVENT_ACTION)
-            .setPackage(YAUTO_PACKAGE)
-            .putExtra("type", type)
-            .putExtra("bridgeSource", "lsposed.package")
-            .putExtra("package", context.packageName)
-            .putExtra("timestampEpochMs", System.currentTimeMillis())
-        extras.forEach { (key, value) ->
-            when (value) {
-                is String -> intent.putExtra(key, value)
-                is Int -> intent.putExtra(key, value)
-                is Long -> intent.putExtra(key, value)
-                is Boolean -> intent.putExtra(key, value)
-            }
-        }
-        runCatching { context.sendBroadcast(intent) }
     }
 
     private fun registerAppHookBridge(context: Context, packageName: String, classLoader: ClassLoader) {
