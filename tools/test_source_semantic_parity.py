@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SHORTX_HINTS = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/EnhancedShortXImporter.kt"
 SHORTX_PARSER = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXMappings.kt"
+SHORTX_NATIVE_SUPPORT = ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/ShortXNativeSupport.kt"
 MACRO_HINTS = ROOT / "importer/macrodroid/src/main/kotlin/com/yagay/yauto/importer/macrodroid/MacroDroidFeatureSuggestions.kt"
 COMMUNICATION = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidCommunicationFeaturePack.kt"
 SMS_IMPLEMENTATION = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidPersonalDataFeaturePack.kt"
@@ -97,7 +98,7 @@ class SourceSemanticParityTests(unittest.TestCase):
         self.assertIn('"SetStatusBarIcon" -> nativeStatusBarIcon(', shortx)
         self.assertIn('"RemoveStatusBarIcon" -> nativeStatusBarIcon(', shortx)
         self.assertIn('"StopService" -> nativeStopServices(', shortx)
-        self.assertIn('input.startsWith("yauto_")', shortx)
+        self.assertIn('input.startsWith("yauto_")', SHORTX_NATIVE_SUPPORT.read_text(encoding="utf-8"))
         self.assertIn('jsonBusinessKeysSafe(', shortx)
 
     def test_android_16_native_live_update_is_not_mislabelled_shortx_overlay(self):
