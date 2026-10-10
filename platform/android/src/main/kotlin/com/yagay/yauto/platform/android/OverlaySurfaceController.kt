@@ -40,10 +40,8 @@ import kotlin.math.sin
 
 class OverlaySurfaceController(context: Context) {
     private val context = context.applicationContext
-    private val windowManager = context.applicationContext.getSystemService(WindowManager::class.java)
     private val main = Handler(Looper.getMainLooper())
-    private val surfaces = ConcurrentHashMap<String, android.view.View>()
-    private val autoHideCallbacks = ConcurrentHashMap<String, Runnable>()
+    private val windows = OverlayWindowLifecycle(context.applicationContext, main)
     private val recordedGestures = ConcurrentHashMap<String, String>()
     private val taskerSceneModels = ConcurrentHashMap<String, String>()
 
@@ -60,7 +58,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val root = LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
@@ -112,12 +110,7 @@ class OverlaySurfaceController(context: Context) {
                 x = 0
                 y = (24 * density).toInt()
             }
-            runCatching {
-                windowManager.addView(root, params)
-                surfaces[id] = root
-                SurfaceRuntimeBridge.emit(id, "shown")
-                scheduleAutoHide(id, root, autoHideMs)
-            }
+            windows.attach(id, root, params, autoHideMs)
         }
         return true
     }
@@ -134,7 +127,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val input = EditText(context).apply {
                 this.hint = hint
@@ -167,7 +160,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank() || items.isEmpty()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val list = LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
@@ -203,7 +196,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank() || apps.isEmpty()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val grid = GridLayout(context).apply {
                 columnCount = columns.coerceIn(1, 6)
@@ -252,7 +245,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank() || items.isEmpty()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val grid = GridLayout(context).apply {
                 columnCount = columns.coerceIn(1, 6)
@@ -279,7 +272,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val view = Button(context).apply {
                 this.text = text
@@ -300,7 +293,7 @@ class OverlaySurfaceController(context: Context) {
     fun showTouchBlocker(id: String, autoHideMs: Long): Boolean {
         if (!canDraw() || id.isBlank()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val blocker = View(context).apply {
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
                 setOnTouchListener { _, event ->
@@ -330,7 +323,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank() || items.isEmpty()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val pie = PieMenuView(context, items.take(12)) { label, action ->
                 SurfaceRuntimeBridge.emit(id, action.ifBlank { label }, label)
@@ -360,7 +353,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank() || maxValue <= minValue) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val label = TextView(context).apply {
                 setTextColor(android.graphics.Color.WHITE)
@@ -400,7 +393,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val root = createOverlayBasePanel(context, "", density).apply {
                 addView(Switch(context).apply {
@@ -426,7 +419,7 @@ class OverlaySurfaceController(context: Context) {
         if (!canDraw() || id.isBlank() || source.isBlank()) return false
         val bitmap = loadOverlayBitmap(context, source) ?: return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val view = ImageView(context).apply {
                 setImageBitmap(bitmap)
@@ -449,7 +442,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank() || (!url.startsWith("http://") && !url.startsWith("https://"))) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val web = WebView(context).apply {
                 settings.javaScriptEnabled = javaScript
@@ -482,7 +475,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val board = DrawingBoardView(context).apply {
                 layoutParams = LinearLayout.LayoutParams((320 * density).toInt(), (320 * density).toInt())
@@ -524,7 +517,7 @@ class OverlaySurfaceController(context: Context) {
         val validEdge = edge in setOf("left", "right", "top", "bottom", "top_left", "top_right", "bottom_left", "bottom_right")
         if (!validEdge) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val thickness = (thicknessDp.coerceIn(4, 96) * density).toInt()
             val corner = edge.contains("_")
@@ -564,7 +557,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val view = RegionSelectorView(context) { left, top, right, bottom ->
                 SurfaceRuntimeBridge.emit(
                     id,
@@ -596,7 +589,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val view = View(context).apply {
                 setBackgroundColor(
                     android.graphics.Color.argb(
@@ -631,7 +624,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank() || text.isBlank()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val view = TextView(context).apply {
                 this.text = text
                 setTextColor(color)
@@ -673,7 +666,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val view = GestureRecorderView(
                 context = context,
                 maxPoints = maxPoints.coerceIn(16, 4096),
@@ -696,11 +689,11 @@ class OverlaySurfaceController(context: Context) {
     }
 
     fun stopGestureRecorder(id: String): Boolean {
-        if (id.isBlank() || surfaces[id] !is GestureRecorderView) return false
+        if (id.isBlank() || windows.view(id) !is GestureRecorderView) return false
         main.post {
-            val recorder = surfaces[id] as? GestureRecorderView ?: return@post
+            val recorder = windows.view(id) as? GestureRecorderView ?: return@post
             recorder.finishRecording()
-            hideInternal(id)
+            windows.remove(id)
             SurfaceRuntimeBridge.emit(id, "gesture_recording_stopped")
         }
         return true
@@ -732,7 +725,7 @@ class OverlaySurfaceController(context: Context) {
         val model = runCatching { JSONObject(resolved) }.getOrNull() ?: return false
         taskerSceneModels[id] = resolved
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val content = LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
@@ -873,7 +866,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val thickness = (thicknessDp.coerceIn(1, 48) * density).toInt()
             val view = EdgeLightingView(context, color, thickness)
@@ -901,7 +894,7 @@ class OverlaySurfaceController(context: Context) {
     ): Boolean {
         if (!canDraw() || id.isBlank()) return false
         main.post {
-            hideInternal(id)
+            windows.remove(id)
             val density = context.resources.displayMetrics.density
             val root = createOverlayBasePanel(context, title, density).apply {
                 if (text.isNotBlank()) addView(TextView(context).apply {
@@ -937,7 +930,7 @@ class OverlaySurfaceController(context: Context) {
 
     private fun addSurface(
         id: String,
-        view: android.view.View,
+        view: View,
         gravity: String,
         autoHideMs: Long,
         focusable: Boolean = false,
@@ -945,61 +938,19 @@ class OverlaySurfaceController(context: Context) {
         height: Int = WindowManager.LayoutParams.WRAP_CONTENT,
         touchable: Boolean = true,
     ) {
-        val density = context.resources.displayMetrics.density
-        val flags = (if (focusable) 0 else WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) or
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-            (if (touchable) 0 else WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
-        val params = WindowManager.LayoutParams(
-            width,
-            height,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            flags,
-            PixelFormat.TRANSLUCENT,
-        ).apply {
-            this.gravity = gravityValue(gravity)
-            x = 0
-            y = (24 * density).toInt()
-            if (focusable) softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
-        }
-        runCatching {
-            windowManager.addView(view, params)
-            surfaces[id] = view
-            SurfaceRuntimeBridge.emit(id, "shown")
-            scheduleAutoHide(id, view, autoHideMs)
-        }
-    }
-
-    /** A delayed hide belongs to the specific window instance, not a recycled surface ID. */
-    private fun scheduleAutoHide(id: String, view: View, timeoutMs: Long) {
-        autoHideCallbacks.remove(id)?.let(main::removeCallbacks)
-        if (timeoutMs <= 0) return
-        val callback = object : Runnable {
-            override fun run() {
-                autoHideCallbacks.remove(id, this)
-                if (surfaces[id] === view) hideInternal(id)
-            }
-        }
-        autoHideCallbacks[id] = callback
-        main.postDelayed(callback, timeoutMs.coerceAtMost(86_400_000))
+        windows.add(id, view, gravityValue(gravity), autoHideMs, focusable, width, height, touchable)
     }
 
     fun hide(id: String): Boolean {
         if (id.isBlank()) return false
-        val existed = surfaces.containsKey(id)
-        main.post { hideInternal(id) }
+        val existed = windows.contains(id)
+        main.post { windows.remove(id) }
         return existed
     }
 
     fun hideAll() {
-        main.post { surfaces.keys.toList().forEach(::hideInternal) }
+        main.post { windows.removeAll() }
     }
 
-    fun isShown(id: String): Boolean = surfaces.containsKey(id)
-
-    private fun hideInternal(id: String) {
-        autoHideCallbacks.remove(id)?.let(main::removeCallbacks)
-        val view = surfaces.remove(id) ?: return
-        runCatching { windowManager.removeView(view) }
-        SurfaceRuntimeBridge.emit(id, "hidden")
-    }
+    fun isShown(id: String): Boolean = windows.contains(id)
 }
