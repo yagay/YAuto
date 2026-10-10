@@ -81,7 +81,7 @@ internal fun buildEditedFeatureConfig(
     return config
 }
 
-private fun valuesAsConfig(
+internal fun valuesAsConfig(
     fields: List<FieldSchema>,
     values: Map<String, String>,
     locale: Locale,
