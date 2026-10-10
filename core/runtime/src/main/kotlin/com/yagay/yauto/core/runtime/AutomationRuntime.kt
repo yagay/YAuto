@@ -109,12 +109,7 @@ class AutomationRuntime(
         val runs = mutableListOf<RuntimeAutomationRun>()
         val callStack = currentCoroutineContext()[AutomationCallStack]?.ids.orEmpty()
 
-        for (automation in workspace.automations.filter {
-            it.enabled &&
-                it.id.value !in callStack &&
-                RuntimeSelectionPolicy.categoryEnabled(it.category, workspace.disabledCategories)
-        }) {
-            if (statesOnly && automation.activation.states.isEmpty()) continue
+        for (automation in RuntimeEventDispatchPolicy.eligible(workspace, callStack, statesOnly)) {
             try {
                 val variables = MapVariableAccess(RuntimeEventContext.variables(workspace, automation.variables, event))
 
@@ -166,16 +161,9 @@ class AutomationRuntime(
                     val gateOpen = statesMatch && conditionMatches
                     val wasActive = activeStates[automation.id.value] ?: false
 
-                    buildList {
-                        if (stateful) {
-                            if (gateOpen && !wasActive) add(AutomationPhase.ENTER)
-                            if (gateOpen && eventMatches) add(AutomationPhase.EVENT)
-                            if (!gateOpen && wasActive) add(AutomationPhase.EXIT)
-                            activeStates[automation.id.value] = gateOpen
-                        } else if (eventMatches && conditionMatches) {
-                            add(AutomationPhase.EVENT)
-                        }
-                    }
+                    val phases = RuntimeEventDispatchPolicy.phases(stateful, gateOpen, wasActive, eventMatches, conditionMatches)
+                    if (stateful) activeStates[automation.id.value] = gateOpen
+                    phases
                 }
 
                 if (phases.isNotEmpty()) {

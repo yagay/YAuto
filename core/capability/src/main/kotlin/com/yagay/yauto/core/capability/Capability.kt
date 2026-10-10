@@ -116,21 +116,22 @@ class CapabilityBroker(
     private val environmentProvider: () -> RuntimeEnvironment,
     backends: List<CapabilityBackend> = emptyList(),
 ) : CapabilityClient {
-    private val backends = backends.toMutableList()
+    @Volatile private var backendSnapshot: List<CapabilityBackend> = backends.sortedByDescending { it.priority }
 
+    @Synchronized
     fun register(backend: CapabilityBackend) {
-        backends.removeAll { it.id == backend.id }
-        backends += backend
-        backends.sortByDescending { it.priority }
+        backendSnapshot = (backendSnapshot.filterNot { it.id == backend.id } + backend)
+            .sortedByDescending { it.priority }
     }
 
+    @Synchronized
     fun unregister(backendId: String) {
-        backends.removeAll { it.id == backendId }
+        backendSnapshot = backendSnapshot.filterNot { it.id == backendId }
     }
 
     override suspend fun execute(request: CapabilityRequest): CapabilityResult {
         val environment = environmentProvider()
-        val supported = backends.filter { backend ->
+        val supported = backendSnapshot.filter { backend ->
             (request.preferredBackendId == null || backend.id == request.preferredBackendId) &&
                 backend.supports(request, environment)
         }.let { applicable ->

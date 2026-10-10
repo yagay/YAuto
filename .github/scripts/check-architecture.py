@@ -194,6 +194,15 @@ if not xposed_init_policy.exists():
 if xposed_entry.exists() and "XposedPackageInitPolicy.shouldInitialize(" not in xposed_entry.read_text(encoding="utf-8"):
     errors.append("YAutoXposedModule must delegate package initialization policy")
 
+# Dispatcher, runtime and importer data contracts must have one canonical source.
+if runtime_entry.exists() and "RuntimeEventDispatchPolicy.eligible(" not in runtime_entry.read_text(encoding="utf-8"):
+    errors.append("AutomationRuntime must share event eligibility rules")
+if not (runtime_dir / "RuntimeEventDispatchPolicy.kt").exists():
+    errors.append("RuntimeEventDispatchPolicy.kt is required")
+capability_file = ROOT / "core/capability/src/main/kotlin/com/yagay/yauto/core/capability/Capability.kt"
+if capability_file.exists() and "backendSnapshot" not in capability_file.read_text(encoding="utf-8"):
+    errors.append("CapabilityBroker must use snapshot backend registration")
+
 if errors:
     print("Architecture guard failed:")
     for error in errors:
