@@ -92,8 +92,11 @@ xposed_router = xposed_dir / "XposedPackageHookRouter.kt"
 xposed_entry = xposed_dir / "YAutoXposedModule.kt"
 if not xposed_router.exists() or "fun routeXposedPackageHooks(" not in xposed_router.read_text(encoding="utf-8"):
     errors.append("XposedPackageHookRouter must own system package-to-Hook routing")
-if xposed_entry.exists() and "routeXposedPackageHooks(" not in xposed_entry.read_text(encoding="utf-8"):
-    errors.append("YAutoXposedModule must delegate package hook routing to the shared router")
+xposed_installers = xposed_dir / "XposedHookInstallers.kt"
+if not xposed_installers.exists():
+    errors.append("XposedHookInstallers must own package installation logic")
+if xposed_installers.exists() and "routeXposedPackageHooks(" not in xposed_installers.read_text(encoding="utf-8"):
+    errors.append("XposedHookInstallers must delegate package routing to the shared router")
 
 # Third-party compatibility parsers must stay behind the lazy compatibility catalog rather than
 # becoming direct AppGraph dependencies.
