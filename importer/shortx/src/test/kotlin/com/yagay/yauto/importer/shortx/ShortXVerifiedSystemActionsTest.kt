@@ -361,6 +361,29 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals(ConfigValue.StringValue("long_click"), long.activation.events.single().config["gesture"])
     }
 
+    @Test fun `ShortX ShowRecentApps maps only the actually supported On mode`() {
+        assertEquals("accessibility.recents.show",
+            importAction("ShowRecentApps", byteArrayOf()).typeId)
+        assertEquals("accessibility.recents.show",
+            importAction("ShowRecentApps", message(varintField(1, 0))).typeId)
+        assertEquals("compat.source.action",
+            importAction("ShowRecentApps", message(varintField(1, 1))).typeId)
+        assertEquals("compat.source.action",
+            importAction("ShowRecentApps", message(varintField(1, 2))).typeId)
+        assertEquals("compat.source.action",
+            importAction("ShowRecentApps", message(varintField(1, 0), varintField(3, 1))).typeId)
+
+        val json = """{"title":"Recent tasks","actions":[
+            {"@type":"type.googleapis.com/ShowRecentApps","state":0},
+            {"@type":"type.googleapis.com/ShowRecentApps","state":"OnOffToggle_Off"},
+            {"@type":"type.googleapis.com/ShowRecentApps","state":"OnOffToggle_Toggle"}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("recents.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        assertEquals(listOf("accessibility.recents.show", "compat.source.action", "compat.source.action"),
+            result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature.typeId })
+    }
+
     private fun assertBoolean(source: String, target: String, key: String, value: Boolean) {
         val feature = importAction(source, message(varintField(1, if (value) 1 else 0)))
         assertEquals(target, feature.typeId)

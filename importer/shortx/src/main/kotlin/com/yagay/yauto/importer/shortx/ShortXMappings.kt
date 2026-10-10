@@ -54,6 +54,7 @@ internal object ShortXMappings {
             "SetAutoBrightness" -> setAutoBrightness(any, importerId, fields)
             "ExpandNotification" -> expandNotification(any, importerId, fields)
             "AreaScreenshot" -> noFieldAction(any, importerId, fields, "android.screenshot.area_select")
+            "ShowRecentApps" -> nativeShowRecentApps(any, importerId, fields)
             "ShowGlobalActionsMenu" -> noFieldAction(any, importerId, fields, "android.global_actions.show")
             "StopAudioRecording" -> noFieldAction(any, importerId, fields, "android.audio.record.stop")
             "GetScreenOnTime" -> nativeGetScreenOnTime(any, importerId, fields)
@@ -577,6 +578,24 @@ internal object ShortXMappings {
                         "chipId" to ConfigValue.StringValue("shortx"),
                     ))
                 else null
+            "ShowRecentApps" -> {
+                // ShortX uses OnOffToggle: 0=open, 1=close, 2=toggle.
+                // An Accessibility RECENTS action only opens the overview.
+                // Unsupported modes must remain source-preserving compatibility actions.
+                if (!jsonBusinessKeysOnly(obj, "state")) null
+                else {
+                    val state = (obj["state"] as? JsonPrimitive)?.let { value ->
+                        value.intOrNull ?: when (value.contentOrNull?.substringAfterLast('_')?.lowercase()) {
+                            "on" -> 0
+                            "off" -> 1
+                            "toggle" -> 2
+                            else -> null
+                        }
+                    } ?: 0
+                    if (state == 0) sourceFeature("accessibility.recents.show", importerId, any.typeUrl, raw)
+                    else null
+                }
+            }
             "ShowGlobalActionsMenu" -> if (jsonBusinessKeysSafe(obj, emptySet()))
                 sourceFeature("android.global_actions.show", importerId, any.typeUrl, raw)
                 else null
@@ -1474,6 +1493,14 @@ internal object ShortXMappings {
 
     private fun jsonBusinessKeysSafe(obj: JsonObject, keys: Set<String>): Boolean =
         obj.keys.all { key -> key in keys || key in SOURCE_METADATA_KEYS }
+
+    private fun nativeShowRecentApps(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
+        if (!fields.onlyBusinessFields(1)) return null
+        // The default protobuf enum value is On=0; reject malformed/non-varint fields.
+        val state = fields.varint(1) ?: if (fields.has(1)) return null else 0L
+        if (state != 0L) return null
+        return binaryFeature(any, importerId, "accessibility.recents.show", emptyMap())
+    }
 
     private fun noFieldAction(any: AnyStub, importerId: String, fields: ProtoFields, target: String): FeatureRef? {
         if (!fields.onlyBusinessFields()) return null

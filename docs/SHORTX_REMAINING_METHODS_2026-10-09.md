@@ -19,3 +19,7 @@ Updated 2026-10-10: non-plugin app-process requests and YAuto-scoped SystemUI ch
 - Verified JSON ShortX 1.11 control-flow nodes: sequential IfThenElse / WhileLoop, no-field StopAllActions, current-scope BreakActionExecute, SetFunctionReturnValue, ExecuteFunction, FromDA. Native conversions reuse existing YAuto ActionNode structures and stable flow IDs, without introducing redundant feature IDs or menu entries.
 - Unrepresentable async/loop timing, non-default action metadata, source IDs/notes, MVEL expressions, unknown keys or duplicate parameter names remain complete compatibility nodes. Nested unknown actions continue to be represented within converted safe branches.
 - Protocol reference: https://github.com/ShortX-Repo/ShortX-Files/blob/main/skills/references/actions.md . Debug unit tests are not OEM/runtime validation.
+
+## 2026-10-10: ShowRecentApps source mode precision
+
+ShortX 1.11's `ShowRecentApps.state` uses OnOffToggle (On=0, Off=1, Toggle=2). The existing YAuto `accessibility.recents.show` opens the Android overview, so **only On=0** is a proven native mapping for JSON or protobuf. Off/Toggle, unknown fields or malformed mode encodings stay source-preserved; YAuto does not emulate Close/Toggle with Back, Home or a guessed global action. This preserves MacroDroid-first distinct function naming and avoids a duplicate action/ID.
