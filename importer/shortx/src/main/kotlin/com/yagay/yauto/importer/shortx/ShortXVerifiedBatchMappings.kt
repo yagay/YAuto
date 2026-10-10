@@ -239,6 +239,12 @@ internal object ShortXVerifiedBatchMappings {
     /** Protobuf defaults are accepted only when the message has no unknown business fields. */
     fun binary(any: AnyStub, importerId: String, fields: ProtoFields): FeatureRef? {
         return when (sourceName(any)) {
+            "ToggleData" -> if (fields.onlyBusinessFields(1, 2)) {
+                val specific = fields.varint(1) ?: if (!fields.has(1)) 0L else return null
+                val slot = fields.varint(2) ?: if (!fields.has(2)) 0L else return null
+                if (specific == 0L && slot == 0L) toggle(any, importerId, "android.mobile_data.set")
+                else null // A specific SIM must never be silently treated as the default.
+            } else null
             "ToggleWifi" -> if (fields.onlyBusinessFields()) toggle(any, importerId, "android.wifi.set") else null
             "ToggleBT" -> if (fields.onlyBusinessFields()) toggle(any, importerId, "android.bluetooth.set") else null
             "ToggleNFC" -> if (fields.onlyBusinessFields()) toggle(any, importerId, "android.nfc.set") else null
@@ -367,6 +373,13 @@ internal object ShortXVerifiedBatchMappings {
             obj.keys.all { it in sourceMetadata || it in keys }
         fun field(name: String): Int? = (obj[name] as? JsonPrimitive)?.intOrNull
         return when (sourceName(any)) {
+            "ToggleData" -> if (allowed("hasSpecificSlotId", "slotId")) {
+                val specific = (obj["hasSpecificSlotId"] as? JsonPrimitive)?.booleanOrNull
+                    ?: if ("hasSpecificSlotId" in obj) return null else false
+                val slot = (obj["slotId"] as? JsonPrimitive)?.intOrNull
+                    ?: if ("slotId" in obj) return null else 0
+                if (!specific && slot == 0) toggle(any, importerId, "android.mobile_data.set") else null
+            } else null
             "ToggleWifi" -> if (allowed()) toggle(any, importerId, "android.wifi.set") else null
             "ToggleBT" -> if (allowed()) toggle(any, importerId, "android.bluetooth.set") else null
             "ToggleNFC" -> if (allowed()) toggle(any, importerId, "android.nfc.set") else null

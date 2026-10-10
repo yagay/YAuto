@@ -655,6 +655,22 @@ class ShortXVerifiedSystemActionsTest {
         assertEquals(ConfigValue.StringValue("toggle_mute"), list[7].config["direction"])
     }
 
+    @Test fun `ShortX mobile data toggle never disregards a selected SIM slot`() {
+        val default = importAction("ToggleData", message(varintField(1, 0), varintField(2, 0)))
+        assertEquals("android.mobile_data.set", default.typeId)
+        assertEquals(ConfigValue.BooleanValue(true), default.config["toggleCurrent"])
+        assertEquals("compat.source.action", importAction("ToggleData", message(varintField(1, 1), varintField(2, 1))).typeId)
+        assertEquals("compat.source.action", importAction("ToggleData", message(varintField(1, 0), varintField(2, 1))).typeId)
+        val json = """{"title":"mobile","actions":[
+            {"@type":"type.googleapis.com/shortx.ToggleData","hasSpecificSlotId":false,"slotId":0},
+            {"@type":"type.googleapis.com/shortx.ToggleData","hasSpecificSlotId":true,"slotId":1}
+        ]}"""
+        val result = ShortXImporter().import(ImportInput("mobile.json", "application/json", json.toByteArray()))
+        assertTrue(result.success)
+        assertEquals(listOf("android.mobile_data.set", "compat.source.action"),
+            result.bundle.automations.single().onEvent.map { (it as ActionNode.Action).feature.typeId })
+    }
+
     private fun assertBoolean(source: String, target: String, key: String, value: Boolean) {
         val feature = importAction(source, message(varintField(1, if (value) 1 else 0)))
         assertEquals(target, feature.typeId)
