@@ -44,7 +44,10 @@ fun NavigationDialog(onBack: () -> Unit, content: @Composable () -> Unit) {
         onDismissRequest = onBack,
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
-            dismissOnBackPress = false,
+            // The platform forwards Android predictive/gesture/hardware back to
+            // onDismissRequest = onBack. The dialog remains visible until the owner
+            // pops its one child page or explicitly closes the root.
+            dismissOnBackPress = true,
         ),
     ) {
         PageBackHandler(onBack = onBack)

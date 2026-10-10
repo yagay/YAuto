@@ -69,6 +69,9 @@ class SharedNavigationArchitectureTest(unittest.TestCase):
             value = source(path)
             self.assertIn("NavigationDialog(", value, path)
             self.assertNotIn("Dialog(onDismissRequest", value, path)
+        dialog = source("ui/design/src/main/kotlin/com/yagay/yauto/ui/design/PageNavigationUi.kt")
+        self.assertIn("onDismissRequest = onBack", dialog)
+        self.assertIn("dismissOnBackPress = true", dialog)
 
 
 if __name__ == "__main__":
