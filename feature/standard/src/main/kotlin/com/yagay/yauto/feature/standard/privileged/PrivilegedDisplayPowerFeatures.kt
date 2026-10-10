@@ -51,13 +51,7 @@ internal object PrivilegedDisplayPowerFeatures {
             )
         ) { feature, _ ->
             if (feature.config.string("mode", "auto") == "toggle") {
-                return@privilegedCommandFeature """state=${'(cmd uimode night); case "__DOLLAR__state" in *"Night mode: yes"*) cmd uimode night no ;; *"Night mode: no"*) cmd uimode night yes ;; *) echo "Night mode state unavailable or automatic" >&2; exit 1 ;; esac"""
-            }
-            val mode = when (feature.config.string("mode", "auto")) {
-                "light" -> "no"}(cmd uimode night); case "${'state" in *"Night mode: yes"*) cmd uimode night no ;; *"Night mode: no"*) cmd uimode night yes ;; *) echo "Night mode state unavailable or automatic" >&2; exit 1 ;; esac"""
-            }
-            val mode = when (feature.config.string("mode", "auto")) {
-                "light" -> "no"}state" in *"Night mode: yes"*) cmd uimode night no ;; *"Night mode: no"*) cmd uimode night yes ;; *) echo "Night mode state unavailable or automatic" >&2; exit 1 ;; esac"""
+                return@privilegedCommandFeature """state=${'$'}(cmd uimode night); case "${'$'}state" in *"Night mode: yes"*) cmd uimode night no ;; *"Night mode: no"*) cmd uimode night yes ;; *) echo "Night mode state unavailable or automatic" >&2; exit 1 ;; esac"""
             }
             val mode = when (feature.config.string("mode", "auto")) {
                 "light" -> "no"

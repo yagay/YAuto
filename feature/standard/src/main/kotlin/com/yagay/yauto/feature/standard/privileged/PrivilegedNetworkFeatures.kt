@@ -71,15 +71,7 @@ internal object PrivilegedNetworkFeatures {
             )
         ) { feature, _ ->
             if (feature.config.boolean("toggleCurrent")) {
-                """state=${'(cmd location is-location-enabled); case "__DOLLAR__state" in true) cmd location set-location-enabled false ;; false) cmd location set-location-enabled true ;; *) echo "Location state unavailable" >&2; exit 1 ;; esac"""
-            } else {
-                "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
-            }
-        },}(cmd location is-location-enabled); case "${'state" in true) cmd location set-location-enabled false ;; false) cmd location set-location-enabled true ;; *) echo "Location state unavailable" >&2; exit 1 ;; esac"""
-            } else {
-                "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
-            }
-        },}state" in true) cmd location set-location-enabled false ;; false) cmd location set-location-enabled true ;; *) echo "Location state unavailable" >&2; exit 1 ;; esac"""
+                """state=${'$'}(cmd location is-location-enabled); case "${'$'}state" in true) cmd location set-location-enabled false ;; false) cmd location set-location-enabled true ;; *) echo "Location state unavailable" >&2; exit 1 ;; esac"""
             } else {
                 "cmd location set-location-enabled ${feature.config.boolean("enabled", true)}"
             }
@@ -108,15 +100,7 @@ internal object PrivilegedNetworkFeatures {
         )
     ) { feature, _ ->
         if (feature.config.boolean("toggleCurrent")) {
-            """state=${'(settings get global $stateKey); case "__DOLLAR__state" in 1) $commandPrefix disable ;; 0) $commandPrefix enable ;; *) echo "State for $stateKey unavailable" >&2; exit 1 ;; esac"""
-        } else {
-            "$commandPrefix ${if (feature.config.boolean("enabled", true)) "enable" else "disable"}"
-        }
-    }}(settings get global $stateKey); case "${'state" in 1) $commandPrefix disable ;; 0) $commandPrefix enable ;; *) echo "State for $stateKey unavailable" >&2; exit 1 ;; esac"""
-        } else {
-            "$commandPrefix ${if (feature.config.boolean("enabled", true)) "enable" else "disable"}"
-        }
-    }}state" in 1) $commandPrefix disable ;; 0) $commandPrefix enable ;; *) echo "State for $stateKey unavailable" >&2; exit 1 ;; esac"""
+            """state=${'$'}(settings get global $stateKey); case "${'$'}state" in 1) $commandPrefix disable ;; 0) $commandPrefix enable ;; *) echo "State for $stateKey unavailable" >&2; exit 1 ;; esac"""
         } else {
             "$commandPrefix ${if (feature.config.boolean("enabled", true)) "enable" else "disable"}"
         }
