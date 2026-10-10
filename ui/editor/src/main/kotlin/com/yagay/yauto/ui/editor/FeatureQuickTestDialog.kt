@@ -113,3 +113,70 @@ internal fun FeatureQuickTestDialog(
         },
     )
 }
+
+/** Tests saved EVENT actions, without falsely claiming a trigger fired. */
+@Composable
+internal fun SavedAutomationTestDialog(automationId: String, onDismiss: () -> Unit) {
+    val tester = LocalFeatureTestGateway.current
+    val scope = rememberCoroutineScope()
+    var running by remember(automationId) { mutableStateOf(false) }
+    var result by remember(automationId) { mutableStateOf<FeatureTestResult?>(null) }
+    AlertDialog(
+        onDismissRequest = { if (!running) onDismiss() },
+        title = { Text(stringResource(TextR.string.feature_test_automation)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(stringResource(TextR.string.feature_test_saved_warning))
+                if (running) {
+                    CircularProgressIndicator()
+                    Text(stringResource(TextR.string.feature_test_running))
+                }
+                result?.let { tested ->
+                    Text(
+                        stringResource(if (tested.success) TextR.string.feature_test_success
+                            else TextR.string.feature_test_failed),
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(tested.detail)
+                    Text(stringResource(TextR.string.feature_test_duration, tested.elapsedMs))
+                }
+            }
+        },
+        confirmButton = {
+            if (result != null) {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(TextR.string.common_close))
+                }
+            } else {
+                TextButton(
+                    enabled = !running && tester != null,
+                    onClick = {
+                        val service = tester ?: return@TextButton
+                        running = true
+                        scope.launch {
+                            try {
+                                result = service.testSavedAutomation(automationId)
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (error: Exception) {
+                                result = FeatureTestResult(
+                                    false, error.message ?: error.javaClass.simpleName,
+                                    0L, kind = FeatureKind.ACTION,
+                                )
+                            } finally {
+                                running = false
+                            }
+                        }
+                    },
+                ) { Text(stringResource(TextR.string.feature_test_run_now)) }
+            }
+        },
+        dismissButton = {
+            if (!running && result == null) {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(TextR.string.common_cancel))
+                }
+            }
+        },
+    )
+}
