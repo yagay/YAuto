@@ -211,8 +211,8 @@ abstract class XposedMethodHookInstallers : XposedSystemEventInstallers() {
             .filter { it.name == "addAnimator" && it.returnType == Void.TYPE }
             .forEach { method ->
                 val key = "shortx-rendernode-guard|" + method.toGenericString()
-                if (!installedHooks.add(key)) return@forEach
-                method.isAccessible = true
+                val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                    method.isAccessible = true
                 hook(method).intercept { chain ->
                     if (
                         SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_RENDERNODE_GUARD !in
@@ -242,6 +242,10 @@ abstract class XposedMethodHookInstallers : XposedSystemEventInstallers() {
                             null
                         }
                     }
+                }
+                }
+                installation.exceptionOrNull()?.let { error ->
+                    log(Log.WARN, "YAuto", "Hook installation failed: " + key, error)
                 }
             }
     }

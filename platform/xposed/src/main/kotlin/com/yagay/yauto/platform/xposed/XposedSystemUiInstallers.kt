@@ -46,14 +46,18 @@ abstract class XposedSystemUiInstallers : XposedProviderInstallers() {
             val clazz = runCatching { classLoader.loadClass(name) }.getOrNull() ?: return@forEach
             clazz.declaredMethods.filter { it.name in setOf("onFinishInflate", "onAttachedToWindow") }.forEach { method ->
                 val key = "yauto-chip|" + method.toGenericString()
-                if (!installedHooks.add(key)) return@forEach
-                method.isAccessible = true
+                val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                    method.isAccessible = true
                 hook(method).intercept { chain ->
                     val result = chain.proceed()
                     runCatching { controller.attach(chain.thisObject) }
                     result
                 }
-                hookedCount++
+                }
+                installation.exceptionOrNull()?.let { error ->
+                    log(Log.WARN, "YAuto", "Hook installation failed: " + key, error)
+                }
+                if (installation.getOrNull() == true) hookedCount++
             }
         }
         if (systemUiChipRegistered.getAndSet(true)) return
@@ -195,8 +199,8 @@ abstract class XposedSystemUiInstallers : XposedProviderInstallers() {
                 val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
                 clazz.declaredConstructors.forEach { constructor ->
                     val key = "shortx-systemui-constructor|" + eventType + "|" + constructor.toGenericString()
-                    if (!installedHooks.add(key)) return@forEach
-                    constructor.isAccessible = true
+                    val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                        constructor.isAccessible = true
                     hook(constructor).intercept { chain ->
                         val result = chain.proceed()
                         emitPackageRuntimeEvent(
@@ -208,6 +212,10 @@ abstract class XposedSystemUiInstallers : XposedProviderInstallers() {
                             ),
                         )
                         result
+                    }
+                    }
+                    installation.exceptionOrNull()?.let { error ->
+                        log(Log.WARN, "YAuto", "Hook installation failed: " + key, error)
                     }
                 }
             }
@@ -224,8 +232,8 @@ abstract class XposedSystemUiInstallers : XposedProviderInstallers() {
                 val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
                 clazz.declaredMethods.filter { it.name in methodNames }.forEach { method ->
                     val key = "shortx-systemui|" + eventType + "|" + method.toGenericString()
-                    if (!installedHooks.add(key)) return@forEach
-                    method.isAccessible = true
+                    val installation = XposedHookInstallationGuard.install(installedHooks, key) {
+                        method.isAccessible = true
                     hook(method).intercept { chain ->
                         if (after) {
                             val result = chain.proceed()
@@ -239,6 +247,10 @@ abstract class XposedSystemUiInstallers : XposedProviderInstallers() {
                             }
                             chain.proceed()
                         }
+                    }
+                    }
+                    installation.exceptionOrNull()?.let { error ->
+                        log(Log.WARN, "YAuto", "Hook installation failed: " + key, error)
                     }
                 }
             }
