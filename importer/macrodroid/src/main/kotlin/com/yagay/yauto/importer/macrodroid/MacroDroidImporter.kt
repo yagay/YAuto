@@ -634,10 +634,5 @@ class MacroDroidImporter(
         return sourceFeature(fallbackId, id, sourceType, item.toString())
     }
 
-    private fun JsonObject.string(vararg keys: String): String? = keys.firstNotNullOfOrNull { (this[it] as? JsonPrimitive)?.contentOrNull }
-    private fun JsonObject.bool(key: String): Boolean? = (this[key] as? JsonPrimitive)?.booleanOrNull
-    private fun JsonObject.number(vararg keys: String): Double? =
-        keys.firstNotNullOfOrNull { (this[it] as? JsonPrimitive)?.doubleOrNull }
-    private fun JsonObject.array(vararg keys: String): List<JsonElement> = keys.firstNotNullOfOrNull { this[it] as? JsonArray }?.toList().orEmpty()
-    private fun JsonObject.primitiveText(key: String): String? = (this[key] as? JsonPrimitive)?.contentOrNull
+
 }
