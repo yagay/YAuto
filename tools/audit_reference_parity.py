@@ -21,7 +21,7 @@ HOOK_EVENTS = ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/
 
 def names_in_branches(source: str) -> set[str]:
     """Only 12-space Kotlin when branches, not string occurrences or hint targets."""
-    return set(re.findall(r'^ {12}"([A-Za-z][A-Za-z0-9_]*)"(?:\\s*,\\s*"[A-Za-z][A-Za-z0-9_]*")*\\s*->', source, re.M))
+    return set(re.findall(r'^ {12}"([A-Za-z][A-Za-z0-9_]*)"(?:\s*,\s*"[A-Za-z][A-Za-z0-9_]*")*\s*->', source, re.M))
 
 
 def inventory() -> dict:
@@ -42,8 +42,8 @@ def inventory() -> dict:
         groups = list(csv.DictReader(f))
     hook_source = HOOKS.read_text(encoding="utf-8")
     hook_events = HOOK_EVENTS.read_text(encoding="utf-8")
-    hooks = dict(re.findall(r'id = "([^"]+)"[\\s\\S]*?eventType = "([^"]+)"', hook_source.split("val systemServerObservers:", 1)[1].split("val behaviorHooks:", 1)[0]))
-    unknown_hooks = sorted(set(hooks.values()) - set(re.findall(r'event\\(registry, "([^"]+)"', hook_events)))
+    hooks = dict(re.findall(r'id = "([^"]+)"[\s\S]*?eventType = "([^"]+)"', hook_source.split("val systemServerObservers:", 1)[1].split("val behaviorHooks:", 1)[0]))
+    unknown_hooks = sorted(set(hooks.values()) - set(re.findall(r'event\(registry, "([^"]+)"', hook_events)))
     rows = []
     for name in types:
         binary_native = name in binary
@@ -91,7 +91,7 @@ def main() -> int:
     report = inventory()
     path = ROOT / args.output
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("ShortX source types:", report["shortx_source_types"],
           "declared decoder:", report["shortx_field_decoder_present"],
           "hint only:", report["shortx_hint_only"],
