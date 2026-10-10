@@ -25,7 +25,6 @@ import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.WorkspaceRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
@@ -83,7 +82,7 @@ class AutomationRuntime(
     private val activeStates = ConcurrentHashMap<String, Boolean>()
     private val locks = ConcurrentHashMap<String, Mutex>()
     private val evaluationLocks = ConcurrentHashMap<String, Mutex>()
-    private val runningExecutions = ConcurrentHashMap<String, MutableSet<Job>>()
+    private val executionJobs = ExecutionJobRegistry()
     private val eventWaitRequests = ConcurrentHashMap<String, EventWaitRequest>()
     private val workspaceMutationLock = Mutex()
     private val expressions = SimpleExpressionEngine()
@@ -281,7 +280,7 @@ class AutomationRuntime(
                 )
                 changedAutomation = automation
                 if (!enabled) {
-                    cancelJobs(automation.id.value)
+                    executionJobs.cancel(automation.id.value)
                     resetState(automation.id)
                 }
             }
@@ -313,7 +312,7 @@ class AutomationRuntime(
         if (automation.id.value in stack) {
             return ActionExecutionResult(false, message = userText("runtime.automation_cancel_self", automation.name))
         }
-        val cancelled = cancelJobs(automation.id.value)
+        val cancelled = executionJobs.cancel(automation.id.value)
         return ActionExecutionResult(true, ConfigValue.BooleanValue(cancelled))
     }
 
@@ -327,7 +326,7 @@ class AutomationRuntime(
         val trimmed = target.trim()
         if (trimmed.isEmpty()) return null
         val automation = resolveAutomation(workspaceRepository.load(), trimmed) ?: return null
-        return runningExecutions[automation.id.value]?.any { it.isActive } == true
+        return executionJobs.isRunning(automation.id.value)
     }
 
     override suspend fun setRuntimeEnabled(mode: AutomationEnableMode): ActionExecutionResult {
@@ -344,7 +343,7 @@ class AutomationRuntime(
             if (enabled != workspace.runtimeEnabled) {
                 workspaceRepository.save(workspace.copy(runtimeEnabled = enabled))
                 if (!enabled) {
-                    runningExecutions.keys.toList().forEach(::cancelJobs)
+                    executionJobs.cancelAll()
                     activeStates.clear()
                 }
             }
@@ -446,7 +445,7 @@ class AutomationRuntime(
                     workspace.automations
                         .filter { it.category?.trim() == name }
                         .forEach {
-                            cancelJobs(it.id.value)
+                            executionJobs.cancel(it.id.value)
                             resetState(it.id)
                         }
                 }
@@ -639,7 +638,7 @@ class AutomationRuntime(
                     }
                     results
                 }
-                trackJob(key, job)
+                executionJobs.track(key, job)
                 try {
                     job.await()
                 } catch (cancelled: CancellationException) {
@@ -652,7 +651,7 @@ class AutomationRuntime(
                         )
                     )
                 } finally {
-                    untrackJob(key, job)
+                    unexecutionJobs.track(key, job)
                 }
             }
         }
@@ -665,7 +664,7 @@ class AutomationRuntime(
                 if (!lock.tryLock()) null else try { runTracked() } finally { lock.unlock() }
             }
             ConflictPolicy.CANCEL_PREVIOUS -> {
-                cancelJobs(key)
+                executionJobs.cancel(key)
                 runTracked()
             }
         }
@@ -773,25 +772,6 @@ class AutomationRuntime(
         workspace.automations.firstOrNull { it.id.value == target }?.let { return it }
         val matches = workspace.automations.filter { it.name.equals(target, ignoreCase = true) }
         return matches.singleOrNull()
-    }
-
-    private fun trackJob(key: String, job: Job) {
-        runningExecutions.compute(key) { _, existing ->
-            (existing ?: ConcurrentHashMap.newKeySet()).apply { add(job) }
-        }
-    }
-
-    private fun untrackJob(key: String, job: Job) {
-        runningExecutions.computeIfPresent(key) { _, existing ->
-            existing.remove(job)
-            existing.takeIf { it.isNotEmpty() }
-        }
-    }
-
-    private fun cancelJobs(key: String): Boolean {
-        val jobs = runningExecutions[key]?.toList().orEmpty()
-        jobs.forEach(Job::cancel)
-        return jobs.isNotEmpty()
     }
 
     private data class EventWaitRequest(
