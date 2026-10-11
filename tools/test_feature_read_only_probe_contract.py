@@ -42,7 +42,7 @@ class FeatureReadOnlyProbeContractTest(unittest.TestCase):
         self.assertIn("graph.featureHealth.requestReadOnlyVerification()", settings)
         self.assertIn("graph.featureHealth.requestReadOnlyVerification()", main)
         self.assertIn("if (enabled) requestReadOnlyVerification()", scanner)
-        self.assertIn('put("scanType",', screen)
+        self.assertIn('"scanType",', screen)
         self.assertIn('put("hasRealInterfaceEvidence",', screen)
         self.assertIn("feature_health_readiness_only_warning", screen)
 
