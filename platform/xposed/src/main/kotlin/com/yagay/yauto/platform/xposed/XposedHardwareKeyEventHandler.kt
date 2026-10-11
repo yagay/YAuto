@@ -75,8 +75,13 @@ internal class XposedHardwareKeyEventHandler(
         event: KeyEvent,
         methodName: String,
     ) {
-        // Match ShortX's prompt behavior: publish the learned key on ACTION_UP.
-        if (event.action != KeyEvent.ACTION_UP) return
+        // Capture only an actual Android key identity. On some OEM input
+        // callback paths KEYCODE_UNKNOWN/scanCode=0 is observed before the
+        // translated KeyEvent arrives at the policy callback. Retiring the
+        // one-shot lease on that empty event permanently loses the real key.
+        if (event.action != KeyEvent.ACTION_UP ||
+            (event.keyCode <= KeyEvent.KEYCODE_UNKNOWN && event.scanCode <= 0)
+        ) return
         val until = state.hardwareKeyCaptureUntilElapsed.get()
         val nowElapsed = SystemClock.elapsedRealtime()
         if (until <= 0L || nowElapsed > until) {
