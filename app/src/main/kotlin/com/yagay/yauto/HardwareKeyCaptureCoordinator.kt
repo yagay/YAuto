@@ -199,21 +199,18 @@ internal suspend fun captureHardwareKey(
                 // receiver time to deliver its authenticated broadcast and
                 // always favor a real Android KeyCode over an unconverted scan.
                 if ("lsposed" !in first.sources || first.keyCode <= 0) {
-                    val graceMs = if (first.keyCode > 0) 350L else 1_400L
+                    // Root may finish before the system_server LSPosed
+                    // capture handshake and event delivery. Give the Android
+                    // observer a longer opportunity before using Linux EV_KEY.
+                    val graceMs = if (first.keyCode > 0) 350L else 3_000L
                     withTimeoutOrNull(minOf(graceMs, remainingMs())) {
                         while (true) candidates += observations.receive()
                     }
                 }
-                val best = candidates.maxByOrNull(::hardwareKeyCapturePriority) ?: first
-                if (best.linuxEvKey > 0 && best.keyCode <= 0) {
-                    try {
-                        graph.hardwareKeys.enrichRawCapture(best)
-                    } catch (cancelled: CancellationException) {
-                        throw cancelled
-                    } catch (_: Exception) {
-                        best
-                    }
-                } else best
+                // A key-layout guess is not an observed Android KeyEvent.
+                // Preserve the genuine Linux EV_KEY as fallback rather than
+                // labeling an ambiguous guessed mapping as Android KeyCode.
+                candidates.maxByOrNull(::hardwareKeyCapturePriority) ?: first
             } finally {
                 rootObserver.cancel()
                 xposedObserver.cancel()
