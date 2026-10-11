@@ -3,4 +3,5 @@
     <string name="feature_android_ui_wait_for_idle_field_package">应用 / 包名</string>
     <string name="feature_android_ui_wait_for_idle_field_quietms">稳定等待时间（毫秒）</string>
     <string name="feature_android_ui_wait_for_idle_field_timeoutms">超时时间（毫秒）</string>
+    <string name="feature_android_ui_wait_for_idle_description">等待前台应用的无障碍窗口和内容在指定时间内保持稳定后继续。</string>
 </resources>
