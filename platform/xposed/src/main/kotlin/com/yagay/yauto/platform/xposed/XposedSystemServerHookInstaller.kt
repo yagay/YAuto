@@ -1,32 +1,15 @@
 package com.yagay.yauto.platform.xposed
 
-import android.app.Application
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.os.Binder
-import android.os.Build
-import android.os.Bundle
-import android.os.PowerManager
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
-import android.content.ComponentName
 import android.os.SystemClock
 import android.util.Log
 import android.view.InputEvent
 import android.view.KeyEvent
-import com.yagay.yauto.core.capability.SystemOperations
-import io.github.libxposed.api.XposedModule
-import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
-import io.github.libxposed.api.XposedModuleInterface.SystemServerStartingParam
+import java.lang.reflect.Constructor
 import java.lang.reflect.Method
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 
-/** Installs SystemServer event subscriptions, input filters and system behaviors. */
 internal val SHORTX_PERMISSION_ALLOWLIST = setOf(
             "android.permission.MANAGE_MEDIA_PROJECTION",
             "android.permission.CAPTURE_VOICE_COMMUNICATION_OUTPUT",
@@ -34,75 +17,30 @@ internal val SHORTX_PERMISSION_ALLOWLIST = setOf(
             "android.permission.READ_CLIPBOARD_IN_BACKGROUND",
         )
 
-abstract class XposedSystemEventInstallers : XposedModule() {
-    internal val sharedState = XposedInstallationState()
-    protected val installedHooks get() = sharedState.installedHooks
+/**
+ * Installs SystemServer events and ShortX-compatible input/behavior interceptors.
+ * This component has no dependency on the XposedModule inheritance chain.
+ */
+internal class XposedSystemServerHookInstaller(
+    private val state: XposedInstallationState,
+    private val interceptMethod: (Method, (XposedHookInvocation) -> Any?) -> Unit,
+    private val interceptConstructor: (Constructor<*>, (XposedHookInvocation) -> Any?) -> Unit,
+    private val reportLog: (Int, String, Throwable?) -> Unit,
+) {
+    private val installedHooks get() = state.installedHooks
+    private val systemEventDedup get() = state.systemEventDedup
+    private val hardwareKeyEventDedup get() = state.hardwareKeyEventDedup
+    private val hardwareKeyCaptureUntilElapsed get() = state.hardwareKeyCaptureUntilElapsed
+    private val subscribedSystemEvents get() = state.subscribedSystemEvents
+    private val enabledShortXBehaviors get() = state.enabledShortXBehaviors
+    private val enabledPackageBehaviors get() = state.enabledPackageBehaviors
+    private val yAutoUid get() = state.yAutoUid
 
-    private val providerHooks by lazy {
-        XposedProviderHookInstaller(
-            installedHooks = installedHooks,
-            intercept = { method, callback ->
-                hook(method).intercept { chain ->
-                    callback(chain.args.toList()) { chain.proceed() }
-                }
-            },
-            reportFailure = { key, error ->
-                log(Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
-            },
-        )
+    private fun log(level: Int, tag: String, message: String, error: Throwable? = null) {
+        reportLog(level, message, error)
     }
 
-    private val systemUiHooks by lazy {
-        XposedSystemUiHookInstaller(
-            installedHooks = installedHooks,
-            interceptMethod = { method, callback ->
-                hook(method).intercept { chain ->
-                    callback(XposedHookInvocation(chain.thisObject, chain.args.toList()) { chain.proceed() })
-                }
-            },
-            interceptConstructor = { constructor, callback ->
-                hook(constructor).intercept { chain ->
-                    callback(XposedHookInvocation(chain.thisObject, chain.args.toList()) { chain.proceed() })
-                }
-            },
-            reportLog = { level, message, error -> log(level, "YAuto", message, error) },
-        )
-    }
-
-    protected fun installShortXNfcHooks(context: Context, classLoader: ClassLoader) =
-        providerHooks.installShortXNfcHooks(context, classLoader)
-
-    protected fun installShortXMediaProviderHooks(context: Context, classLoader: ClassLoader) =
-        providerHooks.installShortXMediaProviderHooks(context, classLoader)
-
-    protected fun installShortXTelephonyProviderHooks(context: Context, classLoader: ClassLoader) =
-        providerHooks.installShortXTelephonyProviderHooks(context, classLoader)
-
-    protected fun installShortXInputConnectionHook(context: Context, packageName: String, classLoader: ClassLoader) =
-        providerHooks.installShortXInputConnectionHook(context, packageName, classLoader)
-
-    protected fun installShortXStatusChipHooks(context: Context, classLoader: ClassLoader) =
-        systemUiHooks.installShortXStatusChipHooks(context, classLoader)
-
-    protected fun installShortXTileLabelHooks(context: Context, classLoader: ClassLoader) =
-        systemUiHooks.installShortXTileLabelHooks(context, classLoader)
-
-    protected fun installShortXSystemUiHooks(context: Context, classLoader: ClassLoader) =
-        systemUiHooks.installShortXSystemUiHooks(context, classLoader)
-
-    protected val systemRegistered get() = sharedState.systemRegistered
-    protected val appReceivers get() = sharedState.appReceivers
-    protected val systemEventDedup get() = sharedState.systemEventDedup
-    protected val hardwareKeyEventDedup get() = sharedState.hardwareKeyEventDedup
-    protected val hardwareKeyCaptureUntilElapsed get() = sharedState.hardwareKeyCaptureUntilElapsed
-    protected val subscribedSystemEvents get() = sharedState.subscribedSystemEvents
-    protected val enabledShortXBehaviors get() = sharedState.enabledShortXBehaviors
-    protected val enabledPackageBehaviors get() = sharedState.enabledPackageBehaviors
-    internal val methodSessions get() = sharedState.methodSessions
-    internal val crashGuards get() = sharedState.crashGuards
-    protected val yAutoUid get() = sharedState.yAutoUid
-
-    protected fun installSystemRuntimeHooks(context: Context, classLoader: ClassLoader, eventTypes: Set<String>) {
+    fun installSystemRuntimeHooks(context: Context, classLoader: ClassLoader, eventTypes: Set<String>) {
         ShortXCompatHookCatalog.subscribedCoreRuntimeHooks(eventTypes).forEach { family ->
             when (family) {
                 ShortXCoreRuntimeHook.PROCESS_DEATH -> installProcessDeathHooks(context, classLoader)
@@ -113,7 +51,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
         }
     }
 
-    protected fun installProcessDeathHooks(context: Context, classLoader: ClassLoader) {
+    fun installProcessDeathHooks(context: Context, classLoader: ClassLoader) {
         val clazz = runCatching { classLoader.loadClass("com.android.server.am.ProcessRecord") }.getOrNull() ?: return
         clazz.declaredMethods
             .filter { method ->
@@ -124,9 +62,9 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                 val key = "system-process-death|" + method.toGenericString()
                 val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                     method.isAccessible = true
-                    hook(method).intercept { chain ->
-                    val process = processSnapshot(chain.thisObject)
-                    val result = chain.proceed()
+                    interceptMethod(method) { invocation ->
+                    val process = processSnapshot(invocation.thisObject)
+                    val result = invocation.proceed()
                     if (process.packageName.isNotBlank() || process.processName.isNotBlank()) {
                         emitSystemRuntimeEvent(
                             context = context,
@@ -150,7 +88,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
             }
     }
 
-    protected fun installTaskRemovedHooks(context: Context, classLoader: ClassLoader) {
+    fun installTaskRemovedHooks(context: Context, classLoader: ClassLoader) {
         val recentTasks = runCatching { classLoader.loadClass("com.android.server.wm.RecentTasks") }.getOrNull()
         recentTasks?.declaredMethods
             ?.filter { method ->
@@ -161,10 +99,10 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                 val key = "system-task-removed|" + method.toGenericString()
                 val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                     method.isAccessible = true
-                hook(method).intercept { chain ->
-                    val task = chain.args.firstOrNull { it?.javaClass?.name == "com.android.server.wm.Task" }
+                interceptMethod(method) { invocation ->
+                    val task = invocation.args.firstOrNull { it?.javaClass?.name == "com.android.server.wm.Task" }
                     val snapshot = taskSnapshot(task)
-                    val result = chain.proceed()
+                    val result = invocation.proceed()
                     emitSystemRuntimeEvent(
                         context = context,
                         type = "android.event.task_removed",
@@ -191,9 +129,9 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                 val key = "system-task-direct-remove|" + method.toGenericString()
                 val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                     method.isAccessible = true
-                hook(method).intercept { chain ->
-                    val snapshot = taskSnapshot(chain.thisObject)
-                    val result = chain.proceed()
+                interceptMethod(method) { invocation ->
+                    val snapshot = taskSnapshot(invocation.thisObject)
+                    val result = invocation.proceed()
                     emitSystemRuntimeEvent(
                         context = context,
                         type = "android.event.task_removed",
@@ -214,7 +152,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
             }
     }
 
-    protected fun installBackNavigationHooks(context: Context, classLoader: ClassLoader) {
+    fun installBackNavigationHooks(context: Context, classLoader: ClassLoader) {
         val clazz = runCatching { classLoader.loadClass("com.android.server.wm.BackNavigationController") }.getOrNull() ?: return
         clazz.declaredMethods
             .filter { method ->
@@ -231,7 +169,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                 val key = "system-back-nav|" + method.toGenericString()
                 val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                     method.isAccessible = true
-                hook(method).intercept { chain ->
+                interceptMethod(method) { invocation ->
                     if (started) {
                         emitSystemRuntimeEvent(
                             context = context,
@@ -241,7 +179,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                             dedupWindowMs = 150L,
                         )
                     }
-                    val result = chain.proceed()
+                    val result = invocation.proceed()
                     if (!started) {
                         emitSystemRuntimeEvent(
                             context = context,
@@ -261,7 +199,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
     }
 
 
-    protected fun installShortXHooksForSubscriptions(
+    fun installShortXHooksForSubscriptions(
         context: Context,
         classLoader: ClassLoader,
         eventTypes: Set<String>,
@@ -282,7 +220,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
         }
     }
 
-    protected fun installShortXAccessibilityUserStateConstructorHook(
+    fun installShortXAccessibilityUserStateConstructorHook(
         context: Context,
         classLoader: ClassLoader,
     ) {
@@ -293,12 +231,12 @@ abstract class XposedSystemEventInstallers : XposedModule() {
             val key = "shortx-accessibility-user-state|" + constructor.toGenericString()
             val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                 constructor.isAccessible = true
-            hook(constructor).intercept { chain ->
-                val result = chain.proceed()
+            interceptConstructor(constructor) { invocation ->
+                val result = invocation.proceed()
                 emitSystemRuntimeEvent(
                     context = context,
                     type = "android.event.accessibility_user_state_created",
-                    dedupKey = "accessibility-user-state:" + System.identityHashCode(chain.thisObject),
+                    dedupKey = "accessibility-user-state:" + System.identityHashCode(invocation.thisObject),
                     extras = mapOf("className" to clazz.name),
                     dedupWindowMs = 100L,
                 )
@@ -311,13 +249,13 @@ abstract class XposedSystemEventInstallers : XposedModule() {
         }
     }
 
-    protected fun installShortXBehaviorHooks(context: Context, classLoader: ClassLoader) {
+    fun installShortXBehaviorHooks(context: Context, classLoader: ClassLoader) {
         installShortXAccessibilityBehaviorHooks(context, classLoader)
         installShortXClipboardBehaviorHooks(context, classLoader)
         installShortXPermissionBehaviorHook(context, classLoader)
     }
 
-    protected fun installShortXAccessibilityBehaviorHooks(context: Context, classLoader: ClassLoader) {
+    fun installShortXAccessibilityBehaviorHooks(context: Context, classLoader: ClassLoader) {
         val targets = listOf(
             Triple(
                 "com.android.server.accessibility.AccessibilitySecurityPolicy",
@@ -347,14 +285,14 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                     val key = "shortx-behavior-accessibility|" + method.toGenericString()
                     val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                         method.isAccessible = true
-                    hook(method).intercept { chain ->
+                    interceptMethod(method) { invocation ->
                         if (
                             SystemBridgeProtocol.SHORTX_BEHAVIOR_ACCESSIBILITY in enabledShortXBehaviors.get() &&
                             isYAutoCaller(context)
                         ) {
                             replacement
                         } else {
-                            chain.proceed()
+                            invocation.proceed()
                         }
                     }
                     }
@@ -365,7 +303,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
         }
     }
 
-    protected fun installShortXClipboardBehaviorHooks(context: Context, classLoader: ClassLoader) {
+    fun installShortXClipboardBehaviorHooks(context: Context, classLoader: ClassLoader) {
         val clazz = runCatching {
             classLoader.loadClass("com.android.server.clipboard.ClipboardService")
         }.getOrNull() ?: return
@@ -379,14 +317,14 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                 val key = "shortx-behavior-clipboard|" + method.toGenericString()
                 val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                     method.isAccessible = true
-                hook(method).intercept { chain ->
+                interceptMethod(method) { invocation ->
                     if (
                         SystemBridgeProtocol.SHORTX_BEHAVIOR_CLIPBOARD in enabledShortXBehaviors.get() &&
                         isYAutoCaller(context)
                     ) {
                         true
                     } else {
-                        chain.proceed()
+                        invocation.proceed()
                     }
                 }
                 }
@@ -396,7 +334,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
             }
     }
 
-    protected fun installShortXPermissionBehaviorHook(context: Context, classLoader: ClassLoader) {
+    fun installShortXPermissionBehaviorHook(context: Context, classLoader: ClassLoader) {
         val clazz = runCatching { classLoader.loadClass("android.app.ContextImpl") }.getOrNull() ?: return
         clazz.declaredMethods
             .filter { method ->
@@ -408,8 +346,8 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                 val key = "shortx-behavior-permission|" + method.toGenericString()
                 val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                     method.isAccessible = true
-                hook(method).intercept { chain ->
-                    val permission = chain.args.firstOrNull() as? String
+                interceptMethod(method) { invocation ->
+                    val permission = invocation.args.firstOrNull() as? String
                     if (
                         SystemBridgeProtocol.SHORTX_BEHAVIOR_PERMISSION in enabledShortXBehaviors.get() &&
                         isYAutoCaller(context) &&
@@ -417,7 +355,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                     ) {
                         PackageManager.PERMISSION_GRANTED
                     } else {
-                        chain.proceed()
+                        invocation.proceed()
                     }
                 }
                 }
@@ -446,18 +384,18 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                         val key = "shortx-observer|" + spec.id + "|" + method.toGenericString()
                         val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                             method.isAccessible = true
-                            hook(method).intercept { chain ->
+                            interceptMethod(method) { invocation ->
                                 if (spec.after) {
-                                    val result = chain.proceed()
+                                    val result = invocation.proceed()
                                     runCatching {
-                                        observerEvents.emit(context, spec, className, method.name, chain.thisObject, chain.args)
+                                        observerEvents.emit(context, spec, className, method.name, invocation.thisObject, invocation.args)
                                     }
                                     result
                                 } else {
                                     runCatching {
-                                        observerEvents.emit(context, spec, className, method.name, chain.thisObject, chain.args)
+                                        observerEvents.emit(context, spec, className, method.name, invocation.thisObject, invocation.args)
                                     }
-                                    chain.proceed()
+                                    invocation.proceed()
                                 }
                             }
                         }
@@ -470,7 +408,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
     }
 
     private val observerEvents by lazy {
-        XposedObserverEventEmitter(sharedState) { context, type, identity, extras, windowMs ->
+        XposedObserverEventEmitter(state) { context, type, identity, extras, windowMs ->
             emitSystemRuntimeEvent(context, type, identity, extras, windowMs)
         }
     }
@@ -482,7 +420,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
      * interceptKeyBeforeQueueing/interceptKeyBeforeDispatching between policy callback classes.
      * We never change the return value here; YAuto only observes and forwards KeyEvent metadata.
      */
-    protected fun installShortXInputHooks(context: Context, classLoader: ClassLoader) {
+    fun installShortXInputHooks(context: Context, classLoader: ClassLoader) {
         val targets = listOf(
             InputHookTarget(
                 "com.android.server.input.InputManagerService",
@@ -520,14 +458,14 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                     val key = "shortx-input|" + method.toGenericString()
                     val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                         method.isAccessible = true
-                    hook(method).intercept { chain ->
-                        val event = chain.args.firstOrNull { it is KeyEvent } as? KeyEvent
+                    interceptMethod(method) { invocation ->
+                        val event = invocation.args.firstOrNull { it is KeyEvent } as? KeyEvent
                         if (event != null) {
                             runCatching {
                                 hardwareKeyEvents.handleSystemKeyEvent(context, event, target.className, method.name)
                             }
                         }
-                        chain.proceed()
+                        invocation.proceed()
                     }
                     }
                     installation.exceptionOrNull()?.let { error ->
@@ -540,7 +478,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
         log(Log.INFO, "YAuto", "ShortX-compatible input hooks installed")
     }
 
-    protected fun installInputFilterStateHook(context: Context, classLoader: ClassLoader) {
+    fun installInputFilterStateHook(context: Context, classLoader: ClassLoader) {
         val clazz = runCatching {
             classLoader.loadClass("com.android.server.input.NativeInputManagerService\$NativeImpl")
         }.getOrNull() ?: return
@@ -555,8 +493,8 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                 val key = "shortx-input-filter-state|" + method.toGenericString()
                 val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                     method.isAccessible = true
-                hook(method).intercept { chain ->
-                    val enabled = chain.args.firstOrNull { it is Boolean } as? Boolean
+                interceptMethod(method) { invocation ->
+                    val enabled = invocation.args.firstOrNull { it is Boolean } as? Boolean
                     emitSystemRuntimeEvent(
                         context = context,
                         type = "android.event.input_filter_state_changed",
@@ -567,7 +505,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                         ),
                         dedupWindowMs = 100L,
                     )
-                    chain.proceed()
+                    invocation.proceed()
                 }
                 }
                 installation.exceptionOrNull()?.let { error ->
@@ -577,7 +515,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
     }
 
     private val hardwareKeyEvents by lazy {
-        XposedHardwareKeyEventHandler(sharedState) { context, type, dedupKey, extras, windowMs ->
+        XposedHardwareKeyEventHandler(state) { context, type, dedupKey, extras, windowMs ->
             emitSystemRuntimeEvent(context, type, dedupKey, extras, windowMs)
         }
     }
@@ -588,7 +526,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
         val matchAnyKeyEventMethod: Boolean = false,
     )
 
-    protected fun installAssistantHooks(context: Context, classLoader: ClassLoader) {
+    fun installAssistantHooks(context: Context, classLoader: ClassLoader) {
         val classNames = listOf(
             "com.android.server.voiceinteraction.VoiceInteractionManagerServiceImpl",
             "com.android.server.voiceinteraction.VoiceInteractionManagerService\$VoiceInteractionManagerServiceStub",
@@ -608,10 +546,10 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                     val key = "system-assistant|" + method.toGenericString()
                     val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                         method.isAccessible = true
-                    hook(method).intercept { chain ->
-                        val component = chain.args.filterIsInstance<android.content.ComponentName>().firstOrNull()
+                    interceptMethod(method) { invocation ->
+                        val component = invocation.args.filterIsInstance<android.content.ComponentName>().firstOrNull()
                         val info = reflectedValue(
-                            chain.thisObject,
+                            invocation.thisObject,
                             "mInfo",
                             "mVoiceInteractionServiceInfo",
                             "mServiceInfo",
@@ -630,7 +568,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
                             ),
                             dedupWindowMs = 350L,
                         )
-                        chain.proceed()
+                        invocation.proceed()
                     }
                     }
                     installation.exceptionOrNull()?.let { error ->
@@ -640,7 +578,7 @@ abstract class XposedSystemEventInstallers : XposedModule() {
         }
     }
 
-    private val systemEventPublisher by lazy { XposedSystemEventPublisher(sharedState) }
+    private val systemEventPublisher by lazy { XposedSystemEventPublisher(state) }
 
     private fun emitSystemRuntimeEvent(
         context: Context,
@@ -649,5 +587,4 @@ abstract class XposedSystemEventInstallers : XposedModule() {
         extras: Map<String, Any?>,
         dedupWindowMs: Long = 1_000L,
     ) = systemEventPublisher.emit(context, type, dedupKey, extras, dedupWindowMs)
-
 }

@@ -103,8 +103,18 @@ else:
             errors.append("XposedMethodHookInstaller missing " + hook_name)
 if (xposed_dir / "XposedMethodHookInstallers.kt").exists():
     errors.append("Legacy XposedMethodHookInstallers inheritance layer must be removed")
-if not (xposed_dir / "XposedSystemEventInstallers.kt").exists():
-    errors.append("XposedSystemEventInstallers must own SystemServer and input event hook installation")
+server_component = xposed_dir / "XposedSystemServerHookInstaller.kt"
+if not server_component.exists():
+    errors.append("XposedSystemServerHookInstaller must own SystemServer and input hook installation")
+else:
+    server_text = server_component.read_text(encoding="utf-8")
+    for hook_name in ("installSystemRuntimeHooks", "installShortXObserverHooks",
+                      "installShortXInputHooks", "installShortXBehaviorHooks",
+                      "installInputFilterStateHook", "installAssistantHooks"):
+        if "fun " + hook_name + "(" not in server_text:
+            errors.append("XposedSystemServerHookInstaller missing " + hook_name)
+if (xposed_dir / "XposedSystemEventInstallers.kt").exists():
+    errors.append("Legacy XposedSystemEventInstallers inheritance layer must be removed")
 systemui_impl = xposed_dir / "XposedSystemUiHookInstaller.kt"
 if not systemui_impl.exists():
     errors.append("XposedSystemUiHookInstaller must own concrete chip, tile and event interceptors")
@@ -115,13 +125,11 @@ else:
             errors.append("XposedSystemUiHookInstaller missing " + hook_name)
 if (xposed_dir / "XposedSystemUiInstallers.kt").exists():
     errors.append("Legacy XposedSystemUiInstallers inheritance layer must be removed")
-system_events = xposed_dir / "XposedSystemEventInstallers.kt"
-if system_events.exists():
-    system_events_text = system_events.read_text(encoding="utf-8")
-    if "abstract class XposedSystemEventInstallers : XposedModule()" not in system_events_text:
-        errors.append("XposedSystemEventInstallers must directly extend XposedModule")
-    if "XposedSystemUiHookInstaller(" not in system_events_text:
-        errors.append("XposedSystemEventInstallers must compose SystemUI hooks")
+if xposed_entry.exists():
+    composed_entry = xposed_entry.read_text(encoding="utf-8")
+    for component in ("XposedSystemServerHookInstaller(", "XposedSystemUiHookInstaller(", "XposedProviderHookInstaller(", "XposedMethodHookInstaller("):
+        if component not in composed_entry:
+            errors.append("YAutoXposedModule must compose " + component)
 provider_component = xposed_dir / "XposedProviderHookInstaller.kt"
 if not provider_component.exists():
     errors.append("XposedProviderHookInstaller must own NFC, media, SMS and input Hook implementation")
@@ -133,13 +141,12 @@ else:
             errors.append("XposedProviderHookInstaller missing concrete " + hook_name)
 if (xposed_dir / "XposedProviderInstallers.kt").exists():
     errors.append("Legacy XposedProviderInstallers inheritance layer must be removed")
-if system_events.exists() and "XposedProviderHookInstaller(" not in system_events_text:
-    errors.append("XposedSystemEventInstallers must compose Provider hooks")
+
 if not xposed_entry.exists():
     errors.append("YAutoXposedModule must own the process and system lifecycle hooks")
 else:
     entry_text = xposed_entry.read_text(encoding="utf-8")
-    if "class YAutoXposedModule : XposedSystemEventInstallers()" not in entry_text:
+    if "class YAutoXposedModule : XposedModule()" not in entry_text:
         errors.append("YAutoXposedModule must directly own lifecycle dispatch, without legacy wrapper inheritance")
     if "XposedPackageHookDispatcher(" not in entry_text:
         errors.append("YAutoXposedModule must dispatch package hooks with the shared process router")

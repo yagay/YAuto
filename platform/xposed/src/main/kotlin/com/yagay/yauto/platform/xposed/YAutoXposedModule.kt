@@ -17,6 +17,7 @@ import android.util.Log
 import android.view.InputEvent
 import android.view.KeyEvent
 import com.yagay.yauto.core.capability.SystemOperations
+import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
 import io.github.libxposed.api.XposedModuleInterface.SystemServerStartingParam
 import java.lang.reflect.Method
@@ -27,7 +28,83 @@ import java.util.concurrent.atomic.AtomicReference
 
 internal const val YAUTO_HOOK_PACKAGE = "com.yagay.yauto"
 
-class YAutoXposedModule : XposedSystemEventInstallers() {
+class YAutoXposedModule : XposedModule() {
+    internal val sharedState = XposedInstallationState()
+    private val installedHooks get() = sharedState.installedHooks
+    private val crashGuards get() = sharedState.crashGuards
+
+    private val providerHooks by lazy {
+        XposedProviderHookInstaller(
+            installedHooks = installedHooks,
+            intercept = { method, callback ->
+                hook(method).intercept { chain ->
+                    callback(chain.args.toList()) { chain.proceed() }
+                }
+            },
+            reportFailure = { key, error ->
+                log(Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+            },
+        )
+    }
+
+    private val systemUiHooks by lazy {
+        XposedSystemUiHookInstaller(
+            installedHooks = installedHooks,
+            interceptMethod = { method, callback ->
+                hook(method).intercept { chain ->
+                    callback(XposedHookInvocation(chain.thisObject, chain.args.toList()) { chain.proceed() })
+                }
+            },
+            interceptConstructor = { constructor, callback ->
+                hook(constructor).intercept { chain ->
+                    callback(XposedHookInvocation(chain.thisObject, chain.args.toList()) { chain.proceed() })
+                }
+            },
+            reportLog = { level, message, error -> log(level, "YAuto", message, error) },
+        )
+    }
+
+    private fun installShortXNfcHooks(context: Context, classLoader: ClassLoader) =
+        providerHooks.installShortXNfcHooks(context, classLoader)
+
+    private fun installShortXMediaProviderHooks(context: Context, classLoader: ClassLoader) =
+        providerHooks.installShortXMediaProviderHooks(context, classLoader)
+
+    private fun installShortXTelephonyProviderHooks(context: Context, classLoader: ClassLoader) =
+        providerHooks.installShortXTelephonyProviderHooks(context, classLoader)
+
+    private fun installShortXInputConnectionHook(context: Context, packageName: String, classLoader: ClassLoader) =
+        providerHooks.installShortXInputConnectionHook(context, packageName, classLoader)
+
+    private fun installShortXStatusChipHooks(context: Context, classLoader: ClassLoader) =
+        systemUiHooks.installShortXStatusChipHooks(context, classLoader)
+
+    private fun installShortXTileLabelHooks(context: Context, classLoader: ClassLoader) =
+        systemUiHooks.installShortXTileLabelHooks(context, classLoader)
+
+    private fun installShortXSystemUiHooks(context: Context, classLoader: ClassLoader) =
+        systemUiHooks.installShortXSystemUiHooks(context, classLoader)
+
+    private val systemServerHooks by lazy {
+        XposedSystemServerHookInstaller(
+            state = sharedState,
+            interceptMethod = { method, callback ->
+                hook(method).intercept { chain ->
+                    callback(XposedHookInvocation(chain.thisObject, chain.args.toList()) { chain.proceed() })
+                }
+            },
+            interceptConstructor = { constructor, callback ->
+                hook(constructor).intercept { chain ->
+                    callback(XposedHookInvocation(chain.thisObject, chain.args.toList()) { chain.proceed() })
+                }
+            },
+            reportLog = { level, message, error ->
+                if (error != null) log(level, "YAuto", message, error)
+                else log(level, "YAuto", message)
+            },
+        )
+    }
+
     private val methodHookInstaller by lazy {
         XposedMethodHookInstaller(
             state = sharedState,
@@ -108,14 +185,14 @@ class YAutoXposedModule : XposedSystemEventInstallers() {
         registerXposedSystemBridge(
             context = context,
             classLoader = classLoader,
-            systemRegistered = systemRegistered,
-            enabledShortXBehaviors = enabledShortXBehaviors,
-            subscribedSystemEvents = subscribedSystemEvents,
-            hardwareKeyCaptureUntilElapsed = hardwareKeyCaptureUntilElapsed,
-            yAutoUid = yAutoUid,
-            installBehaviorHooks = { installShortXBehaviorHooks(context, classLoader) },
-            installSubscriptions = { events -> installShortXHooksForSubscriptions(context, classLoader, events) },
-            installInputHooks = { installShortXInputHooks(context, classLoader) },
+            systemRegistered = sharedState.systemRegistered,
+            enabledShortXBehaviors = sharedState.enabledShortXBehaviors,
+            subscribedSystemEvents = sharedState.subscribedSystemEvents,
+            hardwareKeyCaptureUntilElapsed = sharedState.hardwareKeyCaptureUntilElapsed,
+            yAutoUid = sharedState.yAutoUid,
+            installBehaviorHooks = { systemServerHooks.installShortXBehaviorHooks(context, classLoader) },
+            installSubscriptions = { events -> systemServerHooks.installShortXHooksForSubscriptions(context, classLoader, events) },
+            installInputHooks = { systemServerHooks.installShortXInputHooks(context, classLoader) },
             emitLog = { level, message, error ->
                 if (error != null) log(level, "YAuto", message, error)
                 else log(level, "YAuto", message)
