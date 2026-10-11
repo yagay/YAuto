@@ -28,6 +28,26 @@ class LiveSystemFieldPickerWiringTest(unittest.TestCase):
         self.assertIn("manager.notificationChannelGroups", source)
         self.assertIn("if (controller == null && !isOwnedChannel)", source)
 
+    def test_picker_backed_parameters_select_device_value_first(self):
+        editor = read("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/SystemFieldPickers.kt")
+        self.assertIn('var manualEntry by remember(descriptorId, field.key, picker)', editor)
+        self.assertIn('if (manualEntry && allowManualInput)', editor)
+        self.assertIn('selectedOption?.takeIf { it.value == value }?.label', editor)
+        self.assertIn('TextR.string.live_picker_enter_manually', editor)
+        self.assertIn('TextR.string.live_picker_choose_from_device', editor)
+        self.assertIn('selectedOption = option', editor)
+        self.assertIn('manualEntry = false', editor)
+
+    def test_quick_settings_click_uses_live_device_selector(self):
+        source = read("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidShortXParityFeaturePack.kt")
+        self.assertIn('FeatureId("android.qs_tile.click")', source)
+        self.assertIn('FieldSchema.Text("component", "Tile component package/class", true)', source)
+        picker = read("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/SystemFieldPickers.kt")
+        self.assertIn('descriptor.id.value.contains("qs_tile", ignoreCase = true)', picker)
+        self.assertIn('"component" -> if (descriptor.id.value.contains("qs_tile", ignoreCase = true))', picker)
+        loader = read("app/src/main/kotlin/com/yagay/yauto/LiveAndroidFieldPicker.kt")
+        self.assertIn('deviceTiles.load().entries.mapNotNull { entry ->', loader)
+
     def test_external_qs_components_from_actual_declared_services(self):
         source = read("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/SystemFieldPickerData.kt")
         self.assertIn("Intent(TileService.ACTION_QS_TILE)", source)
