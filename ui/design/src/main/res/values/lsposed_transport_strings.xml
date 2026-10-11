@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="runtime_diagnostics_xposed_transport_title">LSPosed event delivery (since app start)</string>
+    <string name="runtime_diagnostics_xposed_transport_pass">PASS</string>
+    <string name="runtime_diagnostics_xposed_transport_fail">FAIL</string>
+    <string name="runtime_diagnostics_xposed_transport_message">Authenticated system_server round trip: %1$s. Receiver accepted: %2$d; forwarded to runtime: %3$d; rejected: %4$d. Last accepted: %5$s; last forwarded: %6$s; last rejection: %7$s. Connection and Hook installation do not prove a trigger executed; test the actual feature.</string>
+</resources>
