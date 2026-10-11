@@ -160,9 +160,15 @@ internal fun permissionStatus(context: Context, group: PermissionGrantGroup): Bo
         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
     }
     return when (group.id) {
-        // An enabled service toggle does not prove the service is bound and
-        // able to receive events. Report actual running service availability.
-        "accessibility" -> YAutoAccessibilityService.current != null
+        // This page reports the system authorization toggle. Runtime service
+        // connection is separately read from RuntimeAccessStatusRepository.
+        "accessibility" -> {
+            val target = ComponentName(context, YAutoAccessibilityService::class.java)
+                .flattenToString()
+            Settings.Secure.getString(context.contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
+                ?.split(':')?.any { it.equals(target, ignoreCase = true) } == true
+        }
         "usage" -> isUsageStatsAccessGranted(context)
         "write" -> Settings.System.canWrite(context)
         "listener" -> context.packageName in
@@ -199,12 +205,13 @@ internal fun permissionSettingsIntent(context: Context, group: PermissionGrantGr
 
 /** Shared fully actionable permission center: no inert grant buttons. */
 @Composable
-internal fun PermissionGrantCenter(modifier: Modifier = Modifier) {
+internal fun PermissionGrantCenter(modifier: Modifier = Modifier, graph: AppGraph) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var refresh by remember { mutableIntStateOf(0) }
     var feedback by remember { mutableStateOf<String?>(null) }
     val deniedMessage = stringResource(TextR.string.permission_request_denied)
+    val liveAccess by graph.accessStatus.status.collectAsState()
     val groups = remember { permissionGrantGroups(Build.VERSION.SDK_INT) }
 
     val request = rememberLauncherForActivityResult(
@@ -295,6 +302,17 @@ internal fun PermissionGrantCenter(modifier: Modifier = Modifier) {
                     }
                     Text(stringResource(group.detail),
                         style = MaterialTheme.typography.bodySmall)
+                    if (group.id == "accessibility" && granted) {
+                        Text(
+                            stringResource(
+                                if (liveAccess[com.yagay.yauto.core.registry.AccessRequirement.ACCESSIBILITY] ==
+                                    com.yagay.yauto.ui.editor.PermissionAvailability.GRANTED
+                                ) TextR.string.runtime_access_accessibility_connected
+                                else TextR.string.runtime_access_accessibility_enabled_unbound
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
                     Button(onClick = { authorize(group) }, Modifier.fillMaxWidth()) {
                         Text(stringResource(if (granted) TextR.string.permission_open_app_settings
                             else TextR.string.permission_request_now))

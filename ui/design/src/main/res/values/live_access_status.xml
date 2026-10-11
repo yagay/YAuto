@@ -7,4 +7,6 @@
     <string name="runtime_access_unknown">Not checked or probe failed</string>
     <string name="runtime_access_shizuku_disabled">Disabled while Root is available</string>
     <string name="feature_health_unknown_count">Not verified: %1$d</string>
+    <string name="runtime_access_accessibility_connected">Accessibility service is connected and receiving events.</string>
+    <string name="runtime_access_accessibility_enabled_unbound">System access is enabled, but the Accessibility service is not currently connected.</string>
 </resources>

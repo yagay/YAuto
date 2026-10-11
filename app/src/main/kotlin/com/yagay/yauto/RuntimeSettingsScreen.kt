@@ -128,7 +128,9 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     }
 
     LaunchedEffect(page, refresh) {
-        if (page == RuntimeSettingsPage.BACKENDS) {
+        if (page == RuntimeSettingsPage.BACKENDS ||
+            page == RuntimeSettingsPage.PERMISSIONS
+        ) {
             // Never probe Shizuku before verifying Root, even from settings.
             graph.accessStatus.refresh(force = true)
             runCatching { graph.lsposedScopes.start() }
@@ -376,7 +378,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
             }
 
             RuntimeSettingsPage.PERMISSIONS -> PermissionGrantCenter(
-                modifier = Modifier.padding(padding),
+                modifier = Modifier.padding(padding), graph = graph,
             )
 
             RuntimeSettingsPage.RUNTIME -> RuntimeBackgroundPreferencesPage(
@@ -442,19 +444,29 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                             authorize = true,
                         ) {
                             scope.launch {
-                                val hasRoot = runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)
-                                graph.accessStatus.refresh(force = true)
-                                if (hasRoot) {
-                                    shizukuMessage = context.getString(TextR.string.sx_shizuku_root_blocked)
-                                } else {
-                                    shizukuMessage = runCatching {
+                                val actual = graph.accessStatus.refresh(
+                                    setOf(
+                                        com.yagay.yauto.core.registry.AccessRequirement.ROOT,
+                                        com.yagay.yauto.core.registry.AccessRequirement.SHIZUKU,
+                                    ), force = true,
+                                )
+                                when (actual[com.yagay.yauto.core.registry.AccessRequirement.ROOT]) {
+                                    com.yagay.yauto.ui.editor.PermissionAvailability.GRANTED -> {
+                                        shizukuMessage = context.getString(TextR.string.sx_shizuku_root_blocked)
+                                    }
+                                    com.yagay.yauto.ui.editor.PermissionAvailability.UNKNOWN, null -> {
+                                        shizukuMessage = context.getString(TextR.string.runtime_access_unknown)
+                                    }
+                                    com.yagay.yauto.ui.editor.PermissionAvailability.NOT_GRANTED -> {
+                                        shizukuMessage = runCatching {
                                         graph.shizuku.requestPermission { granted ->
                                             shizukuMessage = if (granted) grantedText else deniedText
                                             refresh++
                                             scope.launch { graph.accessStatus.refresh(force = true) }
                                         }
                                         returnHint
-                                    }.getOrElse { it.message ?: missingText }
+                                        }.getOrElse { it.message ?: missingText }
+                                    }
                                 }
                                 refresh++
                             }
