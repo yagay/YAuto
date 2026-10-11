@@ -215,6 +215,17 @@ object AccessibilityRuntimeBridge {
         }
     }
 
+    /**
+     * Content changes frequently identify a child View class rather than the
+     * foreground Activity. Never overwrite the last real window class or
+     * report a spurious application transition for the same package.
+     */
+    internal fun updateFromContent(packageName: String?) {
+        val pkg = packageName?.trim().orEmpty()
+        if (pkg.isEmpty() || current.get()?.packageName == pkg) return
+        update(pkg, null)
+    }
+
     internal fun update(packageName: String?, className: String?) {
         val pkg = packageName?.trim().orEmpty()
         if (pkg.isEmpty()) return

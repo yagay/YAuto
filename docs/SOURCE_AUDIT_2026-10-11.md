@@ -19,6 +19,13 @@
 
 137 项 Python 自动回归测试通过；多语言、启动安全、事件契约、架构、权限接线、FeaturePack Schema、MacroDroid 分类与重复项目审计通过。启动安全核对 520 个字面量和 172 个展开的 FeatureDescriptor ID，检测到的兼容别名无冲突。原生 Kotlin 编译和 Debug APK 以本提交 GitHub Actions 结果为准。
 
+## 下一批：窗口、AppOps 与实体按键可靠性
+
+- **窗口状态识别**：Accessibility 内容更新不再覆盖窗口 Activity 类名；不同包名的真实切换仍保留。
+- **AppOps 重复 Hook**：同一 ROM 同时存在公开方法和 Impl 方法时优先公开方法，缺失时回退 Impl；相同 UID/包名/操作码/阶段采用 75ms 去重，开始与结束事件永不互相合并。
+- **实体按键捕获**：忽略 KEYCODE_UNKNOWN 与异常 action，不再提前消费用户等待中的合法 Android KeyEvent。
+- **回归约束**：新增 JVM 与静态契约测试；真实 ROM 的方法签名与事件时序仍需手机验证。
+
 ## 未声称解决的边界
 
 - 系统服务器 AppOps、窗口生命周期、SystemUI 和厂商 Hook 的方法签名需要 OxygenOS 真机逐项验证。

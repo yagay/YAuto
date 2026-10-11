@@ -71,6 +71,15 @@ object XposedSystemEventRuntimeBridge {
             return
         }
         if (type == SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_TYPE) {
+            val keyCode = intent.getIntExtra("keyCode", 0)
+            val action = intent.getIntExtra("action", -1)
+            if (!XposedHardwareKeyCapturePolicy.accepts(keyCode, action)) {
+                // Do not consume the one-shot waiter for KEYCODE_UNKNOWN or
+                // a malformed event; a valid Android KeyEvent may follow.
+                Log.w("YAutoKeyCapture", "Ignored invalid Android key capture: " +
+                    "keyCode=$keyCode action=$action")
+                return
+            }
             val waiter = nextHardwareKey.getAndSet(null)
             Log.i("YAutoKeyCapture", "LSPosed event dispatched: " +
                 "keyCode=${intent.getIntExtra("keyCode", 0)} " +

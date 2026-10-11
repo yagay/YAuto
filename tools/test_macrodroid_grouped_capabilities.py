@@ -30,7 +30,11 @@ class GroupedFeatureContracts(unittest.TestCase):
         self.assertEqual(hooks.count('eventType = "android.event.app_ops_operation"'), 2)
         self.assertIn('extras["phase"]', emitter)
         self.assertIn('extras["opCode"]', emitter)
-        self.assertIn('if (spec.payloadKind == ShortXHookPayloadKind.APP_OPS) 0L', emitter)
+        self.assertIn('if (spec.payloadKind == ShortXHookPayloadKind.APP_OPS) 75L', emitter)
+        self.assertIn('extras["callingUid"] = Binder.getCallingUid()', emitter)
+        self.assertIn("ShortXObserverMethodSelection.select(", src(
+            "platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedSystemServerHookInstaller.kt"
+        ))
 
     def test_recent_app_actions_are_one_parameterized_picker_entry_with_old_aliases(self):
         code = src("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidShortXParityFeaturePack.kt")

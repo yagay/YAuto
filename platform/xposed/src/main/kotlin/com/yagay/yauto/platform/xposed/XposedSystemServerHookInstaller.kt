@@ -379,8 +379,13 @@ internal class XposedSystemServerHookInstaller(
         requested.forEach { spec ->
             spec.classNames.forEach { className ->
                 val clazz = runCatching { classLoader.loadClass(className) }.getOrNull() ?: return@forEach
-                clazz.declaredMethods
+                val candidateMethods = clazz.declaredMethods
                     .filter { it.name in spec.methodNames }
+                val selectedNames = ShortXObserverMethodSelection.select(
+                    spec, candidateMethods.map { it.name }.toSet(),
+                )
+                candidateMethods
+                    .filter { it.name in selectedNames }
                     .forEach { method ->
                         val key = "shortx-observer|" + spec.id + "|" + method.toGenericString()
                         val installation = XposedHookInstallationGuard.install(installedHooks, key) {

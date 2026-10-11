@@ -75,11 +75,12 @@ class YAutoAccessibilityService : AccessibilityService() {
             return
         }
 
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
-            event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
-            event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
-        ) {
-            AccessibilityRuntimeBridge.update(eventPackage, event.className?.toString())
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            AccessibilityEvent.TYPE_WINDOWS_CHANGED ->
+                AccessibilityRuntimeBridge.update(eventPackage, event.className?.toString())
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED ->
+                AccessibilityRuntimeBridge.updateFromContent(eventPackage)
         }
 
         val kind = when (event.eventType) {

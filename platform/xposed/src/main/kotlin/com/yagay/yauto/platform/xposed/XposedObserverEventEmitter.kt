@@ -124,6 +124,7 @@ internal class XposedObserverEventEmitter(
                 // wrapper arguments. Expose only demonstrably typed primitives;
                 // never invent an app package when the signature is unknown.
                 extras["phase"] = if (methodName.startsWith("start")) "start" else "finish"
+                extras["callingUid"] = Binder.getCallingUid()
                 extras["opCode"] = args.filterIsInstance<Int>().firstOrNull() ?: -1
                 extras["package"] = args.filterIsInstance<String>()
                     .firstOrNull { it.contains('.') && it.length <= 255 }.orEmpty()
@@ -138,20 +139,26 @@ internal class XposedObserverEventEmitter(
             type = spec.eventType,
             dedupKey = identity,
             extras = extras,
-            // Start/finish are semantically distinct; rapid paired AppOps
-            // operations must not be discarded as duplicated generic hooks.
-            dedupWindowMs = if (spec.payloadKind == ShortXHookPayloadKind.APP_OPS) 0L else 150L,
+            // AppOps wrapper/Impl callbacks may describe the same operation.
+            // De-duplicate identical phase+UID+package+op within 75ms while
+            // preserving start and finish as separate event identities.
+            dedupWindowMs = if (spec.payloadKind == ShortXHookPayloadKind.APP_OPS) 75L else 150L,
         )
     }
 }
 
 /** Preserves the original observer de-duplication identity across hook families. */
 internal object XposedObserverEventIdentity {
-    fun from(specId: String, extras: Map<String, Any?>): String = listOf(
-        specId,
-        extras["package"]?.toString().orEmpty(),
-        extras["activity"]?.toString().orEmpty(),
-        extras["processName"]?.toString().orEmpty(),
-        extras["state"]?.toString().orEmpty(),
-    ).joinToString(":")
+    fun from(specId: String, extras: Map<String, Any?>): String = buildList {
+        add(specId)
+        add(extras["package"]?.toString().orEmpty())
+        add(extras["activity"]?.toString().orEmpty())
+        add(extras["processName"]?.toString().orEmpty())
+        add(extras["state"]?.toString().orEmpty())
+        if (specId.startsWith("app-ops-")) {
+            // Different ops/UIDs must never collapse into one event.
+            add(extras["opCode"]?.toString().orEmpty())
+            add(extras["callingUid"]?.toString().orEmpty())
+        }
+    }.joinToString(":")
 }

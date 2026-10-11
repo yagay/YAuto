@@ -19,6 +19,17 @@ class XposedObserverEventIdentityTest {
         )
     }
 
+    @Test fun appOpsEventsKeepStartFinishAndOperationCodesDistinct() {
+        val attrs = mapOf<String, Any?>(
+            "package" to "com.example", "opCode" to 24, "callingUid" to 12001,
+        )
+        val start = XposedObserverEventIdentity.from("app-ops-start", attrs)
+        assertNotEquals(start, XposedObserverEventIdentity.from("app-ops-finish", attrs))
+        assertNotEquals(start, XposedObserverEventIdentity.from("app-ops-start", attrs + ("opCode" to 26)))
+        assertNotEquals(start, XposedObserverEventIdentity.from("app-ops-start", attrs + ("callingUid" to 12002)))
+        assertEquals(start, XposedObserverEventIdentity.from("app-ops-start", attrs + ("method" to "startOperationImpl")))
+    }
+
     @Test fun unrelatedArgumentsDoNotChangeEventIdentity() {
         val base = mapOf<String, Any?>("package" to "com.example")
         assertEquals(
