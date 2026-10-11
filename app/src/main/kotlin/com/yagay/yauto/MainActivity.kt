@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             YAutoTheme {
                 val source = remember(graph) {
-                    liveAndroidFieldPicker(applicationContext, graph.quickSettingsTiles)
+                    liveAndroidFieldPicker(applicationContext, graph.quickSettingsTiles, graph.deviceQuickSettingsTiles)
                 }
                 CompositionLocalProvider(LocalLiveSystemFieldPicker provides source) {
                     YAutoAppScreen(graph)

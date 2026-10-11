@@ -77,6 +77,9 @@ class AppGraph(context: Context) {
     val workspace = ReconcilingWorkspaceRepository(workspaceStorage, features)
     val importReports = JsonImportReportStore(appContext)
     val quickSettingsTiles by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { QuickSettingsTileController(appContext) }
+    val deviceQuickSettingsTiles by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        DeviceQuickSettingsInventory(appContext, rootShell, xposed)
+    }
     val overlaySurfaces by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { OverlaySurfaceController(appContext) }
 
     val capabilities = CapabilityBroker(

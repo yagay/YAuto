@@ -110,7 +110,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     val scope = rememberCoroutineScope()
     val permissionGateway = rememberFeaturePermissionGateway(graph)
     val featureTester = remember(context, graph) { RuntimeFeatureTester(context, graph) }
-    val liveSystemPicker = remember(context, graph) { liveAndroidFieldPicker(context, graph.quickSettingsTiles) }
+    val liveSystemPicker = remember(context, graph) { liveAndroidFieldPicker(context, graph.quickSettingsTiles, graph.deviceQuickSettingsTiles) }
     val saveLock = remember { Mutex() }
     val featureDescriptors = remember(graph) { graph.features.allDescriptors() }
     RefreshFeatureHealthOnEditorOpen(

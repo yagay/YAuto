@@ -18,6 +18,7 @@ import kotlinx.coroutines.withContext
 internal fun liveAndroidFieldPicker(
     context: Context,
     tiles: QuickSettingsTileController,
+    deviceTiles: DeviceQuickSettingsInventory,
 ): LiveSystemFieldPicker = LiveSystemFieldPicker { descriptorId, fieldKey, values ->
     withContext(Dispatchers.Default) {
         if (fieldKey == "slot" && descriptorId.contains("qs_tile", ignoreCase = true)) {
@@ -32,6 +33,24 @@ internal fun liveAndroidFieldPicker(
                     label = context.getString(TextR.string.live_picker_tile_slot, slot, tiles.label(slot)),
                     detail = state,
                 )
+            }
+        } else if (fieldKey in setOf("component", "tileSpec") &&
+            descriptorId.contains("qs_tile", ignoreCase = true)
+        ) {
+            deviceTiles.load().entries.mapNotNull { entry ->
+                val value = if (fieldKey == "component") entry.component else entry.spec
+                if (value.isNullOrBlank()) null else {
+                    val origin = when (entry.isInPanel) {
+                        true -> context.getString(TextR.string.live_picker_tile_in_panel)
+                        false -> context.getString(TextR.string.live_picker_tile_not_in_panel)
+                        null -> context.getString(TextR.string.live_picker_tile_unknown_panel)
+                    }
+                    SystemPickerOption(
+                        value = value,
+                        label = entry.label,
+                        detail = "$origin · ${entry.spec}",
+                    )
+                }
             }
         } else if (descriptorId.contains("notification", ignoreCase = true)) {
             val controller = NotificationControlBridge.current()

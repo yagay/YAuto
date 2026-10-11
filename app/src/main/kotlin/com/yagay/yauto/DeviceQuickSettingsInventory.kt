@@ -1,7 +1,6 @@
 package com.yagay.yauto
 
-import android.Manifest
-import android.content.ComponentName
+ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -67,7 +66,7 @@ internal class DeviceQuickSettingsInventory(
             PackageManager.GET_META_DATA,
         ).mapNotNull { resolved ->
             val service = resolved.serviceInfo ?: return@mapNotNull null
-            if (service.permission != Manifest.permission.BIND_QUICK_SETTINGS_TILE) {
+            if (service.permission != "android.permission.BIND_QUICK_SETTINGS_TILE") {
                 return@mapNotNull null
             }
             val component = ComponentName(service.packageName, service.name)

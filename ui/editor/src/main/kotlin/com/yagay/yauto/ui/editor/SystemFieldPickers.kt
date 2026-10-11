@@ -54,6 +54,8 @@ internal fun inferredPickerSource(
 ): FieldPickerSource? {
     if (field !is FieldSchema.Text && field !is FieldSchema.Number) return null
     return when (field.key) {
+        "tileSpec" -> if (descriptor.id.value.contains("qs_tile", ignoreCase = true))
+            FieldPickerSource.LiveSystem else null
         "slot" -> if (descriptor.id.value.contains("qs_tile", ignoreCase = true))
             FieldPickerSource.LiveSystem else null
         "channelId", "groupId", "groupKey", "actionTitle", "actionIndex", "titleContains",
@@ -61,7 +63,8 @@ internal fun inferredPickerSource(
             descriptor.id.value.contains("notification", ignoreCase = true)
         ) FieldPickerSource.LiveSystem else null
         "package" -> FieldPickerSource.InstalledApp
-        "component" -> FieldPickerSource.Component(
+        "component" -> if (descriptor.id.value.contains("qs_tile", ignoreCase = true))
+            FieldPickerSource.LiveSystem else FieldPickerSource.Component(
             packageFieldKey = descriptor.fields.firstOrNull { it.key == "package" }?.key,
             kinds = inferredComponentKinds(descriptor.id.value),
         )
