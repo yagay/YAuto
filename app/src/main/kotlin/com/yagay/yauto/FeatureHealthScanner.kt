@@ -266,7 +266,7 @@ class FeatureHealthScanner(
                     descriptor.kind,
                     FeatureHealthStatus.READY,
                     backendId = readyOption.backendId,
-                    detail = "Implementation, backend and access checks passed",
+                    detail = "A declared backend is authorized; this feature's specific operation is checked during execution",
                 )
             }
             // Alternative backends are OR options, never cumulative grants:
@@ -286,7 +286,7 @@ class FeatureHealthScanner(
                 FeatureHealthStatus.BLOCKED,
                 backendId = nextOption?.backendId,
                 missingRequirements = missing,
-                detail = "Selected fallback implementation needs authorization",
+                detail = "One declared implementation needs authorization; operation support depends on its parameters",
             )
         }
 

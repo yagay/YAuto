@@ -24,12 +24,32 @@ class FeatureMethodRoutingTest {
         assertEquals(0, normalCalls)
     }
 
-    @Test fun autoTriesPrivilegedBeforeNoRootOnlyOnFailure() = runBlocking {
+    @Test fun autoFallsBackOnlyIfPrivilegedWasUnavailable() = runBlocking {
         val order = mutableListOf<String>()
         val result = routeFeatureMethod(FeatureMethod.AUTO, true,
-            { order += "macro"; true }, { order += "shortx"; false }, { it })
-        assertEquals(true, result)
+            { order += "macro"; com.yagay.yauto.core.capability.CapabilityResult(true) },
+            { order += "shortx"; com.yagay.yauto.core.capability.CapabilityResult(false,
+                failureKind = com.yagay.yauto.core.capability.CapabilityFailureKind.BACKEND_UNAVAILABLE) },
+            { it.success })
+        assertEquals(true, result?.success)
         assertEquals(listOf("shortx", "macro"), order)
+    }
+
+    @Test fun uncertainSideEffectIsNotReplayedThroughAnotherBackend() = runBlocking {
+        val seen = mutableListOf<String>()
+        val result = routeFeatureMethod(FeatureMethod.AUTO, true,
+            { seen += "regular"; com.yagay.yauto.core.capability.CapabilityResult(true) },
+            { seen += "privileged"; com.yagay.yauto.core.capability.CapabilityResult(false) },
+            { it.success })
+        assertEquals(false, result?.success)
+        assertEquals(listOf("privileged"), seen)
+        seen.clear()
+        val candidates = routeBackendCandidates<String?>(
+            null, listOf("lsposed", "root"), { selected -> seen += selected; "failed" },
+            { it == "success" },
+        )
+        assertEquals("failed", candidates)
+        assertEquals(listOf("lsposed"), seen)
     }
 
     @Test fun autoStopsAfterSuccessfulPrivilegedAction() = runBlocking {

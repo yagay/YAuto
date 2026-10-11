@@ -97,6 +97,31 @@ fun interface CapabilityClient {
     suspend fun execute(request: CapabilityRequest): CapabilityResult
 }
 
+/**
+ * A failed reply from an action does not prove it did not execute. In particular,
+ * a binder timeout or shell exit error can arrive AFTER a side effect. Only
+ * failures known to be pre-execution, or verified read-only operations, permit
+ * a different backend to retry the operation automatically.
+ */
+object CapabilityFallbackPolicy {
+    private val READ_ONLY_OPERATIONS = setOf(
+        "android.settings.value.get",
+        "android.system.property.get",
+        "android.app.appop.get",
+        "android.process.list",
+        SystemOperations.SENSORS_OFF_QUERY,
+    )
+
+    fun canRetryAfterFailure(request: CapabilityRequest, result: CapabilityResult): Boolean =
+        result.failureKind == CapabilityFailureKind.UNSUPPORTED ||
+            result.failureKind == CapabilityFailureKind.BACKEND_UNAVAILABLE ||
+            request.operationId in READ_ONLY_OPERATIONS
+
+    fun canRetryUnknownOperation(result: CapabilityResult): Boolean =
+        result.failureKind == CapabilityFailureKind.UNSUPPORTED ||
+            result.failureKind == CapabilityFailureKind.BACKEND_UNAVAILABLE
+}
+
 /** Applies a user-selected backend to requests without forcing every feature executor to know about UI preferences. */
 class PreferredBackendCapabilityClient(
     private val delegate: CapabilityClient,
@@ -202,8 +227,14 @@ class CapabilityBroker(
                     failureKind = CapabilityFailureKind.EXECUTION_FAILED)
             }
             attempts += CapabilityAttempt(backend.id, result.success, result.message)
-            if (result.success || !request.allowFallback || request.preferredBackendId != null) {
-                return result.copy(backendId = backend.id, attempts = attempts.toList())
+            if (result.success || !request.allowFallback || request.preferredBackendId != null ||
+                !CapabilityFallbackPolicy.canRetryAfterFailure(request, result)
+            ) {
+                return result.copy(
+                    backendId = backend.id,
+                    attempts = attempts.toList(),
+                    failureKind = if (!result.success) result.failureKind ?: CapabilityFailureKind.EXECUTION_FAILED else null,
+                )
             }
         }
         return CapabilityResult(

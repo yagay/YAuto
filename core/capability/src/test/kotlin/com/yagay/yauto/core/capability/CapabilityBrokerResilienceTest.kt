@@ -101,7 +101,8 @@ class CapabilityBrokerResilienceTest {
             override suspend fun isAvailable(environment: RuntimeEnvironment) = true
             override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
                 calls += id
-                return CapabilityResult(success)
+                return CapabilityResult(success,
+                    failureKind = if (success) null else CapabilityFailureKind.BACKEND_UNAVAILABLE)
             }
         }
         val root = fake("root", false)
@@ -160,7 +161,8 @@ class CapabilityBrokerResilienceTest {
             override suspend fun isAvailable(environment: RuntimeEnvironment) = true
             override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
                 executed += name
-                return CapabilityResult(works)
+                return CapabilityResult(works,
+                    failureKind = if (works) null else CapabilityFailureKind.BACKEND_UNAVAILABLE)
             }
         }
         val broker = CapabilityBroker({ environment }, listOf(
@@ -206,4 +208,42 @@ class CapabilityBrokerResilienceTest {
         assertEquals("lsposed", broker.execute(request).backendId)
         assertEquals(listOf("available:lsposed", "execute:lsposed"), seen)
     }
+    @Test fun failedSideEffectDoesNotRunSecondBackend() = runBlocking {
+        val seen = mutableListOf<String>()
+        fun backend(name: String, succeeds: Boolean) = object : CapabilityBackend {
+            override val id = name
+            override val priority = 10
+            override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) = true
+            override suspend fun isAvailable(environment: RuntimeEnvironment) = true
+            override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
+                seen += name
+                return CapabilityResult(succeeds)
+            }
+        }
+        val broker = CapabilityBroker({ environment }, listOf(backend("root", false), backend("shizuku", true)))
+        val result = broker.execute(CapabilityRequest(CapabilityIds.SYSTEM_UI, SystemOperations.SLEEP))
+        assertFalse(result.success)
+        assertEquals("root", result.backendId)
+        assertEquals(CapabilityFailureKind.EXECUTION_FAILED, result.failureKind)
+        assertEquals(listOf("root"), seen)
+    }
+
+    @Test fun failedReadOnlyOperationCanTryAnotherBackend() = runBlocking {
+        val seen = mutableListOf<String>()
+        fun backend(name: String, succeeds: Boolean) = object : CapabilityBackend {
+            override val id = name
+            override val priority = 10
+            override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) = true
+            override suspend fun isAvailable(environment: RuntimeEnvironment) = true
+            override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
+                seen += name
+                return CapabilityResult(succeeds)
+            }
+        }
+        val broker = CapabilityBroker({ environment }, listOf(backend("root", false), backend("shizuku", true)))
+        val result = broker.execute(CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "android.system.property.get"))
+        assertTrue(result.success)
+        assertEquals(listOf("root", "shizuku"), seen)
+    }
+
 }

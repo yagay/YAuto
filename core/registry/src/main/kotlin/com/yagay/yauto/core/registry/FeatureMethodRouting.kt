@@ -1,5 +1,8 @@
 package com.yagay.yauto.core.registry
 
+import com.yagay.yauto.core.capability.CapabilityFallbackPolicy
+import com.yagay.yauto.core.capability.CapabilityResult
+
 /**
  * No-root includes Shizuku (started via wireless debugging), Android and Accessibility.
  * Root-required permits Root and LSPosed only. AUTO is the default for
@@ -19,9 +22,16 @@ suspend fun <T> routeFeatureMethod(
         // Do not eagerly execute both implementations. A successful privileged
         // action is final; the no-root route is a sequential fallback only.
         val privileged = shortx()
-        if (succeeded(privileged) || !macroSupported) privileged else macrodroid()
+        if (succeeded(privileged) || !macroSupported || !canSafelyRetry(privileged)) privileged else macrodroid()
     }
 }
+
+/**
+ * Do not repeat an unknown side effect on a second backend. The only
+ * automatic retryable failures are explicit unsupported/unavailable replies.
+ */
+private fun <T> canSafelyRetry(value: T): Boolean =
+    (value as? CapabilityResult)?.let(CapabilityFallbackPolicy::canRetryUnknownOperation) == true
 
 /** Try only the named backends, in order, never across no-root/root permission families. */
 suspend fun <T> routeBackendCandidates(
@@ -36,7 +46,7 @@ suspend fun <T> routeBackendCandidates(
     for (backend in choices) {
         val result = execute(backend)
         last = result
-        if (succeeded(result)) return result
+        if (succeeded(result) || !canSafelyRetry(result)) return result
     }
     return last
 }
