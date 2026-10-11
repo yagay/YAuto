@@ -11,4 +11,6 @@
     <string name="live_picker_refresh">Refresh available values</string>
     <string name="live_picker_notification_history_origin">Captured history · %1$s · %2$s</string>
     <string name="live_picker_notification_apps">Choose from observed notification apps</string>
+    <string name="live_picker_choose_from_device">Choose from device</string>
+    <string name="live_picker_enter_manually">Enter a custom value manually</string>
 </resources>
