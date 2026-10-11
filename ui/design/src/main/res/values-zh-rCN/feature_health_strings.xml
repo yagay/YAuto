@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="runtime_settings_title_health">功能健康</string>
-    <string name="runtime_settings_feature_health">功能健康扫描</string>
+    <string name="runtime_settings_title_health">功能健康检测</string>
+    <string name="runtime_settings_feature_health">功能健康检测</string>
     <string name="runtime_settings_feature_health_subtitle">后台检查每个已注册功能的权限、依赖和后端可用性</string>
     <string name="feature_health_scanning">正在扫描功能可用性…</string>
     <string name="feature_health_not_scanned">尚未生成扫描结果</string>
