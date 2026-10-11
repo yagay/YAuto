@@ -1,0 +1,59 @@
+"""MacroDroid-style feature grouping with executable paths and old-rule compatibility.
+
+Keep behavior distinctions, runtime subscriptions and verified categories intact.
+This is a wiring check; OEM LSPosed hook availability still needs phone tests.
+"""
+import pathlib
+import unittest
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+def src(path):
+    return (ROOT / path).read_text(encoding="utf-8")
+
+
+class GroupedFeatureContracts(unittest.TestCase):
+    def test_app_ops_start_finish_use_a_single_macro_category_and_real_hooks(self):
+        event = src("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidShortXHookEventFeaturePack.kt")
+        hooks = src("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/ShortXCompatHookCatalog.kt")
+        emitter = src("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedObserverEventEmitter.kt")
+        self.assertEqual(event.count('FeatureId("android.event.app_ops_operation")'), 1)
+        self.assertIn('pickerCategory = FeaturePickerCategory.APPLICATIONS', event)
+        self.assertIn('FieldSchema.Choice("phase", "Operation", true, listOf("any", "start", "finish"))', event)
+        self.assertIn('FieldSchema.AppPicker("package"', event)
+        self.assertIn('FieldSchema.Number("opCode"', event)
+        self.assertIn('ctx.event.payload.string("phase")', event)
+        self.assertIn('ctx.event.payload["opCode"].numberOrNull()', event)
+        self.assertIn('methodNames = setOf("startOperation", "startOperationImpl")', hooks)
+        self.assertIn('methodNames = setOf("finishOperation", "finishOperationImpl")', hooks)
+        self.assertEqual(hooks.count('eventType = "android.event.app_ops_operation"'), 2)
+        self.assertIn('extras["phase"]', emitter)
+        self.assertIn('extras["opCode"]', emitter)
+        self.assertIn('if (spec.payloadKind == ShortXHookPayloadKind.APP_OPS) 0L', emitter)
+
+    def test_recent_app_actions_are_one_parameterized_picker_entry_with_old_aliases(self):
+        code = src("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidShortXParityFeaturePack.kt")
+        self.assertEqual(code.count('FeatureId("android.app.last_used.launch")'), 1)
+        self.assertIn('FieldSchema.Choice("mode", "Recent app", true, listOf("latest", "older"))', code)
+        self.assertIn('aliases = setOf("android.app.previous.launch", "android.app.next.launch")', code)
+        self.assertIn('"android.app.previous.launch" to mapOf("mode" to ConfigValue.StringValue("latest"))', code)
+        self.assertIn('"android.app.next.launch" to mapOf("mode" to ConfigValue.StringValue("older"))', code)
+        self.assertNotIn("private fun registerRecentAppAction(", code)
+        self.assertNotIn("private fun registerLastUsedApp(", code)
+        self.assertIn("usage.queryUsageStats(", code)
+        self.assertIn("not Android's live task stack", code)
+
+    def test_bilingual_macro_category_titles_exist_and_no_duplicate_actions(self):
+        for lang in ("values", "values-zh-rCN"):
+            s = src(f"ui/design/src/main/res/{lang}/macrodroid_appops_strings.xml")
+            for key in ("feature_android_event_app_ops_operation_title",
+                        "feature_android_app_last_used_launch_title"):
+                self.assertIn(key, s)
+        taxonomy = src("core/registry/src/main/kotlin/com/yagay/yauto/core/registry/FeaturePickerCategory.kt")
+        self.assertIn("MacroDroid's category taxonomy", taxonomy)
+        self.assertIn("FeaturePickerCategory.APPLICATIONS", taxonomy)
+
+
+if __name__ == "__main__":
+    unittest.main()
