@@ -100,6 +100,7 @@ class AppGraph(context: Context) {
             shizuku = shizuku,
             xposed = xposed,
             accessibility = accessibility,
+            accessStatus = accessStatus,
             implementationAvailable = { descriptor ->
                 when (descriptor.kind) {
                     com.yagay.yauto.core.registry.FeatureKind.ACTION ->

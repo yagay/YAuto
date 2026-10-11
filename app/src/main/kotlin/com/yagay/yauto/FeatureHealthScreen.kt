@@ -173,13 +173,15 @@ internal fun FeatureHealthScreen(
 @Composable
 private fun FeatureHealthRow(item: FeatureHealthItem) {
     val statusText = when (item.status) {
-        FeatureHealthStatus.READY -> stringResource(TextR.string.feature_health_ready)
+        FeatureHealthStatus.READY -> stringResource(TextR.string.feature_health_authorized_unverified)
+        FeatureHealthStatus.UNKNOWN -> stringResource(TextR.string.feature_health_unknown)
         FeatureHealthStatus.BLOCKED -> stringResource(TextR.string.feature_health_blocked)
         FeatureHealthStatus.BROKEN -> stringResource(TextR.string.feature_health_broken)
         FeatureHealthStatus.UNSUPPORTED -> stringResource(TextR.string.feature_health_unsupported)
     }
     val statusColor = when (item.status) {
         FeatureHealthStatus.READY -> MacroPalette.Constraint
+        FeatureHealthStatus.UNKNOWN -> MaterialTheme.colorScheme.onSurfaceVariant
         FeatureHealthStatus.BLOCKED -> MacroPalette.Trigger
         FeatureHealthStatus.BROKEN -> MaterialTheme.colorScheme.error
         FeatureHealthStatus.UNSUPPORTED -> MacroPalette.Utility
@@ -265,6 +267,7 @@ private fun featureHealthDiagnosticJson(
             JSONObject()
                 .put("total", snapshot.items.size)
                 .put("ready", snapshot.readyCount)
+                .put("unknown", snapshot.unknownCount)
                 .put("blocked", snapshot.blockedCount)
                 .put("broken", snapshot.brokenCount)
                 .put("unsupported", snapshot.unsupportedCount),
@@ -274,6 +277,14 @@ private fun featureHealthDiagnosticJson(
             JSONObject().apply {
                 snapshot.accessState.toSortedMap(compareBy { it.id }).forEach { (requirement, available) ->
                     put(requirement.id, available)
+                }
+            },
+        )
+        .put(
+            "accessAvailability",
+            JSONObject().apply {
+                snapshot.accessAvailability.toSortedMap(compareBy { it.id }).forEach { (requirement, status) ->
+                    put(requirement.id, status.name)
                 }
             },
         )

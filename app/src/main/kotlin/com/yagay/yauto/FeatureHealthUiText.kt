@@ -7,7 +7,8 @@ import com.yagay.yauto.ui.design.R as TextR
 internal fun featureHealthStatusLabel(context: Context, status: FeatureHealthStatus): String =
     context.getString(
         when (status) {
-            FeatureHealthStatus.READY -> TextR.string.feature_health_ready
+            FeatureHealthStatus.READY -> TextR.string.feature_health_authorized_unverified
+            FeatureHealthStatus.UNKNOWN -> TextR.string.feature_health_unknown
             FeatureHealthStatus.BLOCKED -> TextR.string.feature_health_blocked
             FeatureHealthStatus.BROKEN -> TextR.string.feature_health_broken
             FeatureHealthStatus.UNSUPPORTED -> TextR.string.feature_health_unsupported
@@ -17,7 +18,8 @@ internal fun featureHealthStatusLabel(context: Context, status: FeatureHealthSta
 internal fun featureHealthReason(context: Context, item: FeatureHealthItem): String {
     val missing = item.missingRequirements.joinToString(", ") { healthRequirementLabel(context, it) }
     return when (item.status) {
-        FeatureHealthStatus.READY -> context.getString(TextR.string.feature_health_ready_detail)
+        FeatureHealthStatus.READY -> context.getString(TextR.string.feature_health_authorized_detail)
+        FeatureHealthStatus.UNKNOWN -> context.getString(TextR.string.feature_health_unknown_detail)
         FeatureHealthStatus.BLOCKED -> context.getString(TextR.string.feature_health_blocked_detail_format, missing)
         FeatureHealthStatus.BROKEN -> context.getString(TextR.string.feature_health_broken_detail)
         FeatureHealthStatus.UNSUPPORTED -> context.getString(TextR.string.feature_health_unsupported_detail)
@@ -26,7 +28,7 @@ internal fun featureHealthReason(context: Context, item: FeatureHealthItem): Str
 
 internal fun featureHealthResolution(context: Context, item: FeatureHealthItem): String? =
     when (item.status) {
-        FeatureHealthStatus.READY -> null
+        FeatureHealthStatus.READY, FeatureHealthStatus.UNKNOWN -> null
         FeatureHealthStatus.BROKEN -> context.getString(TextR.string.feature_health_solution_broken)
         FeatureHealthStatus.UNSUPPORTED -> context.getString(TextR.string.feature_health_solution_unsupported)
         FeatureHealthStatus.BLOCKED -> item.missingRequirements
@@ -37,7 +39,7 @@ internal fun featureHealthResolution(context: Context, item: FeatureHealthItem):
     }
 
 internal fun featureHealthListSummary(context: Context, item: FeatureHealthItem): String? {
-    if (item.status == FeatureHealthStatus.READY) return null
+    if (item.status == FeatureHealthStatus.READY) return featureHealthReason(context, item)
     val reason = featureHealthReason(context, item)
     val solution = featureHealthResolution(context, item)
     return if (solution.isNullOrBlank()) reason

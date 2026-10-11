@@ -119,6 +119,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
                 summary = featureHealthListSummary(context, item),
                 tone = when (item.status) {
                     FeatureHealthStatus.READY -> FeatureAvailabilityTone.READY
+                    FeatureHealthStatus.UNKNOWN -> FeatureAvailabilityTone.UNSUPPORTED
                     FeatureHealthStatus.BLOCKED -> FeatureAvailabilityTone.BLOCKED
                     FeatureHealthStatus.BROKEN -> FeatureAvailabilityTone.BROKEN
                     FeatureHealthStatus.UNSUPPORTED -> FeatureAvailabilityTone.UNSUPPORTED

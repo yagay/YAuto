@@ -37,7 +37,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-enum class FeatureHealthStatus { READY, BLOCKED, BROKEN, UNSUPPORTED }
+enum class FeatureHealthStatus { READY, BLOCKED, UNKNOWN, BROKEN, UNSUPPORTED }
 
 data class FeatureHealthItem(
     val featureId: String,
@@ -54,8 +54,10 @@ data class FeatureHealthSnapshot(
     val finishedAtEpochMs: Long,
     val items: List<FeatureHealthItem>,
     val accessState: Map<AccessRequirement, Boolean> = emptyMap(),
+    val accessAvailability: Map<AccessRequirement, com.yagay.yauto.ui.editor.PermissionAvailability> = emptyMap(),
 ) {
     val readyCount: Int get() = items.count { it.status == FeatureHealthStatus.READY }
+    val unknownCount: Int get() = items.count { it.status == FeatureHealthStatus.UNKNOWN }
     val blockedCount: Int get() = items.count { it.status == FeatureHealthStatus.BLOCKED }
     val brokenCount: Int get() = items.count { it.status == FeatureHealthStatus.BROKEN }
     val unsupportedCount: Int get() = items.count { it.status == FeatureHealthStatus.UNSUPPORTED }
@@ -76,6 +78,7 @@ class FeatureHealthScanner(
     private val xposed: XposedBackend,
     private val accessibility: AccessibilityBackend,
     private val implementationAvailable: (FeatureDescriptor) -> Boolean,
+    private val accessStatus: RuntimeAccessStatusRepository,
 ) {
     private val context = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -138,86 +141,29 @@ class FeatureHealthScanner(
                 }
             }
             .toSet()
-        val access = probeAccess(needed)
+        val access = accessStatus.refresh(needed, force = true)
         val items = featureList.map { descriptor -> evaluate(descriptor, access) }
             .sortedWith(
                 compareBy<FeatureHealthItem> {
                     when (it.status) {
                         FeatureHealthStatus.BROKEN -> 0
                         FeatureHealthStatus.BLOCKED -> 1
-                        FeatureHealthStatus.UNSUPPORTED -> 2
-                        FeatureHealthStatus.READY -> 3
+                        FeatureHealthStatus.UNKNOWN -> 2
+                        FeatureHealthStatus.UNSUPPORTED -> 3
+                        FeatureHealthStatus.READY -> 4
                     }
                 }.thenBy { it.title.lowercase() }.thenBy { it.featureId }
             )
-        return FeatureHealthSnapshot(started, System.currentTimeMillis(), items, access).also { _snapshot.value = it }
-    }
-
-    private suspend fun probeAccess(needed: Set<AccessRequirement>): Map<AccessRequirement, Boolean> {
-        val environment = RuntimeEnvironment(Build.VERSION.SDK_INT)
-        val root = if (AccessRequirement.ROOT in needed || AccessRequirement.ZYGISK in needed ||
-            AccessRequirement.SHIZUKU in needed) {
-            runCatching { rootShell.isAvailable() }.getOrDefault(false)
-        } else false
-        val lsposed = if (AccessRequirement.LSPOSED in needed) {
-            runCatching { xposed.isAvailable(environment) }.getOrDefault(false)
-        } else false
-        val zygisk = if (AccessRequirement.ZYGISK in needed && root) {
-            runCatching {
-                rootShell.run(
-                    "test -d /data/adb/modules/zygisksu || test -d /data/adb/modules/zygisk_lsposed || ps -A 2>/dev/null | grep -qi zygisk",
-                    2_000,
-                ).exitCode == 0
-            }.getOrDefault(false)
-        } else false
-
-        // Probe only capabilities required by a registered feature. Checking every permission
-        // on every scan adds unnecessary system calls and reports unrelated access as denied.
-        return needed.associateWith { requirement ->
-            when (requirement) {
-                AccessRequirement.ROOT -> root
-                AccessRequirement.SHIZUKU -> !root &&
-                    runCatching { shizuku.hasPermission() }.getOrDefault(false)
-                AccessRequirement.LSPOSED -> lsposed
-                AccessRequirement.ZYGISK -> zygisk
-                AccessRequirement.ACCESSIBILITY ->
-                    runCatching { accessibility.isAvailable(environment) }.getOrDefault(false)
-                AccessRequirement.USAGE_STATS -> isUsageStatsAccessGranted(context)
-                AccessRequirement.NOTIFICATION_LISTENER ->
-                    context.packageName in NotificationManagerCompat.getEnabledListenerPackages(context)
-                AccessRequirement.POST_NOTIFICATIONS ->
-                    Build.VERSION.SDK_INT < 33 || granted(Manifest.permission.POST_NOTIFICATIONS)
-                AccessRequirement.OVERLAY -> Settings.canDrawOverlays(context)
-                AccessRequirement.WRITE_SETTINGS -> Settings.System.canWrite(context)
-                AccessRequirement.CAMERA -> granted(Manifest.permission.CAMERA)
-                AccessRequirement.LOCATION ->
-                    granted(Manifest.permission.ACCESS_FINE_LOCATION) || granted(Manifest.permission.ACCESS_COARSE_LOCATION)
-                AccessRequirement.BLUETOOTH_CONNECT ->
-                    Build.VERSION.SDK_INT < Build.VERSION_CODES.S || granted(Manifest.permission.BLUETOOTH_CONNECT)
-                AccessRequirement.DND_POLICY ->
-                    context.getSystemService(NotificationManager::class.java).isNotificationPolicyAccessGranted
-                AccessRequirement.DEVICE_ADMIN ->
-                    context.getSystemService(DevicePolicyManager::class.java)
-                        .isAdminActive(ComponentName(context, YAutoDeviceAdminReceiver::class.java))
-                AccessRequirement.CALENDAR ->
-                    granted(Manifest.permission.READ_CALENDAR) && granted(Manifest.permission.WRITE_CALENDAR)
-                AccessRequirement.CONTACTS -> granted(Manifest.permission.READ_CONTACTS)
-                AccessRequirement.CALL_LOG -> granted(Manifest.permission.READ_CALL_LOG)
-                AccessRequirement.SMS ->
-                    granted(Manifest.permission.READ_SMS) ||
-                        granted(Manifest.permission.RECEIVE_SMS) ||
-                        granted(Manifest.permission.SEND_SMS)
-                AccessRequirement.PHONE -> granted(Manifest.permission.READ_PHONE_STATE)
-                AccessRequirement.RECORD_AUDIO -> granted(Manifest.permission.RECORD_AUDIO)
-                AccessRequirement.ACTIVITY_RECOGNITION ->
-                    Build.VERSION.SDK_INT < 29 || granted(Manifest.permission.ACTIVITY_RECOGNITION)
-            }
-        }
+        return FeatureHealthSnapshot(
+            started, System.currentTimeMillis(), items,
+            access.mapValues { it.value == com.yagay.yauto.ui.editor.PermissionAvailability.GRANTED },
+            access,
+        ).also { _snapshot.value = it }
     }
 
     private fun evaluate(
         descriptor: FeatureDescriptor,
-        access: Map<AccessRequirement, Boolean>,
+        access: Map<AccessRequirement, com.yagay.yauto.ui.editor.PermissionAvailability>,
     ): FeatureHealthItem {
         if (!runCatching { implementationAvailable(descriptor) }.getOrDefault(false)) {
             return FeatureHealthItem(
@@ -252,7 +198,7 @@ class FeatureHealthScanner(
                 runtimePermissionsForFeature(group, descriptor.id.value).let { permissions ->
                     permissions.isNotEmpty() && permissions.all(::granted)
                 }
-            } else access[requirement] == true
+            } else access[requirement] == com.yagay.yauto.ui.editor.PermissionAvailability.GRANTED
         }
         val explicitMissing = descriptor.accessRequirements.filterNot(available).toSet()
         if (explicitMissing.isNotEmpty()) {
@@ -260,14 +206,17 @@ class FeatureHealthScanner(
                 descriptor.id.value,
                 descriptor.title,
                 descriptor.kind,
-                FeatureHealthStatus.BLOCKED,
+                if (explicitMissing.any {
+                        access[it] == null || access[it] == com.yagay.yauto.ui.editor.PermissionAvailability.UNKNOWN
+                    }) FeatureHealthStatus.UNKNOWN else FeatureHealthStatus.BLOCKED,
                 missingRequirements = explicitMissing,
                 detail = "Required access is not available",
             )
         }
 
         val options = descriptor.resolvedImplementationOptions().filterNot {
-            it.backendId == "shizuku" && access[AccessRequirement.ROOT] == true
+            it.backendId == "shizuku" &&
+                access[AccessRequirement.ROOT] == com.yagay.yauto.ui.editor.PermissionAvailability.GRANTED
         }
         if (options.isNotEmpty()) {
             val rootFirst = RuntimeSettingsPreferences.preferRootWhenAvailable(context)
@@ -284,6 +233,23 @@ class FeatureHealthScanner(
                     FeatureHealthStatus.READY,
                     backendId = readyOption.backendId,
                     detail = "A declared backend is authorized; this feature's specific operation is checked during execution",
+                )
+            }
+            // A transient Binder/Root/LSPosed probe failure is UNKNOWN, not denied.
+            // If a backend could work but its state cannot be established, never
+            // show a red "missing permission" or claim a successful execution.
+            val uncertain = options.filter { option ->
+                option.requirements.all { requirement ->
+                    access[requirement] != com.yagay.yauto.ui.editor.PermissionAvailability.NOT_GRANTED
+                }
+            }.minWithOrNull(compareBy<FeatureImplementationOption> {
+                CapabilityBackendPriority.rank(it.backendId, rootFirst)
+            })
+            if (uncertain != null) {
+                return FeatureHealthItem(
+                    descriptor.id.value, descriptor.title, descriptor.kind,
+                    FeatureHealthStatus.UNKNOWN, backendId = uncertain.backendId,
+                    detail = "Backend authorization could not be verified during this scan",
                 )
             }
             // Alternative backends are OR options, never cumulative grants:
@@ -314,7 +280,13 @@ class FeatureHealthScanner(
             descriptor.id.value,
             descriptor.title,
             descriptor.kind,
-            if (resolvedMissing.isEmpty()) FeatureHealthStatus.READY else FeatureHealthStatus.BLOCKED,
+            when {
+                resolvedMissing.isEmpty() -> FeatureHealthStatus.READY
+                resolvedMissing.any {
+                    access[it] == null || access[it] == com.yagay.yauto.ui.editor.PermissionAvailability.UNKNOWN
+                } -> FeatureHealthStatus.UNKNOWN
+                else -> FeatureHealthStatus.BLOCKED
+            },
             missingRequirements = resolvedMissing,
             detail = if (resolvedMissing.isEmpty()) {
                 "Implementation and environment checks passed; side-effect behavior is not executed during background scan"
