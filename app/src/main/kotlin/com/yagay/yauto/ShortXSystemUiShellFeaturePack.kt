@@ -19,7 +19,9 @@ internal class ShortXSystemUiShellFeaturePack : FeaturePack {
                 userText("shortx.systemui.detail"),
                 FeatureCategory.SYSTEM,
                 fields = listOf(
-                    FieldSchema.Text("command", userText("shortx.systemui.command"), true),
+                    FieldSchema.Text(
+                        "command", userText("shortx.systemui.command"), true
+                    ),
                     FieldSchema.Variable("resultVariable", "Store output"),
                 ),
                 capabilities = setOf(CapabilityIds.LSPOSED),
