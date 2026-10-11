@@ -165,9 +165,7 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
             val position = when (feature.config.string("mode", "latest")) {
                 "latest" -> 0
                 "older" -> 1
-                else -> return@registerAction ActionExecutionResult(
-                    false, message = userText("feature.operation_failed", "Unsupported recent-app mode")
-                )
+                else -> return@registerAction ActionExecutionResult(false)
             }
             val now = System.currentTimeMillis()
             val lookback = ((feature.config["lookbackHours"].numberOrNull() ?: 24.0)
