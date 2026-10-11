@@ -3,6 +3,7 @@ package com.yagay.yauto
 import android.content.Context
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 import java.net.URL
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -106,7 +107,7 @@ internal class ShortXWorkdayFeaturePack(context: Context) : FeaturePack {
         val description = FeatureDescriptor(
             id = FeatureId("android.state.shortx_workday"),
             kind = FeatureKind.STATE,
-            title = "Workday / statutory holiday",
+            title = userText("shortx.workday.title"),
             description = "Check whether today is a workday using cached UK or China holiday calendars",
             category = FeatureCategory.SYSTEM,
             fields = listOf(

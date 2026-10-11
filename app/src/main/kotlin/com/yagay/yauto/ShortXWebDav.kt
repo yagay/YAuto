@@ -64,7 +64,7 @@ internal object ShortXWebDav {
         require(uri.port == -1 || uri.port in 1..65535)
         require(uri.path.length <= 500 && !uri.path.contains(".."))
         require(uri.host !in setOf("localhost", "127.0.0.1", "::1"))
-        return uri.toString().trimEnd('/') + "/"
+        return uri.resolve(".").toString()
     }
     fun save(context: Context, config: WebDavSettings) {
         val address = validateDirectory(config.directory)

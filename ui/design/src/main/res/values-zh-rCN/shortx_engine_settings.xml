@@ -96,4 +96,5 @@
     <string name="sx_workday_date">日期（YYYY-MM-DD）</string>
     <string name="sx_workday_refresh">更新工作日历</string>
     <string name="sx_workday_entries">已保存特殊日期：%1$d</string>
+    <string name="shortx_workday_title">工作日与法定节假日</string>
 </resources>
