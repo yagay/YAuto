@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Process
+import java.security.MessageDigest
+import java.util.concurrent.atomic.AtomicReference
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.RuntimeEvent
 import kotlinx.coroutines.CompletableDeferred
@@ -89,16 +91,23 @@ object XposedSystemEventRuntimeBridge {
 class XposedSystemEventReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null || intent?.action != SystemBridgeProtocol.SYSTEM_EVENT_ACTION) return
+        val source = intent.getStringExtra("bridgeSource").orEmpty()
+            .ifBlank { "lsposed.system_server" }
         if (Build.VERSION.SDK_INT >= 34) {
             val uid = getSentFromUid()
             val packages = context.packageManager.getPackagesForUid(uid)?.toList().orEmpty()
             if (!XposedEventSenderVerifier.accept(
                     uid = uid,
-                    source = intent.getStringExtra("bridgeSource").orEmpty()
-                        .ifBlank { "lsposed.system_server" },
+                    source = source,
                     claimedPackage = intent.getStringExtra("package").orEmpty(),
                     senderPackages = packages,
                 )) return
+        } else {
+            // Android 12/13 lacks broadcast sender UID; fail closed for unauthenticated
+            // package-originated broadcasts and verify a system_server session secret.
+            if (source != "lsposed.system_server" ||
+                !XposedEventAuth.acceptLegacy(intent.getStringExtra(XposedEventAuth.EXTRA_TOKEN).orEmpty())
+            ) return
         }
         XposedSystemEventRuntimeBridge.dispatch(intent)
     }
@@ -109,5 +118,20 @@ internal object XposedEventSenderVerifier {
         if (uid == Process.SYSTEM_UID) return true
         if (uid < 0 || source != "lsposed.package") return false
         return claimedPackage.isNotBlank() && claimedPackage in senderPackages
+    }
+}
+
+/** Process-local secret expected by the app and published by the signed system bridge. */
+internal object XposedEventAuth {
+    const val EXTRA_TOKEN = "yautoSystemEventAuth"
+    private val appExpected = AtomicReference("")
+    private val systemPublished = AtomicReference("")
+    fun expect(token: String) { appExpected.set(token) }
+    fun publish(token: String) { systemPublished.set(token) }
+    fun publishedToken(): String = systemPublished.get()
+    fun acceptLegacy(candidate: String): Boolean {
+        val expected = appExpected.get()
+        if (expected.length < 32 || candidate.length != expected.length) return false
+        return MessageDigest.isEqual(expected.toByteArray(Charsets.UTF_8), candidate.toByteArray(Charsets.UTF_8))
     }
 }

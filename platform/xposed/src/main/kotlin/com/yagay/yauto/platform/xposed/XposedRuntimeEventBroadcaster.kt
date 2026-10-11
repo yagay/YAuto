@@ -27,6 +27,9 @@ internal fun broadcastXposedRuntimeEvent(
             is Boolean -> intent.putExtra(key, value)
         }
     }
+    // The system_server key is delivered through the signature-protected ordered bridge.
+    if (!fromPackage) XposedEventAuth.publishedToken().takeIf(String::isNotBlank)
+        ?.let { intent.putExtra(XposedEventAuth.EXTRA_TOKEN, it) }
     runCatching { context.sendBroadcast(intent) }
 }
 

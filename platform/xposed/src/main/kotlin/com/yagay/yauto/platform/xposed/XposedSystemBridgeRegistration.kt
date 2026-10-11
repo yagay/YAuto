@@ -164,6 +164,9 @@ internal fun registerXposedSystemBridge(
                                 .distinct()
                                 .take(256)
                                 .toSet()
+                            val token = intent.getStringExtra(XposedEventAuth.EXTRA_TOKEN).orEmpty()
+                            require(token.length in 32..128) { "Missing system event authentication token" }
+                            XposedEventAuth.publish(token)
                             subscribedSystemEvents.set(values)
                             installSubscriptions(values)
                             response.putInt("subscriptionCount", values.size)

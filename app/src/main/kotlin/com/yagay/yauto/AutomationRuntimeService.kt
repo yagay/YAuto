@@ -299,6 +299,21 @@ class AutomationRuntimeService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_REFRESH_LOCALIZED_SURFACES) { if (!promoteToForeground()) { stopSelf(); return START_NOT_STICKY }; return START_STICKY }
+        if (intent?.action == ACTION_EXTERNAL_COMMAND) {
+            val runtime = graph ?: runCatching { (application as YAutoApplication).graph }.getOrNull()
+            if (runtime != null) RuntimeEventDispatcher(runtime, scope).dispatch(
+                RuntimeEvent(
+                    "android.event.external_command",
+                    mapOf(
+                        "name" to ConfigValue.StringValue(intent.getStringExtra(EXTRA_COMMAND_NAME).orEmpty()),
+                        "payload" to ConfigValue.StringValue(intent.getStringExtra(EXTRA_COMMAND_PAYLOAD).orEmpty()),
+                        "senderPackage" to ConfigValue.StringValue(intent.getStringExtra(EXTRA_COMMAND_SENDER).orEmpty()),
+                    ),
+                    source = "android.external_command",
+                )
+            )
+            return START_STICKY
+        }
         if (intent?.action == ACTION_SECURITY_EVENT) {
             val type = intent.getStringExtra(EXTRA_SECURITY_EVENT_TYPE).orEmpty()
             if (type.startsWith("android.event.")) {
@@ -452,6 +467,10 @@ class AutomationRuntimeService : Service() {
         const val ACTION_REFRESH_LOCALIZED_SURFACES = "com.yagay.yauto.action.REFRESH_LOCALIZED_SURFACES"
         const val ACTION_SHARE_DISPATCH = "com.yagay.yauto.action.SHARE_DISPATCH"
         const val ACTION_SECURITY_EVENT = "com.yagay.yauto.action.SECURITY_EVENT"
+        const val ACTION_EXTERNAL_COMMAND = "com.yagay.yauto.action.EXTERNAL_COMMAND"
+        private const val EXTRA_COMMAND_NAME = "externalCommandName"
+        private const val EXTRA_COMMAND_PAYLOAD = "externalCommandPayload"
+        private const val EXTRA_COMMAND_SENDER = "externalCommandClaimedSender"
         private const val EXTRA_SHARE_TEXT = "shareText"
         private const val EXTRA_SHARE_SUBJECT = "shareSubject"
         private const val EXTRA_SHARE_MIME = "shareMime"
@@ -467,6 +486,22 @@ class AutomationRuntimeService : Service() {
         }.getOrElse {
             Log.e(TAG, "Unable to start automation runtime service", it)
             StartupFailureRecorder.record(context, "runtime:start", it)
+            false
+        }
+
+        fun startExternalCommand(context: Context, name: String, payload: String, claimedSenderPackage: String): Boolean = runCatching {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, AutomationRuntimeService::class.java)
+                    .setAction(ACTION_EXTERNAL_COMMAND)
+                    .putExtra(EXTRA_COMMAND_NAME, name.take(256))
+                    .putExtra(EXTRA_COMMAND_PAYLOAD, payload.take(65_536))
+                    .putExtra(EXTRA_COMMAND_SENDER, claimedSenderPackage.take(256)),
+            )
+            true
+        }.getOrElse {
+            Log.e(TAG, "Unable to deliver external command", it)
+            StartupFailureRecorder.record(context, "runtime:external-command", it)
             false
         }
 

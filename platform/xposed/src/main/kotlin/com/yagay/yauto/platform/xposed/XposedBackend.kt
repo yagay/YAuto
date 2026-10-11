@@ -3,6 +3,7 @@ package com.yagay.yauto.platform.xposed
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import java.util.UUID
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -19,6 +20,7 @@ import kotlin.coroutines.resume
 class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract, DiagnosticCollector {
     private val context = context.applicationContext
     @Volatile private var connected = false
+    private val systemEventAuthToken = UUID.randomUUID().toString().also(XposedEventAuth::expect)
     override val id = "lsposed"
     override val priority = 90
     override val protocolVersion = SystemBridgeProtocol.VERSION
@@ -44,6 +46,7 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                 .putExtra("version", protocolVersion)
                 .putExtra("operation", SystemBridgeProtocol.SYSTEM_EVENT_SUBSCRIPTIONS_SET)
                 .putStringArrayListExtra("eventTypes", safe)
+                .putExtra(XposedEventAuth.EXTRA_TOKEN, systemEventAuthToken)
         ).also { connected = it != null }
         return result?.getBoolean("success") == true
     }

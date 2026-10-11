@@ -55,6 +55,11 @@ jobs:
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_duplicate_titles.py'
           python3 tools/audit_picker_duplicate_titles.py --fail-on-unresolved-zh --fail-on-unresolved-en
+      - name: Runtime ingress and settings regression
+        run: |
+          python3 -m unittest discover -s tools -p 'test_security_runtime_guards.py'
+          python3 -m unittest discover -s tools -p 'test_runtime_settings_wiring.py'
+          python3 -m unittest discover -s tools -p 'test_source_spotify_area_parity.py'
       - name: One-tap unified method selector guard
         run: |
           python3 -m unittest discover -s tools -p 'test_unified_click_selector.py'
