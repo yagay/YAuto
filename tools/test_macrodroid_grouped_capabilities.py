@@ -44,6 +44,26 @@ class GroupedFeatureContracts(unittest.TestCase):
         self.assertIn("usage.queryUsageStats(", code)
         self.assertIn("not Android's live task stack", code)
 
+    def test_target_ui_idle_uses_accessibility_activity_not_app_main_looper(self):
+        bridge = src("platform/accessibility/src/main/kotlin/com/yagay/yauto/platform/accessibility/AccessibilityRuntimeBridge.kt")
+        service = src("platform/accessibility/src/main/kotlin/com/yagay/yauto/platform/accessibility/YAutoAccessibilityService.kt")
+        features = src("platform/accessibility/src/main/kotlin/com/yagay/yauto/platform/accessibility/AccessibilityFeaturePack.kt")
+        self.assertIn("suspend fun awaitUiIdle(", bridge)
+        self.assertIn("lastUiActivity", bridge)
+        self.assertIn("YAutoAccessibilityService.current == null", bridge)
+        self.assertIn("maxOf(started, last.updatedElapsedMs)", bridge)
+        self.assertIn("AccessibilityRuntimeBridge.recordUiActivity(eventPackage)", service)
+        self.assertLess(service.index("recordUiActivity(eventPackage)"),
+                        service.index("shouldDispatchUiEvent(kind)"))
+        self.assertIn('FeatureId("accessibility.ui.wait_for_idle")', features)
+        self.assertIn("FeaturePickerCategory.DEVICE_ACTIONS", features)
+        self.assertIn("AccessibilityRuntimeBridge.awaitUiIdle(", features)
+        self.assertNotIn("MessageQueue.IdleHandler", bridge)
+        for language in ("values", "values-zh-rCN"):
+            content = src(f"ui/design/src/main/res/{language}/macro_ui_idle_strings.xml")
+            self.assertIn("feature_accessibility_ui_wait_for_idle_title", content)
+            self.assertIn("feature_accessibility_ui_wait_for_idle_field_timeoutms", content)
+
     def test_bilingual_macro_category_titles_exist_and_no_duplicate_actions(self):
         for lang in ("values", "values-zh-rCN"):
             s = src(f"ui/design/src/main/res/{lang}/macrodroid_appops_strings.xml")
