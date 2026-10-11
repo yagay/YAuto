@@ -33,6 +33,7 @@ class XposedEventDeliveryContractTest(unittest.TestCase):
         )[0]
         self.assertGreaterEqual(action.count("XposedEventTransportHealth.onRejected("), 2)
         self.assertIn("XposedEventTransportHealth.onAccepted(eventType)", action)
+        self.assertIn("XposedEventTransportHealth.onForwarded(type)", receiver)
         self.assertLess(action.index("XposedEventTransportHealth.onAccepted(eventType)"),
                         action.index("XposedSystemEventRuntimeBridge.dispatch(intent)"))
         self.assertNotIn("if (isKeyCapture) XposedEventTransportHealth.onRejected(", action)
@@ -43,6 +44,7 @@ class XposedEventDeliveryContractTest(unittest.TestCase):
         self.assertIn("sessionId.isBlank() || token.isBlank()", method)
         self.assertIn('XposedEventTransportHealth.onAccepted("android.event.lsposed_method_called")', method)
         self.assertIn("XposedEventTransportHealth.onRejected(", method)
+        self.assertIn('XposedEventTransportHealth.onForwarded("android.event.lsposed_method_called")', method)
 
     def test_both_event_broadcasters_report_failed_submission_without_logging_secrets(self):
         for filename in ("XposedRuntimeEventBroadcaster.kt", "MethodHookEventEmitter.kt"):
@@ -61,8 +63,9 @@ class XposedEventDeliveryContractTest(unittest.TestCase):
         self.assertIn("XposedEventTransportHealth.snapshot()", s)
         self.assertIn("delivery.rejected", s)
         self.assertIn("delivery.accepted", s)
-        self.assertIn("No end-to-end event delivery has been observed yet", s)
-        self.assertIn("Connected/Hook installed does not prove event delivery", s)
+        self.assertIn("delivery.forwarded", s)
+        self.assertIn("No runtime listener handoff has been observed yet", s)
+        self.assertIn("Connection, installed Hooks, and broadcast acceptance", s)
 
     def test_new_sender_uid_checks_require_centralized_auth_review(self):
         sources = list(XPOSED.glob("*.kt"))
