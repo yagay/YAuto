@@ -55,14 +55,18 @@ class GroupedFeatureContracts(unittest.TestCase):
         self.assertIn("AccessibilityRuntimeBridge.recordUiActivity(eventPackage)", service)
         self.assertLess(service.index("recordUiActivity(eventPackage)"),
                         service.index("shouldDispatchUiEvent(kind)"))
-        self.assertIn('FeatureId("accessibility.ui.wait_for_idle")', features)
+        self.assertIn('FeatureId("android.ui.wait_for_idle")', features)
+        self.assertIn('aliases = setOf("accessibility.ui.wait_for_idle")', features)
+        old = src("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidPluginWidgetRegistrations.kt")
+        self.assertNotIn('FeatureId("android.ui.wait_for_idle")', old)
+        self.assertNotIn("MessageQueue.IdleHandler", old)
         self.assertIn("FeaturePickerCategory.DEVICE_ACTIONS", features)
         self.assertIn("AccessibilityRuntimeBridge.awaitUiIdle(", features)
         self.assertNotIn("MessageQueue.IdleHandler", bridge)
         for language in ("values", "values-zh-rCN"):
             content = src(f"ui/design/src/main/res/{language}/macro_ui_idle_strings.xml")
-            self.assertIn("feature_accessibility_ui_wait_for_idle_title", content)
-            self.assertIn("feature_accessibility_ui_wait_for_idle_field_timeoutms", content)
+            self.assertIn("feature_android_ui_wait_for_idle_field_quietms", content)
+            self.assertIn("feature_android_ui_wait_for_idle_field_timeoutms", content)
 
     def test_bilingual_macro_category_titles_exist_and_no_duplicate_actions(self):
         for lang in ("values", "values-zh-rCN"):
