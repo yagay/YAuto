@@ -46,4 +46,7 @@
     <string name="sx_dynamic_color_hint">Use wallpaper-based Material colors on Android 12 and newer.</string>
     <string name="sx_colorful_card">Colorful cards</string>
     <string name="sx_colorful_card_hint">Use category accent backgrounds on dashboard tiles and section headers.</string>
+    <string name="sx_export_library">Export library</string>
+    <string name="sx_import_library">Import library</string>
+    <string name="sx_imported">Library entries imported</string>
 </resources>

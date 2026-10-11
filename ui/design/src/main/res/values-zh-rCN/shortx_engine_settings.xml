@@ -46,4 +46,7 @@
     <string name="sx_dynamic_color_hint">在 Android 12 及以上版本使用 Material 壁纸动态配色。</string>
     <string name="sx_colorful_card">彩色卡片</string>
     <string name="sx_colorful_card_hint">主页磁贴和分类标题使用各自的彩色背景。</string>
+    <string name="sx_export_library">导出代码库</string>
+    <string name="sx_import_library">导入代码库</string>
+    <string name="sx_imported">代码库条目已导入</string>
 </resources>
