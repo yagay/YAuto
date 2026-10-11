@@ -9,7 +9,7 @@
     <string name="feature_android_event_app_ops_operation_field_phase_option_start">Start</string>
     <string name="feature_android_event_app_ops_operation_field_phase_option_finish">Finish</string>
     <string name="feature_android_event_app_ops_operation_field_package">App / package</string>
-    <string name="feature_android_event_app_ops_operation_field_op_code">AppOps operation code</string>
+    <string name="feature_android_event_app_ops_operation_field_opcode">AppOps operation code</string>
     <string name="feature_android_app_last_used_launch_field_mode">Recent app position</string>
     <string name="feature_android_app_last_used_launch_field_mode_option_latest">Most recent</string>
     <string name="feature_android_app_last_used_launch_field_mode_option_older">One older</string>
