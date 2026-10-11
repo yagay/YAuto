@@ -4,4 +4,14 @@
     <string name="feature_android_event_app_ops_operation_description">Run when an application AppOps operation starts or finishes. Select a phase, app, or operation code.</string>
     <string name="feature_android_app_last_used_launch_title">Launch recently used app</string>
     <string name="feature_android_app_last_used_launch_description">Launch the latest or an older app from UsageStats history; this is not a live task-stack switch.</string>
+    <string name="feature_android_event_app_ops_operation_field_phase">Operation phase</string>
+    <string name="feature_android_event_app_ops_operation_field_phase_option_any">Any</string>
+    <string name="feature_android_event_app_ops_operation_field_phase_option_start">Start</string>
+    <string name="feature_android_event_app_ops_operation_field_phase_option_finish">Finish</string>
+    <string name="feature_android_event_app_ops_operation_field_package">App / package</string>
+    <string name="feature_android_event_app_ops_operation_field_op_code">AppOps operation code</string>
+    <string name="feature_android_app_last_used_launch_field_mode">Recent app position</string>
+    <string name="feature_android_app_last_used_launch_field_mode_option_latest">Most recent</string>
+    <string name="feature_android_app_last_used_launch_field_mode_option_older">One older</string>
+    <string name="feature_android_app_last_used_launch_field_lookback_hours">Look back hours</string>
 </resources>
