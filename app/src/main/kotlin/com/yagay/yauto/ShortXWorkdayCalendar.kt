@@ -108,7 +108,7 @@ internal class ShortXWorkdayFeaturePack(context: Context) : FeaturePack {
             kind = FeatureKind.STATE,
             title = "Workday / statutory holiday",
             description = "Check whether today is a workday using cached UK or China holiday calendars",
-            category = FeatureCategory.TIME,
+            category = FeatureCategory.SYSTEM,
             fields = listOf(
                 FieldSchema.Choice("region", "Calendar", true, listOf("UK", "CN")),
                 FieldSchema.Choice("expected", "Day status", true, listOf("workday", "offday")),
