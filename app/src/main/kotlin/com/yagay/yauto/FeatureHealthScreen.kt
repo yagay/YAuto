@@ -196,13 +196,17 @@ internal fun FeatureHealthScreen(
             key = { it.featureId },
             contentType = { "feature_health" },
         ) { item ->
-            FeatureHealthRow(item)
+            FeatureHealthRow(item, scanning) { scanner.requestFeatureVerification(item.featureId) }
         }
     }
 }
 
 @Composable
-private fun FeatureHealthRow(item: FeatureHealthItem) {
+private fun FeatureHealthRow(
+    item: FeatureHealthItem,
+    scanning: Boolean,
+    onVerify: () -> Unit,
+) {
     val statusText = when (item.status) {
         FeatureHealthStatus.READY -> stringResource(TextR.string.feature_health_authorized_unverified)
         FeatureHealthStatus.UNKNOWN -> stringResource(TextR.string.feature_health_unknown)
@@ -289,6 +293,13 @@ private fun FeatureHealthRow(item: FeatureHealthItem) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+            OutlinedButton(
+                onClick = onVerify,
+                enabled = !scanning,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(TextR.string.feature_health_probe_one))
             }
         }
     }
