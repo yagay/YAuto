@@ -155,7 +155,8 @@ class FeatureHealthScanner(
 
     private suspend fun probeAccess(needed: Set<AccessRequirement>): Map<AccessRequirement, Boolean> {
         val environment = RuntimeEnvironment(Build.VERSION.SDK_INT)
-        val root = if (AccessRequirement.ROOT in needed || AccessRequirement.ZYGISK in needed) {
+        val root = if (AccessRequirement.ROOT in needed || AccessRequirement.ZYGISK in needed ||
+            AccessRequirement.SHIZUKU in needed) {
             runCatching { rootShell.isAvailable() }.getOrDefault(false)
         } else false
         val lsposed = if (AccessRequirement.LSPOSED in needed) {
@@ -264,7 +265,9 @@ class FeatureHealthScanner(
             )
         }
 
-        val options = descriptor.resolvedImplementationOptions()
+        val options = descriptor.resolvedImplementationOptions().filterNot {
+            it.backendId == "shizuku" && access[AccessRequirement.ROOT] == true
+        }
         if (options.isNotEmpty()) {
             val rootFirst = RuntimeSettingsPreferences.preferRootWhenAvailable(context)
             val readyOption = options

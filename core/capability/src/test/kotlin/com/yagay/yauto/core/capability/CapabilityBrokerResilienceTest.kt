@@ -92,7 +92,7 @@ class CapabilityBrokerResilienceTest {
         assertEquals(listOf("check:root", "exec:root"), calls)
     }
 
-    @Test fun failedRootFallsBackAndExplicitBackendRemainsPinned() = runBlocking {
+    @Test fun failedRootDoesNotFallBackToShizukuWhileRootGrantIsValid() = runBlocking {
         val calls = mutableListOf<String>()
         fun fake(idValue: String, success: Boolean) = object : CapabilityBackend {
             override val id = idValue
@@ -113,8 +113,10 @@ class CapabilityBrokerResilienceTest {
         assertEquals("root", result.backendId)
         assertEquals(listOf("root"), result.attempts.map { it.backendId })
         calls.clear()
-        broker.execute(request.copy(preferredBackendId = "shizuku"))
-        assertEquals(listOf("shizuku"), calls)
+        val pinned = broker.execute(request.copy(preferredBackendId = "shizuku"))
+        assertFalse(pinned.success)
+        assertEquals(CapabilityFailureKind.BACKEND_UNAVAILABLE, pinned.failureKind)
+        assertTrue(calls.isEmpty())
         calls.clear()
         CapabilityBroker({ environment }, listOf(root, shizuku), { false }).execute(request)
         assertEquals(listOf("root"), calls)
@@ -152,7 +154,7 @@ class CapabilityBrokerResilienceTest {
         assertEquals(listOf("check:root", "execute:root"), calls)
     }
 
-    @Test fun lsposedFailureFallsBackToRootThenShizukuAndAccessibility() = runBlocking {
+    @Test fun lsposedFailureFallsBackToRootThenAccessibilityWithoutShizuku() = runBlocking {
         val executed = mutableListOf<String>()
         fun backend(name: String, works: Boolean) = object : CapabilityBackend {
             override val id = name

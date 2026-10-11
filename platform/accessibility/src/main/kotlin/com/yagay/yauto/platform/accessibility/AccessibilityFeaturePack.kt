@@ -288,7 +288,7 @@ class AccessibilityFeaturePack(
                     routeBackendCandidates(
                         backend,
                         if (action == "power_dialog") listOf("accessibility")
-                            else listOf("shizuku", "accessibility"),
+                            else listOf("accessibility", "shizuku"),
                         execute = { selected ->
                             if (selected == "accessibility") {
                                 ctx.executeCapability(feature.typeId, CapabilityRequest(
