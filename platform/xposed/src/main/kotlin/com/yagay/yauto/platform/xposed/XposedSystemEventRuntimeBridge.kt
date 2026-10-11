@@ -103,16 +103,34 @@ class XposedSystemEventReceiver : BroadcastReceiver() {
             SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_TYPE
         if (Build.VERSION.SDK_INT >= 34) {
             val uid = getSentFromUid()
-            val packages = context.packageManager.getPackagesForUid(uid)?.toList().orEmpty()
+            // Some OEM Android 14+ builds return INVALID_UID (-1) for a
+            // manifest receiver even when the broadcast came from hooked
+            // system_server. Never equate this with a trusted sender: verify
+            // the per-app-session random secret negotiated over the
+            // signature-protected ordered system bridge instead.
+            val authenticatedUnknownSystemSender =
+                uid == Process.INVALID_UID &&
+                source == "lsposed.system_server" &&
+                XposedEventAuth.acceptLegacy(
+                    intent.getStringExtra(XposedEventAuth.EXTRA_TOKEN).orEmpty()
+                )
+            val packages = if (uid >= 0 && uid != Process.SYSTEM_UID) {
+                context.packageManager.getPackagesForUid(uid)?.toList().orEmpty()
+            } else emptyList()
             if (!XposedEventSenderVerifier.accept(
                     uid = uid,
                     source = source,
                     claimedPackage = intent.getStringExtra("package").orEmpty(),
                     senderPackages = packages,
+                    authenticatedUnknownSystemSender = authenticatedUnknownSystemSender,
                 )) {
                 if (isKeyCapture) Log.w("YAutoKeyCapture", "Rejected LSPosed capture broadcast: " +
-                    "senderUid=$uid source=$source")
+                    "senderUid=$uid source=$source authenticated=$authenticatedUnknownSystemSender")
                 return
+            }
+            if (isKeyCapture && authenticatedUnknownSystemSender) {
+                Log.i("YAutoKeyCapture", "Accepted authenticated system_server capture " +
+                    "despite unavailable broadcast sender UID")
             }
         } else {
             // Android 12/13 lacks broadcast sender UID; fail closed for unauthenticated
@@ -130,8 +148,20 @@ class XposedSystemEventReceiver : BroadcastReceiver() {
 }
 
 internal object XposedEventSenderVerifier {
-    fun accept(uid: Int, source: String, claimedPackage: String, senderPackages: List<String>): Boolean {
+    fun accept(
+        uid: Int,
+        source: String,
+        claimedPackage: String,
+        senderPackages: List<String>,
+        authenticatedUnknownSystemSender: Boolean = false,
+    ): Boolean {
         if (uid == Process.SYSTEM_UID) return true
+        // Never trust an absent UID by itself. A session-authenticated
+        // system_server broadcast is the only allowed INVALID_UID fallback;
+        // arbitrary app and package-Hook broadcasts remain rejected.
+        if (uid == Process.INVALID_UID) {
+            return source == "lsposed.system_server" && authenticatedUnknownSystemSender
+        }
         if (uid < 0 || source != "lsposed.package") return false
         return claimedPackage.isNotBlank() && claimedPackage in senderPackages
     }
