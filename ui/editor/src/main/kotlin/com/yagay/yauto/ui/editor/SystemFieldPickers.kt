@@ -179,6 +179,7 @@ internal fun PickerBackedField(
     val scope = rememberCoroutineScope()
     var showPicker by remember(picker) { mutableStateOf(false) }
     var capturingKey by remember(picker) { mutableStateOf(false) }
+    var lastCapturedKey by remember(descriptorId, field.key) { mutableStateOf<HardwareKeyCaptureResult?>(null) }
     // Select-first for all device-backed parameters. A service component,
     // notification ID, tile spec or hardware key is a *choice*, not a prompt
     // to type implementation details. Keep explicit manual entry as fallback.
@@ -247,6 +248,7 @@ internal fun PickerBackedField(
                             Toast.LENGTH_SHORT,
                         ).show()
                         val captured = runCatching { captureHardwareKey(10_000L) }.getOrNull()
+                        lastCapturedKey = captured
                         capturingKey = false
                         if (captured == null) {
                             Toast.makeText(
@@ -266,8 +268,10 @@ internal fun PickerBackedField(
                                         TextR.string.hardware_key_capture_result,
                                         captured.keyCode,
                                     )
+                                } else if (captured.linuxEvKey > 0) {
+                                    context.getString(TextR.string.hardware_key_capture_result_oem, captured.linuxEvKey)
                                 } else {
-                                    context.getString(TextR.string.hardware_key_capture_result_oem)
+                                    context.getString(TextR.string.hardware_key_capture_scan_code, captured.scanCode)
                                 },
                                 Toast.LENGTH_LONG,
                             ).show()
@@ -283,6 +287,18 @@ internal fun PickerBackedField(
                         else TextR.string.hardware_key_capture_button
                     )
                 )
+            }
+            lastCapturedKey?.let { key ->
+                if (key.keyCode <= 0) {
+                    Text(
+                        if (key.linuxEvKey > 0) {
+                            stringResource(TextR.string.hardware_key_capture_result_oem, key.linuxEvKey)
+                        } else {
+                            stringResource(TextR.string.hardware_key_capture_scan_code, key.scanCode)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         }
     }
