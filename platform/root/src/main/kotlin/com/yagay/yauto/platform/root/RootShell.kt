@@ -24,12 +24,27 @@ internal object ReadOnlyRootCommand {
 
 class RootShell(
     private val shared: SharedRootRunner? = null,
+    private val suBinary: () -> String = { "su" },
 ) : DiagnosticCommandRunner {
+    /** ProcessBuilder receives argv directly; never pass user-provided su paths through a shell. */
+    fun commandArguments(command: String): List<String> {
+        val binary = suBinary()
+        require(isSafeSuBinary(binary)) { "Invalid su executable path" }
+        return listOf(binary, "-c", command)
+    }
+
+    companion object {
+        fun isSafeSuBinary(path: String): Boolean =
+            path == "su" || (path.startsWith("/") && path.endsWith("/su") &&
+                ".." !in path && path.matches(Regex("/[A-Za-z0-9_./-]{2,240}")))
+    }
     override suspend fun run(command: String, timeoutMs: Long): CommandOutput = try {
-        if (shared != null && ReadOnlyRootCommand.accepts(command)) {
+        val binary = suBinary()
+        require(isSafeSuBinary(binary)) { "Invalid su executable path" }
+        if (binary == "su" && shared != null && ReadOnlyRootCommand.accepts(command)) {
             shared.execute(command, timeoutMs)
         } else {
-            BoundedProcessRunner.run(listOf("su", "-c", command), timeoutMs)
+            BoundedProcessRunner.run(commandArguments(command), timeoutMs)
         }
     } catch (cancelled: CancellationException) {
         throw cancelled
@@ -42,13 +57,13 @@ class RootShell(
         fun granted(output: CommandOutput): Boolean =
             !output.timedOut && output.exitCode == 0 && "uid=0" in output.stdout
         if (granted(sharedResult)) return true
-        if (shared == null) return false
+        if (shared == null || suBinary() != "su") return false
         // A cached libsu shell can be unprivileged if authorization was
         // granted only after its creation. Verify with a fresh Root process
         // before allowing the scheduler to classify the device as rootless
         // and enable Shizuku.
         return try {
-            granted(BoundedProcessRunner.run(listOf("su", "-c", "id"), 5_000))
+            granted(BoundedProcessRunner.run(commandArguments("id"), 5_000))
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {

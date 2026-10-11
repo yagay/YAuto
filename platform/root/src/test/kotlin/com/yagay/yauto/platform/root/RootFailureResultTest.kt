@@ -11,6 +11,18 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class RootFailureResultTest {
+    @Test fun safeSuPathHasNoShellInjectionOrTraversal() {
+        assertTrue(RootShell.isSafeSuBinary("su"))
+        assertTrue(RootShell.isSafeSuBinary("/system/xbin/su"))
+        assertTrue(RootShell.isSafeSuBinary("/data/adb/custom/su"))
+        assertFalse(RootShell.isSafeSuBinary("/data/adb/../su"))
+        assertFalse(RootShell.isSafeSuBinary("su; reboot"))
+        assertFalse(RootShell.isSafeSuBinary("/data/adb/su -c reboot"))
+        assertFalse(RootShell.isSafeSuBinary("/data/adb/tool"))
+        assertEquals(listOf("/data/adb/custom/su", "-c", "id"),
+            RootShell(suBinary = { "/data/adb/custom/su" }).commandArguments("id"))
+    }
+
     @Test fun sharedShellIsRestrictedToReadOnlyCommands() {
         assertTrue(ReadOnlyRootCommand.accepts("id"))
         assertTrue(ReadOnlyRootCommand.accepts("getprop ro.build.version.sdk"))

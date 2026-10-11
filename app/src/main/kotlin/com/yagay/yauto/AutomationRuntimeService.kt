@@ -106,6 +106,11 @@ class AutomationRuntimeService : Service() {
             privilegedFirst = { RuntimeSettingsPreferences.preferRootWhenAvailable(this) },
         )
         registerRuntimeEventSources(this, appGraph, ::registerSource)
+        // The learned OEM raw-key reader must actually be registered. It stays
+        // dormant unless an enabled rule contains a validated hidden EV_KEY map.
+        registerSource("root-learned-keys") {
+            RootHardwareKeyEventSource(appGraph.workspace, appGraph.rootShell)
+        }
         val emitter = RuntimeEventEmitter { event ->
             if (event.typeId == "android.event.hardware_key") {
                 dispatchHardwareKeyEvent(dispatcher, event)

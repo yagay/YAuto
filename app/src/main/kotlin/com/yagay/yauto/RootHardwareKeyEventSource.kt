@@ -18,6 +18,7 @@ import java.util.concurrent.CopyOnWriteArraySet
  */
 class RootHardwareKeyEventSource(
     private val workspace: ObservableWorkspaceRepository,
+    private val rootShell: com.yagay.yauto.platform.root.RootShell,
 ) : AndroidEventSource {
     override val id: String = "root.hardware-key.raw"
 
@@ -119,7 +120,7 @@ class RootHardwareKeyEventSource(
                 while (myGeneration == generation && started.get() && listening) {
                     var child: Process? = null
                     try {
-                        val opened = ProcessBuilder("su", "-c", "getevent -t 2>/dev/null")
+                        val opened = ProcessBuilder(rootShell.commandArguments("getevent -t 2>/dev/null"))
                             .redirectErrorStream(true)
                             .start()
                         child = opened
