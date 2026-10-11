@@ -111,6 +111,13 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     val featureTester = remember(context, graph) { RuntimeFeatureTester(context, graph) }
     val saveLock = remember { Mutex() }
     val featureDescriptors = remember(graph) { graph.features.allDescriptors() }
+    // The picker must not present an old or absent health snapshot as current.
+    // Scan asynchronously on editor entry, never synchronously during list rendering.
+    LaunchedEffect(page) {
+        if (page == AppPage.AUTOMATION || page == AppPage.FLOW) {
+            graph.featureHealth.requestScan(force = true)
+        }
+    }
     val featureHealthSnapshot by graph.featureHealth.snapshot.collectAsState()
     val featureAvailability = remember(featureHealthSnapshot, context) {
         featureHealthSnapshot?.items.orEmpty().associate { item ->
