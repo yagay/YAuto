@@ -57,6 +57,8 @@ jobs:
           python3 tools/audit_picker_duplicate_titles.py --fail-on-unresolved-zh --fail-on-unresolved-en
       - name: Hardware-key capture runtime regression
         run: python3 -m unittest discover -s tools -p 'test_hardware_key_capture_wiring.py'
+      - name: External event source lifecycle and backpressure audit
+        run: python3 -m unittest discover -s tools -p 'test_external_source_lifecycle.py'
       - name: Single backend execution policy audit
         run: python3 -m unittest discover -s tools -p 'test_single_backend_execution_policy.py'
       - name: Root-first routing and backend coverage

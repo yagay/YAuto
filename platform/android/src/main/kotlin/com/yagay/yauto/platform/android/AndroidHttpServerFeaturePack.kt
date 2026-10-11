@@ -19,7 +19,9 @@ import java.net.Socket
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 class AndroidHttpServerFeaturePack : FeaturePack {
@@ -140,7 +142,14 @@ private data class HttpResponse(val status: Int, val contentType: String, val bo
 private object HttpServerRuntime {
     val running = AtomicBoolean(false)
     @Volatile var emitter: RuntimeEventEmitter? = null
-    private val executor = Executors.newCachedThreadPool()
+    // The listener and in-flight webhook responses share a strictly bounded
+    // pool. A cached/unbounded executor could create arbitrarily many threads
+    // while requests are waiting for automation responses.
+    private val executor = ThreadPoolExecutor(
+        2, 12, 30L, TimeUnit.SECONDS,
+        ArrayBlockingQueue<Runnable>(64),
+        ThreadPoolExecutor.AbortPolicy(),
+    )
     private val pending = ConcurrentHashMap<String, CompletableDeferred<HttpResponse>>()
     @Volatile private var server: ServerSocket? = null
     @Volatile private var responseTimeoutMs: Long = 10_000L
@@ -162,7 +171,12 @@ private object HttpServerRuntime {
             executor.execute {
                 while (running.get()) {
                     val client = runCatching { socket.accept() }.getOrNull() ?: break
-                    executor.execute { handle(client) }
+                    try {
+                        executor.execute { handle(client) }
+                    } catch (_: java.util.concurrent.RejectedExecutionException) {
+                        runCatching { writeResponse(client, HttpResponse(503, "text/plain", "Server busy")) }
+                        runCatching { client.close() }
+                    }
                 }
             }
             true
@@ -194,9 +208,15 @@ private object HttpServerRuntime {
                 val method = parts[0].uppercase()
                 val rawTarget = parts[1]
                 val headers = linkedMapOf<String, String>()
+                var headerBytes = 0
                 while (true) {
                     val line = reader.readLine() ?: break
                     if (line.isEmpty()) break
+                    headerBytes += line.length
+                    if (headerBytes > 32_768 || headers.size >= 100) {
+                        writeResponse(client, HttpResponse(431, "text/plain", "Headers too large"))
+                        return
+                    }
                     val sep = line.indexOf(':')
                     if (sep > 0) headers[line.substring(0, sep).trim()] = line.substring(sep + 1).trim()
                 }
@@ -228,11 +248,14 @@ private object HttpServerRuntime {
                         source = "android.http_server",
                     )
                 )
-                val response = runBlocking(Dispatchers.IO) {
-                    withTimeoutOrNull(responseTimeoutMs) { deferred.await() }
-                } ?: HttpResponse(defaultStatus, "text/plain; charset=utf-8", defaultBody)
-                pending.remove(requestId)
-                writeResponse(client, response)
+                try {
+                    val response = runBlocking(Dispatchers.IO) {
+                        withTimeoutOrNull(responseTimeoutMs) { deferred.await() }
+                    } ?: HttpResponse(defaultStatus, "text/plain; charset=utf-8", defaultBody)
+                    writeResponse(client, response)
+                } finally {
+                    pending.remove(requestId, deferred)
+                }
             }
         }
     }

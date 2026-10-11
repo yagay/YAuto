@@ -148,19 +148,22 @@ class AndroidBiometricFeaturePack(private val context: android.content.Context) 
                 BiometricRuntime.remove(token)
                 return@registerAction ActionExecutionResult(false, message = userText("feature.biometric_launch_failed"))
             }
-            val result = withTimeoutOrNull(timeout) { deferred.await() }
-            BiometricRuntime.remove(token)
-            if (result == null) {
-                return@registerAction ActionExecutionResult(false, message = userText("feature.biometric_timeout"))
-            }
-            val output = ConfigValue.ObjectValue(
-                mapOf(
-                    "success" to ConfigValue.BooleanValue(result.success),
-                    "reason" to ConfigValue.StringValue(result.reason),
+            try {
+                val result = withTimeoutOrNull(timeout) { deferred.await() }
+                    ?: return@registerAction ActionExecutionResult(false, message = userText("feature.biometric_timeout"))
+                val output = ConfigValue.ObjectValue(
+                    mapOf(
+                        "success" to ConfigValue.BooleanValue(result.success),
+                        "reason" to ConfigValue.StringValue(result.reason),
+                    )
                 )
-            )
-            feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
-            ActionExecutionResult(result.success, output, if (result.success) null else userText("feature.operation_failed", result.reason))
+                feature.config.string("resultVariable").trim().takeIf { it.isNotBlank() }?.let { ctx.variables.set(it, output) }
+                ActionExecutionResult(result.success, output, if (result.success) null else userText("feature.operation_failed", result.reason))
+            } finally {
+                // Cancellation is not a normal timeout return. Always remove
+                // pending biometric tokens when an automation stops.
+                BiometricRuntime.remove(token)
+            }
         }
     }
 }

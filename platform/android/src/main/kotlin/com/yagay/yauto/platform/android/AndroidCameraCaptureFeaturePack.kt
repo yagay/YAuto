@@ -16,6 +16,7 @@ import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -217,15 +218,20 @@ class AndroidCameraCaptureFeaturePack(context: Context) : FeaturePack {
             withContext(Dispatchers.Main.immediate) { releaseCamera(camera, texture) }
             return false
         }
-        val bytes = withTimeoutOrNull(30_000L) { result.await() }
-        val saved = if (bytes != null) withContext(Dispatchers.IO) {
-            runCatching {
-                File(path).apply { parentFile?.mkdirs() }.writeBytes(bytes)
-                true
-            }.getOrDefault(false)
-        } else false
-        withContext(Dispatchers.Main.immediate) { releaseCamera(camera, texture) }
-        return saved
+        return try {
+            val bytes = withTimeoutOrNull(30_000L) { result.await() }
+            if (bytes != null) withContext(Dispatchers.IO) {
+                runCatching {
+                    File(path).apply { parentFile?.mkdirs() }.writeBytes(bytes)
+                    true
+                }.getOrDefault(false)
+            } else false
+        } finally {
+            // A cancelled capture must release the camera/SurfaceTexture too.
+            withContext(NonCancellable + Dispatchers.Main.immediate) {
+                releaseCamera(camera, texture)
+            }
+        }
     }
 
     private fun releaseCamera(camera: Camera?, texture: SurfaceTexture?) {
@@ -274,13 +280,16 @@ private object CameraVideoRuntime {
             runCatching {
                 val cameraId = findCameraId(front) ?: error("camera unavailable")
                 val nextCamera = Camera.open(cameraId)
+                camera = nextCamera
                 val nextTexture = SurfaceTexture(0)
+                texture = nextTexture
                 nextCamera.setPreviewTexture(nextTexture)
                 nextCamera.startPreview()
                 nextCamera.unlock()
 
                 val profile = bestProfile(cameraId, quality)
-                val nextRecorder = MediaRecorder().apply {
+                recorder = MediaRecorder()
+                val nextRecorder = recorder!!.apply {
                     setCamera(nextCamera)
                     setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
                     setVideoSource(MediaRecorder.VideoSource.CAMERA)
@@ -291,8 +300,6 @@ private object CameraVideoRuntime {
                     prepare()
                     start()
                 }
-                camera = nextCamera
-                texture = nextTexture
                 recorder = nextRecorder
                 this@CameraVideoRuntime.path = path
                 true
