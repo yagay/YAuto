@@ -15,11 +15,16 @@ import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.resume
 
 class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract, DiagnosticCollector {
     private val context = context.applicationContext
     @Volatile private var connected = false
+    private val availabilityMutex = Mutex()
+    @Volatile private var lastProbeMs = 0L
+    @Volatile private var lastProbeSuccess = false
     private val systemEventAuthToken = UUID.randomUUID().toString().also(XposedEventAuth::expect)
     override val id = "lsposed"
     override val priority = 90
@@ -29,8 +34,22 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
 
     override fun supportedOperations() = PrivilegedOperationContract.lsposedSystemUiOperations
 
-    override suspend fun isAvailable(environment: RuntimeEnvironment): Boolean =
-        requestSystem(SystemBridgeProtocol.PING)?.getBoolean("success") == true
+    override suspend fun isAvailable(environment: RuntimeEnvironment): Boolean {
+        val now = System.nanoTime() / 1_000_000L
+        fun cached(at: Long): Boolean =
+            lastProbeMs != 0L && at - lastProbeMs in
+                0L..(if (lastProbeSuccess) 10_000L else 2_000L)
+        if (cached(now)) return lastProbeSuccess
+        return availabilityMutex.withLock {
+            if (cached(System.nanoTime() / 1_000_000L)) lastProbeSuccess
+            else {
+                val ok = requestSystem(SystemBridgeProtocol.PING)?.getBoolean("success") == true
+                lastProbeSuccess = ok
+                lastProbeMs = System.nanoTime() / 1_000_000L
+                ok
+            }
+        }
+    }
 
     suspend fun setSystemEventSubscriptions(eventTypes: Set<String>): Boolean {
         val safe = eventTypes
@@ -130,6 +149,11 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
             request.operationId == SystemOperations.SENSORS_OFF_QUERY && result != null ->
                 ConfigValue.BooleanValue(result.getBoolean("enabled", false))
             else -> ConfigValue.NullValue
+        }
+        if (result == null) {
+            // A process restart invalidates a previously cached Hook handshake.
+            lastProbeMs = 0L
+            lastProbeSuccess = false
         }
         return CapabilityResult(
             success = success,

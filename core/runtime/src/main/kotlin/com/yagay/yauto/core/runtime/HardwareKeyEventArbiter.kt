@@ -22,9 +22,8 @@ class HardwareKeyEventArbiter(
     private data class Entry(
         val signature: String,
         val atMs: Long,
-        var event: RuntimeEvent,
-        var rank: Int,
         val deviceId: Int,
+        val observations: MutableMap<String, RuntimeEvent>,
     )
     private data class Delivered(
         val signature: String,
@@ -52,9 +51,6 @@ class HardwareKeyEventArbiter(
             return
         }
         val now = clock()
-        val identity = signature.substringBefore(":${event.payload.string("action")}:")
-        val owner = synchronized(lock) { pressOwners[identity] }
-        val rank = rank(event.source) - if (owner == event.source) 10 else 0
         val deviceId = event.payload["deviceId"].numberOrNull()?.toInt() ?: -1
         var created: Entry? = null
         synchronized(lock) {
@@ -71,12 +67,13 @@ class HardwareKeyEventArbiter(
                     now >= it.atMs && now - it.atMs < COLLECTION_MS
             }
             if (match != null) {
-                if (rank < match.rank) {
-                    match.event = event
-                    match.rank = rank
-                }
+                // Retain both candidates until delivery. For an UP that is queued
+                // before its DOWN is published, the DOWN's chosen owner must
+                // still win even if another provider has a higher base rank.
+                match.observations.putIfAbsent(event.source, event)
             } else {
-                created = Entry(signature, now, event, rank, deviceId).also(pending::add)
+                created = Entry(signature, now, deviceId, linkedMapOf(event.source to event))
+                    .also(pending::add)
             }
         }
         created?.let { entry ->
@@ -84,16 +81,23 @@ class HardwareKeyEventArbiter(
                 val selected = synchronized(lock) {
                     if (closed || !pending.remove(entry)) null
                     else {
-                        delivered.add(Delivered(entry.signature, clock(), entry.event.source, entry.deviceId))
-                        if (delivered.size > 128) delivered.subList(0, delivered.size - 128).clear()
+                        val first = entry.observations.values.first()
                         val selectedIdentity = entry.signature.substringBefore(
-                            ":${entry.event.payload.string("action")}:"
+                            ":${first.payload.string("action")}:"
                         )
-                        when (entry.event.payload.string("action")) {
-                            "down" -> pressOwners[selectedIdentity] = entry.event.source
+                        val owner = pressOwners[selectedIdentity]
+                        val chosen = entry.observations.values.minWithOrNull(
+                            compareBy<RuntimeEvent> {
+                                if (it.source == owner) -1 else rank(it.source)
+                            }
+                        ) ?: first
+                        delivered.add(Delivered(entry.signature, clock(), chosen.source, entry.deviceId))
+                        if (delivered.size > 128) delivered.subList(0, delivered.size - 128).clear()
+                        when (chosen.payload.string("action")) {
+                            "down" -> pressOwners[selectedIdentity] = chosen.source
                             "up" -> pressOwners.remove(selectedIdentity)
                         }
-                        entry.event
+                        chosen
                     }
                 }
                 if (selected != null) publish(selected)

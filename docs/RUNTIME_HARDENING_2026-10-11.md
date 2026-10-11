@@ -22,3 +22,11 @@ Target branch: `refactor/macrodroid-on-1003-20261008`.
 - When the privileged-first setting is enabled (the default), supported actions select LSPosed, then Root, then Shizuku, then Accessibility.
 - The setting retains its previous storage key to preserve user preferences. Explicit saved backend pins are not overridden.
 - The priority is shared by the broker, feature health and editor permission guidance. LSPosed only advertises operations verified by its system bridge; it does not replace Accessibility tree inspection.
+
+## ShortX-style privilege and physical-key source isolation (2026-10-11)
+
+- Hardware-key learning now activates **one capture source at a time**: LSPosed handshake and release capture, then a bounded Root raw-key stage for OEM-only buttons, then Accessibility for any remaining deadline. The three observers are no longer launched concurrently by the learner. The editor suppresses automation triggers during learning.
+- Runtime key dispatch still accepts Root raw events for explicitly learned OEM keys. Disabling Root globally whenever LSPosed exists would break devices whose special keys never emit Android KeyEvents. Runtime arbitration keeps cross-backend de-duplication and now defers the winning provider selection until delivery: an UP queued while DOWN is pending follows the DOWN owner.
+- LSPosed PING is coalesced via a short positive/negative health cache; a transport timeout invalidates the cache. Root privilege probes retain bounded subprocesses and now cache a successful check for 30 seconds versus a failure for 3 seconds.
+- Fallback applies only when a source cannot capture, and never re-runs a non-idempotent automation action after an ambiguous execution result. Raw EV_KEY identities remain hidden compatibility metadata, not Android KeyCode replacements.
+- Full device validation (KernelSU, LSPosed scopes, OEM keys and accessibility) remains necessary. No persistent Root Shell pool was introduced because cross-command output isolation, process death and cancellation must be tested before replacing bounded single-use command execution.

@@ -70,6 +70,25 @@ class HardwareKeyEventArbiterTest {
         assertEquals(listOf("root.input", "root.input"), published.map { it.source })
     }
 
+    @Test fun releaseQueuedBeforeDownDispatchStillUsesDownOwner() {
+        val arbiter = arbiter()
+        arbiter.accept(event("root.input", action = "down"))
+        arbiter.accept(event("lsposed.system_server", action = "up"))
+        arbiter.accept(event("root.input", action = "up"))
+        flush()
+        assertEquals(listOf("root.input", "root.input"), published.map { it.source })
+    }
+
+    @Test fun releaseQueuedBeforeDownDispatchFollowsLsposedSelection() {
+        val arbiter = arbiter()
+        arbiter.accept(event("root.input", action = "down"))
+        arbiter.accept(event("lsposed.system_server", action = "down"))
+        arbiter.accept(event("root.input", action = "up"))
+        arbiter.accept(event("lsposed.system_server", action = "up"))
+        flush()
+        assertEquals(listOf("lsposed.system_server", "lsposed.system_server"), published.map { it.source })
+    }
+
     @Test fun distinctPhysicalButtonsAndUnknownScanCodesAreNotCollapsed() {
         val arbiter = arbiter()
         arbiter.accept(event("root.input", code = 0, raw = 115))
