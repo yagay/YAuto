@@ -242,18 +242,6 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                                 )
                             }
                             Button(
-                                onClick = { graph.featureHealth.requestScan(force = true) },
-                                enabled = !scanning,
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Text(
-                                    stringResource(
-                                        if (scanning) TextR.string.feature_health_scanning
-                                        else TextR.string.feature_health_scan_now
-                                    )
-                                )
-                            }
-                            OutlinedButton(
                                 onClick = {
                                     graph.featureHealth.requestReadOnlyVerification()
                                     navigateTo(RuntimeSettingsPage.HEALTH)
@@ -262,6 +250,16 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Text(stringResource(TextR.string.feature_health_probe_read_only))
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    graph.featureHealth.requestScan(force = true)
+                                    navigateTo(RuntimeSettingsPage.HEALTH)
+                                },
+                                enabled = !scanning,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(stringResource(TextR.string.feature_health_scan_now))
                             }
                         }
                     }
