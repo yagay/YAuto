@@ -30,6 +30,18 @@ class ShortXObserverSubscriptionTest {
         assertEquals(2, selected.size)
     }
 
+    @Test fun appOpsStartAndFinishShareOneSubscribedMacroDroidTrigger() {
+        val selected = ShortXCompatHookCatalog.subscribedObservers(
+            setOf("android.event.app_ops_operation")
+        )
+        assertEquals(setOf("app-ops-start", "app-ops-finish"), selected.map { it.id }.toSet())
+        assertTrue(selected.all { it.eventType == "android.event.app_ops_operation" })
+        assertTrue(selected.all { it.payloadKind == ShortXHookPayloadKind.APP_OPS })
+        assertTrue(ShortXCompatHookCatalog.subscribedObservers(emptySet()).none {
+            it.payloadKind == ShortXHookPayloadKind.APP_OPS
+        })
+    }
+
     @Test fun coreRuntimeHooksHaveExactEventSubscriptions() {
         assertEquals(
             setOf(ShortXCoreRuntimeHook.BACK_NAVIGATION, ShortXCoreRuntimeHook.ASSISTANT),
