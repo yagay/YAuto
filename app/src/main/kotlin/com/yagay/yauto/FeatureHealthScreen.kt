@@ -325,7 +325,8 @@ private fun featureHealthDiagnosticJson(
         items.put(
             JSONObject()
                 .put("featureId", item.featureId)
-                .put("title", item.title)
+                .put("title", localizedTitles[item.featureId] ?: item.title)
+                .put("sourceTitle", item.title)
                 .put("localizedTitle", localizedTitles[item.featureId] ?: item.title)
                 .put("kind", item.kind.name)
                 .put("status", item.status.name)
