@@ -56,6 +56,7 @@ import com.yagay.yauto.ui.editor.LocalFeaturePermissionGateway
 import com.yagay.yauto.ui.editor.LocalFeatureTestGateway
 import com.yagay.yauto.ui.editor.LocalHardwareKeyCatalogLoader
 import com.yagay.yauto.ui.editor.LocalHardwareKeyCapture
+import com.yagay.yauto.ui.editor.LocalLiveSystemFieldPicker
 import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
 import com.yagay.yauto.platform.xposed.XposedSystemEventRuntimeBridge
 import com.yagay.yauto.core.registry.HardwareKeyCaptureResult
@@ -109,6 +110,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     val scope = rememberCoroutineScope()
     val permissionGateway = rememberFeaturePermissionGateway(graph)
     val featureTester = remember(context, graph) { RuntimeFeatureTester(context, graph) }
+    val liveSystemPicker = remember(context, graph) { liveAndroidFieldPicker(context, graph.quickSettingsTiles) }
     val saveLock = remember { Mutex() }
     val featureDescriptors = remember(graph) { graph.features.allDescriptors() }
     RefreshFeatureHealthOnEditorOpen(
@@ -357,6 +359,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
             LocalFeatureTestGateway provides featureTester,
             LocalHardwareKeyCatalogLoader provides { graph.hardwareKeys.load() },
             LocalHardwareKeyCapture provides { timeoutMs -> captureHardwareKey(graph, timeoutMs) },
+            LocalLiveSystemFieldPicker provides liveSystemPicker,
         ) {
             AutomationEditorScreen(
             flows = workspace.flows,
@@ -387,6 +390,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
             LocalFeatureTestGateway provides featureTester,
             LocalHardwareKeyCatalogLoader provides { graph.hardwareKeys.load() },
             LocalHardwareKeyCapture provides { timeoutMs -> captureHardwareKey(graph, timeoutMs) },
+            LocalLiveSystemFieldPicker provides liveSystemPicker,
         ) {
             FlowEditorScreen(
             initial = editingFlow,
