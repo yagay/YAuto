@@ -54,6 +54,9 @@ def inventory() -> dict:
     lifecycle_events = LIFECYCLE_EVENTS.read_text(encoding="utf-8")
     hooks = dict(re.findall(r'id = "([^"]+)"[\s\S]*?eventType = "([^"]+)"', hook_source.split("val systemServerObservers:", 1)[1].split("val behaviorHooks:", 1)[0]))
     declared_hooks = set(re.findall(r'event\(registry, "([^"]+)"', hook_events))
+    # Parameterized MacroDroid-style hooks use registerEvent(FeatureDescriptor(...))
+    # instead of the generic event() helper; both are real picker registrations.
+    declared_hooks.update(re.findall(r'FeatureId\("(android\.event\.[^"]+)"\)', hook_events))
     declared_hooks.update(re.findall(r'FeatureId\("(android\.event\.[^"]+)"\)', lifecycle_events))
     unknown_hooks = sorted(set(hooks.values()) - declared_hooks)
     rows = []
