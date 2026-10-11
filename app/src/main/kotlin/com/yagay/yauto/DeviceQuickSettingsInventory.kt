@@ -1,6 +1,6 @@
 package com.yagay.yauto
 
- import android.content.ComponentName
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -46,7 +46,15 @@ internal class DeviceQuickSettingsInventory(
             throw cancelled
         } catch (_: Exception) { null }
 
-        val saved = if (live == null) {
+        // Check authorization before calling su. Loading a picker must not run
+        // a privileged command merely because Root happens to be installed.
+        val rootGranted = try {
+            rootShell.isAvailable()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) { false }
+
+        val saved = if (live == null && rootGranted) {
             val output = rootShell.run("settings get secure sysui_qs_tiles", 4_000)
             if (!output.timedOut && output.exitCode == 0) {
                 output.stdout.trim().takeIf { it.isNotBlank() && it != "null" }
@@ -54,9 +62,20 @@ internal class DeviceQuickSettingsInventory(
             } else null
         } else null
         val panelSpecs = live ?: saved
+        // Android's app-visibility rules and disabled packages may hide valid
+        // third-party TileServices from an ordinary PackageManager query.
+        // Root enumerates service components only; it never toggles those tiles.
+        val rootComponents = if (rootGranted) {
+            val cmd = "cmd package query-services --components --user current -a " + TileService.ACTION_QS_TILE
+            val output = rootShell.run(cmd, 6_000)
+            if (output.exitCode == 0 && !output.timedOut) parseRootTileComponents(output.stdout)
+            else emptyList()
+        } else emptyList()
+
         val source = when {
             live != null -> "lsposed_systemui"
             saved != null -> "root_saved_config"
+            rootComponents.isNotEmpty() -> "root_service_inventory"
             else -> "installed_services_only"
         }
 
@@ -80,13 +99,36 @@ internal class DeviceQuickSettingsInventory(
             )
         }.distinctBy { it.component }
 
+        val rootInstalled = rootComponents.mapNotNull { component ->
+            // When metadata is visible, reject services lacking the required
+            // binding permission. Root-enumerated components can still be shown
+            // if Android hides their package metadata from the YAuto UID.
+            val service = runCatching {
+                pm.getServiceInfo(
+                    component,
+                    PackageManager.GET_META_DATA or PackageManager.MATCH_DISABLED_COMPONENTS,
+                )
+            }.getOrNull()
+            if (service != null &&
+                service.permission != "android.permission.BIND_QUICK_SETTINGS_TILE"
+            ) return@mapNotNull null
+            val label = service?.let { runCatching { it.loadLabel(pm)?.toString() }.getOrNull() }
+                ?.takeIf { it.isNotBlank() } ?: component.shortClassName
+            DeviceTileEntry(
+                spec = "custom(" + component.flattenToShortString() + ")",
+                label = label,
+                component = component.flattenToString(),
+            )
+        }
+        val allInstalled = (installed + rootInstalled).distinctBy { it.component }
+
         // Match component identity, not literal short/full class spellings.
         fun parsedComponent(spec: String): String? =
             if (spec.startsWith("custom(") && spec.endsWith(")")) {
                 ComponentName.unflattenFromString(spec.substring(7, spec.length - 1))
                     ?.flattenToString()
             } else null
-        val installedByComponent = installed.mapNotNull { entry ->
+        val installedByComponent = allInstalled.mapNotNull { entry ->
             entry.component?.let { it to entry }
         }.toMap()
         val listed = panelSpecs.orEmpty().mapNotNull { spec ->
@@ -103,9 +145,24 @@ internal class DeviceQuickSettingsInventory(
             )
         }
         val listedComponents = listed.mapNotNull(DeviceTileEntry::component).toSet()
-        val extras = installed.filter { it.component !in listedComponents }
+        val extras = allInstalled.filter { it.component !in listedComponents }
             .map { it.copy(isInPanel = panelSpecs?.let { false }) }
             .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.label })
         DeviceTileInventory(source, (listed + extras).distinctBy { it.spec }.take(200))
+    }
+
+    private fun parseRootTileComponents(stdout: String): List<ComponentName> =
+        stdout.lineSequence()
+            .map(String::trim)
+            .filter { ROOT_COMPONENT.matches(it) }
+            .mapNotNull(ComponentName::unflattenFromString)
+            .distinctBy(ComponentName::flattenToString)
+            .take(200)
+            .toList()
+
+    private companion object {
+        // Accept only bare components from 'query-services --components'.
+        // Ignore errors, headings and shell diagnostics; never execute output.
+        val ROOT_COMPONENT = Regex("[A-Za-z_][A-Za-z0-9_.]*/[A-Za-z0-9_.$]+")
     }
 }
