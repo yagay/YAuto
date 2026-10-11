@@ -52,7 +52,7 @@ class HardwareKeyEventArbiter(
             return
         }
         val now = clock()
-        val identity = signature.substringBefore(":${event.payload.string(\"action\")}:")
+        val identity = signature.substringBefore(":${event.payload.string("action")}:")
         val owner = synchronized(lock) { pressOwners[identity] }
         val rank = rank(event.source) - if (owner == event.source) 10 else 0
         val deviceId = event.payload["deviceId"].numberOrNull()?.toInt() ?: -1
@@ -87,7 +87,7 @@ class HardwareKeyEventArbiter(
                         delivered.add(Delivered(entry.signature, clock(), entry.event.source, entry.deviceId))
                         if (delivered.size > 128) delivered.subList(0, delivered.size - 128).clear()
                         val selectedIdentity = entry.signature.substringBefore(
-                            ":${entry.event.payload.string(\"action\")}:"
+                            ":${entry.event.payload.string("action")}:"
                         )
                         when (entry.event.payload.string("action")) {
                             "down" -> pressOwners[selectedIdentity] = entry.event.source
