@@ -1,6 +1,7 @@
 package com.yagay.yauto
 
 import android.content.Context
+import android.app.NotificationManager
 import android.service.quicksettings.Tile
 import com.yagay.yauto.platform.android.NotificationControlBridge
 import com.yagay.yauto.platform.android.QuickSettingsTileController
@@ -34,16 +35,37 @@ internal fun liveAndroidFieldPicker(
             }
         } else if (descriptorId.contains("notification", ignoreCase = true)) {
             val controller = NotificationControlBridge.current()
-                ?: error("Notification listener is not connected")
             val selectedPackage = values["package"].orEmpty().trim()
             val pm = context.packageManager
-            val active = controller.snapshots()
+            val isOwnedChannel = descriptorId.contains("notification.channel", ignoreCase = true)
+            val supportsOwnChannel = fieldKey in setOf("channelId", "groupId")
+            // Creating/managing YAuto's own channels never requires a connected
+            // notification listener or inventing other apps' channel catalogs.
+            val owned = if (isOwnedChannel && supportsOwnChannel) {
+                val manager = context.getSystemService(NotificationManager::class.java)
+                when (fieldKey) {
+                    "channelId" -> manager.notificationChannels.map {
+                        SystemPickerOption(it.id, it.name?.toString().orEmpty().ifBlank { it.id }, it.id)
+                    }
+                    else -> manager.notificationChannelGroups.map {
+                        SystemPickerOption(it.id, it.name?.toString().orEmpty().ifBlank { it.id }, it.id)
+                    }
+                }
+            } else emptyList()
+            if (controller == null && !isOwnedChannel) {
+                error("Notification listener is not connected")
+            }
+            val active = controller?.snapshots().orEmpty()
                 .asSequence()
                 .filter { selectedPackage.isEmpty() || it.packageName == selectedPackage }
                 .sortedByDescending { it.postTimeEpochMs }
-                .take(200)
-                .toList()
-            buildList {
+                .take(200).toList()
+            val previous = controller?.history().orEmpty()
+                .asSequence()
+                .filter { selectedPackage.isEmpty() || it.packageName == selectedPackage }
+                .sortedByDescending { it.removedAtEpochMs }
+                .take(200).toList()
+            (owned + buildList {
                 active.forEach { notification ->
                     val appName = runCatching {
                         pm.getApplicationLabel(pm.getApplicationInfo(notification.packageName, 0)).toString()
@@ -57,10 +79,11 @@ internal fun liveAndroidFieldPicker(
                     val related = mapOf("package" to notification.packageName)
                     fun addValue(value: String, readable: String = value, indexDetail: String = origin) {
                         if (value.isNotBlank()) add(SystemPickerOption(
-                            value, readable.take(120), indexDetail.take(250), related
+                            value, readable.take(120), indexDetail.take(250), related,
                         ))
                     }
                     when (fieldKey) {
+                        "package" -> addValue(notification.packageName, appName)
                         "channelId" -> addValue(notification.channelId)
                         "groupKey" -> addValue(notification.groupKey)
                         "titleContains" -> addValue(notification.title)
@@ -72,12 +95,34 @@ internal fun liveAndroidFieldPicker(
                         }
                         "actionIndex" -> notification.actionTitles.forEachIndexed { index, title ->
                             addValue(index.toString(), context.getString(
-                                TextR.string.live_picker_notification_action, index + 1, title
+                                TextR.string.live_picker_notification_action, index + 1, title,
                             ))
                         }
                     }
                 }
-            }.distinctBy { it.value }.take(120)
+                // NotificationListener snapshots only cover currently active items.
+                // History is a fallback solely for text/filter metadata; never
+                // offer nonexistent action buttons from dismissed notifications.
+                previous.forEach { item ->
+                    val origin = context.getString(
+                        TextR.string.live_picker_notification_history_origin,
+                        item.packageName, item.title.take(60),
+                    )
+                    val related = mapOf("package" to item.packageName)
+                    fun historical(value: String, label: String = value) {
+                        if (value.isNotBlank()) add(SystemPickerOption(
+                            value, label.take(120), origin.take(250), related,
+                        ))
+                    }
+                    when (fieldKey) {
+                        "package" -> historical(item.packageName)
+                        "channelId" -> historical(item.channelId)
+                        "groupKey" -> historical(item.groupKey)
+                        "titleContains" -> historical(item.title)
+                        "textContains" -> historical(item.text)
+                    }
+                }
+            }).distinctBy { it.value }.take(200)
         } else emptyList()
     }
 }
