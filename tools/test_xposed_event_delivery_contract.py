@@ -64,8 +64,8 @@ class XposedEventDeliveryContractTest(unittest.TestCase):
         self.assertIn("delivery.rejected", s)
         self.assertIn("delivery.accepted", s)
         self.assertIn("delivery.forwarded", s)
-        self.assertIn("No runtime listener handoff has been observed yet", s)
-        self.assertIn("Connection, installed Hooks, and broadcast acceptance", s)
+        self.assertIn('userText("diagnostics.xposed.transport_title")', s)
+        self.assertIn('"diagnostics.xposed.transport_message"', s)
 
     def test_diagnostics_includes_a_real_authenticated_system_server_round_trip(self):
         protocol = (XPOSED / "SystemBridgeProtocol.kt").read_text(encoding="utf-8")
@@ -83,7 +83,15 @@ class XposedEventDeliveryContractTest(unittest.TestCase):
         self.assertIn("transportProbeMutex.withLock", backend)
         self.assertIn("XposedSystemEventRuntimeBridge.awaitTransportProbe(nonce", backend)
         self.assertIn("probeSystemEventDelivery()", backend)
-        self.assertIn("Authenticated system_server event round trip:", backend)
+        self.assertIn("diagnostics.xposed.transport_message", backend)
+        english = source("ui/design/src/main/res/values/lsposed_transport_strings.xml")
+        chinese = source("ui/design/src/main/res/values-zh-rCN/lsposed_transport_strings.xml")
+        for field in ("runtime_diagnostics_xposed_transport_title",
+                      "runtime_diagnostics_xposed_transport_pass",
+                      "runtime_diagnostics_xposed_transport_fail",
+                      "runtime_diagnostics_xposed_transport_message"):
+            self.assertIn(field, english)
+            self.assertIn(field, chinese)
         self.assertIn("expected.nonce ==", bridge)
         self.assertIn("transportProbe.compareAndSet(expected, null)", bridge)
         self.assertIn("XposedEventTransportHealth.onForwarded(type)", bridge)
