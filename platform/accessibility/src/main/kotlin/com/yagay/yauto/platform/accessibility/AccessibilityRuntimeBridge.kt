@@ -1,9 +1,11 @@
 package com.yagay.yauto.platform.accessibility
 
 import android.graphics.Bitmap
+import android.os.SystemClock
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.delay
 
 data class AccessibilityWindowSnapshot(
     val packageName: String,
@@ -64,6 +66,10 @@ data class AccessibilityNodeSnapshot(
 /** Process-local bridge carrying foreground identity, hardware-key metadata and UI event snapshots. */
 object AccessibilityRuntimeBridge {
     private val current = AtomicReference<AccessibilityWindowSnapshot?>(null)
+    /** Real target-window activity, not YAuto's own MessageQueue idleness. */
+    private data class UiActivity(val packageName: String, val updatedElapsedMs: Long)
+    private val lastUiActivity = AtomicReference<UiActivity?>(null)
+
     @Volatile private var listener: ((previous: AccessibilityWindowSnapshot?, current: AccessibilityWindowSnapshot) -> Unit)? = null
     @Volatile private var keyListener: ((AccessibilityKeySnapshot) -> Unit)? = null
     @Volatile private var uiEventListener: ((AccessibilityUiEventSnapshot) -> Unit)? = null
@@ -74,6 +80,42 @@ object AccessibilityRuntimeBridge {
     private val subscribedUiRuntimeEvents = AtomicReference<Set<String>>(emptySet())
 
     fun currentWindow(): AccessibilityWindowSnapshot? = current.get()
+
+    /** Updated before allocating rich UI snapshots, even without subscribed UI event rules. */
+    internal fun recordUiActivity(packageName: String?) {
+        val pkg = packageName?.trim().orEmpty()
+        if (pkg.isNotEmpty()) lastUiActivity.set(UiActivity(pkg, SystemClock.elapsedRealtime()))
+    }
+
+    /**
+     * Wait for a real foreground Accessibility window to remain unchanged for
+     * quietMs. A missing service/window, foreground switch, or timeout returns
+     * false; never treat idle YAuto main Looper as remote app stability.
+     */
+    suspend fun awaitUiIdle(packageName: String, quietMs: Long, timeoutMs: Long): Boolean {
+        if (YAutoAccessibilityService.current == null) return false
+        val quiet = quietMs.coerceIn(100L, 10_000L)
+        val total = timeoutMs.coerceIn(quiet, 60_000L)
+        val started = SystemClock.elapsedRealtime()
+        val deadline = started + total
+        while (true) {
+            if (YAutoAccessibilityService.current == null) return false
+            val currentPkg = current.get()?.packageName.orEmpty()
+            if (currentPkg.isNotEmpty() && currentPkg != "com.yagay.yauto" &&
+                (packageName.isBlank() || currentPkg == packageName)) {
+                val last = lastUiActivity.get()
+                val lastChanged = if (last?.packageName == currentPkg)
+                    maxOf(started, last.updatedElapsedMs) else started
+                val now = SystemClock.elapsedRealtime()
+                if (now - lastChanged >= quiet) return true
+            }
+            val remaining = deadline - SystemClock.elapsedRealtime()
+            if (remaining <= 0L) return false
+            delay(minOf(remaining, 100L))
+        }
+    }
+
+
 
     suspend fun awaitNextClick(timeoutMs: Long): AccessibilityUiEventSnapshot? {
         val deferred = CompletableDeferred<AccessibilityUiEventSnapshot>()
@@ -205,6 +247,7 @@ object AccessibilityRuntimeBridge {
 
     internal fun clearIfServiceStops() {
         current.set(null)
+        lastUiActivity.set(null)
         fingerprintGestureAvailable = false
         nextClick.getAndSet(null)?.cancel()
         nextKey.getAndSet(null)?.cancel()
