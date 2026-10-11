@@ -62,7 +62,9 @@ class FeatureMethodExplanationsTests(unittest.TestCase):
 
     def test_feature_picker_does_not_show_no_root_as_permission(self):
         catalog = (GENERIC.parent / "FeaturePickerRows.kt").read_text(encoding="utf-8")
-        self.assertIn("permissionsForFeature(descriptor, null)", catalog)
+        self.assertIn("permissionsForFeature(", catalog)
+        self.assertIn("LocalFeaturePermissionGateway.current", catalog)
+        self.assertIn("gateway?.availability(permission)", catalog)
         self.assertNotIn("implementation_group_no_root", catalog)
         self.assertNotIn("implementation_group_root_required", catalog)
         self.assertIn("if (requirements.isEmpty()) return \"\"", catalog)
