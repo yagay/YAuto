@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -37,24 +38,27 @@ fun YAutoSection(
     trailing: @Composable RowScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val vivid = YAutoAppearanceSettings.colorful(LocalContext.current)
+    val sectionColor = if (vivid) color else MaterialTheme.colorScheme.surfaceVariant
+    val sectionTextColor = if (vivid) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Row(
-            Modifier.fillMaxWidth().background(color).padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            Modifier.fillMaxWidth().background(sectionColor).padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
                     count?.let { stringResource(R.string.macro_section_title_count_format, title, it) } ?: title,
-                    color = Color.White,
+                    color = sectionTextColor,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
                 subtitle?.takeIf { it.isNotBlank() }?.let {
-                    Text(it, color = Color.White.copy(alpha = .85f), style = MaterialTheme.typography.labelSmall)
+                    Text(it, color = sectionTextColor.copy(alpha = .85f), style = MaterialTheme.typography.labelSmall)
                 }
             }
             trailing()
@@ -141,10 +145,13 @@ fun YAutoHomeTile(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    val vivid = YAutoAppearanceSettings.colorful(LocalContext.current)
+    val tileColor = if (vivid) color else MaterialTheme.colorScheme.surfaceVariant
+    val tileForeground = if (vivid) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
     Card(
         modifier = modifier.aspectRatio(1.08f).clickable(onClick = onClick),
         shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = color),
+        colors = CardDefaults.cardColors(containerColor = tileColor),
     ) {
         Column(
             Modifier.fillMaxSize().padding(12.dp),
@@ -153,12 +160,12 @@ fun YAutoHomeTile(
             Icon(
                 painter = androidx.compose.ui.res.painterResource(R.drawable.ic_add),
                 contentDescription = stringResource(R.string.icon_add),
-                tint = Color.White.copy(alpha = .9f),
+                tint = tileForeground.copy(alpha = .9f),
             )
             Column {
-                Text(title, color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleSmall)
+                Text(title, color = tileForeground, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleSmall)
                 subtitle?.takeIf { it.isNotBlank() }?.let {
-                    Text(it, color = Color.White.copy(alpha = .82f), style = MaterialTheme.typography.labelSmall)
+                    Text(it, color = tileForeground.copy(alpha = .82f), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }

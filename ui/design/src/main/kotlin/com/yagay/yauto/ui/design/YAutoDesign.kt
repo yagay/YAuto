@@ -3,12 +3,26 @@ package com.yagay.yauto.ui.design
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.platform.LocalContext
+import android.os.Build
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun YAutoTheme(content: @Composable () -> Unit) {
-    MaterialTheme(content = content)
+    val context = LocalContext.current
+    // Observe the same revision as settings: no activity recreation needed.
+    YAutoAppearanceSettings.revision
+    val dark = when (YAutoAppearanceSettings.mode(context)) {
+        "dark" -> true
+        "light" -> false
+        else -> isSystemInDarkTheme()
+    }
+    val colors = if (Build.VERSION.SDK_INT >= 31 && YAutoAppearanceSettings.dynamic(context)) {
+        if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    } else if (dark) darkColorScheme() else lightColorScheme()
+    MaterialTheme(colorScheme = colors, content = content)
 }
 
 @Composable
