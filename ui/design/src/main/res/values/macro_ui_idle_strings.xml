@@ -3,6 +3,6 @@
     <string name="feature_accessibility_ui_wait_for_idle_title">Wait for UI to become idle</string>
     <string name="feature_accessibility_ui_wait_for_idle_description">Wait for a foreground application's window and content to remain unchanged for the configured quiet period.</string>
     <string name="feature_accessibility_ui_wait_for_idle_field_package">App / package</string>
-    <string name="feature_accessibility_ui_wait_for_idle_field_quiet_ms">Quiet period (ms)</string>
-    <string name="feature_accessibility_ui_wait_for_idle_field_timeout_ms">Timeout (ms)</string>
+    <string name="feature_accessibility_ui_wait_for_idle_field_quietms">Quiet period (ms)</string>
+    <string name="feature_accessibility_ui_wait_for_idle_field_timeoutms">Timeout (ms)</string>
 </resources>
