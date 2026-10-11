@@ -25,7 +25,8 @@ internal fun registerRuntimeEventSources(
         registerSource("audio-device") { AudioDeviceEventSource(context) }
         registerSource("audio-focus") { AudioFocusEventSource() }
         registerSource("bluetooth-device") { BluetoothDeviceEventSource(context) }
-        registerSource("communication") { CommunicationEventSource(context) }
+        registerSource("communication") { CommunicationEventSource(context,
+            smsEnabled = { RuntimeSettingsPreferences.smsEngineEnabled(context) }) }
         registerSource("sim-subscriptions") { SubscriptionChangeEventSource(context) }
         registerSource("configured-weather") { WorkspaceGatedEventSource(appGraph.workspace, setOf("android.event.weather_changed")) { ConfiguredWeatherEventSource(context, appGraph.workspace) } }
         registerSource("midi-device") { MidiDeviceEventSource(context) }
@@ -48,7 +49,7 @@ internal fun registerRuntimeEventSources(
         }
         registerSource("screenshot-content-ocr") {
             WorkspaceGatedEventSource(appGraph.workspace, setOf("android.event.screenshot_content")) {
-                ScreenshotContentOcrEventSource(appGraph.workspace)
+                ScreenshotContentOcrEventSource(appGraph.workspace, context)
             }
         }
         registerSource("media-store") { MediaStoreEventSource(context) }

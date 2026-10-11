@@ -36,6 +36,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  */
 class ScreenshotContentOcrEventSource(
     private val workspace: WorkspaceRepository,
+    private val context: android.content.Context,
 ) : AndroidEventSource {
     override val id: String = "android.screenshot.content.ocr"
     private val running = AtomicBoolean(false)
@@ -51,7 +52,8 @@ class ScreenshotContentOcrEventSource(
             try {
                 while (isActive) {
                     try {
-                        val watches = screenshotWatches(workspace)
+                        val watches = if (RuntimeSettingsPreferences.ocrEngineEnabled(context))
+                            screenshotWatches(workspace) else emptySet()
                         if (watches.isEmpty()) {
                             previouslyVisible = emptySet()
                         } else {

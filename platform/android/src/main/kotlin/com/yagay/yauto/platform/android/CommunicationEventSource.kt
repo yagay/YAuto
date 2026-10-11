@@ -15,7 +15,10 @@ import com.yagay.yauto.core.model.RuntimeEvent
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Optional communication events. Receivers remain registered, but protected payloads are emitted only when permission allows. */
-class CommunicationEventSource(context: Context) : AndroidEventSource {
+class CommunicationEventSource(
+    context: Context,
+    private val smsEnabled: () -> Boolean = { true },
+) : AndroidEventSource {
     override val id: String = "android.communication.events"
     private val context = context.applicationContext
     private val started = AtomicBoolean(false)
@@ -54,7 +57,7 @@ class CommunicationEventSource(context: Context) : AndroidEventSource {
     }
 
     private fun emitSms(intent: Intent) {
-        if (!hasPermission(Manifest.permission.RECEIVE_SMS)) return
+        if (!smsEnabled() || !hasPermission(Manifest.permission.RECEIVE_SMS)) return
         val messages = runCatching { Telephony.Sms.Intents.getMessagesFromIntent(intent).toList() }.getOrDefault(emptyList())
         if (messages.isEmpty()) return
         val address = messages.firstNotNullOfOrNull { message -> message.originatingAddress?.takeIf(String::isNotBlank) }.orEmpty()

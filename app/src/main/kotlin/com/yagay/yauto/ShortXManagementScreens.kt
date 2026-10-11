@@ -26,6 +26,9 @@ internal fun ShortXEngineSettingsScreen(context: Context, graph: AppGraph, onLib
     var rootShared by remember { mutableStateOf(RuntimeSettingsPreferences.sharedRootQueries(context)) }
     var emergency by remember { mutableStateOf(RuntimeSettingsPreferences.emergencyPowerKey(context)) }
     var keyPrompt by remember { mutableStateOf(RuntimeSettingsPreferences.keyEventPrompt(context)) }
+    var ocrEnabled by remember { mutableStateOf(RuntimeSettingsPreferences.ocrEngineEnabled(context)) }
+    var smsEnabled by remember { mutableStateOf(RuntimeSettingsPreferences.smsEngineEnabled(context)) }
+    var qsOpt by remember { mutableStateOf(RuntimeSettingsPreferences.qsClickOptimization(context)) }
     var executable by remember { mutableStateOf(RuntimeSettingsPreferences.suBinary(context)) }
     var feedback by remember { mutableStateOf<String?>(null) }
     var runtimeEnabled by remember {
@@ -99,6 +102,36 @@ internal fun ShortXEngineSettingsScreen(context: Context, graph: AppGraph, onLib
                 RuntimeSettingsPreferences.setKeyEventPrompt(context, value)
                 keyPrompt = value
                 notifyService()
+            }
+        }
+        item {
+            SettingsToggleCard(
+                stringResource(TextR.string.sx_ocr_engine),
+                stringResource(TextR.string.sx_ocr_engine_hint),
+                ocrEnabled,
+            ) { value ->
+                RuntimeSettingsPreferences.setOcrEngineEnabled(context, value)
+                ocrEnabled = value
+            }
+        }
+        item {
+            SettingsToggleCard(
+                stringResource(TextR.string.sx_sms_engine),
+                stringResource(TextR.string.sx_sms_engine_hint),
+                smsEnabled,
+            ) { value ->
+                RuntimeSettingsPreferences.setSmsEngineEnabled(context, value)
+                smsEnabled = value
+            }
+        }
+        item {
+            SettingsToggleCard(
+                stringResource(TextR.string.sx_qs_opt),
+                stringResource(TextR.string.sx_qs_opt_hint),
+                qsOpt,
+            ) { value ->
+                RuntimeSettingsPreferences.setQsClickOptimization(context, value)
+                qsOpt = value
             }
         }
         item {

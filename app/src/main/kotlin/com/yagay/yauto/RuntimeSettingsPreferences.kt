@@ -18,6 +18,9 @@ object RuntimeSettingsPreferences {
     private const val KEY_EMERGENCY_KEY = "emergency_power_key"
     private const val KEY_KEY_PROMPT = "key_event_prompt"
     private const val KEY_EMERGENCY_LATCH = "emergency_latched"
+    private const val KEY_OCR_ENGINE = "screenshot_ocr_engine"
+    private const val KEY_SMS_ENGINE = "sms_engine"
+    private const val KEY_QS_OPT = "qs_tile_debounce"
     val supportedLogSizesMb = listOf(1, 2, 5, 10)
 
     private fun prefs(context: Context) =
@@ -58,6 +61,18 @@ object RuntimeSettingsPreferences {
         // commit(): safety latch must reach disk before dispatch resumes.
         prefs(context).edit().putBoolean(KEY_EMERGENCY_LATCH, enabled).commit()
     }
+
+    fun ocrEngineEnabled(context: Context): Boolean = prefs(context).getBoolean(KEY_OCR_ENGINE, true)
+    fun setOcrEngineEnabled(context: Context, enabled: Boolean) =
+        prefs(context).edit().putBoolean(KEY_OCR_ENGINE, enabled).apply()
+
+    fun smsEngineEnabled(context: Context): Boolean = prefs(context).getBoolean(KEY_SMS_ENGINE, true)
+    fun setSmsEngineEnabled(context: Context, enabled: Boolean) =
+        prefs(context).edit().putBoolean(KEY_SMS_ENGINE, enabled).apply()
+
+    fun qsClickOptimization(context: Context): Boolean = prefs(context).getBoolean(KEY_QS_OPT, false)
+    fun setQsClickOptimization(context: Context, enabled: Boolean) =
+        prefs(context).edit().putBoolean(KEY_QS_OPT, enabled).apply()
 
     fun startAtBoot(context: Context): Boolean = prefs(context).getBoolean(KEY_START_AT_BOOT, true)
     fun setStartAtBoot(context: Context, enabled: Boolean) {
