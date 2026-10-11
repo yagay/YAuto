@@ -406,27 +406,18 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                 System.currentTimeMillis(),
                 severity = if (delivery.rejected > 0 || !probeResult)
                     DiagnosticSeverity.WARNING else DiagnosticSeverity.INFO,
-                title = "LSPosed event transport (since app start)",
-                message = buildString {
-                    append("Authenticated system_server event round trip: " +
-                        "${if (probeResult) "PASS" else "FAIL"}. ")
-                    append("Authenticated broadcasts accepted by receiver: ${delivery.accepted}; ")
-                    append("forwarded to runtime listener: ${delivery.forwarded}; ")
-                    append("rejected: ${delivery.rejected}. ")
-                    if (delivery.lastAcceptedType.isNotBlank()) {
-                        append("Last accepted: ${delivery.lastAcceptedType}. ")
-                    }
-                    if (delivery.lastForwardedType.isNotBlank()) {
-                        append("Last forwarded: ${delivery.lastForwardedType}. ")
-                    } else {
-                        append("No runtime listener handoff has been observed yet. ")
-                    }
-                    if (delivery.lastRejectedReason.isNotBlank()) {
-                        append("Last rejection: ${delivery.lastRejectedReason}. ")
-                    }
-                    append("Connection, installed Hooks, and broadcast acceptance " +
-                        "alone cannot prove a trigger executed; test that feature.")
-                },
+                title = userText("diagnostics.xposed.transport_title"),
+                message = userText(
+                    "diagnostics.xposed.transport_message",
+                    userText(if (probeResult) "diagnostics.xposed.transport_pass"
+                        else "diagnostics.xposed.transport_fail"),
+                    delivery.accepted,
+                    delivery.forwarded,
+                    delivery.rejected,
+                    delivery.lastAcceptedType.ifBlank { "-" },
+                    delivery.lastForwardedType.ifBlank { "-" },
+                    delivery.lastRejectedReason.ifBlank { "-" },
+                ),
                 context = context,
             ),
         )
