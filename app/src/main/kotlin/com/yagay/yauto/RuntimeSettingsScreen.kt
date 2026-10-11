@@ -37,7 +37,7 @@ import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.launch
 
 private enum class RuntimeSettingsPage {
-    OVERVIEW, PERMISSIONS, BACKENDS, RUNTIME, EDITOR, LOGGING, ENGINE, HEALTH
+    OVERVIEW, PERMISSIONS, BACKENDS, RUNTIME, EDITOR, LOGGING, ENGINE, LIBRARIES, HEALTH
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +56,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
         mutableStateOf(RuntimeSettingsPreferences.preferRootWhenAvailable(context))
     }
     var shizukuMessage by remember(notChecked) { mutableStateOf(notChecked) }
+    var rootDetected by remember { mutableStateOf<Boolean?>(null) }
     var lsposedMessage by remember(notChecked) { mutableStateOf(notChecked) }
     var lsposedScopeMessage by remember { mutableStateOf<String?>(null) }
     var navigation by rememberPageNavigation(RuntimeSettingsPage.OVERVIEW)
@@ -119,8 +120,10 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     }
     val currentLanguageTag = remember(refresh) { AppLanguageManager.currentTag(context) }
 
-    LaunchedEffect(page) {
+    LaunchedEffect(page, refresh) {
         if (page == RuntimeSettingsPage.BACKENDS) {
+            // Never probe Shizuku before verifying Root, even from settings.
+            rootDetected = runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)
             runCatching { graph.lsposedScopes.start() }
         }
     }
@@ -138,6 +141,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                             RuntimeSettingsPage.EDITOR -> stringResource(TextR.string.settings_editor_defaults)
                             RuntimeSettingsPage.LOGGING -> stringResource(TextR.string.settings_logs_title)
                             RuntimeSettingsPage.ENGINE -> stringResource(TextR.string.runtime_settings_title_engine)
+                            RuntimeSettingsPage.LIBRARIES -> stringResource(TextR.string.sx_libraries)
                             RuntimeSettingsPage.HEALTH -> stringResource(TextR.string.runtime_settings_title_health)
                         }
                     )
@@ -220,6 +224,14 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.runtime_settings_engine_subtitle),
                         MacroPalette.Action,
                         onClick = { navigateTo(RuntimeSettingsPage.ENGINE) },
+                    )
+                }
+                item {
+                    MacroItemRow(
+                        stringResource(TextR.string.sx_libraries),
+                        stringResource(TextR.string.sx_library_hint),
+                        MacroPalette.Utility,
+                        onClick = { navigateTo(RuntimeSettingsPage.LIBRARIES) },
                     )
                 }
                 item {
@@ -328,7 +340,8 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                     ) {
                         rootMessage = checking
                         scope.launch {
-                            rootMessage = if (graph.rootShell.isAvailable()) rootAvailable else rootUnavailable
+                            rootDetected = graph.rootShell.isAvailable()
+                            rootMessage = if (rootDetected == true) rootAvailable else rootUnavailable
                             refresh++
                         }
                     }
@@ -338,21 +351,38 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                     val grantedText = stringResource(TextR.string.backend_shizuku_ready)
                     val deniedText = stringResource(TextR.string.permission_request_denied)
                     val missingText = stringResource(TextR.string.backend_shizuku_unavailable)
-                    BackendCard(
-                        stringResource(TextR.string.backend_shizuku_title),
-                        stringResource(TextR.string.backend_shizuku_detail),
-                        if (graph.shizuku.hasPermission()) grantedText
-                        else shizukuMessage.takeUnless { it == notChecked } ?: missingText,
-                        authorize = true,
-                    ) {
-                        shizukuMessage = runCatching {
-                            graph.shizuku.requestPermission { granted ->
-                                shizukuMessage = if (granted) grantedText else deniedText
+                    when (rootDetected) {
+                        true -> EngineCard(
+                            stringResource(TextR.string.backend_shizuku_title),
+                            stringResource(TextR.string.sx_shizuku_root_blocked),
+                        )
+                        null -> EngineCard(
+                            stringResource(TextR.string.backend_shizuku_title), checking,
+                        )
+                        false -> BackendCard(
+                            stringResource(TextR.string.backend_shizuku_title),
+                            stringResource(TextR.string.backend_shizuku_detail),
+                            if (graph.shizuku.hasPermission()) grantedText
+                            else shizukuMessage.takeUnless { it == notChecked } ?: missingText,
+                            authorize = true,
+                        ) {
+                            scope.launch {
+                                val hasRoot = runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)
+                                rootDetected = hasRoot
+                                if (hasRoot) {
+                                    shizukuMessage = context.getString(TextR.string.sx_shizuku_root_blocked)
+                                } else {
+                                    shizukuMessage = runCatching {
+                                        graph.shizuku.requestPermission { granted ->
+                                            shizukuMessage = if (granted) grantedText else deniedText
+                                            refresh++
+                                        }
+                                        returnHint
+                                    }.getOrElse { it.message ?: missingText }
+                                }
                                 refresh++
                             }
-                            returnHint
-                        }.getOrElse { it.message ?: missingText }
-                        refresh++
+                        }
                     }
                 }
                 item {
@@ -407,16 +437,13 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 }
             }
 
-            RuntimeSettingsPage.ENGINE -> LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                item { EngineCard(stringResource(TextR.string.engine_capability_broker_title), stringResource(TextR.string.engine_capability_broker_detail)) }
-                item { EngineCard(stringResource(TextR.string.engine_fallback_title), stringResource(TextR.string.engine_fallback_detail)) }
-                item { EngineCard(stringResource(TextR.string.engine_backend_selection_title), stringResource(TextR.string.engine_backend_selection_detail)) }
-                item { EngineCard(stringResource(TextR.string.engine_execution_safety_title), stringResource(TextR.string.engine_execution_safety_detail)) }
-                item { EngineCard(stringResource(TextR.string.engine_execution_trace_title), stringResource(TextR.string.engine_execution_trace_detail)) }
+            RuntimeSettingsPage.ENGINE -> Column(Modifier.padding(padding)) {
+                ShortXEngineSettingsScreen(context, graph) {
+                    navigateTo(RuntimeSettingsPage.LIBRARIES)
+                }
+            }
+            RuntimeSettingsPage.LIBRARIES -> Column(Modifier.padding(padding)) {
+                ShortXLibrarySettingsScreen(context)
             }
 
             RuntimeSettingsPage.HEALTH -> FeatureHealthScreen(
