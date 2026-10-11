@@ -80,6 +80,19 @@ import kotlinx.serialization.json.Json
 internal object HardwareKeyCaptureSession {
     val mutex = Mutex()
     @Volatile var active: Boolean = false
+
+    fun begin() {
+        active = true
+        RootHardwareKeyEventSource.pauseReadersForLearning()
+    }
+
+    fun end() {
+        try {
+            RootHardwareKeyEventSource.resumeReadersAfterLearning()
+        } finally {
+            active = false
+        }
+    }
 }
 
 /**
@@ -92,7 +105,7 @@ internal suspend fun captureHardwareKey(
     graph: AppGraph,
     timeoutMs: Long,
 ): HardwareKeyCaptureResult? = HardwareKeyCaptureSession.mutex.withLock {
-    HardwareKeyCaptureSession.active = true
+    HardwareKeyCaptureSession.begin()
     try {
         coroutineScope {
             val totalMs = timeoutMs.coerceIn(1_000L, 60_000L)
@@ -196,6 +209,6 @@ internal suspend fun captureHardwareKey(
             null
         }
     } finally {
-        HardwareKeyCaptureSession.active = false
+        HardwareKeyCaptureSession.end()
     }
 }

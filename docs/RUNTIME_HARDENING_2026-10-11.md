@@ -34,3 +34,5 @@ Target branch: `refactor/macrodroid-on-1003-20261008`.
 - The LSPosed one-shot capture lease has an explicit STOP bridge operation; a local listener timeout no longer leaves system_server armed while the Root/Accessibility learner takes over. CI source tests now verify staged rather than parallel learning.
 
 - The Root OEM-key event source now reconnects after unexpected getevent/su termination with interruptible 2–60-second backoff, so a transient permission or input service failure does not permanently disable an existing rule. Stop/restart generations prevent stale threads from publishing into a replacement reader.
+
+- Key learning pauses all existing runtime Root getevent readers and restores them after the session ends. Root mappings are preserved; the one-shot learner is the only active Root reader.

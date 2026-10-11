@@ -30,8 +30,10 @@ class HardwareKeyCaptureWiringTest(unittest.TestCase):
         self.assertIn("rootShell.run(RAW_KEY_CAPTURE_COMMAND", method)
         self.assertIn("key.action == KeyEvent.ACTION_UP", s)
         self.assertIn("HardwareKeyCaptureSession.mutex.withLock", s)
-        self.assertIn("HardwareKeyCaptureSession.active = true", s)
-        self.assertIn("HardwareKeyCaptureSession.active = false", s)
+        self.assertIn("HardwareKeyCaptureSession.begin()", s)
+        self.assertIn("HardwareKeyCaptureSession.end()", s)
+        self.assertIn("RootHardwareKeyEventSource.pauseReadersForLearning()", s)
+        self.assertIn("RootHardwareKeyEventSource.resumeReadersAfterLearning()", s)
         runtime = source("app/src/main/kotlin/com/yagay/yauto/AutomationRuntimeService.kt")
         self.assertIn("HardwareKeyEventArbiter(", runtime)
         self.assertIn("if (HardwareKeyCaptureSession.active) return", runtime)
@@ -46,6 +48,9 @@ class HardwareKeyCaptureWiringTest(unittest.TestCase):
         self.assertIn("while (myGeneration == generation && started.get() && listening)", listener)
         self.assertIn("Thread.sleep(backoffMs)", listener)
         self.assertIn("backoffMs = (backoffMs * 2).coerceAtMost(60_000L)", listener)
+        self.assertIn("if (mappings.isNotEmpty() && !learningPaused)", listener)
+        self.assertIn("activeReaders.add(this)", listener)
+        self.assertIn("activeReaders.remove(this)", listener)
         self.assertIn("if (raw.linuxEvKey > 0 && raw.keyCode <= 0)", s)
 
     def test_lsposed_capture_uses_authenticated_event_envelope(self):

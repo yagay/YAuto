@@ -8,6 +8,7 @@ import com.yagay.yauto.core.storage.activeActivationEvents
 import com.yagay.yauto.platform.android.AndroidEventSource
 import com.yagay.yauto.platform.android.RuntimeEventEmitter
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.CopyOnWriteArraySet
 
 /**
  * Android OEM-key fallback for buttons that do not reliably reach Android KeyEvent.
@@ -27,6 +28,7 @@ class RootHardwareKeyEventSource(
     @Volatile private var process: Process? = null
     @Volatile private var readerThread: Thread? = null
     @Volatile private var listening = false
+    @Volatile private var learningPaused = false
     /** Generation changes on stop/restart, invalidating any in-flight process creation. */
     @Volatile private var generation = 0L
     @Volatile private var learnedMappings: Map<Int, List<LearnedAndroidKey>> = emptyMap()
@@ -34,6 +36,8 @@ class RootHardwareKeyEventSource(
     override fun start(emitter: RuntimeEventEmitter) {
         if (!started.compareAndSet(false, true)) return
         this.emitter = emitter
+        activeReaders.add(this)
+        learningPaused = HardwareKeyCaptureSession.active
         subscription = workspace.addListener(::applyWorkspace)
         workspace.snapshotOrNull()?.let(::applyWorkspace)
     }
@@ -42,6 +46,7 @@ class RootHardwareKeyEventSource(
         if (!started.compareAndSet(true, false)) return
         subscription?.close()
         subscription = null
+        activeReaders.remove(this)
         synchronized(lock) { stopListenerLocked() }
         emitter = null
     }
@@ -63,7 +68,18 @@ class RootHardwareKeyEventSource(
 
         synchronized(lock) {
             if (!started.get()) return
-            if (mappings.isNotEmpty()) startListenerLocked() else stopListenerLocked()
+            if (mappings.isNotEmpty() && !learningPaused) startListenerLocked() else stopListenerLocked()
+        }
+    }
+
+    private fun setLearningPaused(paused: Boolean) {
+        synchronized(lock) {
+            learningPaused = paused
+            if (paused) {
+                stopListenerLocked()
+            } else if (started.get() && learnedMappings.isNotEmpty()) {
+                startListenerLocked()
+            }
         }
     }
 
@@ -215,8 +231,18 @@ class RootHardwareKeyEventSource(
         val devicePath: String = "",
     )
 
-    private companion object {
-        const val HARDWARE_KEY_EVENT = "android.event.hardware_key"
+    companion object {
+        private val activeReaders = CopyOnWriteArraySet<RootHardwareKeyEventSource>()
+
+        internal fun pauseReadersForLearning() {
+            activeReaders.forEach { it.setLearningPaused(true) }
+        }
+
+        internal fun resumeReadersAfterLearning() {
+            activeReaders.forEach { it.setLearningPaused(false) }
+        }
+
+        private const val HARDWARE_KEY_EVENT = "android.event.hardware_key"
         const val HARDWARE_KEY_GESTURE_EVENT = "android.event.hardware_key_gesture"
         const val HARDWARE_KEY_COMBO_EVENT = "android.event.hardware_key_combo"
         val RAW_KEY_EVENT = Regex(":\\s+0001\\s+([0-9a-fA-F]{4})\\s+([0-9a-fA-F]{8})")
