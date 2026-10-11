@@ -141,7 +141,7 @@ class SourceSemanticParityTests(unittest.TestCase):
         macro = MACRO_HINTS.read_text(encoding="utf-8")
         self.assertIn('"ScreenshotContentTrigger" -> "android.event.screenshot_content"', macro)
         self.assertIn('FeatureId("android.event.screenshot_content")', (ROOT / "platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidScreenshotContentFeaturePack.kt").read_text(encoding="utf-8"))
-        self.assertIn('WorkspaceGatedEventSource(appGraph.workspace, setOf("android.event.screenshot_content"))', (ROOT / "app/src/main/kotlin/com/yagay/yauto/AutomationRuntimeService.kt").read_text(encoding="utf-8"))
+        self.assertIn('WorkspaceGatedEventSource(appGraph.workspace, setOf("android.event.screenshot_content"))', (ROOT / "app/src/main/kotlin/com/yagay/yauto/RuntimeEventSourceCatalog.kt").read_text(encoding="utf-8"))
         self.assertIn('"SpotifyTrigger" -> "android.event.spotify"', macro)
         self.assertIn('"ScreenTextAppearedTrigger" -> "android.event.screen_text_appeared"', macro)
         self.assertIn('"MediaTrackChangedTrigger" -> "android.event.media_track_changed"', macro)
