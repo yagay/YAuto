@@ -37,7 +37,10 @@ class SharedRuntimeSafetyTest(unittest.TestCase):
 
     def test_health_refresh_survives_individual_scan_failure(self):
         s=read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScanner.kt")
-        self.assertIn('val scanRequests = Channel<Unit>(Channel.CONFLATED)',s)
+        # The conflated actor now carries an explicit read-only verification flag.
+        self.assertIn('val scanRequests = Channel<Boolean>(Channel.CONFLATED)',s)
+        self.assertIn('for (verifyReadOnly in scanRequests)',s)
+        self.assertIn('scan(verifyReadOnly)',s)
         self.assertIn('catch (error: Exception) {',s)
         self.assertIn('Feature scan failed',s)
         self.assertNotIn('if (scanJob?.isActive == true) return',s)
