@@ -38,7 +38,15 @@ object XposedHookRuntimeBridge {
         if (intent.action != SystemBridgeProtocol.HOOK_EVENT_ACTION) return
         val sessionId = intent.getStringExtra("sessionId").orEmpty()
         val token = intent.getStringExtra("eventToken").orEmpty()
-        if (sessionTokens[sessionId] != token) return
+        if (sessionId.isBlank() || token.isBlank() || sessionTokens[sessionId] != token) {
+            // No token contents or private method argument values are logged.
+            XposedEventTransportHealth.onRejected(
+                "android.event.lsposed_method_called", "lsposed.method_hook",
+                android.os.Process.INVALID_UID, "missing or mismatched session event token",
+            )
+            return
+        }
+        XposedEventTransportHealth.onAccepted("android.event.lsposed_method_called")
         listener?.invoke(
             XposedHookEvent(
                 sessionId = sessionId,
