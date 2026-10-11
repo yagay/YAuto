@@ -1,5 +1,7 @@
 package com.yagay.yauto
 
+import android.os.SystemClock
+import android.view.KeyEvent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -85,7 +87,19 @@ internal suspend fun captureHardwareKey(
     }
 
     launchCapture {
-        AccessibilityRuntimeBridge.awaitNextKey(timeoutMs)?.let { key ->
+        // Accessibility receives DOWN before UP. Wait for the same release phase
+        // used by LSPosed/getevent to avoid returning an incomplete press.
+        val deadline = SystemClock.elapsedRealtime() + timeoutMs.coerceIn(1_000L, 60_000L)
+        var released: com.yagay.yauto.platform.accessibility.AccessibilityKeySnapshot? = null
+        while (SystemClock.elapsedRealtime() < deadline) {
+            val remaining = deadline - SystemClock.elapsedRealtime()
+            val observed = AccessibilityRuntimeBridge.awaitNextKey(remaining) ?: break
+            if (observed.action == KeyEvent.ACTION_UP) {
+                released = observed
+                break
+            }
+        }
+        released?.let { key ->
             HardwareKeyCaptureResult(
                 keyCode = key.keyCode,
                 scanCode = key.scanCode,

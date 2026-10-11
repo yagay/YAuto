@@ -172,6 +172,11 @@ internal fun registerXposedSystemBridge(
                             response.putInt("subscriptionCount", values.size)
                         }
                         SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_START -> {
+                            // Manual capture can precede runtime subscriptions. Establish the
+                            // authenticated event channel here as well (Android 12/13).
+                            val token = intent.getStringExtra(XposedEventAuth.EXTRA_TOKEN).orEmpty()
+                            require(token.length in 32..128) { "Missing hardware capture authentication token" }
+                            XposedEventAuth.publish(token)
                             val installedCount = installInputHooks()
                             require(installedCount > 0) { "No compatible Android key-event Hook found on this ROM" }
                             response.putInt("inputHookCount", installedCount)

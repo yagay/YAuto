@@ -58,7 +58,8 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                 .putExtra("version", protocolVersion)
                 .putExtra("operation", SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_START)
                 .putExtra("timeoutMs", timeoutMs.coerceIn(1_000L, 60_000L))
-        ).also { connected = it != null }
+                .putExtra(XposedEventAuth.EXTRA_TOKEN, systemEventAuthToken)
+        , requestTimeoutMs = 5_000L).also { connected = it != null }
         return result?.getBoolean("success") == true
     }
 
@@ -236,8 +237,8 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
         return result
     }
 
-    private suspend fun orderedRequest(intent: Intent): Bundle? =
-        withTimeoutOrNull(2_500L) {
+    private suspend fun orderedRequest(intent: Intent, requestTimeoutMs: Long = 2_500L): Bundle? =
+        withTimeoutOrNull(requestTimeoutMs) {
             suspendCancellableCoroutine { continuation ->
                 val receiver = object : BroadcastReceiver() {
                     override fun onReceive(context: Context?, intent: Intent?) {

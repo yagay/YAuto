@@ -21,12 +21,19 @@ class HardwareKeyCaptureWiringTest(unittest.TestCase):
         method = c.split("suspend fun captureRawKey(", 1)[1].split("private suspend fun resolveAndroidKeyCode", 1)[0]
         self.assertNotIn("rootShell.isAvailable()", method)
         self.assertIn("rootShell.run(RAW_KEY_CAPTURE_COMMAND", method)
+        self.assertIn("observed.action == KeyEvent.ACTION_UP", s)
 
     def test_lsposed_capture_uses_authenticated_event_envelope(self):
         s = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedHardwareKeyEventHandler.kt")
         method = s.split("private fun emitHardwareKeyCapture(", 1)[1]
         self.assertIn("broadcastXposedRuntimeEvent(", method)
         self.assertNotIn("context.sendBroadcast(", method)
+        backend = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedBackend.kt")
+        bridge = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedSystemBridgeRegistration.kt")
+        capture = backend.split("suspend fun beginHardwareKeyCapture(", 1)[1].split("override fun supports", 1)[0]
+        self.assertIn("XposedEventAuth.EXTRA_TOKEN, systemEventAuthToken", capture)
+        self.assertIn("XposedEventAuth.publish(token)", bridge)
+        self.assertIn("requestTimeoutMs = 5_000L", capture)
 
     def test_hook_handshake_reports_actual_compatible_callbacks(self):
         installer = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedSystemServerHookInstaller.kt")
