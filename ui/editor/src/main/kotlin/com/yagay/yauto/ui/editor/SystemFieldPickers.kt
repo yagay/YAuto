@@ -46,6 +46,9 @@ data class SystemPickerOption(
     val label: String,
     val detail: String? = null,
     val relatedValues: Map<String, String> = emptyMap(),
+    /** Optional source identity for an icon, never used as the selected value. */
+    val iconPackage: String? = null,
+    val iconComponent: String? = null,
 )
 
 internal fun inferredPickerSource(
@@ -418,6 +421,36 @@ private fun SystemValuePickerDialog(
                 } else {
                     items(filtered, key = { it.value + "\u0000" + it.label }) { option ->
                         ListItem(
+                            leadingContent = {
+                                val appPackage = option.iconPackage
+                                    ?: option.relatedValues["package"]
+                                    ?: allValues["package"]
+                                    ?: if (fieldKey == "package") option.value else null
+                                val serviceComponent = option.iconComponent
+                                    ?: option.value.takeIf { ComponentName.unflattenFromString(it) != null }
+                                val category = when {
+                                    descriptorId.contains("qs_tile", ignoreCase = true) ->
+                                        DevicePickerIconKind.TILE
+                                    descriptorId.contains("notification", ignoreCase = true) ->
+                                        DevicePickerIconKind.NOTIFICATION
+                                    picker == FieldPickerSource.InstalledApp ||
+                                        picker is FieldPickerSource.Component ->
+                                        DevicePickerIconKind.APP
+                                    picker == FieldPickerSource.KeyCode -> DevicePickerIconKind.KEY
+                                    picker == FieldPickerSource.Camera -> DevicePickerIconKind.CAMERA
+                                    picker == FieldPickerSource.WifiSsid ||
+                                        picker == FieldPickerSource.BluetoothDevice -> DevicePickerIconKind.NETWORK
+                                    picker == FieldPickerSource.TimeZone ||
+                                        picker == FieldPickerSource.Calendar -> DevicePickerIconKind.TIME
+                                    picker == FieldPickerSource.LocationProvider -> DevicePickerIconKind.LOCATION
+                                    else -> DevicePickerIconKind.GENERIC
+                                }
+                                DeviceEntryIcon(
+                                    packageName = appPackage,
+                                    componentName = serviceComponent,
+                                    kind = category,
+                                )
+                            },
                             headlineContent = {
                                 Text(
                                     option.label,
@@ -594,6 +627,12 @@ private fun InstalledAppDialog(
                 }
                 items(filtered, key = { it.packageName }) { app ->
                     ListItem(
+                        leadingContent = {
+                            DeviceEntryIcon(
+                                packageName = app.packageName,
+                                kind = DevicePickerIconKind.APP,
+                            )
+                        },
                         headlineContent = {
                             Text(
                                 app.label,
