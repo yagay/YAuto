@@ -9,4 +9,5 @@
     <string name="feature_health_unknown_count">状态未验证：%1$d</string>
     <string name="runtime_access_accessibility_connected">无障碍服务已连接，可以接收事件。</string>
     <string name="runtime_access_accessibility_enabled_unbound">系统已开启无障碍权限，但服务当前未连接。</string>
+    <string name="runtime_access_partially_granted">部分授权</string>
 </resources>

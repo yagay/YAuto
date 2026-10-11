@@ -36,6 +36,26 @@ class PermissionGrantCenterTest {
         assertTrue(Manifest.permission.CALL_PHONE in missing)
     }
 
+    @Test fun multipleRuntimeGrantsAreNotMisreportedAsDenied() {
+        val phone = permissionGrantGroups(35).single { it.id == "phone" }
+        assertEquals(PermissionGroupState.PARTIAL,
+            runtimePermissionGroupState(phone, 35) {
+                it == Manifest.permission.READ_PHONE_STATE
+            })
+        assertEquals(PermissionGroupState.GRANTED,
+            runtimePermissionGroupState(phone, 35) { true })
+        assertEquals(PermissionGroupState.NOT_GRANTED,
+            runtimePermissionGroupState(phone, 35) { false })
+    }
+
+    @Test fun photoPickerAuthorizationIsLimitedMediaNotFullGrant() {
+        val media = permissionGrantGroups(35).single { it.id == "media" }
+        assertEquals(PermissionGroupState.PARTIAL,
+            runtimePermissionGroupState(media, 35) {
+                it == Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+            })
+    }
+
     @Test fun backgroundLocationCannotBeBatchRequested() {
         val bg = permissionGrantGroups(35).single { it.id == "location_background" }
         assertTrue(bg.requiresForegroundLocation)

@@ -123,6 +123,38 @@ internal fun permissionGrantGroups(sdk: Int): List<PermissionGrantGroup> = build
         TextR.string.permission_device_admin_detail, deviceAdmin = true))
 }
 
+/** Runtime groups can be partially granted (fine vs coarse, phone, SMS, media). */
+internal enum class PermissionGroupState { GRANTED, PARTIAL, NOT_GRANTED, UNKNOWN }
+
+internal fun runtimePermissionGroupState(
+    group: PermissionGrantGroup, sdk: Int, granted: (String) -> Boolean,
+): PermissionGroupState {
+    if (group.permissions.isEmpty()) return PermissionGroupState.UNKNOWN
+    val total = group.permissions.count(granted)
+    if (group.id == "media" && sdk >= 34 &&
+        granted(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) &&
+        !(granted(Manifest.permission.READ_MEDIA_IMAGES) &&
+            granted(Manifest.permission.READ_MEDIA_VIDEO))
+    ) return PermissionGroupState.PARTIAL
+    return when (total) {
+        group.permissions.size -> PermissionGroupState.GRANTED
+        0 -> PermissionGroupState.NOT_GRANTED
+        else -> PermissionGroupState.PARTIAL
+    }
+}
+
+internal fun permissionGroupState(context: Context, group: PermissionGrantGroup): PermissionGroupState =
+    runCatching {
+        if (group.permissions.isEmpty()) {
+            if (permissionStatus(context, group)) PermissionGroupState.GRANTED
+            else PermissionGroupState.NOT_GRANTED
+        } else {
+            runtimePermissionGroupState(group, Build.VERSION.SDK_INT) { permission ->
+                ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+            }
+        }
+    }.getOrDefault(PermissionGroupState.UNKNOWN)
+
 /** The app itself must declare a runtime permission before the system can grant it. */
 internal fun missingRuntimePermissions(
     group: PermissionGrantGroup,
@@ -227,7 +259,7 @@ internal fun PermissionGrantCenter(modifier: Modifier = Modifier, graph: AppGrap
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    val statuses = remember(refresh, context) { groups.associate { it.id to permissionStatus(context, it) } }
+    val statuses = remember(refresh, context) { groups.associate { it.id to permissionGroupState(context, it) } }
 
     fun manageAppPermissions() {
         openPermissionSettings(context, applicationDetailsIntent(context)) { feedback = it }
@@ -287,17 +319,22 @@ internal fun PermissionGrantCenter(modifier: Modifier = Modifier, graph: AppGrap
             }
         }
         items(groups, key = { it.id }) { group ->
-            val granted = statuses[group.id] == true
+            val state = statuses[group.id] ?: PermissionGroupState.UNKNOWN
+            val granted = state == PermissionGroupState.GRANTED
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(group.title), Modifier.weight(1f),
                             fontWeight = FontWeight.SemiBold)
-                        Text(stringResource(if (granted) TextR.string.common_granted
-                            else TextR.string.common_not_granted),
+                        Text(stringResource(when (state) {
+                            PermissionGroupState.GRANTED -> TextR.string.common_granted
+                            PermissionGroupState.PARTIAL -> TextR.string.runtime_access_partially_granted
+                            PermissionGroupState.NOT_GRANTED -> TextR.string.common_not_granted
+                            PermissionGroupState.UNKNOWN -> TextR.string.runtime_access_unknown
+                        }),
                             color = if (granted) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.error,
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.labelMedium)
                     }
                     Text(stringResource(group.detail),
