@@ -11,6 +11,17 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class RootFailureResultTest {
+    @Test fun sharedShellIsRestrictedToReadOnlyCommands() {
+        assertTrue(ReadOnlyRootCommand.accepts("id"))
+        assertTrue(ReadOnlyRootCommand.accepts("getprop ro.build.version.sdk"))
+        assertTrue(ReadOnlyRootCommand.accepts("settings get secure enabled_accessibility_services"))
+        assertFalse(ReadOnlyRootCommand.accepts("settings put global airplane_mode_on 1"))
+        assertFalse(ReadOnlyRootCommand.accepts("input tap 50 50"))
+        assertFalse(ReadOnlyRootCommand.accepts("reboot"))
+        assertFalse(ReadOnlyRootCommand.accepts("id; reboot"))
+        assertFalse(ReadOnlyRootCommand.accepts("getprop ro.debuggable; echo 2"))
+    }
+
     @Test fun successfulCommandHasNoError() {
         assertNull(rootCommandFailureMessage(CommandOutput(0, "ok", "")))
     }

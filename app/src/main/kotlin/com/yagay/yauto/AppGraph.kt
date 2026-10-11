@@ -57,7 +57,7 @@ class AppGraph(context: Context) {
         traceStore.clear()
     }
 
-    val rootShell by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { RootShell() }
+    val rootShell by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { RootShell(LibsuSharedRootRunner()) }
     val hardwareKeys by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { DeviceHardwareKeyCatalog(rootShell) }
     val shizuku by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { ShizukuBackend(appContext) }
     val xposed by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { XposedBackend(appContext) }

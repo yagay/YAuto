@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.kotlinx.coroutines.android)
+    implementation("com.github.topjohnwu.libsu:core:6.0.0")
     implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit)
     implementation(libs.mlkit.text.recognition)
