@@ -1,6 +1,7 @@
 package com.yagay.yauto.platform.android
 
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.registry.*
 
 /**
@@ -11,6 +12,7 @@ class AndroidShortXHookEventFeaturePack : FeaturePack {
     override val id: String = "android.shortx_hook_events"
 
     override fun install(registry: FeatureRegistry) {
+        registerAppOpsEvent(registry)
         event(registry, "android.event.input_filter_state_changed", "Input filter state changed", "Run when Android changes the native input-filter state", FeatureCategory.UI_AUTOMATION)
         event(registry, "android.event.activity_manager_started", "Activity manager started", "Run when ActivityManagerService starts", FeatureCategory.SYSTEM)
         event(registry, "android.event.activity_manager_ready", "Activity manager ready", "Run when ActivityManagerService finishes systemReady", FeatureCategory.SYSTEM)
@@ -65,6 +67,42 @@ class AndroidShortXHookEventFeaturePack : FeaturePack {
         event(registry, "android.event.nfc_tag_system", "NFC tag from system service", "Run when the NFC service dispatches a tag endpoint before app routing", FeatureCategory.DEVICE)
         event(registry, "android.event.media_provider_ready", "Media provider ready", "Run after the MediaProvider initializes", FeatureCategory.FILE)
         event(registry, "android.event.media_provider_changed", "Media provider changed", "Run when the MediaProvider inserts, updates or deletes content", FeatureCategory.FILE)
+    }
+
+    /**
+     * MacroDroid-style single AppOps event: start / finish are a parameter,
+     * not separate picker entries. Only fires after a subscribed system_server
+     * observer emits an actual AppOpsService callback.
+     */
+    private fun registerAppOpsEvent(registry: FeatureRegistry) {
+        registry.registerEvent(
+            FeatureDescriptor(
+                id = FeatureId("android.event.app_ops_operation"),
+                kind = FeatureKind.EVENT,
+                title = "Application operation",
+                description = "Observe an Android AppOpsService operation starting or finishing",
+                category = FeatureCategory.APP,
+                pickerCategory = FeaturePickerCategory.APPLICATIONS,
+                fields = listOf(
+                    FieldSchema.Choice("phase", "Operation", true, listOf("any", "start", "finish")),
+                    FieldSchema.AppPicker("package", "App / package"),
+                    FieldSchema.Number("opCode", "AppOps operation code", min = 0.0, max = 1000.0),
+                ),
+                accessRequirements = setOf(AccessRequirement.LSPOSED),
+                keywords = setOf("appops", "start op", "finish op", "application operation", "macrodroid"),
+                ownerPackId = id,
+            ),
+        ) { feature, ctx ->
+            if (ctx.event.typeId != "android.event.app_ops_operation") return@registerEvent false
+            val phase = feature.config.string("phase", "any")
+            if (phase !in setOf("any", "start", "finish")) return@registerEvent false
+            if (phase != "any" && ctx.event.payload.string("phase") != phase) return@registerEvent false
+            val pkg = feature.config.string("package").trim()
+            if (pkg.isNotBlank() && ctx.event.payload.string("package") != pkg) return@registerEvent false
+            val code = feature.config["opCode"].numberOrNull()
+            code == null || (code.isFinite() && code >= 0 &&
+                ctx.event.payload["opCode"].numberOrNull() == code)
+        }
     }
 
     private fun event(
