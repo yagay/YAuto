@@ -31,6 +31,39 @@ def sources(folder: Path):
         yield path.relative_to(ROOT).as_posix(), path.read_text(encoding="utf-8")
 
 
+# Audit every owned Kotlin source tree, including UI/engine helpers that
+# sometimes bypass the central capability broker. The resulting locations are
+# review candidates, not proof that their operations are semantically equivalent.
+SOURCE_COMPONENTS = ("app", "core", "feature", "importer", "platform", "ui", "plugin")
+BACKEND_PIN = re.compile(r'preferredBackendId\\s*=\\s*"(lsposed|root|shizuku|accessibility)"')
+DIRECT_PRIVILEGE = re.compile(r'\\b(?:RootShell|ShizukuBackend|XposedBackend|AccessibilityRuntimeBridge)\\b')
+
+
+def full_project_routing_inventory() -> dict:
+    counts = {}
+    explicit_pins = []
+    direct_privilege_references = []
+    for folder_name in SOURCE_COMPONENTS:
+        folder = ROOT / folder_name
+        files = sorted(folder.rglob("*.kt")) if folder.exists() else []
+        counts[folder_name] = len(files)
+        for path in files:
+            source = path.read_text(encoding="utf-8")
+            relative = path.relative_to(ROOT).as_posix()
+            matches = sorted(set(BACKEND_PIN.findall(source)))
+            if matches:
+                explicit_pins.append({"path": relative, "backends": matches})
+            if DIRECT_PRIVILEGE.search(source):
+                direct_privilege_references.append(relative)
+    return {
+        "kotlin_files_scanned": sum(counts.values()),
+        "files_by_component": counts,
+        "literal_backend_pins": explicit_pins,
+        "direct_privilege_reference_files": direct_privilege_references,
+        "limitations": "Source references are review leads; operation-level runtime checks and OEM testing remain required",
+    }
+
+
 def collect_inventory() -> dict:
     android_sources = list(sources(ANDROID))
     privileged_sources = list(sources(PRIVILEGED))
@@ -97,6 +130,7 @@ def collect_inventory() -> dict:
     root_shell_bounded = any("BoundedProcessRunner.run" in src
                              for _, src in root_sources)
     return {
+        "source_audit": full_project_routing_inventory(),
         "root": {
             "backend_declared": root_backend_ready,
             "bounded_root_shell": root_shell_bounded,
@@ -128,6 +162,10 @@ def main() -> None:
     target = ROOT / args.output
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print("Project Kotlin files scanned:", report["source_audit"]["kotlin_files_scanned"],
+          "across", len(report["source_audit"]["files_by_component"]), "component trees")
+    print("Literal backend pin locations:", len(report["source_audit"]["literal_backend_pins"]))
+    print("Direct privileged-reference files:", len(report["source_audit"]["direct_privilege_reference_files"]))
     print("Root backend:", report["root"]["backend_declared"],
           "bounded runner:", report["root"]["bounded_root_shell"])
     print("ShortX system observers:", report["lsposed"]["system_server_catalog_observers"],
