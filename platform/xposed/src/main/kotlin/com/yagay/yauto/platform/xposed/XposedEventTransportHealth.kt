@@ -44,8 +44,10 @@ internal object XposedEventTransportHealth {
         // Most failures are identical on a broken ROM; don't flood logcat.
         val last = lastWarningEpochMs.get()
         if (now - last > 30_000L && lastWarningEpochMs.compareAndSet(last, now)) {
-            Log.w("YAutoBridge", "Rejected authenticated event channel input: " +
-                lastRejectedReason.get() + " (count=${rejected.get()})")
+            runCatching {
+                Log.w("YAutoBridge", "Rejected event channel input: " +
+                    lastRejectedReason.get() + " (count=${rejected.get()})")
+            }
         }
     }
 
