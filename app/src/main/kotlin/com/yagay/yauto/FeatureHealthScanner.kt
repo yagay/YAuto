@@ -27,12 +27,12 @@ import com.yagay.yauto.platform.xposed.XposedBackend
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -81,7 +81,7 @@ class FeatureHealthScanner(
     private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
     private val scanLock = Mutex()
     private val lastRequestAt = AtomicLong(0)
-    private var scanJob: Job? = null
+    private val scanRequests = Channel<Unit>(Channel.CONFLATED)
 
     private val _snapshot = MutableStateFlow<FeatureHealthSnapshot?>(null)
     val snapshot: StateFlow<FeatureHealthSnapshot?> = _snapshot.asStateFlow()
@@ -91,6 +91,19 @@ class FeatureHealthScanner(
 
     private val _autoScanEnabled = MutableStateFlow(preferences.getBoolean(KEY_AUTO_SCAN, false))
     val autoScanEnabled: StateFlow<Boolean> = _autoScanEnabled.asStateFlow()
+
+    init {
+        scope.launch {
+            for (request in scanRequests) {
+                _scanning.value = true
+                try {
+                    scan()
+                } finally {
+                    _scanning.value = false
+                }
+            }
+        }
+    }
 
     fun setAutoScanEnabled(enabled: Boolean) {
         if (_autoScanEnabled.value == enabled) return
@@ -103,15 +116,8 @@ class FeatureHealthScanner(
         val now = System.currentTimeMillis()
         if (!force && now - lastRequestAt.get() < MIN_RESCAN_INTERVAL_MS) return
         lastRequestAt.set(now)
-        if (scanJob?.isActive == true) return
-        scanJob = scope.launch {
-            _scanning.value = true
-            try {
-                scan()
-            } finally {
-                _scanning.value = false
-            }
-        }
+        // A request arriving mid-scan is coalesced and processed afterwards.
+        scanRequests.trySend(Unit)
     }
 
     suspend fun scan(): FeatureHealthSnapshot = scanLock.withLock {

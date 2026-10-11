@@ -42,6 +42,7 @@ class AutomationRuntimeService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val eventSources = AndroidEventSourceManager()
     private var graph: AppGraph? = null
+    private var runtimeDispatcher: RuntimeEventDispatcher? = null
     private var workspaceSubscription: AutoCloseable? = null
     private var hardwareKeyArbiter: HardwareKeyEventArbiter? = null
     private var hardwareKeyGestureEngine: HardwareKeyGestureEngine? = null
@@ -87,6 +88,7 @@ class AutomationRuntimeService : Service() {
             }
         }
         val dispatcher = RuntimeEventDispatcher(appGraph, scope)
+        runtimeDispatcher = dispatcher
         hardwareKeyGestureEngine = HardwareKeyGestureEngine(scope) { derived ->
             dispatcher.dispatch(derived)
         }
@@ -259,7 +261,7 @@ class AutomationRuntimeService : Service() {
         if (intent?.action == ACTION_REFRESH_LOCALIZED_SURFACES) { if (!promoteToForeground()) { stopSelf(); return START_NOT_STICKY }; return START_STICKY }
         if (intent?.action == ACTION_EXTERNAL_COMMAND) {
             val runtime = graph ?: runCatching { (application as YAutoApplication).graph }.getOrNull()
-            if (runtime != null) RuntimeEventDispatcher(runtime, scope).dispatch(
+            if (runtime != null) (runtimeDispatcher ?: RuntimeEventDispatcher(runtime, scope)).dispatch(
                 RuntimeEvent(
                     "android.event.external_command",
                     mapOf(
@@ -277,7 +279,7 @@ class AutomationRuntimeService : Service() {
             if (type.startsWith("android.event.")) {
                 val appGraph = graph ?: runCatching { (application as YAutoApplication).graph }.getOrNull()
                 if (appGraph != null) {
-                    RuntimeEventDispatcher(appGraph, scope).dispatch(
+                    (runtimeDispatcher ?: RuntimeEventDispatcher(appGraph, scope)).dispatch(
                         RuntimeEvent(type, source = "android.device_admin")
                     )
                 }
@@ -287,7 +289,7 @@ class AutomationRuntimeService : Service() {
         if (intent?.action == ACTION_SHARE_DISPATCH) {
             val appGraph = graph ?: runCatching { (application as YAutoApplication).graph }.getOrNull()
             if (appGraph != null) {
-                val dispatcher = RuntimeEventDispatcher(appGraph, scope)
+                val dispatcher = runtimeDispatcher ?: RuntimeEventDispatcher(appGraph, scope)
                 val text = intent.getStringExtra(EXTRA_SHARE_TEXT).orEmpty()
                 val subject = intent.getStringExtra(EXTRA_SHARE_SUBJECT).orEmpty()
                 val mimeType = intent.getStringExtra(EXTRA_SHARE_MIME).orEmpty()
@@ -321,7 +323,7 @@ class AutomationRuntimeService : Service() {
             }
             return START_STICKY
         }
-        if (intent?.getBooleanExtra("boot", false) == true) runCatching { (application as YAutoApplication).graph }.onFailure { StartupFailureRecorder.record(this, "runtime:boot-graph", it) }.getOrNull()?.let { RuntimeEventDispatcher(it, scope).dispatch(RuntimeEvent("android.event.boot", source = "android.boot")) }
+        if (intent?.getBooleanExtra("boot", false) == true) runCatching { (application as YAutoApplication).graph }.onFailure { StartupFailureRecorder.record(this, "runtime:boot-graph", it) }.getOrNull()?.let { (runtimeDispatcher ?: RuntimeEventDispatcher(it, scope)).dispatch(RuntimeEvent("android.event.boot", source = "android.boot")) }
         return START_STICKY
     }
 
@@ -338,6 +340,7 @@ class AutomationRuntimeService : Service() {
         eventSources.stopAll().forEach(::reportSourceFailure)
         eventSources.clear()
         graph = null
+        runtimeDispatcher = null
         scope.cancel()
         super.onDestroy()
     }

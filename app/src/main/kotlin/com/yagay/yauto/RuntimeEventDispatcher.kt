@@ -6,6 +6,7 @@ import com.yagay.yauto.core.logging.TraceLevel
 import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.RuntimeEvent
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.CancellationException
@@ -16,9 +17,15 @@ class RuntimeEventDispatcher(
     private val scope: CoroutineScope,
 ) {
     private val orderedInputs by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        Channel<Pair<RuntimeEvent, Boolean>>(Channel.UNLIMITED).also { queue ->
+        Channel<Pair<RuntimeEvent, Boolean>>(512).also { queue ->
             scope.launch {
-                for ((event, statesOnly) in queue) execute(event, statesOnly)
+                // The ordered intake must not wait for an automation's WaitEvent:
+                // the next physical event is required to finish that action.
+                for ((event, statesOnly) in queue) {
+                    scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                        execute(event, statesOnly)
+                    }
+                }
             }
         }
     }
@@ -28,7 +35,10 @@ class RuntimeEventDispatcher(
             event.typeId == "android.event.hardware_key_gesture" ||
             event.typeId == "android.event.hardware_key_combo"
         ) {
-            orderedInputs.trySend(event to statesOnly)
+            if (!orderedInputs.trySend(event to statesOnly).isSuccess) {
+                // Never discard a KEY_UP when the bounded queue is briefly full.
+                scope.launch { orderedInputs.send(event to statesOnly) }
+            }
         } else {
             scope.launch { execute(event, statesOnly) }
         }
