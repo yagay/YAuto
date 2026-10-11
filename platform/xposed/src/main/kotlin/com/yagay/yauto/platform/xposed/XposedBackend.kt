@@ -82,6 +82,18 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
         return result?.getBoolean("success") == true
     }
 
+    /** End the temporary one-shot Hook capture before moving to another source. */
+    suspend fun endHardwareKeyCapture(): Boolean {
+        val reply = orderedRequest(
+            Intent(SystemBridgeProtocol.ACTION)
+                .setPackage("android")
+                .putExtra("version", protocolVersion)
+                .putExtra("operation", SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_STOP),
+            requestTimeoutMs = 1_000L,
+        )
+        return reply?.getBoolean("success") == true
+    }
+
     override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment): Boolean =
         (request.capability == CapabilityIds.SYSTEM_UI && request.operationId in supportedOperations()) ||
             (request.capability == CapabilityIds.ACCESSIBILITY &&

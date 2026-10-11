@@ -15,6 +15,7 @@ object SystemBridgeProtocol {
     const val STATUS_ICON_SET = "status_icon.set"
     const val STATUS_ICON_REMOVE = "status_icon.remove"
     const val HARDWARE_KEY_CAPTURE_START = "hardware_key_capture.start"
+    const val HARDWARE_KEY_CAPTURE_STOP = "hardware_key_capture.stop"
     const val SYSTEM_EVENT_SUBSCRIPTIONS_SET = "system_event_subscriptions.set"
     const val SHORTX_BEHAVIOR_SET = "shortx.behavior.set"
     const val SHORTX_BEHAVIOR_ACCESSIBILITY = "accessibility_access"

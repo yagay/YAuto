@@ -171,6 +171,10 @@ internal fun registerXposedSystemBridge(
                             installSubscriptions(values)
                             response.putInt("subscriptionCount", values.size)
                         }
+                        SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_STOP -> {
+                            // Clear a timed-out learner before activating a fallback.
+                            hardwareKeyCaptureUntilElapsed.set(0L)
+                        }
                         SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_START -> {
                             // Manual capture can precede runtime subscriptions. Establish the
                             // authenticated event channel here as well (Android 12/13).

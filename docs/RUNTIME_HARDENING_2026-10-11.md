@@ -30,3 +30,5 @@ Target branch: `refactor/macrodroid-on-1003-20261008`.
 - LSPosed PING is coalesced via a short positive/negative health cache; a transport timeout invalidates the cache. Root privilege probes retain bounded subprocesses and now cache a successful check for 30 seconds versus a failure for 3 seconds.
 - Fallback applies only when a source cannot capture, and never re-runs a non-idempotent automation action after an ambiguous execution result. Raw EV_KEY identities remain hidden compatibility metadata, not Android KeyCode replacements.
 - Full device validation (KernelSU, LSPosed scopes, OEM keys and accessibility) remains necessary. No persistent Root Shell pool was introduced because cross-command output isolation, process death and cancellation must be tested before replacing bounded single-use command execution.
+
+- The LSPosed one-shot capture lease has an explicit STOP bridge operation; a local listener timeout no longer leaves system_server armed while the Root/Accessibility learner takes over. CI source tests now verify staged rather than parallel learning.

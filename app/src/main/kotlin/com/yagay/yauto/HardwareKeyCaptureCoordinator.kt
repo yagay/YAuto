@@ -104,6 +104,7 @@ internal suspend fun captureHardwareKey(
             val xposedWaiter = async(start = CoroutineStart.UNDISPATCHED) {
                 XposedSystemEventRuntimeBridge.awaitNextHardwareKey(totalMs)
             }
+            var xposedStarted = false
             val xposedResult = try {
                 val started = try {
                     graph.xposed.beginHardwareKeyCapture(totalMs)
@@ -112,6 +113,7 @@ internal suspend fun captureHardwareKey(
                 } catch (_: Exception) {
                     false
                 }
+                xposedStarted = started
                 if (started && remainingMs() > 0L) {
                     // A successful Hook can still miss OEM-only keys. Reserve a
                     // useful part of the same deadline for the next provider.
@@ -121,6 +123,18 @@ internal suspend fun captureHardwareKey(
                 } else null
             } finally {
                 xposedWaiter.cancel()
+            }
+            // Explicitly retire system_server's remaining capture lease before
+            // activating Root or Accessibility. A timed-out local waiter alone
+            // would otherwise leave the one-shot Hook armed.
+            if (xposedStarted && xposedResult == null) {
+                try {
+                    graph.xposed.endHardwareKeyCapture()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    // The system capture will still expire at its bounded deadline.
+                }
             }
             if (xposedResult != null && xposedResult.action == KeyEvent.ACTION_UP &&
                 (xposedResult.keyCode > 0 || xposedResult.scanCode > 0)
