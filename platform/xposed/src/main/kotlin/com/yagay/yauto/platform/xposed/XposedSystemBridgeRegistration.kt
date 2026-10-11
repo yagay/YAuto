@@ -51,6 +51,24 @@ internal fun registerXposedSystemBridge(
                     require(intent.getIntExtra("version", -1) == SystemBridgeProtocol.VERSION) { "Protocol mismatch" }
                     when (intent.getStringExtra("operation")) {
                         SystemBridgeProtocol.PING -> Unit
+                        SystemBridgeProtocol.EVENT_DELIVERY_PROBE -> {
+                            // Read-only diagnostic: system_server sends an authenticated
+                            // echo over the SAME broadcast receiver used for real Hook
+                            // events. A successful PING alone cannot prove this works.
+                            val token = intent.getStringExtra(XposedEventAuth.EXTRA_TOKEN).orEmpty()
+                            require(token.length in 32..128) { "Missing transport probe authentication" }
+                            val nonce = intent.getStringExtra("nonce").orEmpty()
+                            require(nonce.matches(Regex("[A-Za-z0-9-]{20,80}"))) {
+                                "Invalid transport probe nonce"
+                            }
+                            XposedEventAuth.publish(token)
+                            broadcastXposedRuntimeEvent(
+                                context,
+                                SystemBridgeProtocol.EVENT_DELIVERY_PROBE_TYPE,
+                                mapOf("nonce" to nonce),
+                            )
+                            response.putBoolean("probeSent", true)
+                        }
                         SystemBridgeProtocol.APP_PROCESS_START -> {
                             val pkg = intent.getStringExtra("package").orEmpty().trim()
                             val requestedUser = intent.getDoubleExtra("userId", -1.0)
