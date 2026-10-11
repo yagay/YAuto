@@ -51,13 +51,16 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     var showRootExclusive by remember(context) {
         mutableStateOf(FeatureVisibilityPreferences.showRootExclusive(context))
     }
-    var rootMessage by remember(notChecked) { mutableStateOf(notChecked) }
+    val liveAccess by graph.accessStatus.status.collectAsState()
+    val rootDetected: Boolean? = when (liveAccess[com.yagay.yauto.core.registry.AccessRequirement.ROOT]) {
+        com.yagay.yauto.ui.editor.PermissionAvailability.GRANTED -> true
+        com.yagay.yauto.ui.editor.PermissionAvailability.NOT_GRANTED -> false
+        else -> null
+    }
     var preferRoot by remember(context) {
         mutableStateOf(RuntimeSettingsPreferences.preferRootWhenAvailable(context))
     }
     var shizukuMessage by remember(notChecked) { mutableStateOf(notChecked) }
-    var rootDetected by remember { mutableStateOf<Boolean?>(null) }
-    var lsposedMessage by remember(notChecked) { mutableStateOf(notChecked) }
     var lsposedScopeMessage by remember { mutableStateOf<String?>(null) }
     var navigation by rememberPageNavigation(RuntimeSettingsPage.OVERVIEW)
     val page = navigation.current
@@ -120,10 +123,14 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     }
     val currentLanguageTag = remember(refresh) { AppLanguageManager.currentTag(context) }
 
+    LaunchedEffect(page) {
+        if (page == RuntimeSettingsPage.HEALTH) graph.featureHealth.requestScan(force = true)
+    }
+
     LaunchedEffect(page, refresh) {
         if (page == RuntimeSettingsPage.BACKENDS) {
             // Never probe Shizuku before verifying Root, even from settings.
-            rootDetected = runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)
+            graph.accessStatus.refresh(force = true)
             runCatching { graph.lsposedScopes.start() }
         }
     }
@@ -399,12 +406,14 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                     BackendCard(
                         stringResource(TextR.string.backend_root_title),
                         stringResource(TextR.string.backend_root_detail),
-                        rootMessage,
+                        when (rootDetected) {
+                            true -> rootAvailable
+                            false -> rootUnavailable
+                            null -> stringResource(TextR.string.runtime_access_unknown)
+                        },
                     ) {
-                        rootMessage = checking
                         scope.launch {
-                            rootDetected = graph.rootShell.isAvailable()
-                            rootMessage = if (rootDetected == true) rootAvailable else rootUnavailable
+                            graph.accessStatus.refresh(force = true)
                             refresh++
                         }
                     }
@@ -425,13 +434,16 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         false -> BackendCard(
                             stringResource(TextR.string.backend_shizuku_title),
                             stringResource(TextR.string.backend_shizuku_detail),
-                            if (graph.shizuku.hasPermission()) grantedText
-                            else shizukuMessage.takeUnless { it == notChecked } ?: missingText,
+                            when (liveAccess[com.yagay.yauto.core.registry.AccessRequirement.SHIZUKU]) {
+                                com.yagay.yauto.ui.editor.PermissionAvailability.GRANTED -> grantedText
+                                com.yagay.yauto.ui.editor.PermissionAvailability.NOT_GRANTED -> missingText
+                                else -> stringResource(TextR.string.runtime_access_unknown)
+                            },
                             authorize = true,
                         ) {
                             scope.launch {
                                 val hasRoot = runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)
-                                rootDetected = hasRoot
+                                graph.accessStatus.refresh(force = true)
                                 if (hasRoot) {
                                     shizukuMessage = context.getString(TextR.string.sx_shizuku_root_blocked)
                                 } else {
@@ -439,6 +451,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                                         graph.shizuku.requestPermission { granted ->
                                             shizukuMessage = if (granted) grantedText else deniedText
                                             refresh++
+                                            scope.launch { graph.accessStatus.refresh(force = true) }
                                         }
                                         returnHint
                                     }.getOrElse { it.message ?: missingText }
@@ -452,10 +465,16 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                     BackendCard(
                         stringResource(TextR.string.backend_lsposed_title),
                         stringResource(TextR.string.backend_lsposed_detail),
-                        lsposedMessage,
+                        when (liveAccess[com.yagay.yauto.core.registry.AccessRequirement.LSPOSED]) {
+                            com.yagay.yauto.ui.editor.PermissionAvailability.GRANTED ->
+                                stringResource(TextR.string.common_granted)
+                            com.yagay.yauto.ui.editor.PermissionAvailability.NOT_GRANTED ->
+                                stringResource(TextR.string.common_not_granted)
+                            else -> stringResource(TextR.string.runtime_access_unknown)
+                        },
                     ) {
                         scope.launch {
-                            lsposedMessage = graph.xposed.status().message.orEmpty()
+                            graph.accessStatus.refresh(force = true)
                             refresh++
                         }
                     }

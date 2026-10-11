@@ -95,6 +95,12 @@ internal fun FeatureHealthScreen(
                         },
                         style = MaterialTheme.typography.bodySmall,
                     )
+                    if (snapshot != null && snapshot!!.unknownCount > 0) {
+                        Text(
+                            stringResource(TextR.string.feature_health_unknown_count, snapshot!!.unknownCount),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                     Text(
                         stringResource(TextR.string.feature_health_safe_note),
                         style = MaterialTheme.typography.labelSmall,
