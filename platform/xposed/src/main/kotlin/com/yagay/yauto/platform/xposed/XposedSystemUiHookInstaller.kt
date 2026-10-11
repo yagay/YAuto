@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.util.Log
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
+import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -23,6 +24,7 @@ internal class XposedSystemUiHookInstaller(
     private val systemUiTileLabels = ConcurrentHashMap<String, String>()
     private val systemUiTileReceiverRegistered = AtomicBoolean(false)
     private val systemUiChipRegistered = AtomicBoolean(false)
+    @Volatile private var quickSettingsHost: WeakReference<Any>? = null
     @Volatile private var systemUiChipController: ShortXStatusChipController? = null
     fun installShortXStatusChipHooks(context: Context, classLoader: ClassLoader) {
         val controller = ShortXStatusChipController(context) { chipId, gesture ->
@@ -59,7 +61,12 @@ internal class XposedSystemUiHookInstaller(
                 val response = Bundle().apply { putInt("version", SystemBridgeProtocol.VERSION) }
                 try {
                     require(intent.getIntExtra("version", -1) == SystemBridgeProtocol.VERSION) { "Protocol mismatch" }
-                    if (intent.getStringExtra("operation") == SystemBridgeProtocol.STATUS_SHELL_QUERY) {
+                    if (intent.getStringExtra("operation") == SystemBridgeProtocol.QS_TILES_SNAPSHOT) {
+                        val specs = readSystemUiTileSpecs()
+                        require(specs.isNotEmpty()) { "SystemUI tile host has no readable tile specs" }
+                        response.putStringArrayList("specs", ArrayList(specs.take(80)))
+                        response.putBoolean("success", true)
+                    } else if (intent.getStringExtra("operation") == SystemBridgeProtocol.STATUS_SHELL_QUERY) {
                         // Read-only system-process diagnostics. No arbitrary commands, no su,
                         // and no shell subprocess launched inside SystemUI's main thread.
                         val cmd = intent.getStringExtra("command").orEmpty().trim()
@@ -198,6 +205,59 @@ internal class XposedSystemUiHookInstaller(
         }
     }
 
+    /**
+     * Read host metadata only: never invoke tile click handlers or mutate
+     * QSTileHost. OEM class layouts are probed conservatively.
+     */
+    private fun readSystemUiTileSpecs(): List<String> {
+        val host = quickSettingsHost?.get() ?: return emptyList()
+        val candidates = sequenceOf(host.javaClass, host.javaClass.superclass)
+            .filterNotNull().toList()
+        fun safeSpecs(raw: Any?): List<String> {
+            val values = when (raw) {
+                is Collection<*> -> raw.toList()
+                is Array<*> -> raw.toList()
+                else -> emptyList()
+            }
+            return values.take(80).mapNotNull { entry ->
+                when (entry) {
+                    is String -> entry
+                    null -> null
+                    else -> runCatching {
+                        val method = entry.javaClass.methods.firstOrNull {
+                            it.name == "getTileSpec" && it.parameterCount == 0
+                        }
+                        method?.invoke(entry)?.toString()
+                    }.getOrNull()
+                }
+            }.filter { it.length in 1..250 }.distinct()
+        }
+        for (name in listOf("getSpecs", "getTileSpecs", "getTiles")) {
+            for (clazz in candidates) {
+                val method = clazz.declaredMethods.firstOrNull {
+                    it.name == name && it.parameterCount == 0
+                } ?: continue
+                val values = runCatching {
+                    method.isAccessible = true
+                    safeSpecs(method.invoke(host))
+                }.getOrDefault(emptyList())
+                if (values.isNotEmpty()) return values
+            }
+        }
+        for (fieldName in listOf("mTileSpecs", "mTiles")) {
+            for (clazz in candidates) {
+                val field = clazz.declaredFields.firstOrNull { it.name == fieldName } ?: continue
+                val values = runCatching {
+                    field.isAccessible = true
+                    val raw = field.get(host)
+                    safeSpecs(if (raw is Map<*, *>) raw.values.toList() else raw)
+                }.getOrDefault(emptyList())
+                if (values.isNotEmpty()) return values
+            }
+        }
+        return emptyList()
+    }
+
     fun installShortXSystemUiHooks(context: Context, classLoader: ClassLoader) {
         fun observeConstructors(
             classNames: List<String>,
@@ -211,6 +271,9 @@ internal class XposedSystemUiHookInstaller(
                         constructor.isAccessible = true
                     interceptConstructor(constructor) { invocation ->
                         val result = invocation.proceed()
+                        if (eventType == "android.event.systemui_qs_host_ready") {
+                            invocation.thisObject?.let { quickSettingsHost = WeakReference(it) }
+                        }
                         emitPackageRuntimeEvent(
                             context,
                             eventType,

@@ -11,6 +11,7 @@ object SystemBridgeProtocol {
     const val TILE_LABEL_SET = "qs_tile.label.set"
     const val TILE_LABEL_CLEAR = "qs_tile.label.clear"
     const val STATUS_SHELL_QUERY = "systemui.shell.query"
+    const val QS_TILES_SNAPSHOT = "qs_tiles.snapshot"
     const val STATUS_CHIP_SHOW = "status_chip.show"
     const val STATUS_CHIP_HIDE = "status_chip.hide"
     const val STATUS_ICON_SET = "status_icon.set"

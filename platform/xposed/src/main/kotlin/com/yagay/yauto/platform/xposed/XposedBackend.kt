@@ -86,6 +86,17 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
         return ok to (message ?: "SystemUI bridge unavailable")
     }
 
+    /** Returns null when the SystemUI hook has no verified host snapshot. */
+    suspend fun quickSettingsTileSpecs(): List<String>? {
+        val response = requestSystem(
+            SystemBridgeProtocol.QS_TILES_SNAPSHOT,
+            destination = "com.android.systemui",
+            action = SystemBridgeProtocol.CHIP_ACTION,
+        )
+        if (response?.getBoolean("success") != true) return null
+        return response.getStringArrayList("specs")?.take(80)?.filter { it.length in 1..250 }
+    }
+
     suspend fun beginHardwareKeyCapture(timeoutMs: Long): Boolean {
         val result = orderedRequest(
             Intent(SystemBridgeProtocol.ACTION)
