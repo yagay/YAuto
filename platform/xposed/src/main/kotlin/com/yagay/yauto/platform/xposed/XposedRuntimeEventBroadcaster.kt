@@ -2,10 +2,6 @@ package com.yagay.yauto.platform.xposed
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
-import java.util.concurrent.atomic.AtomicLong
-
-private val lastXposedSendWarningMs = AtomicLong(0L)
 
 /** One event envelope for package and system Xposed bridges. */
 internal fun broadcastXposedRuntimeEvent(
@@ -35,16 +31,9 @@ internal fun broadcastXposedRuntimeEvent(
     if (!fromPackage) XposedEventAuth.publishedToken().takeIf(String::isNotBlank)
         ?.let { intent.putExtra(XposedEventAuth.EXTRA_TOKEN, it) }
     runCatching { context.sendBroadcast(intent) }.onFailure { error ->
-        // Broadcast submission failures were formerly swallowed completely.
-        // Never log the event extras: they may include session credentials.
-        val now = android.os.SystemClock.elapsedRealtime()
-        val previous = lastXposedSendWarningMs.get()
-        if (now - previous > 30_000L &&
-            lastXposedSendWarningMs.compareAndSet(previous, now)) {
-            Log.w("YAutoBridge", "Cannot submit LSPosed event: " +
-                "type=${type.take(96)} origin=${if (fromPackage) "package" else "system_server"} " +
-                "failure=${error.javaClass.simpleName}")
-        }
+        XposedEventSendFailureReporter.report(
+            type, if (fromPackage) "package" else "system_server", error,
+        )
     }
 }
 
