@@ -99,8 +99,8 @@ class XposedSystemEventReceiver : BroadcastReceiver() {
         if (context == null || intent?.action != SystemBridgeProtocol.SYSTEM_EVENT_ACTION) return
         val source = intent.getStringExtra("bridgeSource").orEmpty()
             .ifBlank { "lsposed.system_server" }
-        val isKeyCapture = intent.getStringExtra("type") ==
-            SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_TYPE
+        val eventType = intent.getStringExtra("type").orEmpty()
+        val isKeyCapture = eventType == SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_TYPE
         if (Build.VERSION.SDK_INT >= 34) {
             val uid = getSentFromUid()
             // Some OEM Android 14+ builds return INVALID_UID (-1) for a
@@ -124,6 +124,11 @@ class XposedSystemEventReceiver : BroadcastReceiver() {
                     senderPackages = packages,
                     authenticatedUnknownSystemSender = authenticatedUnknownSystemSender,
                 )) {
+                XposedEventTransportHealth.onRejected(
+                    eventType, source, uid,
+                    if (uid == Process.INVALID_UID) "unknown UID without valid system session"
+                    else "sender UID is not authorized",
+                )
                 if (isKeyCapture) Log.w("YAutoKeyCapture", "Rejected LSPosed capture broadcast: " +
                     "senderUid=$uid source=$source authenticated=$authenticatedUnknownSystemSender")
                 return
@@ -138,10 +143,14 @@ class XposedSystemEventReceiver : BroadcastReceiver() {
             if (source != "lsposed.system_server" ||
                 !XposedEventAuth.acceptLegacy(intent.getStringExtra(XposedEventAuth.EXTRA_TOKEN).orEmpty())
             ) {
+                XposedEventTransportHealth.onRejected(
+                    eventType, source, Process.INVALID_UID, "missing authenticated legacy system session",
+                )
                 if (isKeyCapture) Log.w("YAutoKeyCapture", "Rejected unauthenticated LSPosed key event")
                 return
             }
         }
+        XposedEventTransportHealth.onAccepted(eventType)
         if (isKeyCapture) Log.i("YAutoKeyCapture", "Authenticated LSPosed capture broadcast received")
         XposedSystemEventRuntimeBridge.dispatch(intent)
     }
