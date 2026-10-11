@@ -55,6 +55,8 @@ jobs:
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_duplicate_titles.py'
           python3 tools/audit_picker_duplicate_titles.py --fail-on-unresolved-zh --fail-on-unresolved-en
+      - name: Runtime event source catalog coverage
+        run: python3 -m unittest discover -s tools -p 'test_runtime_event_source_catalog.py'
       - name: Workspace event source configuration regression
         run: python3 -m unittest discover -s tools -p 'test_workspace_change_monitor.py'
       - name: Overlay result contract regression
