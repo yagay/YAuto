@@ -21,6 +21,7 @@ internal enum class ShortXHookPayloadKind {
     INTENT_START,
     SCREEN_STATE,
     BACK_PRESS,
+    APP_OPS,
 }
 
 internal data class ShortXObserverHookSpec(
@@ -51,6 +52,23 @@ internal object ShortXCompatHookCatalog {
     }
 
     val systemServerObservers: List<ShortXObserverHookSpec> = listOf(
+        // Explicit AppOps start/finish callbacks; install only when the
+        // combined MacroDroid-style trigger is subscribed. Signatures differ
+        // across Android/OxygenOS, so OEM mismatches remain fail-isolated.
+        ShortXObserverHookSpec(
+            id = "app-ops-start",
+            classNames = listOf("com.android.server.appop.AppOpsService"),
+            methodNames = setOf("startOperation", "startOperationImpl"),
+            eventType = "android.event.app_ops_operation",
+            payloadKind = ShortXHookPayloadKind.APP_OPS,
+        ),
+        ShortXObserverHookSpec(
+            id = "app-ops-finish",
+            classNames = listOf("com.android.server.appop.AppOpsService"),
+            methodNames = setOf("finishOperation", "finishOperationImpl"),
+            eventType = "android.event.app_ops_operation",
+            payloadKind = ShortXHookPayloadKind.APP_OPS,
+        ),
         ShortXObserverHookSpec(
             id = "ams-start",
             classNames = listOf(
