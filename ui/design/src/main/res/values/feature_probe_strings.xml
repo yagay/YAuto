@@ -9,4 +9,5 @@
     <string name="feature_health_probe_skipped">Skipped: prerequisites not ready</string>
     <string name="feature_health_probe_evidence">%1$s = %2$s</string>
     <string name="feature_health_probe_error">%1$s: %2$s</string>
+    <string name="feature_health_probe_one">Verify this feature</string>
 </resources>
