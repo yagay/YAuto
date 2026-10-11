@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -159,13 +160,9 @@ internal fun permissionStatus(context: Context, group: PermissionGrantGroup): Bo
         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
     }
     return when (group.id) {
-        "accessibility" -> {
-            val target = ComponentName(context, YAutoAccessibilityService::class.java)
-                .flattenToString()
-            Settings.Secure.getString(context.contentResolver,
-                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
-                ?.split(':')?.any { it.equals(target, ignoreCase = true) } == true
-        }
+        // An enabled service toggle does not prove the service is bound and
+        // able to receive events. Report actual running service availability.
+        "accessibility" -> YAutoAccessibilityService.current != null
         "usage" -> isUsageStatsAccessGranted(context)
         "write" -> Settings.System.canWrite(context)
         "listener" -> context.packageName in

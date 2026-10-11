@@ -81,7 +81,8 @@ internal class RuntimeAccessStatusRepository(
             val lsposed = if (AccessRequirement.LSPOSED in needed) {
                 checkSuspend { xposed.isAvailable(environment) }
             } else previous[AccessRequirement.LSPOSED] ?: PermissionAvailability.UNKNOWN
-            val groups = permissionGrantGroups(Build.VERSION.SDK_INT).associateBy { it.id }
+            // Per-feature runtime permission checks are performed separately
+            // by the health scanner for SMS, PHONE and CALENDAR.
             val updated = linkedMapOf<AccessRequirement, PermissionAvailability>()
             for (requirement in needed) {
                 updated[requirement] = when (requirement) {
