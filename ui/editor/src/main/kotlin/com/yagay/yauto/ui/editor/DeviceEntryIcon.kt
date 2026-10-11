@@ -62,7 +62,7 @@ fun DeviceEntryIcon(
             )
         } else {
             val fallback = when (kind) {
-                DevicePickerIconKind.APP -> android.R.drawable.sym_def_app_icon
+                DevicePickerIconKind.APP -> android.R.drawable.ic_menu_myplaces
                 DevicePickerIconKind.TILE -> android.R.drawable.ic_menu_manage
                 DevicePickerIconKind.NOTIFICATION -> android.R.drawable.ic_dialog_email
                 DevicePickerIconKind.KEY -> android.R.drawable.ic_menu_view
