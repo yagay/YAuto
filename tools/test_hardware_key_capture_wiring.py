@@ -91,6 +91,13 @@ class HardwareKeyCaptureWiringTest(unittest.TestCase):
         installer = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedSystemServerHookInstaller.kt")
         reg = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedSystemBridgeRegistration.kt")
         self.assertIn("fun installShortXInputHooks(context: Context, classLoader: ClassLoader): Int", installer)
+        module = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/YAutoXposedModule.kt")
+        bridge_init = module.split("private fun registerSystemBridge(", 1)[1].split(
+            "private fun installShortXPackageHooks(", 1
+        )[0]
+        self.assertIn("registerXposedSystemBridge(", bridge_init)
+        self.assertIn("systemServerHooks.installShortXInputHooks(context, classLoader)", bridge_init)
+        self.assertIn("System input Hook preinstalled at boot", bridge_init)
         self.assertIn('installedHooks.count { it.startsWith("shortx-input|") }', installer)
         self.assertIn("require(installedCount > 0)", reg)
         self.assertIn('response.putInt("inputHookCount", installedCount)', reg)
