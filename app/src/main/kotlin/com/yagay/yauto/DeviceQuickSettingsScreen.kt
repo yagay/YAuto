@@ -1,6 +1,7 @@
 package com.yagay.yauto
 
 import android.content.ClipData
+import android.content.ComponentName
 import android.content.Context
 import android.content.ClipboardManager
 import androidx.compose.foundation.clickable
@@ -15,6 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.ui.design.R as TextR
+import com.yagay.yauto.ui.editor.DeviceEntryIcon
+import com.yagay.yauto.ui.editor.DevicePickerIconKind
 import kotlinx.coroutines.launch
 
 /** Read-only QS inventory; tile clicks and panel edits are never simulated here. */
@@ -69,17 +72,29 @@ internal fun DeviceQuickSettingsScreen(graph: AppGraph) {
                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                     clipboard?.setPrimaryClip(ClipData.newPlainText("QS tile", text))
                 }) {
-                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(tile.label, fontWeight = FontWeight.SemiBold)
-                        Text(tile.spec, style = MaterialTheme.typography.labelSmall)
-                        Text(
-                            when (tile.isInPanel) {
-                                true -> stringResource(TextR.string.live_picker_tile_in_panel)
-                                false -> stringResource(TextR.string.live_picker_tile_not_in_panel)
-                                null -> stringResource(TextR.string.live_picker_tile_unknown_panel)
+                    Row(
+                        Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        DeviceEntryIcon(
+                            packageName = tile.component?.let {
+                                ComponentName.unflattenFromString(it)?.packageName
                             },
-                            style = MaterialTheme.typography.bodySmall,
+                            componentName = tile.component,
+                            kind = DevicePickerIconKind.TILE,
                         )
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(tile.label, fontWeight = FontWeight.SemiBold)
+                            Text(tile.spec, style = MaterialTheme.typography.labelSmall)
+                            Text(
+                                when (tile.isInPanel) {
+                                    true -> stringResource(TextR.string.live_picker_tile_in_panel)
+                                    false -> stringResource(TextR.string.live_picker_tile_not_in_panel)
+                                    null -> stringResource(TextR.string.live_picker_tile_unknown_panel)
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
                     }
                 }
             }
