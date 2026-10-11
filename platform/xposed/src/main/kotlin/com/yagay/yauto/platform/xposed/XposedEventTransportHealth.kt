@@ -57,3 +57,22 @@ internal object XposedEventTransportHealth {
         lastRejectedEpochMs.get(),
     )
 }
+
+/**
+ * Shared failure reporter for both system_server events and application Hook
+ * callbacks. Successful sendBroadcast means "submitted", NOT "delivered".
+ * Only the receiving side can confirm acceptance.
+ */
+internal object XposedEventSendFailureReporter {
+    private val lastWarningElapsedMs = AtomicLong(-60_000L)
+    fun report(type: String, origin: String, error: Throwable) {
+        val now = android.os.SystemClock.elapsedRealtime()
+        val previous = lastWarningElapsedMs.get()
+        if (now - previous >= 30_000L &&
+            lastWarningElapsedMs.compareAndSet(previous, now)) {
+            Log.w("YAutoBridge", "Event broadcast submission failed: " +
+                "type=${type.take(96)} origin=${origin.take(40)} " +
+                "exception=${error.javaClass.simpleName}")
+        }
+    }
+}
