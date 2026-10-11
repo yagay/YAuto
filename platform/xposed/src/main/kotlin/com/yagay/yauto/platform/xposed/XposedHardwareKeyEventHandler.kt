@@ -3,6 +3,7 @@ package com.yagay.yauto.platform.xposed
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
+import android.util.Log
 import android.view.KeyEvent
 
 /** Owns hardware-key event de-duplication, payload capture and key-learning broadcasts.
@@ -75,6 +76,14 @@ internal class XposedHardwareKeyEventHandler(
         event: KeyEvent,
         methodName: String,
     ) {
+        // Trace only while a manual key-learner lease is armed; otherwise
+        // this hot path must not emit logs on every physical key press.
+        val activeUntil = state.hardwareKeyCaptureUntilElapsed.get()
+        if (activeUntil > SystemClock.elapsedRealtime() &&
+            event.action == KeyEvent.ACTION_UP) {
+            Log.i("YAutoKeyHook", "Observed Android KeyEvent keyCode=${event.keyCode} " +
+                "scanCode=${event.scanCode} via $methodName")
+        }
         // ShortX's policy-stage hook sees translated Android KeyCodes.
         // An earlier callback can deliver an ACTION_UP with an OEM scanCode
         // but KEYCODE_UNKNOWN. Never retire the one-shot LSPosed lease on
@@ -96,6 +105,7 @@ internal class XposedHardwareKeyEventHandler(
         // All system_server events must use the authenticated event envelope.
         // The old direct broadcast was rejected by our own Android 12/13
         // receiver because it omitted the negotiated session token.
+        Log.i("YAutoKeyHook", "Sending learned Android KeyCode ${event.keyCode} from $methodName")
         broadcastXposedRuntimeEvent(
             context = context,
             type = SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_TYPE,
