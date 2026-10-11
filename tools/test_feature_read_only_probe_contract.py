@@ -46,6 +46,25 @@ class FeatureReadOnlyProbeContractTest(unittest.TestCase):
         self.assertIn('put("hasRealInterfaceEvidence",', screen)
         self.assertIn("feature_health_readiness_only_warning", screen)
 
+    def test_extended_read_only_probes_cannot_run_actions_or_read_private_content(self):
+        probe = read("app/src/main/kotlin/com/yagay/yauto/AdditionalReadOnlyInterfaceProbe.kt")
+        base = read("app/src/main/kotlin/com/yagay/yauto/FeatureReadOnlyInterfaceProbe.kt")
+        self.assertIn("AdditionalReadOnlyInterfaceProbe.keys", base)
+        self.assertIn("AdditionalReadOnlyInterfaceProbe.read(context, key)", base)
+        for expected in (
+            "DateFormat.is24HourFormat", "Build.VERSION.SDK_INT",
+            "PackageManager.hasSystemFeature", "ActivityManager.MemoryInfo",
+            "BatteryManager.BATTERY_PROPERTY_CURRENT_NOW",
+        ):
+            self.assertIn(expected, probe)
+        for forbidden in (
+            "registerAction(", "registerEvent(", "sendBroadcast(",
+            "startActivity(", "su -c", "RuntimeFeatureTester",
+            "Settings.System.put", "Settings.Global.put",
+            "getLastKnownLocation(", "getActiveNotifications(",
+        ):
+            self.assertNotIn(forbidden, probe)
+
     def test_interface_evidence_is_exportable_and_not_mislabeled_as_actual_trigger(self):
         screen = read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScreen.kt")
         self.assertIn('put("schemaVersion", 2)', screen)
