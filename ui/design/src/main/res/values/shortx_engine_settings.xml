@@ -99,4 +99,10 @@
     <string name="shortx_workday_title">Workday and statutory holiday</string>
     <string name="sx_systemui_query">Read-only: id or getprop PROPERTY</string>
     <string name="sx_systemui_run">Query SystemUI</string>
+    <string name="sx_ocr_engine">OCR engine</string>
+    <string name="sx_ocr_engine_hint">Enable screenshot-content recognition when an active OCR trigger subscribes. Disabling stops scheduled recognition on the next scan.</string>
+    <string name="sx_sms_engine">SMS engine</string>
+    <string name="sx_sms_engine_hint">Allow incoming SMS events to enter YAuto automation. Android RECEIVE_SMS permission is still required.</string>
+    <string name="sx_qs_opt">QS tile optimization</string>
+    <string name="sx_qs_opt_hint">Suppress duplicate rapid QS tile taps within 450 ms to avoid repeated execution. Does not modify SystemUI framework behavior.</string>
 </resources>

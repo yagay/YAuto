@@ -99,4 +99,10 @@
     <string name="shortx_workday_title">工作日与法定节假日</string>
     <string name="sx_systemui_query">只读指令：id 或 getprop 属性名</string>
     <string name="sx_systemui_run">在 SystemUI 中查询</string>
+    <string name="sx_ocr_engine">OCR 引擎</string>
+    <string name="sx_ocr_engine_hint">有启用的截图文字触发器时运行 OCR；关闭后下一个检测周期停止识别。</string>
+    <string name="sx_sms_engine">短信引擎</string>
+    <string name="sx_sms_engine_hint">控制收到短信时是否向 YAuto 发送自动化事件，仍需要 Android 接收短信权限。</string>
+    <string name="sx_qs_opt">快捷磁贴优化</string>
+    <string name="sx_qs_opt_hint">450 毫秒内忽略重复的磁贴点击，减少规则重复执行；不会修改 SystemUI 框架。</string>
 </resources>
