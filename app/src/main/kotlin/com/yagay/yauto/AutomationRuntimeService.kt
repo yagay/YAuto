@@ -92,6 +92,7 @@ class AutomationRuntimeService : Service() {
                     callback()
                 }
             },
+            privilegedFirst = { RuntimeSettingsPreferences.preferRootWhenAvailable(this) },
         )
         registerRuntimeEventSources(this, appGraph, ::registerSource)
         val emitter = RuntimeEventEmitter { event ->

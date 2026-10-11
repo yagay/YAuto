@@ -59,6 +59,17 @@ class HardwareKeyEventArbiterTest {
         assertEquals("up", (published.last().payload["action"] as ConfigValue.StringValue).value)
     }
 
+    @Test fun releasePrefersBackendThatSuppliedTheKeyDown() {
+        val arbiter = arbiter()
+        arbiter.accept(event("root.input", code = 24, action = "down"))
+        flush()
+        arbiter.accept(event("lsposed.system_server", code = 24, action = "up"))
+        now += 3
+        arbiter.accept(event("root.input", code = 24, action = "up"))
+        flush()
+        assertEquals(listOf("root.input", "root.input"), published.map { it.source })
+    }
+
     @Test fun distinctPhysicalButtonsAndUnknownScanCodesAreNotCollapsed() {
         val arbiter = arbiter()
         arbiter.accept(event("root.input", code = 0, raw = 115))

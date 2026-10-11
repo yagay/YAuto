@@ -17,6 +17,7 @@ class HardwareKeyEventArbiter(
     private val publish: (RuntimeEvent) -> Unit,
     private val schedule: (Long, () -> Unit) -> Unit,
     private val clock: () -> Long = { System.nanoTime() / 1_000_000L },
+    private val privilegedFirst: () -> Boolean = { true },
 ) {
     private data class Entry(
         val signature: String,
@@ -35,6 +36,8 @@ class HardwareKeyEventArbiter(
     private val lock = Any()
     private val pending = ArrayList<Entry>()
     private val delivered = ArrayList<Delivered>()
+    /** Keep a physical press on one backend until release to prevent split gestures. */
+    private val pressOwners = HashMap<String, String>()
     private var closed = false
 
     fun accept(event: RuntimeEvent) {
@@ -49,7 +52,9 @@ class HardwareKeyEventArbiter(
             return
         }
         val now = clock()
-        val rank = rank(event.source)
+        val identity = signature.substringBefore(":${event.payload.string(\"action\")}:")
+        val owner = synchronized(lock) { pressOwners[identity] }
+        val rank = rank(event.source) - if (owner == event.source) 10 else 0
         val deviceId = event.payload["deviceId"].numberOrNull()?.toInt() ?: -1
         var created: Entry? = null
         synchronized(lock) {
@@ -81,6 +86,13 @@ class HardwareKeyEventArbiter(
                     else {
                         delivered.add(Delivered(entry.signature, clock(), entry.event.source, entry.deviceId))
                         if (delivered.size > 128) delivered.subList(0, delivered.size - 128).clear()
+                        val selectedIdentity = entry.signature.substringBefore(
+                            ":${entry.event.payload.string(\"action\")}:"
+                        )
+                        when (entry.event.payload.string("action")) {
+                            "down" -> pressOwners[selectedIdentity] = entry.event.source
+                            "up" -> pressOwners.remove(selectedIdentity)
+                        }
                         entry.event
                     }
                 }
@@ -93,6 +105,7 @@ class HardwareKeyEventArbiter(
         closed = true
         pending.clear()
         delivered.clear()
+        pressOwners.clear()
     }
 
     private fun signature(event: RuntimeEvent): String? {
@@ -115,10 +128,10 @@ class HardwareKeyEventArbiter(
         first < 0 || second < 0 || first == second
 
     private fun rank(source: String): Int = when {
-        source.startsWith("lsposed") -> CapabilityBackendPriority.rank("lsposed", true)
-        source.startsWith("root") -> CapabilityBackendPriority.rank("root", true)
-        source.startsWith("shizuku") -> CapabilityBackendPriority.rank("shizuku", true)
-        source.startsWith("accessibility") -> CapabilityBackendPriority.rank("accessibility", true)
+        source.startsWith("lsposed") -> CapabilityBackendPriority.rank("lsposed", privilegedFirst())
+        source.startsWith("root") -> CapabilityBackendPriority.rank("root", privilegedFirst())
+        source.startsWith("shizuku") -> CapabilityBackendPriority.rank("shizuku", privilegedFirst())
+        source.startsWith("accessibility") -> CapabilityBackendPriority.rank("accessibility", privilegedFirst())
         else -> 5
     }
 
