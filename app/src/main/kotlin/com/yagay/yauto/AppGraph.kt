@@ -68,6 +68,9 @@ class AppGraph(context: Context) {
     val shizuku by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { ShizukuBackend(appContext) }
     val xposed by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { XposedBackend(appContext) }
     val lsposedScopes = LsposedScopeManager()
+    val accessStatus by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        RuntimeAccessStatusRepository(appContext, rootShell, shizuku, xposed)
+    }
     val accessibility by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AccessibilityBackend() }
     private val usageForeground by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { SystemUsageStatsForegroundReader(appContext) }
     private val workspaceStorage = JsonWorkspaceRepository(appContext)
