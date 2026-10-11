@@ -48,13 +48,12 @@ internal fun liveAndroidFieldPicker(
                     val appName = runCatching {
                         pm.getApplicationLabel(pm.getApplicationInfo(notification.packageName, 0)).toString()
                     }.getOrDefault(notification.packageName)
-                    val origin = buildString {
-                        append(appName)
-                        if (notification.title.isNotBlank()) {
-                            append(" · ")
-                            append(notification.title.take(70))
-                        }
-                    }
+                    val origin = if (notification.title.isNotBlank()) {
+                        context.getString(
+                            TextR.string.live_picker_notification_origin,
+                            appName, notification.title.take(70),
+                        )
+                    } else appName
                     val related = mapOf("package" to notification.packageName)
                     fun addValue(value: String, readable: String = value, indexDetail: String = origin) {
                         if (value.isNotBlank()) add(SystemPickerOption(
