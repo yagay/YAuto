@@ -45,7 +45,7 @@ internal object ReadOnlyFeatureProbeCatalog {
         "screen", "charging", "power_save", "nfc_enabled", "location_enabled",
         "auto_rotate", "dark_mode", "headset_connected", "network",
         "battery_level", "battery_temperature", "battery_present", "battery_plugged",
-        "media_volume", "screen_timeout", "bluetooth_enabled",
+        "media_volume", "brightness", "screen_timeout", "stay_awake_while_charging", "bluetooth_enabled",
         "next_alarm_set", "network_validated", "network_internet",
         "network_restricted", "network_suspended",
     )
@@ -198,6 +198,14 @@ internal class FeatureReadOnlyInterfaceProbe(context: Context) {
                         ((audio.getStreamVolume(AudioManager.STREAM_MUSIC) - minimum) *
                             100.0 / (maximum - minimum)).toString()
                 }
+                "brightness" ->
+                    "Settings.System.SCREEN_BRIGHTNESS" to
+                        Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS).toString()
+                "stay_awake_while_charging" ->
+                    "Settings.Global.STAY_ON_WHILE_PLUGGED_IN" to
+                        Settings.Global.getInt(
+                            context.contentResolver, Settings.Global.STAY_ON_WHILE_PLUGGED_IN, 0
+                        ).toString()
                 "screen_timeout" ->
                     "Settings.System.SCREEN_OFF_TIMEOUT" to
                         Settings.System.getLong(context.contentResolver, Settings.System.SCREEN_OFF_TIMEOUT).toString()
