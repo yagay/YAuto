@@ -7,10 +7,12 @@ import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.CancellationException
 import org.mvel2.MVEL
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.RejectedExecutionException
 
 class AccessibilityMvelFeaturePack(
     context: Context,
@@ -90,19 +92,23 @@ class AccessibilityMvelFeaturePack(
         bindings["accessibility"] = YAutoAccessibilityService.current
         bindings["variableSetter"] = BeanShellVariableBridge(variables)
         bindings["globals"] = BeanShellGlobals
-        val executor = Executors.newSingleThreadExecutor { runnable ->
-            Thread(runnable, "YAutoMVEL").apply { isDaemon = true }
+        val future = try {
+            AccessibilityScriptExecutionPool.executor.submit<Any?> {
+                MVEL.eval(expression, bindings)
+            }
+        } catch (_: RejectedExecutionException) {
+            return@withContext null
         }
-        val future = executor.submit<Any?> { MVEL.eval(expression, bindings) }
         try {
-            future.get(timeoutMs, TimeUnit.MILLISECONDS)
+            runInterruptible(Dispatchers.IO) { future.get(timeoutMs, TimeUnit.MILLISECONDS) }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (_: TimeoutException) {
-            future.cancel(true)
             null
-        } catch (_: Throwable) {
+        } catch (_: Exception) {
             null
         } finally {
-            executor.shutdownNow()
+            future.cancel(true)
         }
     }
 

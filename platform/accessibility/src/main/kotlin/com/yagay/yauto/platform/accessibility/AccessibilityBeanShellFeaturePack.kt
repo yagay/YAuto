@@ -9,15 +9,16 @@ import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.CancellationException
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.RejectedExecutionException
 
 /**
  * BeanShell Java automation compatible with the core shape of MacroDroid's Java Action.
@@ -74,14 +75,12 @@ class AccessibilityBeanShellFeaturePack(
         timeoutMs: Long,
         variables: VariableAccess,
     ): BeanShellOutput? = withContext(Dispatchers.IO) {
-        val consoleBytes = ByteArrayOutputStream()
+        val consoleBytes = BoundedScriptOutputStream(MAX_CONSOLE_LENGTH)
         val console = PrintStream(consoleBytes, true, StandardCharsets.UTF_8.name())
-        val executor = Executors.newSingleThreadExecutor { runnable ->
-            Thread(runnable, "YAutoBeanShell").apply { isDaemon = true }
-        }
         val bridge = BeanShellVariableBridge(variables)
         val magicText = BeanShellMagicText(variables)
-        val future = executor.submit<Any?> {
+        val future = try {
+            AccessibilityScriptExecutionPool.executor.submit<Any?> {
             Interpreter().apply {
                 setOut(console)
                 setErr(console)
@@ -92,20 +91,24 @@ class AccessibilityBeanShellFeaturePack(
                 set("variables", bridge)
                 set("globals", BeanShellGlobals)
             }.eval(script)
+            }
+        } catch (_: RejectedExecutionException) {
+            console.close()
+            return@withContext null
         }
         try {
-            val raw = future.get(timeoutMs, TimeUnit.MILLISECONDS)
+            val raw = runInterruptible(Dispatchers.IO) { future.get(timeoutMs, TimeUnit.MILLISECONDS) }
             val value = javaToConfig(runCatching { Primitive.unwrap(raw) }.getOrDefault(raw))
-            val text = consoleBytes.toString(StandardCharsets.UTF_8.name()).take(MAX_CONSOLE_LENGTH)
-            BeanShellOutput(value, text)
+            BeanShellOutput(value, consoleBytes.text().take(MAX_CONSOLE_LENGTH))
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (_: TimeoutException) {
-            future.cancel(true)
             null
-        } catch (_: Throwable) {
+        } catch (_: Exception) {
             null
         } finally {
+            future.cancel(true)
             console.close()
-            executor.shutdownNow()
         }
     }
 

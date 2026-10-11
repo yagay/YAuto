@@ -20,6 +20,17 @@ class SharedRuntimeSafetyTest(unittest.TestCase):
         self.assertIn("catch (cancelled: CancellationException)",s)
         self.assertNotIn("Executors.newCachedThreadPool",s)
 
+    def test_accessibility_interpreters_reuse_bounded_pool(self):
+        pool=read("platform/accessibility/src/main/kotlin/com/yagay/yauto/platform/accessibility/AccessibilityScriptExecutionPool.kt")
+        self.assertIn("ArrayBlockingQueue<Runnable>(16)",pool)
+        self.assertIn("BoundedScriptOutputStream",pool)
+        for file in ("AccessibilityBeanShellFeaturePack.kt", "AccessibilityMvelFeaturePack.kt"):
+            s=read("platform/accessibility/src/main/kotlin/com/yagay/yauto/platform/accessibility/"+file)
+            self.assertIn("AccessibilityScriptExecutionPool.executor",s)
+            self.assertIn("runInterruptible(Dispatchers.IO)",s)
+            self.assertIn("catch (cancelled: CancellationException)",s)
+            self.assertNotIn("Executors.newSingleThreadExecutor",s)
+
     def test_diagnostics_never_consume_cancellation(self):
         s=read("core/diagnostics/src/main/kotlin/com/yagay/yauto/core/diagnostics/Diagnostics.kt")
         self.assertGreaterEqual(s.count('catch (cancelled: CancellationException) { throw cancelled }'),2)
