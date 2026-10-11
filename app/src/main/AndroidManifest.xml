@@ -55,6 +55,9 @@
 
     <queries>
         <intent>
+            <action android:name="android.service.quicksettings.action.QS_TILE" />
+        </intent>
+        <intent>
             <action android:name="com.twofortyfouram.locale.intent.action.FIRE_SETTING" />
         </intent>
         <intent>

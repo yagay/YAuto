@@ -13,6 +13,7 @@ import android.location.LocationManager
 import android.net.wifi.WifiManager
 import android.os.UserManager
 import android.provider.CalendarContract
+import android.service.quicksettings.TileService
 import android.telephony.SubscriptionManager
 import android.view.KeyEvent
 import android.view.inputmethod.InputMethodManager
@@ -248,6 +249,26 @@ private fun loadComponentOptions(
 ): List<SystemPickerOption> {
     val pm = context.packageManager
     val explicitPackage = picker.packageFieldKey?.let { values[it].orEmpty().trim() }.orEmpty()
+    // Tile services are discoverable by the public QS_TILE service intent;
+    // querying every application's GET_SERVICES is slower and can include
+    // services that are not valid tiles.
+    if (picker.kinds == setOf(ComponentPickerKind.QUICK_SETTINGS_TILE)) {
+        val discovered = pm.queryIntentServices(
+            Intent(TileService.ACTION_QS_TILE), PackageManager.GET_META_DATA,
+        ).mapNotNull { resolve ->
+            val service = resolve.serviceInfo ?: return@mapNotNull null
+            if (explicitPackage.isNotBlank() && service.packageName != explicitPackage) return@mapNotNull null
+            if (service.permission != "android.permission.BIND_QUICK_SETTINGS_TILE") return@mapNotNull null
+            val value = componentPickerValue(picker, service.packageName, service.name)
+            val label = runCatching { resolve.loadLabel(pm)?.toString() }.getOrNull()
+                ?.takeIf(String::isNotBlank) ?: service.name
+            SystemPickerOption(value, label, service.packageName)
+        }
+        return discovered.distinctBy { it.value }.sortedWith { left, right ->
+            comparator.compare(left.label, right.label)
+        }
+    }
+
     val packages = if (explicitPackage.isNotBlank()) {
         listOf(explicitPackage)
     } else {

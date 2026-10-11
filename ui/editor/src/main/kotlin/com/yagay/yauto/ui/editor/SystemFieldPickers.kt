@@ -56,7 +56,7 @@ internal fun inferredPickerSource(
     return when (field.key) {
         "slot" -> if (descriptor.id.value.contains("qs_tile", ignoreCase = true))
             FieldPickerSource.LiveSystem else null
-        "channelId", "groupKey", "actionTitle", "actionIndex", "titleContains",
+        "channelId", "groupId", "groupKey", "actionTitle", "actionIndex", "titleContains",
         "textContains", "notificationId", "id", "tag" -> if (
             descriptor.id.value.contains("notification", ignoreCase = true)
         ) FieldPickerSource.LiveSystem else null
@@ -293,10 +293,12 @@ private fun SystemValuePickerDialog(
     val liveSystemLoader = LocalLiveSystemFieldPicker.current
     var query by remember { mutableStateOf("") }
     var loading by remember(picker, allValues) { mutableStateOf(true) }
+    var refreshSequence by remember(picker, descriptorId, fieldKey) { mutableIntStateOf(0) }
     var options by remember(picker, allValues) { mutableStateOf(emptyList<SystemPickerOption>()) }
 
     var unavailable by remember { mutableStateOf(false) }
-    LaunchedEffect(picker, descriptorId, fieldKey, allValues, locale, hardwareKeyCatalogLoader, liveSystemLoader) {
+    LaunchedEffect(picker, descriptorId, fieldKey, allValues, locale, hardwareKeyCatalogLoader,
+        liveSystemLoader, refreshSequence) {
         loading = true
         val hardwareKeys = if (picker == FieldPickerSource.KeyCode) {
             runCatching { hardwareKeyCatalogLoader() }.getOrDefault(HardwareKeyPickerCatalog())
@@ -351,6 +353,14 @@ private fun SystemValuePickerDialog(
                         label = { Text(stringResource(TextR.string.feature_picker_search_value)) },
                         singleLine = true,
                     )
+                }
+                item {
+                    OutlinedButton(
+                        onClick = { refreshSequence++ },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(TextR.string.live_picker_refresh))
+                    }
                 }
                 if (unavailable) {
                     item { Text(stringResource(TextR.string.live_picker_unavailable),

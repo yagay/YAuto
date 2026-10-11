@@ -8,4 +8,6 @@
     <string name="live_picker_tile_unavailable">Configured unavailable</string>
     <string name="live_picker_notification_action">Action %1$d · %2$s</string>
     <string name="live_picker_notification_origin">%1$s · %2$s</string>
+    <string name="live_picker_refresh">Refresh available values</string>
+    <string name="live_picker_notification_history_origin">Captured history · %1$s · %2$s</string>
 </resources>

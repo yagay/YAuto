@@ -8,4 +8,6 @@
     <string name="live_picker_tile_unavailable">已设置为不可用</string>
     <string name="live_picker_notification_action">操作 %1$d · %2$s</string>
     <string name="live_picker_notification_origin">%1$s · %2$s</string>
+    <string name="live_picker_refresh">重新读取可用选项</string>
+    <string name="live_picker_notification_history_origin">已捕获的历史记录 · %1$s · %2$s</string>
 </resources>
