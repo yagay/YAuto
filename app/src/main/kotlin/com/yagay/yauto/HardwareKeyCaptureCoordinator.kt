@@ -72,15 +72,22 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 
-/** A key-learning session owns the one-shot receivers exclusively. */
-private val hardwareKeyLearningMutex = Mutex()
+/** One learner at a time; the automation runtime must not fire a mapped
+ * rule while its physical button is being recorded by the editor.
+ */
+internal object HardwareKeyCaptureSession {
+    val mutex = Mutex()
+    @Volatile var active: Boolean = false
+}
 
 /** Single capture coordinator combines Android, LSPosed and raw OEM hardware events. */
 internal suspend fun captureHardwareKey(
     graph: AppGraph,
     timeoutMs: Long,
-): HardwareKeyCaptureResult? = hardwareKeyLearningMutex.withLock {
-    coroutineScope {
+): HardwareKeyCaptureResult? = HardwareKeyCaptureSession.mutex.withLock {
+    HardwareKeyCaptureSession.active = true
+    try {
+        coroutineScope {
     val channel = Channel<HardwareKeyCaptureResult>(capacity = 3)
     val jobs = mutableListOf<kotlinx.coroutines.Job>()
 
@@ -167,6 +174,9 @@ internal suspend fun captureHardwareKey(
     jobs.forEach { it.cancel() }
     channel.close()
     mergeHardwareKeyCaptures(candidates)
+        }
+    } finally {
+        HardwareKeyCaptureSession.active = false
     }
 }
 

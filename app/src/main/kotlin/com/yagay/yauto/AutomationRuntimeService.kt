@@ -330,6 +330,8 @@ class AutomationRuntimeService : Service() {
         dispatcher: RuntimeEventDispatcher,
         event: RuntimeEvent,
     ) {
+        // Editing/learning must not execute an existing rule bound to this key.
+        if (HardwareKeyCaptureSession.active) return
         // One arbiter for Root, LSPosed and Accessibility. Do not allow the
         // quickest (possibly lower-priority) observer to trigger twice.
         hardwareKeyArbiter?.accept(event) ?: dispatcher.dispatch(event)
