@@ -14,6 +14,8 @@ import com.yagay.yauto.core.model.long
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.storage.WorkspaceRepository
+import com.yagay.yauto.core.storage.WorkspaceData
+import com.yagay.yauto.core.storage.activeActivationEvents
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -39,22 +41,20 @@ class ConfiguredSensorEventSource(
     @Volatile private var emitter: RuntimeEventEmitter? = null
     @Volatile private var rulesByType: Map<Int, List<SensorRule>> = emptyMap()
     private val lastEmit = ConcurrentHashMap<String, Long>()
+    private var configurationJob: Job? = null
 
     override fun start(emitter: RuntimeEventEmitter) {
         if (!started.compareAndSet(false, true)) return
         this.emitter = emitter
         thread.start()
         handler = Handler(thread.looper)
-        scope.launch {
-            while (isActive && started.get()) {
-                refreshRules()
-                delay(5_000)
-            }
-        }
+        configurationJob = scope.watchWorkspaceChanges(workspace, ::refreshRules)
     }
 
     override fun stop() {
         if (!started.compareAndSet(true, false)) return
+        configurationJob?.cancel()
+        configurationJob = null
         scope.cancel()
         emitter = null
         handler?.post { manager.unregisterListener(this@ConfiguredSensorEventSource) }
@@ -63,14 +63,10 @@ class ConfiguredSensorEventSource(
         rulesByType = emptyMap()
     }
 
-    private suspend fun refreshRules() {
-        val features = runCatching {
-            workspace.load().automations.asSequence()
-                .filter { it.enabled }
-                .flatMap { it.activation.events.asSequence() }
-                .filter { it.typeId == "android.event.sensor_value" || it.typeId == "android.event.shake" }
-                .toList()
-        }.getOrDefault(emptyList())
+    private suspend fun refreshRules(data: WorkspaceData) {
+        val features = data.activeActivationEvents()
+            .filter { it.typeId == "android.event.sensor_value" || it.typeId == "android.event.shake" }
+            .toList()
 
         val next = features.mapNotNull(::toRule).distinctBy { it.key }.groupBy { it.sensorType }
         val oldTypes = rulesByType.keys

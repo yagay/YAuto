@@ -20,12 +20,8 @@ fun WorkspaceData.runtimeEventFeatureIds(): Set<String> = buildSet {
             (automation.category == null || automation.category !in disabledCategories)
     }
 
+    activeActivationEvents().forEach { add(it.typeId) }
     active.forEach { automation ->
-        automation.activation.events.forEach { feature ->
-            if (runtimeTriggerKey(automation, feature) !in disabledTriggerKeys) {
-                add(feature.typeId)
-            }
-        }
         collectWaitEvents(automation.onEnter)
         collectWaitEvents(automation.onEvent)
         collectWaitEvents(automation.onExit)
@@ -46,4 +42,16 @@ private fun MutableSet<String>.collectWaitEvents(nodes: List<ActionNode>) {
             addAll(node.events.map(FeatureRef::typeId))
         }
     }
+}
+
+/** Shared runtime subscription view; disabled categories and individual triggers are excluded. */
+fun WorkspaceData.activeActivationEvents(): Sequence<FeatureRef> {
+    if (!runtimeEnabled) return emptySequence()
+    return automations.asSequence()
+        .filter { it.enabled && (it.category == null || it.category !in disabledCategories) }
+        .flatMap { automation ->
+            automation.activation.events.asSequence().filter { feature ->
+                runtimeTriggerKey(automation, feature) !in disabledTriggerKeys
+            }
+        }
 }

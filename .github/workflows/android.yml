@@ -55,6 +55,8 @@ jobs:
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_duplicate_titles.py'
           python3 tools/audit_picker_duplicate_titles.py --fail-on-unresolved-zh --fail-on-unresolved-en
+      - name: Workspace event source configuration regression
+        run: python3 -m unittest discover -s tools -p 'test_workspace_change_monitor.py'
       - name: Overlay result contract regression
         run: python3 -m unittest discover -s tools -p 'test_overlay_result_contract.py'
       - name: Runtime ingress and settings regression

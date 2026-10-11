@@ -5,13 +5,14 @@ import com.yagay.yauto.core.model.FeatureRef
 import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.storage.WorkspaceRepository
+import com.yagay.yauto.core.storage.WorkspaceData
+import com.yagay.yauto.core.storage.activeActivationEvents
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -26,46 +27,39 @@ class ConfiguredIntervalEventSource(
     override val id: String = "android.interval.configured"
     private val started = AtomicBoolean(false)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val jobs = ConcurrentHashMap<String, Job>()
+    private val jobs = ConcurrentHashMap<String, RunningRule>()
     @Volatile private var emitter: RuntimeEventEmitter? = null
     private var refreshJob: Job? = null
 
     override fun start(emitter: RuntimeEventEmitter) {
         if (!started.compareAndSet(false, true)) return
         this.emitter = emitter
-        refreshJob = scope.launch {
-            while (isActive && started.get()) {
-                refreshRules()
-                delay(2_000L)
-            }
-        }
+        refreshJob = scope.watchWorkspaceChanges(workspace, ::refreshRules)
     }
 
     override fun stop() {
         if (!started.compareAndSet(true, false)) return
         refreshJob?.cancel()
         refreshJob = null
-        jobs.values.forEach(Job::cancel)
+        jobs.values.forEach { it.job.cancel() }
         jobs.clear()
         emitter = null
         scope.cancel()
     }
 
-    private suspend fun refreshRules() {
-        val rules = runCatching {
-            workspace.load().automations.asSequence()
-                .filter { it.enabled }
-                .flatMap { it.activation.events.asSequence() }
-                .filter { it.typeId == "android.event.interval" }
-                .map(::toRule)
-                .distinctBy { it.key }
-                .associateBy { it.key }
-        }.getOrDefault(emptyMap())
+    private suspend fun refreshRules(data: WorkspaceData) {
+        val rules = data.activeActivationEvents()
+            .filter { it.typeId == "android.event.interval" }
+            .map(::toRule)
+            .distinctBy { it.key }
+            .associateBy { it.key }
 
-        jobs.keys.filter { it !in rules }.forEach { key -> jobs.remove(key)?.cancel() }
+        jobs.entries.toList().forEach { (key, running) ->
+            if (rules[key] != running.rule && jobs.remove(key, running)) running.job.cancel()
+        }
         rules.values.forEach { rule ->
-            if (jobs[rule.key]?.isActive == true) return@forEach
-            jobs[rule.key] = scope.launch { runRule(rule) }
+            if (jobs[rule.key]?.job?.isActive == true) return@forEach
+            jobs[rule.key] = RunningRule(rule, scope.launch { runRule(rule) })
         }
     }
 
@@ -96,6 +90,8 @@ class ConfiguredIntervalEventSource(
         intervalMs = intervalDurationMs(feature),
         fireImmediately = feature.config.boolean("fireImmediately"),
     )
+
+    private data class RunningRule(val rule: IntervalRule, val job: Job)
 
     private data class IntervalRule(
         val key: String,

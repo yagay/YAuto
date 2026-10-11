@@ -7,6 +7,8 @@ import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.model.long
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.storage.WorkspaceRepository
+import com.yagay.yauto.core.storage.WorkspaceData
+import com.yagay.yauto.core.storage.activeActivationEvents
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
@@ -31,25 +33,18 @@ class ConfiguredShortXTimeEventSource(
     private val started = AtomicBoolean(false)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var job: Job? = null
+    private var configurationJob: Job? = null
+    @Volatile private var activeTimeEvents: List<FeatureRef> = emptyList()
     @Volatile private var emitter: RuntimeEventEmitter? = null
     private val emittedKeys = ConcurrentHashMap<String, String>()
 
     override fun start(emitter: RuntimeEventEmitter) {
         if (!started.compareAndSet(false, true)) return
         this.emitter = emitter
+        configurationJob = scope.watchWorkspaceChanges(workspace, ::refreshTimeEvents)
         job = scope.launch {
             while (isActive && started.get()) {
-                val events = runCatching {
-                    workspace.load().automations.asSequence()
-                        .filter { it.enabled }
-                        .flatMap { it.activation.events.asSequence() }
-                        .filter {
-                            it.typeId == "android.event.alarm_time" ||
-                                it.typeId == "android.event.fixed_in_period" ||
-                                it.typeId == "android.event.random_in_period"
-                        }
-                        .toList()
-                }.getOrDefault(emptyList())
+                val events = activeTimeEvents
                 val now = ZonedDateTime.now()
                 events.forEach { feature ->
                     when (feature.typeId) {
@@ -69,9 +64,23 @@ class ConfiguredShortXTimeEventSource(
         if (!started.compareAndSet(true, false)) return
         job?.cancel()
         job = null
+        configurationJob?.cancel()
+        configurationJob = null
+        activeTimeEvents = emptyList()
         emitter = null
         emittedKeys.clear()
         scope.cancel()
+    }
+
+    private suspend fun refreshTimeEvents(data: WorkspaceData) {
+        val events = data.activeActivationEvents().filter {
+            it.typeId == "android.event.alarm_time" ||
+                it.typeId == "android.event.fixed_in_period" ||
+                it.typeId == "android.event.random_in_period"
+        }.toList()
+        activeTimeEvents = events
+        val activeKeys = events.map(::eventKey).toSet()
+        emittedKeys.keys.removeIf { it !in activeKeys }
     }
 
     private fun evaluateAlarm(feature: FeatureRef, now: ZonedDateTime) {
