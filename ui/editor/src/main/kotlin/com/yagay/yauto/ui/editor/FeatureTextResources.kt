@@ -55,6 +55,14 @@ internal class FeatureTextResolver(private val context: Context) {
                 ?: resource("shortx_feature_${resourceKey(descriptor.id.value)}_title")
                 ?: resource("feature_${resourceKey(descriptor.id.value)}_title")
                 ?: sourceAlignedFeatureTitle(descriptor.id.value)?.let(localizedContext::getString)
+                // STATE and CONDITION often register the same observable Android
+                // property under two feature IDs. Reuse an approved counterpart
+                // name only if this precise feature has no own localized title.
+                ?: stateConditionCounterpartId(descriptor.id.value)?.let { pairedId ->
+                    resource("macro_feature_${resourceKey(pairedId)}_title")
+                        ?: resource("shortx_feature_${resourceKey(pairedId)}_title")
+                        ?: resource("feature_${resourceKey(pairedId)}_title")
+                }
                 ?: phrase(descriptor.title)
                 ?: genericTitle(descriptor)
         }
@@ -170,6 +178,14 @@ internal class FeatureTextResolver(private val context: Context) {
  * Use the authored descriptor label, or a readable stable ID when blank.
  * Localized resource translations and source-approved names still take precedence.
  */
+internal fun stateConditionCounterpartId(featureId: String): String? = when {
+    featureId.startsWith("android.state.") ->
+        "android.condition." + featureId.removePrefix("android.state.")
+    featureId.startsWith("android.condition.") ->
+        "android.state." + featureId.removePrefix("android.condition.")
+    else -> null
+}
+
 internal fun descriptiveFallbackName(authoredTitle: String, featureId: String): String {
     val candidate = authoredTitle.trim()
     if (candidate.isNotEmpty()) return candidate
