@@ -33,6 +33,7 @@ import org.json.JSONObject
 internal fun FeatureHealthScreen(
     modifier: Modifier,
     scanner: FeatureHealthScanner,
+    localizedTitles: Map<String, String>,
 ) {
     val context = LocalContext.current
     val snapshot by scanner.snapshot.collectAsState()
@@ -48,7 +49,7 @@ internal fun FeatureHealthScreen(
             exportStatus = runCatching {
                 context.contentResolver.openOutputStream(uri, "wt")
                     ?.bufferedWriter()
-                    ?.use { it.write(featureHealthDiagnosticJson(context, current)) }
+                    ?.use { it.write(featureHealthDiagnosticJson(context, current, localizedTitles)) }
                     ?: error("Unable to open output stream")
                 context.getString(TextR.string.feature_health_export_saved)
             }.getOrElse { error ->
@@ -61,10 +62,11 @@ internal fun FeatureHealthScreen(
     }
     var query by remember { mutableStateOf("") }
     val normalized = query.trim().lowercase()
-    val visible = remember(snapshot, normalized) {
+    val visible = remember(snapshot, normalized, localizedTitles) {
         snapshot?.items.orEmpty().filter { item ->
             normalized.isEmpty() ||
                 normalized in item.title.lowercase() ||
+                normalized in localizedTitles[item.featureId].orEmpty().lowercase() ||
                 normalized in item.featureId.lowercase()
         }
     }
@@ -201,7 +203,9 @@ internal fun FeatureHealthScreen(
             key = { it.featureId },
             contentType = { "feature_health" },
         ) { item ->
-            FeatureHealthRow(item, scanning) { scanner.requestFeatureVerification(item.featureId) }
+            FeatureHealthRow(item, localizedTitles[item.featureId] ?: item.title, scanning) {
+                scanner.requestFeatureVerification(item.featureId)
+            }
         }
     }
 }
@@ -209,6 +213,7 @@ internal fun FeatureHealthScreen(
 @Composable
 private fun FeatureHealthRow(
     item: FeatureHealthItem,
+    translatedTitle: String,
     scanning: Boolean,
     onVerify: () -> Unit,
 ) {
@@ -235,7 +240,7 @@ private fun FeatureHealthRow(
         Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(Modifier.fillMaxWidth()) {
                 Text(
-                    item.title,
+                    translatedTitle,
                     modifier = Modifier.weight(1f),
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
@@ -313,6 +318,7 @@ private fun FeatureHealthRow(
 private fun featureHealthDiagnosticJson(
     context: android.content.Context,
     snapshot: FeatureHealthSnapshot,
+    localizedTitles: Map<String, String>,
 ): String {
     val items = JSONArray()
     snapshot.items.forEach { item ->
@@ -320,6 +326,7 @@ private fun featureHealthDiagnosticJson(
             JSONObject()
                 .put("featureId", item.featureId)
                 .put("title", item.title)
+                .put("localizedTitle", localizedTitles[item.featureId] ?: item.title)
                 .put("kind", item.kind.name)
                 .put("status", item.status.name)
                 .put("backendId", item.backendId)
