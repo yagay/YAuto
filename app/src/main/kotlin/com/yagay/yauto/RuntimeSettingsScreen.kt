@@ -123,9 +123,9 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
     }
     val currentLanguageTag = remember(refresh) { AppLanguageManager.currentTag(context) }
 
-    LaunchedEffect(page) {
-        if (page == RuntimeSettingsPage.HEALTH) graph.featureHealth.requestScan(force = true)
-    }
+    // The user explicitly selects "scan" or "verify interfaces".
+    // Do not enqueue a basic scan on navigation: it could overwrite the
+    // requested read-only verification in the conflated scan channel.
 
     LaunchedEffect(page, refresh) {
         if (page == RuntimeSettingsPage.BACKENDS ||
@@ -183,6 +183,86 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                                 stringResource(TextR.string.runtime_settings_capability_center_description),
                                 style = MaterialTheme.typography.bodySmall,
                             )
+                        }
+                    }
+                }
+                item {
+                    val snapshot by graph.featureHealth.snapshot.collectAsState()
+                    val scanning by graph.featureHealth.scanning.collectAsState()
+                    val autoScan by graph.featureHealth.autoScanEnabled.collectAsState()
+                    val subtitle = when {
+                        scanning -> stringResource(TextR.string.feature_health_scanning)
+                        snapshot != null -> stringResource(
+                            TextR.string.feature_health_summary_format,
+                            snapshot!!.items.size,
+                            snapshot!!.readyCount,
+                            snapshot!!.blockedCount,
+                            snapshot!!.unknownCount,
+                            snapshot!!.brokenCount,
+                            snapshot!!.unsupportedCount,
+                        )
+                        autoScan -> stringResource(TextR.string.feature_health_auto_on_not_scanned)
+                        else -> stringResource(TextR.string.feature_health_not_scanned)
+                    }
+                    MacroItemRow(
+                        stringResource(TextR.string.runtime_settings_feature_health),
+                        subtitle,
+                        MacroPalette.Diagnostics,
+                        onClick = { navigateTo(RuntimeSettingsPage.HEALTH) },
+                    )
+                }
+                item {
+                    val scanning by graph.featureHealth.scanning.collectAsState()
+                    val autoScan by graph.featureHealth.autoScanEnabled.collectAsState()
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(
+                            Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Text(
+                                stringResource(TextR.string.feature_health_quick_title),
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                stringResource(TextR.string.feature_health_auto_scan_detail),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Text(
+                                    stringResource(TextR.string.feature_health_auto_scan),
+                                    Modifier.weight(1f),
+                                )
+                                Switch(
+                                    checked = autoScan,
+                                    onCheckedChange = graph.featureHealth::setAutoScanEnabled,
+                                )
+                            }
+                            Button(
+                                onClick = { graph.featureHealth.requestScan(force = true) },
+                                enabled = !scanning,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(
+                                    stringResource(
+                                        if (scanning) TextR.string.feature_health_scanning
+                                        else TextR.string.feature_health_scan_now
+                                    )
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    graph.featureHealth.requestReadOnlyVerification()
+                                    navigateTo(RuntimeSettingsPage.HEALTH)
+                                },
+                                enabled = !scanning,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(stringResource(TextR.string.feature_health_probe_read_only))
+                            }
                         }
                     }
                 }
@@ -313,76 +393,6 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.live_picker_tile_inventory_hint),
                         MacroPalette.Utility,
                         onClick = { navigateTo(RuntimeSettingsPage.DEVICE_TILES) },
-                    )
-                }
-                item {
-                    val scanning by graph.featureHealth.scanning.collectAsState()
-                    val autoScan by graph.featureHealth.autoScanEnabled.collectAsState()
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(
-                            Modifier.padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            Text(
-                                stringResource(TextR.string.feature_health_quick_title),
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                            Text(
-                                stringResource(TextR.string.feature_health_auto_scan_detail),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Row(
-                                Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                Text(
-                                    stringResource(TextR.string.feature_health_auto_scan),
-                                    Modifier.weight(1f),
-                                )
-                                Switch(
-                                    checked = autoScan,
-                                    onCheckedChange = graph.featureHealth::setAutoScanEnabled,
-                                )
-                            }
-                            Button(
-                                onClick = { graph.featureHealth.requestScan(force = true) },
-                                enabled = !scanning,
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Text(
-                                    stringResource(
-                                        if (scanning) TextR.string.feature_health_scanning
-                                        else TextR.string.feature_health_scan_now
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-                item {
-                    val snapshot by graph.featureHealth.snapshot.collectAsState()
-                    val scanning by graph.featureHealth.scanning.collectAsState()
-                    val autoScan by graph.featureHealth.autoScanEnabled.collectAsState()
-                    val subtitle = when {
-                        scanning -> stringResource(TextR.string.feature_health_scanning)
-                        snapshot != null -> stringResource(
-                            TextR.string.feature_health_summary_format,
-                            snapshot!!.items.size,
-                            snapshot!!.readyCount,
-                            snapshot!!.blockedCount,
-                            snapshot!!.unknownCount,
-                            snapshot!!.brokenCount,
-                            snapshot!!.unsupportedCount,
-                        )
-                        autoScan -> stringResource(TextR.string.feature_health_auto_on_not_scanned)
-                        else -> stringResource(TextR.string.feature_health_not_scanned)
-                    }
-                    MacroItemRow(
-                        stringResource(TextR.string.runtime_settings_feature_health),
-                        subtitle,
-                        MacroPalette.Diagnostics,
-                        onClick = { navigateTo(RuntimeSettingsPage.HEALTH) },
                     )
                 }
             }
