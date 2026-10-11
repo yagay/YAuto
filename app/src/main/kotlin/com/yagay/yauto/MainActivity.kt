@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
         if (FeatureHealthScanner.autoScanEnabled(this)) {
             lifecycleScope.launch {
                 delay(1_000L)
-                graph.featureHealth.requestScan()
+                graph.featureHealth.requestReadOnlyVerification()
             }
         }
     }
