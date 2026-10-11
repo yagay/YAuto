@@ -15,6 +15,10 @@ import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -96,6 +100,34 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
         )
         if (response?.getBoolean("success") != true) return null
         return response.getStringArrayList("specs")?.take(80)?.filter { it.length in 1..250 }
+    }
+
+    /**
+     * Actual system_server -> authenticated broadcast -> app receiver round
+     * trip. Unlike PING this detects a failed sender-UID gate on OEM ROMs.
+     * Only invoked from diagnostics: sends no KeyEvent or automation action.
+     */
+    suspend fun probeSystemEventDelivery(): Boolean = coroutineScope {
+        val nonce = UUID.randomUUID().toString()
+        val waiter = async(start = CoroutineStart.UNDISPATCHED) {
+            XposedSystemEventRuntimeBridge.awaitTransportProbe(nonce, 4_000L)
+        }
+        try {
+            val response = orderedRequest(
+                Intent(SystemBridgeProtocol.ACTION)
+                    .setPackage("android")
+                    .putExtra("version", protocolVersion)
+                    .putExtra("operation", SystemBridgeProtocol.EVENT_DELIVERY_PROBE)
+                    .putExtra("nonce", nonce)
+                    .putExtra(XposedEventAuth.EXTRA_TOKEN, systemEventAuthToken),
+                requestTimeoutMs = 2_500L,
+            )
+            response?.getBoolean("success") == true &&
+                response.getBoolean("probeSent") &&
+                waiter.await()
+        } finally {
+            waiter.cancel()
+        }
     }
 
     suspend fun beginHardwareKeyCapture(timeoutMs: Long): Boolean {
@@ -346,6 +378,15 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
 
     override suspend fun collect(context: DiagnosticContext): List<DiagnosticRecord> {
         val permissionStatus = status()
+        val probeResult = if (permissionStatus.available) {
+            try {
+                probeSystemEventDelivery()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                false
+            }
+        } else false
         val delivery = XposedEventTransportHealth.snapshot()
         // PING proves only the system bridge is reachable. Event delivery is
         // measured independently; a permission grant and eleven installed
@@ -361,10 +402,12 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
             DiagnosticRecord(
                 DiagnosticSource.LSPOSED,
                 System.currentTimeMillis(),
-                severity = if (delivery.rejected > 0)
+                severity = if (delivery.rejected > 0 || !probeResult)
                     DiagnosticSeverity.WARNING else DiagnosticSeverity.INFO,
                 title = "LSPosed event transport (since app start)",
                 message = buildString {
+                    append("Authenticated system_server event round trip: " +
+                        "${if (probeResult) "PASS" else "FAIL"}. ")
                     append("Authenticated broadcasts accepted by receiver: ${delivery.accepted}; ")
                     append("forwarded to runtime listener: ${delivery.forwarded}; ")
                     append("rejected: ${delivery.rejected}. ")
