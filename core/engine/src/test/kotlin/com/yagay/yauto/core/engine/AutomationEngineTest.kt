@@ -131,7 +131,7 @@ class AutomationEngineTest {
         val registry = FeatureRegistry()
         registry.registerAction(actionDescriptor("test.flaky")) { _, _ ->
             val current = attempts.incrementAndGet()
-            ActionExecutionResult(current >= 3, message = "attempt $current")
+            ActionExecutionResult(current >= 3, message = "attempt $current", retrySafeOnFailure = true)
         }
         val engine = testEngine(registry)
         val automation = Automation(
@@ -158,7 +158,7 @@ class AutomationEngineTest {
         val registry = FeatureRegistry()
         registry.registerAction(actionDescriptor("test.always.fail")) { _, _ ->
             attempts.incrementAndGet()
-            ActionExecutionResult(false, message = "still failing")
+            ActionExecutionResult(false, message = "still failing", retrySafeOnFailure = true)
         }
         val engine = testEngine(registry)
         val automation = Automation(
@@ -179,6 +179,44 @@ class AutomationEngineTest {
         assertFalse(result.success)
         assertEquals(3, attempts.get())
         assertNotNull(result.error)
+    }
+
+    @Test fun ambiguousActionFailureIsNotRetried() = runBlocking {
+        val attempts = AtomicInteger(0)
+        val registry = FeatureRegistry()
+        registry.registerAction(actionDescriptor("test.side_effect")) { _, _ ->
+            attempts.incrementAndGet()
+            ActionExecutionResult(false, message = "reply lost")
+        }
+        val automation = Automation(
+            AutomationId("retry-unsafe"), "unsafe action",
+            onEvent = listOf(ActionNode.Action(
+                NodeId("side-effect"), FeatureRef("test.side_effect"),
+                failurePolicy = ActionFailurePolicy.RETRY,
+                retryPolicy = ActionRetryPolicy(maxAttempts = 5, delayMs = 0),
+            )),
+        )
+        assertFalse(testEngine(registry).execute(automation, AutomationPhase.EVENT).success)
+        assertEquals(1, attempts.get())
+    }
+
+    @Test fun exceptionsDoNotRetryActionsWithoutProofOfNonExecution() = runBlocking {
+        val attempts = AtomicInteger(0)
+        val registry = FeatureRegistry()
+        registry.registerAction(actionDescriptor("test.throws")) { _, _ ->
+            attempts.incrementAndGet()
+            throw IllegalStateException("transport disconnected")
+        }
+        val automation = Automation(
+            AutomationId("retry-exception"), "unknown outcome",
+            onEvent = listOf(ActionNode.Action(
+                NodeId("throws"), FeatureRef("test.throws"),
+                failurePolicy = ActionFailurePolicy.RETRY,
+                retryPolicy = ActionRetryPolicy(maxAttempts = 4, delayMs = 0),
+            )),
+        )
+        assertFalse(testEngine(registry).execute(automation, AutomationPhase.EVENT).success)
+        assertEquals(1, attempts.get())
     }
 
     private fun actionDescriptor(id: String) = FeatureDescriptor(

@@ -160,6 +160,11 @@ data class ActionExecutionResult(
     val success: Boolean,
     val value: ConfigValue = ConfigValue.NullValue,
     val message: String? = null,
+    /**
+     * False by default: an error/timeout does not prove the action was not performed.
+     * Only implementations with an explicitly verifiable, repeatable failure may opt in.
+     */
+    val retrySafeOnFailure: Boolean = false,
 )
 
 fun interface ActionExecutor { suspend fun execute(feature: FeatureRef, context: FeatureExecutionContext): ActionExecutionResult }

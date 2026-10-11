@@ -399,6 +399,7 @@ class AutomationEngine(
         var lastFailure = userText("engine.action_failed", node.feature.typeId)
 
         for (attempt in 1..maxAttempts) {
+            var retrySafeOnFailure = false
             currentCoroutineContext().ensureActive()
             trace(executionId, TraceKind.ACTION, userText("engine.action_start", node.feature.typeId), automation, flow, node.id, node.feature.typeId)
 
@@ -418,6 +419,7 @@ class AutomationEngine(
                     result.success,
                 )
                 if (result.success) return Signal.Next
+                retrySafeOnFailure = result.retrySafeOnFailure
                 result.message ?: userText("engine.action_failed", node.feature.typeId)
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -451,7 +453,11 @@ class AutomationEngine(
             }
 
             lastFailure = failure
-            if (node.failurePolicy == ActionFailurePolicy.RETRY && attempt < maxAttempts) {
+            // Do not replay an ambiguous side effect, even if the rule has
+            // RETRY configured. An exception is also an unknown outcome.
+            if (node.failurePolicy == ActionFailurePolicy.RETRY &&
+                attempt < maxAttempts && retrySafeOnFailure
+            ) {
                 if (retryDelayMs > 0L) delay(retryDelayMs)
             } else {
                 break
