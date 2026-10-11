@@ -90,7 +90,11 @@
     <string name="main_unknown_format">Unknown format</string>
     <string name="main_loading_workspace">Loading workspace…</string>
     <string name="main_restore_backup_title">Restore backup?</string>
-    <string name="main_restore_backup_message">Merge automations: %1$d; flows: %2$d. Items with the same ID will be replaced; unavailable features: %3$d. Their configuration will be kept.</string>
+    <string name="main_restore_backup_message">Backup: %1$d automations, %2$d flows, %3$d unavailable features (configuration retained). Merge keeps local runtime controls; replace restores the entire saved workspace.</string>
+    <string name="main_restore_merge">Merge</string>
+    <string name="main_restore_replace">Replace all</string>
+    <string name="main_restore_replace_confirm_title">Replace entire workspace?</string>
+    <string name="main_restore_replace_confirm_message">Local rules, flows, variables, run history and runtime settings absent from the backup will be deleted. This cannot be undone. Choose Merge to preserve existing data.</string>
     <string name="main_backup_restored">Backup restored.</string>
     <string name="main_saving">Saving</string>
     <string name="main_flow_still_referenced">The flow is still referenced. Remove its calls first.</string>

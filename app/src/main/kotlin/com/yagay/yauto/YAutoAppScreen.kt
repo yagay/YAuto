@@ -3,6 +3,7 @@ package com.yagay.yauto
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
@@ -35,6 +36,8 @@ import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.storage.WorkspaceBackup
 import com.yagay.yauto.core.storage.WorkspaceBackupCodec
 import com.yagay.yauto.core.storage.WorkspaceData
+import com.yagay.yauto.core.storage.WorkspaceRestoreMode
+import com.yagay.yauto.core.storage.restoreBackup
 import com.yagay.yauto.core.storage.featureIds
 import com.yagay.yauto.core.storage.merge
 import com.yagay.yauto.core.storage.references
@@ -93,6 +96,7 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     var workspaceReady by remember { mutableStateOf(false) }
     var workspaceSaving by remember { mutableStateOf(false) }
     var pendingRestore by remember { mutableStateOf<WorkspaceBackup?>(null) }
+    var replaceRestoreConfirm by remember { mutableStateOf(false) }
     var backupText by remember { mutableStateOf<String?>(null) }
     var statuses by remember { mutableStateOf<List<CollectorStatus>>(emptyList()) }
     var diagnosticSnapshot by remember { mutableStateOf<DiagnosticSnapshot?>(null) }
@@ -294,43 +298,57 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     }
 
     pendingRestore?.let { backup ->
-        val unknown = backup.workspace.featureIds().filter { graph.features.descriptor(it) == null }
-        AlertDialog(
-            onDismissRequest = { pendingRestore = null },
-            title = { Text(context.getString(TextR.string.main_restore_backup_title)) },
-            text = {
-                Text(
-                    context.getString(
-                        TextR.string.main_restore_backup_message,
-                        backup.workspace.automations.size,
-                        backup.workspace.flows.size,
-                        unknown.size,
-                    )
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    saveWorkspace(
-                        workspace.merge(
-                            backup.workspace.automations,
-                            backup.workspace.flows,
-                            backup.workspace.globalVariables,
-                            backup.workspace.persistentVariables,
-                        )
-                    ) {
-                        importSummary = context.getString(TextR.string.main_backup_restored)
+        if (replaceRestoreConfirm) {
+            AlertDialog(
+                onDismissRequest = { replaceRestoreConfirm = false },
+                title = { Text(context.getString(TextR.string.main_restore_replace_confirm_title)) },
+                text = { Text(context.getString(TextR.string.main_restore_replace_confirm_message)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        saveWorkspace(workspace.restoreBackup(backup.workspace, WorkspaceRestoreMode.REPLACE)) {
+                            importSummary = context.getString(TextR.string.main_backup_restored)
+                        }
+                        pendingRestore = null
+                        replaceRestoreConfirm = false
+                    }) { Text(context.getString(TextR.string.main_restore_replace)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { replaceRestoreConfirm = false }) {
+                        Text(context.getString(TextR.string.common_cancel))
                     }
-                    pendingRestore = null
-                }) {
-                    Text(context.getString(TextR.string.common_restore))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingRestore = null }) {
-                    Text(context.getString(TextR.string.common_cancel))
-                }
-            },
-        )
+                },
+            )
+        } else {
+            val unknown = backup.workspace.featureIds().count { graph.features.descriptor(it) == null }
+            AlertDialog(
+                onDismissRequest = { pendingRestore = null },
+                title = { Text(context.getString(TextR.string.main_restore_backup_title)) },
+                text = {
+                    Text(context.getString(
+                        TextR.string.main_restore_backup_message,
+                        backup.workspace.automations.size, backup.workspace.flows.size, unknown,
+                    ))
+                },
+                confirmButton = {
+                    Row {
+                        TextButton(onClick = {
+                            saveWorkspace(workspace.restoreBackup(backup.workspace, WorkspaceRestoreMode.MERGE)) {
+                                importSummary = context.getString(TextR.string.main_backup_restored)
+                            }
+                            pendingRestore = null
+                        }) { Text(context.getString(TextR.string.main_restore_merge)) }
+                        TextButton(onClick = { replaceRestoreConfirm = true }) {
+                            Text(context.getString(TextR.string.main_restore_replace))
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pendingRestore = null }) {
+                        Text(context.getString(TextR.string.common_cancel))
+                    }
+                },
+            )
+        }
     }
 
     if (workspaceSaving) {

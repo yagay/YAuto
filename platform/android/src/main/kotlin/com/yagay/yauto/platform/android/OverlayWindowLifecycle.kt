@@ -4,6 +4,9 @@ import android.content.Context
 import android.graphics.PixelFormat
 import android.os.Handler
 import android.view.View
+import android.view.ViewGroup
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.view.WindowManager
 import java.util.concurrent.ConcurrentHashMap
 
@@ -50,6 +53,9 @@ internal class OverlayWindowLifecycle(
             surfaces[id] = view
             SurfaceRuntimeBridge.emit(id, "shown")
             schedule(id, view, timeoutMs)
+        }.onFailure { error ->
+            releaseOverlayWebViews(view)
+            SurfaceRuntimeBridge.emit(id, "show_failed", error.message.orEmpty())
         }
     }
 
@@ -69,11 +75,27 @@ internal class OverlayWindowLifecycle(
     fun remove(id: String) {
         dismissals.remove(id)?.let(main::removeCallbacks)
         val view = surfaces.remove(id) ?: return
-        runCatching { manager.removeView(view) }
+        runCatching { manager.removeViewImmediate(view) }
+        releaseOverlayWebViews(view)
         SurfaceRuntimeBridge.emit(id, "hidden")
     }
 
     fun removeAll() {
         surfaces.keys.toList().forEach(::remove)
+    }
+}
+
+// Nested WebViews retain renderer resources even when their overlay is hidden.
+private fun releaseOverlayWebViews(view: View) {
+    when (view) {
+        is WebView -> runCatching {
+            view.stopLoading()
+            view.webViewClient = WebViewClient()
+            view.removeAllViews()
+            view.destroy()
+        }
+        is ViewGroup -> for (index in 0 until view.childCount) {
+            releaseOverlayWebViews(view.getChildAt(index))
+        }
     }
 }

@@ -54,3 +54,14 @@ fun WorkspaceData.merge(
         persistentVariables = persistentVariables + persistentVariablesToImport,
     )
 }
+
+// Merge keeps current operational state; replacement restores the backup exactly.
+enum class WorkspaceRestoreMode { MERGE, REPLACE }
+
+fun WorkspaceData.restoreBackup(backup: WorkspaceData, mode: WorkspaceRestoreMode): WorkspaceData =
+    when (mode) {
+        WorkspaceRestoreMode.MERGE -> merge(
+            backup.automations, backup.flows, backup.globalVariables, backup.persistentVariables,
+        )
+        WorkspaceRestoreMode.REPLACE -> backup
+    }

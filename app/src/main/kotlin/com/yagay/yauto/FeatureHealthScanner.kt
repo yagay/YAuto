@@ -232,7 +232,9 @@ class FeatureHealthScanner(
                     AccessRequirement.CALENDAR -> "calendar"
                     else -> "phone"
                 }
-                runtimePermissionsForFeature(group, descriptor.id.value).all(::granted)
+                runtimePermissionsForFeature(group, descriptor.id.value).let { permissions ->
+                    permissions.isNotEmpty() && permissions.all(::granted)
+                }
             } else access[requirement] == true
         }
         val explicitMissing = descriptor.accessRequirements.filterNot(available).toSet()

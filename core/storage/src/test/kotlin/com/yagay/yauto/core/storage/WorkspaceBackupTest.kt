@@ -67,6 +67,40 @@ class WorkspaceBackupTest {
         )
     }
 
+    @Test fun `merge backup keeps local runtime controls and adds imported variables`() {
+        val current = WorkspaceData(
+            runtimeEnabled = false, disabledCategories = setOf("local"),
+            disabledTriggerKeys = setOf("local|event|"),
+            automationLastRunEpochMs = mapOf("local" to 42L),
+            globalVariables = mapOf("old" to "value"),
+        )
+        val backup = WorkspaceData(
+            runtimeEnabled = true, disabledCategories = setOf("backup"),
+            disabledTriggerKeys = setOf("backup|event|"),
+            automationLastRunEpochMs = mapOf("backup" to 99L),
+            globalVariables = mapOf("new" to "imported"),
+            persistentVariables = mapOf("typed" to ConfigValue.BooleanValue(true)),
+        )
+        val merged = current.restoreBackup(backup, WorkspaceRestoreMode.MERGE)
+        assertEquals(current.runtimeEnabled, merged.runtimeEnabled)
+        assertEquals(current.disabledCategories, merged.disabledCategories)
+        assertEquals(current.disabledTriggerKeys, merged.disabledTriggerKeys)
+        assertEquals(current.automationLastRunEpochMs, merged.automationLastRunEpochMs)
+        assertEquals(mapOf("old" to "value", "new" to "imported"), merged.globalVariables)
+        assertEquals(backup.persistentVariables, merged.persistentVariables)
+    }
+
+    @Test fun `replace backup restores full runtime state`() {
+        val local = WorkspaceData(runtimeEnabled = false, disabledTriggerKeys = setOf("old"))
+        val backup = WorkspaceData(
+            runtimeEnabled = true, disabledCategories = setOf("backup"),
+            disabledTriggerKeys = setOf("new"),
+            automationLastRunEpochMs = mapOf("run" to 42L),
+            persistentVariables = mapOf("typed" to ConfigValue.NumberValue(5.0)),
+        )
+        assertEquals(backup, local.restoreBackup(backup, WorkspaceRestoreMode.REPLACE))
+    }
+
     @Test(expected = IllegalArgumentException::class) fun `future backup versions are rejected`() {
         WorkspaceBackupCodec.decode(WorkspaceBackupCodec.encode(WorkspaceData(), "test").replace("\"formatVersion\": 1", "\"formatVersion\": 99"))
     }

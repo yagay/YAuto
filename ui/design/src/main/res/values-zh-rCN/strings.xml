@@ -90,7 +90,11 @@
     <string name="main_unknown_format">未知格式</string>
     <string name="main_loading_workspace">正在读取工作区…</string>
     <string name="main_restore_backup_title">恢复备份？</string>
-    <string name="main_restore_backup_message">合并 %1$d 个自动化、%2$d 个流程。同 ID 的项目将替换；未安装功能 %3$d 个，其配置会保留。</string>
+    <string name="main_restore_backup_message">备份包含 %1$d 条自动化、%2$d 个流程和 %3$d 个未安装功能（其配置保留）。合并保留本地运行设置；全部替换则完整恢复备份工作区。</string>
+    <string name="main_restore_merge">合并恢复</string>
+    <string name="main_restore_replace">全部替换</string>
+    <string name="main_restore_replace_confirm_title">替换整个工作区？</string>
+    <string name="main_restore_replace_confirm_message">备份中不存在的本地规则、流程、变量、运行历史和运行设置都会被清除，且无法撤销。如需保留，请使用合并恢复。</string>
     <string name="main_backup_restored">备份已恢复。</string>
     <string name="main_saving">正在保存</string>
     <string name="main_flow_still_referenced">流程仍被引用，请先移除调用。</string>

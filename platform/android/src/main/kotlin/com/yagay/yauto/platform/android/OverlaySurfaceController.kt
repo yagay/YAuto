@@ -440,17 +440,14 @@ class OverlaySurfaceController(context: Context) {
         autoHideMs: Long,
         javaScript: Boolean,
     ): Boolean {
-        if (!canDraw() || id.isBlank() || (!url.startsWith("http://") && !url.startsWith("https://"))) return false
+        if (!canDraw() || id.isBlank() || !OverlayWebUrlPolicy.accepts(url)) return false
         main.post {
             windows.remove(id)
             val density = context.resources.displayMetrics.density
             val web = WebView(context).apply {
-                settings.javaScriptEnabled = javaScript
-                settings.domStorageEnabled = true
-                webViewClient = object : WebViewClient() {
-                    override fun onPageFinished(view: WebView?, finishedUrl: String?) {
-                        SurfaceRuntimeBridge.emit(id, "page_finished", finishedUrl.orEmpty())
-                    }
+                configureOverlayWebView(this, javaScript)
+                webViewClient = OverlayWebNavigationClient { finishedUrl ->
+                    SurfaceRuntimeBridge.emit(id, "page_finished", finishedUrl)
                 }
                 loadUrl(url)
             }
@@ -820,9 +817,9 @@ class OverlaySurfaceController(context: Context) {
                         }
                     })
                     "web" -> content.addView(WebView(context).apply {
-                        settings.javaScriptEnabled = false
-                        webViewClient = WebViewClient()
-                        if (value.startsWith("http://") || value.startsWith("https://")) loadUrl(value)
+                        configureOverlayWebView(this, false)
+                        webViewClient = OverlayWebNavigationClient()
+                        if (OverlayWebUrlPolicy.accepts(value)) loadUrl(value)
                         else loadDataWithBaseURL(null, value, "text/html", "UTF-8", null)
                         layoutParams = LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.MATCH_PARENT,
