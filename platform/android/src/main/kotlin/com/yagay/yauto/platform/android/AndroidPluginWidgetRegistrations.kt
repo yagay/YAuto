@@ -155,31 +155,6 @@ internal fun AndroidFinalParityFeaturePack.registerFinalUtilities(registry: Feat
 
         registry.registerAction(
             FeatureDescriptor(
-                FeatureId("android.ui.wait_for_idle"), FeatureKind.ACTION,
-                "Wait for UI idle",
-                "Wait until Android's main message queue becomes idle or the timeout expires",
-                FeatureCategory.FLOW,
-                fields = listOf(FieldSchema.Duration("timeoutMs", "Maximum wait")),
-                keywords = setOf("wait idle", "ui idle", "shortx", "message queue"),
-                ownerPackId = id,
-            )
-        ) { feature, _ ->
-            val timeoutMs = ((feature.config["timeoutMs"].numberOrNull() ?: 5_000.0).toLong()).coerceIn(100L, 60_000L)
-            val idle = kotlinx.coroutines.withTimeoutOrNull(timeoutMs) {
-                kotlinx.coroutines.suspendCancellableCoroutine<Boolean> { continuation ->
-                    android.os.Handler(android.os.Looper.getMainLooper()).post {
-                        android.os.Looper.getMainLooper().queue.addIdleHandler {
-                            if (continuation.isActive) continuation.resume(true) { _, _, _ -> }
-                            false
-                        }
-                    }
-                }
-            } ?: false
-            ActionExecutionResult(idle, ConfigValue.BooleanValue(idle))
-        }
-
-        registry.registerAction(
-            FeatureDescriptor(
                 FeatureId("android.text.pinyin"), FeatureKind.ACTION,
                 "Convert Chinese text to Pinyin",
                 "Transliterate Han characters to Latin/Pinyin using Android ICU",
