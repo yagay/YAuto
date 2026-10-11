@@ -134,7 +134,7 @@ class FeatureHealthScanner(
         if (_autoScanEnabled.value == enabled) return
         _autoScanEnabled.value = enabled
         preferences.edit().putBoolean(KEY_AUTO_SCAN, enabled).apply()
-        if (enabled) requestScan(force = true)
+        if (enabled) requestReadOnlyVerification()
     }
 
     fun requestScan(force: Boolean = false) {
