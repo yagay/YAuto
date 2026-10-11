@@ -25,6 +25,17 @@ class ReadOnlyFeatureProbeCatalogTest {
         assertNull(ReadOnlyFeatureProbeCatalog.queryKey("android.condition.hardware_key", FeatureKind.CONDITION))
     }
 
+    @Test fun actualAndroidStateIdentifiersHaveSafeStandaloneQueries() {
+        val expected = setOf(
+            "screen", "charging", "power_save", "nfc_enabled", "location_enabled",
+            "network", "battery_level", "battery_temperature", "media_volume",
+            "bluetooth_enabled", "network_validated", "battery_present",
+        )
+        assertTrue(ReadOnlyFeatureProbeCatalog.keys.containsAll(expected))
+        assertNull(ReadOnlyFeatureProbeCatalog.queryKey("android.state.app_installed", FeatureKind.STATE))
+        assertNull(ReadOnlyFeatureProbeCatalog.queryKey("android.event.hardware_key", FeatureKind.EVENT))
+    }
+
     @Test fun observedFalseIsStillSuccessfulInterfaceResponse() {
         val result = FeatureProbeResult(
             FeatureProbeStatus.RESPONDED,
