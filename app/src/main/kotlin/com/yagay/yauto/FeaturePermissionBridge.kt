@@ -61,11 +61,6 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
     val scope = rememberCoroutineScope()
     var permissionVersion by remember { mutableIntStateOf(0) }
     val liveStatus by graph.accessStatus.status.collectAsState()
-    val rootPermission: Boolean? = when (liveStatus[AccessRequirement.ROOT]) {
-        PermissionAvailability.GRANTED -> true
-        PermissionAvailability.NOT_GRANTED -> false
-        else -> null
-    }
     var message by remember { mutableStateOf<String?>(null) }
     val groups = remember { permissionGrantGroups(Build.VERSION.SDK_INT).associateBy { it.id } }
 
@@ -98,46 +93,10 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
             override val preferRootWhenAvailable: Boolean
                 get() = RuntimeSettingsPreferences.preferRootWhenAvailable(context)
 
-            override fun availability(permission: AccessRequirement): PermissionAvailability {
-                val granted: Boolean? = when (permission) {
-                    AccessRequirement.ROOT,
-                    AccessRequirement.SHIZUKU,
-                    AccessRequirement.LSPOSED,
-                    AccessRequirement.ACCESSIBILITY -> return liveStatus[permission]
-                        ?: PermissionAvailability.UNKNOWN
-                    // Zygisk cannot be enabled through an Android permission request.
-                    AccessRequirement.ZYGISK -> null
-                    AccessRequirement.POST_NOTIFICATIONS -> if (Build.VERSION.SDK_INT < 33) true
-                        else groups["notifications"]?.let { permissionStatus(context, it) }
-                    AccessRequirement.BLUETOOTH_CONNECT -> if (Build.VERSION.SDK_INT < 31) true
-                        else ContextCompat.checkSelfPermission(context,
-                            Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
-                    AccessRequirement.ACTIVITY_RECOGNITION -> if (Build.VERSION.SDK_INT < 29) true
-                        else groups["activity"]?.let { permissionStatus(context, it) }
-                    AccessRequirement.LOCATION -> listOf(
-                        Manifest.permission.ACCESS_COARSE_LOCATION,
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                    ).any {
-                        ContextCompat.checkSelfPermission(context, it) ==
-                            PackageManager.PERMISSION_GRANTED
-                    }
-                    AccessRequirement.SMS -> listOf(Manifest.permission.READ_SMS,
-                        Manifest.permission.RECEIVE_SMS, Manifest.permission.SEND_SMS).any {
-                        ContextCompat.checkSelfPermission(context, it) ==
-                            PackageManager.PERMISSION_GRANTED
-                    }
-                    AccessRequirement.PHONE -> ContextCompat.checkSelfPermission(context,
-                        Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED
-                    else -> permissionGroupId(permission)?.let(groups::get)?.let {
-                        permissionStatus(context, it)
-                    }
-                }
-                return when (granted) {
-                    true -> PermissionAvailability.GRANTED
-                    false -> PermissionAvailability.NOT_GRANTED
-                    null -> PermissionAvailability.UNKNOWN
-                }
-            }
+            override fun availability(permission: AccessRequirement): PermissionAvailability =
+                // No private copy of permission checks: picker, editor, backends
+                // and diagnostics all use the same device-authoritative probe.
+                liveStatus[permission] ?: PermissionAvailability.UNKNOWN
 
             override fun request(permission: AccessRequirement) {
                 fun inform(text: String) { message = text }
