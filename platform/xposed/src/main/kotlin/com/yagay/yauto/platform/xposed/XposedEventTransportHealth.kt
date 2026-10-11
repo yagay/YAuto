@@ -15,15 +15,19 @@ import java.util.concurrent.atomic.AtomicReference
 internal object XposedEventTransportHealth {
     data class Snapshot(
         val accepted: Long,
+        val forwarded: Long,
         val rejected: Long,
         val lastAcceptedType: String,
+        val lastForwardedType: String,
         val lastRejectedReason: String,
         val lastRejectedEpochMs: Long,
     )
 
     private val accepted = AtomicLong(0)
+    private val forwarded = AtomicLong(0)
     private val rejected = AtomicLong(0)
     private val lastAcceptedType = AtomicReference("")
+    private val lastForwardedType = AtomicReference("")
     private val lastRejectedReason = AtomicReference("")
     private val lastRejectedEpochMs = AtomicLong(0)
     private val lastWarningEpochMs = AtomicLong(0)
@@ -31,6 +35,11 @@ internal object XposedEventTransportHealth {
     fun onAccepted(type: String) {
         accepted.incrementAndGet()
         lastAcceptedType.set(type.take(96))
+    }
+
+    fun onForwarded(type: String) {
+        forwarded.incrementAndGet()
+        lastForwardedType.set(type.take(96))
     }
 
     fun onRejected(type: String, source: String, senderUid: Int, reason: String) {
@@ -53,8 +62,10 @@ internal object XposedEventTransportHealth {
 
     fun snapshot(): Snapshot = Snapshot(
         accepted.get(),
+        forwarded.get(),
         rejected.get(),
         lastAcceptedType.get(),
+        lastForwardedType.get(),
         lastRejectedReason.get(),
         lastRejectedEpochMs.get(),
     )
