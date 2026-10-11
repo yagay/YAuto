@@ -48,17 +48,23 @@ internal fun permissionsForFeature(
             candidates.filterNot { it.requiresRootOrLsposed() }
         } else candidates
     }
+    val keyCapture = descriptor.id.value in setOf(
+        "android.event.hardware_key",
+        "android.event.hardware_key_gesture",
+        "android.event.hardware_key_combo",
+    )
     val best = eligible.minWithOrNull(
         compareBy<FeatureImplementationOption> { option ->
             option.requirements.count { availability(it) != PermissionAvailability.GRANTED }
         }.thenBy { option ->
-            // Only prioritize LSPosed/Root when their authorization is confirmed.
-            // Otherwise suggest available Shizuku/Accessibility rather than asking
-            // for unnecessary privileged permissions.
+            // Hardware keys have a different order from UI gestures:
+            // LSPosed -> learned Root EV_KEY -> Accessibility. Even with no
+            // permission gateway (e.g. picker opening), never misleadingly
+            // label hardware-key events as Accessibility-only.
             val ready = option.requirements.all { availability(it) == PermissionAvailability.GRANTED }
             CapabilityBackendPriority.rank(
                 option.backendId,
-                privilegedFirst = ready && preferRootWhenAvailable,
+                privilegedFirst = keyCapture || (ready && preferRootWhenAvailable),
             )
         },
     )

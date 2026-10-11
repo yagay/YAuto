@@ -101,8 +101,12 @@ class AccessibilityKeyFeaturePack : FeaturePack {
     }
 
     private fun hardwareKeyImplementations() = listOf(
-        FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+        // Runtime capture: system_server LSPosed first; Root getevent only for
+        // keys whose Linux EV_KEY identity was learned; Accessibility last.
+        // These are alternatives, never cumulative permission requirements.
         FeatureImplementationOption("lsposed", setOf(AccessRequirement.LSPOSED), restartRequired = true),
+        FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+        FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
     )
 }
 

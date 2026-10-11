@@ -117,6 +117,56 @@ class FeaturePermissionSelectionTest {
             })
     }
 
+    private fun hardwareKeyDescriptor(id: String) = FeatureDescriptor(
+        id = FeatureId(id), kind = FeatureKind.EVENT, title = "Hardware key",
+        description = "", category = FeatureCategory.UI_AUTOMATION,
+        implementationOptions = listOf(
+            FeatureImplementationOption("lsposed", setOf(AccessRequirement.LSPOSED)),
+            FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+            FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+        ),
+    )
+
+    @Test fun hardwareKeyPickerWithoutKnownGrantsRecommendsLsposedNotAccessibility() {
+        for (featureId in listOf(
+            "android.event.hardware_key",
+            "android.event.hardware_key_gesture",
+            "android.event.hardware_key_combo",
+        )) {
+            assertEquals(listOf(AccessRequirement.LSPOSED),
+                permissionsForFeature(hardwareKeyDescriptor(featureId), null) {
+                    PermissionAvailability.UNKNOWN
+                })
+        }
+    }
+
+    @Test fun hardwareKeyWithGrantedRootDoesNotPromptForAccessibility() {
+        val feature = hardwareKeyDescriptor("android.event.hardware_key")
+        assertEquals(listOf(AccessRequirement.ROOT),
+            permissionsForFeature(feature, null) {
+                if (it == AccessRequirement.ROOT) PermissionAvailability.GRANTED
+                else PermissionAvailability.NOT_GRANTED
+            })
+    }
+
+    @Test fun hardwareKeyWithGrantedLsposedDoesNotPromptForAccessibilityOrRoot() {
+        val feature = hardwareKeyDescriptor("android.event.hardware_key_combo")
+        assertEquals(listOf(AccessRequirement.LSPOSED),
+            permissionsForFeature(feature, null) {
+                if (it == AccessRequirement.LSPOSED) PermissionAvailability.GRANTED
+                else PermissionAvailability.NOT_GRANTED
+            })
+    }
+
+    @Test fun hardwareKeyFallsBackToAccessibilityWhenItIsTheOnlyAuthorizedSource() {
+        val feature = hardwareKeyDescriptor("android.event.hardware_key_gesture")
+        assertEquals(listOf(AccessRequirement.ACCESSIBILITY),
+            permissionsForFeature(feature, null) {
+                if (it == AccessRequirement.ACCESSIBILITY) PermissionAvailability.GRANTED
+                else PermissionAvailability.NOT_GRANTED
+            })
+    }
+
     @Test fun globalBackActionNeverRecommendsUnavailableLsposedPath() {
         val supported = FeatureDescriptor(
             id = FeatureId("accessibility.global_action"), kind = FeatureKind.ACTION,

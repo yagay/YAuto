@@ -161,8 +161,17 @@ internal fun featureAccessTags(descriptor: FeatureDescriptor): String {
     // Keep the picker and configuration editor consistent: list only the
     // actual requirements of the preferred available method. In particular,
     // "No Root required" is not a permission and should never be displayed.
-    val requirements = remember(descriptor) {
-        permissionsForFeature(descriptor, null) { PermissionAvailability.UNKNOWN }
+    val gateway = LocalFeaturePermissionGateway.current
+    // Resolve current authorization rather than permanently pretending all
+    // backends are UNKNOWN; Root/LSPosed grants must refresh the picker badge.
+    val requirements = remember(descriptor, gateway) {
+        permissionsForFeature(
+            descriptor,
+            null,
+            preferRootWhenAvailable = gateway?.preferRootWhenAvailable ?: true,
+        ) { permission ->
+            gateway?.availability(permission) ?: PermissionAvailability.UNKNOWN
+        }
     }
     if (requirements.isEmpty()) return ""
     val permissions = requirements.map { requirement ->
