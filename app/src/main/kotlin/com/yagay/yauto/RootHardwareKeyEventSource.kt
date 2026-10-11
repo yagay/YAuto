@@ -4,6 +4,7 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.storage.ObservableWorkspaceRepository
 import com.yagay.yauto.core.storage.WorkspaceData
+import com.yagay.yauto.core.storage.activeActivationEvents
 import com.yagay.yauto.platform.android.AndroidEventSource
 import com.yagay.yauto.platform.android.RuntimeEventEmitter
 import java.util.concurrent.atomic.AtomicBoolean
@@ -45,10 +46,7 @@ class RootHardwareKeyEventSource(
 
     private fun applyWorkspace(data: WorkspaceData) {
         val mappings = linkedMapOf<Int, LearnedAndroidKey>()
-        data.automations.asSequence()
-            .filter { it.enabled }
-            .flatMap { it.activation.events.asSequence() }
-            .forEach { event ->
+        data.activeActivationEvents().forEach { event ->
                 when (event.typeId) {
                     HARDWARE_KEY_EVENT,
                     HARDWARE_KEY_GESTURE_EVENT -> event.config.rawMapping()?.let { mappings.putIfAbsent(it.first, it.second) }
@@ -125,7 +123,9 @@ class RootHardwareKeyEventSource(
     }
 
     private fun emit(event: RawKeyEvent) {
-        val mapped = learnedMappings[event.evKey]
+        // Never dispatch unrelated OEM keys as a second observation. The
+        // Root listener is a fallback for keys explicitly learned by a rule.
+        val mapped = learnedMappings[event.evKey] ?: return
         val action = when (event.value) {
             0 -> "up"
             1, 2 -> "down"

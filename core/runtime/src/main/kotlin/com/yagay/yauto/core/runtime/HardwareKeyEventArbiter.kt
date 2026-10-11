@@ -23,11 +23,13 @@ class HardwareKeyEventArbiter(
         val atMs: Long,
         var event: RuntimeEvent,
         var rank: Int,
+        val deviceId: Int,
     )
     private data class Delivered(
         val signature: String,
         val atMs: Long,
         val source: String,
+        val deviceId: Int,
     )
 
     private val lock = Any()
@@ -48,6 +50,7 @@ class HardwareKeyEventArbiter(
         }
         val now = clock()
         val rank = rank(event.source)
+        val deviceId = event.payload["deviceId"].numberOrNull()?.toInt() ?: -1
         var created: Entry? = null
         synchronized(lock) {
             if (closed) return
@@ -55,9 +58,11 @@ class HardwareKeyEventArbiter(
             // another observer without suppressing a second press on the same
             // source (which may legitimately occur within 180 ms).
             if (delivered.any { it.signature == signature && it.source != event.source &&
+                    sameDevice(it.deviceId, deviceId) &&
                     now >= it.atMs && now - it.atMs < LATE_DUPLICATE_MS }) return
             val match = pending.firstOrNull {
                 it.signature == signature && it.event.source != event.source &&
+                    sameDevice(it.deviceId, deviceId) &&
                     now >= it.atMs && now - it.atMs < COLLECTION_MS
             }
             if (match != null) {
@@ -66,7 +71,7 @@ class HardwareKeyEventArbiter(
                     match.rank = rank
                 }
             } else {
-                created = Entry(signature, now, event, rank).also(pending::add)
+                created = Entry(signature, now, event, rank, deviceId).also(pending::add)
             }
         }
         created?.let { entry ->
@@ -74,7 +79,7 @@ class HardwareKeyEventArbiter(
                 val selected = synchronized(lock) {
                     if (closed || !pending.remove(entry)) null
                     else {
-                        delivered.add(Delivered(entry.signature, clock(), entry.event.source))
+                        delivered.add(Delivered(entry.signature, clock(), entry.event.source, entry.deviceId))
                         if (delivered.size > 128) delivered.subList(0, delivered.size - 128).clear()
                         entry.event
                     }
@@ -102,13 +107,12 @@ class HardwareKeyEventArbiter(
             linux > 0 -> "l:$linux"
             else -> return null
         }
-        val device = event.payload["deviceId"].numberOrNull()?.toInt() ?: -1
-        // Android's key identity is more useful than a backend-local deviceId.
-        // Preserve distinct known devices when both observations identify them.
         val repeat = event.payload["repeatCount"].numberOrNull()?.toInt() ?: 0
-        return "$identity:$action:$repeat" +
-            if (device >= 0) ":dev:$device" else ""
+        return "$identity:$action:$repeat"
     }
+
+    private fun sameDevice(first: Int, second: Int): Boolean =
+        first < 0 || second < 0 || first == second
 
     private fun rank(source: String): Int = when {
         source.startsWith("lsposed") -> CapabilityBackendPriority.rank("lsposed", true)

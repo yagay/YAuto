@@ -72,11 +72,15 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 
+/** A key-learning session owns the one-shot receivers exclusively. */
+private val hardwareKeyLearningMutex = Mutex()
+
 /** Single capture coordinator combines Android, LSPosed and raw OEM hardware events. */
 internal suspend fun captureHardwareKey(
     graph: AppGraph,
     timeoutMs: Long,
-): HardwareKeyCaptureResult? = coroutineScope {
+): HardwareKeyCaptureResult? = hardwareKeyLearningMutex.withLock {
+    coroutineScope {
     val channel = Channel<HardwareKeyCaptureResult>(capacity = 3)
     val jobs = mutableListOf<kotlinx.coroutines.Job>()
 
@@ -163,6 +167,7 @@ internal suspend fun captureHardwareKey(
     jobs.forEach { it.cancel() }
     channel.close()
     mergeHardwareKeyCaptures(candidates)
+    }
 }
 
 private fun mergeHardwareKeyCaptures(
@@ -173,9 +178,11 @@ private fun mergeHardwareKeyCaptures(
         .filter { it.keyCode > 0 || it.scanCode > 0 }
         .maxByOrNull { capture ->
             val sourceRank = when {
-                "lsposed" in capture.sources -> 30
-                "accessibility" in capture.sources -> 20
-                else -> 10
+                "lsposed" in capture.sources -> 40
+                "root.input" in capture.sources -> 30
+                "shizuku" in capture.sources -> 20
+                "accessibility" in capture.sources -> 10
+                else -> 0
             }
             sourceRank + (if (capture.keyCode > 0) 2 else 0) + (if (capture.scanCode > 0) 1 else 0)
         }

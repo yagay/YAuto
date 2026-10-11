@@ -22,6 +22,13 @@ class HardwareKeyCaptureWiringTest(unittest.TestCase):
         self.assertNotIn("rootShell.isAvailable()", method)
         self.assertIn("rootShell.run(RAW_KEY_CAPTURE_COMMAND", method)
         self.assertIn("observed.action == KeyEvent.ACTION_UP", s)
+        self.assertIn("hardwareKeyLearningMutex.withLock", s)
+        runtime = source("app/src/main/kotlin/com/yagay/yauto/AutomationRuntimeService.kt")
+        self.assertIn("HardwareKeyEventArbiter(", runtime)
+        self.assertNotIn("hardwareKeyDedup.put(", runtime)
+        listener = source("app/src/main/kotlin/com/yagay/yauto/RootHardwareKeyEventSource.kt")
+        self.assertIn("data.activeActivationEvents()", listener)
+        self.assertIn("val mapped = learnedMappings[event.evKey] ?: return", listener)
 
     def test_lsposed_capture_uses_authenticated_event_envelope(self):
         s = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedHardwareKeyEventHandler.kt")

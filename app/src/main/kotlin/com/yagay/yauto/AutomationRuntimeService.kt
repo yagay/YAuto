@@ -18,6 +18,7 @@ import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.model.userText
+import com.yagay.yauto.core.runtime.HardwareKeyEventArbiter
 import com.yagay.yauto.core.storage.WorkspaceData
 import com.yagay.yauto.core.storage.runtimeEventFeatureIds
 import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
@@ -35,14 +36,13 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 class AutomationRuntimeService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val eventSources = AndroidEventSourceManager()
     private var graph: AppGraph? = null
     private var workspaceSubscription: AutoCloseable? = null
-    private val hardwareKeyDedup = ConcurrentHashMap<String, Long>()
+    private var hardwareKeyArbiter: HardwareKeyEventArbiter? = null
     private var hardwareKeyGestureEngine: HardwareKeyGestureEngine? = null
     private val lsposedSubscriptions = Channel<Set<String>>(Channel.CONFLATED)
 
@@ -81,6 +81,18 @@ class AutomationRuntimeService : Service() {
         hardwareKeyGestureEngine = HardwareKeyGestureEngine(scope) { derived ->
             dispatcher.dispatch(derived)
         }
+        hardwareKeyArbiter = HardwareKeyEventArbiter(
+            publish = { chosen ->
+                dispatcher.dispatch(chosen)
+                hardwareKeyGestureEngine?.accept(chosen)
+            },
+            schedule = { milliseconds, callback ->
+                scope.launch {
+                    delay(milliseconds)
+                    callback()
+                }
+            },
+        )
         registerRuntimeEventSources(this, appGraph, ::registerSource)
         val emitter = RuntimeEventEmitter { event ->
             if (event.typeId == "android.event.hardware_key") {
@@ -302,6 +314,8 @@ class AutomationRuntimeService : Service() {
     override fun onDestroy() {
         workspaceSubscription?.close()
         workspaceSubscription = null
+        hardwareKeyArbiter?.close()
+        hardwareKeyArbiter = null
         hardwareKeyGestureEngine?.clear()
         hardwareKeyGestureEngine = null
         RuntimeBridgeLifecycle.detachAll()
@@ -315,31 +329,9 @@ class AutomationRuntimeService : Service() {
         dispatcher: RuntimeEventDispatcher,
         event: RuntimeEvent,
     ) {
-        val payload = event.payload
-        val keyCode = (payload["keyCode"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
-        val scanCode = (payload["scanCode"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
-        val linuxEvKey = (payload["linuxEvKey"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
-        val identity = when {
-            keyCode > 0 -> "k:$keyCode"
-            scanCode > 0 -> "s:$scanCode"
-            linuxEvKey > 0 -> "e:$linuxEvKey"
-            else -> "unknown"
-        }
-        val signature = buildString {
-            append(identity)
-            append(':')
-            append(payload["action"]?.toString().orEmpty())
-            append(':')
-            append(payload["repeatCount"]?.toString().orEmpty())
-        }
-        val now = android.os.SystemClock.elapsedRealtime()
-        val previous = hardwareKeyDedup.put(signature, now)
-        if (previous != null && now - previous < 180L) return
-        if (hardwareKeyDedup.size > 64) {
-            hardwareKeyDedup.entries.removeIf { now - it.value > 2_000L }
-        }
-        dispatcher.dispatch(event)
-        hardwareKeyGestureEngine?.accept(event)
+        // One arbiter for Root, LSPosed and Accessibility. Do not allow the
+        // quickest (possibly lower-priority) observer to trigger twice.
+        hardwareKeyArbiter?.accept(event) ?: dispatcher.dispatch(event)
     }
 
     private fun configureLsposedSubscriptions(workspace: WorkspaceData) {
