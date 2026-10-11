@@ -92,7 +92,6 @@ xposed_router = xposed_dir / "XposedPackageHookRouter.kt"
 xposed_entry = xposed_dir / "YAutoXposedModule.kt"
 if not xposed_router.exists() or "fun routeXposedPackageHooks(" not in xposed_router.read_text(encoding="utf-8"):
     errors.append("XposedPackageHookRouter must own system package-to-Hook routing")
-xposed_installers = xposed_dir / "XposedHookInstallers.kt"
 if not (xposed_dir / "XposedMethodHookInstallers.kt").exists():
     errors.append("XposedMethodHookInstallers must own method-hook session management")
 if not (xposed_dir / "XposedSystemEventInstallers.kt").exists():
@@ -101,10 +100,18 @@ if not (xposed_dir / "XposedSystemUiInstallers.kt").exists():
     errors.append("XposedSystemUiInstallers must own SystemUI hook families")
 if not (xposed_dir / "XposedProviderInstallers.kt").exists():
     errors.append("XposedProviderInstallers must own provider and input hooks")
-if not xposed_installers.exists():
-    errors.append("XposedHookInstallers must own package installation logic")
-if xposed_installers.exists() and not any(marker in xposed_installers.read_text(encoding="utf-8") for marker in ("routeXposedPackageHooks(", "XposedPackageHookDispatcher(", "XposedPackageHookCoordinator(")):
-    errors.append("XposedHookInstallers must delegate package routing to the shared dispatcher")
+if not xposed_entry.exists():
+    errors.append("YAutoXposedModule must own the process and system lifecycle hooks")
+else:
+    entry_text = xposed_entry.read_text(encoding="utf-8")
+    if "class YAutoXposedModule : XposedMethodHookInstallers()" not in entry_text:
+        errors.append("YAutoXposedModule must directly own lifecycle dispatch, without legacy wrapper inheritance")
+    if "XposedPackageHookDispatcher(" not in entry_text:
+        errors.append("YAutoXposedModule must dispatch package hooks with the shared process router")
+if (xposed_dir / "XposedHookInstallers.kt").exists():
+    errors.append("Legacy XposedHookInstallers inheritance layer must be removed")
+if (xposed_dir / "XposedPackageHookCoordinator.kt").exists():
+    errors.append("Redundant XposedPackageHookCoordinator forwarding layer must be removed")
 if not (xposed_dir / "XposedInstallationState.kt").exists():
     errors.append("XposedInstallationState must own shared hook state")
 
