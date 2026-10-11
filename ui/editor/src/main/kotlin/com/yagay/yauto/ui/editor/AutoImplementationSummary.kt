@@ -45,13 +45,13 @@ internal fun permissionsForFeature(
     val best = eligible.minWithOrNull(
         compareBy<FeatureImplementationOption> { option ->
             option.requirements.count { availability(it) != PermissionAvailability.GRANTED }
-        }.thenBy { it.requiresRootOrLsposed() }.thenBy {
+        }.thenBy {
             when (it.backendId) {
-                "android" -> 0
-                "accessibility" -> 1
+                "root" -> 0
+                "lsposed" -> 1
                 "shizuku" -> 2
-                "root" -> 3
-                "lsposed" -> 4
+                "accessibility" -> 3
+                "android" -> 4
                 else -> 5
             }
         },

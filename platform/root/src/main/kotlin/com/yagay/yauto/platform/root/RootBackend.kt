@@ -21,10 +21,10 @@ class RootBackend(
     override suspend fun isAvailable(environment: RuntimeEnvironment): Boolean {
         if (environment.rootAvailable) return true
         val now = android.os.SystemClock.elapsedRealtime()
-        if (lastCheckMs != 0L && now - lastCheckMs in 0..5_000L) return lastCheckSuccess
+        if (lastCheckMs != 0L && now - lastCheckMs in 0L..5_000L) return lastCheckSuccess
         return availabilityMutex.withLock {
             val current = android.os.SystemClock.elapsedRealtime()
-            if (lastCheckMs != 0L && current - lastCheckMs in 0..5_000L) {
+            if (lastCheckMs != 0L && current - lastCheckMs in 0L..5_000L) {
                 lastCheckSuccess
             } else {
                 val result = shell.isAvailable()

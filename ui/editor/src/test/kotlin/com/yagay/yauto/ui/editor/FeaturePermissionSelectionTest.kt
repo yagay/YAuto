@@ -72,4 +72,14 @@ class FeaturePermissionSelectionTest {
             PermissionAvailability.UNKNOWN
         }.isEmpty())
     }
+
+    @Test fun rootWinsWhenBothRootAndShizukuAreAuthorized() {
+        val feature = descriptor(
+            FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+            FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+            FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+        )
+        assertEquals(listOf(AccessRequirement.ROOT),
+            permissionsForFeature(feature, null) { PermissionAvailability.GRANTED })
+    }
 }

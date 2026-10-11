@@ -36,6 +36,11 @@ internal fun AccessibilityFeaturePack.registerAccessibilityActions(registry: Fea
                 "Open Android's system recent-apps overview using Accessibility",
                 FeatureCategory.UI_AUTOMATION,
                 capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                implementationOptions = listOf(
+                    FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+                    FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+                    FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+                ),
                 keywords = setOf("recents", "recent apps", "overview", "shortx", "tasker"),
                 ownerPackId = id,
             )

@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -76,6 +77,11 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
         }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
+    }
+
+    // Detect granted Root without requiring manual permission checks for each action.
+    LaunchedEffect(graph, permissionVersion) {
+        rootPermission = runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)
     }
 
     // Recreate the gateway when a returned Settings screen changes the grants.

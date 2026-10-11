@@ -52,6 +52,9 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
         mutableStateOf(FeatureVisibilityPreferences.showRootExclusive(context))
     }
     var rootMessage by remember(notChecked) { mutableStateOf(notChecked) }
+    var preferRoot by remember(context) {
+        mutableStateOf(RuntimeSettingsPreferences.preferRootWhenAvailable(context))
+    }
     var shizukuMessage by remember(notChecked) { mutableStateOf(notChecked) }
     var lsposedMessage by remember(notChecked) { mutableStateOf(notChecked) }
     var lsposedScopeMessage by remember { mutableStateOf<String?>(null) }
@@ -305,6 +308,16 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 contentPadding = PaddingValues(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                item {
+                    SettingsToggleCard(
+                        stringResource(TextR.string.backend_prefer_root_title),
+                        stringResource(TextR.string.backend_prefer_root_description),
+                        preferRoot,
+                    ) { value ->
+                        RuntimeSettingsPreferences.setPreferRootWhenAvailable(context, value)
+                        preferRoot = value
+                    }
+                }
                 item {
                     val rootAvailable = stringResource(TextR.string.backend_root_available)
                     val rootUnavailable = stringResource(TextR.string.backend_root_unavailable)

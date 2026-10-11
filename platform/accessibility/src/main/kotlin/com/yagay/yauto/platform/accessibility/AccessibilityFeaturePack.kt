@@ -274,14 +274,21 @@ class AccessibilityFeaturePack(
             val rootSupported = action != "power_dialog"
             val preferredMethod = if (!rootSupported && feature.preferredMethod() == FeatureMethod.AUTO)
                 FeatureMethod.NO_ROOT else feature.preferredMethod()
-            val result = routeFeatureMethod(
+            val result = if (preferredMethod == FeatureMethod.AUTO) {
+                ctx.executeCapability(feature.typeId, CapabilityRequest(
+                    capability = CapabilityIds.ACCESSIBILITY,
+                    operationId = AccessibilityOperations.GLOBAL_ACTION,
+                    payload = mapOf("action" to ConfigValue.StringValue(action)),
+                    preferredBackendId = backend,
+                ))
+            } else routeFeatureMethod(
                 method = preferredMethod,
                 macroSupported = true,
                 macrodroid = {
                     routeBackendCandidates(
                         backend,
                         if (action == "power_dialog") listOf("accessibility")
-                            else listOf("accessibility", "shizuku"),
+                            else listOf("shizuku", "accessibility"),
                         execute = { selected ->
                             if (selected == "accessibility") {
                                 ctx.executeCapability(feature.typeId, CapabilityRequest(
@@ -305,7 +312,7 @@ class AccessibilityFeaturePack(
                     routeBackendCandidates(
                         backend,
                         if (action in setOf("lock_screen", "notifications", "quick_settings"))
-                            listOf("lsposed", "root")
+                            listOf("root", "lsposed")
                         else if (rootSupported) listOf("root") else emptyList(),
                         execute = { selected ->
                             shortXGlobalActionRequest(action, selected)?.let {
@@ -361,7 +368,13 @@ class AccessibilityFeaturePack(
 
     internal fun action(registry: FeatureRegistry, typeId: String, title: String, description: String, fields: List<FieldSchema>, keywords: Set<String>) {
         registry.registerAction(
-            FeatureDescriptor(id = FeatureId(typeId), kind = FeatureKind.ACTION, title = title, description = description, category = FeatureCategory.UI_AUTOMATION, capabilities = setOf(CapabilityIds.ACCESSIBILITY), fields = fields, keywords = keywords, ownerPackId = id)
+            FeatureDescriptor(id = FeatureId(typeId), kind = FeatureKind.ACTION, title = title, description = description, category = FeatureCategory.UI_AUTOMATION, capabilities = setOf(CapabilityIds.ACCESSIBILITY), fields = fields, keywords = keywords, ownerPackId = id,
+                implementationOptions = if (typeId == AccessibilityOperations.TAP || typeId == AccessibilityOperations.SWIPE)
+                    listOf(
+                        FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+                        FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+                        FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+                    ) else emptyList())
         ) { feature, ctx ->
             val result = ctx.capabilities.execute(CapabilityRequest(CapabilityIds.ACCESSIBILITY, typeId, feature.config))
             ActionExecutionResult(result.success, result.value, result.message)
