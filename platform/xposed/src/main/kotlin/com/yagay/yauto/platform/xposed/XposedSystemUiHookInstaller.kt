@@ -1,67 +1,30 @@
 package com.yagay.yauto.platform.xposed
 
-import android.app.Application
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Binder
 import android.os.Build
 import android.os.Bundle
-import android.os.PowerManager
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
-import android.content.ComponentName
-import android.os.SystemClock
 import android.util.Log
-import android.view.InputEvent
-import android.view.KeyEvent
-import com.yagay.yauto.core.capability.SystemOperations
-import io.github.libxposed.api.XposedModule
-import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
-import io.github.libxposed.api.XposedModuleInterface.SystemServerStartingParam
+import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 
-/** Installs all SystemUI chip, tile and status events in the SystemUI process. */
-abstract class XposedSystemUiInstallers : XposedModule() {
-    internal val sharedState = XposedInstallationState()
-    protected val installedHooks get() = sharedState.installedHooks
-
-    private val providerHooks by lazy {
-        XposedProviderHookInstaller(
-            installedHooks = installedHooks,
-            intercept = { method, callback ->
-                hook(method).intercept { chain ->
-                    callback(chain.args.toList()) { chain.proceed() }
-                }
-            },
-            reportFailure = { key, error ->
-                log(Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
-            },
-        )
-    }
-
-    protected fun installShortXNfcHooks(context: Context, classLoader: ClassLoader) =
-        providerHooks.installShortXNfcHooks(context, classLoader)
-
-    protected fun installShortXMediaProviderHooks(context: Context, classLoader: ClassLoader) =
-        providerHooks.installShortXMediaProviderHooks(context, classLoader)
-
-    protected fun installShortXTelephonyProviderHooks(context: Context, classLoader: ClassLoader) =
-        providerHooks.installShortXTelephonyProviderHooks(context, classLoader)
-
-    protected fun installShortXInputConnectionHook(context: Context, packageName: String, classLoader: ClassLoader) =
-        providerHooks.installShortXInputConnectionHook(context, packageName, classLoader)
-
+/** Owns concrete SystemUI hooks and receiver lifecycles without inheriting XposedModule. */
+internal class XposedSystemUiHookInstaller(
+    private val installedHooks: MutableSet<String>,
+    private val interceptMethod: (Method, (XposedHookInvocation) -> Any?) -> Unit,
+    private val interceptConstructor: (Constructor<*>, (XposedHookInvocation) -> Any?) -> Unit,
+    private val reportLog: (Int, String, Throwable) -> Unit,
+) {
     private val systemUiTileLabels = ConcurrentHashMap<String, String>()
     private val systemUiTileReceiverRegistered = AtomicBoolean(false)
     private val systemUiChipRegistered = AtomicBoolean(false)
     @Volatile private var systemUiChipController: ShortXStatusChipController? = null
-    protected fun installShortXStatusChipHooks(context: Context, classLoader: ClassLoader) {
+    fun installShortXStatusChipHooks(context: Context, classLoader: ClassLoader) {
         val controller = ShortXStatusChipController(context) { chipId, gesture ->
             emitPackageRuntimeEvent(context, "android.event.status_chip_interaction",
                 mapOf("chipId" to chipId, "gesture" to gesture))
@@ -77,14 +40,14 @@ abstract class XposedSystemUiInstallers : XposedModule() {
                 val key = "yauto-chip|" + method.toGenericString()
                 val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                     method.isAccessible = true
-                hook(method).intercept { chain ->
-                    val result = chain.proceed()
-                    runCatching { controller.attach(chain.thisObject) }
+                interceptMethod(method) { invocation ->
+                    val result = invocation.proceed()
+                    runCatching { controller.attach(invocation.thisObject) }
                     result
                 }
                 }
                 installation.exceptionOrNull()?.let { error ->
-                    log(Log.WARN, "YAuto", "Hook installation failed: " + key, error)
+                    reportLog(Log.WARN, "Hook installation failed: " + key, error)
                 }
                 if (installation.getOrNull() == true) hookedCount++
             }
@@ -110,7 +73,7 @@ abstract class XposedSystemUiInstallers : XposedModule() {
                 } catch (error: Exception) {
                     response.putBoolean("success", false)
                     response.putString("error", error.cause?.message ?: error.message)
-                    log(Log.ERROR, "YAuto", "Status chip request failed", error)
+                    reportLog(Log.ERROR, "Status chip request failed", error)
                 }
                 setResultExtras(response)
             }
@@ -126,7 +89,7 @@ abstract class XposedSystemUiInstallers : XposedModule() {
             }
         } catch (error: Exception) {
             systemUiChipRegistered.set(false)
-            log(Log.ERROR, "YAuto", "Unable to register SystemUI chip receiver", error)
+            reportLog(Log.ERROR, "Unable to register SystemUI chip receiver", error)
         }
     }
 
@@ -136,7 +99,7 @@ abstract class XposedSystemUiInstallers : XposedModule() {
      * still runs and retains its original behavior when no matching override exists.
      * No system/stock tile labels or icons are changed.
      */
-    protected fun installShortXTileLabelHooks(context: Context, classLoader: ClassLoader) {
+    fun installShortXTileLabelHooks(context: Context, classLoader: ClassLoader) {
         val clazz = runCatching {
             classLoader.loadClass("com.android.systemui.qs.external.CustomTile")
         }.getOrNull() ?: return
@@ -147,9 +110,9 @@ abstract class XposedSystemUiInstallers : XposedModule() {
             val key = "yauto-qs-label|" + method.toGenericString()
             val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                 method.isAccessible = true
-                hook(method).intercept { chain ->
-                    val original = chain.proceed()
-                    val tile = chain.thisObject
+                interceptMethod(method) { invocation ->
+                    val original = invocation.proceed()
+                    val tile = invocation.thisObject
                     val component = runCatching {
                         generateSequence(tile?.javaClass) { it.superclass }
                             .take(5).flatMap { it.declaredFields.asSequence() }
@@ -163,7 +126,7 @@ abstract class XposedSystemUiInstallers : XposedModule() {
             }
             if (installation.getOrNull() == true) hookCount++
             installation.exceptionOrNull()?.let { error ->
-                log(Log.WARN, "YAuto", "External QS tile label hook unavailable", error)
+                reportLog(Log.WARN, "External QS tile label hook unavailable", error)
             }
         }
         if (hookCount == 0 || !systemUiTileReceiverRegistered.compareAndSet(false, true)) return
@@ -198,7 +161,7 @@ abstract class XposedSystemUiInstallers : XposedModule() {
                 } catch (error: Exception) {
                     reply.putBoolean("success", false)
                     reply.putString("error", error.cause?.message ?: error.message)
-                    log(Log.WARN, "YAuto", "Custom tile label operation failed", error)
+                    reportLog(Log.WARN, "Custom tile label operation failed", error)
                 }
                 setResultExtras(reply)
             }
@@ -214,11 +177,11 @@ abstract class XposedSystemUiInstallers : XposedModule() {
             }
         } catch (error: Exception) {
             systemUiTileReceiverRegistered.set(false)
-            log(Log.ERROR, "YAuto", "Custom tile label receiver unavailable", error)
+            reportLog(Log.ERROR, "Custom tile label receiver unavailable", error)
         }
     }
 
-    protected fun installShortXSystemUiHooks(context: Context, classLoader: ClassLoader) {
+    fun installShortXSystemUiHooks(context: Context, classLoader: ClassLoader) {
         fun observeConstructors(
             classNames: List<String>,
             eventType: String,
@@ -229,8 +192,8 @@ abstract class XposedSystemUiInstallers : XposedModule() {
                     val key = "shortx-systemui-constructor|" + eventType + "|" + constructor.toGenericString()
                     val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                         constructor.isAccessible = true
-                    hook(constructor).intercept { chain ->
-                        val result = chain.proceed()
+                    interceptConstructor(constructor) { invocation ->
+                        val result = invocation.proceed()
                         emitPackageRuntimeEvent(
                             context,
                             eventType,
@@ -243,7 +206,7 @@ abstract class XposedSystemUiInstallers : XposedModule() {
                     }
                     }
                     installation.exceptionOrNull()?.let { error ->
-                        log(Log.WARN, "YAuto", "Hook installation failed: " + key, error)
+                        reportLog(Log.WARN, "Hook installation failed: " + key, error)
                     }
                 }
             }
@@ -262,23 +225,23 @@ abstract class XposedSystemUiInstallers : XposedModule() {
                     val key = "shortx-systemui|" + eventType + "|" + method.toGenericString()
                     val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                         method.isAccessible = true
-                    hook(method).intercept { chain ->
+                    interceptMethod(method) { invocation ->
                         if (after) {
-                            val result = chain.proceed()
+                            val result = invocation.proceed()
                             runCatching {
-                                emitPackageRuntimeEvent(context, eventType, extras(chain.thisObject, chain.args, method.name))
+                                emitPackageRuntimeEvent(context, eventType, extras(invocation.thisObject, invocation.args, method.name))
                             }
                             result
                         } else {
                             runCatching {
-                                emitPackageRuntimeEvent(context, eventType, extras(chain.thisObject, chain.args, method.name))
+                                emitPackageRuntimeEvent(context, eventType, extras(invocation.thisObject, invocation.args, method.name))
                             }
-                            chain.proceed()
+                            invocation.proceed()
                         }
                     }
                     }
                     installation.exceptionOrNull()?.let { error ->
-                        log(Log.WARN, "YAuto", "Hook installation failed: " + key, error)
+                        reportLog(Log.WARN, "Hook installation failed: " + key, error)
                     }
                 }
             }
@@ -376,5 +339,11 @@ abstract class XposedSystemUiInstallers : XposedModule() {
             },
         )
     }
-
 }
+
+/** Boundary between the LSPosed interception chain and its hook behavior. */
+internal class XposedHookInvocation(
+    val thisObject: Any?,
+    val args: List<Any?>,
+    val proceed: () -> Any?,
+)

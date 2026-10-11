@@ -34,7 +34,62 @@ internal val SHORTX_PERMISSION_ALLOWLIST = setOf(
             "android.permission.READ_CLIPBOARD_IN_BACKGROUND",
         )
 
-abstract class XposedSystemEventInstallers : XposedSystemUiInstallers() {
+abstract class XposedSystemEventInstallers : XposedModule() {
+    internal val sharedState = XposedInstallationState()
+    protected val installedHooks get() = sharedState.installedHooks
+
+    private val providerHooks by lazy {
+        XposedProviderHookInstaller(
+            installedHooks = installedHooks,
+            intercept = { method, callback ->
+                hook(method).intercept { chain ->
+                    callback(chain.args.toList()) { chain.proceed() }
+                }
+            },
+            reportFailure = { key, error ->
+                log(Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+            },
+        )
+    }
+
+    private val systemUiHooks by lazy {
+        XposedSystemUiHookInstaller(
+            installedHooks = installedHooks,
+            interceptMethod = { method, callback ->
+                hook(method).intercept { chain ->
+                    callback(XposedHookInvocation(chain.thisObject, chain.args.toList()) { chain.proceed() })
+                }
+            },
+            interceptConstructor = { constructor, callback ->
+                hook(constructor).intercept { chain ->
+                    callback(XposedHookInvocation(chain.thisObject, chain.args.toList()) { chain.proceed() })
+                }
+            },
+            reportLog = { level, message, error -> log(level, "YAuto", message, error) },
+        )
+    }
+
+    protected fun installShortXNfcHooks(context: Context, classLoader: ClassLoader) =
+        providerHooks.installShortXNfcHooks(context, classLoader)
+
+    protected fun installShortXMediaProviderHooks(context: Context, classLoader: ClassLoader) =
+        providerHooks.installShortXMediaProviderHooks(context, classLoader)
+
+    protected fun installShortXTelephonyProviderHooks(context: Context, classLoader: ClassLoader) =
+        providerHooks.installShortXTelephonyProviderHooks(context, classLoader)
+
+    protected fun installShortXInputConnectionHook(context: Context, packageName: String, classLoader: ClassLoader) =
+        providerHooks.installShortXInputConnectionHook(context, packageName, classLoader)
+
+    protected fun installShortXStatusChipHooks(context: Context, classLoader: ClassLoader) =
+        systemUiHooks.installShortXStatusChipHooks(context, classLoader)
+
+    protected fun installShortXTileLabelHooks(context: Context, classLoader: ClassLoader) =
+        systemUiHooks.installShortXTileLabelHooks(context, classLoader)
+
+    protected fun installShortXSystemUiHooks(context: Context, classLoader: ClassLoader) =
+        systemUiHooks.installShortXSystemUiHooks(context, classLoader)
+
     protected val systemRegistered get() = sharedState.systemRegistered
     protected val appReceivers get() = sharedState.appReceivers
     protected val systemEventDedup get() = sharedState.systemEventDedup
