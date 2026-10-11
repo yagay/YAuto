@@ -9,4 +9,5 @@
     <string name="feature_health_probe_skipped">跳过：前置条件尚未满足</string>
     <string name="feature_health_probe_evidence">%1$s = %2$s</string>
     <string name="feature_health_probe_error">%1$s：%2$s</string>
+    <string name="feature_health_probe_one">单独检测此功能</string>
 </resources>
