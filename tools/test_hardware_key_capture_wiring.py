@@ -43,6 +43,9 @@ class HardwareKeyCaptureWiringTest(unittest.TestCase):
         self.assertIn("val choices = learnedMappings[event.evKey].orEmpty()", listener)
         self.assertIn("val mapped = eligible.distinct().singleOrNull() ?: return", listener)
         self.assertIn("if (myGeneration == generation)", listener)
+        self.assertIn("while (myGeneration == generation && started.get() && listening)", listener)
+        self.assertIn("Thread.sleep(backoffMs)", listener)
+        self.assertIn("backoffMs = (backoffMs * 2).coerceAtMost(60_000L)", listener)
         self.assertIn("if (raw.linuxEvKey > 0 && raw.keyCode <= 0)", s)
 
     def test_lsposed_capture_uses_authenticated_event_envelope(self):

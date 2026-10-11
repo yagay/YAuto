@@ -28,7 +28,7 @@ class RootHardwareKeyEventSource(
     @Volatile private var readerThread: Thread? = null
     @Volatile private var listening = false
     /** Generation changes on stop/restart, invalidating any in-flight process creation. */
-    private var generation = 0L
+    @Volatile private var generation = 0L
     @Volatile private var learnedMappings: Map<Int, List<LearnedAndroidKey>> = emptyMap()
 
     override fun start(emitter: RuntimeEventEmitter) {
@@ -95,28 +95,48 @@ class RootHardwareKeyEventSource(
         listening = true
         val myGeneration = ++generation
         readerThread = Thread({
-            var mine: Process? = null
+            var backoffMs = 2_000L
             try {
-                val child = ProcessBuilder("su", "-c", "getevent -t 2>/dev/null")
-                    .redirectErrorStream(true)
-                    .start()
-                mine = child
-                val accepted = synchronized(lock) {
-                    if (myGeneration != generation || !listening || !started.get()) false
-                    else { process = child; true }
-                }
-                if (!accepted) return@Thread
-                child.inputStream.bufferedReader().useLines { lines ->
-                    lines.forEach { line ->
-                        if (myGeneration == generation && started.get() && listening) {
-                            parseRawKey(line)?.let { emit(it) }
+                // A one-off getevent reader silently dies after su revocation,
+                // process restarts, or input service resets. Restart while OEM
+                // key rules remain subscribed, with bounded exponential backoff.
+                while (myGeneration == generation && started.get() && listening) {
+                    var child: Process? = null
+                    try {
+                        val opened = ProcessBuilder("su", "-c", "getevent -t 2>/dev/null")
+                            .redirectErrorStream(true)
+                            .start()
+                        child = opened
+                        val accepted = synchronized(lock) {
+                            if (myGeneration != generation || !listening || !started.get()) false
+                            else { process = opened; true }
+                        }
+                        if (!accepted) break
+                        opened.inputStream.bufferedReader().useLines { lines ->
+                            lines.forEach { line ->
+                                if (myGeneration == generation && started.get() && listening) {
+                                    parseRawKey(line)?.let(::emit)
+                                }
+                            }
+                        }
+                    } catch (_: Exception) {
+                        // A rejected Root grant or temporarily inaccessible input
+                        // device must not permanently disable a learned OEM rule.
+                    } finally {
+                        child?.destroyForcibly()
+                        synchronized(lock) {
+                            if (process === child) process = null
                         }
                     }
+                    if (myGeneration != generation || !started.get() || !listening) break
+                    try {
+                        Thread.sleep(backoffMs)
+                    } catch (_: InterruptedException) {
+                        break
+                    }
+                    backoffMs = (backoffMs * 2).coerceAtMost(60_000L)
                 }
-            } catch (_: Exception) {
-                // Root denied or getevent unavailable; never mutate a newer session.
             } finally {
-                mine?.destroyForcibly()
                 synchronized(lock) {
                     if (myGeneration == generation) {
                         process = null

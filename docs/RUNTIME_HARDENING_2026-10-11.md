@@ -32,3 +32,5 @@ Target branch: `refactor/macrodroid-on-1003-20261008`.
 - Full device validation (KernelSU, LSPosed scopes, OEM keys and accessibility) remains necessary. No persistent Root Shell pool was introduced because cross-command output isolation, process death and cancellation must be tested before replacing bounded single-use command execution.
 
 - The LSPosed one-shot capture lease has an explicit STOP bridge operation; a local listener timeout no longer leaves system_server armed while the Root/Accessibility learner takes over. CI source tests now verify staged rather than parallel learning.
+
+- The Root OEM-key event source now reconnects after unexpected getevent/su termination with interruptible 2–60-second backoff, so a transient permission or input service failure does not permanently disable an existing rule. Stop/restart generations prevent stale threads from publishing into a replacement reader.
