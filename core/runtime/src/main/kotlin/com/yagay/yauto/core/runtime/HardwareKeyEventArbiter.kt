@@ -62,7 +62,7 @@ class HardwareKeyEventArbiter(
                     sameDevice(it.deviceId, deviceId) &&
                     now >= it.atMs && now - it.atMs < LATE_DUPLICATE_MS }) return
             val match = pending.firstOrNull {
-                it.signature == signature && it.event.source != event.source &&
+                it.signature == signature && !it.observations.containsKey(event.source) &&
                     sameDevice(it.deviceId, deviceId) &&
                     now >= it.atMs && now - it.atMs < COLLECTION_MS
             }
