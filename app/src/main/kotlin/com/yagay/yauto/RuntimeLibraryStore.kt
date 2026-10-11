@@ -12,7 +12,7 @@ internal object RuntimeLibraryStore {
     private const val FILE = "yauto_shortx_library"
     private const val KEY = "entries"
     private val packagePattern = Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)+")
-    val kinds = listOf("shell", "javascript", "mvel", "beanshell", "apps")
+    val kinds = listOf("shell", "javascript", "mvel", "beanshell", "apps", "gesture")
 
     fun list(context: Context): List<LibraryEntry> = runCatching {
         val json = JSONArray(context.getSharedPreferences(FILE, Context.MODE_PRIVATE).getString(KEY, "[]"))
@@ -38,6 +38,13 @@ internal object RuntimeLibraryStore {
             val packages = entry.body.lineSequence().map(String::trim).filter(String::isNotEmpty).toList()
             if (packages.isEmpty() || packages.size > 200 ||
                 packages.any { !packagePattern.matches(it) }) return false
+        }
+        if (entry.kind == "gesture") {
+            val points = entry.body.lineSequence().filter(String::isNotBlank).toList()
+            if (points.size !in 2..4096 || points.any { point ->
+                val pair = point.split(",")
+                pair.size != 2 || pair.any { it.toIntOrNull() !in 0..20000 }
+            }) return false
         }
         return true
     }
