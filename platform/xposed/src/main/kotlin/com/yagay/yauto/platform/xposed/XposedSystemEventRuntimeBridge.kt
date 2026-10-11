@@ -62,7 +62,8 @@ object XposedSystemEventRuntimeBridge {
         if (!type.startsWith("android.event.")) return
         val payload = buildMap<String, ConfigValue> {
             intent.extras?.keySet().orEmpty().forEach { key ->
-                if (key == "type" || key == "timestampEpochMs" || key == "bridgeSource") return@forEach
+                if (key == "type" || key == "timestampEpochMs" || key == "bridgeSource" ||
+                    key == XposedEventAuth.EXTRA_TOKEN) return@forEach
                 when (val value = intent.extras?.get(key)) {
                     is String -> put(key, ConfigValue.StringValue(value))
                     is Int -> put(key, ConfigValue.NumberValue(value.toDouble()))

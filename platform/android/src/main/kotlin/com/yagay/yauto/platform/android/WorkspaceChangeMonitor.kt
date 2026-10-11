@@ -25,7 +25,9 @@ internal fun CoroutineScope.watchWorkspaceChanges(
         if (observable != null) {
             // Register first so a save during initial load cannot be missed.
             changes.trySend(observable.snapshotOrNull() ?: repository.load())
-            for (data in changes) onChanged(data)
+            // A queued initial snapshot can be older than a simultaneous save callback.
+            // Prefer the repository's latest atomic snapshot before applying each update.
+            for (data in changes) onChanged(observable.snapshotOrNull() ?: data)
         } else {
             while (isActive) {
                 onChanged(repository.load())

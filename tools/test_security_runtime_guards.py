@@ -22,6 +22,7 @@ class RuntimeIngressSecurityTest(unittest.TestCase):
         self.assertIn("XposedEventAuth.acceptLegacy(", receiver)
         self.assertIn("source != \"lsposed.system_server\"", receiver)
         self.assertIn("MessageDigest.isEqual(", receiver)
+        self.assertIn("key == XposedEventAuth.EXTRA_TOKEN", receiver)
         self.assertIn("XposedEventAuth.publish(token)", read("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedSystemBridgeRegistration.kt"))
 
     def test_external_secret_excluded_from_backup(self):
