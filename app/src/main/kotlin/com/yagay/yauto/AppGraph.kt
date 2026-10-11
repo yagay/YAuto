@@ -111,6 +111,7 @@ class AppGraph(context: Context) {
     }
 
     init {
+        RuntimeEmergencyState.restore(appContext)
         safelyUnit("importers:compatibility") {
             CompatibilityImporterCatalog.registerInto(importers)
         }

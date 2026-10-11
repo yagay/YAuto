@@ -46,6 +46,7 @@ class AutomationRuntimeService : Service() {
     private var workspaceSubscription: AutoCloseable? = null
     private var hardwareKeyArbiter: HardwareKeyEventArbiter? = null
     private var hardwareKeyGestureEngine: HardwareKeyGestureEngine? = null
+    private var safetyController: RuntimeSafetyController? = null
     @Volatile private var hardwareKeyAutomationEnabled = false
     private val lsposedSubscriptions = Channel<Set<String>>(Channel.CONFLATED)
     private val workspaceSubscriptions = Channel<WorkspaceData>(Channel.CONFLATED)
@@ -89,13 +90,17 @@ class AutomationRuntimeService : Service() {
         }
         val dispatcher = RuntimeEventDispatcher(appGraph, scope)
         runtimeDispatcher = dispatcher
+        safetyController = RuntimeSafetyController(this, appGraph, scope)
         hardwareKeyGestureEngine = HardwareKeyGestureEngine(scope) { derived ->
             dispatcher.dispatch(derived)
         }
         hardwareKeyArbiter = HardwareKeyEventArbiter(
             publish = { chosen ->
-                dispatcher.dispatch(chosen)
-                hardwareKeyGestureEngine?.accept(chosen)
+                safetyController?.observeKey(chosen)
+                if (!RuntimeEmergencyState.isPaused()) {
+                    dispatcher.dispatch(chosen)
+                    hardwareKeyGestureEngine?.accept(chosen)
+                }
             },
             schedule = { milliseconds, callback ->
                 scope.launch {
@@ -263,6 +268,10 @@ class AutomationRuntimeService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_REFRESH_ENGINE_SETTINGS) {
+            graph?.workspace?.snapshotOrNull()?.let(workspaceSubscriptions::trySend)
+            return START_STICKY
+        }
         if (intent?.action == ACTION_REFRESH_LOCALIZED_SURFACES) { if (!promoteToForeground()) { stopSelf(); return START_NOT_STICKY }; return START_STICKY }
         if (intent?.action == ACTION_EXTERNAL_COMMAND) {
             val runtime = graph ?: runCatching { (application as YAutoApplication).graph }.getOrNull()
@@ -338,6 +347,7 @@ class AutomationRuntimeService : Service() {
         workspaceSubscriptions.close()
         hardwareKeyArbiter?.close()
         hardwareKeyArbiter = null
+        safetyController = null
         hardwareKeyAutomationEnabled = false
         hardwareKeyGestureEngine?.clear()
         hardwareKeyGestureEngine = null
@@ -368,6 +378,9 @@ class AutomationRuntimeService : Service() {
         ) {
             eventTypes += "android.event.hardware_key"
         }
+        if (RuntimeSettingsPreferences.keyEventPrompt(this) ||
+            RuntimeSettingsPreferences.emergencyPowerKey(this)
+        ) eventTypes += "android.event.hardware_key"
         lsposedSubscriptions.trySend(eventTypes)
     }
 
@@ -376,11 +389,12 @@ class AutomationRuntimeService : Service() {
         // workspace's active triggers; Accessibility must not push a duplicate
         // stream when no hardware-key rules exist.
         val activeIds = workspace.runtimeEventFeatureIds()
-        hardwareKeyAutomationEnabled = activeIds.any {
-            it == "android.event.hardware_key" ||
-                it == "android.event.hardware_key_gesture" ||
-                it == "android.event.hardware_key_combo"
-        }
+        hardwareKeyAutomationEnabled = RuntimeSettingsPreferences.keyEventPrompt(this) ||
+            RuntimeSettingsPreferences.emergencyPowerKey(this) || activeIds.any {
+                it == "android.event.hardware_key" ||
+                    it == "android.event.hardware_key_gesture" ||
+                    it == "android.event.hardware_key_combo"
+            }
         val subscribed = buildSet {
             activeIds.forEach { typeId ->
                 when (typeId) {
@@ -423,6 +437,7 @@ class AutomationRuntimeService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(android.R.drawable.ic_popup_sync).setContentTitle(localizedContext.getString(TextR.string.runtime_notification_title)).setContentText(localizedContext.getString(TextR.string.runtime_notification_text)).setOngoing(true).setOnlyAlertOnce(true).build()
     }
     companion object {
+        const val ACTION_REFRESH_ENGINE_SETTINGS = "com.yagay.yauto.action.REFRESH_ENGINE_SETTINGS"
         const val ACTION_REFRESH_LOCALIZED_SURFACES = "com.yagay.yauto.action.REFRESH_LOCALIZED_SURFACES"
         const val ACTION_SHARE_DISPATCH = "com.yagay.yauto.action.SHARE_DISPATCH"
         const val ACTION_SECURITY_EVENT = "com.yagay.yauto.action.SECURITY_EVENT"

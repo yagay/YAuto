@@ -31,6 +31,7 @@ class RuntimeEventDispatcher(
     }
 
     fun dispatch(event: RuntimeEvent, statesOnly: Boolean = false) {
+        if (RuntimeEmergencyState.isPaused()) return
         if (event.typeId == "android.event.hardware_key" ||
             event.typeId == "android.event.hardware_key_gesture" ||
             event.typeId == "android.event.hardware_key_combo"
