@@ -150,7 +150,7 @@ internal fun ShortXWebDavScreen(context: Context, graph: AppGraph) {
                             val current = graph.workspace.load()
                             // Cancel running work before replacing live activation rules.
                             graph.runtime.setRuntimeEnabled(AutomationEnableMode.DISABLE)
-                            graph.workspace.save(current.restoreBackup(decoded.workspace, mode))
+                            graph.workspace.save(current.restoreBackup(decoded.workspace, mode).copy(runtimeEnabled = false))
                             graph.runtime.resetState()
                             graph.runtime.dispatch(RuntimeEvent("android.event.workspace_changed", source = "ui.webdav"), statesOnly = true)
                             val imported = RuntimeLibraryStore.importJson(context, data.library)

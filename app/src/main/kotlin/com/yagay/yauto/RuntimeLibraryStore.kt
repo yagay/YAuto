@@ -73,7 +73,7 @@ internal object RuntimeLibraryStore {
     }
 
     /** Import validates *all* entries before persisting any of them. */
-    fun importJson(context: Context, text: String): Int {
+    fun validateImportJson(text: String): List<LibraryEntry> {
         require(text.length <= 1_000_000)
         val document = JSONObject(text)
         require(document.optString("format") == "YAuto.Library.v1")
@@ -89,6 +89,11 @@ internal object RuntimeLibraryStore {
                 add(entry)
             }
         }
+        return incoming
+    }
+
+    fun importJson(context: Context, text: String): Int {
+        val incoming = validateImportJson(text)
         val current = list(context).toMutableList()
         for (e in incoming) {
             val i = current.indexOfFirst { it.kind == e.kind && it.name == e.name }

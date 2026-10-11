@@ -194,7 +194,7 @@ internal fun ShortXGestureLibraryScreen(context: Context, graph: AppGraph) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Button(onClick = {
                     scope.launch {
-                        feedback = if (graph.overlaySurfaces.showGestureRecorder(id, 1024, 0L))
+                        feedback = if (graph.overlaySurfaces.showGestureRecorder(id, 1024, 0L, dismissOnRecord = true))
                             saved else failed
                     }
                 }) { Text(stringResource(TextR.string.sx_record_start)) }

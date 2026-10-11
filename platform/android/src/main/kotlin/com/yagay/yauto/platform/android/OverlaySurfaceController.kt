@@ -646,6 +646,7 @@ class OverlaySurfaceController(context: Context) {
         id: String,
         maxPoints: Int,
         autoHideMs: Long,
+        dismissOnRecord: Boolean = false,
     ): Boolean {
         if (!canDraw() || id.isBlank()) return false
         return presentOnMain(id) {
@@ -656,6 +657,8 @@ class OverlaySurfaceController(context: Context) {
             ) { path ->
                 recordedGestures[id] = path
                 SurfaceRuntimeBridge.emit(id, "gesture_recorded", path)
+                // Dismiss after touch delivery, without changing existing automation recorders.
+                if (dismissOnRecord) main.post { windows.remove(id) }
             }
             val attached = addSurface(
                 id = id,

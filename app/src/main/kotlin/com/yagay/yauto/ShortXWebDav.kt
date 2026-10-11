@@ -141,9 +141,7 @@ internal object ShortXWebDav {
             val library = document.getString("library")
             WorkspaceBackupCodec.decode(workspace)
             // Library validation is completed before any restoration is requested.
-            val entries = JSONObject(library)
-            require(entries.getString("format") == "YAuto.Library.v1")
-            require(entries.getJSONArray("entries").length() <= 50)
+            ShortXWebDavLibraryValidation.validate(library)
             WebDavRestorePreview(workspace, library)
         } finally { connection.disconnect() }
     }
