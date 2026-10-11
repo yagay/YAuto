@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_health_probe_read_only">逐项验证真实只读系统接口</string>
+    <string name="feature_health_probe_read_only">一键实测：逐项读取系统接口回应</string>
     <string name="feature_health_probe_progress">正在检查：%1$d / %2$d</string>
     <string name="feature_health_probe_summary">接口有回应：%1$d · 接口错误：%2$d · 需人工测试：%3$d。接口返回结果不等于动作或触发器正常。</string>
     <string name="feature_health_probe_responded">系统接口已回应（只读）</string>
@@ -10,4 +10,5 @@
     <string name="feature_health_probe_evidence">%1$s = %2$s</string>
     <string name="feature_health_probe_error">%1$s：%2$s</string>
     <string name="feature_health_probe_one">单独检测此功能</string>
+    <string name="feature_health_readiness_only_warning">当前仅为权限与环境扫描，尚未测试任何真实接口。请点击上方「一键实测」。</string>
 </resources>
