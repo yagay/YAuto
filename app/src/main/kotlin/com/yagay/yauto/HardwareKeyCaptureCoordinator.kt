@@ -58,6 +58,7 @@ import com.yagay.yauto.ui.editor.LocalHardwareKeyCapture
 import com.yagay.yauto.platform.accessibility.AccessibilityRuntimeBridge
 import com.yagay.yauto.platform.xposed.XposedSystemEventRuntimeBridge
 import com.yagay.yauto.core.registry.HardwareKeyCaptureResult
+import com.yagay.yauto.core.registry.hardwareKeyCapturePriority
 import com.yagay.yauto.core.registry.mergeHardwareKeyCaptures
 import com.yagay.yauto.ui.home.HomeScreen
 import kotlinx.coroutines.CancellationException
@@ -203,17 +204,7 @@ internal suspend fun captureHardwareKey(
                         while (true) candidates += observations.receive()
                     }
                 }
-                val best = candidates.maxWithOrNull(
-                    compareBy<HardwareKeyCaptureResult> {
-                        if (it.keyCode > KeyEvent.KEYCODE_UNKNOWN) 1 else 0
-                    }.thenBy {
-                        when {
-                            "lsposed" in it.sources -> 3
-                            "root.input" in it.sources -> 2
-                            else -> 1
-                        }
-                    }
-                ) ?: first
+                val best = candidates.maxByOrNull(::hardwareKeyCapturePriority) ?: first
                 if (best.linuxEvKey > 0 && best.keyCode <= 0) {
                     try {
                         graph.hardwareKeys.enrichRawCapture(best)
