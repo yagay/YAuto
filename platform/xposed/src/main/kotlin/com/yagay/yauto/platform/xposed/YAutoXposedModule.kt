@@ -199,6 +199,18 @@ class YAutoXposedModule : XposedModule() {
             },
             ownPackage = YAUTO_HOOK_PACKAGE,
         )
+        // ShortX installs its InputManagerHook while system_server starts,
+        // rather than at the moment the user presses "learn key". Pre-arm
+        // passive framework callbacks at boot: the temporary authenticated
+        // capture lease controls emission, not Hook installation. Keeping the
+        // observers installed prevents the first OEM KeyEvent being missed
+        // during a slow system_server binder/broadcast handshake.
+        runCatching {
+            val count = systemServerHooks.installShortXInputHooks(context, classLoader)
+            log(Log.INFO, "YAuto", "System input Hook preinstalled at boot: $count callbacks")
+        }.onFailure { error ->
+            log(Log.WARN, "YAuto", "Input Hook boot preinstall unavailable; will retry on capture", error)
+        }
     }
 
     private fun installShortXPackageHooks(
