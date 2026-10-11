@@ -67,7 +67,10 @@ class HardwareKeyCaptureWiringTest(unittest.TestCase):
         self.assertIn("if (mappings.isNotEmpty() && !learningPaused)", listener)
         self.assertIn("activeReaders.add(this)", listener)
         self.assertIn("activeReaders.remove(this)", listener)
-        self.assertIn("if (best.linuxEvKey > 0 && best.keyCode <= 0)", s)
+        self.assertIn("val graceMs = if (first.keyCode > 0) 350L else 3_000L", s)
+        self.assertIn("candidates.maxByOrNull(::hardwareKeyCapturePriority) ?: first", s)
+        self.assertNotIn("graph.hardwareKeys.enrichRawCapture(best)", s)
+        self.assertIn("A key-layout guess is not an observed Android KeyEvent", s)
 
     def test_lsposed_capture_uses_authenticated_event_envelope(self):
         s = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedHardwareKeyEventHandler.kt")
