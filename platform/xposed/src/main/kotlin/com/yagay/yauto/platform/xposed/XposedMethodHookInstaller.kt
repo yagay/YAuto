@@ -339,3 +339,4 @@ internal class XposedMethodHookInstaller(
         val CLASS_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]*(?:\\.[A-Za-z_$][A-Za-z0-9_$]*)+")
         val METHOD_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]{0,127}")
     }
+}
