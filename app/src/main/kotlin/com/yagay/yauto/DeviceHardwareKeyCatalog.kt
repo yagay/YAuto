@@ -29,7 +29,9 @@ class DeviceHardwareKeyCatalog(
 
 
     suspend fun captureRawKey(timeoutMs: Long): HardwareKeyCaptureResult? {
-        if (!rootShell.isAvailable()) return null
+        // Starting a second `su -c id` probe before getevent can consume the
+        // entire key-learning window on slow Magisk/KernelSU authorization.
+        // Running getevent itself is the authoritative permission check.
         val boundedTimeout = timeoutMs.coerceIn(1_000L, 60_000L)
         val output = rootShell.run(RAW_KEY_CAPTURE_COMMAND, boundedTimeout + 1_500L)
         val lines = output.stdout.lineSequence().toList()

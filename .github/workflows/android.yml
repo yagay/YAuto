@@ -55,6 +55,8 @@ jobs:
         run: |
           python3 -m unittest discover -s tools -p 'test_picker_duplicate_titles.py'
           python3 tools/audit_picker_duplicate_titles.py --fail-on-unresolved-zh --fail-on-unresolved-en
+      - name: Hardware-key capture runtime regression
+        run: python3 -m unittest discover -s tools -p 'test_hardware_key_capture_wiring.py'
       - name: Root-first routing and backend coverage
         run: python3 -m unittest discover -s tools -p 'test_root_first_routing.py'
       - name: Runtime event source catalog coverage

@@ -119,13 +119,13 @@ internal suspend fun captureHardwareKey(
     }
     jobs += xposedWaiter
 
-    val xposedArmed = runCatching {
-        graph.xposed.beginHardwareKeyCapture(timeoutMs)
-    }.getOrDefault(false)
-    if (!xposedArmed) xposedWaiter.cancel()
-
-    if (runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)) {
-        launchCapture { graph.hardwareKeys.captureRawKey(timeoutMs) }
+    // Arm the Root getevent reader immediately, in parallel with the system Hook
+    // handshake. Serial Root availability checks used to miss the key-up event.
+    launchCapture { graph.hardwareKeys.captureRawKey(timeoutMs) }
+    jobs += launch {
+        if (!runCatching { graph.xposed.beginHardwareKeyCapture(timeoutMs) }.getOrDefault(false)) {
+            xposedWaiter.cancel()
+        }
     }
 
     val first = withTimeoutOrNull(timeoutMs.coerceIn(1_000L, 60_000L)) {

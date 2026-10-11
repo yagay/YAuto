@@ -421,7 +421,7 @@ internal class XposedSystemServerHookInstaller(
      * interceptKeyBeforeQueueing/interceptKeyBeforeDispatching between policy callback classes.
      * We never change the return value here; YAuto only observes and forwards KeyEvent metadata.
      */
-    fun installShortXInputHooks(context: Context, classLoader: ClassLoader) {
+    fun installShortXInputHooks(context: Context, classLoader: ClassLoader): Int {
         val targets = listOf(
             InputHookTarget(
                 "com.android.server.input.InputManagerService",
@@ -476,7 +476,13 @@ internal class XposedSystemServerHookInstaller(
         }
 
         installInputFilterStateHook(context, classLoader)
-        log(Log.INFO, "YAuto", "ShortX-compatible input hooks installed")
+        val installedCount = installedHooks.count { it.startsWith("shortx-input|") }
+        if (installedCount == 0) {
+            log(Log.WARN, "YAuto", "Hardware key capture unavailable: no matching input callback on this ROM")
+        } else {
+            log(Log.INFO, "YAuto", "Hardware key input callbacks installed: $installedCount")
+        }
+        return installedCount
     }
 
     fun installInputFilterStateHook(context: Context, classLoader: ClassLoader) {

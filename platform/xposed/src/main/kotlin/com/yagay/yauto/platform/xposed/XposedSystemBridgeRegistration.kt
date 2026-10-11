@@ -38,7 +38,7 @@ internal fun registerXposedSystemBridge(
     yAutoUid: AtomicLong,
     installBehaviorHooks: () -> Unit,
     installSubscriptions: (Set<String>) -> Unit,
-    installInputHooks: () -> Unit,
+    installInputHooks: () -> Int,
     emitLog: (Int, String, Throwable?) -> Unit,
     ownPackage: String,
 ) {
@@ -172,7 +172,9 @@ internal fun registerXposedSystemBridge(
                             response.putInt("subscriptionCount", values.size)
                         }
                         SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_START -> {
-                            installInputHooks()
+                            val installedCount = installInputHooks()
+                            require(installedCount > 0) { "No compatible Android key-event Hook found on this ROM" }
+                            response.putInt("inputHookCount", installedCount)
                             val timeoutMs = intent.getLongExtra("timeoutMs", 10_000L)
                                 .coerceIn(1_000L, 60_000L)
                             val until = SystemClock.elapsedRealtime() + timeoutMs

@@ -86,23 +86,24 @@ internal class XposedHardwareKeyEventHandler(
         if (!state.hardwareKeyCaptureUntilElapsed.compareAndSet(until, 0L)) return
 
         val inputDevice = event.device
-        runCatching {
-            context.sendBroadcast(
-                Intent(SystemBridgeProtocol.SYSTEM_EVENT_ACTION)
-                    .setPackage(YAUTO_HOOK_PACKAGE)
-                    .putExtra("type", SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_TYPE)
-                    .putExtra("keyCode", event.keyCode)
-                    .putExtra("scanCode", event.scanCode)
-                    .putExtra("deviceId", event.deviceId)
-                    .putExtra("deviceName", inputDevice?.name.orEmpty())
-                    .putExtra("deviceDescriptor", inputDevice?.descriptor.orEmpty())
-                    .putExtra("vendorId", inputDevice?.vendorId ?: 0)
-                    .putExtra("productId", inputDevice?.productId ?: 0)
-                    .putExtra("action", event.action)
-                    .putExtra("method", methodName)
-                    .putExtra("timestampEpochMs", System.currentTimeMillis())
-            )
-        }
+        // All system_server events must use the authenticated event envelope.
+        // The old direct broadcast was rejected by our own Android 12/13
+        // receiver because it omitted the negotiated session token.
+        broadcastXposedRuntimeEvent(
+            context = context,
+            type = SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_TYPE,
+            extras = mapOf(
+                "keyCode" to event.keyCode,
+                "scanCode" to event.scanCode,
+                "deviceId" to event.deviceId,
+                "deviceName" to inputDevice?.name.orEmpty(),
+                "deviceDescriptor" to inputDevice?.descriptor.orEmpty(),
+                "vendorId" to (inputDevice?.vendorId ?: 0),
+                "productId" to (inputDevice?.productId ?: 0),
+                "action" to event.action,
+                "method" to methodName,
+            ),
+        )
     }
 
 }
