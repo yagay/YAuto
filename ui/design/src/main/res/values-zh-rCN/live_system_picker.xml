@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_picker_no_visible_data">当前没有可读取的匹配项目。请检查通知监听权限、当前通知及已选应用，也可以手动输入。</string>
+    <string name="live_picker_unavailable">尚未获得读取系统数据的权限，或当前服务未连接。仍可手动输入。</string>
+    <string name="live_picker_tile_slot">磁贴 %1$d · %2$s</string>
+    <string name="live_picker_tile_active">已设置为启用</string>
+    <string name="live_picker_tile_inactive">已设置为停用</string>
+    <string name="live_picker_tile_unavailable">已设置为不可用</string>
+    <string name="live_picker_notification_action">操作 %1$d · %2$s</string>
+</resources>

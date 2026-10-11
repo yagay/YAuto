@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_picker_no_visible_data">No matching active system items are visible. Check notification access, active notifications and selected application, or enter the value manually.</string>
+    <string name="live_picker_unavailable">Live system data is unavailable or has not been authorized. Manual input remains available.</string>
+    <string name="live_picker_tile_slot">Tile %1$d · %2$s</string>
+    <string name="live_picker_tile_active">Configured active</string>
+    <string name="live_picker_tile_inactive">Configured inactive</string>
+    <string name="live_picker_tile_unavailable">Configured unavailable</string>
+    <string name="live_picker_notification_action">Action %1$d · %2$s</string>
+</resources>

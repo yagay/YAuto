@@ -3,6 +3,9 @@ package com.yagay.yauto
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import com.yagay.yauto.ui.editor.LocalLiveSystemFieldPicker
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -16,7 +19,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             YAutoTheme {
-                YAutoAppScreen(graph)
+                val source = remember(graph) {
+                    liveAndroidFieldPicker(applicationContext, graph.quickSettingsTiles)
+                }
+                CompositionLocalProvider(LocalLiveSystemFieldPicker provides source) {
+                    YAutoAppScreen(graph)
+                }
             }
         }
     }
