@@ -17,6 +17,8 @@ internal object XposedEventTransportHealth {
         val accepted: Long,
         val forwarded: Long,
         val rejected: Long,
+        val runtimeFailures: Long,
+        val lastRuntimeFailureEpochMs: Long,
         val lastAcceptedType: String,
         val lastForwardedType: String,
         val lastRejectedReason: String,
@@ -26,11 +28,14 @@ internal object XposedEventTransportHealth {
     private val accepted = AtomicLong(0)
     private val forwarded = AtomicLong(0)
     private val rejected = AtomicLong(0)
+    private val runtimeFailures = AtomicLong(0)
+    private val lastRuntimeFailureEpochMs = AtomicLong(0)
     private val lastAcceptedType = AtomicReference("")
     private val lastForwardedType = AtomicReference("")
     private val lastRejectedReason = AtomicReference("")
     private val lastRejectedEpochMs = AtomicLong(0)
     private val lastWarningEpochMs = AtomicLong(0)
+    private val lastRuntimeWarningElapsedMs = AtomicLong(-60_000L)
 
     fun onAccepted(type: String) {
         accepted.incrementAndGet()
@@ -40,6 +45,23 @@ internal object XposedEventTransportHealth {
     fun onForwarded(type: String) {
         forwarded.incrementAndGet()
         lastForwardedType.set(type.take(96))
+    }
+
+    fun onRuntimeFailure(type: String, error: Exception) {
+        runtimeFailures.incrementAndGet()
+        lastRuntimeFailureEpochMs.set(System.currentTimeMillis())
+        // Never include payload, Hook arguments or credentials; rate-limit
+        // failures caused by a fast, repeatedly firing OEM system callback.
+        val nowElapsed = android.os.SystemClock.elapsedRealtime()
+        val previous = lastRuntimeWarningElapsedMs.get()
+        if (nowElapsed - previous >= 30_000L &&
+            lastRuntimeWarningElapsedMs.compareAndSet(previous, nowElapsed)) {
+            runCatching {
+                Log.e("YAutoBridge", "Authenticated event callback failed: " +
+                    "type=${type.take(96)} exception=${error.javaClass.simpleName} " +
+                    "(count=${runtimeFailures.get()})")
+            }
+        }
     }
 
     fun onRejected(type: String, source: String, senderUid: Int, reason: String) {
@@ -64,6 +86,8 @@ internal object XposedEventTransportHealth {
         accepted.get(),
         forwarded.get(),
         rejected.get(),
+        runtimeFailures.get(),
+        lastRuntimeFailureEpochMs.get(),
         lastAcceptedType.get(),
         lastForwardedType.get(),
         lastRejectedReason.get(),

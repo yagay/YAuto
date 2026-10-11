@@ -105,15 +105,20 @@ object XposedSystemEventRuntimeBridge {
             }
         }
         listener?.let { callback ->
-            callback.invoke(
-                RuntimeEvent(
-                    typeId = type,
-                    payload = payload,
-                    source = intent.getStringExtra("bridgeSource").orEmpty().ifBlank { "lsposed.system_server" },
-                    timestampEpochMs = intent.getLongExtra("timestampEpochMs", System.currentTimeMillis()),
+            try {
+                callback.invoke(
+                    RuntimeEvent(
+                        typeId = type,
+                        payload = payload,
+                        source = intent.getStringExtra("bridgeSource").orEmpty().ifBlank { "lsposed.system_server" },
+                        timestampEpochMs = intent.getLongExtra("timestampEpochMs", System.currentTimeMillis()),
+                    )
                 )
-            )
-            XposedEventTransportHealth.onForwarded(type)
+                XposedEventTransportHealth.onForwarded(type)
+            } catch (error: Exception) {
+                // A valid broadcast was not delivered to automation runtime.
+                XposedEventTransportHealth.onRuntimeFailure(type, error)
+            }
         }
     }
 }

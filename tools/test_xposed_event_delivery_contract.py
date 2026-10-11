@@ -58,6 +58,33 @@ class XposedEventDeliveryContractTest(unittest.TestCase):
         self.assertNotIn("eventToken", reporter)
         self.assertNotIn("EXTRA_TOKEN", reporter)
 
+    def test_callback_failures_are_isolated_and_reflected_in_diagnostics(self):
+        system = (XPOSED / "XposedSystemEventRuntimeBridge.kt").read_text(encoding="utf-8")
+        hook = (XPOSED / "XposedHookRuntimeBridge.kt").read_text(encoding="utf-8")
+        health = (XPOSED / "XposedEventTransportHealth.kt").read_text(encoding="utf-8")
+        backend = (XPOSED / "XposedBackend.kt").read_text(encoding="utf-8")
+        for code in (system, hook):
+            self.assertIn("XposedEventTransportHealth.onRuntimeFailure(", code)
+            self.assertIn("catch (error: Exception)", code)
+        self.assertIn("val runtimeFailures: Long", health)
+        self.assertIn("lastRuntimeFailureEpochMs", health)
+        self.assertIn("delivery.runtimeFailures", backend)
+        self.assertIn("delivery.lastRuntimeFailureEpochMs", backend)
+
+    def test_hook_installation_never_replaces_live_session_token(self):
+        backend = (XPOSED / "XposedBackend.kt").read_text(encoding="utf-8")
+        session = (XPOSED / "XposedHookRuntimeBridge.kt").read_text(encoding="utf-8")
+        self.assertIn("sessionTokens.putIfAbsent(sessionId, token)", session)
+        self.assertIn("sessionTokens.remove(sessionId, token)", session)
+        self.assertIn("val newlyRegistered = XposedHookRuntimeBridge.registerSession", backend)
+        self.assertIn('if (result?.getBoolean("success") != true && newlyRegistered)', backend)
+        self.assertIn("if (!sessionId.matches", backend)
+
+    def test_ordered_system_ipc_denials_do_not_crash_settings(self):
+        backend = (XPOSED / "XposedBackend.kt").read_text(encoding="utf-8")
+        self.assertIn("Ordered bridge request failed:", backend)
+        self.assertIn("if (continuation.isActive) continuation.resume(null)", backend)
+
     def test_permission_status_must_not_claim_event_delivery(self):
         s = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedBackend.kt")
         self.assertIn("XposedEventTransportHealth.snapshot()", s)

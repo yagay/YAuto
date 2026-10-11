@@ -74,9 +74,9 @@ class RuntimeAccessStatusRepository(
                     throw cancelled
                 } catch (_: Exception) { PermissionAvailability.UNKNOWN }
 
-            val rootNeeded = needed.any { it in setOf(
-                AccessRequirement.ROOT, AccessRequirement.SHIZUKU, AccessRequirement.ZYGISK
-            ) }
+            // A Root grant changes execution priority, not Shizuku permission.
+            // Probe only the requested permission here.
+            val rootNeeded = AccessRequirement.ROOT in needed
             val root = if (rootNeeded) checkSuspend { rootShell.isAvailable() }
                 else previous[AccessRequirement.ROOT] ?: PermissionAvailability.UNKNOWN
             val lsposed = if (AccessRequirement.LSPOSED in needed) {
@@ -89,11 +89,7 @@ class RuntimeAccessStatusRepository(
                 updated[requirement] = when (requirement) {
                     AccessRequirement.ROOT -> root
                     AccessRequirement.LSPOSED -> lsposed
-                    AccessRequirement.SHIZUKU -> when (root) {
-                        PermissionAvailability.GRANTED -> PermissionAvailability.NOT_GRANTED
-                        PermissionAvailability.UNKNOWN -> PermissionAvailability.UNKNOWN
-                        PermissionAvailability.NOT_GRANTED -> check { shizuku.hasPermission() }
-                    }
+                    AccessRequirement.SHIZUKU -> check { shizuku.hasPermission() }
                     AccessRequirement.ZYGISK -> PermissionAvailability.UNKNOWN
                     AccessRequirement.ACCESSIBILITY ->
                         checkSuspend { accessibility.isAvailable(environment) }

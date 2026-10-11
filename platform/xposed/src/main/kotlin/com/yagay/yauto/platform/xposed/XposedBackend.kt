@@ -323,7 +323,19 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
             return response
         }
         val eventToken = request.payload.string("eventToken")
-        XposedHookRuntimeBridge.registerSession(sessionId, eventToken)
+        if (!sessionId.matches(Regex("[A-Za-z0-9_.:-]{1,96}")) || eventToken.length !in 32..128) {
+            return Bundle().apply {
+                putInt("version", protocolVersion)
+                putBoolean("success", false)
+                putString("error", "Invalid hook session credentials")
+            }
+        }
+        val newlyRegistered = XposedHookRuntimeBridge.registerSession(sessionId, eventToken)
+            ?: return Bundle().apply {
+                putInt("version", protocolVersion)
+                putBoolean("success", false)
+                putString("error", "Session ID already has different credentials")
+            }
         val intent = Intent(SystemBridgeProtocol.HOOK_ACTION)
             .setPackage(targetPackage)
             .putExtra("version", protocolVersion)
@@ -342,7 +354,10 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
             .putExtra("replacementType", request.payload.string("replacementType", "null"))
             .putExtra("replacementValue", request.payload.string("replacementValue"))
         val result = orderedRequest(intent)
-        if (result?.getBoolean("success") != true) XposedHookRuntimeBridge.unregisterSession(sessionId)
+        // A failed reinstall must not remove an existing live listener's token.
+        if (result?.getBoolean("success") != true && newlyRegistered) {
+            XposedHookRuntimeBridge.unregisterSessionIfMatching(sessionId, eventToken)
+        }
         return result
     }
 
@@ -357,15 +372,23 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                         }
                     }
                 }
-                context.sendOrderedBroadcast(
-                    intent,
-                    null,
-                    receiver,
-                    Handler(Looper.getMainLooper()),
-                    0,
-                    null,
-                    null,
-                )
+                try {
+                    context.sendOrderedBroadcast(
+                        intent,
+                        null,
+                        receiver,
+                        Handler(Looper.getMainLooper()),
+                        0,
+                        null,
+                        null,
+                    )
+                } catch (error: Exception) {
+                    // OEM SecurityException/TransactionTooLargeException must
+                    // not crash settings, key capture or the diagnostic panel.
+                    android.util.Log.w("YAutoBridge", "Ordered bridge request failed: " +
+                        error.javaClass.simpleName)
+                    if (continuation.isActive) continuation.resume(null)
+                }
             }
         }
 
@@ -404,7 +427,11 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
             DiagnosticRecord(
                 DiagnosticSource.LSPOSED,
                 System.currentTimeMillis(),
-                severity = if (delivery.rejected > 0 || !probeResult)
+                severity = if (!probeResult ||
+                    (delivery.lastRuntimeFailureEpochMs > 0 &&
+                        System.currentTimeMillis() - delivery.lastRuntimeFailureEpochMs in 0L..300_000L) ||
+                    (delivery.lastRejectedEpochMs > 0 &&
+                        System.currentTimeMillis() - delivery.lastRejectedEpochMs in 0L..300_000L))
                     DiagnosticSeverity.WARNING else DiagnosticSeverity.INFO,
                 title = userText("diagnostics.xposed.transport_title"),
                 message = userText(
@@ -414,6 +441,7 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                     delivery.accepted,
                     delivery.forwarded,
                     delivery.rejected,
+                    delivery.runtimeFailures,
                     delivery.lastAcceptedType.ifBlank { "-" },
                     delivery.lastForwardedType.ifBlank { "-" },
                     delivery.lastRejectedReason.ifBlank { "-" },

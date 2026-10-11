@@ -31,6 +31,18 @@ class XposedEventTransportHealthTest {
         assertEquals(before.accepted, after.accepted)
     }
 
+    @Test fun callbackFailureCannotMasqueradeAsAuthenticatedDelivery() {
+        val before = XposedEventTransportHealth.snapshot()
+        XposedEventTransportHealth.onRuntimeFailure(
+            "android.event.test", IllegalStateException("do-not-log-credentials"),
+        )
+        val after = XposedEventTransportHealth.snapshot()
+        assertEquals(before.runtimeFailures + 1L, after.runtimeFailures)
+        assertEquals(before.forwarded, after.forwarded)
+        assertEquals(before.rejected, after.rejected)
+        assertTrue(after.lastRuntimeFailureEpochMs > 0L)
+    }
+
     @Test fun rejectReasonIsBoundedToAvoidUntrustedLogFlood() {
         XposedEventTransportHealth.onRejected("a".repeat(1000), "s".repeat(1000), -1, "r".repeat(1000))
         val reason = XposedEventTransportHealth.snapshot().lastRejectedReason

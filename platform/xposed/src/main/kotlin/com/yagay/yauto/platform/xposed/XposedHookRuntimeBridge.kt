@@ -26,12 +26,27 @@ object XposedHookRuntimeBridge {
         listener = value
     }
 
-    fun registerSession(sessionId: String, token: String) {
-        if (sessionId.isNotBlank() && token.isNotBlank()) sessionTokens[sessionId] = token
+    /**
+     * Reserve without replacing another live session.
+     * true = new, false = same token already reserved, null = invalid/conflict.
+     */
+    internal fun registerSession(sessionId: String, token: String): Boolean? {
+        if (!sessionId.matches(Regex("[A-Za-z0-9_.:-]{1,96}")) || token.length !in 32..128) return null
+        val previous = sessionTokens.putIfAbsent(sessionId, token)
+        return when (previous) {
+            null -> true
+            token -> false
+            else -> null
+        }
     }
 
     fun unregisterSession(sessionId: String) {
         sessionTokens.remove(sessionId)
+    }
+
+    /** Only rollback the reservation we created, not a later session. */
+    internal fun unregisterSessionIfMatching(sessionId: String, token: String) {
+        sessionTokens.remove(sessionId, token)
     }
 
     internal fun dispatch(intent: Intent) {
@@ -48,8 +63,9 @@ object XposedHookRuntimeBridge {
         }
         XposedEventTransportHealth.onAccepted("android.event.lsposed_method_called")
         listener?.let { callback ->
-            callback.invoke(
-                XposedHookEvent(
+            try {
+                callback.invoke(
+                    XposedHookEvent(
                 sessionId = sessionId,
                 packageName = intent.getStringExtra("package").orEmpty(),
                 className = intent.getStringExtra("className").orEmpty(),
@@ -62,7 +78,10 @@ object XposedHookRuntimeBridge {
                 }.toMap(),
                 )
             )
-            XposedEventTransportHealth.onForwarded("android.event.lsposed_method_called")
+                XposedEventTransportHealth.onForwarded("android.event.lsposed_method_called")
+            } catch (error: Exception) {
+                XposedEventTransportHealth.onRuntimeFailure("android.event.lsposed_method_called", error)
+            }
         }
     }
 

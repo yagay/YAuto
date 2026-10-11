@@ -24,12 +24,12 @@ class LiveAccessStatusTests(unittest.TestCase):
         assert "rootShell.isAvailable()" in probe
         assert "accessibility.isAvailable(environment)" in probe
 
-    def test_shizuku_never_authorized_while_root_probe_unknown(self):
+    def test_shizuku_status_is_true_authorization_not_fake_denial_when_root_is_granted(self):
         probe = read("RuntimeAccessStatusRepository.kt")
         settings = read("RuntimeSettingsScreen.kt")
-        assert "PermissionAvailability.GRANTED -> PermissionAvailability.NOT_GRANTED" in probe
-        assert "PermissionAvailability.UNKNOWN -> PermissionAvailability.UNKNOWN" in probe
-        assert "PermissionAvailability.NOT_GRANTED -> check { shizuku.hasPermission() }" in probe
+        assert "AccessRequirement.SHIZUKU -> check { shizuku.hasPermission() }" in probe
+        assert "val rootNeeded = AccessRequirement.ROOT in needed" in probe
+        assert "PermissionAvailability.GRANTED -> PermissionAvailability.NOT_GRANTED" not in probe
         assert "when (actual[com.yagay.yauto.core.registry.AccessRequirement.ROOT])" in settings
 
     def test_permission_grant_vs_connected_accessibility_is_separate(self):

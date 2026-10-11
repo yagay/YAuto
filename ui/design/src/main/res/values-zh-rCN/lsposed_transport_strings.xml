@@ -3,5 +3,5 @@
     <string name="runtime_diagnostics_xposed_transport_title">LSPosed 事件传输（本次启动以来）</string>
     <string name="runtime_diagnostics_xposed_transport_pass">通过</string>
     <string name="runtime_diagnostics_xposed_transport_fail">失败</string>
-    <string name="runtime_diagnostics_xposed_transport_message">system_server 认证往返：%1$s。接收器通过：%2$d；转发至运行时：%3$d；拒绝：%4$d。最近接收：%5$s；最近转发：%6$s；最近拒绝原因：%7$s。连接成功和 Hook 已安装都不能证明触发器已经执行，仍需测试实际功能。</string>
+    <string name="runtime_diagnostics_xposed_transport_message">system_server 认证往返：%1$s。接收器通过：%2$d；转发至运行时：%3$d；拒绝：%4$d；运行时处理失败：%5$d。最近接收：%6$s；最近转发：%7$s；最近拒绝原因：%8$s。连接成功和 Hook 已安装都不能证明触发器已经执行，仍需测试实际功能。</string>
 </resources>

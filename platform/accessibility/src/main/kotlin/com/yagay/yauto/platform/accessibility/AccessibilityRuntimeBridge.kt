@@ -2,6 +2,7 @@ package com.yagay.yauto.platform.accessibility
 
 import android.graphics.Bitmap
 import android.os.SystemClock
+import android.util.Log
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
@@ -79,6 +80,17 @@ object AccessibilityRuntimeBridge {
     private val nextKey = AtomicReference<CompletableDeferred<AccessibilityKeySnapshot>?>(null)
     private val subscribedUiRuntimeEvents = AtomicReference<Set<String>>(emptySet())
 
+    /** Keep OEM Accessibility callbacks from crashing the entire service. */
+    private inline fun dispatchToRuntime(kind: String, callback: () -> Unit) {
+        try {
+            callback()
+        } catch (error: Exception) {
+            // No event text, key descriptors, or private app content in logs.
+            runCatching { Log.e("YAutoAccessibility", "Runtime callback failed: " +
+                kind + ": " + error.javaClass.simpleName) }
+        }
+    }
+
     fun currentWindow(): AccessibilityWindowSnapshot? = current.get()
 
     /** Updated before allocating rich UI snapshots, even without subscribed UI event rules. */
@@ -95,7 +107,7 @@ object AccessibilityRuntimeBridge {
     suspend fun awaitUiIdle(packageName: String, quietMs: Long, timeoutMs: Long): Boolean {
         if (YAutoAccessibilityService.current == null) return false
         val quiet = quietMs.coerceIn(100L, 10_000L)
-        val total = timeoutMs.coerceIn(quiet, 60_000L)
+        val total = timeoutMs.coerceIn(100L, 60_000L)
         val started = SystemClock.elapsedRealtime()
         val deadline = started + total
         while (true) {
@@ -198,7 +210,9 @@ object AccessibilityRuntimeBridge {
     }
 
     internal fun dispatchFingerprintGesture(gesture: String) {
-        fingerprintGestureListener?.invoke(AccessibilityFingerprintGestureSnapshot(gesture))
+        dispatchToRuntime("fingerprint") {
+            fingerprintGestureListener?.invoke(AccessibilityFingerprintGestureSnapshot(gesture))
+        }
     }
 
     internal fun update(packageName: String?, className: String?) {
@@ -207,7 +221,7 @@ object AccessibilityRuntimeBridge {
         val next = AccessibilityWindowSnapshot(pkg, className?.takeIf { it.isNotBlank() })
         val previous = current.getAndSet(next)
         if (previous?.packageName == next.packageName && previous.className == next.className) return
-        listener?.invoke(previous, next)
+        dispatchToRuntime("window") { listener?.invoke(previous, next) }
     }
 
     internal fun dispatchKey(
@@ -235,13 +249,13 @@ object AccessibilityRuntimeBridge {
             productId = productId,
         )
         nextKey.getAndSet(null)?.complete(snapshot)
-        keyListener?.invoke(snapshot)
+        dispatchToRuntime("key") { keyListener?.invoke(snapshot) }
     }
 
     internal fun dispatchUiEvent(snapshot: AccessibilityUiEventSnapshot) {
         if (snapshot.event == "click") nextClick.getAndSet(null)?.complete(snapshot)
         if (isRuntimeUiEventSubscribed(snapshot.event)) {
-            uiEventListener?.invoke(snapshot)
+            dispatchToRuntime("ui") { uiEventListener?.invoke(snapshot) }
         }
     }
 
