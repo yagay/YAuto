@@ -176,7 +176,8 @@ class FeatureHealthScanner(
         return needed.associateWith { requirement ->
             when (requirement) {
                 AccessRequirement.ROOT -> root
-                AccessRequirement.SHIZUKU -> runCatching { shizuku.hasPermission() }.getOrDefault(false)
+                AccessRequirement.SHIZUKU -> !root &&
+                    runCatching { shizuku.hasPermission() }.getOrDefault(false)
                 AccessRequirement.LSPOSED -> lsposed
                 AccessRequirement.ZYGISK -> zygisk
                 AccessRequirement.ACCESSIBILITY ->

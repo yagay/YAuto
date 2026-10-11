@@ -94,8 +94,11 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
             override fun availability(permission: AccessRequirement): PermissionAvailability {
                 val granted: Boolean? = when (permission) {
                     AccessRequirement.ROOT -> rootPermission
-                    AccessRequirement.SHIZUKU ->
-                        runCatching { graph.shizuku.hasPermission() }.getOrDefault(false)
+                    AccessRequirement.SHIZUKU -> when (rootPermission) {
+                        true -> false // Root already granted; Shizuku is deliberately dormant.
+                        null -> null // Never ping Shizuku before the Root probe completes.
+                        false -> runCatching { graph.shizuku.hasPermission() }.getOrDefault(false)
+                    }
                     AccessRequirement.LSPOSED -> graph.lsposedScopes.state.value.connected &&
                         graph.lsposedScopes.state.value.currentScope.containsAll(
                             LsposedScopeManager.FIXED_SCOPES)
@@ -142,17 +145,25 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
                         inform(context.getString(if (result) TextR.string.backend_root_available
                             else TextR.string.backend_root_unavailable))
                     }
-                    AccessRequirement.SHIZUKU -> {
-                        runCatching {
-                            graph.shizuku.requestPermission { granted ->
-                                inform(context.getString(if (granted)
-                                    TextR.string.backend_shizuku_ready
-                                else TextR.string.permission_request_denied))
-                                permissionVersion++
+                    AccessRequirement.SHIZUKU -> scope.launch {
+                        // No Shizuku authorization prompts when Root is granted.
+                        // Recheck rather than trusting a potentially stale UI snapshot.
+                        val hasRoot = runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)
+                        rootPermission = hasRoot
+                        if (hasRoot) {
+                            inform(context.getString(TextR.string.backend_root_available))
+                        } else {
+                            runCatching {
+                                graph.shizuku.requestPermission { granted ->
+                                    inform(context.getString(if (granted)
+                                        TextR.string.backend_shizuku_ready
+                                    else TextR.string.permission_request_denied))
+                                    permissionVersion++
+                                }
+                            }.onFailure { error ->
+                                inform(error.message ?: context.getString(
+                                    TextR.string.backend_shizuku_unavailable))
                             }
-                        }.onFailure { error ->
-                            inform(error.message ?: context.getString(
-                                TextR.string.backend_shizuku_unavailable))
                         }
                     }
                     AccessRequirement.LSPOSED -> {
