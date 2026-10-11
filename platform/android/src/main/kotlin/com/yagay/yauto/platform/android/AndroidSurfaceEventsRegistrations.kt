@@ -67,8 +67,13 @@ internal fun AndroidSurfaceFeaturePack.registerSurfaceEventsAndGestures(registry
             try {
                 val rect = withTimeoutOrNull(maxWait) { selection.await() }
                     ?: return@registerAction ActionExecutionResult(false, message = userText("feature.area_screenshot_timed_out"))
-                // Overlay hide is scheduled on the UI thread; let it detach before capture.
-                delay(200L)
+                // Confirm the selection overlay is detached before capturing it.
+                controller.hideConfirmed(id)
+                if (controller.isShown(id)) {
+                    return@registerAction ActionExecutionResult(false, message = userText("feature.area_screenshot_overlay_unavailable"))
+                }
+                // SurfaceFlinger may need one composition frame after detachment.
+                delay(40L)
                 val width = rect[2] - rect[0]
                 val height = rect[3] - rect[1]
                 if (rect[0] < 0 || rect[1] < 0 || width < 4 || height < 4) {

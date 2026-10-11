@@ -671,15 +671,12 @@ class OverlaySurfaceController(context: Context) {
         }
     }
 
-    fun stopGestureRecorder(id: String): Boolean {
-        if (id.isBlank() || windows.view(id) !is GestureRecorderView) return false
-        main.post {
-            val recorder = windows.view(id) as? GestureRecorderView ?: return@post
-            recorder.finishRecording()
-            windows.remove(id)
-            SurfaceRuntimeBridge.emit(id, "gesture_recording_stopped")
-        }
-        return true
+    suspend fun stopGestureRecorder(id: String): Boolean = withContext(Dispatchers.Main.immediate) {
+        val recorder = windows.view(id) as? GestureRecorderView ?: return@withContext false
+        recorder.finishRecording()
+        val removed = windows.remove(id)
+        if (removed) SurfaceRuntimeBridge.emit(id, "gesture_recording_stopped")
+        removed
     }
 
     fun recordedGesture(id: String): String? = recordedGestures[id]
@@ -835,10 +832,13 @@ class OverlaySurfaceController(context: Context) {
         }
     }
 
-    fun destroyTaskerScene(id: String): Boolean {
-        val existed = taskerSceneModels.remove(id) != null
-        hide(id)
-        return existed
+    suspend fun destroyTaskerScene(id: String): Boolean {
+        if (id.isBlank()) return false
+        val existed = taskerSceneModels.containsKey(id)
+        val visible = isShown(id)
+        val hidden = !visible || hideConfirmed(id)
+        if (hidden) taskerSceneModels.remove(id)
+        return (existed || visible) && hidden
     }
 
     suspend fun showEdgeLighting(
@@ -939,13 +939,11 @@ class OverlaySurfaceController(context: Context) {
         if (id.isBlank() || !windows.contains(id)) false
         else {
             windows.remove(id)
-            !windows.contains(id)
         }
     }
 
     suspend fun hideAllConfirmed(): Boolean = withContext(Dispatchers.Main.immediate) {
         windows.removeAll()
-        true
     }
 
     fun hide(id: String): Boolean {

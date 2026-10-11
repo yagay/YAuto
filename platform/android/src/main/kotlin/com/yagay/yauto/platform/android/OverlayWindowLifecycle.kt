@@ -47,7 +47,11 @@ internal class OverlayWindowLifecycle(
     fun attach(id: String, view: View, params: WindowManager.LayoutParams, timeoutMs: Long): Boolean {
         // A surface ID owns at most one attached View. Remove the previous window
         // before installing its replacement to avoid orphaned WindowManager views.
-        if (surfaces.containsKey(id)) remove(id)
+        if (surfaces.containsKey(id) && !remove(id)) {
+            releaseOverlayWebViews(view)
+            SurfaceRuntimeBridge.emit(id, "show_failed", "Unable to replace existing overlay")
+            return false
+        }
         return runCatching {
             manager.addView(view, params)
             surfaces[id] = view
@@ -74,16 +78,30 @@ internal class OverlayWindowLifecycle(
         main.postDelayed(callback, timeoutMs.coerceAtMost(86_400_000))
     }
 
-    fun remove(id: String) {
+    /** Preserve the registered View on detach failure to permit a later retry. */
+    fun remove(id: String): Boolean {
+        val view = surfaces[id] ?: return false
+        val detached = try {
+            manager.removeViewImmediate(view)
+            true
+        } catch (error: Exception) {
+            SurfaceRuntimeBridge.emit(id, "hide_failed", error.message.orEmpty())
+            false
+        }
+        if (!detached) return false
         dismissals.remove(id)?.let(main::removeCallbacks)
-        val view = surfaces.remove(id) ?: return
-        runCatching { manager.removeViewImmediate(view) }
+        surfaces.remove(id, view)
         releaseOverlayWebViews(view)
         SurfaceRuntimeBridge.emit(id, "hidden")
+        return true
     }
 
-    fun removeAll() {
-        surfaces.keys.toList().forEach(::remove)
+    fun removeAll(): Boolean {
+        var allRemoved = true
+        surfaces.keys.toList().forEach { id ->
+            if (!remove(id)) allRemoved = false
+        }
+        return allRemoved
     }
 }
 

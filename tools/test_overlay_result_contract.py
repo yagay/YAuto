@@ -23,6 +23,11 @@ class OverlayResultContractTest(unittest.TestCase):
         self.assertIn("SurfaceRuntimeBridge.emit(id, \"show_failed\"", lifecycle)
         self.assertIn("suspend fun hideConfirmed", controller)
         self.assertIn("suspend fun hideAllConfirmed", controller)
+        self.assertIn("suspend fun stopGestureRecorder", controller)
+        self.assertIn("suspend fun destroyTaskerScene", controller)
+        self.assertIn("fun remove(id: String): Boolean", lifecycle)
+        self.assertIn('SurfaceRuntimeBridge.emit(id, "hide_failed"', lifecycle)
+        self.assertIn("fun removeAll(): Boolean", lifecycle)
 
     def test_add_surface_returns_actual_window_result(self):
         controller = read("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/OverlaySurfaceController.kt")
