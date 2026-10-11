@@ -642,6 +642,11 @@ class OverlaySurfaceController(context: Context) {
     }
 
 
+    /** UI overlay cleanup is scheduled outside the presentation/result contract. */
+    private fun dismissRecordedGestureOnNextFrame(id: String) {
+        main.post { windows.remove(id) }
+    }
+
     suspend fun showGestureRecorder(
         id: String,
         maxPoints: Int,
@@ -658,7 +663,7 @@ class OverlaySurfaceController(context: Context) {
                 recordedGestures[id] = path
                 SurfaceRuntimeBridge.emit(id, "gesture_recorded", path)
                 // Dismiss after touch delivery, without changing existing automation recorders.
-                if (dismissOnRecord) main.post { windows.remove(id) }
+                if (dismissOnRecord) dismissRecordedGestureOnNextFrame(id)
             }
             val attached = addSurface(
                 id = id,
