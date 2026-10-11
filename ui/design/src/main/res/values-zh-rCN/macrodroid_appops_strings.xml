@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_app_ops_operation_title">应用操作</string>
+    <string name="feature_android_event_app_ops_operation_description">应用的 AppOps 操作开始或结束时触发，可按阶段、应用和操作码过滤。</string>
+    <string name="feature_android_app_last_used_launch_title">启动最近使用的应用</string>
+    <string name="feature_android_app_last_used_launch_description">通过使用记录启动最近或更早的应用，不等同于实时任务栈切换。</string>
+</resources>
