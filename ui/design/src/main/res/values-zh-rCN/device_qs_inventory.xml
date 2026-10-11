@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_picker_tile_inventory_title">设备快捷磁贴</string>
+    <string name="live_picker_tile_inventory_hint">优先经 LSPosed 读取 SystemUI 当前面板，失败则通过 Root 查询已保存的磁贴布局，同时列出其他应用安装的磁贴。点选可复制标识。已安装不代表已经添加到面板。</string>
+    <string name="live_picker_tile_in_panel">已添加到快捷设置</string>
+    <string name="live_picker_tile_not_in_panel">已安装，但未添加到当前面板</string>
+    <string name="live_picker_tile_unknown_panel">已安装（面板状态未验证）</string>
+    <string name="live_picker_tile_source_hook">来源：LSPosed 读取的 SystemUI 实时磁贴宿主</string>
+    <string name="live_picker_tile_source_root">来源：Root 读取的已保存面板配置（非实时状态）</string>
+    <string name="live_picker_tile_source_installed">来源：仅已安装的磁贴服务，面板排列未知</string>
+    <string name="live_picker_tile_detail_format">%1$s · %2$s</string>
+</resources>

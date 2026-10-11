@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_picker_tile_inventory_title">Device Quick Settings tiles</string>
+    <string name="live_picker_tile_inventory_hint">Read the current panel via LSPosed, fall back to Root saved panel configuration, and list installed third-party tiles. Tap an item to copy its identifier. Installed tiles are not necessarily added to the panel.</string>
+    <string name="live_picker_tile_in_panel">Added to Quick Settings</string>
+    <string name="live_picker_tile_not_in_panel">Installed, not in current panel</string>
+    <string name="live_picker_tile_unknown_panel">Installed (panel membership unverified)</string>
+    <string name="live_picker_tile_source_hook">Source: live SystemUI tile host (LSPosed)</string>
+    <string name="live_picker_tile_source_root">Source: Root saved panel configuration (not live state)</string>
+    <string name="live_picker_tile_source_installed">Source: installed tile services only; panel order unknown</string>
+    <string name="live_picker_tile_detail_format">%1$s · %2$s</string>
+</resources>

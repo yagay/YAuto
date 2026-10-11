@@ -48,7 +48,9 @@ internal fun liveAndroidFieldPicker(
                     SystemPickerOption(
                         value = value,
                         label = entry.label,
-                        detail = "$origin · ${entry.spec}",
+                        detail = context.getString(
+                            TextR.string.live_picker_tile_detail_format, origin, entry.spec,
+                        ),
                     )
                 }
             }
