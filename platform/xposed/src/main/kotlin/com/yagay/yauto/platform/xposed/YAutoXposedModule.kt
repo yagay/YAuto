@@ -27,7 +27,30 @@ import java.util.concurrent.atomic.AtomicReference
 
 internal const val YAUTO_HOOK_PACKAGE = "com.yagay.yauto"
 
-class YAutoXposedModule : XposedMethodHookInstallers() {
+class YAutoXposedModule : XposedSystemEventInstallers() {
+    private val methodHookInstaller by lazy {
+        XposedMethodHookInstaller(
+            state = sharedState,
+            interceptMethod = { method, callback ->
+                hook(method).intercept { chain ->
+                    callback(XposedHookInvocation(chain.thisObject, chain.args.toList()) { chain.proceed() })
+                }
+            },
+            interceptConstructor = { constructor, callback ->
+                hook(constructor).intercept { chain ->
+                    callback(XposedHookInvocation(chain.thisObject, chain.args.toList()) { chain.proceed() })
+                }
+            },
+            reportLog = { level, message, error ->
+                if (error != null) log(level, "YAuto", message, error)
+                else log(level, "YAuto", message)
+            },
+        )
+    }
+
+    private fun registerAppHookBridge(context: Context, packageName: String, classLoader: ClassLoader) =
+        methodHookInstaller.registerAppHookBridge(context, packageName, classLoader)
+
     override fun onSystemServerStarting(param: SystemServerStartingParam) {
         try {
             val server = param.classLoader.loadClass("com.android.server.SystemServer")

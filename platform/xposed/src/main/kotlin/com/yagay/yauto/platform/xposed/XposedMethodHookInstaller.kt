@@ -5,30 +5,33 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Binder
 import android.os.Build
 import android.os.Bundle
-import android.os.PowerManager
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
-import android.content.ComponentName
-import android.os.SystemClock
 import android.util.Log
-import android.view.InputEvent
-import android.view.KeyEvent
-import com.yagay.yauto.core.capability.SystemOperations
-import io.github.libxposed.api.XposedModule
-import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
-import io.github.libxposed.api.XposedModuleInterface.SystemServerStartingParam
+import java.lang.reflect.Constructor
 import java.lang.reflect.Method
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 
-/** Owns target-process management bridge and dynamic method hook sessions. */
-abstract class XposedMethodHookInstallers : XposedSystemEventInstallers() {
-    protected fun registerAppHookBridge(context: Context, packageName: String, classLoader: ClassLoader) {
+/**
+ * Owns real per-process method Hook sessions, RenderNode interception and management
+ * broadcast lifecycle. LSPosed module inheritance is not needed by this component.
+ */
+internal class XposedMethodHookInstaller(
+    private val state: XposedInstallationState,
+    private val interceptMethod: (Method, (XposedHookInvocation) -> Any?) -> Unit,
+    private val interceptConstructor: (Constructor<*>, (XposedHookInvocation) -> Any?) -> Unit,
+    private val reportLog: (Int, String, Throwable?) -> Unit,
+) {
+    private val installedHooks get() = state.installedHooks
+    private val appReceivers get() = state.appReceivers
+    private val crashGuards get() = state.crashGuards
+    private val methodSessions get() = state.methodSessions
+    private val enabledPackageBehaviors get() = state.enabledPackageBehaviors
+
+    private fun log(level: Int, tag: String, message: String, error: Throwable? = null) {
+        reportLog(level, message, error)
+    }
+
+    fun registerAppHookBridge(context: Context, packageName: String, classLoader: ClassLoader) {
         val processName = runCatching { Application.getProcessName() }.getOrDefault(packageName)
         val receiverKey = "$packageName@$processName"
         if (!appReceivers.add(receiverKey)) return
@@ -217,15 +220,15 @@ abstract class XposedMethodHookInstallers : XposedSystemEventInstallers() {
                 val key = "shortx-rendernode-guard|" + method.toGenericString()
                 val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                     method.isAccessible = true
-                hook(method).intercept { chain ->
+                interceptMethod(method) { invocation ->
                     if (
                         SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_RENDERNODE_GUARD !in
                         enabledPackageBehaviors.get()
                     ) {
-                        chain.proceed()
+                        invocation.proceed()
                     } else {
                         try {
-                            chain.proceed()
+                            invocation.proceed()
                         } catch (error: RuntimeException) {
                             log(
                                 Log.WARN,
@@ -266,20 +269,20 @@ abstract class XposedMethodHookInstallers : XposedSystemEventInstallers() {
         captureValues: Boolean,
     ) {
         constructor.isAccessible = true
-        hook(constructor).intercept { chain ->
+        interceptConstructor(constructor) { invocation ->
             if (!methodSessions.isActive(sessionId, eventToken)) {
-                chain.proceed()
+                invocation.proceed()
             } else if (lifecycle == "after") {
-                val result = chain.proceed()
+                val result = invocation.proceed()
                 emitMethodCalled(context, sessionId, eventToken, packageName, processName,
                     className, "<init>", "after",
-                    if (captureValues) MethodHookValueSnapshot.capture(chain.args) else emptyMap())
+                    if (captureValues) MethodHookValueSnapshot.capture(invocation.args) else emptyMap())
                 result
             } else {
                 emitMethodCalled(context, sessionId, eventToken, packageName, processName,
                     className, "<init>", "before",
-                    if (captureValues) MethodHookValueSnapshot.capture(chain.args) else emptyMap())
-                chain.proceed()
+                    if (captureValues) MethodHookValueSnapshot.capture(invocation.args) else emptyMap())
+                invocation.proceed()
             }
         }
     }
@@ -299,35 +302,35 @@ abstract class XposedMethodHookInstallers : XposedSystemEventInstallers() {
         captureValues: Boolean,
     ) {
         method.isAccessible = true
-        hook(method).intercept { chain ->
+        interceptMethod(method) { invocation ->
             if (!methodSessions.isActive(sessionId, eventToken)) {
-                chain.proceed()
+                invocation.proceed()
             } else if (mode == "replace") {
                 val result = parseReplacement(method.returnType, replacementType, replacementValue)
                 emitMethodCalled(context, sessionId, eventToken, packageName, processName,
-                    chain.thisObject?.javaClass?.name ?: className, method.name, "before",
-                    if (captureValues) MethodHookValueSnapshot.capture(chain.args, result, true) else emptyMap())
+                    invocation.thisObject?.javaClass?.name ?: className, method.name, "before",
+                    if (captureValues) MethodHookValueSnapshot.capture(invocation.args, result, true) else emptyMap())
                 result
             } else if (mode == "override_result") {
                 // Unlike replace, run the original method first; only its returned
                 // value is overridden. Side effects of the method are preserved.
-                chain.proceed()
+                invocation.proceed()
                 val result = parseReplacement(method.returnType, replacementType, replacementValue)
                 emitMethodCalled(context, sessionId, eventToken, packageName, processName,
-                    chain.thisObject?.javaClass?.name ?: className, method.name, "after",
-                    if (captureValues) MethodHookValueSnapshot.capture(chain.args, result, true) else emptyMap())
+                    invocation.thisObject?.javaClass?.name ?: className, method.name, "after",
+                    if (captureValues) MethodHookValueSnapshot.capture(invocation.args, result, true) else emptyMap())
                 result
             } else if (lifecycle == "after") {
-                val result = chain.proceed()
+                val result = invocation.proceed()
                 emitMethodCalled(context, sessionId, eventToken, packageName, processName,
-                    chain.thisObject?.javaClass?.name ?: className, method.name, "after",
-                    if (captureValues) MethodHookValueSnapshot.capture(chain.args, result, true) else emptyMap())
+                    invocation.thisObject?.javaClass?.name ?: className, method.name, "after",
+                    if (captureValues) MethodHookValueSnapshot.capture(invocation.args, result, true) else emptyMap())
                 result
             } else {
                 emitMethodCalled(context, sessionId, eventToken, packageName, processName,
-                    chain.thisObject?.javaClass?.name ?: className, method.name, "before",
-                    if (captureValues) MethodHookValueSnapshot.capture(chain.args) else emptyMap())
-                chain.proceed()
+                    invocation.thisObject?.javaClass?.name ?: className, method.name, "before",
+                    if (captureValues) MethodHookValueSnapshot.capture(invocation.args) else emptyMap())
+                invocation.proceed()
             }
         }
     }
@@ -336,4 +339,3 @@ abstract class XposedMethodHookInstallers : XposedSystemEventInstallers() {
         val CLASS_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]*(?:\\.[A-Za-z_$][A-Za-z0-9_$]*)+")
         val METHOD_NAME = Regex("[A-Za-z_$][A-Za-z0-9_$]{0,127}")
     }
-}

@@ -92,8 +92,17 @@ xposed_router = xposed_dir / "XposedPackageHookRouter.kt"
 xposed_entry = xposed_dir / "YAutoXposedModule.kt"
 if not xposed_router.exists() or "fun routeXposedPackageHooks(" not in xposed_router.read_text(encoding="utf-8"):
     errors.append("XposedPackageHookRouter must own system package-to-Hook routing")
-if not (xposed_dir / "XposedMethodHookInstallers.kt").exists():
-    errors.append("XposedMethodHookInstallers must own method-hook session management")
+method_component = xposed_dir / "XposedMethodHookInstaller.kt"
+if not method_component.exists():
+    errors.append("XposedMethodHookInstaller must own method hook sessions and RenderNode protection")
+else:
+    method_component_text = method_component.read_text(encoding="utf-8")
+    for hook_name in ("registerAppHookBridge", "installShortXRenderNodeGuard",
+                      "installConstructorHook", "installMethodHook"):
+        if "fun " + hook_name + "(" not in method_component_text:
+            errors.append("XposedMethodHookInstaller missing " + hook_name)
+if (xposed_dir / "XposedMethodHookInstallers.kt").exists():
+    errors.append("Legacy XposedMethodHookInstallers inheritance layer must be removed")
 if not (xposed_dir / "XposedSystemEventInstallers.kt").exists():
     errors.append("XposedSystemEventInstallers must own SystemServer and input event hook installation")
 systemui_impl = xposed_dir / "XposedSystemUiHookInstaller.kt"
@@ -130,7 +139,7 @@ if not xposed_entry.exists():
     errors.append("YAutoXposedModule must own the process and system lifecycle hooks")
 else:
     entry_text = xposed_entry.read_text(encoding="utf-8")
-    if "class YAutoXposedModule : XposedMethodHookInstallers()" not in entry_text:
+    if "class YAutoXposedModule : XposedSystemEventInstallers()" not in entry_text:
         errors.append("YAutoXposedModule must directly own lifecycle dispatch, without legacy wrapper inheritance")
     if "XposedPackageHookDispatcher(" not in entry_text:
         errors.append("YAutoXposedModule must dispatch package hooks with the shared process router")
