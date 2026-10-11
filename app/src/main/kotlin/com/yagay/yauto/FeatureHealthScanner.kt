@@ -269,14 +269,24 @@ class FeatureHealthScanner(
                     detail = "Implementation, backend and access checks passed",
                 )
             }
-            val missing = options.flatMap { it.requirements }.filterNot(available).toSet()
+            // Alternative backends are OR options, never cumulative grants:
+            // report only the closest single implementation to authorize.
+            val nextOption = options.minWithOrNull(
+                compareBy<FeatureImplementationOption> { option ->
+                    option.requirements.count { !available(it) }
+                }.thenBy { option ->
+                    CapabilityBackendPriority.rank(option.backendId, rootFirst)
+                },
+            )
+            val missing = nextOption?.requirements?.filterNot(available).orEmpty().toSet()
             return FeatureHealthItem(
                 descriptor.id.value,
                 descriptor.title,
                 descriptor.kind,
                 FeatureHealthStatus.BLOCKED,
+                backendId = nextOption?.backendId,
                 missingRequirements = missing,
-                detail = "No declared implementation backend is currently ready",
+                detail = "Selected fallback implementation needs authorization",
             )
         }
 

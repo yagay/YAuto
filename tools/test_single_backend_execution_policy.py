@@ -36,6 +36,12 @@ class SingleBackendExecutionPolicyTest(unittest.TestCase):
         self.assertIn('listOf("lsposed", "root")', a)
         self.assertIn('listOf("shizuku", "accessibility")', a)
 
+    def test_health_scanner_reports_one_alternative_not_all_permissions(self):
+        s = read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScanner.kt")
+        self.assertIn('val nextOption = options.minWithOrNull(', s)
+        self.assertIn('nextOption?.requirements?.filterNot(available).orEmpty().toSet()', s)
+        self.assertNotIn('options.flatMap { it.requirements }.filterNot(available).toSet()', s)
+
     def test_idle_hardware_rules_do_not_forward_accessibility_keys(self):
         s = read("app/src/main/kotlin/com/yagay/yauto/AutomationRuntimeService.kt")
         self.assertIn('if (!hardwareKeyAutomationEnabled) return@setKeyListener', s)
