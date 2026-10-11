@@ -7,6 +7,7 @@
     <string name="live_picker_tile_unknown_panel">已安装（面板状态未验证）</string>
     <string name="live_picker_tile_source_hook">来源：LSPosed 读取的 SystemUI 实时磁贴宿主</string>
     <string name="live_picker_tile_source_root">来源：Root 读取的已保存面板配置（非实时状态）</string>
+    <string name="live_picker_tile_source_root_services">来源：Root 枚举的应用磁贴服务；面板状态未知</string>
     <string name="live_picker_tile_source_installed">来源：仅已安装的磁贴服务，面板排列未知</string>
     <string name="live_picker_tile_detail_format">%1$s · %2$s</string>
 </resources>
