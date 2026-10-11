@@ -7,6 +7,7 @@ import com.yagay.yauto.core.capability.SystemOperations
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.boolean
 import com.yagay.yauto.core.model.long
+import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
@@ -18,7 +19,37 @@ class AccessibilityFeaturePack(
 
     override fun install(registry: FeatureRegistry) {
         registerAccessibilityActions(registry)
+        registerUiIdleAction(registry)
         registerAccessibilityEventsAndConditions(registry)
+    }
+
+    private fun registerUiIdleAction(registry: FeatureRegistry) {
+        registry.registerAction(
+            FeatureDescriptor(
+                id = FeatureId("accessibility.ui.wait_for_idle"),
+                kind = FeatureKind.ACTION,
+                title = "Wait for UI to become idle",
+                description = "Wait until the foreground app stops sending Accessibility window/content changes for a configured quiet period",
+                category = FeatureCategory.UI_AUTOMATION,
+                pickerCategory = FeaturePickerCategory.DEVICE_ACTIONS,
+                fields = listOf(
+                    FieldSchema.AppPicker("package", "App / package"),
+                    FieldSchema.Number("quietMs", "Quiet period (ms)", min = 100.0, max = 10_000.0),
+                    FieldSchema.Number("timeoutMs", "Timeout (ms)", min = 100.0, max = 60_000.0),
+                ),
+                capabilities = setOf(CapabilityIds.ACCESSIBILITY),
+                accessRequirements = setOf(AccessRequirement.ACCESSIBILITY),
+                keywords = setOf("wait for idle", "ui stable", "accessibility", "shortx", "macrodroid"),
+                ownerPackId = id,
+            )
+        ) { feature, _ ->
+            val quiet = feature.config["quietMs"].numberOrNull()?.toLong() ?: 600L
+            val timeout = feature.config["timeoutMs"].numberOrNull()?.toLong() ?: 10_000L
+            val stable = AccessibilityRuntimeBridge.awaitUiIdle(
+                feature.config.string("package").trim(), quiet, timeout,
+            )
+            ActionExecutionResult(stable, ConfigValue.BooleanValue(stable))
+        }
     }
 
     internal fun foregroundEvent(registry: FeatureRegistry, typeId: String, title: String) {
