@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sx_engine_tools">Automation and Shell engines</string>
+    <string name="sx_master_rules">Rule feature</string>
+    <string name="sx_master_rules_hint">Enable or disable all automations. Disabling cancels active rules.</string>
+    <string name="sx_emergency">Emergency disable</string>
+    <string name="sx_emergency_hint">If the system hook delivers 12 power-key releases in 10 seconds, stop and disable all rules. Not guaranteed on every ROM; use the master switch as backup.</string>
+    <string name="sx_key_prompt">Key event prompt</string>
+    <string name="sx_key_prompt_hint">Toast Android KeyCode and scan code from the chosen input source when a physical key is released.</string>
+    <string name="sx_shared_shell">Shell engine</string>
+    <string name="sx_shared_shell_hint">Reuse the libsu Root shell for approved read-only queries. Commands with side effects always use independent cancellable processes.</string>
+    <string name="sx_custom_su">Custom su</string>
+    <string name="sx_custom_su_hint">Executable path for YAuto Root commands. Use su or an absolute path ending with /su. A custom executable disables the libsu shared route.</string>
+    <string name="sx_su_path">su executable</string>
+    <string name="sx_save_path">Save executable path</string>
+    <string name="sx_systemui_shell">Shell in SystemUI</string>
+    <string name="sx_systemui_shell_hint">Not enabled: YAuto uses a scoped LSPosed SystemUI bridge instead of granting the entire com.android.shell or SystemUI process Root.</string>
+    <string name="sx_libraries">Application sets and code library</string>
+    <string name="sx_library_hint">Save reusable Shell, JavaScript, MVEL and BeanShell snippets, and package-name sets locally. Copy the content into automation actions; the library does not execute code by itself.</string>
+    <string name="sx_library_editor">New or edit entry</string>
+    <string name="sx_name">Name</string>
+    <string name="sx_content">Command or script</string>
+    <string name="sx_app_packages">One application package per line</string>
+    <string name="sx_copy">Copy</string>
+    <string name="sx_edit">Edit</string>
+    <string name="sx_delete">Delete</string>
+    <string name="sx_confirm_delete">Delete this library entry?</string>
+    <string name="sx_save">Save</string>
+    <string name="sx_clear">Clear editor</string>
+    <string name="sx_saved">Saved</string>
+    <string name="sx_error">Invalid entry or executable path</string>
+    <string name="sx_latched">Emergency stop is active. Enable Rule feature to resume.</string>
+    <string name="sx_shizuku_root_blocked">Root is available. Shizuku is disabled by the privileged routing policy; no authorization is needed.</string>
+</resources>

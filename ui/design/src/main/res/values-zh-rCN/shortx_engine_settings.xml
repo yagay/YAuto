@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sx_engine_tools">自动化与 Shell 引擎</string>
+    <string name="sx_master_rules">规则总开关</string>
+    <string name="sx_master_rules_hint">启用或停止全部自动化；停用时取消正在运行的规则。</string>
+    <string name="sx_emergency">紧急停止</string>
+    <string name="sx_emergency_hint">如果系统 Hook 能收到 10 秒内 12 次电源键松开事件，立即停止并禁用规则。部分 ROM 无法捕获电源键，请同时保留总开关作为备用。</string>
+    <string name="sx_key_prompt">按键事件提示</string>
+    <string name="sx_key_prompt_hint">实体按键松开时用 Toast 显示选中事件源的 Android KeyCode 和扫描码。</string>
+    <string name="sx_shared_shell">Shell 引擎</string>
+    <string name="sx_shared_shell_hint">仅为白名单只读查询复用 libsu Root Shell。有副作用的命令仍使用独立、可超时中止的进程。</string>
+    <string name="sx_custom_su">自定义 su</string>
+    <string name="sx_custom_su_hint">YAuto 自身 Root 命令使用的可执行文件。填写 su 或以 /su 结尾的绝对路径。自定义路径不使用 libsu 共享通道。</string>
+    <string name="sx_su_path">su 路径</string>
+    <string name="sx_save_path">保存 su 路径</string>
+    <string name="sx_systemui_shell">在 SystemUI 中执行 Shell</string>
+    <string name="sx_systemui_shell_hint">此模式未开启。YAuto 使用受限 LSPosed SystemUI 桥接，不额外给予整个系统 Shell 或 SystemUI 进程 Root 权限。</string>
+    <string name="sx_libraries">应用集合与代码库</string>
+    <string name="sx_library_hint">在本地保存 Shell、JavaScript、MVEL、BeanShell 代码及应用包名集合。可复制到自动化动作中；保存本身不会执行代码。</string>
+    <string name="sx_library_editor">新建或修改条目</string>
+    <string name="sx_name">名称</string>
+    <string name="sx_content">命令或脚本</string>
+    <string name="sx_app_packages">每行一个应用包名</string>
+    <string name="sx_copy">复制</string>
+    <string name="sx_edit">编辑</string>
+    <string name="sx_delete">删除</string>
+    <string name="sx_confirm_delete">确定删除此条目？</string>
+    <string name="sx_save">保存</string>
+    <string name="sx_clear">清空编辑器</string>
+    <string name="sx_saved">已保存</string>
+    <string name="sx_error">条目或 su 路径不符合要求</string>
+    <string name="sx_latched">紧急停止仍处于启用状态。重新打开规则总开关即可恢复。</string>
+    <string name="sx_shizuku_root_blocked">Root 已可用，根据特权执行策略禁用 Shizuku，不需要再申请 Shizuku 授权。</string>
+</resources>
