@@ -49,4 +49,10 @@
     <string name="sx_export_library">导出代码库</string>
     <string name="sx_import_library">导入代码库</string>
     <string name="sx_imported">代码库条目已导入</string>
+    <string name="sx_records">运行记录</string>
+    <string name="sx_records_hint">查看已保存的触发器、动作和错误记录。可刷新或把当前筛选的记录导出为 JSON。</string>
+    <string name="sx_records_refresh">刷新记录</string>
+    <string name="sx_records_export">导出 JSON</string>
+    <string name="sx_records_count">%1$d 条记录</string>
+    <string name="sx_records_export_error">记录导出失败</string>
 </resources>

@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -79,7 +81,10 @@ internal fun ShortXRecordsScreen(context: Context, graph: AppGraph) {
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 listOf("all", TraceKind.TRIGGER.name, TraceKind.ACTION.name, TraceKind.ERROR.name)
                     .forEach { kind ->
                         FilterChip(

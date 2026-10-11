@@ -68,11 +68,16 @@ class RuntimeSettingsWiringTest(unittest.TestCase):
         self.assertIn("RuntimeLibraryStore.exportJson(context)", controls)
         self.assertIn("require(document.optString", library)
         self.assertIn("dynamicDarkColorScheme(context)", theme)
+        trace_reader = read("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/FileExecutionTracer.kt")
+        records = read("app/src/main/kotlin/com/yagay/yauto/ShortXRecordsScreen.kt")
+        self.assertIn("suspend fun readRecent(", trace_reader)
+        self.assertIn("writer?.flush()", trace_reader)
+        self.assertIn("graph.recentExecutionRecords(500)", records)
         self.assertIn("YAutoAppearanceSettings.revision", theme)
 
     def test_new_pages_are_reachable_with_the_shared_back_stack(self):
         screen = read("app/src/main/kotlin/com/yagay/yauto/RuntimeSettingsScreen.kt")
-        for page in ("RUNTIME", "EDITOR", "LOGGING", "ENGINE", "LIBRARIES", "APPEARANCE"):
+        for page in ("RUNTIME", "EDITOR", "LOGGING", "ENGINE", "LIBRARIES", "APPEARANCE", "RECORDS"):
             self.assertIn(f"RuntimeSettingsPage.{page}", screen)
             self.assertIn(f"navigateTo(RuntimeSettingsPage.{page})", screen)
         self.assertIn("rememberPageNavigation(RuntimeSettingsPage.OVERVIEW)", screen)
