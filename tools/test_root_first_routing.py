@@ -11,6 +11,7 @@ class RootPreferredRoutingTest(unittest.TestCase):
         broker = read("core/capability/src/main/kotlin/com/yagay/yauto/core/capability/Capability.kt")
         graph = read("app/src/main/kotlin/com/yagay/yauto/AppGraph.kt")
         self.assertIn('val privilegedFirst = preferRootWhenAvailable()', broker)
+        self.assertIn('CapabilityBackendPriority.rank(it.id, privilegedFirst)', broker)
         self.assertIn('"lsposed" -> if (privilegedFirst) 0', broker)
         self.assertIn('"root" -> if (privilegedFirst) 1', broker)
         self.assertIn('if (!available) continue', broker)
@@ -31,7 +32,7 @@ class RootPreferredRoutingTest(unittest.TestCase):
         xposed = read("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedBackend.kt")
         self.assertIn('ShellAccessibilityOperations.systemUiOperation(request)', xposed)
         self.assertIn('listOf("shizuku", "accessibility")', feature)
-        self.assertIn('listOf("root", "lsposed")', feature)
+        self.assertIn('listOf("lsposed", "root")', feature)
 
 if __name__ == "__main__":
     unittest.main()

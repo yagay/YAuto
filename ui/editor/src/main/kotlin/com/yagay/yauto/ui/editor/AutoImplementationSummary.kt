@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.model.FeatureRef
+import com.yagay.yauto.core.capability.CapabilityBackendPriority
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.ui.design.R as TextR
 
@@ -51,14 +52,10 @@ internal fun permissionsForFeature(
             // Otherwise suggest available Shizuku/Accessibility rather than asking
             // for unnecessary privileged permissions.
             val ready = option.requirements.all { availability(it) == PermissionAvailability.GRANTED }
-            when (option.backendId) {
-                "lsposed" -> if (ready && preferRootWhenAvailable) 0 else 5
-                "root" -> if (ready && preferRootWhenAvailable) 1 else 4
-                "shizuku" -> 2
-                "accessibility" -> 3
-                "android" -> 2
-                else -> 6
-            }
+            CapabilityBackendPriority.rank(
+                option.backendId,
+                privilegedFirst = ready && preferRootWhenAvailable,
+            )
         },
     )
     return (required + best.orEmptyRequirements()).sortedBy { it.ordinal }

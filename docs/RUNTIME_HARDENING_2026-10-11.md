@@ -17,3 +17,8 @@ Target branch: `refactor/macrodroid-on-1003-20261008`.
 - Migrate remaining asynchronous overlay surface operations to explicit completion results when downstream actions need confirmation.
 - Run end-to-end on-device UI navigation, gestures, Accessibility, LSPosed scope, Root and Shizuku tests. Current CI remains a JVM/source audit and debug build pipeline.
 - Third-party importer source placeholders and advanced hooks are deliberately retained until lossless semantics can be verified; this work does not claim full ShortX/MacroDroid/Tasker parity.
+
+## Automatic backend priority
+- When the privileged-first setting is enabled (the default), supported actions select LSPosed, then Root, then Shizuku, then Accessibility.
+- The setting retains its previous storage key to preserve user preferences. Explicit saved backend pins are not overridden.
+- The priority is shared by the broker, feature health and editor permission guidance. LSPosed only advertises operations verified by its system bridge; it does not replace Accessibility tree inspection.

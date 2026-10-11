@@ -11,6 +11,7 @@ import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.yagay.yauto.core.capability.RuntimeEnvironment
+import com.yagay.yauto.core.capability.CapabilityBackendPriority
 import com.yagay.yauto.core.registry.AccessRequirement
 import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
@@ -256,14 +257,7 @@ class FeatureHealthScanner(
             val readyOption = options
                 .filter { option -> option.requirements.all(available) }
                 .minWithOrNull(compareBy<FeatureImplementationOption> {
-                    when (it.backendId) {
-                        "lsposed" -> if (rootFirst) 0 else 5
-                        "root" -> if (rootFirst) 1 else 4
-                        "shizuku" -> 2
-                        "accessibility" -> 3
-                        "android" -> 2
-                        else -> 6
-                    }
+                    CapabilityBackendPriority.rank(it.backendId, rootFirst)
                 })
             if (readyOption != null) {
                 return FeatureHealthItem(

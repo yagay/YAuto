@@ -172,4 +172,15 @@ class CapabilityBrokerResilienceTest {
         assertEquals(listOf("lsposed", "root", "shizuku", "accessibility"), executed)
         assertEquals(executed, outcome.attempts.map { it.backendId })
     }
+
+    @Test fun sharedPriorityRanksAllFourBackendsInRequestedOrder() {
+        val order = listOf("accessibility", "root", "shizuku", "lsposed").sortedBy {
+            CapabilityBackendPriority.rank(it, privilegedFirst = true)
+        }
+        assertEquals(listOf("lsposed", "root", "shizuku", "accessibility"), order)
+        val withoutPrivilegedPreference = order.sortedBy {
+            CapabilityBackendPriority.rank(it, privilegedFirst = false)
+        }
+        assertEquals(listOf("shizuku", "accessibility", "lsposed", "root"), withoutPrivilegedPreference)
+    }
 }

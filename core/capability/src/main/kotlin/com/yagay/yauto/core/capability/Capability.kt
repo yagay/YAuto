@@ -119,6 +119,21 @@ interface CapabilityBackend {
     suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult
 }
 
+/**
+ * Single backend ordering contract used by the runtime, permission guidance,
+ * and feature diagnostics. Unsupported backends are filtered before ranking.
+ */
+object CapabilityBackendPriority {
+    fun rank(backendId: String?, privilegedFirst: Boolean): Int = when (backendId) {
+        "lsposed" -> if (privilegedFirst) 0 else 3
+        "root" -> if (privilegedFirst) 1 else 4
+        "shizuku" -> if (privilegedFirst) 2 else 0
+        "accessibility" -> if (privilegedFirst) 3 else 1
+        "android" -> if (privilegedFirst) 4 else 2
+        else -> 5
+    }
+}
+
 class CapabilityBroker(
     private val environmentProvider: () -> RuntimeEnvironment,
     backends: List<CapabilityBackend> = emptyList(),
@@ -154,13 +169,7 @@ class CapabilityBroker(
                 val privilegedFirst = preferRootWhenAvailable()
                 applicable.sortedWith(
                     compareBy<CapabilityBackend> {
-                        when (it.id) {
-                            "lsposed" -> if (privilegedFirst) 0 else 3
-                            "root" -> if (privilegedFirst) 1 else 4
-                            "shizuku" -> if (privilegedFirst) 2 else 0
-                            "accessibility" -> if (privilegedFirst) 3 else 1
-                            else -> if (privilegedFirst) 4 else 2
-                        }
+                        CapabilityBackendPriority.rank(it.id, privilegedFirst)
                     }.thenByDescending { it.priority },
                 )
             }

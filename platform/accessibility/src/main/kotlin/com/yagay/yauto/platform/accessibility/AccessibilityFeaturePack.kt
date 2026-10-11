@@ -312,7 +312,7 @@ class AccessibilityFeaturePack(
                     routeBackendCandidates(
                         backend,
                         if (action in setOf("lock_screen", "notifications", "quick_settings"))
-                            listOf("root", "lsposed")
+                            listOf("lsposed", "root")
                         else if (rootSupported) listOf("root") else emptyList(),
                         execute = { selected ->
                             shortXGlobalActionRequest(action, selected)?.let {
