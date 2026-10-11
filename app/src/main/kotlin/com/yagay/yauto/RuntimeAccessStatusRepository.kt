@@ -12,7 +12,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.yagay.yauto.core.capability.RuntimeEnvironment
 import com.yagay.yauto.core.registry.AccessRequirement
-import com.yagay.yauto.platform.accessibility.YAutoAccessibilityService
+import com.yagay.yauto.platform.accessibility.AccessibilityBackend
 import com.yagay.yauto.platform.root.RootShell
 import com.yagay.yauto.platform.shizuku.ShizukuBackend
 import com.yagay.yauto.platform.xposed.XposedBackend
@@ -34,11 +34,12 @@ import kotlinx.coroutines.withContext
  * A granted permission only authorizes a candidate route. It does not prove
  * the OEM implements a specific hook or that an action will succeed.
  */
-internal class RuntimeAccessStatusRepository(
+class RuntimeAccessStatusRepository(
     context: Context,
     private val rootShell: RootShell,
     private val shizuku: ShizukuBackend,
     private val xposed: XposedBackend,
+    private val accessibility: AccessibilityBackend,
 ) {
     private val context = context.applicationContext
     private val refreshLock = Mutex()
@@ -95,7 +96,7 @@ internal class RuntimeAccessStatusRepository(
                     }
                     AccessRequirement.ZYGISK -> PermissionAvailability.UNKNOWN
                     AccessRequirement.ACCESSIBILITY ->
-                        check { YAutoAccessibilityService.current != null }
+                        checkSuspend { accessibility.isAvailable(environment) }
                     AccessRequirement.USAGE_STATS ->
                         check { com.yagay.yauto.platform.android.isUsageStatsAccessGranted(context) }
                     AccessRequirement.NOTIFICATION_LISTENER -> check {

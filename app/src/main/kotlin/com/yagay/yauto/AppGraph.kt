@@ -69,7 +69,7 @@ class AppGraph(context: Context) {
     val xposed by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { XposedBackend(appContext) }
     val lsposedScopes = LsposedScopeManager()
     val accessStatus by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        RuntimeAccessStatusRepository(appContext, rootShell, shizuku, xposed)
+        RuntimeAccessStatusRepository(appContext, rootShell, shizuku, xposed, accessibility)
     }
     val accessibility by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AccessibilityBackend() }
     private val usageForeground by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { SystemUsageStatsForegroundReader(appContext) }
