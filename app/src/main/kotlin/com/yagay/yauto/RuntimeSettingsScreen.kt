@@ -311,7 +311,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                     MacroItemRow(
                         stringResource(TextR.string.live_picker_tile_inventory_title),
                         stringResource(TextR.string.live_picker_tile_inventory_hint),
-                        MacroPalette.System,
+                        MacroPalette.Utility,
                         onClick = { navigateTo(RuntimeSettingsPage.DEVICE_TILES) },
                     )
                 }
