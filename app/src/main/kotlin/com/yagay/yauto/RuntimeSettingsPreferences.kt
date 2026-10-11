@@ -17,6 +17,7 @@ object RuntimeSettingsPreferences {
     private const val KEY_SHARED_ROOT = "shared_read_only_root"
     private const val KEY_EMERGENCY_KEY = "emergency_power_key"
     private const val KEY_KEY_PROMPT = "key_event_prompt"
+    private const val KEY_EMERGENCY_LATCH = "emergency_latched"
     val supportedLogSizesMb = listOf(1, 2, 5, 10)
 
     private fun prefs(context: Context) =
@@ -50,6 +51,12 @@ object RuntimeSettingsPreferences {
     fun keyEventPrompt(context: Context): Boolean = prefs(context).getBoolean(KEY_KEY_PROMPT, false)
     fun setKeyEventPrompt(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_KEY_PROMPT, enabled).apply()
+    }
+
+    fun emergencyLatched(context: Context): Boolean = prefs(context).getBoolean(KEY_EMERGENCY_LATCH, false)
+    fun setEmergencyLatched(context: Context, enabled: Boolean) {
+        // commit(): safety latch must reach disk before dispatch resumes.
+        prefs(context).edit().putBoolean(KEY_EMERGENCY_LATCH, enabled).commit()
     }
 
     fun startAtBoot(context: Context): Boolean = prefs(context).getBoolean(KEY_START_AT_BOOT, true)
