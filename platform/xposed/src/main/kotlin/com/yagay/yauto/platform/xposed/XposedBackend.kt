@@ -70,6 +70,23 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
         return result?.getBoolean("success") == true
     }
 
+    /** Safe SystemUI process diagnostics; never spawns su in SystemUI. */
+    suspend fun querySystemUi(command: String): Pair<Boolean, String> {
+        val cmd = command.trim()
+        if (cmd != "id" && !cmd.matches(Regex("getprop [A-Za-z0-9_.-]{1,128}")))
+            return false to "Unsupported SystemUI read-only command"
+        val bundle = requestSystem(
+            SystemBridgeProtocol.STATUS_SHELL_QUERY,
+            mapOf("command" to ConfigValue.StringValue(cmd)),
+            "com.android.systemui",
+            SystemBridgeProtocol.CHIP_ACTION,
+        )
+        return (bundle?.getBoolean("success") == true) to (
+            bundle?.getString(if (bundle.getBoolean("success")) "stdout" else "error")
+                ?: "SystemUI bridge unavailable"
+        )
+    }
+
     suspend fun beginHardwareKeyCapture(timeoutMs: Long): Boolean {
         val result = orderedRequest(
             Intent(SystemBridgeProtocol.ACTION)
@@ -108,6 +125,7 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                     SystemBridgeProtocol.APP_PROCESS_START,
                     SystemBridgeProtocol.STATUS_CHIP_SHOW,
                     SystemBridgeProtocol.STATUS_CHIP_HIDE,
+                    SystemBridgeProtocol.STATUS_SHELL_QUERY,
                     SystemBridgeProtocol.TILE_LABEL_SET,
                     SystemBridgeProtocol.TILE_LABEL_CLEAR,
                 )) ||
@@ -130,7 +148,8 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                 requestPackageBehavior(request)
             request.capability == CapabilityIds.LSPOSED_HOOK -> requestHook(request)
             request.capability == CapabilityIds.LSPOSED &&
-                request.operationId in setOf(SystemBridgeProtocol.STATUS_CHIP_SHOW, SystemBridgeProtocol.STATUS_CHIP_HIDE) ->
+                request.operationId in setOf(SystemBridgeProtocol.STATUS_CHIP_SHOW,
+                    SystemBridgeProtocol.STATUS_CHIP_HIDE, SystemBridgeProtocol.STATUS_SHELL_QUERY) ->
                 requestSystem(request.operationId, request.payload, "com.android.systemui", SystemBridgeProtocol.CHIP_ACTION)
             request.capability == CapabilityIds.LSPOSED &&
                 request.operationId in setOf(SystemBridgeProtocol.TILE_LABEL_SET, SystemBridgeProtocol.TILE_LABEL_CLEAR) ->
@@ -140,6 +159,8 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
         }
         val success = result?.getBoolean("success") == true
         val value = when {
+            request.operationId == SystemBridgeProtocol.STATUS_SHELL_QUERY && result != null ->
+                ConfigValue.StringValue(result.getString("stdout").orEmpty())
             request.capability == CapabilityIds.ACCESSIBILITY -> ConfigValue.BooleanValue(success)
             request.capability == CapabilityIds.LSPOSED_HOOK && result != null -> ConfigValue.ObjectValue(
                 mapOf(

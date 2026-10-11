@@ -10,6 +10,7 @@ object SystemBridgeProtocol {
     const val TILE_LABEL_ACTION = "com.yagay.yauto.SYSTEM_UI_TILE_LABEL"
     const val TILE_LABEL_SET = "qs_tile.label.set"
     const val TILE_LABEL_CLEAR = "qs_tile.label.clear"
+    const val STATUS_SHELL_QUERY = "systemui.shell.query"
     const val STATUS_CHIP_SHOW = "status_chip.show"
     const val STATUS_CHIP_HIDE = "status_chip.hide"
     const val STATUS_ICON_SET = "status_icon.set"

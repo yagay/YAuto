@@ -59,17 +59,34 @@ internal class XposedSystemUiHookInstaller(
                 val response = Bundle().apply { putInt("version", SystemBridgeProtocol.VERSION) }
                 try {
                     require(intent.getIntExtra("version", -1) == SystemBridgeProtocol.VERSION) { "Protocol mismatch" }
-                    require(hookedCount > 0) { "SystemUI status-bar ViewGroup not available on this ROM" }
-                    controller.update(
-                        intent.getStringExtra("operation").orEmpty(),
-                        intent.getStringExtra("chipId").orEmpty(),
-                        intent.getStringExtra("text").orEmpty(),
-                        intent.getStringExtra("iconMode").orEmpty().ifBlank { "none" },
-                        intent.getStringExtra("icon").orEmpty(),
-                        intent.getStringExtra("imageBase64").orEmpty(),
-                    )
-                    response.putBoolean("success", true)
-                    response.putBoolean("accepted", true)
+                    if (intent.getStringExtra("operation") == SystemBridgeProtocol.STATUS_SHELL_QUERY) {
+                        // Read-only system-process diagnostics. No arbitrary commands, no su,
+                        // and no shell subprocess launched inside SystemUI's main thread.
+                        val cmd = intent.getStringExtra("command").orEmpty().trim()
+                        val output = when {
+                            cmd == "id" -> "uid=" + android.os.Process.myUid()
+                            cmd.matches(Regex("getprop [A-Za-z0-9_.-]{1,128}")) -> {
+                                val name = cmd.removePrefix("getprop ")
+                                val sys = Class.forName("android.os.SystemProperties")
+                                sys.getMethod("get", String::class.java).invoke(null, name)?.toString().orEmpty()
+                            }
+                            else -> error("Only id and single-property getprop are supported inside SystemUI")
+                        }
+                        response.putString("stdout", output.take(4096))
+                        response.putBoolean("success", true)
+                    } else {
+                        require(hookedCount > 0) { "SystemUI status-bar ViewGroup not available on this ROM" }
+                        controller.update(
+                            intent.getStringExtra("operation").orEmpty(),
+                            intent.getStringExtra("chipId").orEmpty(),
+                            intent.getStringExtra("text").orEmpty(),
+                            intent.getStringExtra("iconMode").orEmpty().ifBlank { "none" },
+                            intent.getStringExtra("icon").orEmpty(),
+                            intent.getStringExtra("imageBase64").orEmpty(),
+                        )
+                        response.putBoolean("success", true)
+                        response.putBoolean("accepted", true)
+                    }
                 } catch (error: Exception) {
                     response.putBoolean("success", false)
                     response.putString("error", error.cause?.message ?: error.message)
