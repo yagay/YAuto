@@ -25,6 +25,7 @@ internal object ReadOnlyRootCommand {
 class RootShell(
     private val shared: SharedRootRunner? = null,
     private val suBinary: () -> String = { "su" },
+    private val sharedEnabled: () -> Boolean = { true },
 ) : DiagnosticCommandRunner {
     /** ProcessBuilder receives argv directly; never pass user-provided su paths through a shell. */
     fun commandArguments(command: String): List<String> {
@@ -41,7 +42,8 @@ class RootShell(
     override suspend fun run(command: String, timeoutMs: Long): CommandOutput = try {
         val binary = suBinary()
         require(isSafeSuBinary(binary)) { "Invalid su executable path" }
-        if (binary == "su" && shared != null && ReadOnlyRootCommand.accepts(command)) {
+        if (binary == "su" && shared != null && sharedEnabled() &&
+            ReadOnlyRootCommand.accepts(command)) {
             shared.execute(command, timeoutMs)
         } else {
             BoundedProcessRunner.run(commandArguments(command), timeoutMs)
@@ -57,7 +59,7 @@ class RootShell(
         fun granted(output: CommandOutput): Boolean =
             !output.timedOut && output.exitCode == 0 && "uid=0" in output.stdout
         if (granted(sharedResult)) return true
-        if (shared == null || suBinary() != "su") return false
+        if (shared == null || suBinary() != "su" || !sharedEnabled()) return false
         // A cached libsu shell can be unprivileged if authorization was
         // granted only after its creation. Verify with a fresh Root process
         // before allowing the scheduler to classify the device as rootless
