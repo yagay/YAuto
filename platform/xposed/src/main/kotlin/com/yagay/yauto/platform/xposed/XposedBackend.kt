@@ -28,6 +28,7 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
     private val context = context.applicationContext
     @Volatile private var connected = false
     private val availabilityMutex = Mutex()
+    private val transportProbeMutex = Mutex()
     @Volatile private var lastProbeMs = 0L
     @Volatile private var lastProbeSuccess = false
     private val systemEventAuthToken = UUID.randomUUID().toString().also(XposedEventAuth::expect)
@@ -107,7 +108,8 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
      * trip. Unlike PING this detects a failed sender-UID gate on OEM ROMs.
      * Only invoked from diagnostics: sends no KeyEvent or automation action.
      */
-    suspend fun probeSystemEventDelivery(): Boolean = coroutineScope {
+    suspend fun probeSystemEventDelivery(): Boolean = transportProbeMutex.withLock {
+        coroutineScope {
         val nonce = UUID.randomUUID().toString()
         val waiter = async(start = CoroutineStart.UNDISPATCHED) {
             XposedSystemEventRuntimeBridge.awaitTransportProbe(nonce, 4_000L)
@@ -122,11 +124,11 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                     .putExtra(XposedEventAuth.EXTRA_TOKEN, systemEventAuthToken),
                 requestTimeoutMs = 2_500L,
             )
-            response?.getBoolean("success") == true &&
-                response.getBoolean("probeSent") &&
+            response?.let { it.getBoolean("success") && it.getBoolean("probeSent") } == true &&
                 waiter.await()
         } finally {
             waiter.cancel()
+        }
         }
     }
 
