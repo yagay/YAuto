@@ -1,6 +1,5 @@
 package com.yagay.yauto.platform.xposed
 
-import android.view.InputEvent
 import android.view.KeyEvent
 import java.lang.reflect.Method
 
@@ -11,10 +10,11 @@ internal object XposedInputHookMethodPolicy {
             // OEM callback names vary; capture only methods with a KeyEvent argument.
             return method.parameterTypes.any { KeyEvent::class.java.isAssignableFrom(it) }
         }
-        return method.name in methodNames &&
-            method.parameterTypes.any {
-                KeyEvent::class.java.isAssignableFrom(it) ||
-                    InputEvent::class.java.isAssignableFrom(it)
-            }
+        // ShortX hooks named input callbacks by method name (including OEM
+        // overloads), then inspects actual invocation arguments. Some vendor
+        // versions declare an InputEvent-compatible parameter as Object or a
+        // private wrapper; a declaration-only KeyEvent filter skips them.
+        // Restrict installation to the explicitly named input callbacks.
+        return method.name in methodNames
     }
 }
