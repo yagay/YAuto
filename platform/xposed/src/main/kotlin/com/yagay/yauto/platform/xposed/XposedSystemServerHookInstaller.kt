@@ -448,7 +448,11 @@ internal class XposedSystemServerHookInstaller(
         )
 
         targets.forEach { target ->
-            val clazz = runCatching { classLoader.loadClass(target.className) }.getOrNull() ?: return@forEach
+            val clazz = runCatching { classLoader.loadClass(target.className) }.getOrNull()
+            if (clazz == null) {
+                Log.w("YAutoKeyHook", "Input callback class unavailable: ${target.className}")
+                return@forEach
+            }
             clazz.declaredMethods
                 .filter { method ->
                     XposedInputHookMethodPolicy.matches(
@@ -469,7 +473,12 @@ internal class XposedSystemServerHookInstaller(
                         invocation.proceed()
                     }
                     }
+                    if (installation.getOrNull() == true) {
+                        Log.i("YAutoKeyHook", "Installed input Hook: ${target.className}#${method.name} " +
+                            "parameters=${method.parameterTypes.joinToString { it.simpleName }}")
+                    }
                     installation.exceptionOrNull()?.let { error ->
+                        Log.e("YAutoKeyHook", "Input Hook failed: ${target.className}#${method.name}", error)
                         log(Log.ERROR, "YAuto", "Hook installation failed: shortx-input", error)
                     }
                 }
@@ -477,6 +486,7 @@ internal class XposedSystemServerHookInstaller(
 
         installInputFilterStateHook(context, classLoader)
         val installedCount = installedHooks.count { it.startsWith("shortx-input|") }
+        Log.i("YAutoKeyHook", "Compatible input callback count=$installedCount")
         if (installedCount == 0) {
             log(Log.WARN, "YAuto", "Hardware key capture unavailable: no matching input callback on this ROM")
         } else {
