@@ -88,6 +88,8 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
     return remember(context, graph, permissionVersion, rootPermission, message, runtimeLauncher) {
         object : FeaturePermissionGateway {
             override val feedback: String? get() = message
+            override val preferRootWhenAvailable: Boolean
+                get() = RuntimeSettingsPreferences.preferRootWhenAvailable(context)
 
             override fun availability(permission: AccessRequirement): PermissionAvailability {
                 val granted: Boolean? = when (permission) {

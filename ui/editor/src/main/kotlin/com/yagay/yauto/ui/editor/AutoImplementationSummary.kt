@@ -26,6 +26,7 @@ import com.yagay.yauto.ui.design.R as TextR
 internal fun permissionsForFeature(
     descriptor: FeatureDescriptor,
     existing: FeatureRef?,
+    preferRootWhenAvailable: Boolean = true,
     availability: (AccessRequirement) -> PermissionAvailability,
 ): List<AccessRequirement> {
     val required = descriptor.mandatoryAccessRequirements()
@@ -50,8 +51,8 @@ internal fun permissionsForFeature(
             // When nothing is granted, offer Shizuku/non-root permission first.
             val ready = option.requirements.all { availability(it) == PermissionAvailability.GRANTED }
             when (option.backendId) {
-                "root" -> if (ready) 0 else 4
-                "lsposed" -> if (ready) 1 else 5
+                "root" -> if (ready && preferRootWhenAvailable) 0 else 4
+                "lsposed" -> if (ready && preferRootWhenAvailable) 1 else 5
                 "shizuku" -> 2
                 "accessibility" -> 3
                 "android" -> 2
@@ -68,7 +69,8 @@ private fun FeatureImplementationOption?.orEmptyRequirements(): Set<AccessRequir
 @Composable
 internal fun AutoImplementationSummary(descriptor: FeatureDescriptor, initial: FeatureRef?) {
     val gateway = LocalFeaturePermissionGateway.current
-    val requirements = permissionsForFeature(descriptor, initial) {
+    val requirements = permissionsForFeature(descriptor, initial,
+        preferRootWhenAvailable = gateway?.preferRootWhenAvailable ?: true) {
         gateway?.availability(it) ?: PermissionAvailability.UNKNOWN
     }
     if (requirements.isEmpty()) return

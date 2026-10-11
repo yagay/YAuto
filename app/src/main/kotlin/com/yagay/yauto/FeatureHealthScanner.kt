@@ -16,6 +16,7 @@ import com.yagay.yauto.core.registry.FeatureDescriptor
 import com.yagay.yauto.core.registry.FeatureKind
 import com.yagay.yauto.core.registry.resolvedAccessRequirements
 import com.yagay.yauto.core.registry.resolvedImplementationOptions
+import com.yagay.yauto.core.registry.FeatureImplementationOption
 import com.yagay.yauto.platform.accessibility.AccessibilityBackend
 import com.yagay.yauto.platform.android.isUsageStatsAccessGranted
 import com.yagay.yauto.platform.android.runtimePermissionsForFeature
@@ -251,9 +252,19 @@ class FeatureHealthScanner(
 
         val options = descriptor.resolvedImplementationOptions()
         if (options.isNotEmpty()) {
-            val readyOption = options.firstOrNull { option ->
-                option.requirements.all(available)
-            }
+            val rootFirst = RuntimeSettingsPreferences.preferRootWhenAvailable(context)
+            val readyOption = options
+                .filter { option -> option.requirements.all(available) }
+                .minWithOrNull(compareBy<FeatureImplementationOption> {
+                    when (it.backendId) {
+                        "root" -> if (rootFirst) 0 else 4
+                        "lsposed" -> if (rootFirst) 1 else 5
+                        "shizuku" -> 2
+                        "accessibility" -> 3
+                        "android" -> 2
+                        else -> 6
+                    }
+                })
             if (readyOption != null) {
                 return FeatureHealthItem(
                     descriptor.id.value,

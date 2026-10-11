@@ -10,6 +10,8 @@ interface FeaturePermissionGateway {
     fun availability(permission: AccessRequirement): PermissionAvailability
     fun request(permission: AccessRequirement)
     val feedback: String?
+    /** The app owns this preference; editor tests and alternate hosts default to Root-first. */
+    val preferRootWhenAvailable: Boolean get() = true
 }
 
 val LocalFeaturePermissionGateway = staticCompositionLocalOf<FeaturePermissionGateway?> { null }
