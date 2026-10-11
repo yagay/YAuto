@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_health_authorized_unverified">Authorized (not tested)</string>
+    <string name="feature_health_authorized_detail">The declared route is authorized, but this scan did not execute the feature or verify OEM support.</string>
+    <string name="feature_health_unknown">Not verified</string>
+    <string name="feature_health_unknown_detail">The current device or backend state could not be established. Refresh after connecting the required service.</string>
+    <string name="runtime_access_unknown">Not checked or probe failed</string>
+    <string name="runtime_access_shizuku_disabled">Disabled while Root is available</string>
+    <string name="feature_health_unknown_count">Not verified: %1$d</string>
+</resources>

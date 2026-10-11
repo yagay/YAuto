@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_health_authorized_unverified">已授权（未实测）</string>
+    <string name="feature_health_authorized_detail">所需权限及声明的执行通道已通过检查，但尚未执行该功能，也未验证厂商兼容性。</string>
+    <string name="feature_health_unknown">状态未验证</string>
+    <string name="feature_health_unknown_detail">无法确认设备或后端当前状态，请连接所需服务后重新检测。</string>
+    <string name="runtime_access_unknown">未检测或检测失败</string>
+    <string name="runtime_access_shizuku_disabled">Root 可用时禁用 Shizuku</string>
+    <string name="feature_health_unknown_count">状态未验证：%1$d</string>
+</resources>
