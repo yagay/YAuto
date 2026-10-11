@@ -31,7 +31,7 @@ class RootPreferredRoutingTest(unittest.TestCase):
         self.assertIn('if (preferredMethod == FeatureMethod.AUTO)', feature)
         xposed = read("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedBackend.kt")
         self.assertIn('ShellAccessibilityOperations.systemUiOperation(request)', xposed)
-        self.assertIn('listOf("shizuku", "accessibility")', feature)
+        self.assertIn('listOf("accessibility", "shizuku")', feature)
         self.assertIn('listOf("lsposed", "root")', feature)
 
 if __name__ == "__main__":

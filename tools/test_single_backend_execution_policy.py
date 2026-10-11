@@ -31,7 +31,7 @@ class SingleBackendExecutionPolicyTest(unittest.TestCase):
     def test_global_action_routes_follow_priority(self):
         s = read("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidLsposedFeaturePack.kt")
         self.assertIn('listOf("lsposed", "root")', s)
-        self.assertIn('listOf("shizuku", "accessibility")', s)
+        self.assertIn('listOf("accessibility", "shizuku")', s)
         a = read("platform/accessibility/src/main/kotlin/com/yagay/yauto/platform/accessibility/AccessibilityFeaturePack.kt")
         self.assertIn('listOf("lsposed", "root")', a)
         self.assertIn('listOf("shizuku", "accessibility")', a)
