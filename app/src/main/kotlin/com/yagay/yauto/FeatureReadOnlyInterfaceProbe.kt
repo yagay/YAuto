@@ -48,7 +48,7 @@ internal object ReadOnlyFeatureProbeCatalog {
         "media_volume", "brightness", "screen_timeout", "stay_awake_while_charging", "bluetooth_enabled",
         "next_alarm_set", "network_validated", "network_internet",
         "network_restricted", "network_suspended",
-    )
+    ) + AdditionalReadOnlyInterfaceProbe.keys
 
     fun queryKey(featureId: String, kind: FeatureKind): String? {
         if (kind != FeatureKind.STATE && kind != FeatureKind.CONDITION) return null
@@ -232,7 +232,7 @@ internal class FeatureReadOnlyInterfaceProbe(context: Context) {
                     }
                     "ConnectivityManager.NetworkCapabilities.$key" to value.toString()
                 }
-                else -> error("Probe is not available")
+                else -> AdditionalReadOnlyInterfaceProbe.read(context, key)
             }
             FeatureProbeResult(
                 status = FeatureProbeStatus.RESPONDED,
