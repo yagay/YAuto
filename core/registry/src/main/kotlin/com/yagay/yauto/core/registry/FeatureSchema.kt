@@ -88,6 +88,8 @@ sealed interface FieldPickerSource {
     data object IntentAction : FieldPickerSource
     data object IntentCategory : FieldPickerSource
     data object NotificationCategory : FieldPickerSource
+    /** Device-backed data supplied by the runtime host, not static schema options. */
+    data object LiveSystem : FieldPickerSource
     data class Options(val options: List<FieldPickerOption>) : FieldPickerSource
 }
 
