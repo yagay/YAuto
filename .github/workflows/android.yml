@@ -63,6 +63,8 @@ jobs:
         run: python3 -m unittest discover -s tools -p 'test_xposed_event_delivery_contract.py'
       - name: Live authorization status consistency
         run: python3 -m unittest discover -s tools -p 'test_live_access_state_consistency.py'
+      - name: Real read-only per-feature API probe contract
+        run: python3 -m unittest discover -s tools -p 'test_feature_read_only_probe_contract.py'
       - name: UI idle hard timeout and isolated Accessibility callbacks
         run: python3 -m unittest discover -s tools -p 'test_ui_idle_timeout_contract.py'
       - name: Live Android field picker wiring audit

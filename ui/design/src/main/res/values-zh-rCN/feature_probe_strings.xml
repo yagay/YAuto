@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_health_probe_read_only">逐项验证真实只读系统接口</string>
+    <string name="feature_health_probe_progress">正在检查：%1$d / %2$d</string>
+    <string name="feature_health_probe_summary">接口有回应：%1$d · 接口错误：%2$d · 需人工测试：%3$d。接口返回结果不等于动作或触发器正常。</string>
+    <string name="feature_health_probe_responded">系统接口已回应（只读）</string>
+    <string name="feature_health_probe_failed">系统接口查询失败</string>
+    <string name="feature_health_probe_manual">无安全的独立查询接口，需人工测试</string>
+    <string name="feature_health_probe_skipped">跳过：前置条件尚未满足</string>
+    <string name="feature_health_probe_evidence">%1$s = %2$s</string>
+    <string name="feature_health_probe_error">%1$s：%2$s</string>
+</resources>

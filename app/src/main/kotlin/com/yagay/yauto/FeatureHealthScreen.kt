@@ -37,6 +37,7 @@ internal fun FeatureHealthScreen(
     val context = LocalContext.current
     val snapshot by scanner.snapshot.collectAsState()
     val scanning by scanner.scanning.collectAsState()
+    val verificationProgress by scanner.verificationProgress.collectAsState()
     val autoScan by scanner.autoScanEnabled.collectAsState()
     var exportStatus by remember { mutableStateOf<String?>(null) }
     val exportLauncher = rememberLauncherForActivityResult(
@@ -140,6 +141,29 @@ internal fun FeatureHealthScreen(
                         )
                     }
                     OutlinedButton(
+                        onClick = scanner::requestReadOnlyVerification,
+                        enabled = !scanning,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(TextR.string.feature_health_probe_read_only))
+                    }
+                    verificationProgress?.let { (completed, total) ->
+                        Text(
+                            stringResource(TextR.string.feature_health_probe_progress, completed, total),
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                    if (snapshot?.items?.any { it.probe != null } == true) {
+                        Text(
+                            stringResource(
+                                TextR.string.feature_health_probe_summary,
+                                snapshot!!.probedCount, snapshot!!.probeFailedCount,
+                                snapshot!!.manualTestCount,
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    OutlinedButton(
                         onClick = {
                             exportLauncher.launch("YAuto-feature-health-" + System.currentTimeMillis() + ".json")
                         },
@@ -222,6 +246,39 @@ private fun FeatureHealthRow(item: FeatureHealthItem) {
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
+            item.probe?.let { probe ->
+                val label = when (probe.status) {
+                    FeatureProbeStatus.RESPONDED -> TextR.string.feature_health_probe_responded
+                    FeatureProbeStatus.FAILED -> TextR.string.feature_health_probe_failed
+                    FeatureProbeStatus.NOT_TESTABLE -> TextR.string.feature_health_probe_manual
+                    FeatureProbeStatus.SKIPPED -> TextR.string.feature_health_probe_skipped
+                }
+                Text(
+                    stringResource(label),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (probe.status == FeatureProbeStatus.FAILED)
+                        MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (probe.status == FeatureProbeStatus.RESPONDED && probe.interfaceName != null) {
+                    Text(
+                        stringResource(
+                            TextR.string.feature_health_probe_evidence,
+                            probe.interfaceName,
+                            probe.observedValue.orEmpty(),
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                } else if (probe.status == FeatureProbeStatus.FAILED) {
+                    Text(
+                        stringResource(
+                            TextR.string.feature_health_probe_error,
+                            probe.interfaceName.orEmpty(),
+                            probe.detail.orEmpty(),
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+            }
             Text(
                 stringResource(TextR.string.feature_health_reason_format, reason),
                 style = MaterialTheme.typography.bodySmall,
@@ -252,12 +309,16 @@ private fun featureHealthDiagnosticJson(
                 .put("backendId", item.backendId)
                 .put("missingRequirements", JSONArray(item.missingRequirements.map { it.id }))
                 .put("detail", item.detail)
+                .put("probeStatus", item.probe?.status?.name)
+                .put("probeInterface", item.probe?.interfaceName)
+                .put("probeObservedValue", item.probe?.observedValue)
+                .put("probeError", item.probe?.detail)
                 .put("reason", featureHealthReason(context, item))
                 .put("solution", featureHealthResolution(context, item))
         )
     }
     return JSONObject()
-        .put("schemaVersion", 1)
+        .put("schemaVersion", 2)
         .put("startedAtEpochMs", snapshot.startedAtEpochMs)
         .put("finishedAtEpochMs", snapshot.finishedAtEpochMs)
         .put(
@@ -277,7 +338,10 @@ private fun featureHealthDiagnosticJson(
                 .put("unknown", snapshot.unknownCount)
                 .put("blocked", snapshot.blockedCount)
                 .put("broken", snapshot.brokenCount)
-                .put("unsupported", snapshot.unsupportedCount),
+                .put("unsupported", snapshot.unsupportedCount)
+                .put("interfaceResponded", snapshot.probedCount)
+                .put("interfaceFailed", snapshot.probeFailedCount)
+                .put("needsManualTest", snapshot.manualTestCount),
         )
         .put(
             "accessState",

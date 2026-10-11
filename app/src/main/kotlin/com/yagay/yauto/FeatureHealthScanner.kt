@@ -39,6 +39,16 @@ import kotlinx.coroutines.sync.withLock
 
 enum class FeatureHealthStatus { READY, BLOCKED, UNKNOWN, BROKEN, UNSUPPORTED }
 
+/** Actual interface check, separate from permissions and feature execution. */
+enum class FeatureProbeStatus { RESPONDED, FAILED, NOT_TESTABLE, SKIPPED }
+
+data class FeatureProbeResult(
+    val status: FeatureProbeStatus,
+    val interfaceName: String? = null,
+    val observedValue: String? = null,
+    val detail: String? = null,
+)
+
 data class FeatureHealthItem(
     val featureId: String,
     val title: String,
@@ -47,6 +57,7 @@ data class FeatureHealthItem(
     val backendId: String? = null,
     val missingRequirements: Set<AccessRequirement> = emptySet(),
     val detail: String? = null,
+    val probe: FeatureProbeResult? = null,
 )
 
 data class FeatureHealthSnapshot(
@@ -61,6 +72,9 @@ data class FeatureHealthSnapshot(
     val blockedCount: Int get() = items.count { it.status == FeatureHealthStatus.BLOCKED }
     val brokenCount: Int get() = items.count { it.status == FeatureHealthStatus.BROKEN }
     val unsupportedCount: Int get() = items.count { it.status == FeatureHealthStatus.UNSUPPORTED }
+    val probedCount: Int get() = items.count { it.probe?.status == FeatureProbeStatus.RESPONDED }
+    val probeFailedCount: Int get() = items.count { it.probe?.status == FeatureProbeStatus.FAILED }
+    val manualTestCount: Int get() = items.count { it.probe?.status == FeatureProbeStatus.NOT_TESTABLE }
 }
 
 /**
@@ -81,7 +95,9 @@ class FeatureHealthScanner(
     private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
     private val scanLock = Mutex()
     private val lastRequestAt = AtomicLong(0)
-    private val scanRequests = Channel<Unit>(Channel.CONFLATED)
+    private val scanRequests = Channel<Boolean>(Channel.CONFLATED)
+    private val _verificationProgress = MutableStateFlow<Pair<Int, Int>?>(null)
+    val verificationProgress: StateFlow<Pair<Int, Int>?> = _verificationProgress.asStateFlow()
 
     private val _snapshot = MutableStateFlow<FeatureHealthSnapshot?>(null)
     val snapshot: StateFlow<FeatureHealthSnapshot?> = _snapshot.asStateFlow()
@@ -94,10 +110,10 @@ class FeatureHealthScanner(
 
     init {
         scope.launch {
-            for (request in scanRequests) {
+            for (verifyReadOnly in scanRequests) {
                 _scanning.value = true
                 try {
-                    scan()
+                    scan(verifyReadOnly)
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
@@ -106,6 +122,7 @@ class FeatureHealthScanner(
                     android.util.Log.e("YAutoFeatureHealth", "Feature scan failed", error)
                     _snapshot.value = null // stale permission advice is worse than no advice
                 } finally {
+                    _verificationProgress.value = null
                     _scanning.value = false
                 }
             }
@@ -124,10 +141,15 @@ class FeatureHealthScanner(
         if (!force && now - lastRequestAt.get() < MIN_RESCAN_INTERVAL_MS) return
         lastRequestAt.set(now)
         // A request arriving mid-scan is coalesced and processed afterwards.
-        scanRequests.trySend(Unit)
+        scanRequests.trySend(false)
     }
 
-    suspend fun scan(): FeatureHealthSnapshot = scanLock.withLock {
+    /** Explicit, harmless, read-only checks with a real Android API response. */
+    fun requestReadOnlyVerification() {
+        scanRequests.trySend(true)
+    }
+
+    suspend fun scan(verifyReadOnly: Boolean = false): FeatureHealthSnapshot = scanLock.withLock {
         val started = System.currentTimeMillis()
         val featureList = descriptors()
         val needed = featureList
@@ -139,8 +161,41 @@ class FeatureHealthScanner(
             }
             .toSet()
         val access = accessStatus.refresh(needed, force = true)
-        val items = featureList.map { descriptor -> evaluate(descriptor, access) }
-            .sortedWith(
+        val liveProbe = if (verifyReadOnly) FeatureReadOnlyInterfaceProbe(context) else null
+        val probeCache = mutableMapOf<String, FeatureProbeResult>()
+        if (verifyReadOnly) _verificationProgress.value = 0 to featureList.size
+        val items = featureList.mapIndexed { index, descriptor ->
+            val initial = evaluate(descriptor, access)
+            val result = if (liveProbe == null) initial else {
+                val key = ReadOnlyFeatureProbeCatalog.queryKey(descriptor.id.value, descriptor.kind)
+                val probeResult = when {
+                    initial.status != FeatureHealthStatus.READY ->
+                        FeatureProbeResult(FeatureProbeStatus.SKIPPED)
+                    key == null -> FeatureProbeResult(FeatureProbeStatus.NOT_TESTABLE)
+                    else -> probeCache[key] ?: run {
+                        val checked = try {
+                            kotlinx.coroutines.withTimeoutOrNull(2_000L) {
+                                liveProbe.query(key)
+                            } ?: FeatureProbeResult(
+                                FeatureProbeStatus.FAILED, key, detail = "timeout"
+                            )
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            FeatureProbeResult(
+                                FeatureProbeStatus.FAILED, key,
+                                detail = error.javaClass.simpleName.take(80),
+                            )
+                        }
+                        probeCache[key] = checked
+                        checked
+                    }
+                }
+                initial.copy(probe = probeResult)
+            }
+            if (verifyReadOnly) _verificationProgress.value = (index + 1) to featureList.size
+            result
+        }.sortedWith(
                 compareBy<FeatureHealthItem> {
                     when (it.status) {
                         FeatureHealthStatus.BROKEN -> 0
