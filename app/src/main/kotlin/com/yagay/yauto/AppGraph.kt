@@ -52,6 +52,8 @@ class AppGraph(context: Context) {
         }
     }
 
+    suspend fun recentExecutionRecords(limit: Int = 300) = persistentTracer.readRecent(limit)
+
     suspend fun clearExecutionLogs() {
         persistentTracer.clear()
         traceStore.clear()

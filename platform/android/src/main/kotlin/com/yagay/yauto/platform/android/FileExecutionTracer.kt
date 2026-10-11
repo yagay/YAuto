@@ -56,6 +56,29 @@ class FileExecutionTracer(
         file.renameTo(old)
     }
 
+    /**
+     * Read a bounded tail of persisted trace events, including after process restarts.
+     * Flushes any buffered writes under the same lock so the list is consistent.
+     */
+    suspend fun readRecent(limit: Int = 300): List<TraceEvent> = withContext(Dispatchers.IO) {
+        lock.withLock {
+            writer?.flush()
+            val cap = limit.coerceIn(1, 1_000)
+            val recent = java.util.ArrayDeque<TraceEvent>(cap)
+            for (source in listOf(old, file)) {
+                if (!source.isFile) continue
+                source.forEachLine(Charsets.UTF_8) { line ->
+                    val event = runCatching {
+                        json.decodeFromString(TraceEvent.serializer(), line)
+                    }.getOrNull() ?: return@forEachLine
+                    if (recent.size >= cap) recent.removeFirst()
+                    recent.addLast(event)
+                }
+            }
+            recent.toList()
+        }
+    }
+
     /** Clears both active and rotated logs without racing a concurrent trace append. */
     suspend fun clear() = withContext(Dispatchers.IO) {
         lock.withLock {
