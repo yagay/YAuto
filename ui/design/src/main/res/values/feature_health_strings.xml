@@ -15,7 +15,7 @@
     <string name="feature_health_missing_format">Missing: %1$s</string>
     <string name="feature_health_backend_format">Backend: %1$s</string>
     <string name="feature_health_safe_note">Background scan checks implementation presence, SDK support, permissions and backend connectivity. It never executes side-effect actions.</string>
-    <string name="feature_health_scan_now">Scan now</string>
+    <string name="feature_health_scan_now">Check permissions and readiness only</string>
     <string name="feature_health_auto_scan">Automatic scan</string>
     <string name="feature_health_auto_scan_detail">When enabled, YAuto refreshes feature status in the background whenever the app returns to the foreground. Off by default.</string>
     <string name="feature_health_auto_on_not_scanned">Automatic scan enabled · No result yet</string>
