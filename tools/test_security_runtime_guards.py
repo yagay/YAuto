@@ -15,7 +15,8 @@ class RuntimeIngressSecurityTest(unittest.TestCase):
         self.assertIn("startExternalCommand(", receiver)
         self.assertNotIn("goAsync()", receiver)
         self.assertIn("ACTION_EXTERNAL_COMMAND", service)
-        self.assertIn("RuntimeEventDispatcher(runtime, scope).dispatch(", service)
+        self.assertIn("(runtimeDispatcher ?: RuntimeEventDispatcher(runtime, scope)).dispatch(", service)
+        self.assertIn("runtimeDispatcher = dispatcher", service)
 
     def test_legacy_broadcast_is_authenticated(self):
         receiver = read("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedSystemEventRuntimeBridge.kt")
