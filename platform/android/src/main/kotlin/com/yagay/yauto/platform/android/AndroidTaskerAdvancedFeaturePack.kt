@@ -12,19 +12,27 @@ import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 import java.util.concurrent.Callable
-import java.util.concurrent.Executors
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.CancellationException
 
 class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
     override val id: String = "android.tasker.advanced"
     private val context = context.applicationContext
     private val plugins = LocalePluginHost(this.context)
     private val javaFunctions = TaskerJavaFunctionExecutor(this.context)
-    private val scriptExecutor = Executors.newCachedThreadPool { runnable ->
-        Thread(runnable, "YAuto-Script").apply { isDaemon = true }
-    }
+    // Scripts can block or ignore interruption. Never let an unlimited
+    // number of retries create unbounded interpreter threads.
+    private val scriptExecutor = ThreadPoolExecutor(
+        1, 4, 30L, TimeUnit.SECONDS,
+        ArrayBlockingQueue<Runnable>(16),
+        { runnable -> Thread(runnable, "YAuto-Script").apply { isDaemon = true } },
+        ThreadPoolExecutor.AbortPolicy(),
+    )
 
     override fun install(registry: FeatureRegistry) {
         registerBeanShell(registry)
@@ -60,7 +68,8 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
             val timeout = (feature.config["timeoutMs"].numberOrNull() ?: 5_000.0)
                 .toLong().coerceIn(100L, 60_000L)
             val variables = ctx.variables.snapshot()
-            val future = scriptExecutor.submit(Callable {
+            val future = try {
+                scriptExecutor.submit(Callable {
                 val interpreter = Interpreter()
                 interpreter.set("context", context)
                 interpreter.set("yautoContext", context)
@@ -92,20 +101,26 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
                     }
                 }
                 value
-            })
-            val result = runCatching {
-                withContext(Dispatchers.IO) { future.get(timeout, TimeUnit.MILLISECONDS) }
-            }.onFailure { future.cancel(true) }
-            if (result.isFailure) {
+                })
+            } catch (_: RejectedExecutionException) {
                 return@registerAction ActionExecutionResult(
-                    false,
-                    message = userText(
-                        "feature.operation_failed",
-                        result.exceptionOrNull()?.message ?: "BeanShell",
+                    false, message = userText("feature.operation_failed", "BeanShell busy"),
+                )
+            }
+            val value = try {
+                runInterruptible(Dispatchers.IO) { future.get(timeout, TimeUnit.MILLISECONDS) }
+            } catch (cancelled: CancellationException) {
+                future.cancel(true)
+                throw cancelled
+            } catch (error: Exception) {
+                future.cancel(true)
+                return@registerAction ActionExecutionResult(
+                    false, message = userText(
+                        "feature.operation_failed", error.message ?: "BeanShell",
                     ),
                 )
             }
-            val output = javaToConfig(result.getOrNull())
+            val output = javaToConfig(value)
             feature.config.string("resultVariable").trim().takeIf(String::isNotBlank)?.let {
                 ctx.variables.set(it, output)
             }

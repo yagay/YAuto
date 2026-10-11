@@ -12,6 +12,14 @@ class SharedRuntimeSafetyTest(unittest.TestCase):
         self.assertNotIn('bufferedReader().use { it.readText() }',s)
         self.assertNotIn('process.waitFor(timeoutMs',s)
 
+    def test_interpreter_pool_is_bounded_and_cancellable(self):
+        s=read("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidTaskerAdvancedFeaturePack.kt")
+        self.assertIn("ThreadPoolExecutor(",s)
+        self.assertIn("ArrayBlockingQueue<Runnable>(16)",s)
+        self.assertIn("runInterruptible(Dispatchers.IO)",s)
+        self.assertIn("catch (cancelled: CancellationException)",s)
+        self.assertNotIn("Executors.newCachedThreadPool",s)
+
     def test_diagnostics_never_consume_cancellation(self):
         s=read("core/diagnostics/src/main/kotlin/com/yagay/yauto/core/diagnostics/Diagnostics.kt")
         self.assertGreaterEqual(s.count('catch (cancelled: CancellationException) { throw cancelled }'),2)
