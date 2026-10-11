@@ -37,12 +37,22 @@ def sources(folder: Path):
 SOURCE_COMPONENTS = ("app", "core", "feature", "importer", "platform", "ui", "plugin")
 BACKEND_PIN = re.compile(r'preferredBackendId\s*=\s*"(lsposed|root|shizuku|accessibility)"')
 DIRECT_PRIVILEGE = re.compile(r'\b(?:RootShell|ShizukuBackend|XposedBackend|AccessibilityRuntimeBridge)\b')
+# These are review hotspots, not permission bypasses. Some operations genuinely
+# require Accessibility's UI tree or a public Android permission.
+POTENTIAL_ALTERNATIVE_SOURCES = {
+    "settings_write": re.compile(r"\bSettings\.(?:System|Secure|Global)\.(?:putInt|putString|putLong|canWrite)\b"),
+    "direct_accessibility_runtime": re.compile(r"\b(?:YAutoAccessibilityService\.current|AccessibilityRuntimeBridge)\b"),
+    "package_visibility": re.compile(r"\b(?:queryIntentServices|queryIntentActivities|queryBroadcastReceivers)\b"),
+    "direct_shell_invocation": re.compile(r"\b(?:rootShell\.run|shell\.run|RootShell)\b"),
+}
+
 
 
 def full_project_routing_inventory() -> dict:
     counts = {}
     explicit_pins = []
     direct_privilege_references = []
+    possible_alternative_routes = {kind: [] for kind in POTENTIAL_ALTERNATIVE_SOURCES}
     for folder_name in SOURCE_COMPONENTS:
         folder = ROOT / folder_name
         files = sorted(folder.rglob("*.kt")) if folder.exists() else []
@@ -55,11 +65,15 @@ def full_project_routing_inventory() -> dict:
                 explicit_pins.append({"path": relative, "backends": matches})
             if DIRECT_PRIVILEGE.search(source):
                 direct_privilege_references.append(relative)
+            for kind, matcher in POTENTIAL_ALTERNATIVE_SOURCES.items():
+                if matcher.search(source):
+                    possible_alternative_routes[kind].append(relative)
     return {
         "kotlin_files_scanned": sum(counts.values()),
         "files_by_component": counts,
         "literal_backend_pins": explicit_pins,
         "direct_privilege_reference_files": direct_privilege_references,
+        "potential_alternative_routes": possible_alternative_routes,
         "limitations": "Source references are review leads; operation-level runtime checks and OEM testing remain required",
     }
 
