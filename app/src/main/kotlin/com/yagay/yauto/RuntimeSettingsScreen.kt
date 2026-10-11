@@ -37,7 +37,7 @@ import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.launch
 
 private enum class RuntimeSettingsPage {
-    OVERVIEW, PERMISSIONS, BACKENDS, RUNTIME, EDITOR, LOGGING, ENGINE, LIBRARIES, APPEARANCE, RECORDS, AUDIO_RECORDS, GESTURES, DANMU, HEALTH
+    OVERVIEW, PERMISSIONS, BACKENDS, RUNTIME, EDITOR, LOGGING, ENGINE, LIBRARIES, APPEARANCE, RECORDS, AUDIO_RECORDS, GESTURES, DANMU, WEBDAV, WORKDAY, HEALTH
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -147,6 +147,8 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                             RuntimeSettingsPage.AUDIO_RECORDS -> stringResource(TextR.string.sx_audio_records)
                             RuntimeSettingsPage.GESTURES -> stringResource(TextR.string.sx_gesture_library)
                             RuntimeSettingsPage.DANMU -> stringResource(TextR.string.sx_danmu)
+                            RuntimeSettingsPage.WEBDAV -> stringResource(TextR.string.sx_webdav)
+                            RuntimeSettingsPage.WORKDAY -> stringResource(TextR.string.sx_workday)
                             RuntimeSettingsPage.HEALTH -> stringResource(TextR.string.runtime_settings_title_health)
                         }
                     )
@@ -277,6 +279,22 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.sx_danmu_hint),
                         MacroPalette.Utility,
                         onClick = { navigateTo(RuntimeSettingsPage.DANMU) },
+                    )
+                }
+                item {
+                    MacroItemRow(
+                        stringResource(TextR.string.sx_webdav),
+                        stringResource(TextR.string.sx_webdav_hint),
+                        MacroPalette.Utility,
+                        onClick = { navigateTo(RuntimeSettingsPage.WEBDAV) },
+                    )
+                }
+                item {
+                    MacroItemRow(
+                        stringResource(TextR.string.sx_workday),
+                        stringResource(TextR.string.sx_workday_hint),
+                        MacroPalette.State,
+                        onClick = { navigateTo(RuntimeSettingsPage.WORKDAY) },
                     )
                 }
                 item {
@@ -505,6 +523,12 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
             }
             RuntimeSettingsPage.DANMU -> Column(Modifier.padding(padding)) {
                 ShortXDanmuSettingsScreen(context, graph)
+            }
+            RuntimeSettingsPage.WEBDAV -> Column(Modifier.padding(padding)) {
+                ShortXWebDavScreen(context, graph)
+            }
+            RuntimeSettingsPage.WORKDAY -> Column(Modifier.padding(padding)) {
+                ShortXWorkdayScreen(context)
             }
             RuntimeSettingsPage.HEALTH -> FeatureHealthScreen(
                 modifier = Modifier.padding(padding),
