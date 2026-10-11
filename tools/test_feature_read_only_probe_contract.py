@@ -71,6 +71,8 @@ class FeatureReadOnlyProbeContractTest(unittest.TestCase):
         names = read("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FeatureTextResources.kt")
         self.assertIn("localizedFeatureTitlesById(context, graph.features.allDescriptors())", settings)
         self.assertIn("localizedTitles[item.featureId] ?: item.title", health)
+        self.assertIn('put("title", localizedTitles[item.featureId] ?: item.title)', health)
+        self.assertIn('put("sourceTitle", item.title)', health)
         self.assertIn('put("localizedTitle", localizedTitles[item.featureId] ?: item.title)', health)
         self.assertIn("normalized in localizedTitles[item.featureId].orEmpty().lowercase()", health)
         self.assertIn("fun localizedFeatureTitlesById(", names)
