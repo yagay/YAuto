@@ -75,12 +75,14 @@ internal class XposedHardwareKeyEventHandler(
         event: KeyEvent,
         methodName: String,
     ) {
-        // Capture only an actual Android key identity. On some OEM input
-        // callback paths KEYCODE_UNKNOWN/scanCode=0 is observed before the
-        // translated KeyEvent arrives at the policy callback. Retiring the
-        // one-shot lease on that empty event permanently loses the real key.
+        // ShortX's policy-stage hook sees translated Android KeyCodes.
+        // An earlier callback can deliver an ACTION_UP with an OEM scanCode
+        // but KEYCODE_UNKNOWN. Never retire the one-shot LSPosed lease on
+        // that provisional event: a later stage may report the same physical
+        // button with the real Android KeyCode (e.g. 780).
+        // Root getevent is the explicit fallback for scan-only OEM buttons.
         if (event.action != KeyEvent.ACTION_UP ||
-            (event.keyCode <= KeyEvent.KEYCODE_UNKNOWN && event.scanCode <= 0)
+            event.keyCode <= KeyEvent.KEYCODE_UNKNOWN
         ) return
         val until = state.hardwareKeyCaptureUntilElapsed.get()
         val nowElapsed = SystemClock.elapsedRealtime()
