@@ -65,6 +65,23 @@ class FeatureReadOnlyProbeContractTest(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, probe)
 
+    def test_health_titles_use_shared_source_aligned_localizer(self):
+        health = read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScreen.kt")
+        settings = read("app/src/main/kotlin/com/yagay/yauto/RuntimeSettingsScreen.kt")
+        names = read("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/FeatureTextResources.kt")
+        self.assertIn("localizedFeatureTitlesById(context, graph.features.allDescriptors())", settings)
+        self.assertIn("localizedTitles[item.featureId] ?: item.title", health)
+        self.assertIn('put("localizedTitle", localizedTitles[item.featureId] ?: item.title)', health)
+        self.assertIn("normalized in localizedTitles[item.featureId].orEmpty().lowercase()", health)
+        self.assertIn("fun localizedFeatureTitlesById(", names)
+        order = [
+            'resource("macro_feature_${resourceKey(descriptor.id.value)}_title")',
+            'resource("shortx_feature_${resourceKey(descriptor.id.value)}_title")',
+            'resource("feature_${resourceKey(descriptor.id.value)}_title")',
+            'sourceAlignedFeatureTitle(descriptor.id.value)',
+        ]
+        self.assertEqual(sorted(order, key=names.index), order)
+
     def test_interface_evidence_is_exportable_and_not_mislabeled_as_actual_trigger(self):
         screen = read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScreen.kt")
         self.assertIn('put("schemaVersion", 2)', screen)
