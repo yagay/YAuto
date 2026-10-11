@@ -13,6 +13,7 @@ import com.yagay.yauto.core.runtime.EmergencyPowerKeyDetector
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import com.yagay.yauto.ui.design.R as TextR
 
 /** Emergency state survives process death; only explicit user recovery clears it. */
 internal object RuntimeEmergencyState {
@@ -53,7 +54,7 @@ internal class RuntimeSafetyController(
             // Paused synchronously, before the queued dispatcher can run again.
             scope.launch { graph.runtime.setRuntimeEnabled(AutomationEnableMode.DISABLE) }
             main.post {
-                Toast.makeText(context, "YAuto: emergency stop — rules disabled", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, context.getString(TextR.string.sx_emergency_triggered), Toast.LENGTH_LONG).show()
             }
         }
         if (RuntimeSettingsPreferences.keyEventPrompt(context) && action == "up" &&
@@ -62,7 +63,9 @@ internal class RuntimeSafetyController(
             lastPromptAt = now
             val scan = event.payload["scanCode"].numberOrNull()?.toInt() ?: 0
             main.post {
-                Toast.makeText(context, "KeyCode: $code   ScanCode: $scan   ${event.source}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context,
+                    context.getString(TextR.string.sx_key_event_format, code, scan, event.source),
+                    Toast.LENGTH_SHORT).show()
             }
         }
     }

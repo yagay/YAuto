@@ -31,4 +31,6 @@
     <string name="sx_error">Invalid entry or executable path</string>
     <string name="sx_latched">Emergency stop is active. Enable Rule feature to resume.</string>
     <string name="sx_shizuku_root_blocked">Root is available. Shizuku is disabled by the privileged routing policy; no authorization is needed.</string>
+    <string name="sx_emergency_triggered">YAuto emergency stop: all rules disabled</string>
+    <string name="sx_key_event_format">KeyCode: %1$d   ScanCode: %2$d   %3$s</string>
 </resources>

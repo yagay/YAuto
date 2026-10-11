@@ -31,4 +31,6 @@
     <string name="sx_error">条目或 su 路径不符合要求</string>
     <string name="sx_latched">紧急停止仍处于启用状态。重新打开规则总开关即可恢复。</string>
     <string name="sx_shizuku_root_blocked">Root 已可用，根据特权执行策略禁用 Shizuku，不需要再申请 Shizuku 授权。</string>
+    <string name="sx_emergency_triggered">YAuto 已紧急停止：全部自动化规则已关闭</string>
+    <string name="sx_key_event_format">按键码：%1$d   扫描码：%2$d   来源：%3$s</string>
 </resources>
