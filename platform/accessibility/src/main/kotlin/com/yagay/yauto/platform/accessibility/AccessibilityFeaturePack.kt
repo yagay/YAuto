@@ -26,7 +26,8 @@ class AccessibilityFeaturePack(
     private fun registerUiIdleAction(registry: FeatureRegistry) {
         registry.registerAction(
             FeatureDescriptor(
-                id = FeatureId("accessibility.ui.wait_for_idle"),
+                // Retain historical ID so saved rules and source imports are compatible.
+                id = FeatureId("android.ui.wait_for_idle"),
                 kind = FeatureKind.ACTION,
                 title = "Wait for UI to become idle",
                 description = "Wait until the foreground app stops sending Accessibility window/content changes for a configured quiet period",
@@ -41,6 +42,7 @@ class AccessibilityFeaturePack(
                 accessRequirements = setOf(AccessRequirement.ACCESSIBILITY),
                 keywords = setOf("wait for idle", "ui stable", "accessibility", "shortx", "macrodroid"),
                 ownerPackId = id,
+                aliases = setOf("accessibility.ui.wait_for_idle"),
             )
         ) { feature, _ ->
             val quiet = feature.config["quietMs"].numberOrNull()?.toLong() ?: 600L
