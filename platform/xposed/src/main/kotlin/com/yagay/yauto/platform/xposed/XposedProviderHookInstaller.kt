@@ -1,36 +1,19 @@
 package com.yagay.yauto.platform.xposed
 
-import android.app.Application
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.os.Binder
-import android.os.Build
-import android.os.Bundle
-import android.os.PowerManager
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
-import android.content.ComponentName
-import android.os.SystemClock
-import android.util.Log
-import android.view.InputEvent
-import android.view.KeyEvent
-import com.yagay.yauto.core.capability.SystemOperations
-import io.github.libxposed.api.XposedModule
-import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
-import io.github.libxposed.api.XposedModuleInterface.SystemServerStartingParam
 import java.lang.reflect.Method
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 
-/** Installs NFC, media, SMS and application input provider hooks. */
-abstract class XposedProviderInstallers : XposedModule() {
-    internal val sharedState = XposedInstallationState()
-    protected val installedHooks get() = sharedState.installedHooks
-    protected fun installShortXNfcHooks(context: Context, classLoader: ClassLoader) {
+/**
+ * Concrete NFC, MediaProvider, TelephonyProvider and InputConnection Hook installers.
+ * The owning Xposed module supplies the actual intercept operation; no inheritance
+ * from the module or other installer families is needed here.
+ */
+internal class XposedProviderHookInstaller(
+    private val installedHooks: MutableSet<String>,
+    private val intercept: (Method, (List<Any?>, () -> Any?) -> Any?) -> Unit,
+    private val reportFailure: (String, Throwable) -> Unit,
+) {
+    fun installShortXNfcHooks(context: Context, classLoader: ClassLoader) {
         val clazz = runCatching {
             classLoader.loadClass("com.android.nfc.NfcService\$NfcServiceHandler")
         }.getOrNull() ?: return
@@ -38,8 +21,8 @@ abstract class XposedProviderInstallers : XposedModule() {
             val key = "shortx-nfc|" + method.toGenericString()
             val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                 method.isAccessible = true
-            hook(method).intercept { chain ->
-                val endpoint = chain.args.firstOrNull {
+            intercept(method) { args, proceed ->
+                val endpoint = args.firstOrNull {
                     it?.javaClass?.name?.contains("TagEndpoint") == true
                 }
                 val uid = reflectedValue(endpoint, "uid", "mUid") as? ByteArray
@@ -55,16 +38,16 @@ abstract class XposedProviderInstallers : XposedModule() {
                 )
                 emitPackageRuntimeEvent(context, "android.event.nfc_tag_system", payload)
                 emitPackageRuntimeEvent(context, "android.event.nfc_tag", payload)
-                chain.proceed()
+                proceed()
             }
             }
             installation.exceptionOrNull()?.let { error ->
-                log(android.util.Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+                reportFailure(key, error)
             }
         }
     }
 
-    protected fun installShortXMediaProviderHooks(context: Context, classLoader: ClassLoader) {
+    fun installShortXMediaProviderHooks(context: Context, classLoader: ClassLoader) {
         runCatching { classLoader.loadClass("com.android.providers.media.MediaProvider") }
             .getOrNull()
             ?.declaredMethods
@@ -73,8 +56,8 @@ abstract class XposedProviderInstallers : XposedModule() {
                 val key = "shortx-media-provider-ready|" + method.toGenericString()
                 val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                     method.isAccessible = true
-                hook(method).intercept { chain ->
-                    val result = chain.proceed()
+                intercept(method) { args, proceed ->
+                    val result = proceed()
                     emitPackageRuntimeEvent(
                         context,
                         "android.event.media_provider_ready",
@@ -84,7 +67,7 @@ abstract class XposedProviderInstallers : XposedModule() {
                 }
                 }
                 installation.exceptionOrNull()?.let { error ->
-                    log(android.util.Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+                    reportFailure(key, error)
                 }
             }
 
@@ -106,9 +89,9 @@ abstract class XposedProviderInstallers : XposedModule() {
                     val key = "shortx-media-provider|" + method.toGenericString()
                     val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                         method.isAccessible = true
-                    hook(method).intercept { chain ->
-                        val uri = chain.args.firstOrNull { it is android.net.Uri } as? android.net.Uri
-                        val result = chain.proceed()
+                    intercept(method) { args, proceed ->
+                        val uri = args.firstOrNull { it is android.net.Uri } as? android.net.Uri
+                        val result = proceed()
                         emitPackageRuntimeEvent(
                             context,
                             eventType,
@@ -130,21 +113,21 @@ abstract class XposedProviderInstallers : XposedModule() {
                     }
                     }
                     installation.exceptionOrNull()?.let { error ->
-                        log(android.util.Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+                        reportFailure(key, error)
                     }
                 }
         }
     }
 
-    protected fun installShortXTelephonyProviderHooks(context: Context, classLoader: ClassLoader) {
+    fun installShortXTelephonyProviderHooks(context: Context, classLoader: ClassLoader) {
         val clazz = runCatching { classLoader.loadClass("com.android.providers.telephony.SmsProvider") }.getOrNull()
             ?: return
         clazz.declaredMethods.filter { it.name == "onCreate" }.forEach { method ->
             val key = "shortx-sms-provider-ready|" + method.toGenericString()
             val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                 method.isAccessible = true
-            hook(method).intercept { chain ->
-                val result = chain.proceed()
+            intercept(method) { args, proceed ->
+                val result = proceed()
                 emitPackageRuntimeEvent(
                     context,
                     "android.event.sms_provider_ready",
@@ -154,7 +137,7 @@ abstract class XposedProviderInstallers : XposedModule() {
             }
             }
             installation.exceptionOrNull()?.let { error ->
-                log(android.util.Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+                reportFailure(key, error)
             }
         }
         clazz.declaredMethods
@@ -163,9 +146,9 @@ abstract class XposedProviderInstallers : XposedModule() {
                 val key = "shortx-sms-provider|" + method.toGenericString()
                 val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                     method.isAccessible = true
-                hook(method).intercept { chain ->
-                    val uri = chain.args.firstOrNull { it is android.net.Uri } as? android.net.Uri
-                    val result = chain.proceed()
+                intercept(method) { args, proceed ->
+                    val uri = args.firstOrNull { it is android.net.Uri } as? android.net.Uri
+                    val result = proceed()
                     emitPackageRuntimeEvent(
                         context,
                         "android.event.sms_provider_changed",
@@ -179,20 +162,20 @@ abstract class XposedProviderInstallers : XposedModule() {
                 }
                 }
                 installation.exceptionOrNull()?.let { error ->
-                    log(android.util.Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+                    reportFailure(key, error)
                 }
             }
     }
 
-    protected fun installShortXInputConnectionHook(context: Context, packageName: String, classLoader: ClassLoader) {
+    fun installShortXInputConnectionHook(context: Context, packageName: String, classLoader: ClassLoader) {
         val clazz = runCatching { classLoader.loadClass("android.view.inputmethod.RemoteInputConnectionImpl") }.getOrNull()
             ?: return
         clazz.declaredMethods.filter { it.name == "commitText" }.forEach { method ->
             val key = "shortx-input-connection|" + packageName + "|" + method.toGenericString()
             val installation = XposedHookInstallationGuard.install(installedHooks, key) {
                 method.isAccessible = true
-            hook(method).intercept { chain ->
-                val text = chain.args.firstOrNull { it is CharSequence }?.toString().orEmpty()
+            intercept(method) { args, proceed ->
+                val text = args.firstOrNull { it is CharSequence }?.toString().orEmpty()
                 emitPackageRuntimeEvent(
                     context,
                     "android.event.input_text_committed",
@@ -202,13 +185,12 @@ abstract class XposedProviderInstallers : XposedModule() {
                         "method" to method.name,
                     ),
                 )
-                chain.proceed()
+                proceed()
             }
             }
             installation.exceptionOrNull()?.let { error ->
-                log(android.util.Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+                reportFailure(key, error)
             }
         }
     }
-
 }

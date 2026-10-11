@@ -98,8 +98,24 @@ if not (xposed_dir / "XposedSystemEventInstallers.kt").exists():
     errors.append("XposedSystemEventInstallers must own SystemServer and input event hook installation")
 if not (xposed_dir / "XposedSystemUiInstallers.kt").exists():
     errors.append("XposedSystemUiInstallers must own SystemUI hook families")
-if not (xposed_dir / "XposedProviderInstallers.kt").exists():
-    errors.append("XposedProviderInstallers must own provider and input hooks")
+provider_component = xposed_dir / "XposedProviderHookInstaller.kt"
+if not provider_component.exists():
+    errors.append("XposedProviderHookInstaller must own NFC, media, SMS and input Hook implementation")
+else:
+    provider_text = provider_component.read_text(encoding="utf-8")
+    for hook_name in ("installShortXNfcHooks", "installShortXMediaProviderHooks",
+                      "installShortXTelephonyProviderHooks", "installShortXInputConnectionHook"):
+        if "fun " + hook_name + "(" not in provider_text:
+            errors.append("XposedProviderHookInstaller missing concrete " + hook_name)
+if (xposed_dir / "XposedProviderInstallers.kt").exists():
+    errors.append("Legacy XposedProviderInstallers inheritance layer must be removed")
+systemui_component = xposed_dir / "XposedSystemUiInstallers.kt"
+if systemui_component.exists():
+    systemui_text = systemui_component.read_text(encoding="utf-8")
+    if "abstract class XposedSystemUiInstallers : XposedModule()" not in systemui_text:
+        errors.append("SystemUI installer must directly extend XposedModule, not a Provider installer")
+    if "XposedProviderHookInstaller(" not in systemui_text:
+        errors.append("SystemUI installer must compose the provider Hook installer")
 if not xposed_entry.exists():
     errors.append("YAutoXposedModule must own the process and system lifecycle hooks")
 else:

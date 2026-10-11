@@ -27,7 +27,36 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /** Installs all SystemUI chip, tile and status events in the SystemUI process. */
-abstract class XposedSystemUiInstallers : XposedProviderInstallers() {
+abstract class XposedSystemUiInstallers : XposedModule() {
+    internal val sharedState = XposedInstallationState()
+    protected val installedHooks get() = sharedState.installedHooks
+
+    private val providerHooks by lazy {
+        XposedProviderHookInstaller(
+            installedHooks = installedHooks,
+            intercept = { method, callback ->
+                hook(method).intercept { chain ->
+                    callback(chain.args.toList()) { chain.proceed() }
+                }
+            },
+            reportFailure = { key, error ->
+                log(Log.WARN, "YAuto", "Provider hook unavailable: " + key, error)
+            },
+        )
+    }
+
+    protected fun installShortXNfcHooks(context: Context, classLoader: ClassLoader) =
+        providerHooks.installShortXNfcHooks(context, classLoader)
+
+    protected fun installShortXMediaProviderHooks(context: Context, classLoader: ClassLoader) =
+        providerHooks.installShortXMediaProviderHooks(context, classLoader)
+
+    protected fun installShortXTelephonyProviderHooks(context: Context, classLoader: ClassLoader) =
+        providerHooks.installShortXTelephonyProviderHooks(context, classLoader)
+
+    protected fun installShortXInputConnectionHook(context: Context, packageName: String, classLoader: ClassLoader) =
+        providerHooks.installShortXInputConnectionHook(context, packageName, classLoader)
+
     private val systemUiTileLabels = ConcurrentHashMap<String, String>()
     private val systemUiTileReceiverRegistered = AtomicBoolean(false)
     private val systemUiChipRegistered = AtomicBoolean(false)
