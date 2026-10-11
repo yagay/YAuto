@@ -20,10 +20,10 @@ class SourceModeParityTest(unittest.TestCase):
             self.assertIn(mode, catalog)
         self.assertIn('"SpotifyTrigger" -> "android.event.spotify"', macro)
 
-    def test_area_screenshot_maps_to_native_cropping_backend(self):
+    def test_area_screenshot_suggests_interactive_selection_without_guessing_coordinates(self):
         hint = (ROOT / "importer/shortx/src/main/kotlin/com/yagay/yauto/importer/shortx/EnhancedShortXImporter.kt").read_text()
         native = (ROOT / "platform/accessibility/src/main/kotlin/com/yagay/yauto/platform/accessibility/AccessibilityBackend.kt").read_text()
-        self.assertIn('"AreaScreenshot" -> "accessibility.screenshot.capture"', hint)
+        self.assertIn('"AreaScreenshot" -> "android.screenshot.area_select"', hint)
         self.assertIn("AccessibilityOperations.CAPTURE_SCREENSHOT ->", native)
         self.assertIn("Bitmap.createBitmap(bitmap, left, top, w, h)", native)
         for key in ('"x"', '"y"', '"width"', '"height"'):
