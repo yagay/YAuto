@@ -58,7 +58,7 @@ internal fun AndroidSurfaceFeaturePack.registerSurfaceCore(registry: FeatureRegi
             )
         ) { feature, ctx ->
             val id = feature.config.string("surfaceId").resolveVariables(ctx.variables).trim()
-            ActionExecutionResult(controller.hide(id), message = if (controller.isShown(id)) null else null)
+            ActionExecutionResult(controller.hideConfirmed(id))
         }
 
         registry.registerAction(
@@ -68,7 +68,7 @@ internal fun AndroidSurfaceFeaturePack.registerSurfaceCore(registry: FeatureRegi
                 FeatureCategory.UI_AUTOMATION,
                 keywords = setOf("overlay", "surface", "hide all"), ownerPackId = id,
             )
-        ) { _, _ -> controller.hideAll(); ActionExecutionResult(true) }
+        ) { _, _ -> ActionExecutionResult(controller.hideAllConfirmed()) }
 
 
         registry.registerAction(

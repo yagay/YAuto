@@ -28,7 +28,7 @@ internal class OverlayWindowLifecycle(
         width: Int = WindowManager.LayoutParams.WRAP_CONTENT,
         height: Int = WindowManager.LayoutParams.WRAP_CONTENT,
         touchable: Boolean = true,
-    ) {
+    ): Boolean {
         val flags = (if (focusable) 0 else WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) or
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
             (if (touchable) 0 else WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
@@ -41,7 +41,7 @@ internal class OverlayWindowLifecycle(
             y = (24 * context.resources.displayMetrics.density).toInt()
             if (focusable) softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
-        attach(id, view, params, timeoutMs)
+        return attach(id, view, params, timeoutMs)
     }
 
     fun attach(id: String, view: View, params: WindowManager.LayoutParams, timeoutMs: Long): Boolean {

@@ -63,8 +63,7 @@ class AndroidTaskerSceneFeaturePack(
                 ownerPackId = id,
             )
         ) { feature, ctx ->
-            controller.hide(feature.config.string("sceneId").resolveVariables(ctx.variables).trim())
-            ActionExecutionResult(true)
+            ActionExecutionResult(controller.hideConfirmed(feature.config.string("sceneId").resolveVariables(ctx.variables).trim()))
         }
 
         registry.registerAction(
