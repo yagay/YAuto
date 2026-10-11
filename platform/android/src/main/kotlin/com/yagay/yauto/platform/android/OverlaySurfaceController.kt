@@ -32,6 +32,8 @@ import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -47,7 +49,7 @@ class OverlaySurfaceController(context: Context) {
 
     fun canDraw(): Boolean = Settings.canDrawOverlays(context)
 
-    fun show(
+    suspend fun show(
         id: String,
         title: String,
         text: String,
@@ -55,9 +57,8 @@ class OverlaySurfaceController(context: Context) {
         buttonAction: String,
         gravity: String,
         autoHideMs: Long,
-    ): Boolean {
-        if (!canDraw() || id.isBlank()) return false
-        main.post {
+    ): Boolean = withContext(Dispatchers.Main.immediate) {
+        if (!canDraw() || id.isBlank()) return@withContext false
             windows.remove(id)
             val density = context.resources.displayMetrics.density
             val root = LinearLayout(context).apply {
@@ -111,8 +112,6 @@ class OverlaySurfaceController(context: Context) {
                 y = (24 * density).toInt()
             }
             windows.attach(id, root, params, autoHideMs)
-        }
-        return true
     }
 
 

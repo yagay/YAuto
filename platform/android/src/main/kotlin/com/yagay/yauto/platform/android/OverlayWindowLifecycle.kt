@@ -44,18 +44,20 @@ internal class OverlayWindowLifecycle(
         attach(id, view, params, timeoutMs)
     }
 
-    fun attach(id: String, view: View, params: WindowManager.LayoutParams, timeoutMs: Long) {
+    fun attach(id: String, view: View, params: WindowManager.LayoutParams, timeoutMs: Long): Boolean {
         // A surface ID owns at most one attached View. Remove the previous window
         // before installing its replacement to avoid orphaned WindowManager views.
         if (surfaces.containsKey(id)) remove(id)
-        runCatching {
+        return runCatching {
             manager.addView(view, params)
             surfaces[id] = view
             SurfaceRuntimeBridge.emit(id, "shown")
             schedule(id, view, timeoutMs)
-        }.onFailure { error ->
+            true
+        }.getOrElse { error ->
             releaseOverlayWebViews(view)
             SurfaceRuntimeBridge.emit(id, "show_failed", error.message.orEmpty())
+            false
         }
     }
 
