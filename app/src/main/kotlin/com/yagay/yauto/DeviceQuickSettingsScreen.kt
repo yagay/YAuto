@@ -57,6 +57,7 @@ internal fun DeviceQuickSettingsScreen(graph: AppGraph) {
                     when (snapshot.source) {
                         "lsposed_systemui" -> stringResource(TextR.string.live_picker_tile_source_hook)
                         "root_saved_config" -> stringResource(TextR.string.live_picker_tile_source_root)
+                        "root_service_inventory" -> stringResource(TextR.string.live_picker_tile_source_root_services)
                         else -> stringResource(TextR.string.live_picker_tile_source_installed)
                     },
                     style = MaterialTheme.typography.bodySmall,
