@@ -15,7 +15,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import com.yagay.yauto.ui.editor.localizedFeatureTitlesById
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -582,10 +584,17 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
             RuntimeSettingsPage.DEVICE_TILES -> Column(Modifier.padding(padding)) {
                 DeviceQuickSettingsScreen(graph)
             }
-            RuntimeSettingsPage.HEALTH -> FeatureHealthScreen(
-                modifier = Modifier.padding(padding),
-                scanner = graph.featureHealth,
-            )
+            RuntimeSettingsPage.HEALTH -> {
+                val displayLocale = LocalConfiguration.current.locales[0]?.toLanguageTag().orEmpty()
+                val localizedTitles = remember(graph, context, displayLocale) {
+                    localizedFeatureTitlesById(context, graph.features.allDescriptors())
+                }
+                FeatureHealthScreen(
+                    modifier = Modifier.padding(padding),
+                    scanner = graph.featureHealth,
+                    localizedTitles = localizedTitles,
+                )
+            }
         }
     }
 }
