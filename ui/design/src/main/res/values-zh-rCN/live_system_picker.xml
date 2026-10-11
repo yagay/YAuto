@@ -7,4 +7,5 @@
     <string name="live_picker_tile_inactive">已设置为停用</string>
     <string name="live_picker_tile_unavailable">已设置为不可用</string>
     <string name="live_picker_notification_action">操作 %1$d · %2$s</string>
+    <string name="live_picker_notification_origin">%1$s · %2$s</string>
 </resources>
