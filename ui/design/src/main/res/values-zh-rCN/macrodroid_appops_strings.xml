@@ -4,4 +4,14 @@
     <string name="feature_android_event_app_ops_operation_description">应用的 AppOps 操作开始或结束时触发，可按阶段、应用和操作码过滤。</string>
     <string name="feature_android_app_last_used_launch_title">启动最近使用的应用</string>
     <string name="feature_android_app_last_used_launch_description">通过使用记录启动最近或更早的应用，不等同于实时任务栈切换。</string>
+    <string name="feature_android_event_app_ops_operation_field_phase">操作阶段</string>
+    <string name="feature_android_event_app_ops_operation_field_phase_option_any">任意</string>
+    <string name="feature_android_event_app_ops_operation_field_phase_option_start">开始</string>
+    <string name="feature_android_event_app_ops_operation_field_phase_option_finish">结束</string>
+    <string name="feature_android_event_app_ops_operation_field_package">应用 / 包名</string>
+    <string name="feature_android_event_app_ops_operation_field_op_code">AppOps 操作码</string>
+    <string name="feature_android_app_last_used_launch_field_mode">最近应用位置</string>
+    <string name="feature_android_app_last_used_launch_field_mode_option_latest">最近一个</string>
+    <string name="feature_android_app_last_used_launch_field_mode_option_older">再往前一个</string>
+    <string name="feature_android_app_last_used_launch_field_lookback_hours">回溯小时数</string>
 </resources>
