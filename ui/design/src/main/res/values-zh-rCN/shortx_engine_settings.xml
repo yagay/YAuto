@@ -55,4 +55,20 @@
     <string name="sx_records_export">导出 JSON</string>
     <string name="sx_records_count">%1$d 条记录</string>
     <string name="sx_records_export_error">记录导出失败</string>
+    <string name="sx_audio_records">录音记录</string>
+    <string name="sx_audio_records_hint">浏览、试听、导出和删除 YAuto 现有 Recordings 目录里的麦克风录音。</string>
+    <string name="sx_bytes">%1$d 字节</string>
+    <string name="sx_play">播放</string>
+    <string name="sx_danmu">弹幕</string>
+    <string name="sx_danmu_hint">使用现有 YAuto 悬浮层引擎设置并预览滚动弹幕，需要悬浮窗权限。</string>
+    <string name="sx_danmu_color">文字颜色，例如 #FFFFFF</string>
+    <string name="sx_danmu_size">字号：%1$d sp</string>
+    <string name="sx_danmu_duration">滚动时间：%1$d 秒</string>
+    <string name="sx_preview_danmu">显示弹幕</string>
+    <string name="sx_overlay_required">文字／颜色无效或未获得悬浮窗权限</string>
+    <string name="sx_gesture_library">手势记录</string>
+    <string name="sx_gesture_hint">在 YAuto 全屏悬浮层记录触摸轨迹并保存；录制时会覆盖下面的界面，回放需要无障碍权限。</string>
+    <string name="sx_record_start">开始录制</string>
+    <string name="sx_record_save">停止并保存</string>
+    <string name="sx_gesture_play">回放</string>
 </resources>

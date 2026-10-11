@@ -37,7 +37,7 @@ import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.launch
 
 private enum class RuntimeSettingsPage {
-    OVERVIEW, PERMISSIONS, BACKENDS, RUNTIME, EDITOR, LOGGING, ENGINE, LIBRARIES, APPEARANCE, RECORDS, HEALTH
+    OVERVIEW, PERMISSIONS, BACKENDS, RUNTIME, EDITOR, LOGGING, ENGINE, LIBRARIES, APPEARANCE, RECORDS, AUDIO_RECORDS, GESTURES, DANMU, HEALTH
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -144,6 +144,9 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                             RuntimeSettingsPage.LIBRARIES -> stringResource(TextR.string.sx_libraries)
                             RuntimeSettingsPage.APPEARANCE -> stringResource(TextR.string.sx_appearance)
                             RuntimeSettingsPage.RECORDS -> stringResource(TextR.string.sx_records)
+                            RuntimeSettingsPage.AUDIO_RECORDS -> stringResource(TextR.string.sx_audio_records)
+                            RuntimeSettingsPage.GESTURES -> stringResource(TextR.string.sx_gesture_library)
+                            RuntimeSettingsPage.DANMU -> stringResource(TextR.string.sx_danmu)
                             RuntimeSettingsPage.HEALTH -> stringResource(TextR.string.runtime_settings_title_health)
                         }
                     )
@@ -250,6 +253,30 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.sx_records_hint),
                         MacroPalette.Diagnostics,
                         onClick = { navigateTo(RuntimeSettingsPage.RECORDS) },
+                    )
+                }
+                item {
+                    MacroItemRow(
+                        stringResource(TextR.string.sx_audio_records),
+                        stringResource(TextR.string.sx_audio_records_hint),
+                        MacroPalette.Diagnostics,
+                        onClick = { navigateTo(RuntimeSettingsPage.AUDIO_RECORDS) },
+                    )
+                }
+                item {
+                    MacroItemRow(
+                        stringResource(TextR.string.sx_gesture_library),
+                        stringResource(TextR.string.sx_gesture_hint),
+                        MacroPalette.Action,
+                        onClick = { navigateTo(RuntimeSettingsPage.GESTURES) },
+                    )
+                }
+                item {
+                    MacroItemRow(
+                        stringResource(TextR.string.sx_danmu),
+                        stringResource(TextR.string.sx_danmu_hint),
+                        MacroPalette.Utility,
+                        onClick = { navigateTo(RuntimeSettingsPage.DANMU) },
                     )
                 }
                 item {
@@ -470,6 +497,15 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                 ShortXRecordsScreen(context, graph)
             }
 
+            RuntimeSettingsPage.AUDIO_RECORDS -> Column(Modifier.padding(padding)) {
+                ShortXAudioRecordsScreen(context)
+            }
+            RuntimeSettingsPage.GESTURES -> Column(Modifier.padding(padding)) {
+                ShortXGestureLibraryScreen(context, graph)
+            }
+            RuntimeSettingsPage.DANMU -> Column(Modifier.padding(padding)) {
+                ShortXDanmuSettingsScreen(context, graph)
+            }
             RuntimeSettingsPage.HEALTH -> FeatureHealthScreen(
                 modifier = Modifier.padding(padding),
                 scanner = graph.featureHealth,
