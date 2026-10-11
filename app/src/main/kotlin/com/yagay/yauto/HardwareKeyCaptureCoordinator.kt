@@ -98,7 +98,7 @@ internal object HardwareKeyCaptureSession {
  * Single, short-lived learning session. Arm passive observers together so the
  * FIRST physical key press is not lost while a privileged handshake is pending.
  * This differs from automation execution: no provider sends key actions and
- * only one learned identity wins, with LSPosed > Root > Accessibility priority.
+ * only one learned identity wins: true Android KeyCode first, Linux raw only as fallback.
  * Background Root listeners are paused throughout the learning session.
  */
 internal suspend fun captureHardwareKey(
