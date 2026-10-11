@@ -67,6 +67,28 @@ class XposedEventDeliveryContractTest(unittest.TestCase):
         self.assertIn("No runtime listener handoff has been observed yet", s)
         self.assertIn("Connection, installed Hooks, and broadcast acceptance", s)
 
+    def test_diagnostics_includes_a_real_authenticated_system_server_round_trip(self):
+        protocol = (XPOSED / "SystemBridgeProtocol.kt").read_text(encoding="utf-8")
+        system = (XPOSED / "XposedSystemBridgeRegistration.kt").read_text(encoding="utf-8")
+        bridge = (XPOSED / "XposedSystemEventRuntimeBridge.kt").read_text(encoding="utf-8")
+        backend = (XPOSED / "XposedBackend.kt").read_text(encoding="utf-8")
+
+        self.assertIn('EVENT_DELIVERY_PROBE = "event_delivery.probe"', protocol)
+        self.assertIn('EVENT_DELIVERY_PROBE_TYPE = "yauto.transport.probe"', protocol)
+        self.assertIn("SystemBridgeProtocol.EVENT_DELIVERY_PROBE -> {", system)
+        self.assertIn("XposedEventAuth.publish(token)", system)
+        self.assertIn("broadcastXposedRuntimeEvent(", system)
+        self.assertIn("mapOf(\"nonce\" to nonce)", system)
+        self.assertIn("XposedEventAuth.EXTRA_TOKEN, systemEventAuthToken", backend)
+        self.assertIn("transportProbeMutex.withLock", backend)
+        self.assertIn("XposedSystemEventRuntimeBridge.awaitTransportProbe(nonce", backend)
+        self.assertIn("probeSystemEventDelivery()", backend)
+        self.assertIn("Authenticated system_server event round trip:", backend)
+        self.assertIn("expected.nonce ==", bridge)
+        self.assertIn("transportProbe.compareAndSet(expected, null)", bridge)
+        self.assertIn("XposedEventTransportHealth.onForwarded(type)", bridge)
+        self.assertNotIn('EVENT_DELIVERY_PROBE_TYPE = "android.event.', protocol)
+
     def test_new_sender_uid_checks_require_centralized_auth_review(self):
         sources = list(XPOSED.glob("*.kt"))
         callers = sorted(p.name for p in sources if "getSentFromUid()" in p.read_text(encoding="utf-8"))
