@@ -28,8 +28,7 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
     override fun install(registry: FeatureRegistry) {
         registerQuickSettingsClick(registry)
         registerServiceControl(registry)
-        registerLastUsedApp(registry)
-        registerRecentAppNavigation(registry)
+        registerRecentAppLauncher(registry)
         registerGlobalActions(registry)
         registerInsets(registry)
         registerPackageSets(registry)
@@ -135,108 +134,76 @@ class AndroidShortXParityFeaturePack(context: Context) : FeaturePack {
         }
     }
 
-    private fun registerLastUsedApp(registry: FeatureRegistry) {
+    /**
+     * MacroDroid-style single app-launch action with a mode selector.
+     *
+     * Keep every prior ID as an alias so existing workflows are preserved.
+     * These modes use UsageStats launch history; they are intentionally NOT
+     * advertised as ShortX's genuine ActivityManager recent-task navigation.
+     */
+    private fun registerRecentAppLauncher(registry: FeatureRegistry) {
         registry.registerAction(
             FeatureDescriptor(
                 FeatureId("android.app.last_used.launch"), FeatureKind.ACTION,
-                "Launch last used app",
-                "Launch the most recently used launchable app other than YAuto and the current foreground app",
+                "Launch recently used app",
+                "Launch a selected position from UsageStats app history (not Android's live task stack)",
                 FeatureCategory.APP,
-                fields = listOf(FieldSchema.Number("lookbackHours", "Look back hours", min = 1.0, max = 720.0)),
+                fields = listOf(
+                    FieldSchema.Choice("mode", "Recent app", true, listOf("latest", "older")),
+                    FieldSchema.Number("lookbackHours", "Look back hours", min = 1.0, max = 720.0),
+                ),
                 accessRequirements = setOf(AccessRequirement.USAGE_STATS),
-                keywords = setOf("last app", "previous app", "recent app", "shortx"),
+                keywords = setOf("recent app", "previous app", "next app", "last app", "macrodroid"),
                 ownerPackId = id,
+                aliases = setOf("android.app.previous.launch", "android.app.next.launch"),
+                aliasConfigDefaults = mapOf(
+                    "android.app.previous.launch" to mapOf("mode" to ConfigValue.StringValue("latest")),
+                    "android.app.next.launch" to mapOf("mode" to ConfigValue.StringValue("older")),
+                ),
             )
         ) { feature, _ ->
+            val position = when (feature.config.string("mode", "latest")) {
+                "latest" -> 0
+                "older" -> 1
+                else -> return@registerAction ActionExecutionResult(
+                    false, message = userText("feature.operation_failed", "Unsupported recent-app mode")
+                )
+            }
             val now = System.currentTimeMillis()
-            val lookback = ((feature.config["lookbackHours"].numberOrNull() ?: 24.0).toLong().coerceIn(1L, 720L)) * 3_600_000L
-            val candidates = runCatching {
-                usage.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - lookback, now)
-                    .asSequence()
-                    .filter { it.packageName != context.packageName && it.lastTimeUsed > 0L }
-                    .groupBy { it.packageName }
-                    .mapNotNull { (pkg, stats) ->
-                        val intent = context.packageManager.getLaunchIntentForPackage(pkg) ?: return@mapNotNull null
-                        Triple(pkg, stats.maxOf { it.lastTimeUsed }, intent)
-                    }
-                    .sortedByDescending { it.second }
-                    .toList()
-            }.getOrDefault(emptyList())
-            val target = candidates.firstOrNull() ?: return@registerAction ActionExecutionResult(false)
+            val lookback = ((feature.config["lookbackHours"].numberOrNull() ?: 24.0)
+                .toLong().coerceIn(1L, 720L)) * 3_600_000L
+            val target = recentLaunchableApps(now, lookback).getOrNull(position)
+                ?: return@registerAction ActionExecutionResult(false)
             runCatching {
                 target.third.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 context.startActivity(target.third)
                 ActionExecutionResult(true, ConfigValue.StringValue(target.first))
-            }.getOrElse { ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName)) }
-        }
-    }
-
-    private fun registerRecentAppNavigation(registry: FeatureRegistry) {
-        registerRecentAppAction(
-            registry = registry,
-            featureId = "android.app.previous.launch",
-            title = "Launch previous app",
-            description = "Launch the most recently used launchable app other than YAuto",
-            offset = 0,
-            keywords = setOf("previous app", "last app", "recents", "shortx"),
-        )
-        registerRecentAppAction(
-            registry = registry,
-            featureId = "android.app.next.launch",
-            title = "Launch next recent app",
-            description = "Launch the next older launchable app from recent usage history",
-            offset = 1,
-            keywords = setOf("next app", "recents", "switch app", "shortx"),
-        )
-    }
-
-    private fun registerRecentAppAction(
-        registry: FeatureRegistry,
-        featureId: String,
-        title: String,
-        description: String,
-        offset: Int,
-        keywords: Set<String>,
-    ) {
-        registry.registerAction(
-            FeatureDescriptor(
-                FeatureId(featureId),
-                FeatureKind.ACTION,
-                title,
-                description,
-                FeatureCategory.APP,
-                fields = listOf(FieldSchema.Number("lookbackHours", "Look back hours", min = 1.0, max = 720.0)),
-                accessRequirements = setOf(AccessRequirement.USAGE_STATS),
-                keywords = keywords,
-                ownerPackId = id,
-            )
-        ) { feature, _ ->
-            val now = System.currentTimeMillis()
-            val lookback = ((feature.config["lookbackHours"].numberOrNull() ?: 24.0).toLong().coerceIn(1L, 720L)) * 3_600_000L
-            val candidates = recentLaunchableApps(now, lookback)
-            val target = candidates.getOrNull(offset) ?: return@registerAction ActionExecutionResult(false)
-            runCatching {
-                target.third.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(target.third)
-                ActionExecutionResult(true, ConfigValue.StringValue(target.first))
-            }.getOrElse {
-                ActionExecutionResult(false, message = userText("feature.operation_failed", it.message ?: it.javaClass.simpleName))
+            }.getOrElse { error ->
+                ActionExecutionResult(
+                    false,
+                    message = userText(
+                        "feature.operation_failed",
+                        error.message ?: error.javaClass.simpleName,
+                    ),
+                )
             }
         }
     }
 
-    private fun recentLaunchableApps(now: Long, lookback: Long): List<Triple<String, Long, Intent>> = runCatching {
-        usage.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - lookback, now)
-            .asSequence()
-            .filter { it.packageName != context.packageName && it.lastTimeUsed > 0L }
-            .groupBy { it.packageName }
-            .mapNotNull { (pkg, stats) ->
-                val intent = context.packageManager.getLaunchIntentForPackage(pkg) ?: return@mapNotNull null
-                Triple(pkg, stats.maxOf { it.lastTimeUsed }, intent)
-            }
-            .sortedByDescending { it.second }
-            .toList()
-    }.getOrDefault(emptyList())
+    private fun recentLaunchableApps(now: Long, lookback: Long): List<Triple<String, Long, Intent>> =
+        runCatching {
+            usage.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - lookback, now)
+                .asSequence()
+                .filter { it.packageName != context.packageName && it.lastTimeUsed > 0L }
+                .groupBy { it.packageName }
+                .mapNotNull { (pkg, stats) ->
+                    val intent = context.packageManager.getLaunchIntentForPackage(pkg)
+                        ?: return@mapNotNull null
+                    Triple(pkg, stats.maxOf { it.lastTimeUsed }, intent)
+                }
+                .sortedByDescending { it.second }
+                .toList()
+        }.getOrDefault(emptyList())
 
     private fun registerGlobalActions(registry: FeatureRegistry) {
         registry.registerAction(
