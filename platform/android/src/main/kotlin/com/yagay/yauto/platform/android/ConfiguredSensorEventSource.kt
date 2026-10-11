@@ -57,7 +57,9 @@ class ConfiguredSensorEventSource(
         configurationJob = null
         scope.cancel()
         emitter = null
-        handler?.post { manager.unregisterListener(this@ConfiguredSensorEventSource) }
+        // unregister immediately; a queued handler callback must not revive
+        // subscriptions after stop().
+        runCatching { manager.unregisterListener(this@ConfiguredSensorEventSource) }
         thread.quitSafely()
         lastEmit.clear()
         rulesByType = emptyMap()
@@ -77,6 +79,7 @@ class ConfiguredSensorEventSource(
         if (oldTypes != newTypes) {
             handler?.post {
                 manager.unregisterListener(this@ConfiguredSensorEventSource)
+                if (!started.get()) return@post
                 newTypes.forEach { type ->
                     manager.getDefaultSensor(type)?.let { sensor ->
                         manager.registerListener(this@ConfiguredSensorEventSource, sensor, SensorManager.SENSOR_DELAY_NORMAL, handler)

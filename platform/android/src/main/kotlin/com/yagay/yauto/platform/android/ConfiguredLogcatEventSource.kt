@@ -3,6 +3,7 @@ package com.yagay.yauto.platform.android
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.RuntimeEvent
 import com.yagay.yauto.core.storage.WorkspaceRepository
+import com.yagay.yauto.core.storage.activeActivationEvents
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -33,9 +34,8 @@ class ConfiguredLogcatEventSource(
         refreshJob = scope.launch {
             while (isActive && started.get()) {
                 val needed = runCatching {
-                    workspace.load().automations.any { automation ->
-                        automation.enabled && automation.activation.events.any { it.typeId == "android.event.system_log_entry" }
-                    }
+                    workspace.load().activeActivationEvents()
+                        .any { it.typeId == "android.event.system_log_entry" }
                 }.getOrDefault(false)
                 if (needed && readerJob?.isActive != true) startReader()
                 if (!needed && readerJob != null) stopReader()
@@ -57,7 +57,7 @@ class ConfiguredLogcatEventSource(
                     continue
                 }
                 process = running
-                runCatching {
+                try {
                     BufferedReader(InputStreamReader(running.inputStream)).useLines { lines ->
                         lines.forEach { line ->
                             if (!started.get()) return@forEach
@@ -77,9 +77,14 @@ class ConfiguredLogcatEventSource(
                             )
                         }
                     }
+                } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    // Retry only if this reader session is still active.
+                } finally {
+                    runCatching { running.destroyForcibly() }
+                    if (process === running) process = null
                 }
-                runCatching { running.destroy() }
-                process = null
                 if (isActive && started.get()) delay(1_500L)
             }
         }

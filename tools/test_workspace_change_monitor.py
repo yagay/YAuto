@@ -24,6 +24,16 @@ class WorkspaceMonitoringRegressionTest(unittest.TestCase):
             self.assertIn("watchWorkspaceChanges(workspace,", source)
             self.assertIn("activeActivationEvents()", source)
 
+    def test_other_event_sources_use_active_trigger_contract(self):
+        for name in ("ConfiguredLogcatEventSource.kt", "ConfiguredLocationEventSource.kt", "ConfiguredSensorEventSource.kt"):
+            s = code("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/" + name)
+            self.assertIn("activeActivationEvents()", s)
+        for name in ("ConfiguredLocationEventSource.kt", "ConfiguredSensorEventSource.kt"):
+            s = code("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/" + name)
+            self.assertIn("if (!started.get()) return@post", s)
+        s = code("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/ConfiguredLogcatEventSource.kt")
+        self.assertIn("if (process === running) process = null", s)
+
     def test_interval_changes_restart_existing_job(self):
         source = code("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/ConfiguredIntervalEventSource.kt")
         self.assertIn("rules[key] != running.rule", source)

@@ -18,6 +18,7 @@ import com.yagay.yauto.core.model.long
 import com.yagay.yauto.core.model.numberOrNull
 import com.yagay.yauto.core.model.string
 import com.yagay.yauto.core.storage.WorkspaceRepository
+import com.yagay.yauto.core.storage.activeActivationEvents
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -88,9 +89,7 @@ class ConfiguredLocationEventSource(
 
     private suspend fun refreshRules() {
         val features = runCatching {
-            workspace.load().automations.asSequence()
-                .filter { it.enabled }
-                .flatMap { it.activation.events.asSequence() }
+            workspace.load().activeActivationEvents()
                 .filter { it.typeId == "android.event.location_update" || it.typeId == "android.event.geofence_transition" }
                 .toList()
         }.getOrDefault(emptyList())
@@ -119,7 +118,7 @@ class ConfiguredLocationEventSource(
     private fun reconfigureSubscriptions(rules: List<LocationSubscription>) {
         handler?.post {
             runCatching { manager.removeUpdates(this@ConfiguredLocationEventSource) }
-            if (rules.isEmpty() || !hasLocationPermission()) return@post
+            if (!started.get() || rules.isEmpty() || !hasLocationPermission()) return@post
 
             val minTime = rules.minOfOrNull { it.intervalMs }?.coerceIn(1_000L, 3_600_000L) ?: 30_000L
             val minDistance = rules.minOfOrNull { it.distanceMeters }?.coerceIn(0f, 100_000f) ?: 10f
