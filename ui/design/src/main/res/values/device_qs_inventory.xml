@@ -7,6 +7,7 @@
     <string name="live_picker_tile_unknown_panel">Installed (panel membership unverified)</string>
     <string name="live_picker_tile_source_hook">Source: live SystemUI tile host (LSPosed)</string>
     <string name="live_picker_tile_source_root">Source: Root saved panel configuration (not live state)</string>
+    <string name="live_picker_tile_source_root_services">Source: Root-discovered tile services; panel membership unknown</string>
     <string name="live_picker_tile_source_installed">Source: installed tile services only; panel order unknown</string>
     <string name="live_picker_tile_detail_format">%1$s · %2$s</string>
 </resources>
