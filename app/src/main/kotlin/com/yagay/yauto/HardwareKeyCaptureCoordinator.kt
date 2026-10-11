@@ -62,6 +62,7 @@ import com.yagay.yauto.core.registry.mergeHardwareKeyCaptures
 import com.yagay.yauto.ui.home.HomeScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -93,10 +94,11 @@ internal object HardwareKeyCaptureSession {
 }
 
 /**
- * Learn one Android key from one active observer at a time. An LSPosed handshake
- * proves the system hook is available, not that every OEM key reaches KeyEvent.
- * If a key cannot be observed, use the remaining window for raw Root input and
- * finally Accessibility. Never run three long-lived key learners in parallel.
+ * Single, short-lived learning session. Arm passive observers together so the
+ * FIRST physical key press is not lost while a privileged handshake is pending.
+ * This differs from automation execution: no provider sends key actions and
+ * only one learned identity wins, with LSPosed > Root > Accessibility priority.
+ * Background Root listeners are paused throughout the learning session.
  */
 internal suspend fun captureHardwareKey(
     graph: AppGraph,
@@ -108,102 +110,120 @@ internal suspend fun captureHardwareKey(
             val totalMs = timeoutMs.coerceIn(1_000L, 60_000L)
             val deadline = SystemClock.elapsedRealtime() + totalMs
             fun remainingMs() = (deadline - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
+            val observations = Channel<HardwareKeyCaptureResult>(Channel.UNLIMITED)
 
-            // Install the one-shot waiter BEFORE starting the system-server Hook:
-            // the first release may arrive during the ordered-broadcast handshake.
-            val xposedWaiter = async(start = CoroutineStart.UNDISPATCHED) {
-                XposedSystemEventRuntimeBridge.awaitNextHardwareKey(totalMs)
-            }
-            var xposedStarted = false
-            val xposedResult = try {
-                val started = try {
-                    graph.xposed.beginHardwareKeyCapture(totalMs)
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    false
-                }
-                xposedStarted = started
-                if (started && remainingMs() > 0L) {
-                    // A successful Hook can still miss OEM-only keys. Reserve a
-                    // useful part of the same deadline for the next provider.
-                    withTimeoutOrNull(minOf(remainingMs(), (totalMs / 2).coerceAtLeast(1_000L))) {
-                        xposedWaiter.await()
-                    }
-                } else null
-            } finally {
-                xposedWaiter.cancel()
-            }
-            // Explicitly retire system_server's remaining capture lease before
-            // activating Root or Accessibility. A timed-out local waiter alone
-            // would otherwise leave the one-shot Hook armed.
-            if (xposedStarted && xposedResult == null) {
+            // The getevent and Hook observers are *read-only*, one-shot and
+            // cancellable. Delaying Root until after the LSPosed half-window
+            // caused OEM buttons pressed at the prompt to be lost forever.
+            val rootObserver = launch(Dispatchers.IO) {
                 try {
-                    graph.xposed.endHardwareKeyCapture()
+                    graph.hardwareKeys.captureRawKey(totalMs)?.let { raw ->
+                        if (raw.linuxEvKey > 0) observations.send(raw)
+                    }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (_: Exception) {
-                    // The system capture will still expire at its bounded deadline.
+                    // No Root grant, no usable /dev/input or unsupported ROM.
                 }
             }
-            if (xposedResult != null && xposedResult.action == KeyEvent.ACTION_UP &&
-                (xposedResult.keyCode > 0 || xposedResult.scanCode > 0)
-            ) {
-                return@coroutineScope HardwareKeyCaptureResult(
-                    keyCode = xposedResult.keyCode,
-                    scanCode = xposedResult.scanCode,
-                    deviceId = xposedResult.deviceId,
-                    action = xposedResult.action,
-                    deviceName = xposedResult.deviceName,
-                    deviceDescriptor = xposedResult.deviceDescriptor,
-                    vendorId = xposedResult.vendorId,
-                    productId = xposedResult.productId,
-                    sources = setOf("lsposed"),
-                )
-            }
-
-            // A failed handshake must not consume the entire learning window.
-            // Root getevent is only active during this stage and cancellation
-            // terminates its bounded subprocess through BoundedProcessRunner.
-            val rootBudget = minOf(remainingMs() - 1_000L, (totalMs / 3).coerceAtLeast(1_000L))
-            if (rootBudget >= 1_000L) {
-                val raw = withTimeoutOrNull(rootBudget + 500L) {
-                    graph.hardwareKeys.captureRawKey(rootBudget)
+            val xposedObserver = launch {
+                // Subscribe before the authenticated system_server handshake.
+                val waiter = async(start = CoroutineStart.UNDISPATCHED) {
+                    XposedSystemEventRuntimeBridge.awaitNextHardwareKey(totalMs)
                 }
-                if (raw != null) {
-                    return@coroutineScope if (raw.linuxEvKey > 0 && raw.keyCode <= 0) {
-                        try {
-                            graph.hardwareKeys.enrichRawCapture(raw)
-                        } catch (cancelled: CancellationException) {
-                            throw cancelled
-                        } catch (_: Exception) {
-                            raw
+                var started = false
+                try {
+                    started = graph.xposed.beginHardwareKeyCapture(totalMs)
+                    if (started) {
+                        waiter.await()?.let { snapshot ->
+                            if (snapshot.action == KeyEvent.ACTION_UP &&
+                                (snapshot.keyCode > 0 || snapshot.scanCode > 0)) {
+                                observations.send(HardwareKeyCaptureResult(
+                                    keyCode = snapshot.keyCode,
+                                    scanCode = snapshot.scanCode,
+                                    deviceId = snapshot.deviceId,
+                                    action = snapshot.action,
+                                    deviceName = snapshot.deviceName,
+                                    deviceDescriptor = snapshot.deviceDescriptor,
+                                    vendorId = snapshot.vendorId,
+                                    productId = snapshot.productId,
+                                    sources = setOf("lsposed"),
+                                ))
+                            }
                         }
-                    } else raw
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    // An unavailable Hook must not block Root learning.
+                } finally {
+                    waiter.cancel()
+                    if (started) {
+                        // A locally cancelled observer must not leave the remote
+                        // one-shot capture lease armed in system_server.
+                        withContext(NonCancellable) {
+                            withTimeoutOrNull(1_250L) {
+                                runCatching { graph.xposed.endHardwareKeyCapture() }
+                            }
+                        }
+                    }
                 }
             }
-
-            // Accessibility is the final fallback, not a simultaneous competing
-            // observer. Only ACTION_UP is recorded so gestures have a release.
-            while (remainingMs() > 0L) {
-                val key = AccessibilityRuntimeBridge.awaitNextKey(remainingMs()) ?: break
-                if (key.action == KeyEvent.ACTION_UP &&
-                    (key.keyCode > 0 || key.scanCode > 0)
-                ) {
-                    return@coroutineScope HardwareKeyCaptureResult(
-                        keyCode = key.keyCode,
-                        scanCode = key.scanCode,
-                        deviceId = key.deviceId,
-                        action = key.action,
-                        deviceName = key.deviceName,
-                        deviceDescriptor = key.deviceDescriptor,
-                        vendorId = key.vendorId,
-                        productId = key.productId,
-                        sources = setOf("accessibility"),
-                    )
+            val accessibilityObserver = launch {
+                while (remainingMs() > 0L) {
+                    val key = AccessibilityRuntimeBridge.awaitNextKey(remainingMs()) ?: break
+                    if (key.action == KeyEvent.ACTION_UP && (key.keyCode > 0 || key.scanCode > 0)) {
+                        observations.send(HardwareKeyCaptureResult(
+                            keyCode = key.keyCode,
+                            scanCode = key.scanCode,
+                            deviceId = key.deviceId,
+                            action = key.action,
+                            deviceName = key.deviceName,
+                            deviceDescriptor = key.deviceDescriptor,
+                            vendorId = key.vendorId,
+                            productId = key.productId,
+                            sources = setOf("accessibility"),
+                        ))
+                        break
+                    }
                 }
             }
-            null
+            try {
+                val first = withTimeoutOrNull(remainingMs()) { observations.receive() }
+                    ?: return@coroutineScope null
+                val candidates = mutableListOf(first)
+                // Different observers can report the same release a few frames
+                // apart. Prefer the privileged Android code over a raw-only
+                // scan without waiting through separate 5s/3s learning stages.
+                if ("lsposed" !in first.sources) {
+                    withTimeoutOrNull(minOf(220L, remainingMs())) {
+                        while (true) candidates += observations.receive()
+                    }
+                }
+                val best = candidates.maxWithOrNull(
+                    compareBy<HardwareKeyCaptureResult> {
+                        when {
+                            "lsposed" in it.sources -> 3
+                            "root.input" in it.sources -> 2
+                            else -> 1
+                        }
+                    }.thenBy { if (it.keyCode > 0) 1 else 0 }
+                ) ?: first
+                if (best.linuxEvKey > 0 && best.keyCode <= 0) {
+                    try {
+                        graph.hardwareKeys.enrichRawCapture(best)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        best
+                    }
+                } else best
+            } finally {
+                rootObserver.cancel()
+                xposedObserver.cancel()
+                accessibilityObserver.cancel()
+                observations.cancel()
+            }
         }
     } finally {
         HardwareKeyCaptureSession.end()
