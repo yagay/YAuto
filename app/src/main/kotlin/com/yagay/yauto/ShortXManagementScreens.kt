@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.yagay.yauto.core.registry.AutomationEnableMode
 import com.yagay.yauto.platform.root.RootShell
 import com.yagay.yauto.ui.design.R as TextR
+import com.yagay.yauto.ui.design.YAutoAppearanceSettings
 import kotlinx.coroutines.launch
 
 @Composable
@@ -25,9 +26,24 @@ internal fun ShortXEngineSettingsScreen(context: Context, graph: AppGraph, onLib
     var keyPrompt by remember { mutableStateOf(RuntimeSettingsPreferences.keyEventPrompt(context)) }
     var executable by remember { mutableStateOf(RuntimeSettingsPreferences.suBinary(context)) }
     var feedback by remember { mutableStateOf<String?>(null) }
-    var runtimeEnabled by remember { mutableStateOf(graph.workspace.snapshotOrNull()?.runtimeEnabled ?: true) }
+    var runtimeEnabled by remember {
+        mutableStateOf(!RuntimeEmergencyState.isPaused() &&
+            (graph.workspace.snapshotOrNull()?.runtimeEnabled ?: true))
+    }
+    DisposableEffect(graph.workspace) {
+        val listener = graph.workspace.addListener { data ->
+            scope.launch { runtimeEnabled = data.runtimeEnabled && !RuntimeEmergencyState.isPaused() }
+        }
+        onDispose { listener.close() }
+    }
+    var pointerEnabled by remember { mutableStateOf<Boolean?>(null) }
     val saved = stringResource(TextR.string.sx_saved)
     val failed = stringResource(TextR.string.sx_error)
+
+    LaunchedEffect(Unit) {
+        val status = graph.rootShell.run("settings get system pointer_location", 3_000)
+        pointerEnabled = if (status.exitCode == 0) status.stdout.trim() == "1" else null
+    }
 
     fun notifyService() {
         context.startService(Intent(context, AutomationRuntimeService::class.java)
@@ -119,6 +135,34 @@ internal fun ShortXEngineSettingsScreen(context: Context, graph: AppGraph, onLib
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(TextR.string.sx_systemui_shell), fontWeight = FontWeight.SemiBold)
                     Text(stringResource(TextR.string.sx_systemui_shell_hint), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(TextR.string.sx_pointer_location), fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(TextR.string.sx_pointer_location_hint), style = MaterialTheme.typography.bodySmall)
+                    val label = stringResource(TextR.string.sx_pointer_error)
+                    Switch(
+                        checked = pointerEnabled == true,
+                        enabled = pointerEnabled != null,
+                        onCheckedChange = { desired ->
+                            scope.launch {
+                                if (!graph.rootShell.isAvailable()) {
+                                    feedback = label
+                                } else {
+                                    val output = graph.rootShell.run(
+                                        "settings put system pointer_location " + if (desired) "1" else "0", 5_000
+                                    )
+                                    if (output.exitCode == 0 && !output.timedOut) {
+                                        pointerEnabled = desired
+                                        feedback = saved
+                                    } else feedback = label
+                                }
+                            }
+                        },
+                    )
                 }
             }
         }
@@ -242,5 +286,61 @@ internal fun ShortXLibrarySettingsScreen(context: Context) {
                 Text(stringResource(TextR.string.common_cancel))
             } },
         )
+    }
+}
+
+@Composable
+internal fun ShortXAppearanceSettingsScreen(context: Context) {
+    var mode by remember { mutableStateOf(YAutoAppearanceSettings.mode(context)) }
+    var dynamic by remember { mutableStateOf(YAutoAppearanceSettings.dynamic(context)) }
+    var colorful by remember { mutableStateOf(YAutoAppearanceSettings.colorful(context)) }
+
+    LazyColumn(
+        contentPadding = PaddingValues(12.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp),
+    ) {
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(TextR.string.sx_theme_mode), fontWeight = FontWeight.SemiBold)
+                    listOf(
+                        "system" to TextR.string.sx_theme_system,
+                        "light" to TextR.string.sx_theme_light,
+                        "dark" to TextR.string.sx_theme_dark,
+                    ).forEach { (choice, label) ->
+                        Row {
+                            RadioButton(selected = mode == choice, onClick = {
+                                mode = choice
+                                YAutoAppearanceSettings.setMode(context, choice)
+                            })
+                            TextButton(onClick = {
+                                mode = choice
+                                YAutoAppearanceSettings.setMode(context, choice)
+                            }) { Text(stringResource(label)) }
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            SettingsToggleCard(
+                stringResource(TextR.string.sx_dynamic_color),
+                stringResource(TextR.string.sx_dynamic_color_hint),
+                dynamic,
+            ) {
+                dynamic = it
+                YAutoAppearanceSettings.setDynamic(context, it)
+            }
+        }
+        item {
+            SettingsToggleCard(
+                stringResource(TextR.string.sx_colorful_card),
+                stringResource(TextR.string.sx_colorful_card_hint),
+                colorful,
+            ) {
+                colorful = it
+                YAutoAppearanceSettings.setColorful(context, it)
+            }
+        }
     }
 }

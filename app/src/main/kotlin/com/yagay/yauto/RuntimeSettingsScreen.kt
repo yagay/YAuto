@@ -37,7 +37,7 @@ import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.launch
 
 private enum class RuntimeSettingsPage {
-    OVERVIEW, PERMISSIONS, BACKENDS, RUNTIME, EDITOR, LOGGING, ENGINE, LIBRARIES, HEALTH
+    OVERVIEW, PERMISSIONS, BACKENDS, RUNTIME, EDITOR, LOGGING, ENGINE, LIBRARIES, APPEARANCE, HEALTH
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -142,6 +142,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                             RuntimeSettingsPage.LOGGING -> stringResource(TextR.string.settings_logs_title)
                             RuntimeSettingsPage.ENGINE -> stringResource(TextR.string.runtime_settings_title_engine)
                             RuntimeSettingsPage.LIBRARIES -> stringResource(TextR.string.sx_libraries)
+                            RuntimeSettingsPage.APPEARANCE -> stringResource(TextR.string.sx_appearance)
                             RuntimeSettingsPage.HEALTH -> stringResource(TextR.string.runtime_settings_title_health)
                         }
                     )
@@ -232,6 +233,14 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.sx_library_hint),
                         MacroPalette.Utility,
                         onClick = { navigateTo(RuntimeSettingsPage.LIBRARIES) },
+                    )
+                }
+                item {
+                    MacroItemRow(
+                        stringResource(TextR.string.sx_appearance),
+                        stringResource(TextR.string.sx_appearance_hint),
+                        MacroPalette.State,
+                        onClick = { navigateTo(RuntimeSettingsPage.APPEARANCE) },
                     )
                 }
                 item {
@@ -444,6 +453,9 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
             }
             RuntimeSettingsPage.LIBRARIES -> Column(Modifier.padding(padding)) {
                 ShortXLibrarySettingsScreen(context)
+            }
+            RuntimeSettingsPage.APPEARANCE -> Column(Modifier.padding(padding)) {
+                ShortXAppearanceSettingsScreen(context)
             }
 
             RuntimeSettingsPage.HEALTH -> FeatureHealthScreen(
