@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Process
+import android.util.Log
 import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicReference
 import com.yagay.yauto.core.model.ConfigValue
@@ -45,7 +46,12 @@ object XposedSystemEventRuntimeBridge {
         if (intent.action != SystemBridgeProtocol.SYSTEM_EVENT_ACTION) return
         val type = intent.getStringExtra("type").orEmpty()
         if (type == SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_TYPE) {
-            nextHardwareKey.getAndSet(null)?.complete(
+            val waiter = nextHardwareKey.getAndSet(null)
+            Log.i("YAutoKeyCapture", "LSPosed event dispatched: " +
+                "keyCode=${intent.getIntExtra("keyCode", 0)} " +
+                "scanCode=${intent.getIntExtra("scanCode", 0)} " +
+                "waiterPresent=${waiter != null}")
+            waiter?.complete(
                 XposedHardwareKeySnapshot(
                     keyCode = intent.getIntExtra("keyCode", 0),
                     scanCode = intent.getIntExtra("scanCode", 0),
@@ -93,6 +99,8 @@ class XposedSystemEventReceiver : BroadcastReceiver() {
         if (context == null || intent?.action != SystemBridgeProtocol.SYSTEM_EVENT_ACTION) return
         val source = intent.getStringExtra("bridgeSource").orEmpty()
             .ifBlank { "lsposed.system_server" }
+        val isKeyCapture = intent.getStringExtra("type") ==
+            SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_TYPE
         if (Build.VERSION.SDK_INT >= 34) {
             val uid = getSentFromUid()
             val packages = context.packageManager.getPackagesForUid(uid)?.toList().orEmpty()
@@ -101,14 +109,22 @@ class XposedSystemEventReceiver : BroadcastReceiver() {
                     source = source,
                     claimedPackage = intent.getStringExtra("package").orEmpty(),
                     senderPackages = packages,
-                )) return
+                )) {
+                if (isKeyCapture) Log.w("YAutoKeyCapture", "Rejected LSPosed capture broadcast: " +
+                    "senderUid=$uid source=$source")
+                return
+            }
         } else {
             // Android 12/13 lacks broadcast sender UID; fail closed for unauthenticated
             // package-originated broadcasts and verify a system_server session secret.
             if (source != "lsposed.system_server" ||
                 !XposedEventAuth.acceptLegacy(intent.getStringExtra(XposedEventAuth.EXTRA_TOKEN).orEmpty())
-            ) return
+            ) {
+                if (isKeyCapture) Log.w("YAutoKeyCapture", "Rejected unauthenticated LSPosed key event")
+                return
+            }
         }
+        if (isKeyCapture) Log.i("YAutoKeyCapture", "Authenticated LSPosed capture broadcast received")
         XposedSystemEventRuntimeBridge.dispatch(intent)
     }
 }
