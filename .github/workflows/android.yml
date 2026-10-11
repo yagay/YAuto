@@ -37,6 +37,8 @@ jobs:
 
       - name: MacroDroid and ShortX semantic parity regression
         run: python3 -m unittest discover -s tools -p 'test_source_semantic_parity.py'
+      - name: MacroDroid grouped capabilities and compatibility contract
+        run: python3 -m unittest discover -s tools -p 'test_macrodroid_grouped_capabilities.py'
       - name: MacroDroid terminology audit
         run: python3 tools/audit_macrodroid_catalog.py
       - name: AOSP bilingual terminology tests and audit
