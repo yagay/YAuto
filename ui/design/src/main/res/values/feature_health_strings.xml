@@ -5,10 +5,10 @@
     <string name="runtime_settings_feature_health_subtitle">Background readiness checks for every registered feature</string>
     <string name="feature_health_scanning">Scanning feature readiness…</string>
     <string name="feature_health_not_scanned">No scan result yet</string>
-    <string name="feature_health_summary_format">%1$d total · %2$d ready · %3$d blocked · %4$d broken · %5$d unsupported</string>
+    <string name="feature_health_summary_format">%1$d total · %2$d authorized (untested) · %3$d blocked · %4$d unknown · %5$d broken · %6$d unsupported</string>
     <string name="feature_health_search">Search feature name or ID</string>
     <string name="feature_health_recheck">Scan again</string>
-    <string name="feature_health_ready">Ready</string>
+    <string name="feature_health_ready">Authorized (not tested)</string>
     <string name="feature_health_blocked">Blocked</string>
     <string name="feature_health_broken">Broken</string>
     <string name="feature_health_unsupported">Unsupported</string>

@@ -88,6 +88,7 @@ internal fun FeatureHealthScreen(
                                 snapshot!!.items.size,
                                 snapshot!!.readyCount,
                                 snapshot!!.blockedCount,
+                                snapshot!!.unknownCount,
                                 snapshot!!.brokenCount,
                                 snapshot!!.unsupportedCount,
                             )

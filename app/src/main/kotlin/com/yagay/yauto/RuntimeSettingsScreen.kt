@@ -362,6 +362,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                             snapshot!!.items.size,
                             snapshot!!.readyCount,
                             snapshot!!.blockedCount,
+                            snapshot!!.unknownCount,
                             snapshot!!.brokenCount,
                             snapshot!!.unsupportedCount,
                         )

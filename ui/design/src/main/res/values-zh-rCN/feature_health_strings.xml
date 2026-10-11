@@ -5,10 +5,10 @@
     <string name="runtime_settings_feature_health_subtitle">后台检查每个已注册功能的权限、依赖和后端可用性</string>
     <string name="feature_health_scanning">正在扫描功能可用性…</string>
     <string name="feature_health_not_scanned">尚未生成扫描结果</string>
-    <string name="feature_health_summary_format">共 %1$d 项 · 可用 %2$d · 受阻 %3$d · 异常 %4$d · 不支持 %5$d</string>
+    <string name="feature_health_summary_format">共 %1$d 项 · 已授权未实测 %2$d · 受阻 %3$d · 状态未知 %4$d · 异常 %5$d · 不支持 %6$d</string>
     <string name="feature_health_search">搜索功能名称或 ID</string>
     <string name="feature_health_recheck">重新扫描</string>
-    <string name="feature_health_ready">可用</string>
+    <string name="feature_health_ready">已授权（未实测）</string>
     <string name="feature_health_blocked">受阻</string>
     <string name="feature_health_broken">异常</string>
     <string name="feature_health_unsupported">不支持</string>
