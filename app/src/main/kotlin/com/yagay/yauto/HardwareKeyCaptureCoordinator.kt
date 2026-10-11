@@ -87,11 +87,8 @@ internal object HardwareKeyCaptureSession {
     }
 
     fun end() {
-        try {
-            RootHardwareKeyEventSource.resumeReadersAfterLearning()
-        } finally {
-            active = false
-        }
+        active = false
+        RootHardwareKeyEventSource.resumeReadersAfterLearning()
     }
 }
 

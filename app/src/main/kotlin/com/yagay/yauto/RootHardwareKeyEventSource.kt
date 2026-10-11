@@ -37,7 +37,7 @@ class RootHardwareKeyEventSource(
         if (!started.compareAndSet(false, true)) return
         this.emitter = emitter
         activeReaders.add(this)
-        learningPaused = HardwareKeyCaptureSession.active
+        setLearningPaused(HardwareKeyCaptureSession.active)
         subscription = workspace.addListener(::applyWorkspace)
         workspace.snapshotOrNull()?.let(::applyWorkspace)
     }
