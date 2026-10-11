@@ -59,7 +59,12 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
     var permissionVersion by remember { mutableIntStateOf(0) }
-    var rootPermission by remember { mutableStateOf<Boolean?>(null) }
+    val liveStatus by graph.accessStatus.status.collectAsState()
+    val rootPermission: Boolean? = when (liveStatus[AccessRequirement.ROOT]) {
+        PermissionAvailability.GRANTED -> true
+        PermissionAvailability.NOT_GRANTED -> false
+        else -> null
+    }
     var message by remember { mutableStateOf<String?>(null) }
     val groups = remember { permissionGrantGroups(Build.VERSION.SDK_INT).associateBy { it.id } }
 
@@ -79,13 +84,14 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
         onDispose { lifecycle.removeObserver(observer) }
     }
 
-    // Detect granted Root without requiring manual permission checks for each action.
+    // Refresh the same live status source as settings and feature health.
+    // UNKNOWN is preserved on handshake failure, rather than implying denial.
     LaunchedEffect(graph, permissionVersion) {
-        rootPermission = runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)
+        graph.accessStatus.refresh(force = true)
     }
 
     // Recreate the gateway when a returned Settings screen changes the grants.
-    return remember(context, graph, permissionVersion, rootPermission, message, runtimeLauncher) {
+    return remember(context, graph, permissionVersion, liveStatus, message, runtimeLauncher) {
         object : FeaturePermissionGateway {
             override val feedback: String? get() = message
             override val preferRootWhenAvailable: Boolean
@@ -93,15 +99,11 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
 
             override fun availability(permission: AccessRequirement): PermissionAvailability {
                 val granted: Boolean? = when (permission) {
-                    AccessRequirement.ROOT -> rootPermission
-                    AccessRequirement.SHIZUKU -> when (rootPermission) {
-                        true -> false // Root already granted; Shizuku is deliberately dormant.
-                        null -> null // Never ping Shizuku before the Root probe completes.
-                        false -> runCatching { graph.shizuku.hasPermission() }.getOrDefault(false)
-                    }
-                    AccessRequirement.LSPOSED -> graph.lsposedScopes.state.value.connected &&
-                        graph.lsposedScopes.state.value.currentScope.containsAll(
-                            LsposedScopeManager.FIXED_SCOPES)
+                    AccessRequirement.ROOT,
+                    AccessRequirement.SHIZUKU,
+                    AccessRequirement.LSPOSED,
+                    AccessRequirement.ACCESSIBILITY -> return liveStatus[permission]
+                        ?: PermissionAvailability.UNKNOWN
                     // Zygisk cannot be enabled through an Android permission request.
                     AccessRequirement.ZYGISK -> null
                     AccessRequirement.POST_NOTIFICATIONS -> if (Build.VERSION.SDK_INT < 33) true
@@ -141,7 +143,7 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
                 when (permission) {
                     AccessRequirement.ROOT -> scope.launch {
                         val result = runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)
-                        rootPermission = result
+                        graph.accessStatus.refresh(force = true)
                         inform(context.getString(if (result) TextR.string.backend_root_available
                             else TextR.string.backend_root_unavailable))
                     }
@@ -149,7 +151,7 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
                         // No Shizuku authorization prompts when Root is granted.
                         // Recheck rather than trusting a potentially stale UI snapshot.
                         val hasRoot = runCatching { graph.rootShell.isAvailable() }.getOrDefault(false)
-                        rootPermission = hasRoot
+                        graph.accessStatus.refresh(force = true)
                         if (hasRoot) {
                             inform(context.getString(TextR.string.backend_root_available))
                         } else {
@@ -159,6 +161,7 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
                                         TextR.string.backend_shizuku_ready
                                     else TextR.string.permission_request_denied))
                                     permissionVersion++
+                                    scope.launch { graph.accessStatus.refresh(force = true) }
                                 }
                             }.onFailure { error ->
                                 inform(error.message ?: context.getString(
@@ -178,6 +181,7 @@ internal fun rememberFeaturePermissionGateway(graph: AppGraph): FeaturePermissio
                                     TextR.string.feature_permission_lsposed_hint) },
                             ))
                             permissionVersion++
+                            scope.launch { graph.accessStatus.refresh(force = true) }
                         }
                     }
                     AccessRequirement.ZYGISK ->
