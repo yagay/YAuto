@@ -47,8 +47,9 @@ object XposedHookRuntimeBridge {
             return
         }
         XposedEventTransportHealth.onAccepted("android.event.lsposed_method_called")
-        listener?.invoke(
-            XposedHookEvent(
+        listener?.let { callback ->
+            callback.invoke(
+                XposedHookEvent(
                 sessionId = sessionId,
                 packageName = intent.getStringExtra("package").orEmpty(),
                 className = intent.getStringExtra("className").orEmpty(),
@@ -59,8 +60,10 @@ object XposedHookRuntimeBridge {
                 captured = MethodHookValueSnapshot.allowedKeys.mapNotNull { key ->
                     intent.getStringExtra(key)?.take(256)?.let { key to it }
                 }.toMap(),
+                )
             )
-        )
+            XposedEventTransportHealth.onForwarded("android.event.lsposed_method_called")
+        }
     }
 
     fun toRuntimeEvent(event: XposedHookEvent): RuntimeEvent = RuntimeEvent(
