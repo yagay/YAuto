@@ -97,4 +97,6 @@
     <string name="sx_workday_refresh">Refresh official calendar</string>
     <string name="sx_workday_entries">Saved date overrides: %1$d</string>
     <string name="shortx_workday_title">Workday and statutory holiday</string>
+    <string name="sx_systemui_query">Read-only: id or getprop PROPERTY</string>
+    <string name="sx_systemui_run">Query SystemUI</string>
 </resources>

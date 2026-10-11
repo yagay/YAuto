@@ -39,6 +39,8 @@ internal fun ShortXEngineSettingsScreen(context: Context, graph: AppGraph, onLib
         onDispose { listener.close() }
     }
     var pointerEnabled by remember { mutableStateOf<Boolean?>(null) }
+    var systemUiCommand by remember { mutableStateOf("id") }
+    var systemUiOutput by remember { mutableStateOf<String?>(null) }
     val saved = stringResource(TextR.string.sx_saved)
     val failed = stringResource(TextR.string.sx_error)
 
@@ -137,6 +139,21 @@ internal fun ShortXEngineSettingsScreen(context: Context, graph: AppGraph, onLib
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(TextR.string.sx_systemui_shell), fontWeight = FontWeight.SemiBold)
                     Text(stringResource(TextR.string.sx_systemui_shell_hint), style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        value = systemUiCommand,
+                        onValueChange = { systemUiCommand = it.take(150) },
+                        label = { Text(stringResource(TextR.string.sx_systemui_query)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedButton(onClick = {
+                        scope.launch {
+                            val (success, output) = graph.xposed.querySystemUi(systemUiCommand)
+                            systemUiOutput = output
+                            if (!success) feedback = failed
+                        }
+                    }) { Text(stringResource(TextR.string.sx_systemui_run)) }
+                    systemUiOutput?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 }
             }
         }

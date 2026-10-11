@@ -122,6 +122,7 @@ class AppGraph(context: Context) {
         installCatalog("features.android.catalog") {
             AndroidFeaturePacks.all(appContext, quickSettingsTiles, overlaySurfaces, workspace)
         }
+        installPack("feature:android.shortx.systemui_query") { ShortXSystemUiShellFeaturePack() }
         installPack("feature:android.shortx.workday") { ShortXWorkdayFeaturePack(appContext) }
         installPack("feature:accessibility") {
             AccessibilityFeaturePack {

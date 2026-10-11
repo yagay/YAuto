@@ -97,4 +97,6 @@
     <string name="sx_workday_refresh">更新工作日历</string>
     <string name="sx_workday_entries">已保存特殊日期：%1$d</string>
     <string name="shortx_workday_title">工作日与法定节假日</string>
+    <string name="sx_systemui_query">只读指令：id 或 getprop 属性名</string>
+    <string name="sx_systemui_run">在 SystemUI 中查询</string>
 </resources>
