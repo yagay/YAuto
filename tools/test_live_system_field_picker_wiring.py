@@ -38,6 +38,32 @@ class LiveSystemFieldPickerWiringTest(unittest.TestCase):
         self.assertIn('selectedOption = option', editor)
         self.assertIn('manualEntry = false', editor)
 
+    def test_shared_device_icons_are_async_cached_and_used_by_lists(self):
+        icon = read("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/DeviceEntryIcon.kt")
+        self.assertIn("fun DeviceEntryIcon(", icon)
+        self.assertIn("LruCache<String, ImageBitmap>", icon)
+        self.assertIn("withContext(Dispatchers.IO)", icon)
+        self.assertIn("getServiceInfo(it, PackageManager.GET_META_DATA)", icon)
+        self.assertIn("pm.getApplicationIcon(appPackage)", icon)
+        self.assertIn("DevicePickerIconKind.TILE", icon)
+        editor = read("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/SystemFieldPickers.kt")
+        self.assertIn("leadingContent = {", editor)
+        self.assertIn("option.iconPackage", editor)
+        self.assertIn("option.iconComponent", editor)
+        self.assertIn("DeviceEntryIcon(", editor)
+        self.assertIn("packageName = app.packageName", editor)
+        qs = read("app/src/main/kotlin/com/yagay/yauto/DeviceQuickSettingsScreen.kt")
+        self.assertIn("componentName = tile.component", qs)
+        self.assertIn("DevicePickerIconKind.TILE", qs)
+
+    def test_live_tile_and_notifications_supply_real_icon_origins(self):
+        source = read("app/src/main/kotlin/com/yagay/yauto/LiveAndroidFieldPicker.kt")
+        self.assertIn("iconComponent = entry.component", source)
+        self.assertIn("ComponentName.unflattenFromString(it)?.packageName", source)
+        self.assertIn("iconPackage = notification.packageName", source)
+        self.assertIn("iconPackage = item.packageName", source)
+        self.assertIn("iconPackage = context.packageName", source)
+
     def test_installed_app_fields_offer_picker_before_manual_package(self):
         editor = read("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/SystemFieldPickers.kt")
         installed = editor.split("internal fun InstalledAppField(", 1)[1].split("private fun InstalledAppDialog(", 1)[0]
