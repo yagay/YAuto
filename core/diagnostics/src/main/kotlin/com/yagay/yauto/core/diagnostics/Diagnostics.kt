@@ -2,6 +2,7 @@ package com.yagay.yauto.core.diagnostics
 
 import com.yagay.yauto.core.model.userText
 import kotlinx.coroutines.async
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.Serializable
 
@@ -73,11 +74,17 @@ class DiagnosticCoordinator(
     suspend fun snapshot(context: DiagnosticContext = DiagnosticContext()): DiagnosticSnapshot = coroutineScope {
         val collectors = registry.all()
         val statusDeferred = collectors.map { collector ->
-            async { runCatching { collector.status() }.getOrElse { error -> CollectorStatus(collector.id, false, error.message) } }
+            async {
+                try { collector.status() }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) { CollectorStatus(collector.id, false, error.message) }
+            }
         }
         val recordDeferred = collectors.map { collector ->
             async {
-                runCatching { collector.collect(context) }.getOrElse { error ->
+                try { collector.collect(context) }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) {
                     listOf(
                         DiagnosticRecord(
                             source = DiagnosticSource.YAUTO,

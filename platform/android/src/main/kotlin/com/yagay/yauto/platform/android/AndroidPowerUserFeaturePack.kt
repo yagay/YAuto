@@ -26,11 +26,7 @@ import com.yagay.yauto.core.registry.FeaturePack
 import com.yagay.yauto.core.registry.FeatureRegistry
 import com.yagay.yauto.core.registry.FieldSchema
 import com.yagay.yauto.core.registry.resolveVariables
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
-import java.util.concurrent.TimeUnit
+import com.yagay.yauto.core.diagnostics.BoundedProcessRunner
 
 /** High-value native utilities inspired by mature automation apps without adding compatibility layers. */
 class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
@@ -133,36 +129,29 @@ class AndroidPowerUserFeaturePack(context: Context) : FeaturePack {
         }
     }
 
-    private suspend fun executeLocalShell(command: String, timeoutMs: Long): CapabilityResult =
-        withContext(Dispatchers.IO) {
-            coroutineScope {
-                val process = ProcessBuilder("/system/bin/sh", "-c", command).start()
-                val stdout = async(Dispatchers.IO) { process.inputStream.bufferedReader().use { it.readText() } }
-                val stderr = async(Dispatchers.IO) { process.errorStream.bufferedReader().use { it.readText() } }
-                val finished = process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)
-                if (!finished) process.destroyForcibly()
-                val out = stdout.await()
-                val err = stderr.await()
-                val exitCode = if (finished) process.exitValue() else -1
-                val value = ConfigValue.ObjectValue(
-                    mapOf(
-                        "stdout" to ConfigValue.StringValue(out),
-                        "stderr" to ConfigValue.StringValue(err),
-                        "exitCode" to ConfigValue.NumberValue(exitCode.toDouble()),
-                    )
-                )
-                CapabilityResult(
-                    success = finished && exitCode == 0,
-                    backendId = "app_shell",
-                    value = value,
-                    message = when {
-                        !finished -> userText("capability.timed_out")
-                        err.isNotBlank() -> err
-                        else -> null
-                    },
-                )
-            }
-        }
+    private suspend fun executeLocalShell(command: String, timeoutMs: Long): CapabilityResult {
+        // Use the exact same cancellable, output-bounded subprocess runner as
+        // Root. The previous readText() and waitFor() implementation could
+        // retain processes or indefinitely read child-owned pipes.
+        val out = BoundedProcessRunner.run(listOf("/system/bin/sh", "-c", command), timeoutMs)
+        val value = ConfigValue.ObjectValue(
+            mapOf(
+                "stdout" to ConfigValue.StringValue(out.stdout),
+                "stderr" to ConfigValue.StringValue(out.stderr),
+                "exitCode" to ConfigValue.NumberValue(out.exitCode.toDouble()),
+            )
+        )
+        return CapabilityResult(
+            success = !out.timedOut && out.exitCode == 0,
+            backendId = "app_shell",
+            value = value,
+            message = when {
+                out.timedOut -> userText("capability.timed_out")
+                out.exitCode != 0 -> out.stderr.ifBlank { out.stdout }
+                else -> null
+            },
+        )
+    }
 
     private fun registerVibration(registry: FeatureRegistry) {
         registry.registerAction(

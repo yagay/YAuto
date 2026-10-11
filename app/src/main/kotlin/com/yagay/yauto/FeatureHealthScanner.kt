@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -98,6 +99,12 @@ class FeatureHealthScanner(
                 _scanning.value = true
                 try {
                     scan()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    // A single failed backend probe or provider error must
+                    // not permanently terminate the refresh actor.
+                    android.util.Log.e("YAutoFeatureHealth", "Feature scan failed", error)
                 } finally {
                     _scanning.value = false
                 }
