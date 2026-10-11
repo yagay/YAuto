@@ -72,7 +72,8 @@ class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContrac
     override suspend fun isAvailable(environment: RuntimeEnvironment) = hasPermission()
     override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) =
         request.capability == CapabilityIds.PRIVILEGED_SHELL ||
-            (request.capability == CapabilityIds.SYSTEM_UI && SystemOperations.shellCommand(request.operationId) != null)
+            (request.capability == CapabilityIds.SYSTEM_UI && SystemOperations.shellCommand(request.operationId) != null) ||
+            (request.capability == CapabilityIds.ACCESSIBILITY && ShellAccessibilityOperations.command(request) != null)
 
     private suspend fun connect(): IShizukuShell = connectionLock.withLock {
         service?.takeIf { it.asBinder().pingBinder() } ?: withContext(Dispatchers.Main.immediate) {
@@ -87,7 +88,11 @@ class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContrac
     }
 
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
-        val command = if (request.capability == CapabilityIds.SYSTEM_UI) SystemOperations.shellCommand(request.operationId).orEmpty() else request.payload.string("command")
+        val command = when (request.capability) {
+            CapabilityIds.SYSTEM_UI -> SystemOperations.shellCommand(request.operationId).orEmpty()
+            CapabilityIds.ACCESSIBILITY -> ShellAccessibilityOperations.command(request).orEmpty()
+            else -> request.payload.string("command")
+        }
         if (command.isBlank()) return CapabilityResult(false, message = userText("capability.shell_empty"))
         val binder = connect()
         val requestId = UUID.randomUUID().toString()
@@ -104,8 +109,10 @@ class ShizukuBackend(context: Context) : CapabilityBackend, ShizukuBridgeContrac
                 call.cancel()
             }
         }
-        return CapabilityResult(output.getInt("exitCode", -1) == 0 && !output.getBoolean("timedOut"), id,
-            ConfigValue.ObjectValue(mapOf("stdout" to ConfigValue.StringValue(output.getString("stdout").orEmpty()),
+        val success = output.getInt("exitCode", -1) == 0 && !output.getBoolean("timedOut")
+        return CapabilityResult(success, id,
+            if (request.capability == CapabilityIds.ACCESSIBILITY) ConfigValue.BooleanValue(success)
+            else ConfigValue.ObjectValue(mapOf("stdout" to ConfigValue.StringValue(output.getString("stdout").orEmpty()),
                 "stderr" to ConfigValue.StringValue(output.getString("stderr").orEmpty()), "exitCode" to ConfigValue.NumberValue(output.getInt("exitCode", -1).toDouble()))),
             if (output.getBoolean("timedOut")) userText("capability.timed_out") else output.getString("stderr")?.takeIf { it.isNotBlank() })
     }
