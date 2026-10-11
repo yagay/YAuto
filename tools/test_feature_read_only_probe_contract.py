@@ -22,13 +22,15 @@ class FeatureReadOnlyProbeContractTest(unittest.TestCase):
     def test_scan_requires_manual_invocation_not_automatic_action_execution(self):
         code = read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScanner.kt")
         self.assertIn("fun requestReadOnlyVerification()", code)
-        self.assertIn("scanRequests.trySend(true)", code)
-        self.assertIn("scanRequests.trySend(false)", code)
+        self.assertIn("scanRequests.trySend(ScanRequest(readOnly = true))", code)
+        self.assertIn("scanRequests.trySend(ScanRequest(readOnly = false))", code)
         self.assertIn("FeatureProbeStatus.NOT_TESTABLE", code)
         self.assertIn("FeatureProbeStatus.SKIPPED", code)
         self.assertIn("withTimeoutOrNull(2_000L)", code)
         self.assertIn("probeCache[key] = checked", code)
         self.assertIn("FeatureProbeStatus.RESPONDED", code)
+        self.assertIn("fun requestFeatureVerification(featureId: String)", code)
+        self.assertIn("singleId", code)
 
     def test_interface_evidence_is_exportable_and_not_mislabeled_as_actual_trigger(self):
         screen = read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScreen.kt")
@@ -37,6 +39,8 @@ class FeatureReadOnlyProbeContractTest(unittest.TestCase):
         self.assertIn('put("probeInterface", item.probe?.interfaceName)', screen)
         self.assertIn('put("probeObservedValue", item.probe?.observedValue)', screen)
         self.assertIn('TextR.string.feature_health_probe_read_only', screen)
+        self.assertIn('TextR.string.feature_health_probe_one', screen)
+        self.assertIn('scanner.requestFeatureVerification(item.featureId)', screen)
         assert "FeatureHealthItem" in read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScanner.kt")
 
 if __name__ == "__main__":
