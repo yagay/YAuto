@@ -38,6 +38,15 @@ class LiveSystemFieldPickerWiringTest(unittest.TestCase):
         self.assertIn('selectedOption = option', editor)
         self.assertIn('manualEntry = false', editor)
 
+    def test_installed_app_fields_offer_picker_before_manual_package(self):
+        editor = read("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/SystemFieldPickers.kt")
+        installed = editor.split("internal fun InstalledAppField(", 1)[1].split("private fun InstalledAppDialog(", 1)[0]
+        self.assertIn("var manualEntry by remember(descriptorId, field.key)", installed)
+        self.assertIn("if (manualEntry)", installed)
+        self.assertIn("TextR.string.live_picker_enter_manually", installed)
+        self.assertIn("TextR.string.feature_picker_select_installed_app", installed)
+        self.assertIn("TextR.string.live_picker_choose_from_device", installed)
+
     def test_quick_settings_click_uses_live_device_selector(self):
         source = read("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidShortXParityFeaturePack.kt")
         self.assertIn('FeatureId("android.qs_tile.click")', source)
