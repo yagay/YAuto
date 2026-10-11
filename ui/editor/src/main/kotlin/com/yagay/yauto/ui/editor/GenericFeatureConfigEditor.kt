@@ -399,7 +399,13 @@ private fun FieldEditor(
                 }
             }
         }
-        field is FieldSchema.AppPicker -> InstalledAppField(descriptorId, field, value, enabled, onValue)
+        field is FieldSchema.AppPicker -> {
+            if (descriptorId.contains("notification", ignoreCase = true)) {
+                NotificationAppField(descriptorId, field, value, enabled, onValue)
+            } else {
+                InstalledAppField(descriptorId, field, value, enabled, onValue)
+            }
+        }
         picker != null -> PickerBackedField(
             descriptorId = descriptorId,
             field = field,

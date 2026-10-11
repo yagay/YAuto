@@ -10,4 +10,5 @@
     <string name="live_picker_notification_origin">%1$s · %2$s</string>
     <string name="live_picker_refresh">重新读取可用选项</string>
     <string name="live_picker_notification_history_origin">已捕获的历史记录 · %1$s · %2$s</string>
+    <string name="live_picker_notification_apps">从已观察到的通知应用中选择</string>
 </resources>

@@ -412,6 +412,46 @@ private fun SystemValuePickerDialog(
     }
 }
 
+/**
+ * The installed-app chooser is always available, even with no notification
+ * access. A second chooser narrows to apps that actually posted an observable
+ * notification, so users need not guess package identifiers.
+ */
+@Composable
+internal fun NotificationAppField(
+    descriptorId: String,
+    field: FieldSchema.AppPicker,
+    value: String,
+    enabled: Boolean,
+    onValue: (String) -> Unit,
+) {
+    var showRecent by remember(descriptorId, field.key) { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        InstalledAppField(descriptorId, field, value, enabled, onValue)
+        OutlinedButton(
+            onClick = { showRecent = true },
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(TextR.string.live_picker_notification_apps))
+        }
+    }
+    if (showRecent) {
+        SystemValuePickerDialog(
+            picker = FieldPickerSource.LiveSystem,
+            descriptorId = descriptorId,
+            fieldKey = "package",
+            allValues = emptyMap(),
+            current = value,
+            onDismiss = { showRecent = false },
+            onPick = {
+                onValue(it.value)
+                showRecent = false
+            },
+        )
+    }
+}
+
 @Composable
 internal fun InstalledAppField(
     descriptorId: String,
