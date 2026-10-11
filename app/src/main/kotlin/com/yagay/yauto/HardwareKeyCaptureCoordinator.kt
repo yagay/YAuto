@@ -1,6 +1,7 @@
 package com.yagay.yauto
 
 import android.os.SystemClock
+import android.util.Log
 import android.view.KeyEvent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -106,6 +107,7 @@ internal suspend fun captureHardwareKey(
     timeoutMs: Long,
 ): HardwareKeyCaptureResult? = HardwareKeyCaptureSession.mutex.withLock {
     HardwareKeyCaptureSession.begin()
+    Log.i("YAutoKeyCapture", "Manual key learning started; Android KeyCode preferred")
     try {
         coroutineScope {
             val totalMs = timeoutMs.coerceIn(1_000L, 60_000L)
@@ -135,6 +137,7 @@ internal suspend fun captureHardwareKey(
                 var started = false
                 try {
                     started = graph.xposed.beginHardwareKeyCapture(totalMs)
+                    if (!started) Log.w("YAutoKeyCapture", "LSPosed key learner unavailable; Root fallback only")
                     if (started) {
                         waiter.await()?.let { snapshot ->
                             if (snapshot.action == KeyEvent.ACTION_UP &&
@@ -155,8 +158,9 @@ internal suspend fun captureHardwareKey(
                     }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
-                } catch (_: Exception) {
+                } catch (error: Exception) {
                     // An unavailable Hook must not block Root learning.
+                    Log.w("YAutoKeyCapture", "LSPosed key learner failed: ${error.message}")
                 } finally {
                     waiter.cancel()
                     if (started) {
@@ -210,7 +214,12 @@ internal suspend fun captureHardwareKey(
                 // A key-layout guess is not an observed Android KeyEvent.
                 // Preserve the genuine Linux EV_KEY as fallback rather than
                 // labeling an ambiguous guessed mapping as Android KeyCode.
-                candidates.maxByOrNull(::hardwareKeyCapturePriority) ?: first
+                (candidates.maxByOrNull(::hardwareKeyCapturePriority) ?: first).also { chosen ->
+                    Log.i("YAutoKeyCapture", "Capture selected: " +
+                        "keyCode=${chosen.keyCode} scanCode=${chosen.scanCode} " +
+                        "linuxEvKey=${chosen.linuxEvKey} sources=${chosen.sources} " +
+                        "observerCount=${candidates.size}")
+                }
             } finally {
                 rootObserver.cancel()
                 xposedObserver.cancel()
