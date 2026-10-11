@@ -70,14 +70,17 @@ class AppGraph(context: Context) {
     val quickSettingsTiles by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { QuickSettingsTileController(appContext) }
     val overlaySurfaces by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { OverlaySurfaceController(appContext) }
 
-    val capabilities = CapabilityBroker(environmentProvider = {
-        RuntimeEnvironment(
-            sdkInt = Build.VERSION.SDK_INT,
-            manufacturer = Build.MANUFACTURER,
-            brand = Build.BRAND,
-            model = Build.MODEL,
-        )
-    })
+    val capabilities = CapabilityBroker(
+        environmentProvider = {
+            RuntimeEnvironment(
+                sdkInt = Build.VERSION.SDK_INT,
+                manufacturer = Build.MANUFACTURER,
+                brand = Build.BRAND,
+                model = Build.MODEL,
+            )
+        },
+        preferRootWhenAvailable = { RuntimeSettingsPreferences.preferRootWhenAvailable(appContext) },
+    )
     val diagnostics = DiagnosticCoordinator(diagnosticRegistry)
     val runtime = AutomationRuntime(workspace, features, capabilities, tracer)
     val featureHealth by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {

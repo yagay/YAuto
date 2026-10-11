@@ -71,4 +71,51 @@ class CapabilityBrokerResilienceTest {
         assertEquals(CapabilityFailureKind.BACKEND_UNAVAILABLE, failure.failureKind)
     }
 
+
+    @Test fun automaticRequestsTryRootFirstAndSkipUnnecessaryChecks() = runBlocking {
+        val calls = mutableListOf<String>()
+        fun fake(idValue: String, ok: Boolean) = object : CapabilityBackend {
+            override val id = idValue
+            override val priority = if (id == "root") 80 else 70
+            override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) = true
+            override suspend fun isAvailable(environment: RuntimeEnvironment): Boolean {
+                calls += "check:$id"
+                return true
+            }
+            override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
+                calls += "exec:$id"
+                return CapabilityResult(ok)
+            }
+        }
+        val broker = CapabilityBroker({ environment }, listOf(fake("shizuku", true), fake("root", true)))
+        assertEquals("root", broker.execute(CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "test")).backendId)
+        assertEquals(listOf("check:root", "exec:root"), calls)
+    }
+
+    @Test fun failedRootFallsBackAndExplicitBackendRemainsPinned() = runBlocking {
+        val calls = mutableListOf<String>()
+        fun fake(idValue: String, success: Boolean) = object : CapabilityBackend {
+            override val id = idValue
+            override val priority = if (id == "root") 80 else 70
+            override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) = true
+            override suspend fun isAvailable(environment: RuntimeEnvironment) = true
+            override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
+                calls += id
+                return CapabilityResult(success)
+            }
+        }
+        val root = fake("root", false)
+        val shizuku = fake("shizuku", true)
+        val request = CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "test")
+        val broker = CapabilityBroker({ environment }, listOf(root, shizuku))
+        val result = broker.execute(request)
+        assertEquals("shizuku", result.backendId)
+        assertEquals(listOf("root", "shizuku"), result.attempts.map { it.backendId })
+        calls.clear()
+        broker.execute(request.copy(preferredBackendId = "shizuku"))
+        assertEquals(listOf("shizuku"), calls)
+        calls.clear()
+        CapabilityBroker({ environment }, listOf(root, shizuku), { false }).execute(request)
+        assertEquals(listOf("shizuku"), calls)
+    }
 }

@@ -122,6 +122,8 @@ interface CapabilityBackend {
 class CapabilityBroker(
     private val environmentProvider: () -> RuntimeEnvironment,
     backends: List<CapabilityBackend> = emptyList(),
+    /** Evaluated for each automatic request; saved backend selections remain authoritative. */
+    private val preferRootWhenAvailable: () -> Boolean = { true },
 ) : CapabilityClient {
     @Volatile private var backendSnapshot: List<CapabilityBackend> = backends.sortedByDescending { it.priority }
 
@@ -140,34 +142,47 @@ class CapabilityBroker(
         val environment = environmentProvider()
         val supported = backendSnapshot.filter { backend ->
             (request.preferredBackendId == null || backend.id == request.preferredBackendId) &&
-                try { backend.supports(request, environment) } catch (_: Exception) { false }
+                try { backend.supports(request, environment) } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) { false }
         }.let { applicable ->
-            // Automatic requests prefer a non-root supported route. Explicit saved
-            // backend selections are left untouched for backwards compatibility.
-            if (request.preferredBackendId != null) applicable else applicable.sortedWith(
-                compareBy<CapabilityBackend> { it.id == "root" || it.id == "lsposed" }
-                    .thenByDescending { it.priority },
-            )
-        }
-        val candidates = supported.filter { backend ->
-            try {
-                backend.isAvailable(environment)
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (_: Exception) {
-                false
+            if (request.preferredBackendId != null) applicable
+            else {
+                val rootFirst = preferRootWhenAvailable()
+                applicable.sortedWith(
+                    compareBy<CapabilityBackend> {
+                        when (it.id) {
+                            "root" -> if (rootFirst) 0 else 3
+                            "lsposed" -> if (rootFirst) 1 else 4
+                            "shizuku" -> if (rootFirst) 2 else 0
+                            "accessibility" -> if (rootFirst) 3 else 1
+                            else -> 2
+                        }
+                    }.thenByDescending { it.priority },
+                )
             }
         }
-        if (candidates.isEmpty()) {
-            val message = request.preferredBackendId?.let {
-                userText("capability.selected_backend_unavailable", it, request.capability.value)
-            } ?: userText("capability.no_backend_available", request.capability.value)
-            return CapabilityResult(false, message = message, failureKind =
-                if (supported.isEmpty()) CapabilityFailureKind.UNSUPPORTED else CapabilityFailureKind.BACKEND_UNAVAILABLE)
+        if (supported.isEmpty()) {
+            return CapabilityResult(
+                false,
+                message = request.preferredBackendId?.let {
+                    userText("capability.selected_backend_unavailable", it, request.capability.value)
+                } ?: userText("capability.no_backend_available", request.capability.value),
+                failureKind = CapabilityFailureKind.UNSUPPORTED,
+            )
         }
 
         val attempts = mutableListOf<CapabilityAttempt>()
-        for (backend in candidates) {
+        var anyAvailable = false
+        // Avoid contacting Shizuku and Accessibility when Root already succeeds.
+        for (backend in supported) {
+            val available = try {
+                backend.isAvailable(environment)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) { false }
+            if (!available) continue
+            anyAvailable = true
             val result = try { backend.execute(request, environment) } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -181,9 +196,13 @@ class CapabilityBroker(
         }
         return CapabilityResult(
             success = false,
-            message = userText("capability.all_backends_failed", request.operationId),
+            message = if (anyAvailable) userText("capability.all_backends_failed", request.operationId)
+                else request.preferredBackendId?.let {
+                    userText("capability.selected_backend_unavailable", it, request.capability.value)
+                } ?: userText("capability.no_backend_available", request.capability.value),
             attempts = attempts,
-            failureKind = CapabilityFailureKind.EXECUTION_FAILED,
+            failureKind = if (anyAvailable) CapabilityFailureKind.EXECUTION_FAILED
+                else CapabilityFailureKind.BACKEND_UNAVAILABLE,
         )
     }
 }

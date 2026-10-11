@@ -10,12 +10,19 @@ import com.yagay.yauto.core.logging.TraceLevel
 object RuntimeSettingsPreferences {
     private const val FILE_NAME = "yauto_runtime_preferences"
     private const val KEY_START_AT_BOOT = "start_at_boot"
+    private const val KEY_PREFER_ROOT = "prefer_root_when_available"
     private const val KEY_TRACE_LEVEL = "trace_level"
     private const val KEY_LOG_SIZE_MB = "log_size_mb"
     val supportedLogSizesMb = listOf(1, 2, 5, 10)
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+
+    /** Dynamic routing preference. Explicit saved backends are never overridden. */
+    fun preferRootWhenAvailable(context: Context): Boolean = prefs(context).getBoolean(KEY_PREFER_ROOT, true)
+    fun setPreferRootWhenAvailable(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_PREFER_ROOT, enabled).apply()
+    }
 
     fun startAtBoot(context: Context): Boolean = prefs(context).getBoolean(KEY_START_AT_BOOT, true)
     fun setStartAtBoot(context: Context, enabled: Boolean) {
