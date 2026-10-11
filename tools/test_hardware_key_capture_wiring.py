@@ -75,7 +75,8 @@ class HardwareKeyCaptureWiringTest(unittest.TestCase):
         s = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedHardwareKeyEventHandler.kt")
         method = s.split("private fun emitHardwareKeyCapture(", 1)[1]
         self.assertIn("broadcastXposedRuntimeEvent(", method)
-        self.assertIn("event.keyCode <= KeyEvent.KEYCODE_UNKNOWN && event.scanCode <= 0", method)
+        self.assertIn("event.keyCode <= KeyEvent.KEYCODE_UNKNOWN", method)
+        self.assertNotIn("event.scanCode <= 0", method)
         self.assertLess(method.index("event.keyCode <= KeyEvent.KEYCODE_UNKNOWN"), method.index("compareAndSet(until, 0L)"))
         self.assertNotIn("context.sendBroadcast(", method)
         backend = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedBackend.kt")
