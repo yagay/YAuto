@@ -37,7 +37,7 @@ import com.yagay.yauto.ui.design.R as TextR
 import kotlinx.coroutines.launch
 
 private enum class RuntimeSettingsPage {
-    OVERVIEW, PERMISSIONS, BACKENDS, RUNTIME, EDITOR, LOGGING, ENGINE, LIBRARIES, APPEARANCE, HEALTH
+    OVERVIEW, PERMISSIONS, BACKENDS, RUNTIME, EDITOR, LOGGING, ENGINE, LIBRARIES, APPEARANCE, RECORDS, HEALTH
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -143,6 +143,7 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                             RuntimeSettingsPage.ENGINE -> stringResource(TextR.string.runtime_settings_title_engine)
                             RuntimeSettingsPage.LIBRARIES -> stringResource(TextR.string.sx_libraries)
                             RuntimeSettingsPage.APPEARANCE -> stringResource(TextR.string.sx_appearance)
+                            RuntimeSettingsPage.RECORDS -> stringResource(TextR.string.sx_records)
                             RuntimeSettingsPage.HEALTH -> stringResource(TextR.string.runtime_settings_title_health)
                         }
                     )
@@ -241,6 +242,14 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
                         stringResource(TextR.string.sx_appearance_hint),
                         MacroPalette.State,
                         onClick = { navigateTo(RuntimeSettingsPage.APPEARANCE) },
+                    )
+                }
+                item {
+                    MacroItemRow(
+                        stringResource(TextR.string.sx_records),
+                        stringResource(TextR.string.sx_records_hint),
+                        MacroPalette.Diagnostics,
+                        onClick = { navigateTo(RuntimeSettingsPage.RECORDS) },
                     )
                 }
                 item {
@@ -456,6 +465,9 @@ fun RuntimeSettingsScreen(graph: AppGraph, onBack: () -> Unit) {
             }
             RuntimeSettingsPage.APPEARANCE -> Column(Modifier.padding(padding)) {
                 ShortXAppearanceSettingsScreen(context)
+            }
+            RuntimeSettingsPage.RECORDS -> Column(Modifier.padding(padding)) {
+                ShortXRecordsScreen(context, graph)
             }
 
             RuntimeSettingsPage.HEALTH -> FeatureHealthScreen(
