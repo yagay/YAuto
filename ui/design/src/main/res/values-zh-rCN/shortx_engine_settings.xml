@@ -105,4 +105,9 @@
     <string name="sx_sms_engine_hint">控制收到短信时是否向 YAuto 发送自动化事件，仍需要 Android 接收短信权限。</string>
     <string name="sx_qs_opt">快捷磁贴优化</string>
     <string name="sx_qs_opt_hint">450 毫秒内忽略重复的磁贴点击，减少规则重复执行；不会修改 SystemUI 框架。</string>
+    <string name="runtime_shortx_workday_title">工作日与法定节假日</string>
+    <string name="runtime_shortx_workday_detail">根据离线缓存的英国或中国节假日数据判断今天是否为工作日</string>
+    <string name="runtime_shortx_systemui_title">查询 SystemUI 进程</string>
+    <string name="runtime_shortx_systemui_detail">通过受限 LSPosed 桥接查询 SystemUI 进程 UID 或单个属性</string>
+    <string name="runtime_shortx_systemui_command">只读指令：id 或 getprop 属性名</string>
 </resources>

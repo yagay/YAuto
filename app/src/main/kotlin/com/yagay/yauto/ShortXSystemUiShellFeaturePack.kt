@@ -4,6 +4,7 @@ import com.yagay.yauto.core.capability.CapabilityIds
 import com.yagay.yauto.core.capability.CapabilityRequest
 import com.yagay.yauto.core.model.ConfigValue
 import com.yagay.yauto.core.model.string
+import com.yagay.yauto.core.model.userText
 import com.yagay.yauto.core.registry.*
 import com.yagay.yauto.platform.xposed.SystemBridgeProtocol
 
@@ -14,11 +15,11 @@ internal class ShortXSystemUiShellFeaturePack : FeaturePack {
         registry.registerAction(
             FeatureDescriptor(
                 FeatureId("systemui.shell.query"), FeatureKind.ACTION,
-                "Query SystemUI process",
-                "Read SystemUI process UID or one Android system property via the scoped LSPosed bridge",
+                userText("shortx.systemui.title"),
+                userText("shortx.systemui.detail"),
                 FeatureCategory.SYSTEM,
                 fields = listOf(
-                    FieldSchema.Text("command", "Read-only command (id or getprop KEY)", true),
+                    FieldSchema.Text("command", userText("shortx.systemui.command"), true),
                     FieldSchema.Variable("resultVariable", "Store output"),
                 ),
                 capabilities = setOf(CapabilityIds.LSPOSED),

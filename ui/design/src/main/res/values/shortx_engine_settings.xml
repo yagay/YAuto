@@ -105,4 +105,9 @@
     <string name="sx_sms_engine_hint">Allow incoming SMS events to enter YAuto automation. Android RECEIVE_SMS permission is still required.</string>
     <string name="sx_qs_opt">QS tile optimization</string>
     <string name="sx_qs_opt_hint">Suppress duplicate rapid QS tile taps within 450 ms to avoid repeated execution. Does not modify SystemUI framework behavior.</string>
+    <string name="runtime_shortx_workday_title">Workday and statutory holiday</string>
+    <string name="runtime_shortx_workday_detail">Check whether today is a workday using cached UK or China holiday calendars</string>
+    <string name="runtime_shortx_systemui_title">Query SystemUI process</string>
+    <string name="runtime_shortx_systemui_detail">Read SystemUI process UID or one property via the scoped LSPosed bridge</string>
+    <string name="runtime_shortx_systemui_command">Read-only command: id or getprop PROPERTY</string>
 </resources>

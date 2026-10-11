@@ -108,7 +108,7 @@ internal class ShortXWorkdayFeaturePack(context: Context) : FeaturePack {
             id = FeatureId("android.state.shortx_workday"),
             kind = FeatureKind.STATE,
             title = userText("shortx.workday.title"),
-            description = "Check whether today is a workday using cached UK or China holiday calendars",
+            description = userText("shortx.workday.detail"),
             category = FeatureCategory.SYSTEM,
             fields = listOf(
                 FieldSchema.Choice("region", "Calendar", true, listOf("UK", "CN")),
