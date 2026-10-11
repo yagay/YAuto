@@ -31,7 +31,7 @@ internal object RuntimeLibraryStore {
         }
     }.getOrDefault(emptyList())
 
-    fun save(context: Context, entry: LibraryEntry): Boolean {
+    private fun valid(entry: LibraryEntry): Boolean {
         if (entry.kind !in kinds || entry.name.isBlank() || entry.name.length > 80 ||
             entry.body.isBlank() || entry.body.length > 20_000) return false
         if (entry.kind == "apps") {
@@ -39,6 +39,11 @@ internal object RuntimeLibraryStore {
             if (packages.isEmpty() || packages.size > 200 ||
                 packages.any { !packagePattern.matches(it) }) return false
         }
+        return true
+    }
+
+    fun save(context: Context, entry: LibraryEntry): Boolean {
+        if (!valid(entry)) return false
         val current = list(context).toMutableList()
         val i = current.indexOfFirst { it.id == entry.id }
         if (i >= 0) current[i] = entry else {
@@ -46,6 +51,46 @@ internal object RuntimeLibraryStore {
             current += entry.copy(id = UUID.randomUUID().toString())
         }
         return persist(context, current)
+    }
+
+    fun exportJson(context: Context): String {
+        val entries = JSONArray()
+        list(context).forEach { e ->
+            entries.put(JSONObject().put("id", e.id).put("kind", e.kind)
+                .put("name", e.name).put("body", e.body))
+        }
+        return JSONObject()
+            .put("format", "YAuto.Library.v1")
+            .put("entries", entries)
+            .toString(2)
+    }
+
+    /** Import validates *all* entries before persisting any of them. */
+    fun importJson(context: Context, text: String): Int {
+        require(text.length <= 1_000_000)
+        val document = JSONObject(text)
+        require(document.optString("format") == "YAuto.Library.v1")
+        val source = document.getJSONArray("entries")
+        require(source.length() <= 50)
+        val incoming = buildList {
+            for (i in 0 until source.length()) {
+                val item = source.getJSONObject(i)
+                val entry = LibraryEntry(
+                    "", item.getString("kind"), item.getString("name"), item.getString("body"),
+                )
+                require(valid(entry))
+                add(entry)
+            }
+        }
+        val current = list(context).toMutableList()
+        for (e in incoming) {
+            val i = current.indexOfFirst { it.kind == e.kind && it.name == e.name }
+            if (i >= 0) current[i] = e.copy(id = current[i].id)
+            else current += e.copy(id = UUID.randomUUID().toString())
+        }
+        require(current.size <= 50)
+        check(persist(context, current))
+        return incoming.size
     }
 
     fun delete(context: Context, id: String): Boolean =

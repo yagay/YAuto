@@ -4,6 +4,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -192,6 +194,42 @@ internal fun ShortXLibrarySettingsScreen(context: Context) {
     val clipboard = remember(context) { context.getSystemService(ClipboardManager::class.java) }
     val saved = stringResource(TextR.string.sx_saved)
     val failed = stringResource(TextR.string.sx_error)
+    val imported = stringResource(TextR.string.sx_imported)
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            message = runCatching {
+                context.contentResolver.openOutputStream(uri, "wt")
+                    ?.bufferedWriter()
+                    ?.use { it.write(RuntimeLibraryStore.exportJson(context)) }
+                    ?: error("No output stream")
+                saved
+            }.getOrElse { failed }
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            message = runCatching {
+                val content = context.contentResolver.openInputStream(uri)
+                    ?.bufferedReader()
+                    ?.use { reader ->
+                        val out = StringBuilder()
+                        val buffer = CharArray(4096)
+                        while (true) {
+                            val n = reader.read(buffer)
+                            if (n < 0) break
+                            require(out.length + n <= 1_000_000)
+                            out.append(buffer, 0, n)
+                        }
+                        out.toString()
+                    } ?: error("No input stream")
+                RuntimeLibraryStore.importJson(context, content)
+                items = RuntimeLibraryStore.list(context)
+                imported
+            }.getOrElse { failed }
+        }
+    }
 
     LazyColumn(
         contentPadding = PaddingValues(12.dp),
@@ -199,6 +237,16 @@ internal fun ShortXLibrarySettingsScreen(context: Context) {
     ) {
         item {
             Text(stringResource(TextR.string.sx_library_hint), style = MaterialTheme.typography.bodySmall)
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = {
+                    exportLauncher.launch("YAuto-library.json")
+                }) { Text(stringResource(TextR.string.sx_export_library)) }
+                OutlinedButton(onClick = {
+                    importLauncher.launch(arrayOf("application/json", "text/plain"))
+                }) { Text(stringResource(TextR.string.sx_import_library)) }
+            }
         }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
