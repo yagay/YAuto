@@ -29,5 +29,7 @@ internal fun emitMethodCalled(
                 .putExtra("timestampEpochMs", System.currentTimeMillis())
                 .apply { captured.forEach { (key, value) -> putExtra(key, value) } }
         )
+    }.onFailure { error ->
+        XposedEventSendFailureReporter.report("lsposed_method_called", "package_hook", error)
     }
 }
