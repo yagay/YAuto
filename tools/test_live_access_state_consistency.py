@@ -47,7 +47,9 @@ class LiveAccessStatusTests(unittest.TestCase):
         assert "accessAvailability" in health
         assert "feature_health_authorized_unverified" in labels
         assert "RefreshFeatureHealthOnEditorOpen" in screen
-        assert "FeatureHealthStatus.UNKNOWN -> FeatureAvailabilityTone.UNSUPPORTED" in screen
+        picker = read("EditorFeatureHealthRefresh.kt")
+        assert "FeatureHealthStatus.UNKNOWN -> FeatureAvailabilityTone.UNSUPPORTED" in picker
+        assert "if (scanning) emptyMap()" in picker
 
 if __name__ == "__main__":
     unittest.main()
