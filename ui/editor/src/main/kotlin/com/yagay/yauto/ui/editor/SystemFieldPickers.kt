@@ -176,39 +176,62 @@ internal fun PickerBackedField(
     val scope = rememberCoroutineScope()
     var showPicker by remember(picker) { mutableStateOf(false) }
     var capturingKey by remember(picker) { mutableStateOf(false) }
+    // Select-first for all device-backed parameters. A service component,
+    // notification ID, tile spec or hardware key is a *choice*, not a prompt
+    // to type implementation details. Keep explicit manual entry as fallback.
+    var manualEntry by remember(descriptorId, field.key, picker) { mutableStateOf(false) }
+    var selectedOption by remember(descriptorId, field.key, picker) {
+        mutableStateOf<SystemPickerOption?>(null)
+    }
     val numeric = field is FieldSchema.Number || field is FieldSchema.Duration
     val hardwareKeyField = picker == FieldPickerSource.KeyCode
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValue,
-            readOnly = !allowManualInput,
-            enabled = enabled,
-            modifier = Modifier.fillMaxWidth(),
-            label = {
+        if (manualEntry && allowManualInput) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = onValue,
+                enabled = enabled,
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(
+                        if (field.required) stringResource(TextR.string.editor_required_field_format, label)
+                        else label
+                    )
+                },
+                singleLine = true,
+                keyboardOptions = if (numeric) {
+                    KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                } else {
+                    KeyboardOptions.Default
+                },
+            )
+            TextButton(
+                onClick = { manualEntry = false; showPicker = true },
+                enabled = enabled && !capturingKey,
+            ) {
+                Text(stringResource(TextR.string.live_picker_choose_from_device))
+            }
+        } else {
+            Text(
+                if (field.required) stringResource(TextR.string.editor_required_field_format, label)
+                else label,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            OutlinedButton(
+                onClick = { showPicker = true },
+                enabled = enabled && !capturingKey,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Text(
-                    if (field.required) stringResource(TextR.string.editor_required_field_format, label)
-                    else label
+                    selectedOption?.takeIf { it.value == value }?.label
+                        ?: value.ifBlank { stringResource(TextR.string.feature_picker_select_value) }
                 )
-            },
-            singleLine = true,
-            keyboardOptions = if (numeric) {
-                KeyboardOptions(keyboardType = KeyboardType.Decimal)
-            } else {
-                KeyboardOptions.Default
-            },
-            supportingText = if (allowManualInput) {
-                { Text(stringResource(TextR.string.feature_picker_select_or_enter_hint)) }
-            } else {
-                null
-            },
-        )
-        OutlinedButton(
-            onClick = { showPicker = true },
-            enabled = enabled && !capturingKey,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(TextR.string.feature_picker_select_value))
+            }
+            if (allowManualInput) {
+                TextButton(onClick = { manualEntry = true }, enabled = enabled) {
+                    Text(stringResource(TextR.string.live_picker_enter_manually))
+                }
+            }
         }
         if (hardwareKeyField) {
             OutlinedButton(
@@ -269,6 +292,8 @@ internal fun PickerBackedField(
             current = value,
             onDismiss = { showPicker = false },
             onPick = { option ->
+                selectedOption = option
+                manualEntry = false
                 onValue(option.value)
                 option.relatedValues.forEach { (key, next) ->
                     if (allValues[key].isNullOrBlank()) onRelatedValue(key, next)
