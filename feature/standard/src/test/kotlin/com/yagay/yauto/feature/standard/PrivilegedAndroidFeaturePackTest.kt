@@ -98,13 +98,14 @@ class PrivilegedAndroidFeaturePackTest {
         assertEquals("shizuku", captured?.preferredBackendId)
     }
 
-    @Test fun `broker auto falls back but explicit backend stays strict`() = runBlocking {
+    @Test fun `broker uses Shizuku only when root is unavailable and backend pin stays strict`() = runBlocking {
         class FakeBackend(
             override val id: String,
             override val priority: Int,
             private val succeeds: Boolean,
+            private val available: Boolean = true,
         ) : CapabilityBackend {
-            override suspend fun isAvailable(environment: RuntimeEnvironment) = true
+            override suspend fun isAvailable(environment: RuntimeEnvironment) = available
             override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) =
                 request.capability == CapabilityIds.PRIVILEGED_SHELL
             override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment) =
@@ -114,17 +115,17 @@ class PrivilegedAndroidFeaturePackTest {
 
         val broker = CapabilityBroker(
             environmentProvider = { RuntimeEnvironment(31) },
-            backends = listOf(FakeBackend("root", 80, false), FakeBackend("shizuku", 70, true)),
+            backends = listOf(FakeBackend("root", 80, false, available = false), FakeBackend("shizuku", 70, true)),
         )
         val auto = broker.execute(CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "test"))
         assertTrue(auto.success)
         assertEquals("shizuku", auto.backendId)
-        assertEquals(listOf("root", "shizuku"), auto.attempts.map { it.backendId })
+        assertEquals(listOf("shizuku"), auto.attempts.map { it.backendId })
 
         val rootOnly = broker.execute(CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "test", preferredBackendId = "root"))
         assertFalse(rootOnly.success)
-        assertEquals("root", rootOnly.backendId)
-        assertEquals(listOf("root"), rootOnly.attempts.map { it.backendId })
+        assertNull(rootOnly.backendId)
+        assertTrue(rootOnly.attempts.isEmpty())
     }
 
     @Test fun `invalid package fails before capability invocation`() = runBlocking {
