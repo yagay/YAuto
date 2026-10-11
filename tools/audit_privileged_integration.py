@@ -35,8 +35,8 @@ def sources(folder: Path):
 # sometimes bypass the central capability broker. The resulting locations are
 # review candidates, not proof that their operations are semantically equivalent.
 SOURCE_COMPONENTS = ("app", "core", "feature", "importer", "platform", "ui", "plugin")
-BACKEND_PIN = re.compile(r'preferredBackendId\\s*=\\s*"(lsposed|root|shizuku|accessibility)"')
-DIRECT_PRIVILEGE = re.compile(r'\\b(?:RootShell|ShizukuBackend|XposedBackend|AccessibilityRuntimeBridge)\\b')
+BACKEND_PIN = re.compile(r'preferredBackendId\s*=\s*"(lsposed|root|shizuku|accessibility)"')
+DIRECT_PRIVILEGE = re.compile(r'\b(?:RootShell|ShizukuBackend|XposedBackend|AccessibilityRuntimeBridge)\b')
 
 
 def full_project_routing_inventory() -> dict:
