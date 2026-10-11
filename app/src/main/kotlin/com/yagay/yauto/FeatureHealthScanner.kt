@@ -95,7 +95,8 @@ class FeatureHealthScanner(
     private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
     private val scanLock = Mutex()
     private val lastRequestAt = AtomicLong(0)
-    private val scanRequests = Channel<Boolean>(Channel.CONFLATED)
+    private data class ScanRequest(val readOnly: Boolean, val featureId: String? = null)
+    private val scanRequests = Channel<ScanRequest>(Channel.CONFLATED)
     private val _verificationProgress = MutableStateFlow<Pair<Int, Int>?>(null)
     val verificationProgress: StateFlow<Pair<Int, Int>?> = _verificationProgress.asStateFlow()
 
@@ -110,10 +111,10 @@ class FeatureHealthScanner(
 
     init {
         scope.launch {
-            for (verifyReadOnly in scanRequests) {
+            for (request in scanRequests) {
                 _scanning.value = true
                 try {
-                    scan(verifyReadOnly)
+                    scan(request.readOnly, request.featureId)
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
@@ -141,17 +142,31 @@ class FeatureHealthScanner(
         if (!force && now - lastRequestAt.get() < MIN_RESCAN_INTERVAL_MS) return
         lastRequestAt.set(now)
         // A request arriving mid-scan is coalesced and processed afterwards.
-        scanRequests.trySend(false)
+        scanRequests.trySend(ScanRequest(readOnly = false))
     }
 
     /** Explicit, harmless, read-only checks with a real Android API response. */
     fun requestReadOnlyVerification() {
-        scanRequests.trySend(true)
+        scanRequests.trySend(ScanRequest(readOnly = true))
     }
 
-    suspend fun scan(verifyReadOnly: Boolean = false): FeatureHealthSnapshot = scanLock.withLock {
+    /** Per-feature read-only verification; no feature action or event handler is executed. */
+    fun requestFeatureVerification(featureId: String) {
+        if (featureId.isNotBlank()) {
+            scanRequests.trySend(ScanRequest(readOnly = true, featureId = featureId))
+        }
+    }
+
+    suspend fun scan(
+        verifyReadOnly: Boolean = false,
+        featureId: String? = null,
+    ): FeatureHealthSnapshot = scanLock.withLock {
         val started = System.currentTimeMillis()
         val featureList = descriptors()
+        val singleId = featureId?.takeIf { id -> featureList.any { it.id.value == id } }
+        val priorProbes = if (singleId != null) {
+            _snapshot.value?.items?.associateBy { it.featureId }.orEmpty()
+        } else emptyMap()
         val needed = featureList
             .flatMap { descriptor ->
                 buildList {
@@ -163,10 +178,15 @@ class FeatureHealthScanner(
         val access = accessStatus.refresh(needed, force = true)
         val liveProbe = if (verifyReadOnly) FeatureReadOnlyInterfaceProbe(context) else null
         val probeCache = mutableMapOf<String, FeatureProbeResult>()
-        if (verifyReadOnly) _verificationProgress.value = 0 to featureList.size
+        if (verifyReadOnly) _verificationProgress.value = 0 to (if (singleId == null) featureList.size else 1)
         val items = featureList.mapIndexed { index, descriptor ->
             val initial = evaluate(descriptor, access)
-            val result = if (liveProbe == null) initial else {
+            val result = if (singleId != null && descriptor.id.value != singleId) {
+                val old = priorProbes[descriptor.id.value]
+                initial.copy(probe = if (
+                    initial.status == FeatureHealthStatus.READY && old?.status == FeatureHealthStatus.READY
+                ) old.probe else null)
+            } else if (liveProbe == null) initial else {
                 val key = ReadOnlyFeatureProbeCatalog.queryKey(descriptor.id.value, descriptor.kind)
                 val probeResult = when {
                     initial.status != FeatureHealthStatus.READY ->
@@ -193,7 +213,10 @@ class FeatureHealthScanner(
                 }
                 initial.copy(probe = probeResult)
             }
-            if (verifyReadOnly) _verificationProgress.value = (index + 1) to featureList.size
+            if (verifyReadOnly && (singleId == null || descriptor.id.value == singleId)) {
+                _verificationProgress.value = (if (singleId == null) index + 1 else 1) to
+                    (if (singleId == null) featureList.size else 1)
+            }
             result
         }.sortedWith(
                 compareBy<FeatureHealthItem> {
