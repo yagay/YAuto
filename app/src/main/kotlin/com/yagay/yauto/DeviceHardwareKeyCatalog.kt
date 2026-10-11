@@ -44,9 +44,11 @@ class DeviceHardwareKeyCatalog(
             .mapNotNull { RAW_MSC_SCAN.find(it)?.groupValues?.getOrNull(1)?.toLongOrNull(16) }
             .firstOrNull() ?: 0L
         val devicePath = RAW_DEVICE_PATH.find(keyLine)?.groupValues?.getOrNull(1).orEmpty()
-        val keyCode = resolveAndroidKeyCode(linuxEvKey)
+        // Return the raw observation immediately so the coordinator can
+        // correlate the same press with LSPosed/Accessibility. Keylayout shell
+        // probing can take seconds and must never delay capture delivery.
         return HardwareKeyCaptureResult(
-            keyCode = keyCode,
+            keyCode = KeyEvent.KEYCODE_UNKNOWN,
             scanCode = 0,
             deviceId = -1,
             action = KeyEvent.ACTION_UP,
@@ -55,6 +57,12 @@ class DeviceHardwareKeyCatalog(
             deviceDescriptor = devicePath,
             sources = setOf("root.input"),
         )
+    }
+
+    suspend fun enrichRawCapture(raw: HardwareKeyCaptureResult): HardwareKeyCaptureResult {
+        if (raw.linuxEvKey <= 0 || raw.keyCode > 0) return raw
+        val key = resolveAndroidKeyCode(raw.linuxEvKey)
+        return if (key > 0) raw.copy(keyCode = key) else raw
     }
 
     private suspend fun resolveAndroidKeyCode(scanCode: Int): Int {

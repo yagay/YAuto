@@ -173,7 +173,14 @@ internal suspend fun captureHardwareKey(
 
     jobs.forEach { it.cancel() }
     channel.close()
-    mergeHardwareKeyCaptures(candidates)
+    // Enrichment happens AFTER fast one-shot capture, not inside the Root
+    // listener. A raw key that cannot be mapped still works for OEM-only rules.
+    val enriched = candidates.map { candidate ->
+        if (candidate.linuxEvKey > 0 && candidate.keyCode <= 0) {
+            runCatching { graph.hardwareKeys.enrichRawCapture(candidate) }.getOrDefault(candidate)
+        } else candidate
+    }
+    mergeHardwareKeyCaptures(enriched)
         }
     } finally {
         HardwareKeyCaptureSession.active = false
@@ -184,33 +191,45 @@ private fun mergeHardwareKeyCaptures(
     captures: List<HardwareKeyCaptureResult>,
 ): HardwareKeyCaptureResult? {
     if (captures.isEmpty()) return null
-    val android = captures
-        .filter { it.keyCode > 0 || it.scanCode > 0 }
-        .maxByOrNull { capture ->
-            val sourceRank = when {
-                "lsposed" in capture.sources -> 40
-                "root.input" in capture.sources -> 30
-                "shizuku" in capture.sources -> 20
-                "accessibility" in capture.sources -> 10
-                else -> 0
-            }
-            sourceRank + (if (capture.keyCode > 0) 2 else 0) + (if (capture.scanCode > 0) 1 else 0)
+    // Rank observations, but only merge identities proved compatible. A
+    // 240-ms time window alone does not prove two rapid presses are the same.
+    val ranked = captures.sortedWith(compareByDescending<HardwareKeyCaptureResult> {
+        when {
+            "lsposed" in it.sources -> 40
+            "root.input" in it.sources -> 30
+            "shizuku" in it.sources -> 20
+            "accessibility" in it.sources -> 10
+            else -> 0
         }
-    val raw = captures.firstOrNull { it.linuxEvKey > 0 || it.mscScan != 0L }
-    val primary = android ?: raw ?: captures.first()
-
+    }.thenByDescending { if (it.keyCode > 0) 2 else if (it.scanCode > 0) 1 else 0 })
+    val primary = ranked.first()
+    val samePress = ranked.filter { candidate ->
+        if (candidate === primary) true else when {
+            primary.keyCode > 0 && candidate.keyCode > 0 ->
+                primary.keyCode == candidate.keyCode
+            primary.linuxEvKey > 0 && candidate.linuxEvKey > 0 ->
+                primary.linuxEvKey == candidate.linuxEvKey
+            primary.scanCode > 0 && candidate.scanCode > 0 ->
+                primary.scanCode == candidate.scanCode
+            else -> false
+        }
+    }
+    val android = samePress.firstOrNull { it.keyCode > 0 || it.scanCode > 0 }
+    val raw = samePress.firstOrNull { it.linuxEvKey > 0 || it.mscScan != 0L }
     return HardwareKeyCaptureResult(
         keyCode = android?.keyCode ?: primary.keyCode,
         scanCode = android?.scanCode ?: primary.scanCode,
         deviceId = android?.deviceId ?: primary.deviceId,
-        action = android?.action ?: primary.action,
+        action = primary.action,
         linuxEvKey = raw?.linuxEvKey ?: primary.linuxEvKey,
         mscScan = raw?.mscScan ?: primary.mscScan,
         deviceName = android?.deviceName.orEmpty().ifBlank { primary.deviceName },
-        deviceDescriptor = android?.deviceDescriptor.orEmpty().ifBlank { primary.deviceDescriptor },
+        deviceDescriptor = raw?.deviceDescriptor.orEmpty().ifBlank {
+            android?.deviceDescriptor.orEmpty().ifBlank { primary.deviceDescriptor }
+        },
         vendorId = android?.vendorId?.takeIf { it > 0 } ?: primary.vendorId,
         productId = android?.productId?.takeIf { it > 0 } ?: primary.productId,
-        sources = captures.flatMapTo(linkedSetOf()) { it.sources },
+        sources = samePress.flatMapTo(linkedSetOf()) { it.sources },
     )
 }
 

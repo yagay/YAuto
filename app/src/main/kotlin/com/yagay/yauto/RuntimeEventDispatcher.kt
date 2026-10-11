@@ -15,10 +15,11 @@ class RuntimeEventDispatcher(
     private val graph: AppGraph,
     private val scope: CoroutineScope,
 ) {
-    private val orderedInputs = Channel<Pair<RuntimeEvent, Boolean>>(Channel.UNLIMITED)
-    init {
-        scope.launch {
-            for ((event, statesOnly) in orderedInputs) execute(event, statesOnly)
+    private val orderedInputs by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        Channel<Pair<RuntimeEvent, Boolean>>(Channel.UNLIMITED).also { queue ->
+            scope.launch {
+                for ((event, statesOnly) in queue) execute(event, statesOnly)
+            }
         }
     }
 
