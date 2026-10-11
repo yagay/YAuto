@@ -92,7 +92,7 @@ internal class DeviceQuickSettingsInventory(
         val listed = panelSpecs.orEmpty().mapNotNull { spec ->
             val normalized = spec.trim().takeIf { it.length in 1..250 } ?: return@mapNotNull null
             val component = parsedComponent(normalized)
-            installedByComponent[component]?.copy(
+            installedByComponent[component.orEmpty()]?.copy(
                 spec = normalized, isInPanel = true,
             ) ?: DeviceTileEntry(
                 spec = normalized,
