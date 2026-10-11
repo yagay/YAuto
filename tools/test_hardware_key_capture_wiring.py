@@ -28,6 +28,8 @@ class HardwareKeyCaptureWiringTest(unittest.TestCase):
         runtime = source("app/src/main/kotlin/com/yagay/yauto/AutomationRuntimeService.kt")
         self.assertIn("HardwareKeyEventArbiter(", runtime)
         self.assertIn("if (HardwareKeyCaptureSession.active) return", runtime)
+        self.assertIn("if (!hardwareKeyAutomationEnabled) return@setKeyListener", runtime)
+        self.assertIn("val activeIds = workspace.runtimeEventFeatureIds()", runtime)
         self.assertNotIn("hardwareKeyDedup.put(", runtime)
         listener = source("app/src/main/kotlin/com/yagay/yauto/RootHardwareKeyEventSource.kt")
         self.assertIn("data.activeActivationEvents()", listener)

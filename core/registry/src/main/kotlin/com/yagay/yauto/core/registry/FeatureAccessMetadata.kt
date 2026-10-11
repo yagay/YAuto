@@ -25,7 +25,7 @@ fun FeatureMethod.allowsBackend(backendId: String): Boolean = when (this) {
     FeatureMethod.AUTO -> backendId in NO_ROOT_BACKENDS || backendId in ROOT_BACKENDS
 }
 
-/** Keep saved MacroDroid/ShortX choices compatible while defaulting new work to non-root. */
+/** Keep saved MacroDroid/ShortX permissions while new tasks use the automatic best route. */
 fun FeatureRef.preferredMethod(): FeatureMethod {
     val saved = (config[FEATURE_METHOD_CONFIG_KEY] as? ConfigValue.StringValue)?.value
         ?.trim()?.lowercase()
@@ -35,8 +35,8 @@ fun FeatureRef.preferredMethod(): FeatureMethod {
         "shortx" -> if (backend == "shizuku") FeatureMethod.NO_ROOT else FeatureMethod.ROOT_REQUIRED
         FeatureMethod.ROOT_REQUIRED.id -> FeatureMethod.ROOT_REQUIRED
         FeatureMethod.AUTO.id -> FeatureMethod.AUTO
-        // A new task without a method override uses automatic best-effort routing:
-        // public Android / Accessibility -> Shizuku -> Root or LSPosed if needed.
+        // No saved override: use supported implementations in the configured
+        // LSPosed -> Root -> Shizuku -> Accessibility priority.
         null, "" -> if (backend in ROOT_BACKENDS) FeatureMethod.ROOT_REQUIRED
             else if (backend in NO_ROOT_BACKENDS) FeatureMethod.NO_ROOT
             else FeatureMethod.AUTO

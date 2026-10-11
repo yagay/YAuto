@@ -24,19 +24,28 @@ class FeatureMethodRoutingTest {
         assertEquals(0, normalCalls)
     }
 
-    @Test fun autoTriesNonRootThenPrivilegeWhenNeeded() = runBlocking {
+    @Test fun autoTriesPrivilegedBeforeNoRootOnlyOnFailure() = runBlocking {
         val order = mutableListOf<String>()
         val result = routeFeatureMethod(FeatureMethod.AUTO, true,
-            { order += "macro"; false }, { order += "shortx"; true }, { it })
+            { order += "macro"; true }, { order += "shortx"; false }, { it })
         assertEquals(true, result)
-        assertEquals(listOf("macro", "shortx"), order)
+        assertEquals(listOf("shortx", "macro"), order)
     }
 
-    @Test fun autoStopsAfterSuccessfulNonRoot() = runBlocking {
-        var elevated = false
-        val result = routeFeatureMethod(FeatureMethod.AUTO, true, { true }, { elevated = true; true }, { it })
+    @Test fun autoStopsAfterSuccessfulPrivilegedAction() = runBlocking {
+        var normalInvoked = false
+        val result = routeFeatureMethod(FeatureMethod.AUTO, true,
+            { normalInvoked = true; true }, { true }, { it })
         assertEquals(true, result)
-        assertFalse(elevated)
+        assertFalse(normalInvoked)
+    }
+
+    @Test fun autoDoesNotInvokeNoRootWhenNoRootIsUnsupported() = runBlocking {
+        var normalInvoked = false
+        val result = routeFeatureMethod(FeatureMethod.AUTO, false,
+            { normalInvoked = true; true }, { false }, { it })
+        assertEquals(false, result)
+        assertFalse(normalInvoked)
     }
 
     @Test fun savedShizukuIsNonRootEvenForLegacyShortX() {

@@ -183,4 +183,27 @@ class CapabilityBrokerResilienceTest {
         }
         assertEquals(listOf("shizuku", "accessibility", "lsposed", "root"), withoutPrivilegedPreference)
     }
+
+    @Test fun noRootAndAccessibilityAreNotProbedAfterSuccessfulLsposed() = runBlocking {
+        val seen = mutableListOf<String>()
+        fun fake(name: String): CapabilityBackend = object : CapabilityBackend {
+            override val id = name
+            override val priority = 10
+            override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) = true
+            override suspend fun isAvailable(environment: RuntimeEnvironment): Boolean {
+                seen += "available:$id"
+                return true
+            }
+            override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
+                seen += "execute:$id"
+                return CapabilityResult(true)
+            }
+        }
+        val request = CapabilityRequest(CapabilityIds.SYSTEM_UI, SystemOperations.EXPAND_NOTIFICATIONS)
+        val broker = CapabilityBroker({ environment }, listOf(
+            fake("accessibility"), fake("shizuku"), fake("root"), fake("lsposed"),
+        ))
+        assertEquals("lsposed", broker.execute(request).backendId)
+        assertEquals(listOf("available:lsposed", "execute:lsposed"), seen)
+    }
 }

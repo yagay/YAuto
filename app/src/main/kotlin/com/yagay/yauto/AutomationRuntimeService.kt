@@ -44,6 +44,7 @@ class AutomationRuntimeService : Service() {
     private var workspaceSubscription: AutoCloseable? = null
     private var hardwareKeyArbiter: HardwareKeyEventArbiter? = null
     private var hardwareKeyGestureEngine: HardwareKeyGestureEngine? = null
+    @Volatile private var hardwareKeyAutomationEnabled = false
     private val lsposedSubscriptions = Channel<Set<String>>(Channel.CONFLATED)
 
     override fun onCreate() {
@@ -185,6 +186,10 @@ class AutomationRuntimeService : Service() {
             )
         }
         AccessibilityRuntimeBridge.setKeyListener { key ->
+            // Do not forward keys into the automation engine when the workspace
+            // has no enabled hardware-key trigger. Key learning has its own
+            // independent one-shot bridge and continues to work.
+            if (!hardwareKeyAutomationEnabled) return@setKeyListener
             val action = when (key.action) { KeyEvent.ACTION_DOWN -> "down"; KeyEvent.ACTION_UP -> "up"; else -> "other" }
             dispatchHardwareKeyEvent(
                 dispatcher,
@@ -317,6 +322,7 @@ class AutomationRuntimeService : Service() {
         workspaceSubscription = null
         hardwareKeyArbiter?.close()
         hardwareKeyArbiter = null
+        hardwareKeyAutomationEnabled = false
         hardwareKeyGestureEngine?.clear()
         hardwareKeyGestureEngine = null
         RuntimeBridgeLifecycle.detachAll()
@@ -349,8 +355,17 @@ class AutomationRuntimeService : Service() {
     }
 
     private fun configureAccessibilitySubscriptions(workspace: WorkspaceData) {
+        // The LSPosed subscription and Root getevent source already follow this
+        // workspace's active triggers; Accessibility must not push a duplicate
+        // stream when no hardware-key rules exist.
+        val activeIds = workspace.runtimeEventFeatureIds()
+        hardwareKeyAutomationEnabled = activeIds.any {
+            it == "android.event.hardware_key" ||
+                it == "android.event.hardware_key_gesture" ||
+                it == "android.event.hardware_key_combo"
+        }
         val subscribed = buildSet {
-            workspace.runtimeEventFeatureIds().forEach { typeId ->
+            activeIds.forEach { typeId ->
                 when (typeId) {
                     "android.event.screen_text_appeared" -> add("android.event.screen_content_changed")
                     "android.event.ui_click",

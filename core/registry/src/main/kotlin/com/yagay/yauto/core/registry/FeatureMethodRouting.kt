@@ -2,8 +2,9 @@ package com.yagay.yauto.core.registry
 
 /**
  * No-root includes Shizuku (started via wireless debugging), Android and Accessibility.
- * Root-required permits Root and LSPosed only. AUTO remains exclusively for historical tasks.
- * A chosen family never falls into the other unless a legacy task explicitly requested AUTO.
+ * Root-required permits Root and LSPosed only. AUTO is the default for
+ * tasks without a saved override and prioritizes the privileged method.
+ * A chosen family never crosses into the other.
  */
 suspend fun <T> routeFeatureMethod(
     method: FeatureMethod,
@@ -15,11 +16,10 @@ suspend fun <T> routeFeatureMethod(
     FeatureMethod.NO_ROOT -> if (macroSupported) macrodroid() else null
     FeatureMethod.ROOT_REQUIRED -> shortx()
     FeatureMethod.AUTO -> {
-        if (!macroSupported) shortx()
-        else {
-            val regular = macrodroid()
-            if (succeeded(regular)) regular else shortx()
-        }
+        // Do not eagerly execute both implementations. A successful privileged
+        // action is final; the no-root route is a sequential fallback only.
+        val privileged = shortx()
+        if (succeeded(privileged) || !macroSupported) privileged else macrodroid()
     }
 }
 
