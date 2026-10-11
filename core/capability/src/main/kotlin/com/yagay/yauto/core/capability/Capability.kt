@@ -148,15 +148,18 @@ class CapabilityBroker(
         }.let { applicable ->
             if (request.preferredBackendId != null) applicable
             else {
-                val rootFirst = preferRootWhenAvailable()
+                // Kept under the original preference key for existing installations.
+                // An enabled preference orders supported implementations:
+                // LSPosed > Root > Shizuku > Accessibility.
+                val privilegedFirst = preferRootWhenAvailable()
                 applicable.sortedWith(
                     compareBy<CapabilityBackend> {
                         when (it.id) {
-                            "root" -> if (rootFirst) 0 else 3
-                            "lsposed" -> if (rootFirst) 1 else 4
-                            "shizuku" -> if (rootFirst) 2 else 0
-                            "accessibility" -> if (rootFirst) 3 else 1
-                            else -> 2
+                            "lsposed" -> if (privilegedFirst) 0 else 3
+                            "root" -> if (privilegedFirst) 1 else 4
+                            "shizuku" -> if (privilegedFirst) 2 else 0
+                            "accessibility" -> if (privilegedFirst) 3 else 1
+                            else -> if (privilegedFirst) 4 else 2
                         }
                     }.thenByDescending { it.priority },
                 )
@@ -174,7 +177,7 @@ class CapabilityBroker(
 
         val attempts = mutableListOf<CapabilityAttempt>()
         var anyAvailable = false
-        // Avoid contacting Shizuku and Accessibility when Root already succeeds.
+        // Probe only the next supported backend when an earlier one is unavailable or fails.
         for (backend in supported) {
             val available = try {
                 backend.isAvailable(environment)

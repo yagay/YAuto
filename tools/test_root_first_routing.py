@@ -10,8 +10,9 @@ class RootPreferredRoutingTest(unittest.TestCase):
     def test_root_preference_applies_to_capability_broker(self):
         broker = read("core/capability/src/main/kotlin/com/yagay/yauto/core/capability/Capability.kt")
         graph = read("app/src/main/kotlin/com/yagay/yauto/AppGraph.kt")
-        self.assertIn('val rootFirst = preferRootWhenAvailable()', broker)
-        self.assertIn('"root" -> if (rootFirst) 0', broker)
+        self.assertIn('val privilegedFirst = preferRootWhenAvailable()', broker)
+        self.assertIn('"lsposed" -> if (privilegedFirst) 0', broker)
+        self.assertIn('"root" -> if (privilegedFirst) 1', broker)
         self.assertIn('if (!available) continue', broker)
         self.assertIn('RuntimeSettingsPreferences.preferRootWhenAvailable(appContext)', graph)
 
@@ -27,6 +28,8 @@ class RootPreferredRoutingTest(unittest.TestCase):
     def test_global_actions_use_capability_broker_in_auto_mode(self):
         feature = read("platform/accessibility/src/main/kotlin/com/yagay/yauto/platform/accessibility/AccessibilityFeaturePack.kt")
         self.assertIn('if (preferredMethod == FeatureMethod.AUTO)', feature)
+        xposed = read("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedBackend.kt")
+        self.assertIn('ShellAccessibilityOperations.systemUiOperation(request)', xposed)
         self.assertIn('listOf("shizuku", "accessibility")', feature)
         self.assertIn('listOf("root", "lsposed")', feature)
 

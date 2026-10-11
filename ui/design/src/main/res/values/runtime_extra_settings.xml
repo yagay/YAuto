@@ -30,6 +30,6 @@
     <string name="settings_logs_clear_action">Clear logs</string>
     <string name="settings_logs_clear_confirmation">Delete all stored execution logs? This cannot be undone.</string>
     <string name="settings_logs_cleared">Execution logs cleared</string>
-    <string name="backend_prefer_root_title">Prefer Root when available</string>
-    <string name="backend_prefer_root_description">Automatic actions try Root first when authorized and supported, then Shizuku and Accessibility. UI-node inspection still needs Accessibility; saved backend overrides are respected.</string>
+    <string name="backend_prefer_root_title">Prefer LSPosed, then Root</string>
+    <string name="backend_prefer_root_description">Automatic order: LSPosed → Root → Shizuku → Accessibility, for implementations that support the operation. Unsupported or unavailable methods are skipped; manually selected backends remain unchanged.</string>
 </resources>

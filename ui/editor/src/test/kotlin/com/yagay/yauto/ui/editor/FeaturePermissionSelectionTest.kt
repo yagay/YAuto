@@ -73,6 +73,17 @@ class FeaturePermissionSelectionTest {
         }.isEmpty())
     }
 
+    @Test fun lsposedWinsWhenAllBackendsAreAuthorized() {
+        val feature = descriptor(
+            FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+            FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+            FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+            FeatureImplementationOption("lsposed", setOf(AccessRequirement.LSPOSED)),
+        )
+        assertEquals(listOf(AccessRequirement.LSPOSED),
+            permissionsForFeature(feature, null) { PermissionAvailability.GRANTED })
+    }
+
     @Test fun rootWinsWhenBothRootAndShizukuAreAuthorized() {
         val feature = descriptor(
             FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),

@@ -31,5 +31,20 @@ class ShellAccessibilityOperationsTest {
         assertNull(ShellAccessibilityOperations.command(request(ShellAccessibilityOperations.TAP,
             mapOf("x" to num(-1.0), "y" to num(2.0)))))
         assertNull(ShellAccessibilityOperations.command(request("accessibility.click_text", emptyMap())))
+        val global = request(ShellAccessibilityOperations.GLOBAL_ACTION,
+            mapOf("action" to ConfigValue.StringValue("notifications")))
+        assertEquals(SystemOperations.EXPAND_NOTIFICATIONS,
+            ShellAccessibilityOperations.systemUiOperation(global))
+        assertEquals(SystemOperations.EXPAND_QUICK_SETTINGS,
+            ShellAccessibilityOperations.systemUiOperation(global.copy(
+                payload = mapOf("action" to ConfigValue.StringValue("quick_settings")))))
+        assertEquals(SystemOperations.SLEEP,
+            ShellAccessibilityOperations.systemUiOperation(global.copy(
+                payload = mapOf("action" to ConfigValue.StringValue("lock_screen")))))
+        assertNull(ShellAccessibilityOperations.systemUiOperation(global.copy(
+            payload = mapOf("action" to ConfigValue.StringValue("back")))))
+        assertNull(ShellAccessibilityOperations.systemUiOperation(
+            request(ShellAccessibilityOperations.TAP,
+                mapOf("x" to num(1.0), "y" to num(1.0)))))
     }
 }

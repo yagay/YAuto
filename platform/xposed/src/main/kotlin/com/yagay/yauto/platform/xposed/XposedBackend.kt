@@ -64,6 +64,10 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
 
     override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment): Boolean =
         (request.capability == CapabilityIds.SYSTEM_UI && request.operationId in supportedOperations()) ||
+            (request.capability == CapabilityIds.ACCESSIBILITY &&
+                ShellAccessibilityOperations.systemUiOperation(request)?.let(
+                    PrivilegedOperationContract::lsposedSystemUiSupported
+                ) == true) ||
             (request.capability == CapabilityIds.LSPOSED &&
                 request.operationId in setOf(
                     SystemBridgeProtocol.SHORTX_BEHAVIOR_SET,
@@ -87,6 +91,8 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
 
     override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
         val result = when {
+            request.capability == CapabilityIds.ACCESSIBILITY ->
+                ShellAccessibilityOperations.systemUiOperation(request)?.let { requestSystem(it) }
             request.capability == CapabilityIds.LSPOSED_HOOK &&
                 request.operationId == SystemBridgeProtocol.SHORTX_PACKAGE_BEHAVIOR_SET ->
                 requestPackageBehavior(request)
@@ -102,6 +108,7 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
         }
         val success = result?.getBoolean("success") == true
         val value = when {
+            request.capability == CapabilityIds.ACCESSIBILITY -> ConfigValue.BooleanValue(success)
             request.capability == CapabilityIds.LSPOSED_HOOK && result != null -> ConfigValue.ObjectValue(
                 mapOf(
                     "hookedCount" to ConfigValue.NumberValue(result.getInt("hookedCount", 0).toDouble()),

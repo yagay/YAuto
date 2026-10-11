@@ -30,6 +30,6 @@
     <string name="settings_logs_clear_action">清空日志</string>
     <string name="settings_logs_clear_confirmation">确定清空所有执行日志吗？此操作无法撤销。</string>
     <string name="settings_logs_cleared">执行日志已清空</string>
-    <string name="backend_prefer_root_title">优先使用 Root</string>
-    <string name="backend_prefer_root_description">Root 已授权且支持该操作时自动优先使用 Root；否则回退 Shizuku 或无障碍。界面节点识别等仍需无障碍；已有的手动指定方式保持不变。</string>
+    <string name="backend_prefer_root_title">优先 LSPosed，其次 Root</string>
+    <string name="backend_prefer_root_description">自动执行优先级：LSPosed → Root → Shizuku → 无障碍。仅使用真正支持该操作的方式，不可用或失败时依次回退；手动指定的旧任务不受影响。</string>
 </resources>

@@ -15,6 +15,21 @@ object ShellAccessibilityOperations {
     const val TAP = "accessibility.gesture.tap"
     const val SWIPE = "accessibility.gesture.swipe"
 
+    /**
+     * LSPosed exposes a system_server API only for these semantic equivalents.
+     * Do not pretend a generic UI tap, Home or Back has a matching system Hook.
+     */
+    fun systemUiOperation(request: CapabilityRequest): String? {
+        if (request.capability != CapabilityIds.ACCESSIBILITY ||
+            request.operationId != GLOBAL_ACTION) return null
+        return when (request.payload.string("action")) {
+            "notifications" -> SystemOperations.EXPAND_NOTIFICATIONS
+            "quick_settings" -> SystemOperations.EXPAND_QUICK_SETTINGS
+            "lock_screen" -> SystemOperations.SLEEP
+            else -> null
+        }
+    }
+
     fun command(request: CapabilityRequest): String? {
         if (request.capability != CapabilityIds.ACCESSIBILITY) return null
         val data = request.payload

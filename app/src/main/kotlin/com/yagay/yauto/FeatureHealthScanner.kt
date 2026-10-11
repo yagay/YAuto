@@ -257,8 +257,8 @@ class FeatureHealthScanner(
                 .filter { option -> option.requirements.all(available) }
                 .minWithOrNull(compareBy<FeatureImplementationOption> {
                     when (it.backendId) {
-                        "root" -> if (rootFirst) 0 else 4
-                        "lsposed" -> if (rootFirst) 1 else 5
+                        "lsposed" -> if (rootFirst) 0 else 5
+                        "root" -> if (rootFirst) 1 else 4
                         "shizuku" -> 2
                         "accessibility" -> 3
                         "android" -> 2

@@ -47,12 +47,13 @@ internal fun permissionsForFeature(
         compareBy<FeatureImplementationOption> { option ->
             option.requirements.count { availability(it) != PermissionAvailability.GRANTED }
         }.thenBy { option ->
-            // Only prefer Root in the editor when authorization is confirmed.
-            // When nothing is granted, offer Shizuku/non-root permission first.
+            // Only prioritize LSPosed/Root when their authorization is confirmed.
+            // Otherwise suggest available Shizuku/Accessibility rather than asking
+            // for unnecessary privileged permissions.
             val ready = option.requirements.all { availability(it) == PermissionAvailability.GRANTED }
             when (option.backendId) {
-                "root" -> if (ready && preferRootWhenAvailable) 0 else 4
-                "lsposed" -> if (ready && preferRootWhenAvailable) 1 else 5
+                "lsposed" -> if (ready && preferRootWhenAvailable) 0 else 5
+                "root" -> if (ready && preferRootWhenAvailable) 1 else 4
                 "shizuku" -> 2
                 "accessibility" -> 3
                 "android" -> 2

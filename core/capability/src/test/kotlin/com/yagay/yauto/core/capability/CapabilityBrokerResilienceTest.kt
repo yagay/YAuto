@@ -118,4 +118,58 @@ class CapabilityBrokerResilienceTest {
         CapabilityBroker({ environment }, listOf(root, shizuku), { false }).execute(request)
         assertEquals(listOf("shizuku"), calls)
     }
+
+    @Test fun lsposedPrecedesRootAndShizukuForAutomaticSystemActions() = runBlocking {
+        val calls = mutableListOf<String>()
+        fun backend(name: String, works: Boolean, supported: Boolean = true) = object : CapabilityBackend {
+            override val id = name
+            override val priority = when (name) {
+                "lsposed" -> 90
+                "root" -> 80
+                "shizuku" -> 70
+                else -> 40
+            }
+            override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) = supported
+            override suspend fun isAvailable(environment: RuntimeEnvironment): Boolean {
+                calls += "check:$name"
+                return true
+            }
+            override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
+                calls += "execute:$name"
+                return CapabilityResult(works)
+            }
+        }
+        val broker = CapabilityBroker({ environment }, listOf(
+            backend("root", true), backend("accessibility", true),
+            backend("lsposed", true), backend("shizuku", true),
+        ))
+        val request = CapabilityRequest(CapabilityIds.SYSTEM_UI, SystemOperations.SLEEP)
+        assertEquals("lsposed", broker.execute(request).backendId)
+        assertEquals(listOf("check:lsposed", "execute:lsposed"), calls)
+        calls.clear()
+        assertEquals("root", broker.execute(request.copy(preferredBackendId = "root")).backendId)
+        assertEquals(listOf("check:root", "execute:root"), calls)
+    }
+
+    @Test fun lsposedFailureFallsBackToRootThenShizukuAndAccessibility() = runBlocking {
+        val executed = mutableListOf<String>()
+        fun backend(name: String, works: Boolean) = object : CapabilityBackend {
+            override val id = name
+            override val priority = 100
+            override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) = true
+            override suspend fun isAvailable(environment: RuntimeEnvironment) = true
+            override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment): CapabilityResult {
+                executed += name
+                return CapabilityResult(works)
+            }
+        }
+        val broker = CapabilityBroker({ environment }, listOf(
+            backend("accessibility", true), backend("shizuku", false),
+            backend("root", false), backend("lsposed", false),
+        ))
+        val outcome = broker.execute(CapabilityRequest(CapabilityIds.ACCESSIBILITY, "test"))
+        assertEquals("accessibility", outcome.backendId)
+        assertEquals(listOf("lsposed", "root", "shizuku", "accessibility"), executed)
+        assertEquals(executed, outcome.attempts.map { it.backendId })
+    }
 }
