@@ -27,6 +27,8 @@ data class XposedHardwareKeySnapshot(
 object XposedSystemEventRuntimeBridge {
     @Volatile private var listener: ((RuntimeEvent) -> Unit)? = null
     private val nextHardwareKey = AtomicReference<CompletableDeferred<XposedHardwareKeySnapshot>?>(null)
+    private data class ProbeWaiter(val nonce: String, val deferred: CompletableDeferred<Boolean>)
+    private val transportProbe = AtomicReference<ProbeWaiter?>(null)
 
     fun attach(value: ((RuntimeEvent) -> Unit)?) {
         listener = value
@@ -42,9 +44,32 @@ object XposedSystemEventRuntimeBridge {
         }
     }
 
+    suspend fun awaitTransportProbe(nonce: String, timeoutMs: Long): Boolean {
+        val waiter = ProbeWaiter(nonce, CompletableDeferred())
+        transportProbe.getAndSet(waiter)?.deferred?.cancel()
+        return try {
+            withTimeoutOrNull(timeoutMs.coerceIn(500L, 10_000L)) {
+                waiter.deferred.await()
+            } == true
+        } finally {
+            transportProbe.compareAndSet(waiter, null)
+        }
+    }
+
     internal fun dispatch(intent: Intent) {
         if (intent.action != SystemBridgeProtocol.SYSTEM_EVENT_ACTION) return
         val type = intent.getStringExtra("type").orEmpty()
+        if (type == SystemBridgeProtocol.EVENT_DELIVERY_PROBE_TYPE) {
+            val expected = transportProbe.get()
+            if (expected != null && expected.nonce ==
+                intent.getStringExtra("nonce").orEmpty() &&
+                transportProbe.compareAndSet(expected, null)) {
+                if (expected.deferred.complete(true)) {
+                    XposedEventTransportHealth.onForwarded(type)
+                }
+            }
+            return
+        }
         if (type == SystemBridgeProtocol.HARDWARE_KEY_CAPTURE_TYPE) {
             val waiter = nextHardwareKey.getAndSet(null)
             Log.i("YAutoKeyCapture", "LSPosed event dispatched: " +
