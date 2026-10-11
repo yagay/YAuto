@@ -49,6 +49,19 @@ class YAutoAccessibilityService : AccessibilityService() {
         event ?: return
         val eventPackage = event.packageName?.toString().orEmpty()
         val ownPackage = eventPackage == packageName
+        if (!ownPackage && event.eventType in setOf(
+                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+                AccessibilityEvent.TYPE_WINDOWS_CHANGED,
+                AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
+                AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
+                AccessibilityEvent.TYPE_VIEW_SCROLLED,
+                AccessibilityEvent.TYPE_VIEW_FOCUSED,
+            )) {
+            // The lightweight idle clock is always updated even when no
+            // Accessibility UI-event trigger is subscribed. No text/nodes
+            // are read or retained for this feature.
+            AccessibilityRuntimeBridge.recordUiActivity(eventPackage)
+        }
         if (ownPackage) {
             // Window identity only needs real window transitions. Ignoring YAuto's own content
             // changes also avoids snapshot allocation/atomic churn on every Compose update.
