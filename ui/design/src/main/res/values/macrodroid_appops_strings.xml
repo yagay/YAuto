@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_android_event_app_ops_operation_title">Application operation</string>
+    <string name="feature_android_event_app_ops_operation_description">Run when an application AppOps operation starts or finishes. Select a phase, app, or operation code.</string>
+    <string name="feature_android_app_last_used_launch_title">Launch recently used app</string>
+    <string name="feature_android_app_last_used_launch_description">Launch the latest or an older app from UsageStats history; this is not a live task-stack switch.</string>
+</resources>
