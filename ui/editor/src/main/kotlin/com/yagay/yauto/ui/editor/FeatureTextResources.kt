@@ -48,13 +48,13 @@ internal class FeatureTextResolver(private val context: Context) {
     fun title(descriptor: FeatureDescriptor): String =
         titleCache.getOrPut(descriptor.id.value) {
             // Prefer verified source names for identical semantics: MacroDroid
-            // first, then ShortX; preserve explicitly reviewed YAuto overrides.
+            // first, then ShortX, then native title, then legacy aliases.
             // Raw descriptor titles remain search aliases and never become IDs.
             resource("feature_display_${resourceKey(descriptor.id.value)}_title")
                 ?: resource("macro_feature_${resourceKey(descriptor.id.value)}_title")
                 ?: resource("shortx_feature_${resourceKey(descriptor.id.value)}_title")
-                ?: sourceAlignedFeatureTitle(descriptor.id.value)?.let(localizedContext::getString)
                 ?: resource("feature_${resourceKey(descriptor.id.value)}_title")
+                ?: sourceAlignedFeatureTitle(descriptor.id.value)?.let(localizedContext::getString)
                 ?: phrase(descriptor.title)
                 ?: genericTitle(descriptor)
         }
