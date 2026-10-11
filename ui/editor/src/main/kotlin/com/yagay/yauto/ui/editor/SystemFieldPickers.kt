@@ -490,28 +490,43 @@ internal fun InstalledAppField(
 ) {
     val context = LocalContext.current
     var show by remember { mutableStateOf(false) }
+    var manualEntry by remember(descriptorId, field.key) { mutableStateOf(false) }
     val label = localizedFieldLabelShared(descriptorId, field)
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValue,
-            enabled = enabled,
-            modifier = Modifier.fillMaxWidth(),
-            label = {
-                Text(
-                    if (field.required) stringResource(TextR.string.editor_required_field_format, label)
-                    else label
-                )
-            },
-            singleLine = true,
-            supportingText = { Text(stringResource(TextR.string.feature_picker_app_input_hint)) },
-        )
-        OutlinedButton(
-            onClick = { show = true },
-            enabled = enabled,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(TextR.string.feature_picker_select_installed_app))
+        if (manualEntry) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = onValue,
+                enabled = enabled,
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(
+                        if (field.required) stringResource(TextR.string.editor_required_field_format, label)
+                        else label
+                    )
+                },
+                singleLine = true,
+                supportingText = { Text(stringResource(TextR.string.feature_picker_app_input_hint)) },
+            )
+            TextButton(onClick = { manualEntry = false; show = true }, enabled = enabled) {
+                Text(stringResource(TextR.string.live_picker_choose_from_device))
+            }
+        } else {
+            Text(
+                if (field.required) stringResource(TextR.string.editor_required_field_format, label)
+                else label,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            OutlinedButton(
+                onClick = { show = true },
+                enabled = enabled,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(value.ifBlank { stringResource(TextR.string.feature_picker_select_installed_app) })
+            }
+            TextButton(onClick = { manualEntry = true }, enabled = enabled) {
+                Text(stringResource(TextR.string.live_picker_enter_manually))
+            }
         }
     }
     if (show) {
