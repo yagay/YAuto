@@ -344,15 +344,44 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
         )
     }
 
-    override suspend fun collect(context: DiagnosticContext) = listOf(
-        DiagnosticRecord(
-            DiagnosticSource.LSPOSED,
-            System.currentTimeMillis(),
-            title = userText("diagnostics.xposed.title"),
-            message = status().message.orEmpty(),
-            context = context,
+    override suspend fun collect(context: DiagnosticContext): List<DiagnosticRecord> {
+        val permissionStatus = status()
+        val delivery = XposedEventTransportHealth.snapshot()
+        // PING proves only the system bridge is reachable. Event delivery is
+        // measured independently; a permission grant and eleven installed
+        // Hooks did not prevent the OEM senderUid=-1 rejection.
+        return listOf(
+            DiagnosticRecord(
+                DiagnosticSource.LSPOSED,
+                System.currentTimeMillis(),
+                title = userText("diagnostics.xposed.title"),
+                message = permissionStatus.message.orEmpty(),
+                context = context,
+            ),
+            DiagnosticRecord(
+                DiagnosticSource.LSPOSED,
+                System.currentTimeMillis(),
+                severity = if (delivery.rejected > 0)
+                    DiagnosticSeverity.WARNING else DiagnosticSeverity.INFO,
+                title = "LSPosed event transport (since app start)",
+                message = buildString {
+                    append("Authenticated broadcasts received: ${delivery.accepted}; ")
+                    append("rejected: ${delivery.rejected}. ")
+                    if (delivery.lastAcceptedType.isNotBlank()) {
+                        append("Last received: ${delivery.lastAcceptedType}. ")
+                    } else {
+                        append("No end-to-end event delivery has been observed yet. ")
+                    }
+                    if (delivery.lastRejectedReason.isNotBlank()) {
+                        append("Last rejection: ${delivery.lastRejectedReason}. ")
+                    }
+                    append("Connected/Hook installed does not prove event delivery; " +
+                        "test an actual trigger on this device.")
+                },
+                context = context,
+            ),
         )
-    )
+    }
 
     private companion object {
         val PACKAGE_NAME = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")
