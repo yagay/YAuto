@@ -118,7 +118,7 @@ class PrivilegedAndroidFeaturePackTest {
         val auto = broker.execute(CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "test"))
         assertTrue(auto.success)
         assertEquals("shizuku", auto.backendId)
-        assertEquals(listOf("shizuku"), auto.attempts.map { it.backendId })
+        assertEquals(listOf("root", "shizuku"), auto.attempts.map { it.backendId })
 
         val rootOnly = broker.execute(CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "test", preferredBackendId = "root"))
         assertFalse(rootOnly.success)
