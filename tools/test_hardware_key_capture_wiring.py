@@ -1,6 +1,6 @@
 """Regression checks for the hardware-key capture life cycle.
 
-Protect one-active-learner source selection and authenticated LSPosed capture;
+Protect single-session capture, passive observer precedence and authenticated LSPosed capture;
 runtime OEM Hook behavior still requires device testing.
 """
 import pathlib
@@ -12,22 +12,34 @@ def source(path):
     return (ROOT / path).read_text(encoding="utf-8")
 
 class HardwareKeyCaptureWiringTest(unittest.TestCase):
-    def test_key_learning_uses_one_source_at_a_time(self):
+    def test_key_learning_observes_first_press_without_staged_dead_zones(self):
         s = source("app/src/main/kotlin/com/yagay/yauto/HardwareKeyCaptureCoordinator.kt")
         self.assertIn("graph.xposed.beginHardwareKeyCapture(totalMs)", s)
         self.assertIn("graph.xposed.endHardwareKeyCapture()", s)
-        self.assertIn("graph.hardwareKeys.captureRawKey(rootBudget)", s)
+        self.assertIn("graph.hardwareKeys.captureRawKey(totalMs)", s)
         self.assertIn("AccessibilityRuntimeBridge.awaitNextKey(remainingMs())", s)
-        self.assertLess(s.index("graph.xposed.beginHardwareKeyCapture(totalMs)"),
-                        s.index("graph.hardwareKeys.captureRawKey(rootBudget)"))
-        self.assertLess(s.index("graph.hardwareKeys.captureRawKey(rootBudget)"),
-                        s.index("AccessibilityRuntimeBridge.awaitNextKey(remainingMs())"))
-        self.assertNotIn("launchCapture {", s)
+        self.assertIn("val rootObserver = launch(Dispatchers.IO)", s)
+        self.assertIn("val xposedObserver = launch", s)
+        self.assertIn("val accessibilityObserver = launch", s)
+        self.assertIn("val observations = Channel<HardwareKeyCaptureResult>(Channel.UNLIMITED)", s)
+        self.assertIn("val best = candidates.maxWithOrNull(", s)
+        self.assertIn('"lsposed" in it.sources -> 3', s)
+        self.assertIn('"root.input" in it.sources -> 2', s)
+        self.assertIn("withContext(NonCancellable)", s)
+        self.assertIn("rootObserver.cancel()", s)
+        self.assertIn("xposedObserver.cancel()", s)
+        self.assertIn("accessibilityObserver.cancel()", s)
+        self.assertNotIn("rootBudget", s)
         self.assertNotIn("if (runCatching { graph.rootShell.isAvailable() }", s)
         c = source("app/src/main/kotlin/com/yagay/yauto/DeviceHardwareKeyCatalog.kt")
-        method = c.split("suspend fun captureRawKey(", 1)[1].split("private suspend fun resolveAndroidKeyCode", 1)[0]
+        method = c.split("suspend fun captureRawKey(", 1)[1].split("suspend fun enrichRawCapture", 1)[0]
         self.assertNotIn("rootShell.isAvailable()", method)
-        self.assertIn("rootShell.run(RAW_KEY_CAPTURE_COMMAND", method)
+        self.assertNotIn("RAW_KEY_CAPTURE_COMMAND", method)
+        self.assertIn('rootShell.commandArguments("getevent -t 2>/dev/null")', method)
+        self.assertIn("reader.readLine()", method)
+        self.assertIn("actionValue != 0L", method)
+        self.assertIn("process.destroyForcibly()", method)
+        self.assertIn("withTimeoutOrNull(budget)", method)
         self.assertIn("key.action == KeyEvent.ACTION_UP", s)
         self.assertIn("HardwareKeyCaptureSession.mutex.withLock", s)
         self.assertIn("HardwareKeyCaptureSession.begin()", s)
@@ -51,7 +63,7 @@ class HardwareKeyCaptureWiringTest(unittest.TestCase):
         self.assertIn("if (mappings.isNotEmpty() && !learningPaused)", listener)
         self.assertIn("activeReaders.add(this)", listener)
         self.assertIn("activeReaders.remove(this)", listener)
-        self.assertIn("if (raw.linuxEvKey > 0 && raw.keyCode <= 0)", s)
+        self.assertIn("if (best.linuxEvKey > 0 && best.keyCode <= 0)", s)
 
     def test_lsposed_capture_uses_authenticated_event_envelope(self):
         s = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedHardwareKeyEventHandler.kt")
