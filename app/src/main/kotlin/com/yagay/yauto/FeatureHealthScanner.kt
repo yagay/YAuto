@@ -108,6 +108,7 @@ class FeatureHealthScanner(
                     // A single failed backend probe or provider error must
                     // not permanently terminate the refresh actor.
                     android.util.Log.e("YAutoFeatureHealth", "Feature scan failed", error)
+                    _snapshot.value = null // stale permission advice is worse than no advice
                 } finally {
                     _scanning.value = false
                 }

@@ -112,23 +112,8 @@ internal fun YAutoAppScreen(graph: AppGraph) {
     val saveLock = remember { Mutex() }
     val featureDescriptors = remember(graph) { graph.features.allDescriptors() }
     RefreshFeatureHealthOnEditorOpen(
-        page == AppPage.AUTOMATION || page == AppPage.FLOW, graph.featureHealth)
-    val featureHealthSnapshot by graph.featureHealth.snapshot.collectAsState()
-    val featureAvailability = remember(featureHealthSnapshot, context) {
-        featureHealthSnapshot?.items.orEmpty().associate { item ->
-            item.featureId to FeatureAvailabilityUi(
-                statusLabel = featureHealthStatusLabel(context, item.status),
-                summary = featureHealthListSummary(context, item),
-                tone = when (item.status) {
-                    FeatureHealthStatus.READY -> FeatureAvailabilityTone.READY
-                    FeatureHealthStatus.UNKNOWN -> FeatureAvailabilityTone.UNSUPPORTED
-                    FeatureHealthStatus.BLOCKED -> FeatureAvailabilityTone.BLOCKED
-                    FeatureHealthStatus.BROKEN -> FeatureAvailabilityTone.BROKEN
-                    FeatureHealthStatus.UNSUPPORTED -> FeatureAvailabilityTone.UNSUPPORTED
-                },
-            )
-        }
-    }
+        page == AppPage.AUTOMATION || page == AppPage.FLOW, graph)
+    val featureAvailability = rememberLiveFeatureAvailability(graph)
 
     fun navigateTo(destination: AppPage) {
         navigation = navigation.forward(destination)
