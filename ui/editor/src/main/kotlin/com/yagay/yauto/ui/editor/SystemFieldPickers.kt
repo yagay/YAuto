@@ -41,10 +41,11 @@ import kotlinx.coroutines.withContext
 
 internal data class InstalledApp(val label: String, val packageName: String, val system: Boolean)
 
-internal data class SystemPickerOption(
+data class SystemPickerOption(
     val value: String,
     val label: String,
     val detail: String? = null,
+    val relatedValues: Map<String, String> = emptyMap(),
 )
 
 internal fun inferredPickerSource(
@@ -53,6 +54,12 @@ internal fun inferredPickerSource(
 ): FieldPickerSource? {
     if (field !is FieldSchema.Text && field !is FieldSchema.Number) return null
     return when (field.key) {
+        "slot" -> if (descriptor.id.value.contains("qs_tile", ignoreCase = true))
+            FieldPickerSource.LiveSystem else null
+        "channelId", "groupKey", "actionTitle", "actionIndex", "titleContains",
+        "textContains", "notificationId", "id", "tag" -> if (
+            descriptor.id.value.contains("notification", ignoreCase = true)
+        ) FieldPickerSource.LiveSystem else null
         "package" -> FieldPickerSource.InstalledApp
         "component" -> FieldPickerSource.Component(
             packageFieldKey = descriptor.fields.firstOrNull { it.key == "package" }?.key,
@@ -157,6 +164,7 @@ internal fun PickerBackedField(
     enabled: Boolean,
     allowManualInput: Boolean,
     onValue: (String) -> Unit,
+    onRelatedValue: (String, String) -> Unit = { _, _ -> },
     onHardwareKeyCaptured: (HardwareKeyCaptureResult) -> Unit = {},
 ) {
     val label = localizedFieldLabelShared(descriptorId, field)
@@ -252,11 +260,16 @@ internal fun PickerBackedField(
     if (showPicker) {
         SystemValuePickerDialog(
             picker = picker,
+            descriptorId = descriptorId,
+            fieldKey = field.key,
             allValues = allValues,
             current = value,
             onDismiss = { showPicker = false },
-            onPick = {
-                onValue(it)
+            onPick = { option ->
+                onValue(option.value)
+                option.relatedValues.forEach { (key, next) ->
+                    if (allValues[key].isNullOrBlank()) onRelatedValue(key, next)
+                }
                 showPicker = false
             },
         )
@@ -267,28 +280,41 @@ internal fun PickerBackedField(
 @Composable
 private fun SystemValuePickerDialog(
     picker: FieldPickerSource,
+    descriptorId: String,
+    fieldKey: String,
     allValues: Map<String, String>,
     current: String,
     onDismiss: () -> Unit,
-    onPick: (String) -> Unit,
+    onPick: (SystemPickerOption) -> Unit,
 ) {
     val context = LocalContext.current
     val locale = currentEditorLocale()
     val hardwareKeyCatalogLoader = LocalHardwareKeyCatalogLoader.current
+    val liveSystemLoader = LocalLiveSystemFieldPicker.current
     var query by remember { mutableStateOf("") }
     var loading by remember(picker, allValues) { mutableStateOf(true) }
     var options by remember(picker, allValues) { mutableStateOf(emptyList<SystemPickerOption>()) }
 
-    LaunchedEffect(picker, allValues, locale, hardwareKeyCatalogLoader) {
+    var unavailable by remember { mutableStateOf(false) }
+    LaunchedEffect(picker, descriptorId, fieldKey, allValues, locale, hardwareKeyCatalogLoader, liveSystemLoader) {
         loading = true
         val hardwareKeys = if (picker == FieldPickerSource.KeyCode) {
             runCatching { hardwareKeyCatalogLoader() }.getOrDefault(HardwareKeyPickerCatalog())
         } else {
             HardwareKeyPickerCatalog()
         }
-        options = withContext(Dispatchers.IO) {
-            loadSystemPickerOptions(context, picker, allValues, locale, hardwareKeys)
+        val discovered = runCatching {
+            if (picker == FieldPickerSource.LiveSystem) {
+                liveSystemLoader?.load(descriptorId, fieldKey, allValues).orEmpty()
+            } else {
+                withContext(Dispatchers.IO) {
+                    loadSystemPickerOptions(context, picker, allValues, locale, hardwareKeys)
+                }
+            }
         }
+        unavailable = discovered.isFailure || (picker == FieldPickerSource.LiveSystem &&
+            liveSystemLoader == null)
+        options = discovered.getOrDefault(emptyList())
         loading = false
     }
 
@@ -326,6 +352,10 @@ private fun SystemValuePickerDialog(
                         singleLine = true,
                     )
                 }
+                if (unavailable) {
+                    item { Text(stringResource(TextR.string.live_picker_unavailable),
+                        modifier = Modifier.padding(12.dp)) }
+                }
                 if (loading) {
                     item {
                         Box(
@@ -338,7 +368,11 @@ private fun SystemValuePickerDialog(
                 } else if (filtered.isEmpty()) {
                     item {
                         Text(
-                            stringResource(TextR.string.feature_picker_no_values),
+                            stringResource(
+                                if (picker == FieldPickerSource.LiveSystem)
+                                    TextR.string.live_picker_no_visible_data
+                                else TextR.string.feature_picker_no_values
+                            ),
                             modifier = Modifier.padding(12.dp),
                             style = MaterialTheme.typography.bodyMedium,
                         )
@@ -358,7 +392,7 @@ private fun SystemValuePickerDialog(
                                     ?: option.value.takeIf { it != option.label }
                                 if (detail != null) Text(detail)
                             },
-                            modifier = Modifier.clickable { onPick(option.value) },
+                            modifier = Modifier.clickable { onPick(option) },
                         )
                         HorizontalDivider()
                     }

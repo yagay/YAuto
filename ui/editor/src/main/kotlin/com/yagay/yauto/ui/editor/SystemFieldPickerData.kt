@@ -196,6 +196,7 @@ internal fun loadSystemPickerOptions(
             prefix = "CATEGORY_",
             comparator = comparator,
         )
+        FieldPickerSource.LiveSystem -> emptyList()
         FieldPickerSource.NotificationCategory -> androidConstantOptions(
             owner = Notification::class.java,
             prefix = "CATEGORY_",

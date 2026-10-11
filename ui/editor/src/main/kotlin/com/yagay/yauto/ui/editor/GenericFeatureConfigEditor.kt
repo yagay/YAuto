@@ -409,6 +409,7 @@ private fun FieldEditor(
             enabled = enabled,
             allowManualInput = behavior.allowManualInput,
             onValue = onValue,
+            onRelatedValue = onRelatedValue,
             onHardwareKeyCaptured = { captured ->
                 if (field.key.startsWith("keyCode")) {
                     val suffix = field.key.removePrefix("keyCode")
