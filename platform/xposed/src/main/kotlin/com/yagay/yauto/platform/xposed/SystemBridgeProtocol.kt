@@ -5,6 +5,8 @@ object SystemBridgeProtocol {
     const val ACTION = "com.yagay.yauto.SYSTEM_OPERATION"
     const val PERMISSION = "com.yagay.yauto.permission.SYSTEM_BRIDGE"
     const val PING = "ping"
+    const val EVENT_DELIVERY_PROBE = "event_delivery.probe"
+    const val EVENT_DELIVERY_PROBE_TYPE = "yauto.transport.probe"
     const val APP_PROCESS_START = "app_process.start"
     const val CHIP_ACTION = "com.yagay.yauto.SYSTEM_UI_CHIP"
     const val TILE_LABEL_ACTION = "com.yagay.yauto.SYSTEM_UI_TILE_LABEL"
