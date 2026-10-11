@@ -93,6 +93,8 @@ jobs:
         run: python3 .github/scripts/check-startup-safety.py
       - name: Runtime event contract guard
         run: python3 .github/scripts/check-event-contracts.py
+      - name: FeaturePack registry coverage regression
+        run: python3 -m unittest discover -s tools -p 'test_featurepack_schema_inventory.py'
       - name: FeaturePack and UI Schema architecture inventory
         run: python3 tools/audit_featurepack_schema.py --fail-on-unified-violations
       - name: Architecture maintainability guard

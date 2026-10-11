@@ -24,13 +24,16 @@ def inventory() -> dict:
     packs = []
     violations = []
     for folder in SOURCES:
-        for path in sorted(folder.rglob("*FeaturePack.kt")):
+        for path in sorted(folder.rglob("*.kt")):
             source = path.read_text(encoding="utf-8")
             rel = path.relative_to(ROOT).as_posix()
             direct = len(re.findall(r"registry\.register(?:Action|Condition|Event|State)\s*\(", source))
             descriptors = len(re.findall(r"FeatureDescriptor\s*\(", source))
             schema = len(re.findall(r"FieldSchema\.", source))
             compose = bool(re.search(r"@Composable\b|import\s+androidx\.compose\.", source))
+            is_pack = path.name.endswith("FeaturePack.kt")
+            if not is_pack and direct == 0 and descriptors == 0:
+                continue
             if compose:
                 violations.append(f"{rel}: feature packs cannot implement Compose UI; use the shared editor")
             packs.append({
@@ -40,6 +43,7 @@ def inventory() -> dict:
                 "schema_field_references": schema,
                 "delegated_definitions": direct == 0,
                 "compose_ui": compose,
+                "is_feature_pack": is_pack,
             })
 
     editor_file = EDITOR / "GenericFeatureConfigEditor.kt"
@@ -57,7 +61,8 @@ def inventory() -> dict:
     }
     violations.extend(name for name, passed in rules.items() if not passed)
     return {
-        "pack_count": len(packs),
+        "pack_count": sum(item["is_feature_pack"] for item in packs),
+        "registration_source_count": len(packs),
         "total_descriptor_constructors": sum(item["descriptor_constructors"] for item in packs),
         "direct_registration_calls": sum(item["direct_registration_calls"] for item in packs),
         "editor_contracts": rules,
@@ -73,7 +78,7 @@ def main() -> None:
     output = ROOT / "build/reports/featurepack_schema_inventory.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"Audited {report['pack_count']} FeaturePack files; {report['total_descriptor_constructors']} literal descriptors")
+    print(f"Audited {report['pack_count']} FeaturePack files across {report['registration_source_count']} registration sources; {report['total_descriptor_constructors']} literal descriptors")
     print(f"Direct registration calls: {report['direct_registration_calls']}")
     for item in report["violations"]:
         print("VIOLATION:", item)

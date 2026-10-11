@@ -140,4 +140,29 @@ class WorkspaceEventSubscriptionsTest {
 
         assertEquals(emptySet<String>(), ids)
     }
+    @Test
+    fun `active activation events use the same runtime pause and trigger gates`() {
+        val allowed = Automation(
+            id = AutomationId("allowed"), name = "Allowed",
+            activation = Activation(events = listOf(FeatureRef("android.event.interval"))),
+        )
+        val blocked = Automation(
+            id = AutomationId("blocked"), name = "Blocked", category = "disabled",
+            activation = Activation(events = listOf(FeatureRef("android.event.sensor_value"))),
+        )
+        val disabledTrigger = Automation(
+            id = AutomationId("muted"), name = "Muted",
+            activation = Activation(events = listOf(FeatureRef("android.event.alarm_time"))),
+        )
+        val workspace = WorkspaceData(
+            automations = listOf(allowed, blocked, disabledTrigger),
+            disabledCategories = setOf("disabled"),
+            disabledTriggerKeys = setOf("muted|android.event.alarm_time|"),
+        )
+        assertEquals(listOf("android.event.interval"),
+            workspace.activeActivationEvents().map { it.typeId }.toList())
+        assertEquals(emptyList<String>(),
+            workspace.copy(runtimeEnabled = false).activeActivationEvents().map { it.typeId }.toList())
+    }
+
 }
