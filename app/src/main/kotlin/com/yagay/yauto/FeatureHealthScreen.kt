@@ -129,28 +129,33 @@ internal fun FeatureHealthScreen(
                         )
                     }
                     Button(
-                        onClick = { scanner.requestScan(force = true) },
-                        enabled = !scanning,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(
-                            stringResource(
-                                if (scanning) TextR.string.feature_health_scanning
-                                else TextR.string.feature_health_scan_now
-                            )
-                        )
-                    }
-                    OutlinedButton(
                         onClick = scanner::requestReadOnlyVerification,
                         enabled = !scanning,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(stringResource(TextR.string.feature_health_probe_read_only))
+                        Text(stringResource(
+                            if (scanning) TextR.string.feature_health_scanning
+                            else TextR.string.feature_health_probe_read_only
+                        ))
+                    }
+                    OutlinedButton(
+                        onClick = { scanner.requestScan(force = true) },
+                        enabled = !scanning,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(TextR.string.feature_health_scan_now))
                     }
                     verificationProgress?.let { (completed, total) ->
                         Text(
                             stringResource(TextR.string.feature_health_probe_progress, completed, total),
                             style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                    if (snapshot != null && snapshot!!.items.none { it.probe != null }) {
+                        Text(
+                            stringResource(TextR.string.feature_health_readiness_only_warning),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
                         )
                     }
                     if (snapshot?.items?.any { it.probe != null } == true) {
@@ -330,6 +335,11 @@ private fun featureHealthDiagnosticJson(
     }
     return JSONObject()
         .put("schemaVersion", 2)
+        .put(
+            "scanType",
+            if (snapshot.items.any { it.probe != null }) "READ_ONLY_API" else "READINESS_ONLY",
+        )
+        .put("hasRealInterfaceEvidence", snapshot.probedCount + snapshot.probeFailedCount > 0)
         .put("startedAtEpochMs", snapshot.startedAtEpochMs)
         .put("finishedAtEpochMs", snapshot.finishedAtEpochMs)
         .put(
