@@ -29,7 +29,7 @@ class FeaturePermissionSelectionTest {
             FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
             FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
         )
-        assertEquals(listOf(AccessRequirement.SHIZUKU),
+        assertEquals(listOf(AccessRequirement.ROOT),
             permissionsForFeature(feature, null) { PermissionAvailability.NOT_GRANTED })
     }
 
@@ -94,14 +94,26 @@ class FeaturePermissionSelectionTest {
             permissionsForFeature(feature, null) { PermissionAvailability.GRANTED })
     }
 
-    @Test fun disabledRootPreferenceUsesAuthorizedShizukuFirst() {
+    @Test fun disabledRootPreferenceNeverEnablesShizukuWhenRootIsAuthorized() {
+        val feature = descriptor(
+            FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+            FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
+        )
+        assertEquals(listOf(AccessRequirement.ROOT),
+            permissionsForFeature(feature, null, preferRootWhenAvailable = false) {
+                PermissionAvailability.GRANTED
+            })
+    }
+
+    @Test fun shizukuIsRecommendedOnlyWhenRootIsUnavailable() {
         val feature = descriptor(
             FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
             FeatureImplementationOption("shizuku", setOf(AccessRequirement.SHIZUKU)),
         )
         assertEquals(listOf(AccessRequirement.SHIZUKU),
-            permissionsForFeature(feature, null, preferRootWhenAvailable = false) {
-                PermissionAvailability.GRANTED
+            permissionsForFeature(feature, null) { permission ->
+                if (permission == AccessRequirement.ROOT) PermissionAvailability.NOT_GRANTED
+                else PermissionAvailability.GRANTED
             })
     }
 
