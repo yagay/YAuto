@@ -27,6 +27,7 @@ class ConfiguredLogcatEventSource(
     private var refreshJob: Job? = null
     private var readerJob: Job? = null
     @Volatile private var process: Process? = null
+    private val processLock = Any()
 
     override fun start(emitter: RuntimeEventEmitter) {
         if (!started.compareAndSet(false, true)) return
@@ -56,7 +57,7 @@ class ConfiguredLogcatEventSource(
                     delay(5_000L)
                     continue
                 }
-                process = running
+                synchronized(processLock) { process = running }
                 try {
                     BufferedReader(InputStreamReader(running.inputStream)).useLines { lines ->
                         lines.forEach { line ->
@@ -83,7 +84,9 @@ class ConfiguredLogcatEventSource(
                     // Retry only if this reader session is still active.
                 } finally {
                     runCatching { running.destroyForcibly() }
-                    if (process === running) process = null
+                    synchronized(processLock) {
+                        if (process === running) process = null
+                    }
                 }
                 if (isActive && started.get()) delay(1_500L)
             }
@@ -93,8 +96,10 @@ class ConfiguredLogcatEventSource(
     private fun stopReader() {
         readerJob?.cancel()
         readerJob = null
-        runCatching { process?.destroy() }
-        process = null
+        val previous = synchronized(processLock) {
+            process.also { process = null }
+        }
+        runCatching { previous?.destroyForcibly() }
     }
 
     override fun stop() {

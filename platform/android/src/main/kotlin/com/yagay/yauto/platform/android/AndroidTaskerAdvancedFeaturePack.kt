@@ -104,7 +104,7 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
                 })
             } catch (_: RejectedExecutionException) {
                 return@registerAction ActionExecutionResult(
-                    false, message = userText("feature.operation_failed", "BeanShell busy"),
+                    false, message = userText("feature.operation_failed", "BeanShell"),
                 )
             }
             val value = try {

@@ -28,11 +28,13 @@ class WorkspaceMonitoringRegressionTest(unittest.TestCase):
         for name in ("ConfiguredLogcatEventSource.kt", "ConfiguredLocationEventSource.kt", "ConfiguredSensorEventSource.kt"):
             s = code("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/" + name)
             self.assertIn("activeActivationEvents()", s)
-        for name in ("ConfiguredLocationEventSource.kt", "ConfiguredSensorEventSource.kt"):
-            s = code("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/" + name)
-            self.assertIn("if (!started.get()) return@post", s)
+        location = code("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/ConfiguredLocationEventSource.kt")
+        self.assertIn("if (!started.get() || rules.isEmpty()", location)
+        sensor = code("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/ConfiguredSensorEventSource.kt")
+        self.assertIn("if (!started.get()) return@post", sensor)
         s = code("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/ConfiguredLogcatEventSource.kt")
         self.assertIn("if (process === running) process = null", s)
+        self.assertIn("synchronized(processLock)", s)
 
     def test_interval_changes_restart_existing_job(self):
         source = code("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/ConfiguredIntervalEventSource.kt")
