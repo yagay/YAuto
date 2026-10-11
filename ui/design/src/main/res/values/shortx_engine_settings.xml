@@ -4,7 +4,7 @@
     <string name="sx_master_rules">Rule feature</string>
     <string name="sx_master_rules_hint">Enable or disable all automations. Disabling cancels active rules.</string>
     <string name="sx_emergency">Emergency disable</string>
-    <string name="sx_emergency_hint">If the system hook delivers 12 power-key releases in 10 seconds, stop and disable all rules. Not guaranteed on every ROM; use the master switch as backup.</string>
+    <string name="sx_emergency_hint">If the system hook delivers 12 power-key releases in 10 seconds, stop and disable all rules. Multiple power presses may also invoke Android Emergency SOS; use with caution. Not guaranteed on every ROM; use the master switch as backup.</string>
     <string name="sx_key_prompt">Key event prompt</string>
     <string name="sx_key_prompt_hint">Toast Android KeyCode and scan code from the chosen input source when a physical key is released.</string>
     <string name="sx_shared_shell">Shell engine</string>
@@ -33,4 +33,17 @@
     <string name="sx_shizuku_root_blocked">Root is available. Shizuku is disabled by the privileged routing policy; no authorization is needed.</string>
     <string name="sx_emergency_triggered">YAuto emergency stop: all rules disabled</string>
     <string name="sx_key_event_format">KeyCode: %1$d   ScanCode: %2$d   %3$s</string>
+    <string name="sx_pointer_location">Show pointer location</string>
+    <string name="sx_pointer_location_hint">Android developer overlay with live pointer coordinates. Requires Root. This changes a system-wide setting.</string>
+    <string name="sx_pointer_error">Root is unavailable, or Android refused to change pointer location</string>
+    <string name="sx_appearance">Appearance</string>
+    <string name="sx_appearance_hint">Theme, dynamic colors and colorful cards</string>
+    <string name="sx_theme_mode">Theme mode</string>
+    <string name="sx_theme_system">Follow system</string>
+    <string name="sx_theme_light">Light</string>
+    <string name="sx_theme_dark">Dark</string>
+    <string name="sx_dynamic_color">Dynamic color</string>
+    <string name="sx_dynamic_color_hint">Use wallpaper-based Material colors on Android 12 and newer.</string>
+    <string name="sx_colorful_card">Colorful cards</string>
+    <string name="sx_colorful_card_hint">Use category accent backgrounds on dashboard tiles and section headers.</string>
 </resources>

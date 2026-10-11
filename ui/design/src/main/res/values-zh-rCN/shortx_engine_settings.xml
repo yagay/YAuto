@@ -4,7 +4,7 @@
     <string name="sx_master_rules">规则总开关</string>
     <string name="sx_master_rules_hint">启用或停止全部自动化；停用时取消正在运行的规则。</string>
     <string name="sx_emergency">紧急停止</string>
-    <string name="sx_emergency_hint">如果系统 Hook 能收到 10 秒内 12 次电源键松开事件，立即停止并禁用规则。部分 ROM 无法捕获电源键，请同时保留总开关作为备用。</string>
+    <string name="sx_emergency_hint">如果系统 Hook 能收到 10 秒内 12 次电源键松开事件，立即停止并禁用规则。连续多次按电源键也可能触发 Android 紧急 SOS，请谨慎使用。部分 ROM 无法捕获电源键，请同时保留总开关作为备用。</string>
     <string name="sx_key_prompt">按键事件提示</string>
     <string name="sx_key_prompt_hint">实体按键松开时用 Toast 显示选中事件源的 Android KeyCode 和扫描码。</string>
     <string name="sx_shared_shell">Shell 引擎</string>
@@ -33,4 +33,17 @@
     <string name="sx_shizuku_root_blocked">Root 已可用，根据特权执行策略禁用 Shizuku，不需要再申请 Shizuku 授权。</string>
     <string name="sx_emergency_triggered">YAuto 已紧急停止：全部自动化规则已关闭</string>
     <string name="sx_key_event_format">按键码：%1$d   扫描码：%2$d   来源：%3$s</string>
+    <string name="sx_pointer_location">显示指针位置</string>
+    <string name="sx_pointer_location_hint">显示 Android 开发者指针坐标层。需要 Root，会修改系统范围内的指针位置设置。</string>
+    <string name="sx_pointer_error">Root 不可用，或 Android 拒绝更改指针位置</string>
+    <string name="sx_appearance">外观设置</string>
+    <string name="sx_appearance_hint">主题模式、动态取色及彩色卡片</string>
+    <string name="sx_theme_mode">主题模式</string>
+    <string name="sx_theme_system">跟随系统</string>
+    <string name="sx_theme_light">浅色</string>
+    <string name="sx_theme_dark">深色</string>
+    <string name="sx_dynamic_color">动态颜色</string>
+    <string name="sx_dynamic_color_hint">在 Android 12 及以上版本使用 Material 壁纸动态配色。</string>
+    <string name="sx_colorful_card">彩色卡片</string>
+    <string name="sx_colorful_card_hint">主页磁贴和分类标题使用各自的彩色背景。</string>
 </resources>
