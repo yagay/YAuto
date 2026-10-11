@@ -36,6 +36,28 @@ class ReadOnlyFeatureProbeCatalogTest {
         assertNull(ReadOnlyFeatureProbeCatalog.queryKey("android.event.hardware_key", FeatureKind.EVENT))
     }
 
+    @Test fun extendedSystemApiProbesCoverRegisteredParameterFreeObservations() {
+        val additional = AdditionalReadOnlyInterfaceProbe.keys
+        assertEquals(57, additional.size)
+        assertTrue(additional.containsAll(
+            setOf(
+                "clock_24h", "build_sdk", "has_nfc", "device_locked",
+                "memory_available", "battery_current", "audio.ringer_mode",
+                "touch_exploration_enabled", "supports_picture_in_picture",
+                "screen_width_dp", "thermal_level", "captioning_enabled",
+            )
+        ))
+        assertEquals("clock_24h", ReadOnlyFeatureProbeCatalog.queryKey(
+            "android.state.clock_24h", FeatureKind.STATE
+        ))
+        assertEquals("build_sdk", ReadOnlyFeatureProbeCatalog.queryKey(
+            "android.condition.build_sdk", FeatureKind.CONDITION
+        ))
+        assertNull(ReadOnlyFeatureProbeCatalog.queryKey(
+            "android.event.build_sdk", FeatureKind.EVENT
+        ))
+    }
+
     @Test fun observedFalseIsStillSuccessfulInterfaceResponse() {
         val result = FeatureProbeResult(
             FeatureProbeStatus.RESPONDED,
