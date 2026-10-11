@@ -34,7 +34,7 @@ class SingleBackendExecutionPolicyTest(unittest.TestCase):
         self.assertIn('listOf("accessibility", "shizuku")', s)
         a = read("platform/accessibility/src/main/kotlin/com/yagay/yauto/platform/accessibility/AccessibilityFeaturePack.kt")
         self.assertIn('listOf("lsposed", "root")', a)
-        self.assertIn('listOf("shizuku", "accessibility")', a)
+        self.assertIn('listOf("accessibility", "shizuku")', a)
 
     def test_health_scanner_reports_one_alternative_not_all_permissions(self):
         s = read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScanner.kt")
