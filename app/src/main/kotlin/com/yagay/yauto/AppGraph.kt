@@ -96,10 +96,6 @@ class AppGraph(context: Context) {
         FeatureHealthScanner(
             context = appContext,
             descriptors = features::allDescriptors,
-            rootShell = rootShell,
-            shizuku = shizuku,
-            xposed = xposed,
-            accessibility = accessibility,
             accessStatus = accessStatus,
             implementationAvailable = { descriptor ->
                 when (descriptor.kind) {

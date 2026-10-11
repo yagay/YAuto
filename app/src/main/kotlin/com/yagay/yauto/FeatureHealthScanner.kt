@@ -73,10 +73,6 @@ data class FeatureHealthSnapshot(
 class FeatureHealthScanner(
     context: Context,
     private val descriptors: () -> List<FeatureDescriptor>,
-    private val rootShell: RootShell,
-    private val shizuku: ShizukuBackend,
-    private val xposed: XposedBackend,
-    private val accessibility: AccessibilityBackend,
     private val implementationAvailable: (FeatureDescriptor) -> Boolean,
     private val accessStatus: RuntimeAccessStatusRepository,
 ) {
