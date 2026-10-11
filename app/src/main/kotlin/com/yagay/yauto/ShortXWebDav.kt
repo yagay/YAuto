@@ -52,7 +52,7 @@ internal object ShortXWebDav {
     private fun decrypt(encoded: String): String {
         if (encoded.isBlank()) return ""
         val bytes = Base64.decode(encoded, Base64.NO_WRAP)
-        require(bytes.size in 29..20000)
+        require(bytes.size in 28..20000)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, bytes.copyOfRange(0, 12)))
         return cipher.doFinal(bytes.copyOfRange(12, bytes.size)).toString(Charsets.UTF_8)
@@ -64,7 +64,7 @@ internal object ShortXWebDav {
         require(uri.port == -1 || uri.port in 1..65535)
         require(uri.path.length <= 500 && !uri.path.contains(".."))
         require(uri.host !in setOf("localhost", "127.0.0.1", "::1"))
-        return uri.resolve(".").toString()
+        return uri.toString().trimEnd('/') + Char(47)
     }
     fun save(context: Context, config: WebDavSettings) {
         val address = validateDirectory(config.directory)

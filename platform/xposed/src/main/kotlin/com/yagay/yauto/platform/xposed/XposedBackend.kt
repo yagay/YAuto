@@ -81,10 +81,9 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
             "com.android.systemui",
             SystemBridgeProtocol.CHIP_ACTION,
         )
-        return (bundle?.getBoolean("success") == true) to (
-            bundle?.getString(if (bundle.getBoolean("success")) "stdout" else "error")
-                ?: "SystemUI bridge unavailable"
-        )
+        val ok = bundle?.getBoolean("success") == true
+        val message = if (ok) bundle?.getString("stdout") else bundle?.getString("error")
+        return ok to (message ?: "SystemUI bridge unavailable")
     }
 
     suspend fun beginHardwareKeyCapture(timeoutMs: Long): Boolean {

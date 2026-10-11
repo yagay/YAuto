@@ -43,7 +43,7 @@ internal object RuntimeLibraryStore {
             val points = entry.body.lineSequence().filter(String::isNotBlank).toList()
             if (points.size !in 2..4096 || points.any { point ->
                 val pair = point.split(",")
-                pair.size != 2 || pair.any { it.toIntOrNull() !in 0..20000 }
+                pair.size != 2 || pair.any { text -> text.toIntOrNull()?.let { it in 0..20000 } != true }
             }) return false
         }
         return true
