@@ -104,7 +104,7 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
                 })
             } catch (_: RejectedExecutionException) {
                 return@registerAction ActionExecutionResult(
-                    false, message = userText("feature.operation_failed", "BeanShell"),
+                    false, message = userText("feature.operation_failed", RejectedExecutionException::class.java.simpleName),
                 )
             }
             val value = try {
@@ -116,7 +116,7 @@ class AndroidTaskerAdvancedFeaturePack(context: Context) : FeaturePack {
                 future.cancel(true)
                 return@registerAction ActionExecutionResult(
                     false, message = userText(
-                        "feature.operation_failed", error.message ?: "BeanShell",
+                        "feature.operation_failed", error.message ?: error.javaClass.simpleName,
                     ),
                 )
             }
