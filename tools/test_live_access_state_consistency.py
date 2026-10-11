@@ -22,7 +22,7 @@ class LiveAccessStatusTests(unittest.TestCase):
         assert "PermissionAvailability.UNKNOWN" in probe
         assert "xposed.isAvailable(environment)" in probe
         assert "rootShell.isAvailable()" in probe
-        assert "YAutoAccessibilityService.current != null" in probe
+        assert "accessibility.isAvailable(environment)" in probe
 
     def test_shizuku_never_authorized_while_root_probe_unknown(self):
         probe = read("RuntimeAccessStatusRepository.kt")
@@ -37,7 +37,7 @@ class LiveAccessStatusTests(unittest.TestCase):
         probe = read("RuntimeAccessStatusRepository.kt")
         assert "Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES" in center
         assert "runtime_access_accessibility_enabled_unbound" in center
-        assert "YAutoAccessibilityService.current != null" in probe
+        assert "accessibility.isAvailable(environment)" in probe
 
     def test_unverified_feature_cannot_claim_executed_success(self):
         health = read("FeatureHealthScanner.kt")
