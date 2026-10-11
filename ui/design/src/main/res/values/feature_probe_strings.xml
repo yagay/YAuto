@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="feature_health_probe_read_only">Verify read-only system interfaces one by one</string>
+    <string name="feature_health_probe_read_only">One-tap test: verify real system API responses</string>
     <string name="feature_health_probe_progress">Checking interface %1$d of %2$d</string>
     <string name="feature_health_probe_summary">API responded: %1$d · Errors: %2$d · Manual verification needed: %3$d. A returned value is not proof that an action or trigger works.</string>
     <string name="feature_health_probe_responded">API responded (read-only query)</string>
@@ -10,4 +10,5 @@
     <string name="feature_health_probe_evidence">%1$s = %2$s</string>
     <string name="feature_health_probe_error">%1$s: %2$s</string>
     <string name="feature_health_probe_one">Verify this feature</string>
+    <string name="feature_health_readiness_only_warning">Readiness scan only. No real interface has been tested; tap the main one-tap test button above.</string>
 </resources>
