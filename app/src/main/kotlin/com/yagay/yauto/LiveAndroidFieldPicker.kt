@@ -1,6 +1,7 @@
 package com.yagay.yauto
 
 import android.content.Context
+import android.content.ComponentName
 import android.app.NotificationManager
 import android.service.quicksettings.Tile
 import com.yagay.yauto.platform.android.NotificationControlBridge
@@ -51,6 +52,10 @@ internal fun liveAndroidFieldPicker(
                         detail = context.getString(
                             TextR.string.live_picker_tile_detail_format, origin, entry.spec,
                         ),
+                        iconPackage = entry.component?.let {
+                            ComponentName.unflattenFromString(it)?.packageName
+                        },
+                        iconComponent = entry.component,
                     )
                 }
             }
@@ -66,7 +71,10 @@ internal fun liveAndroidFieldPicker(
                 val manager = context.getSystemService(NotificationManager::class.java)
                 when (fieldKey) {
                     "channelId" -> manager.notificationChannels.map {
-                        SystemPickerOption(it.id, it.name?.toString().orEmpty().ifBlank { it.id }, it.id)
+                        SystemPickerOption(
+                            it.id, it.name?.toString().orEmpty().ifBlank { it.id }, it.id,
+                            iconPackage = context.packageName,
+                        )
                     }
                     else -> manager.notificationChannelGroups.map {
                         SystemPickerOption(it.id, it.name?.toString().orEmpty().ifBlank { it.id }, it.id)
@@ -101,6 +109,7 @@ internal fun liveAndroidFieldPicker(
                     fun addValue(value: String, readable: String = value, indexDetail: String = origin) {
                         if (value.isNotBlank()) add(SystemPickerOption(
                             value, readable.take(120), indexDetail.take(250), related,
+                            iconPackage = notification.packageName,
                         ))
                     }
                     when (fieldKey) {
@@ -133,6 +142,7 @@ internal fun liveAndroidFieldPicker(
                     fun historical(value: String, label: String = value) {
                         if (value.isNotBlank()) add(SystemPickerOption(
                             value, label.take(120), origin.take(250), related,
+                            iconPackage = item.packageName,
                         ))
                     }
                     when (fieldKey) {
