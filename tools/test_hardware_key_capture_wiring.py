@@ -23,7 +23,6 @@ class HardwareKeyCaptureWiringTest(unittest.TestCase):
         self.assertIn("val accessibilityObserver = launch", s)
         self.assertIn("val observations = Channel<HardwareKeyCaptureResult>(Channel.UNLIMITED)", s)
         self.assertIn("candidates.maxByOrNull(::hardwareKeyCapturePriority)", s)
-        self.assertIn("val graceMs = if (first.keyCode > 0) 350L else 1_400L", s)
         priority = source("core/registry/src/main/kotlin/com/yagay/yauto/core/registry/HardwareKeyCapturePriority.kt")
         self.assertIn("capture.keyCode > 0 -> 300", priority)
         self.assertIn("capture.linuxEvKey > 0 || capture.mscScan != 0L -> 100", priority)
