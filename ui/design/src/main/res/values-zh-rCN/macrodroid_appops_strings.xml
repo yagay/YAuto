@@ -9,7 +9,7 @@
     <string name="feature_android_event_app_ops_operation_field_phase_option_start">开始</string>
     <string name="feature_android_event_app_ops_operation_field_phase_option_finish">结束</string>
     <string name="feature_android_event_app_ops_operation_field_package">应用 / 包名</string>
-    <string name="feature_android_event_app_ops_operation_field_op_code">AppOps 操作码</string>
+    <string name="feature_android_event_app_ops_operation_field_opcode">AppOps 操作码</string>
     <string name="feature_android_app_last_used_launch_field_mode">最近应用位置</string>
     <string name="feature_android_app_last_used_launch_field_mode_option_latest">最近一个</string>
     <string name="feature_android_app_last_used_launch_field_mode_option_older">再往前一个</string>
