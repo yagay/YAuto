@@ -52,7 +52,9 @@ internal object XposedEventTransportHealth {
         lastRuntimeFailureEpochMs.set(System.currentTimeMillis())
         // Never include payload, Hook arguments or credentials; rate-limit
         // failures caused by a fast, repeatedly firing OEM system callback.
-        val nowElapsed = android.os.SystemClock.elapsedRealtime()
+        // Monotonic on Android; JVM unit tests lack a real SystemClock.
+        val nowElapsed = runCatching { android.os.SystemClock.elapsedRealtime() }
+            .getOrElse { System.currentTimeMillis() }
         val previous = lastRuntimeWarningElapsedMs.get()
         if (nowElapsed - previous >= 30_000L &&
             lastRuntimeWarningElapsedMs.compareAndSet(previous, nowElapsed)) {
