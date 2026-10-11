@@ -35,6 +35,18 @@ class LiveSystemFieldPickerWiringTest(unittest.TestCase):
         manifest = read("app/src/main/AndroidManifest.xml")
         self.assertIn("android.service.quicksettings.action.QS_TILE", manifest)
 
+    def test_root_and_lsposed_query_external_qs_inventory_without_toggling_tiles(self):
+        inventory = read("app/src/main/kotlin/com/yagay/yauto/DeviceQuickSettingsInventory.kt")
+        self.assertIn("xposed.quickSettingsTileSpecs()", inventory)
+        self.assertIn("rootShell.isAvailable()", inventory)
+        self.assertIn("settings get secure sysui_qs_tiles", inventory)
+        self.assertIn("cmd package query-services --components --user current -a ", inventory)
+        self.assertIn("parseRootTileComponents(output.stdout)", inventory)
+        self.assertIn("PackageManager.MATCH_DISABLED_COMPONENTS", inventory)
+        self.assertIn("(installed + rootInstalled).distinctBy", inventory)
+        self.assertIn("service.permission != \"android.permission.BIND_QUICK_SETTINGS_TILE\"", inventory)
+        self.assertNotIn("statusbar click", inventory)
+
     def test_notification_apps_allow_both_installed_and_observed_choices(self):
         editor = read("ui/editor/src/main/kotlin/com/yagay/yauto/ui/editor/GenericFeatureConfigEditor.kt")
         self.assertIn("NotificationAppField(descriptorId, field, value, enabled, onValue)", editor)
