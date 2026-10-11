@@ -14,19 +14,19 @@ class SingleBackendExecutionPolicyTest(unittest.TestCase):
         s = read("core/capability/src/main/kotlin/com/yagay/yauto/core/capability/Capability.kt")
         self.assertIn('CapabilityBackendPriority.rank(it.id, privilegedFirst)', s)
         self.assertIn('if (!available) continue', s)
-        self.assertIn('if (result.success || !request.allowFallback || request.preferredBackendId != null)', s)
+        self.assertIn('!CapabilityFallbackPolicy.canRetryAfterFailure(request, result)', s)
         self.assertIn('for (backend in supported)', s)
 
     def test_legacy_auto_tries_privilege_first_and_stops_after_success(self):
         s = read("core/registry/src/main/kotlin/com/yagay/yauto/core/registry/FeatureMethodRouting.kt")
         self.assertIn('val privileged = shortx()', s)
-        self.assertIn('if (succeeded(privileged) || !macroSupported) privileged else macrodroid()', s)
+        self.assertIn('if (succeeded(privileged) || !macroSupported || !canSafelyRetry(privileged)) privileged else macrodroid()', s)
         self.assertIn('FeatureMethod.NO_ROOT -> if (macroSupported) macrodroid() else null', s)
 
     def test_manual_backend_is_pinned(self):
         s = read("core/registry/src/main/kotlin/com/yagay/yauto/core/registry/FeatureMethodRouting.kt")
         self.assertIn('val choices = preferred?.let { listOf(it) } ?: candidates', s)
-        self.assertIn('if (succeeded(result)) return result', s)
+        self.assertIn('if (succeeded(result) || !canSafelyRetry(result)) return result', s)
 
     def test_global_action_routes_follow_priority(self):
         s = read("platform/android/src/main/kotlin/com/yagay/yauto/platform/android/AndroidLsposedFeaturePack.kt")

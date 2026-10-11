@@ -104,4 +104,57 @@ class FeaturePermissionSelectionTest {
                 PermissionAvailability.GRANTED
             })
     }
+
+    @Test fun globalBackActionNeverRecommendsUnavailableLsposedPath() {
+        val supported = FeatureDescriptor(
+            id = FeatureId("accessibility.global_action"), kind = FeatureKind.ACTION,
+            title = "Global action", description = "", category = FeatureCategory.SYSTEM,
+            implementationOptions = listOf(
+                FeatureImplementationOption("lsposed", setOf(AccessRequirement.LSPOSED)),
+                FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+                FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+            ),
+        )
+        val saved = FeatureRef("accessibility.global_action", config = mapOf(
+            "action" to ConfigValue.StringValue("back")
+        ))
+        assertEquals(listOf(AccessRequirement.ROOT), permissionsForFeature(supported, saved) {
+            PermissionAvailability.GRANTED
+        })
+    }
+
+    @Test fun powerDialogOnlyRequestsAccessibility() {
+        val supported = FeatureDescriptor(
+            id = FeatureId("accessibility.global_action"), kind = FeatureKind.ACTION,
+            title = "Global action", description = "", category = FeatureCategory.SYSTEM,
+            implementationOptions = listOf(
+                FeatureImplementationOption("lsposed", setOf(AccessRequirement.LSPOSED)),
+                FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+                FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+            ),
+        )
+        val saved = FeatureRef("accessibility.global_action", config = mapOf(
+            "action" to ConfigValue.StringValue("power_dialog")
+        ))
+        assertEquals(listOf(AccessRequirement.ACCESSIBILITY), permissionsForFeature(supported, saved) {
+            PermissionAvailability.GRANTED
+        })
+    }
+
+    @Test fun pinnedUnsupportedBackendNeverFallsBackForPermissionAdvice() {
+        val supported = FeatureDescriptor(
+            id = FeatureId("accessibility.global_action"), kind = FeatureKind.ACTION,
+            title = "Global action", description = "", category = FeatureCategory.SYSTEM,
+            implementationOptions = listOf(
+                FeatureImplementationOption("lsposed", setOf(AccessRequirement.LSPOSED)),
+                FeatureImplementationOption("root", setOf(AccessRequirement.ROOT)),
+                FeatureImplementationOption("accessibility", setOf(AccessRequirement.ACCESSIBILITY)),
+            ),
+        )
+        val pinned = FeatureRef("accessibility.global_action", config = mapOf(
+            "action" to ConfigValue.StringValue("back"),
+            "__backend" to ConfigValue.StringValue("lsposed"),
+        ))
+        assertTrue(permissionsForFeature(supported, pinned) { PermissionAvailability.GRANTED }.isEmpty())
+    }
 }

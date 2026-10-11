@@ -33,7 +33,10 @@ class HardwareKeyCaptureWiringTest(unittest.TestCase):
         self.assertNotIn("hardwareKeyDedup.put(", runtime)
         listener = source("app/src/main/kotlin/com/yagay/yauto/RootHardwareKeyEventSource.kt")
         self.assertIn("data.activeActivationEvents()", listener)
-        self.assertIn("val mapped = learnedMappings[event.evKey] ?: return", listener)
+        self.assertIn("val choices = learnedMappings[event.evKey].orEmpty()", listener)
+        self.assertIn("val mapped = eligible.distinct().singleOrNull() ?: return", listener)
+        self.assertIn("if (myGeneration == generation)", listener)
+        self.assertIn("if (candidate.linuxEvKey > 0 && candidate.keyCode <= 0)", s)
 
     def test_lsposed_capture_uses_authenticated_event_envelope(self):
         s = source("platform/xposed/src/main/kotlin/com/yagay/yauto/platform/xposed/XposedHardwareKeyEventHandler.kt")
