@@ -57,6 +57,8 @@ jobs:
           python3 tools/audit_picker_duplicate_titles.py --fail-on-unresolved-zh --fail-on-unresolved-en
       - name: Hardware-key capture runtime regression
         run: python3 -m unittest discover -s tools -p 'test_hardware_key_capture_wiring.py'
+      - name: LSPosed event transport and OEM UID authentication contract
+        run: python3 -m unittest discover -s tools -p 'test_xposed_event_delivery_contract.py'
       - name: Live authorization status consistency
         run: python3 -m unittest discover -s tools -p 'test_live_access_state_consistency.py'
       - name: Live Android field picker wiring audit
