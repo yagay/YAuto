@@ -32,6 +32,20 @@ class FeatureReadOnlyProbeContractTest(unittest.TestCase):
         self.assertIn("fun requestFeatureVerification(featureId: String)", code)
         self.assertIn("singleId", code)
 
+    def test_primary_one_tap_runs_actual_read_only_query_and_labels_readiness_separately(self):
+        screen = read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScreen.kt")
+        settings = read("app/src/main/kotlin/com/yagay/yauto/RuntimeSettingsScreen.kt")
+        main = read("app/src/main/kotlin/com/yagay/yauto/MainActivity.kt")
+        scanner = read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScanner.kt")
+        self.assertIn("Button(\\n                        onClick = scanner::requestReadOnlyVerification", screen)
+        self.assertIn("onClick = { scanner.requestScan(force = true) }", screen)
+        self.assertIn("graph.featureHealth.requestReadOnlyVerification()", settings)
+        self.assertIn("graph.featureHealth.requestReadOnlyVerification()", main)
+        self.assertIn("if (enabled) requestReadOnlyVerification()", scanner)
+        self.assertIn('put("scanType",', screen)
+        self.assertIn('put("hasRealInterfaceEvidence",', screen)
+        self.assertIn("feature_health_readiness_only_warning", screen)
+
     def test_interface_evidence_is_exportable_and_not_mislabeled_as_actual_trigger(self):
         screen = read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScreen.kt")
         self.assertIn('put("schemaVersion", 2)', screen)
