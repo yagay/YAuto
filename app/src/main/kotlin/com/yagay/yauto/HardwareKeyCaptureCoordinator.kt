@@ -192,22 +192,27 @@ internal suspend fun captureHardwareKey(
                 val first = withTimeoutOrNull(remainingMs()) { observations.receive() }
                     ?: return@coroutineScope null
                 val candidates = mutableListOf(first)
-                // Different observers can report the same release a few frames
-                // apart. Prefer the privileged Android code over a raw-only
-                // scan without waiting through separate 5s/3s learning stages.
-                if ("lsposed" !in first.sources) {
-                    withTimeoutOrNull(minOf(220L, remainingMs())) {
+                // An OEM button can emit Linux EV_KEY 735 before the Android
+                // framework reports KeyEvent.keyCode 780. A raw Root event is
+                // never evidence that Android has no code. Allow the framework
+                // receiver time to deliver its authenticated broadcast and
+                // always favor a real Android KeyCode over an unconverted scan.
+                if ("lsposed" !in first.sources || first.keyCode <= 0) {
+                    val graceMs = if (first.keyCode > 0) 350L else 1_400L
+                    withTimeoutOrNull(minOf(graceMs, remainingMs())) {
                         while (true) candidates += observations.receive()
                     }
                 }
                 val best = candidates.maxWithOrNull(
                     compareBy<HardwareKeyCaptureResult> {
+                        if (it.keyCode > KeyEvent.KEYCODE_UNKNOWN) 1 else 0
+                    }.thenBy {
                         when {
                             "lsposed" in it.sources -> 3
                             "root.input" in it.sources -> 2
                             else -> 1
                         }
-                    }.thenBy { if (it.keyCode > 0) 1 else 0 }
+                    }
                 ) ?: first
                 if (best.linuxEvKey > 0 && best.keyCode <= 0) {
                     try {
