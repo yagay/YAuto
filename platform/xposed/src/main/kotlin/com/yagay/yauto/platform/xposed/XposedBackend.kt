@@ -3,6 +3,7 @@ package com.yagay.yauto.platform.xposed
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import java.util.UUID
 import android.os.Bundle
 import android.os.Handler
@@ -106,7 +107,14 @@ class XposedBackend(context: Context) : CapabilityBackend, XposedBridgeContract,
                 .putExtra("timeoutMs", timeoutMs.coerceIn(1_000L, 60_000L))
                 .putExtra(XposedEventAuth.EXTRA_TOKEN, systemEventAuthToken)
         , requestTimeoutMs = 5_000L).also { connected = it != null }
-        return result?.getBoolean("success") == true
+        val success = result?.getBoolean("success") == true
+        // Device-local diagnostics only. Never log the authenticated token.
+        // A previous silent failure made an unavailable system_server Hook
+        // indistinguishable from a working Hook that saw no Android key.
+        Log.i("YAutoKeyCapture", "LSPosed arm: success=$success " +
+            "bridgeReply=${result != null} inputHooks=${result?.getInt("inputHookCount", 0) ?: 0} " +
+            "error=${result?.getString("error").orEmpty()}")
+        return success
     }
 
     /** End the temporary one-shot Hook capture before moving to another source. */
