@@ -5,6 +5,9 @@ import com.yagay.yauto.core.registry.FieldPickerOption
 import com.yagay.yauto.core.registry.HardwareKeyPickerCatalog
 import com.yagay.yauto.core.registry.HardwareKeyCaptureResult
 import com.yagay.yauto.platform.root.RootShell
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
@@ -29,34 +32,51 @@ class DeviceHardwareKeyCatalog(
 
 
     suspend fun captureRawKey(timeoutMs: Long): HardwareKeyCaptureResult? {
-        // Starting a second `su -c id` probe before getevent can consume the
-        // entire key-learning window on slow Magisk/KernelSU authorization.
-        // Running getevent itself is the authoritative permission check.
-        val boundedTimeout = timeoutMs.coerceIn(1_000L, 60_000L)
-        val output = rootShell.run(RAW_KEY_CAPTURE_COMMAND, boundedTimeout + 1_500L)
-        val lines = output.stdout.lineSequence().toList()
-        val keyLine = lines.lastOrNull { RAW_KEY_EVENT.containsMatchIn(it) } ?: return null
-        val keyMatch = RAW_KEY_EVENT.find(keyLine) ?: return null
-        val linuxEvKey = keyMatch.groupValues[1].toIntOrNull(16) ?: return null
-        val mscScan = lines
-            .asReversed()
-            .asSequence()
-            .mapNotNull { RAW_MSC_SCAN.find(it)?.groupValues?.getOrNull(1)?.toLongOrNull(16) }
-            .firstOrNull() ?: 0L
-        val devicePath = RAW_DEVICE_PATH.find(keyLine)?.groupValues?.getOrNull(1).orEmpty()
-        // Return the raw observation immediately so the coordinator can
-        // correlate the same press with LSPosed/Accessibility. Keylayout shell
-        // probing can take seconds and must never delay capture delivery.
-        return HardwareKeyCaptureResult(
-            keyCode = KeyEvent.KEYCODE_UNKNOWN,
-            scanCode = 0,
-            deviceId = -1,
-            action = KeyEvent.ACTION_UP,
-            linuxEvKey = linuxEvKey,
-            mscScan = mscScan,
-            deviceDescriptor = devicePath,
-            sources = setOf("root.input"),
-        )
+        // Stream raw events directly. The old grep -m 1 pipeline could keep its
+        // upstream getevent process alive after a key release, leaving our
+        // bounded process runner waiting until timeout and discarding the press.
+        // Closing getevent ourselves on the first ACTION_UP avoids that race.
+        val budget = timeoutMs.coerceIn(1_000L, 60_000L)
+        return withTimeoutOrNull(budget) {
+            runInterruptible(Dispatchers.IO) {
+                val process = ProcessBuilder(rootShell.commandArguments("getevent -t 2>/dev/null"))
+                    .redirectErrorStream(true)
+                    .start()
+                try {
+                    val mscByDevice = mutableMapOf<String, Long>()
+                    process.inputStream.bufferedReader().use { reader ->
+                        while (true) {
+                            val line = reader.readLine() ?: break
+                            val devicePath = RAW_DEVICE_PATH.find(line)?.groupValues?.getOrNull(1).orEmpty()
+                            RAW_MSC_SCAN.find(line)?.groupValues?.getOrNull(1)
+                                ?.toLongOrNull(16)?.let { mscByDevice[devicePath] = it }
+                            val match = RAW_KEY_EVENT.find(line) ?: continue
+                            val linuxEvKey = match.groupValues[1].toIntOrNull(16) ?: continue
+                            val actionValue = match.groupValues[2].toLongOrNull(16) ?: continue
+                            // Only record a physical key release, not a repeat
+                            // or the first half of a long/double press.
+                            if (linuxEvKey <= 0 || actionValue != 0L) continue
+                            return@runInterruptible HardwareKeyCaptureResult(
+                                keyCode = KeyEvent.KEYCODE_UNKNOWN,
+                                scanCode = 0,
+                                deviceId = -1,
+                                action = KeyEvent.ACTION_UP,
+                                linuxEvKey = linuxEvKey,
+                                mscScan = mscByDevice[devicePath] ?: 0L,
+                                deviceDescriptor = devicePath,
+                                sources = setOf("root.input"),
+                            )
+                        }
+                    }
+                    null
+                } finally {
+                    process.destroyForcibly()
+                    runCatching { process.inputStream.close() }
+                    runCatching { process.errorStream.close() }
+                    runCatching { process.outputStream.close() }
+                }
+            }
+        }
     }
 
     suspend fun enrichRawCapture(raw: HardwareKeyCaptureResult): HardwareKeyCaptureResult {
@@ -210,11 +230,9 @@ class DeviceHardwareKeyCatalog(
         private val HEX_CODE = Regex("(?i)(?<![0-9a-f])[0-9a-f]{4}(?![0-9a-f])")
         private val KEY_SECTION = Regex("KEY\\s*\\(0001\\)", RegexOption.IGNORE_CASE)
         private val EVENT_SECTION = Regex("[A-Z_]+\\s*\\([0-9a-fA-F]{4}\\)")
-        private val RAW_KEY_EVENT = Regex(":\\s+0001\\s+([0-9a-fA-F]{4})\\s+00000000")
+        private val RAW_KEY_EVENT = Regex(":\\s+0001\\s+([0-9a-fA-F]{4,8})\\s+([0-9a-fA-F]{8})")
         private val RAW_MSC_SCAN = Regex(":\\s+0004\\s+0004\\s+([0-9a-fA-F]{8})")
         private val RAW_DEVICE_PATH = Regex("(/dev/input/event\\d+):")
-        private const val RAW_KEY_CAPTURE_COMMAND =
-            "getevent -t 2>/dev/null | grep -m 1 -B 3 -E ': 0001 [0-9a-fA-F]{4} 00000000'"
 
         private const val KEY_LAYOUT_COMMAND =
             "grep -H -E '^[[:space:]]*key[[:space:]]+' " +
