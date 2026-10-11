@@ -36,6 +36,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
 
 class AutomationRuntimeService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -46,6 +47,8 @@ class AutomationRuntimeService : Service() {
     private var hardwareKeyGestureEngine: HardwareKeyGestureEngine? = null
     @Volatile private var hardwareKeyAutomationEnabled = false
     private val lsposedSubscriptions = Channel<Set<String>>(Channel.CONFLATED)
+    private val workspaceSubscriptions = Channel<WorkspaceData>(Channel.CONFLATED)
+    private val workspaceRevision = AtomicLong(0L)
 
     override fun onCreate() {
         super.onCreate()
@@ -65,18 +68,23 @@ class AutomationRuntimeService : Service() {
                 if (!accepted) delay(5_000L)
             }
         }
-        workspaceSubscription = appGraph.workspace.addListener { data ->
-            scope.launch {
+        scope.launch {
+            for (data in workspaceSubscriptions) {
                 configureAccessibilitySubscriptions(data)
                 configureLsposedSubscriptions(data)
             }
         }
-        scope.launch {
-            runCatching { appGraph.workspace.load() }
-                .onSuccess { data ->
-                    configureAccessibilitySubscriptions(data)
-                    configureLsposedSubscriptions(data)
-                }
+        workspaceSubscription = appGraph.workspace.addListener { data ->
+            workspaceRevision.incrementAndGet()
+            workspaceSubscriptions.trySend(data)
+        }
+        val baselineRevision = workspaceRevision.get()
+        appGraph.workspace.snapshotOrNull()?.let { snapshot ->
+            if (workspaceRevision.get() == baselineRevision) workspaceSubscriptions.trySend(snapshot)
+        } ?: scope.launch {
+            runCatching { appGraph.workspace.load() }.onSuccess { data ->
+                if (workspaceRevision.get() == baselineRevision) workspaceSubscriptions.trySend(data)
+            }
         }
         val dispatcher = RuntimeEventDispatcher(appGraph, scope)
         hardwareKeyGestureEngine = HardwareKeyGestureEngine(scope) { derived ->
@@ -320,6 +328,7 @@ class AutomationRuntimeService : Service() {
     override fun onDestroy() {
         workspaceSubscription?.close()
         workspaceSubscription = null
+        workspaceSubscriptions.close()
         hardwareKeyArbiter?.close()
         hardwareKeyArbiter = null
         hardwareKeyAutomationEnabled = false

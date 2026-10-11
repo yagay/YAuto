@@ -9,6 +9,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.Channel
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Starts an expensive configured event source only while the workspace actually contains a
@@ -26,6 +28,8 @@ class WorkspaceGatedEventSource(
     private var delegate: AndroidEventSource? = null
     private var delegateStarted = false
     private var subscription: AutoCloseable? = null
+    private var updates: Channel<WorkspaceData>? = null
+    private val revision = AtomicLong(0L)
     @Volatile private var emitter: RuntimeEventEmitter? = null
 
     override val id: String =
@@ -37,17 +41,22 @@ class WorkspaceGatedEventSource(
         val activeScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         scope = activeScope
         this.emitter = emitter
+        val queue = Channel<WorkspaceData>(Channel.CONFLATED)
+        updates = queue
+        activeScope.launch { for (data in queue) applyWorkspace(data) }
         subscription = workspace.addListener { data ->
-            activeScope.launch { applyWorkspace(data) }
+            revision.incrementAndGet()
+            queue.trySend(data)
         }
-        // Not all ObservableWorkspaceRepository implementations replay their snapshot to newly
-        // added listeners. Always apply the initial workspace explicitly.
+        val baseline = revision.get()
         val snapshot = workspace.snapshotOrNull()
         if (snapshot != null) {
-            activeScope.launch { applyWorkspace(snapshot) }
+            if (revision.get() == baseline) queue.trySend(snapshot)
         } else {
             activeScope.launch {
-                runCatching { workspace.load() }.onSuccess(::applyWorkspace)
+                runCatching { workspace.load() }.onSuccess { loaded ->
+                    if (revision.get() == baseline) queue.trySend(loaded)
+                }
             }
         }
     }
@@ -57,6 +66,8 @@ class WorkspaceGatedEventSource(
         if (!started.compareAndSet(true, false)) return
         subscription?.close()
         subscription = null
+        updates?.close()
+        updates = null
         scope?.cancel()
         scope = null
         stopDelegate()

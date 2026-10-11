@@ -7,6 +7,7 @@ import com.yagay.yauto.core.model.ExecutionId
 import com.yagay.yauto.core.model.RuntimeEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.CancellationException
 import java.util.UUID
 
@@ -14,8 +15,25 @@ class RuntimeEventDispatcher(
     private val graph: AppGraph,
     private val scope: CoroutineScope,
 ) {
-    fun dispatch(event: RuntimeEvent, statesOnly: Boolean = false) {
+    private val orderedInputs = Channel<Pair<RuntimeEvent, Boolean>>(Channel.UNLIMITED)
+    init {
         scope.launch {
+            for ((event, statesOnly) in orderedInputs) execute(event, statesOnly)
+        }
+    }
+
+    fun dispatch(event: RuntimeEvent, statesOnly: Boolean = false) {
+        if (event.typeId == "android.event.hardware_key" ||
+            event.typeId == "android.event.hardware_key_gesture" ||
+            event.typeId == "android.event.hardware_key_combo"
+        ) {
+            orderedInputs.trySend(event to statesOnly)
+        } else {
+            scope.launch { execute(event, statesOnly) }
+        }
+    }
+
+    private suspend fun execute(event: RuntimeEvent, statesOnly: Boolean) {
             try {
                 graph.runtime.dispatch(event, statesOnly)
             } catch (cancelled: CancellationException) {
@@ -38,6 +56,5 @@ class RuntimeEventDispatcher(
                     )
                 )
             }
-        }
     }
 }

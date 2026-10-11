@@ -27,7 +27,9 @@ class RootHardwareKeyEventSource(
     @Volatile private var process: Process? = null
     @Volatile private var readerThread: Thread? = null
     @Volatile private var listening = false
-    @Volatile private var learnedMappings: Map<Int, LearnedAndroidKey> = emptyMap()
+    /** Generation changes on stop/restart, invalidating any in-flight process creation. */
+    private var generation = 0L
+    @Volatile private var learnedMappings: Map<Int, List<LearnedAndroidKey>> = emptyMap()
 
     override fun start(emitter: RuntimeEventEmitter) {
         if (!started.compareAndSet(false, true)) return
@@ -45,19 +47,19 @@ class RootHardwareKeyEventSource(
     }
 
     private fun applyWorkspace(data: WorkspaceData) {
-        val mappings = linkedMapOf<Int, LearnedAndroidKey>()
+        val mappings = linkedMapOf<Int, MutableList<LearnedAndroidKey>>()
         data.activeActivationEvents().forEach { event ->
                 when (event.typeId) {
                     HARDWARE_KEY_EVENT,
-                    HARDWARE_KEY_GESTURE_EVENT -> event.config.rawMapping()?.let { mappings.putIfAbsent(it.first, it.second) }
+                    HARDWARE_KEY_GESTURE_EVENT -> event.config.rawMapping()?.let { mappings.getOrPut(it.first) { mutableListOf() }.add(it.second) }
 
                     HARDWARE_KEY_COMBO_EVENT -> {
-                        event.config.rawMapping("1")?.let { mappings.putIfAbsent(it.first, it.second) }
-                        event.config.rawMapping("2")?.let { mappings.putIfAbsent(it.first, it.second) }
+                        event.config.rawMapping("1")?.let { mappings.getOrPut(it.first) { mutableListOf() }.add(it.second) }
+                        event.config.rawMapping("2")?.let { mappings.getOrPut(it.first) { mutableListOf() }.add(it.second) }
                     }
                 }
             }
-        learnedMappings = mappings
+        learnedMappings = mappings.mapValues { (_, matches) -> matches.distinct() }
 
         synchronized(lock) {
             if (!started.get()) return
@@ -73,7 +75,9 @@ class RootHardwareKeyEventSource(
         if (evKey > 0) {
             val learnedKeyCode = (hidden["androidKeyCode"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
             val learnedScanCode = (hidden["androidScanCode"] as? ConfigValue.NumberValue)?.value?.toInt() ?: 0
-            return evKey to LearnedAndroidKey(learnedKeyCode, learnedScanCode)
+            val rawDevicePath = (hidden["deviceDescriptor"] as? ConfigValue.StringValue)?.value.orEmpty()
+                .takeIf { it.startsWith("/dev/input/event") }.orEmpty()
+            return evKey to LearnedAndroidKey(learnedKeyCode, learnedScanCode, rawDevicePath)
         }
 
         // Compatibility for rules created before EV_KEY and Android scanCode were separated.
@@ -89,24 +93,37 @@ class RootHardwareKeyEventSource(
     private fun startListenerLocked() {
         if (listening) return
         listening = true
+        val myGeneration = ++generation
         readerThread = Thread({
+            var mine: Process? = null
             try {
                 val child = ProcessBuilder("su", "-c", "getevent -t 2>/dev/null")
                     .redirectErrorStream(true)
                     .start()
-                process = child
+                mine = child
+                val accepted = synchronized(lock) {
+                    if (myGeneration != generation || !listening || !started.get()) false
+                    else { process = child; true }
+                }
+                if (!accepted) return@Thread
                 child.inputStream.bufferedReader().useLines { lines ->
                     lines.forEach { line ->
-                        if (!started.get() || !listening) return@forEach
-                        parseRawKey(line)?.let { emit(it) }
+                        if (myGeneration == generation && started.get() && listening) {
+                            parseRawKey(line)?.let { emit(it) }
+                        }
                     }
                 }
             } catch (_: Exception) {
-                // Root denial or a missing getevent binary simply disables this OEM fallback.
+                // Root denied or getevent unavailable; never mutate a newer session.
             } finally {
-                process?.destroyForcibly()
-                process = null
-                listening = false
+                mine?.destroyForcibly()
+                synchronized(lock) {
+                    if (myGeneration == generation) {
+                        process = null
+                        readerThread = null
+                        listening = false
+                    }
+                }
             }
         }, "yauto-root-key-input").apply {
             isDaemon = true
@@ -115,6 +132,7 @@ class RootHardwareKeyEventSource(
     }
 
     private fun stopListenerLocked() {
+        generation++
         listening = false
         process?.destroyForcibly()
         process = null
@@ -125,7 +143,12 @@ class RootHardwareKeyEventSource(
     private fun emit(event: RawKeyEvent) {
         // Never dispatch unrelated OEM keys as a second observation. The
         // Root listener is a fallback for keys explicitly learned by a rule.
-        val mapped = learnedMappings[event.evKey] ?: return
+        val choices = learnedMappings[event.evKey].orEmpty()
+        // An EV_KEY number is not globally unique across input devices.
+        // Unknown or conflicting device mappings are ambiguous: never guess.
+        val specific = choices.filter { it.devicePath.isNotEmpty() && it.devicePath == event.devicePath }
+        val eligible = if (specific.isNotEmpty()) specific else choices.filter { it.devicePath.isEmpty() }
+        val mapped = eligible.distinct().singleOrNull() ?: return
         val action = when (event.value) {
             0 -> "up"
             1, 2 -> "down"
@@ -135,8 +158,8 @@ class RootHardwareKeyEventSource(
             RuntimeEvent(
                 typeId = HARDWARE_KEY_EVENT,
                 payload = buildMap {
-                    put("keyCode", ConfigValue.NumberValue((mapped?.keyCode ?: 0).toDouble()))
-                    put("scanCode", ConfigValue.NumberValue((mapped?.scanCode ?: 0).toDouble()))
+                    put("keyCode", ConfigValue.NumberValue(mapped.keyCode.toDouble()))
+                    put("scanCode", ConfigValue.NumberValue(mapped.scanCode.toDouble()))
                     put("linuxEvKey", ConfigValue.NumberValue(event.evKey.toDouble()))
                     put("action", ConfigValue.StringValue(action))
                     put("repeatCount", ConfigValue.NumberValue(if (event.value == 2) 1.0 else 0.0))
@@ -169,6 +192,7 @@ class RootHardwareKeyEventSource(
     private data class LearnedAndroidKey(
         val keyCode: Int,
         val scanCode: Int,
+        val devicePath: String = "",
     )
 
     private companion object {

@@ -70,7 +70,7 @@ internal class HardwareKeyGestureEngine(
         var immediate: RuntimeEvent? = null
 
         synchronized(lock) {
-            val down = activeKeys.remove(identity) ?: DownState(now)
+            val down = activeKeys.remove(identity) ?: return
             activeCombos.removeAll { identity == it.first || identity == it.second }
             val holdMs = (now - down.startedElapsedMs).coerceAtLeast(0L)
 
