@@ -119,6 +119,15 @@ internal class XposedObserverEventEmitter(
             ShortXHookPayloadKind.SCREEN_STATE -> {
                 extras["screenOn"] = args.firstOrNull { it is Boolean } as? Boolean ?: false
             }
+            ShortXHookPayloadKind.APP_OPS -> {
+                // AppOpsService variants can have IBinder/AttributionSource or
+                // wrapper arguments. Expose only demonstrably typed primitives;
+                // never invent an app package when the signature is unknown.
+                extras["phase"] = if (methodName.startsWith("start")) "start" else "finish"
+                extras["opCode"] = args.filterIsInstance<Int>().firstOrNull() ?: -1
+                extras["package"] = args.filterIsInstance<String>()
+                    .firstOrNull { it.contains('.') && it.length <= 255 }.orEmpty()
+            }
             ShortXHookPayloadKind.BACK_PRESS,
             ShortXHookPayloadKind.NONE -> Unit
         }
@@ -129,7 +138,9 @@ internal class XposedObserverEventEmitter(
             type = spec.eventType,
             dedupKey = identity,
             extras = extras,
-            dedupWindowMs = 150L,
+            // Start/finish are semantically distinct; rapid paired AppOps
+            // operations must not be discarded as duplicated generic hooks.
+            dedupWindowMs = if (spec.payloadKind == ShortXHookPayloadKind.APP_OPS) 0L else 150L,
         )
     }
 }
