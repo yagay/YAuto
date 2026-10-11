@@ -37,6 +37,22 @@ class RootShell(
         CommandOutput(-1, "", error.message.orEmpty())
     }
 
-    suspend fun isAvailable(): Boolean = run("id", 15_000)
-        .let { !it.timedOut && it.exitCode == 0 && "uid=0" in it.stdout }
+    suspend fun isAvailable(): Boolean {
+        val sharedResult = run("id", 5_000)
+        fun granted(output: CommandOutput): Boolean =
+            !output.timedOut && output.exitCode == 0 && "uid=0" in output.stdout
+        if (granted(sharedResult)) return true
+        if (shared == null) return false
+        // A cached libsu shell can be unprivileged if authorization was
+        // granted only after its creation. Verify with a fresh Root process
+        // before allowing the scheduler to classify the device as rootless
+        // and enable Shizuku.
+        return try {
+            granted(BoundedProcessRunner.run(listOf("su", "-c", "id"), 5_000))
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            false
+        }
+    }
 }
