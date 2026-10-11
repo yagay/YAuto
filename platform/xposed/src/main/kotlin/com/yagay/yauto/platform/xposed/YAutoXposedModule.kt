@@ -129,16 +129,27 @@ class YAutoXposedModule : XposedModule() {
         methodHookInstaller.registerAppHookBridge(context, packageName, classLoader)
 
     override fun onSystemServerStarting(param: SystemServerStartingParam) {
+        Log.i("YAutoKeyHook", "LSPosed system_server entry reached")
         try {
             val server = param.classLoader.loadClass("com.android.server.SystemServer")
-            server.declaredMethods.filter { it.name == "startOtherServices" }.forEach { method ->
+            val startupMethods = server.declaredMethods.filter { it.name == "startOtherServices" }
+            if (startupMethods.isEmpty()) {
+                Log.e("YAutoKeyHook", "No SystemServer.startOtherServices callback on this ROM")
+            }
+            startupMethods.forEach { method ->
                 hook(method).intercept { chain ->
                     val result = chain.proceed()
                     try {
                         val field = server.getDeclaredField("mSystemContext").apply { isAccessible = true }
                         val context = field.get(chain.thisObject) as? Context
-                        if (context != null) registerSystemBridge(context, param.classLoader)
+                        if (context != null) {
+                            Log.i("YAutoKeyHook", "Registering system_server bridge and passive input Hooks")
+                            registerSystemBridge(context, param.classLoader)
+                        } else {
+                            Log.e("YAutoKeyHook", "SystemServer.mSystemContext is null; cannot register input bridge")
+                        }
                     } catch (error: Exception) {
+                        Log.e("YAutoKeyHook", "System bridge registration failed", error)
                         log(Log.ERROR, "YAuto", "System bridge registration failed", error)
                     }
                     result
