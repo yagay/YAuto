@@ -108,7 +108,8 @@ class PrivilegedAndroidFeaturePackTest {
             override fun supports(request: CapabilityRequest, environment: RuntimeEnvironment) =
                 request.capability == CapabilityIds.PRIVILEGED_SHELL
             override suspend fun execute(request: CapabilityRequest, environment: RuntimeEnvironment) =
-                CapabilityResult(succeeds, message = if (succeeds) null else "$id failed")
+                CapabilityResult(succeeds, message = if (succeeds) null else "$id unavailable",
+                    failureKind = if (succeeds) null else com.yagay.yauto.core.capability.CapabilityFailureKind.BACKEND_UNAVAILABLE)
         }
 
         val broker = CapabilityBroker(
