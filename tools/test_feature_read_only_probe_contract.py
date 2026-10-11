@@ -37,7 +37,7 @@ class FeatureReadOnlyProbeContractTest(unittest.TestCase):
         settings = read("app/src/main/kotlin/com/yagay/yauto/RuntimeSettingsScreen.kt")
         main = read("app/src/main/kotlin/com/yagay/yauto/MainActivity.kt")
         scanner = read("app/src/main/kotlin/com/yagay/yauto/FeatureHealthScanner.kt")
-        self.assertIn("Button(\\n                        onClick = scanner::requestReadOnlyVerification", screen)
+        self.assertRegex(screen, r"\bButton\(\s+onClick = scanner::requestReadOnlyVerification")
         self.assertIn("onClick = { scanner.requestScan(force = true) }", screen)
         self.assertIn("graph.featureHealth.requestReadOnlyVerification()", settings)
         self.assertIn("graph.featureHealth.requestReadOnlyVerification()", main)
