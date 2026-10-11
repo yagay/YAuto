@@ -51,7 +51,7 @@ object XposedSystemEventRuntimeBridge {
                 "keyCode=${intent.getIntExtra("keyCode", 0)} " +
                 "scanCode=${intent.getIntExtra("scanCode", 0)} " +
                 "waiterPresent=${waiter != null}")
-            waiter?.complete(
+            val forwarded = waiter?.complete(
                 XposedHardwareKeySnapshot(
                     keyCode = intent.getIntExtra("keyCode", 0),
                     scanCode = intent.getIntExtra("scanCode", 0),
@@ -63,6 +63,7 @@ object XposedSystemEventRuntimeBridge {
                     productId = intent.getIntExtra("productId", 0),
                 )
             )
+            if (forwarded == true) XposedEventTransportHealth.onForwarded(type)
             return
         }
         if (!type.startsWith("android.event.")) return
@@ -78,14 +79,17 @@ object XposedSystemEventRuntimeBridge {
                 }
             }
         }
-        listener?.invoke(
-            RuntimeEvent(
-                typeId = type,
-                payload = payload,
-                source = intent.getStringExtra("bridgeSource").orEmpty().ifBlank { "lsposed.system_server" },
-                timestampEpochMs = intent.getLongExtra("timestampEpochMs", System.currentTimeMillis()),
+        listener?.let { callback ->
+            callback.invoke(
+                RuntimeEvent(
+                    typeId = type,
+                    payload = payload,
+                    source = intent.getStringExtra("bridgeSource").orEmpty().ifBlank { "lsposed.system_server" },
+                    timestampEpochMs = intent.getLongExtra("timestampEpochMs", System.currentTimeMillis()),
+                )
             )
-        )
+            XposedEventTransportHealth.onForwarded(type)
+        }
     }
 }
 
