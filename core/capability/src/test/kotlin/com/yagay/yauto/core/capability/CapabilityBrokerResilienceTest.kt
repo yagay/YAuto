@@ -298,7 +298,7 @@ class CapabilityBrokerResilienceTest {
         assertEquals(listOf("root"), seen)
     }
 
-    @Test fun failedReadOnlyOperationCanTryAnotherBackend() = runBlocking {
+    @Test fun readOnlyFailuresDoNotInvokeShizukuWhileRootIsGranted() = runBlocking {
         val seen = mutableListOf<String>()
         fun backend(name: String, succeeds: Boolean) = object : CapabilityBackend {
             override val id = name
@@ -312,8 +312,9 @@ class CapabilityBrokerResilienceTest {
         }
         val broker = CapabilityBroker({ environment }, listOf(backend("root", false), backend("shizuku", true)))
         val result = broker.execute(CapabilityRequest(CapabilityIds.PRIVILEGED_SHELL, "android.system.property.get"))
-        assertTrue(result.success)
-        assertEquals(listOf("root", "shizuku"), seen)
+        assertFalse(result.success)
+        assertEquals("root", result.backendId)
+        assertEquals(listOf("root"), seen)
     }
 
 }

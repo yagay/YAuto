@@ -212,6 +212,7 @@ class CapabilityBroker(
 
         val attempts = mutableListOf<CapabilityAttempt>()
         var anyAvailable = false
+        var lastAttemptResult: CapabilityResult? = null
         // Probe only the next supported backend when an earlier one is unavailable or fails.
         for (backend in supported) {
             if (backend.id == "shizuku") {
@@ -244,16 +245,21 @@ class CapabilityBroker(
                     failureKind = CapabilityFailureKind.EXECUTION_FAILED)
             }
             attempts += CapabilityAttempt(backend.id, result.success, result.message)
+            val recorded = result.copy(
+                backendId = backend.id,
+                attempts = attempts.toList(),
+                failureKind = if (!result.success) result.failureKind ?: CapabilityFailureKind.EXECUTION_FAILED else null,
+            )
             if (result.success || !request.allowFallback || request.preferredBackendId != null ||
                 !CapabilityFallbackPolicy.canRetryAfterFailure(request, result)
             ) {
-                return result.copy(
-                    backendId = backend.id,
-                    attempts = attempts.toList(),
-                    failureKind = if (!result.success) result.failureKind ?: CapabilityFailureKind.EXECUTION_FAILED else null,
-                )
+                return recorded
             }
+            lastAttemptResult = recorded
         }
+        // Preserve the real failure and its backend when a lower-priority
+        // route was suppressed (e.g. Root is granted, so Shizuku is forbidden).
+        lastAttemptResult?.let { return it.copy(attempts = attempts.toList()) }
         return CapabilityResult(
             success = false,
             message = if (anyAvailable) userText("capability.all_backends_failed", request.operationId)
