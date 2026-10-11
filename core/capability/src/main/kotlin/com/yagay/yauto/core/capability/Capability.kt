@@ -152,9 +152,10 @@ object CapabilityBackendPriority {
     fun rank(backendId: String?, privilegedFirst: Boolean): Int = when (backendId) {
         "lsposed" -> if (privilegedFirst) 0 else 3
         "root" -> if (privilegedFirst) 1 else 4
-        "shizuku" -> if (privilegedFirst) 2 else 0
-        "accessibility" -> if (privilegedFirst) 3 else 1
-        "android" -> if (privilegedFirst) 4 else 2
+        // Shizuku is the last-resort rootless shell, never a peer of granted Root.
+        "shizuku" -> 5
+        "accessibility" -> if (privilegedFirst) 2 else 1
+        "android" -> if (privilegedFirst) 3 else 0
         else -> 5
     }
 }
@@ -190,7 +191,7 @@ class CapabilityBroker(
             else {
                 // Kept under the original preference key for existing installations.
                 // An enabled preference orders supported implementations:
-                // LSPosed > Root > Shizuku > Accessibility.
+                // LSPosed > Root > Accessibility / Android > Shizuku when Root is absent.
                 val privilegedFirst = preferRootWhenAvailable()
                 applicable.sortedWith(
                     compareBy<CapabilityBackend> {
@@ -213,6 +214,22 @@ class CapabilityBroker(
         var anyAvailable = false
         // Probe only the next supported backend when an earlier one is unavailable or fails.
         for (backend in supported) {
+            if (backend.id == "shizuku") {
+                // A valid Root grant rules out Shizuku entirely, including legacy
+                // preferredBackendId pins. A Root operation failure is NOT a
+                // revoked Root grant and must not switch to Shizuku.
+                val rootBackend = backendSnapshot.firstOrNull { it.id == "root" }
+                val rootGranted = environment.rootAvailable || (
+                    rootBackend != null && try {
+                        rootBackend.isAvailable(environment)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        false
+                    }
+                )
+                if (rootGranted) continue
+            }
             val available = try {
                 backend.isAvailable(environment)
             } catch (cancelled: CancellationException) {
