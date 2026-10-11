@@ -335,7 +335,7 @@ class AndroidLsposedFeaturePack : FeaturePack {
                 macrodroid = {
                     routeBackendCandidates(
                         backend,
-                        if (accessibleAction != null) listOf("accessibility", "shizuku")
+                        if (accessibleAction != null) listOf("shizuku", "accessibility")
                             else listOf("shizuku"),
                         execute = { selected ->
                             ctx.executeCapability(feature.typeId, CapabilityRequest(
